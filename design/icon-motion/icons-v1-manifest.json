@@ -1,0 +1,2751 @@
+{
+  "version": 1,
+  "canvas": [
+    1024,
+    1024
+  ],
+  "safeArea": {
+    "left": 192,
+    "top": 192,
+    "width": 640,
+    "height": 640
+  },
+  "updated": "2026-10-25",
+  "icons": {
+    "jahresring": {
+      "priority": "A",
+      "subject": "a flat rounded ring like a soft clay donut seen from above at an angle, sand colored, with one small teal bead sitting on the ring",
+      "animation": "Perle läuft um den Ring",
+      "source": "/Users/julian/.codex/generated_images/01a16ff0-9f36-73c0-8018-f01b2b74ce12/exec-ed30098e-81b7-4bf9-8198-3ec768473435.png",
+      "rawBase": "/Users/julian/.codex/generated_images/01a16ff0-9f36-73c0-8018-f01b2b74ce12/exec-740fd770-d484-444c-9dd3-54a3d1bb40f0.png",
+      "rawLayers": [
+        {
+          "name": "perle",
+          "path": "/Users/julian/.codex/generated_images/01a16ff0-9f36-73c0-8018-f01b2b74ce12/exec-5d6f890d-1620-4d0b-b36c-d54c700d3f68.png"
+        }
+      ],
+      "rawStates": [],
+      "crop": {
+        "left": 284,
+        "top": 393,
+        "width": 696,
+        "height": 527
+      },
+      "scale": 0.9195402298850575,
+      "target": [
+        640,
+        485
+      ],
+      "silhouetteIoU": 0.9657190715942894,
+      "pixelExactRecomposition": true,
+      "files": [
+        {
+          "file": "icon-jahresring.png",
+          "kind": "whole",
+          "path": "/Volumes/Extern/Documents/Obsidian/02 Wiki/Projects/Family Assistant/Design/Icons v1/icon-jahresring.png",
+          "sha256": "29086665b521fdd866df43fcf10fbfc6d1cb43cbee3a87879b4ca6b8c320e969"
+        },
+        {
+          "file": "icon-jahresring__base.png",
+          "kind": "base",
+          "path": "/Volumes/Extern/Documents/Obsidian/02 Wiki/Projects/Family Assistant/Design/Icons v1/icon-jahresring__base.png",
+          "sha256": "b92588c7480cc6af7f3edeaa93d11aea88c03cbf5eac83637748970a6ec980af"
+        },
+        {
+          "file": "icon-jahresring__perle.png",
+          "kind": "part",
+          "part": "perle",
+          "path": "/Volumes/Extern/Documents/Obsidian/02 Wiki/Projects/Family Assistant/Design/Icons v1/icon-jahresring__perle.png",
+          "sha256": "4b719cb521e19a63113256f4bdf8c92f8e784cf4a5ec7bac2869535648451b06"
+        }
+      ]
+    },
+    "zwei-spuren": {
+      "priority": "A",
+      "subject": "two soft rounded vertical pills side by side, blush and sky, with a small teal pill between them",
+      "animation": "Pille rutscht in die Lücke",
+      "source": "/Users/julian/.codex/generated_images/01a16ff0-9f36-73c0-8018-f01b2b74ce12/exec-42217076-6eba-4bab-8b83-97b68b59fe4a.png",
+      "rawBase": "/Users/julian/.codex/generated_images/01a16ff0-9f36-73c0-8018-f01b2b74ce12/exec-9b0e7209-f3e4-4258-95df-05475cd80f32.png",
+      "rawLayers": [
+        {
+          "name": "mittlere-pille",
+          "path": "/Users/julian/.codex/generated_images/01a16ff0-9f36-73c0-8018-f01b2b74ce12/exec-a8acba62-852f-472b-ab9e-e3702948312c.png"
+        }
+      ],
+      "rawStates": [],
+      "crop": {
+        "left": 277,
+        "top": 318,
+        "width": 701,
+        "height": 630
+      },
+      "scale": 0.912981455064194,
+      "target": [
+        640,
+        575
+      ],
+      "silhouetteIoU": 0.9610087503618374,
+      "pixelExactRecomposition": true,
+      "files": [
+        {
+          "file": "icon-zwei-spuren.png",
+          "kind": "whole",
+          "path": "/Volumes/Extern/Documents/Obsidian/02 Wiki/Projects/Family Assistant/Design/Icons v1/icon-zwei-spuren.png",
+          "sha256": "22984d25588f8ea2ab38cd9ebd42a7ffd96fb9d87030b819c6bcee46afbab019"
+        },
+        {
+          "file": "icon-zwei-spuren__base.png",
+          "kind": "base",
+          "path": "/Volumes/Extern/Documents/Obsidian/02 Wiki/Projects/Family Assistant/Design/Icons v1/icon-zwei-spuren__base.png",
+          "sha256": "8ea072c0875d1068f290139d320e309592187adbf2a2f944749d40840329db15"
+        },
+        {
+          "file": "icon-zwei-spuren__mittlere-pille.png",
+          "kind": "part",
+          "part": "mittlere-pille",
+          "path": "/Volumes/Extern/Documents/Obsidian/02 Wiki/Projects/Family Assistant/Design/Icons v1/icon-zwei-spuren__mittlere-pille.png",
+          "sha256": "5f4d1f7a5c7f6e7cbf8570b98fc42523370aa9cde7c39db8c01320f5bce53b1d"
+        }
+      ]
+    },
+    "eingang": {
+      "priority": "A",
+      "subject": "a soft rounded wooden letter tray with two envelopes inside",
+      "animation": "Brief gleitet hinein",
+      "source": "/Users/julian/.codex/generated_images/01a16ff0-9f36-73c0-8018-f01b2b74ce12/exec-e849ccbc-1e25-44d4-b5d4-70d8449a392e.png",
+      "rawBase": "/Users/julian/.codex/generated_images/01a16ff0-9f36-73c0-8018-f01b2b74ce12/exec-adac07b2-1795-4c4e-876e-f72803516f38.png",
+      "rawLayers": [
+        {
+          "name": "oberer-brief",
+          "path": "/Users/julian/.codex/generated_images/01a16ff0-9f36-73c0-8018-f01b2b74ce12/exec-a37b2465-5a68-44d8-a277-9681b5a3360b.png"
+        }
+      ],
+      "rawStates": [],
+      "crop": {
+        "left": 224,
+        "top": 336,
+        "width": 823,
+        "height": 646
+      },
+      "scale": 0.7776427703523694,
+      "target": [
+        640,
+        502
+      ],
+      "silhouetteIoU": 0.9913528616015773,
+      "registrationColorError": 0.034972853519264664,
+      "layerOrder": "parts-first",
+      "pixelExactRecomposition": true,
+      "files": [
+        {
+          "file": "icon-eingang.png",
+          "kind": "whole",
+          "path": "/Volumes/Extern/Documents/Obsidian/02 Wiki/Projects/Family Assistant/Design/Icons v1/icon-eingang.png",
+          "sha256": "68baff082392ee2830679a473ada081c65eeaf5fd4ac3f17607cf8e6e0ebc1ff"
+        },
+        {
+          "file": "icon-eingang__base.png",
+          "kind": "base",
+          "path": "/Volumes/Extern/Documents/Obsidian/02 Wiki/Projects/Family Assistant/Design/Icons v1/icon-eingang__base.png",
+          "sha256": "1bc6cbec20e798395a0e6c180b2a462b32f127d61ad1ba2f22c18d95b02c148f"
+        },
+        {
+          "file": "icon-eingang__oberer-brief.png",
+          "kind": "part",
+          "part": "oberer-brief",
+          "path": "/Volumes/Extern/Documents/Obsidian/02 Wiki/Projects/Family Assistant/Design/Icons v1/icon-eingang__oberer-brief.png",
+          "sha256": "242cca25b591f47636fc3eb6416f73eb9dc67cfb3a64b904b4e8200604f00b50"
+        }
+      ]
+    },
+    "karten": {
+      "priority": "A",
+      "subject": "a small stack of three rounded cards slightly fanned, cream, sage and blush",
+      "animation": "oberste Karte wischt zur Seite",
+      "source": "/Users/julian/.codex/generated_images/01a16ff0-9f36-73c0-8018-f01b2b74ce12/exec-fe5b1258-1847-4876-b3d5-3a8c6cabed3d.png",
+      "rawBase": "/Users/julian/.codex/generated_images/01a16ff0-9f36-73c0-8018-f01b2b74ce12/exec-4dd2e13f-c87e-4426-80ea-bfe035ddb160.png",
+      "rawLayers": [
+        {
+          "name": "oberste-karte",
+          "path": "/Users/julian/.codex/generated_images/01a16ff0-9f36-73c0-8018-f01b2b74ce12/exec-dda47d02-8c4d-4ba0-a743-96a33f60fad9.png"
+        }
+      ],
+      "rawStates": [],
+      "crop": {
+        "left": 247,
+        "top": 264,
+        "width": 800,
+        "height": 750
+      },
+      "scale": 0.8,
+      "target": [
+        640,
+        600
+      ],
+      "silhouetteIoU": 0.9861371502046128,
+      "pixelExactRecomposition": true,
+      "files": [
+        {
+          "file": "icon-karten.png",
+          "kind": "whole",
+          "path": "/Volumes/Extern/Documents/Obsidian/02 Wiki/Projects/Family Assistant/Design/Icons v1/icon-karten.png",
+          "sha256": "5006dc4bb30bf75ad2799416c72f277cf68e904dfabbfce274281e2928325e94"
+        },
+        {
+          "file": "icon-karten__base.png",
+          "kind": "base",
+          "path": "/Volumes/Extern/Documents/Obsidian/02 Wiki/Projects/Family Assistant/Design/Icons v1/icon-karten__base.png",
+          "sha256": "f8ed87a7ba90199c28f619680fe2a981f1f97161a600880bf573b41e4f8325c1"
+        },
+        {
+          "file": "icon-karten__oberste-karte.png",
+          "kind": "part",
+          "part": "oberste-karte",
+          "path": "/Volumes/Extern/Documents/Obsidian/02 Wiki/Projects/Family Assistant/Design/Icons v1/icon-karten__oberste-karte.png",
+          "sha256": "049ea18c1da1d26859378f8235b1d528ef7b860320eaef282ba304386817f4d3"
+        }
+      ]
+    },
+    "erledigt": {
+      "priority": "A",
+      "subject": "a rounded teal check mark on a soft cream disc",
+      "animation": "Haken zeichnet sich und ploppt",
+      "source": "/Users/julian/.codex/generated_images/01a16ff0-9f36-73c0-8018-f01b2b74ce12/exec-90388f5a-3baa-4e54-9f88-e1c93a554d9c.png",
+      "rawBase": "/Users/julian/.codex/generated_images/01a16ff0-9f36-73c0-8018-f01b2b74ce12/exec-6c8fbe06-aca0-4185-939f-19195ce36d7a.png",
+      "rawLayers": [
+        {
+          "name": "haken",
+          "path": "/Users/julian/.codex/generated_images/01a16ff0-9f36-73c0-8018-f01b2b74ce12/exec-833af8ce-13a9-4baa-96b1-5ce9e0309ed9.png"
+        }
+      ],
+      "rawStates": [],
+      "crop": {
+        "left": 268,
+        "top": 329,
+        "width": 718,
+        "height": 600
+      },
+      "scale": 0.8913649025069638,
+      "target": [
+        640,
+        535
+      ],
+      "silhouetteIoU": 0.9945262511559644,
+      "registrationColorError": 0.13152739215042697,
+      "layerOrder": "base-first",
+      "pixelExactRecomposition": true,
+      "files": [
+        {
+          "file": "icon-erledigt.png",
+          "kind": "whole",
+          "path": "/Volumes/Extern/Documents/Obsidian/02 Wiki/Projects/Family Assistant/Design/Icons v1/icon-erledigt.png",
+          "sha256": "6ca858168f26e9bfd2cbec5c9ae404fcea48cf1ecd9efa88302c2d65a0ebcbdc"
+        },
+        {
+          "file": "icon-erledigt__base.png",
+          "kind": "base",
+          "path": "/Volumes/Extern/Documents/Obsidian/02 Wiki/Projects/Family Assistant/Design/Icons v1/icon-erledigt__base.png",
+          "sha256": "c4e7790faba085558806304d4acb4711acbabfc00edfdeae64c7791a7ff9cb59"
+        },
+        {
+          "file": "icon-erledigt__haken.png",
+          "kind": "part",
+          "part": "haken",
+          "path": "/Volumes/Extern/Documents/Obsidian/02 Wiki/Projects/Family Assistant/Design/Icons v1/icon-erledigt__haken.png",
+          "sha256": "fb626bb10eaa421e09d69c1fe12a2cbd2a206a12beb79c7fae6ee89f5915a03a"
+        }
+      ]
+    },
+    "magnet": {
+      "priority": "A",
+      "subject": "a round fridge magnet in teal holding a small note",
+      "animation": "Notiz schwingt leicht",
+      "source": "/Users/julian/.codex/generated_images/01a16ff0-9f36-73c0-8018-f01b2b74ce12/exec-38b0a00e-1e12-4b37-a1b4-c9049d8ea62b.png",
+      "rawBase": "/Users/julian/.codex/generated_images/01a16ff0-9f36-73c0-8018-f01b2b74ce12/exec-ffb07d71-8b09-423f-9f2a-1c3a3e6f5207.png",
+      "rawLayers": [
+        {
+          "name": "notiz",
+          "path": "/Users/julian/.codex/generated_images/01a16ff0-9f36-73c0-8018-f01b2b74ce12/exec-8bccd818-88f3-4f56-9ba8-1e050e0e53c5.png"
+        }
+      ],
+      "rawStates": [],
+      "crop": {
+        "left": 276,
+        "top": 336,
+        "width": 703,
+        "height": 657
+      },
+      "scale": 0.9103840682788051,
+      "target": [
+        640,
+        598
+      ],
+      "silhouetteIoU": 0.9934917562245511,
+      "registrationColorError": 0.0199500921937577,
+      "layerOrder": "parts-first",
+      "pixelExactRecomposition": true,
+      "files": [
+        {
+          "file": "icon-magnet.png",
+          "kind": "whole",
+          "path": "/Volumes/Extern/Documents/Obsidian/02 Wiki/Projects/Family Assistant/Design/Icons v1/icon-magnet.png",
+          "sha256": "b1753bd3d2e8b7fd6289327b6eeeed9566739b0c3bc9da2bb8f4cbbe1dc78870"
+        },
+        {
+          "file": "icon-magnet__base.png",
+          "kind": "base",
+          "path": "/Volumes/Extern/Documents/Obsidian/02 Wiki/Projects/Family Assistant/Design/Icons v1/icon-magnet__base.png",
+          "sha256": "29d907a9573386181790086e99432068fe6710ed4cc12ae6eb009334ff6988e8"
+        },
+        {
+          "file": "icon-magnet__notiz.png",
+          "kind": "part",
+          "part": "notiz",
+          "path": "/Volumes/Extern/Documents/Obsidian/02 Wiki/Projects/Family Assistant/Design/Icons v1/icon-magnet__notiz.png",
+          "sha256": "8d982a6a88ff951da8342157807b5d8f20f161bf3fa38c1d6d972feea50aefe6"
+        }
+      ]
+    },
+    "hand-nimmt": {
+      "priority": "A",
+      "subject": "a soft rounded hand in sand color gently holding a small card",
+      "animation": "Karte wird gegriffen",
+      "source": "/Users/julian/.codex/generated_images/01a16ff0-9f36-73c0-8018-f01b2b74ce12/exec-2f6b6a44-0bbb-4802-8a51-bc626f45af8b.png",
+      "rawBase": "/Users/julian/.codex/generated_images/01a16ff0-9f36-73c0-8018-f01b2b74ce12/exec-d5d4c4cd-b559-437d-920c-1b173544236a.png",
+      "rawLayers": [
+        {
+          "name": "karte",
+          "path": "/Users/julian/.codex/generated_images/01a16ff0-9f36-73c0-8018-f01b2b74ce12/exec-68708209-84bb-49c5-a93b-ba8a116f11a3.png"
+        }
+      ],
+      "rawStates": [],
+      "crop": {
+        "left": 225,
+        "top": 301,
+        "width": 836,
+        "height": 698
+      },
+      "scale": 0.7655502392344498,
+      "target": [
+        640,
+        534
+      ],
+      "silhouetteIoU": 0.9940969443993711,
+      "registrationColorError": 0.019763853639328952,
+      "layerOrder": "parts-first",
+      "pixelExactRecomposition": true,
+      "files": [
+        {
+          "file": "icon-hand-nimmt.png",
+          "kind": "whole",
+          "path": "/Volumes/Extern/Documents/Obsidian/02 Wiki/Projects/Family Assistant/Design/Icons v1/icon-hand-nimmt.png",
+          "sha256": "a75ea6c697afd7a6c8257d7886354c19708eb6c37fcb11ebc9916dc94dbc73c4"
+        },
+        {
+          "file": "icon-hand-nimmt__base.png",
+          "kind": "base",
+          "path": "/Volumes/Extern/Documents/Obsidian/02 Wiki/Projects/Family Assistant/Design/Icons v1/icon-hand-nimmt__base.png",
+          "sha256": "685d21cae7347f50069fc47a9a1c24bee700ed3018c13e50f7a644552419bb41"
+        },
+        {
+          "file": "icon-hand-nimmt__karte.png",
+          "kind": "part",
+          "part": "karte",
+          "path": "/Volumes/Extern/Documents/Obsidian/02 Wiki/Projects/Family Assistant/Design/Icons v1/icon-hand-nimmt__karte.png",
+          "sha256": "86e4a3a5decae223108a99dec4e810ce13736ee1c889336dfdab502408721a9c"
+        }
+      ]
+    },
+    "noch-offen": {
+      "priority": "A",
+      "subject": "a soft cream disc with a small dashed ring, empty inside",
+      "animation": "Ring dreht langsam",
+      "source": "/Users/julian/.codex/generated_images/01a16ff0-9f36-73c0-8018-f01b2b74ce12/exec-eec771a5-576a-4095-8383-02e1a5bdda27.png",
+      "rawBase": "/Users/julian/.codex/generated_images/01a16ff0-9f36-73c0-8018-f01b2b74ce12/exec-e7a0c61b-3d14-498c-b96a-5a0e8fd4bff1.png",
+      "rawLayers": [
+        {
+          "name": "ring",
+          "path": "/Users/julian/.codex/generated_images/01a16ff0-9f36-73c0-8018-f01b2b74ce12/exec-17e6fe9b-67d7-43c2-8bb8-cbe67a89276c.png"
+        }
+      ],
+      "rawStates": [],
+      "crop": {
+        "left": 234,
+        "top": 294,
+        "width": 784,
+        "height": 664
+      },
+      "scale": 0.8163265306122449,
+      "target": [
+        640,
+        542
+      ],
+      "silhouetteIoU": 0.9982258028521056,
+      "registrationColorError": 0.01823266713605183,
+      "layerOrder": "base-first",
+      "pixelExactRecomposition": true,
+      "files": [
+        {
+          "file": "icon-noch-offen.png",
+          "kind": "whole",
+          "path": "/Volumes/Extern/Documents/Obsidian/02 Wiki/Projects/Family Assistant/Design/Icons v1/icon-noch-offen.png",
+          "sha256": "46cdfe250bb5d15812dcbb619cd43b848f3ea2fca432f90697b5eed34abcc547"
+        },
+        {
+          "file": "icon-noch-offen__base.png",
+          "kind": "base",
+          "path": "/Volumes/Extern/Documents/Obsidian/02 Wiki/Projects/Family Assistant/Design/Icons v1/icon-noch-offen__base.png",
+          "sha256": "feeb92b87335d7902f86fae77f9622caecd8ec2ccb00006780ca06c41c82cd55"
+        },
+        {
+          "file": "icon-noch-offen__ring.png",
+          "kind": "part",
+          "part": "ring",
+          "path": "/Volumes/Extern/Documents/Obsidian/02 Wiki/Projects/Family Assistant/Design/Icons v1/icon-noch-offen__ring.png",
+          "sha256": "9d88205c186e35e57833c9eb89ae31558c728107cb78b8c94678842d8b4426a7"
+        }
+      ]
+    },
+    "spaeter": {
+      "priority": "A",
+      "subject": "a small rounded hourglass in sand and teal",
+      "animation": "Glas dreht sich, Sand rieselt",
+      "source": "/Users/julian/.codex/generated_images/01a16ff0-9f36-73c0-8018-f01b2b74ce12/exec-b54cd80d-2d64-4231-9f80-2043a17fd5af.png",
+      "rawBase": "/Users/julian/.codex/generated_images/01a16ff0-9f36-73c0-8018-f01b2b74ce12/exec-870ee95b-3afb-4566-b85e-172c1aee69b7.png",
+      "rawLayers": [
+        {
+          "name": "sand",
+          "path": "/Users/julian/.codex/generated_images/01a16ff0-9f36-73c0-8018-f01b2b74ce12/exec-80f274d6-78fd-4d9b-a5a1-9586615281fc.png"
+        }
+      ],
+      "rawStates": [],
+      "crop": {
+        "left": 404,
+        "top": 254,
+        "width": 447,
+        "height": 775
+      },
+      "scale": 0.8258064516129032,
+      "target": [
+        369,
+        640
+      ],
+      "silhouetteIoU": 0.9814211562555933,
+      "registrationColorError": 0.2544313928264065,
+      "layerOrder": "base-first",
+      "pixelExactRecomposition": true,
+      "files": [
+        {
+          "file": "icon-spaeter.png",
+          "kind": "whole",
+          "path": "/Volumes/Extern/Documents/Obsidian/02 Wiki/Projects/Family Assistant/Design/Icons v1/icon-spaeter.png",
+          "sha256": "75581bdbf0c0448f9085e9a6bed3d16e5469e6531a7b8e0934c430f05877bfff"
+        },
+        {
+          "file": "icon-spaeter__base.png",
+          "kind": "base",
+          "path": "/Volumes/Extern/Documents/Obsidian/02 Wiki/Projects/Family Assistant/Design/Icons v1/icon-spaeter__base.png",
+          "sha256": "5814ed91a603f060016b7830d68e223fe545b9c252790dd20757617f3ae913c9"
+        },
+        {
+          "file": "icon-spaeter__sand.png",
+          "kind": "part",
+          "part": "sand",
+          "path": "/Volumes/Extern/Documents/Obsidian/02 Wiki/Projects/Family Assistant/Design/Icons v1/icon-spaeter__sand.png",
+          "sha256": "47ab7219220292aab7f16313ade150d7df197b24f650a93ad867c475ab13246d"
+        }
+      ]
+    },
+    "kamera-scan": {
+      "priority": "A",
+      "subject": "a compact rounded camera in cream with a teal lens",
+      "animation": "Blitz blinkt",
+      "source": "/Users/julian/.codex/generated_images/01a16ff0-9f36-73c0-8018-f01b2b74ce12/exec-ff8c7896-a6aa-4567-9549-a1327c0a7332.png",
+      "rawBase": null,
+      "rawLayers": [],
+      "rawStates": [
+        {
+          "name": "blitz",
+          "path": "/Users/julian/.codex/generated_images/01a16ff0-9f36-73c0-8018-f01b2b74ce12/exec-005ae4be-8c73-4461-a281-32f230a218c7.png"
+        }
+      ],
+      "crop": {
+        "left": 242,
+        "top": 305,
+        "width": 780,
+        "height": 657
+      },
+      "scale": 0.8205128205128205,
+      "target": [
+        640,
+        539
+      ],
+      "silhouetteIoU": 1,
+      "registrationColorError": 0,
+      "layerOrder": "base-first",
+      "pixelExactRecomposition": null,
+      "files": [
+        {
+          "file": "icon-kamera-scan.png",
+          "kind": "whole",
+          "path": "/Volumes/Extern/Documents/Obsidian/02 Wiki/Projects/Family Assistant/Design/Icons v1/icon-kamera-scan.png",
+          "sha256": "d9f11acc0863198996beb93382522c77c690fefeb418e317eb05b559da9aa20e"
+        },
+        {
+          "file": "icon-kamera-scan__state-blitz.png",
+          "kind": "state",
+          "state": "blitz",
+          "path": "/Volumes/Extern/Documents/Obsidian/02 Wiki/Projects/Family Assistant/Design/Icons v1/icon-kamera-scan__state-blitz.png",
+          "sha256": "e980ef336da38018f929a6a0e4baa7b9d7b159bc3bd835191552cad1c1b22e37"
+        }
+      ]
+    },
+    "brief-gelesen": {
+      "priority": "A",
+      "subject": "an open letter with a small soft teal highlighter lying on it",
+      "animation": "Marker streicht über die Zeile",
+      "source": "/Users/julian/.codex/generated_images/01a16ff0-9f36-73c0-8018-f01b2b74ce12/exec-e76b74eb-3cb5-405c-97ee-b4b92295b73d.png",
+      "rawBase": "/Users/julian/.codex/generated_images/01a16ff0-9f36-73c0-8018-f01b2b74ce12/exec-3b097624-2dcf-484e-9ded-2691048f9d15.png",
+      "rawLayers": [
+        {
+          "name": "marker",
+          "path": "/Users/julian/.codex/generated_images/01a16ff0-9f36-73c0-8018-f01b2b74ce12/exec-66e77a7d-93f9-481f-9b38-89bf5dc03527.png"
+        }
+      ],
+      "rawStates": [],
+      "crop": {
+        "left": 261,
+        "top": 266,
+        "width": 767,
+        "height": 717
+      },
+      "scale": 0.834419817470665,
+      "target": [
+        640,
+        598
+      ],
+      "silhouetteIoU": 0.9909451325690284,
+      "registrationColorError": 0.06526162196173343,
+      "layerOrder": "base-first",
+      "pixelExactRecomposition": true,
+      "files": [
+        {
+          "file": "icon-brief-gelesen.png",
+          "kind": "whole",
+          "path": "/Volumes/Extern/Documents/Obsidian/02 Wiki/Projects/Family Assistant/Design/Icons v1/icon-brief-gelesen.png",
+          "sha256": "f45198b390cf48d5d8c882dc905d8eaa19c2e2952be25e705607a3f0a60a1144"
+        },
+        {
+          "file": "icon-brief-gelesen__base.png",
+          "kind": "base",
+          "path": "/Volumes/Extern/Documents/Obsidian/02 Wiki/Projects/Family Assistant/Design/Icons v1/icon-brief-gelesen__base.png",
+          "sha256": "21130fce939ff51489e0f10c41efe90d4ee68909c583d08c0eaf4c53db481606"
+        },
+        {
+          "file": "icon-brief-gelesen__marker.png",
+          "kind": "part",
+          "part": "marker",
+          "path": "/Volumes/Extern/Documents/Obsidian/02 Wiki/Projects/Family Assistant/Design/Icons v1/icon-brief-gelesen__marker.png",
+          "sha256": "a3928d8cbca53483367add9295cd87b894d009ec5931762efb1e8930b6699378"
+        }
+      ]
+    },
+    "stethoskop": {
+      "priority": "A",
+      "subject": "a pediatric stethoscope loosely coiled, teal tubing",
+      "animation": "Bruststück pendelt",
+      "source": "/Users/julian/.codex/generated_images/01a16ff0-9f36-73c0-8018-f01b2b74ce12/exec-da00e42a-ce72-40d7-9c96-8a4f7955bb7c.png",
+      "rawBase": "/Users/julian/.codex/generated_images/01a16ff0-9f36-73c0-8018-f01b2b74ce12/exec-7a6812d4-9cca-4caa-91a6-93278012ea14.png",
+      "rawLayers": [
+        {
+          "name": "bruststueck",
+          "path": "/Users/julian/.codex/generated_images/01a16ff0-9f36-73c0-8018-f01b2b74ce12/exec-af782546-c4b4-44a1-b3ba-be33386e640b.png"
+        }
+      ],
+      "rawStates": [],
+      "crop": {
+        "left": 246,
+        "top": 223,
+        "width": 779,
+        "height": 832
+      },
+      "scale": 0.7692307692307693,
+      "target": [
+        599,
+        640
+      ],
+      "silhouetteIoU": 0.9102207857898298,
+      "registrationColorError": 0.0955188212529996,
+      "layerOrder": "base-first",
+      "pixelExactRecomposition": true,
+      "files": [
+        {
+          "file": "icon-stethoskop.png",
+          "kind": "whole",
+          "path": "/Volumes/Extern/Documents/Obsidian/02 Wiki/Projects/Family Assistant/Design/Icons v1/icon-stethoskop.png",
+          "sha256": "234a4a123d9bc021b2e0e7c2604e009f425c351ad9dc53e806ebe58a21a85ffb"
+        },
+        {
+          "file": "icon-stethoskop__base.png",
+          "kind": "base",
+          "path": "/Volumes/Extern/Documents/Obsidian/02 Wiki/Projects/Family Assistant/Design/Icons v1/icon-stethoskop__base.png",
+          "sha256": "23b95d594418f4d93482416909b7f5a8c780e82305390325792eb4983559ac15"
+        },
+        {
+          "file": "icon-stethoskop__bruststueck.png",
+          "kind": "part",
+          "part": "bruststueck",
+          "path": "/Volumes/Extern/Documents/Obsidian/02 Wiki/Projects/Family Assistant/Design/Icons v1/icon-stethoskop__bruststueck.png",
+          "sha256": "258b29343467993196056c837a26d21d28908247cb92be1570d83ec6b74c1122"
+        }
+      ]
+    },
+    "u-heft": {
+      "priority": "A",
+      "subject": "a small yellow booklet with rounded corners, slightly open",
+      "animation": "Seite blättert",
+      "source": "/Users/julian/.codex/generated_images/01a16ff0-9f36-73c0-8018-f01b2b74ce12/exec-eedf691d-b9b8-4418-9e7c-229b30a4e253.png",
+      "rawBase": "/Users/julian/.codex/generated_images/01a16ff0-9f36-73c0-8018-f01b2b74ce12/exec-5be50994-4c58-4d21-ac00-f73e9235bbba.png",
+      "rawLayers": [
+        {
+          "name": "seite",
+          "path": "/Users/julian/.codex/generated_images/01a16ff0-9f36-73c0-8018-f01b2b74ce12/exec-f8d8d16e-9a92-4f26-b93f-6991852e158e.png"
+        }
+      ],
+      "rawStates": [],
+      "crop": {
+        "left": 341,
+        "top": 269,
+        "width": 587,
+        "height": 791
+      },
+      "scale": 0.809102402022756,
+      "target": [
+        475,
+        640
+      ],
+      "silhouetteIoU": 0.8067634181680736,
+      "registrationColorError": 0.18753775133588776,
+      "layerOrder": "parts-first",
+      "pixelExactRecomposition": true,
+      "files": [
+        {
+          "file": "icon-u-heft.png",
+          "kind": "whole",
+          "path": "/Volumes/Extern/Documents/Obsidian/02 Wiki/Projects/Family Assistant/Design/Icons v1/icon-u-heft.png",
+          "sha256": "ff6ca9a245c3a292b789bd0b574789027e9a2ec2013e8c3452363dc0b5bd951e"
+        },
+        {
+          "file": "icon-u-heft__base.png",
+          "kind": "base",
+          "path": "/Volumes/Extern/Documents/Obsidian/02 Wiki/Projects/Family Assistant/Design/Icons v1/icon-u-heft__base.png",
+          "sha256": "2f1de7999aec34e287ead7ca6d8b3ac220fd13a17ef9da7e6fbb369909aa4470"
+        },
+        {
+          "file": "icon-u-heft__seite.png",
+          "kind": "part",
+          "part": "seite",
+          "path": "/Volumes/Extern/Documents/Obsidian/02 Wiki/Projects/Family Assistant/Design/Icons v1/icon-u-heft__seite.png",
+          "sha256": "3281c66f8b2dab3c8d665ccf477405fd1833c769ac74e1a39b1f97879af456dd"
+        }
+      ]
+    },
+    "flaeschchen": {
+      "priority": "A",
+      "subject": "a small baby bottle with milk and a teal cap",
+      "animation": "Milch schwappt",
+      "source": "/Users/julian/.codex/generated_images/01a16ff0-9f36-73c0-8018-f01b2b74ce12/exec-078ea89c-56e1-4312-8001-ca0450a466fa.png",
+      "rawBase": null,
+      "rawLayers": [],
+      "rawStates": [
+        {
+          "name": "halb-voll",
+          "path": "/Users/julian/.codex/generated_images/01a16ff0-9f36-73c0-8018-f01b2b74ce12/exec-0cef6198-2099-4cf6-b4c8-7575f062fa67.png"
+        }
+      ],
+      "crop": {
+        "left": 401,
+        "top": 194,
+        "width": 452,
+        "height": 847
+      },
+      "scale": 0.755608028335301,
+      "target": [
+        342,
+        640
+      ],
+      "silhouetteIoU": 1,
+      "registrationColorError": 0,
+      "layerOrder": "base-first",
+      "pixelExactRecomposition": null,
+      "files": [
+        {
+          "file": "icon-flaeschchen.png",
+          "kind": "whole",
+          "path": "/Volumes/Extern/Documents/Obsidian/02 Wiki/Projects/Family Assistant/Design/Icons v1/icon-flaeschchen.png",
+          "sha256": "6b54185770980c1b043a0a5a742149b466b87447a6c4508f20eb01b69d8d82e6"
+        },
+        {
+          "file": "icon-flaeschchen__state-halb-voll.png",
+          "kind": "state",
+          "state": "halb-voll",
+          "path": "/Volumes/Extern/Documents/Obsidian/02 Wiki/Projects/Family Assistant/Design/Icons v1/icon-flaeschchen__state-halb-voll.png",
+          "sha256": "7548e74a917f7ebaacbdb3849a5e4287d101baa779956172a3ecd6d6a3ccec2e"
+        }
+      ]
+    },
+    "yogamatte": {
+      "source": "/Users/julian/.codex/generated_images/01a16ff0-9f36-73c0-8018-f01b2b74ce12/exec-27cb5171-6266-4d64-9101-0ef61a67ffb2.png",
+      "rawBase": null,
+      "rawLayers": [],
+      "rawStates": [],
+      "crop": {
+        "left": 219,
+        "top": 372,
+        "width": 857,
+        "height": 545
+      },
+      "scale": 0.7467911318553092,
+      "target": [
+        640,
+        407
+      ],
+      "silhouetteIoU": 1,
+      "registrationColorError": 0,
+      "layerOrder": "base-first",
+      "pixelExactRecomposition": null,
+      "files": [
+        {
+          "file": "icon-yogamatte.png",
+          "kind": "whole",
+          "path": "/Volumes/Extern/Documents/Obsidian/02 Wiki/Projects/Family Assistant/Design/Icons v1/icon-yogamatte.png",
+          "sha256": "75874ec802e249ddf7e927cb169b2be1b8600022c48a31ebc3f0531f2a8e84f7"
+        }
+      ],
+      "priority": "A",
+      "subject": "a rolled yoga mat in dusty sage",
+      "animation": "ruhiges Aufwippen"
+    },
+    "impfung": {
+      "priority": "A",
+      "subject": "a small rounded vaccine vial with a teal cap next to a round plaster",
+      "animation": "Pflaster klebt sich auf",
+      "source": "/Users/julian/.codex/generated_images/01a16ff0-9f36-73c0-8018-f01b2b74ce12/exec-7f971046-67f0-43bb-91c5-2762fe26c565.png",
+      "rawBase": "/Users/julian/.codex/generated_images/01a16ff0-9f36-73c0-8018-f01b2b74ce12/exec-ccee011f-f7a4-4a85-82d0-d19a18991725.png",
+      "rawLayers": [
+        {
+          "name": "pflaster",
+          "path": "/Users/julian/.codex/generated_images/01a16ff0-9f36-73c0-8018-f01b2b74ce12/exec-cc4370d0-b37c-4e0e-a729-2d1559097fdd.png"
+        }
+      ],
+      "rawStates": [],
+      "crop": {
+        "left": 396,
+        "top": 303,
+        "width": 547,
+        "height": 681
+      },
+      "scale": 0.9397944199706314,
+      "target": [
+        514,
+        640
+      ],
+      "silhouetteIoU": 0.976395583748706,
+      "registrationColorError": 0.02945557693558982,
+      "layerOrder": "base-first",
+      "pixelExactRecomposition": true,
+      "files": [
+        {
+          "file": "icon-impfung.png",
+          "kind": "whole",
+          "path": "/Volumes/Extern/Documents/Obsidian/02 Wiki/Projects/Family Assistant/Design/Icons v1/icon-impfung.png",
+          "sha256": "401b0ca6fba5cf4a54c96b6d1a12d48883ee3862ff2fe58768e201782c1b0154"
+        },
+        {
+          "file": "icon-impfung__base.png",
+          "kind": "base",
+          "path": "/Volumes/Extern/Documents/Obsidian/02 Wiki/Projects/Family Assistant/Design/Icons v1/icon-impfung__base.png",
+          "sha256": "f0151828ba4b4e531bada3afbb3b65fe5259079edc3aafcfb0f6994e4e9481ab"
+        },
+        {
+          "file": "icon-impfung__pflaster.png",
+          "kind": "part",
+          "part": "pflaster",
+          "path": "/Volumes/Extern/Documents/Obsidian/02 Wiki/Projects/Family Assistant/Design/Icons v1/icon-impfung__pflaster.png",
+          "sha256": "90a1835f302aefd8c632b094b03e19584f32eaea568495778c0f52b94274e089"
+        }
+      ]
+    },
+    "windeln": {
+      "priority": "A",
+      "subject": "a neatly folded white baby diaper with a sage tab",
+      "animation": "Lasche klappt zu",
+      "source": "/Users/julian/.codex/generated_images/01a16ff0-9f36-73c0-8018-f01b2b74ce12/exec-56944c4a-171e-4926-b912-11689df68ebe.png",
+      "rawBase": "/Users/julian/.codex/generated_images/01a16ff0-9f36-73c0-8018-f01b2b74ce12/exec-fb4e1083-8915-4445-951b-4e7c78527276.png",
+      "rawLayers": [
+        {
+          "name": "lasche",
+          "path": "/Users/julian/.codex/generated_images/01a16ff0-9f36-73c0-8018-f01b2b74ce12/exec-be498c79-1f02-472b-8522-6d440400095e.png"
+        }
+      ],
+      "rawStates": [],
+      "crop": {
+        "left": 281,
+        "top": 336,
+        "width": 724,
+        "height": 649
+      },
+      "scale": 0.8839779005524862,
+      "target": [
+        640,
+        574
+      ],
+      "silhouetteIoU": 0.9943846046954111,
+      "registrationColorError": 0.02638812416831179,
+      "layerOrder": "base-first",
+      "pixelExactRecomposition": true,
+      "files": [
+        {
+          "file": "icon-windeln.png",
+          "kind": "whole",
+          "path": "/Volumes/Extern/Documents/Obsidian/02 Wiki/Projects/Family Assistant/Design/Icons v1/icon-windeln.png",
+          "sha256": "586b70ea0f4ba1445ddda607ac49cef5d88cda5e6e1770fae9cd0c1f0c47b89e"
+        },
+        {
+          "file": "icon-windeln__base.png",
+          "kind": "base",
+          "path": "/Volumes/Extern/Documents/Obsidian/02 Wiki/Projects/Family Assistant/Design/Icons v1/icon-windeln__base.png",
+          "sha256": "af85e65d0a6f643e0d1b0a4494ad2e0de8ceaab064d1ae26f0f6e747a16cdda0"
+        },
+        {
+          "file": "icon-windeln__lasche.png",
+          "kind": "part",
+          "part": "lasche",
+          "path": "/Volumes/Extern/Documents/Obsidian/02 Wiki/Projects/Family Assistant/Design/Icons v1/icon-windeln__lasche.png",
+          "sha256": "dfb53a15cdd55bdc2c19e2ae071f22df4bdde39330377e2d2bb183c040b5e9e8"
+        }
+      ]
+    },
+    "schnuller": {
+      "priority": "A",
+      "subject": "a soft pacifier with a teal shield and cream handle",
+      "animation": "wippt",
+      "source": "/Users/julian/.codex/generated_images/01a16ff0-9f36-73c0-8018-f01b2b74ce12/exec-692e9777-30f9-4f0d-a9cc-d80678528223.png",
+      "rawBase": null,
+      "rawLayers": [],
+      "rawStates": [],
+      "crop": {
+        "left": 251,
+        "top": 253,
+        "width": 765,
+        "height": 756
+      },
+      "scale": 0.8366013071895425,
+      "target": [
+        640,
+        632
+      ],
+      "silhouetteIoU": 1,
+      "registrationColorError": 0,
+      "layerOrder": "base-first",
+      "pixelExactRecomposition": null,
+      "files": [
+        {
+          "file": "icon-schnuller.png",
+          "kind": "whole",
+          "path": "/Volumes/Extern/Documents/Obsidian/02 Wiki/Projects/Family Assistant/Design/Icons v1/icon-schnuller.png",
+          "sha256": "a9020ef14ebdfcb6dd4ef6ab2a5e2661aaae8dae68f0ec701af34ba40646e31a"
+        }
+      ]
+    },
+    "umschlag-euro": {
+      "priority": "A",
+      "subject": "a soft rounded envelope with a small euro coin leaning on it",
+      "animation": "Münze rollt heran",
+      "source": "/Users/julian/.codex/generated_images/01a16ff0-9f36-73c0-8018-f01b2b74ce12/exec-820165ee-dcb4-457f-8edd-67eb72b0f2df.png",
+      "rawBase": "/Users/julian/.codex/generated_images/01a16ff0-9f36-73c0-8018-f01b2b74ce12/exec-01b09bb2-ebe3-4d39-bb3c-216e40ef1acc.png",
+      "rawLayers": [
+        {
+          "name": "muenze",
+          "path": "/Users/julian/.codex/generated_images/01a16ff0-9f36-73c0-8018-f01b2b74ce12/exec-806aa243-efee-498d-b7a2-ba0f905c9d90.png"
+        }
+      ],
+      "rawStates": [],
+      "crop": {
+        "left": 248,
+        "top": 366,
+        "width": 800,
+        "height": 577
+      },
+      "scale": 0.8,
+      "target": [
+        640,
+        462
+      ],
+      "silhouetteIoU": 0.9663595796163371,
+      "registrationColorError": 0.028852518876477246,
+      "layerOrder": "base-first",
+      "pixelExactRecomposition": true,
+      "files": [
+        {
+          "file": "icon-umschlag-euro.png",
+          "kind": "whole",
+          "path": "/Volumes/Extern/Documents/Obsidian/02 Wiki/Projects/Family Assistant/Design/Icons v1/icon-umschlag-euro.png",
+          "sha256": "6d8ef8c4d5f8b6e05881aca1156083e79054097ef0d76231fdc32d73a976cd2e"
+        },
+        {
+          "file": "icon-umschlag-euro__base.png",
+          "kind": "base",
+          "path": "/Volumes/Extern/Documents/Obsidian/02 Wiki/Projects/Family Assistant/Design/Icons v1/icon-umschlag-euro__base.png",
+          "sha256": "fbf0f63d3f81985a9b69f8ce2f0e09286f95d39c3a36591627a23795f4798bd5"
+        },
+        {
+          "file": "icon-umschlag-euro__muenze.png",
+          "kind": "part",
+          "part": "muenze",
+          "path": "/Volumes/Extern/Documents/Obsidian/02 Wiki/Projects/Family Assistant/Design/Icons v1/icon-umschlag-euro__muenze.png",
+          "sha256": "e03c675d75b1c0601f1879492c5a93d388b951ee0946f5b08b08b650749b0e58"
+        }
+      ]
+    },
+    "reisepass": {
+      "priority": "A",
+      "subject": "a small passport booklet in deep teal, closed",
+      "animation": "klappt auf",
+      "source": "/Users/julian/.codex/generated_images/01a16ff0-9f36-73c0-8018-f01b2b74ce12/exec-19510429-b4a1-40c0-8e3f-084cf067e903.png",
+      "rawBase": null,
+      "rawLayers": [],
+      "rawStates": [
+        {
+          "name": "offen",
+          "path": "/Users/julian/.codex/generated_images/01a16ff0-9f36-73c0-8018-f01b2b74ce12/exec-9b72766e-665e-41bd-9391-b645b2a13302.png"
+        }
+      ],
+      "crop": {
+        "left": 374,
+        "top": 249,
+        "width": 512,
+        "height": 813
+      },
+      "scale": 0.7872078720787208,
+      "target": [
+        403,
+        640
+      ],
+      "silhouetteIoU": 1,
+      "registrationColorError": 0,
+      "layerOrder": "base-first",
+      "pixelExactRecomposition": null,
+      "files": [
+        {
+          "file": "icon-reisepass.png",
+          "kind": "whole",
+          "path": "/Volumes/Extern/Documents/Obsidian/02 Wiki/Projects/Family Assistant/Design/Icons v1/icon-reisepass.png",
+          "sha256": "2b63c40aa93f592f1f76ffb9bd426d32a5bc959daf699d3c557e7f152aa97680"
+        },
+        {
+          "file": "icon-reisepass__state-offen.png",
+          "kind": "state",
+          "state": "offen",
+          "path": "/Volumes/Extern/Documents/Obsidian/02 Wiki/Projects/Family Assistant/Design/Icons v1/icon-reisepass__state-offen.png",
+          "sha256": "c63bde21b38f8fd72c18848a52eddbf016a09f5b5c56a7a1f080ebefae9fbe8f"
+        }
+      ]
+    },
+    "kinderwagen": {
+      "priority": "A",
+      "subject": "a small rounded baby stroller in sage",
+      "animation": "rollt vor und zurück",
+      "source": "/Users/julian/.codex/generated_images/01a16ff0-9f36-73c0-8018-f01b2b74ce12/exec-4b564691-8049-499f-8078-77f723ff53aa.png",
+      "rawBase": "/Users/julian/.codex/generated_images/01a16ff0-9f36-73c0-8018-f01b2b74ce12/exec-353f1835-dbf9-4413-af37-60912b018f2b.png",
+      "rawLayers": [
+        {
+          "name": "raeder",
+          "path": "/Users/julian/.codex/generated_images/01a16ff0-9f36-73c0-8018-f01b2b74ce12/exec-a3ef2e5f-b398-4429-a6c5-54346fce9ac0.png"
+        }
+      ],
+      "rawStates": [],
+      "crop": {
+        "left": 259,
+        "top": 210,
+        "width": 848,
+        "height": 872
+      },
+      "scale": 0.7339449541284404,
+      "target": [
+        622,
+        640
+      ],
+      "silhouetteIoU": 0.9098642023377221,
+      "registrationColorError": 0.10345690241812251,
+      "layerOrder": "base-first",
+      "pixelExactRecomposition": true,
+      "files": [
+        {
+          "file": "icon-kinderwagen.png",
+          "kind": "whole",
+          "path": "/Volumes/Extern/Documents/Obsidian/02 Wiki/Projects/Family Assistant/Design/Icons v1/icon-kinderwagen.png",
+          "sha256": "60ec2896730b5cdd7b5307c3291f83b8e3f224d4d4f4d7f6970773ba7d6ee977"
+        },
+        {
+          "file": "icon-kinderwagen__base.png",
+          "kind": "base",
+          "path": "/Volumes/Extern/Documents/Obsidian/02 Wiki/Projects/Family Assistant/Design/Icons v1/icon-kinderwagen__base.png",
+          "sha256": "7696600f5fab5da92a19a6975610beeea5480413fcbd6ab0e4e26ec2c9a1600f"
+        },
+        {
+          "file": "icon-kinderwagen__raeder.png",
+          "kind": "part",
+          "part": "raeder",
+          "path": "/Volumes/Extern/Documents/Obsidian/02 Wiki/Projects/Family Assistant/Design/Icons v1/icon-kinderwagen__raeder.png",
+          "sha256": "d0952216f70576ebf24435dab980bc6711d576634809cbca7a9936af72983d1d"
+        }
+      ]
+    },
+    "urkunde": {
+      "priority": "A",
+      "subject": "a rolled certificate with a small teal ribbon",
+      "animation": "rollt auf",
+      "source": "/Users/julian/.codex/generated_images/01a16ff0-9f36-73c0-8018-f01b2b74ce12/exec-986a05b5-8a48-45ee-9ef3-3faf03c65f47.png",
+      "rawBase": null,
+      "rawLayers": [],
+      "rawStates": [
+        {
+          "name": "offen",
+          "path": "/Users/julian/.codex/generated_images/01a16ff0-9f36-73c0-8018-f01b2b74ce12/exec-1993e3d8-762c-4f6a-b931-2edbc00b1a8a.png"
+        }
+      ],
+      "crop": {
+        "left": 147,
+        "top": 372,
+        "width": 1056,
+        "height": 701
+      },
+      "scale": 0.6060606060606061,
+      "target": [
+        640,
+        425
+      ],
+      "silhouetteIoU": 1,
+      "registrationColorError": 0,
+      "layerOrder": "base-first",
+      "pixelExactRecomposition": null,
+      "files": [
+        {
+          "file": "icon-urkunde.png",
+          "kind": "whole",
+          "path": "/Volumes/Extern/Documents/Obsidian/02 Wiki/Projects/Family Assistant/Design/Icons v1/icon-urkunde.png",
+          "sha256": "7e1a752d8eaa29c49c07e9efaa368f77450ffecdd07f0ee4a683e3a3fb87cf31"
+        },
+        {
+          "file": "icon-urkunde__state-offen.png",
+          "kind": "state",
+          "state": "offen",
+          "path": "/Volumes/Extern/Documents/Obsidian/02 Wiki/Projects/Family Assistant/Design/Icons v1/icon-urkunde__state-offen.png",
+          "sha256": "bbf1629e41586d097c66a9b9ea4532d499672497a774c9be6869d9a91ae75d31"
+        }
+      ]
+    },
+    "kindergeld": {
+      "priority": "A",
+      "subject": "a small stack of three rounded sand-colored coins",
+      "animation": "Münze fällt auf den Stapel",
+      "source": "/Users/julian/.codex/generated_images/01a16ff0-9f36-73c0-8018-f01b2b74ce12/exec-28bf411f-fabf-46eb-9b59-ad7c6babd6c2.png",
+      "rawBase": "/Users/julian/.codex/generated_images/01a16ff0-9f36-73c0-8018-f01b2b74ce12/exec-54398a71-9587-4bd0-bf58-4539ddca867a.png",
+      "rawLayers": [
+        {
+          "name": "eine-muenze",
+          "path": "/Users/julian/.codex/generated_images/01a16ff0-9f36-73c0-8018-f01b2b74ce12/exec-889980ed-325a-4290-a15b-fdb7c3a1d208.png"
+        }
+      ],
+      "rawStates": [],
+      "crop": {
+        "left": 320,
+        "top": 327,
+        "width": 632,
+        "height": 718
+      },
+      "scale": 0.8913649025069638,
+      "target": [
+        563,
+        640
+      ],
+      "silhouetteIoU": 0.980657310308596,
+      "registrationColorError": 0.05190419728629317,
+      "layerOrder": "base-first",
+      "pixelExactRecomposition": true,
+      "files": [
+        {
+          "file": "icon-kindergeld.png",
+          "kind": "whole",
+          "path": "/Volumes/Extern/Documents/Obsidian/02 Wiki/Projects/Family Assistant/Design/Icons v1/icon-kindergeld.png",
+          "sha256": "50b6486e43aa7816320aa06335d0ff7e97972e72c86773d8d0ab7a0f521fcc53"
+        },
+        {
+          "file": "icon-kindergeld__base.png",
+          "kind": "base",
+          "path": "/Volumes/Extern/Documents/Obsidian/02 Wiki/Projects/Family Assistant/Design/Icons v1/icon-kindergeld__base.png",
+          "sha256": "f9c3e5db43b8d39a49fe4ecbbcd5a4bdea97fc1b87be6ac778ce8ec206c041a6"
+        },
+        {
+          "file": "icon-kindergeld__eine-muenze.png",
+          "kind": "part",
+          "part": "eine-muenze",
+          "path": "/Volumes/Extern/Documents/Obsidian/02 Wiki/Projects/Family Assistant/Design/Icons v1/icon-kindergeld__eine-muenze.png",
+          "sha256": "b1469c89bb535421d3efdfdc0f9b96f0e03085f00d62c7004d85aec0663fbbe2"
+        }
+      ]
+    },
+    "papier-stift": {
+      "priority": "A",
+      "subject": "a sheet of paper with a small pencil lying diagonally",
+      "animation": "Stift schreibt",
+      "source": "/Users/julian/.codex/generated_images/01a16ff0-9f36-73c0-8018-f01b2b74ce12/exec-d99af684-a3bb-48a4-bc9c-be3cd1b1fd85.png",
+      "rawBase": "/Users/julian/.codex/generated_images/01a16ff0-9f36-73c0-8018-f01b2b74ce12/exec-cdd27226-0798-4738-97cd-994475c95c88.png",
+      "rawLayers": [
+        {
+          "name": "stift",
+          "path": "/Users/julian/.codex/generated_images/01a16ff0-9f36-73c0-8018-f01b2b74ce12/exec-9f8c4f2f-41f1-4895-a1f3-a0081b364110.png"
+        }
+      ],
+      "rawStates": [],
+      "crop": {
+        "left": 255,
+        "top": 307,
+        "width": 779,
+        "height": 646
+      },
+      "scale": 0.8215661103979461,
+      "target": [
+        640,
+        531
+      ],
+      "silhouetteIoU": 0.9449129528661347,
+      "registrationColorError": 0.08394362708980609,
+      "layerOrder": "base-first",
+      "pixelExactRecomposition": true,
+      "files": [
+        {
+          "file": "icon-papier-stift.png",
+          "kind": "whole",
+          "path": "/Volumes/Extern/Documents/Obsidian/02 Wiki/Projects/Family Assistant/Design/Icons v1/icon-papier-stift.png",
+          "sha256": "7b01bf1e4398b3f9959876297f36856abb68792e0507d2b9d356ce5ae5126178"
+        },
+        {
+          "file": "icon-papier-stift__base.png",
+          "kind": "base",
+          "path": "/Volumes/Extern/Documents/Obsidian/02 Wiki/Projects/Family Assistant/Design/Icons v1/icon-papier-stift__base.png",
+          "sha256": "fd721aed66127c72ad493ade247c053acf22a1479f726ae06f9722a4649e0f30"
+        },
+        {
+          "file": "icon-papier-stift__stift.png",
+          "kind": "part",
+          "part": "stift",
+          "path": "/Volumes/Extern/Documents/Obsidian/02 Wiki/Projects/Family Assistant/Design/Icons v1/icon-papier-stift__stift.png",
+          "sha256": "172bc93941c6be4c19cbc7370a6b547c9308071c892aff18eac97dbe4b63f241"
+        }
+      ]
+    },
+    "amt": {
+      "priority": "A",
+      "subject": "a small rounded town hall building with a clock, cream and teal",
+      "animation": "Zeiger dreht",
+      "source": "/Users/julian/.codex/generated_images/01a16ff0-9f36-73c0-8018-f01b2b74ce12/exec-84aa67b2-0e84-46a8-a385-378beac88e9c.png",
+      "rawBase": "/Users/julian/.codex/generated_images/01a16ff0-9f36-73c0-8018-f01b2b74ce12/exec-3a58fc66-6411-477e-adf0-0fc51077f4fe.png",
+      "rawLayers": [
+        {
+          "name": "zeiger",
+          "path": "/Users/julian/.codex/generated_images/01a16ff0-9f36-73c0-8018-f01b2b74ce12/exec-6eb0117b-3dc5-4f20-9005-ccfe93627944.png"
+        }
+      ],
+      "rawStates": [],
+      "crop": {
+        "left": 150,
+        "top": 244,
+        "width": 968,
+        "height": 799
+      },
+      "scale": 0.6611570247933884,
+      "target": [
+        640,
+        528
+      ],
+      "silhouetteIoU": 0.9680724241930225,
+      "registrationColorError": 0.03676596453710274,
+      "layerOrder": "parts-first",
+      "pixelExactRecomposition": true,
+      "files": [
+        {
+          "file": "icon-amt.png",
+          "kind": "whole",
+          "path": "/Volumes/Extern/Documents/Obsidian/02 Wiki/Projects/Family Assistant/Design/Icons v1/icon-amt.png",
+          "sha256": "a1ad291e51d738d4e329c12e9da3f221ce47770a2f8fc8f6f9a11fa17fe0a2f9"
+        },
+        {
+          "file": "icon-amt__base.png",
+          "kind": "base",
+          "path": "/Volumes/Extern/Documents/Obsidian/02 Wiki/Projects/Family Assistant/Design/Icons v1/icon-amt__base.png",
+          "sha256": "9a2ecbff3b4ff75d966efd66078325b2995f377f9ed951dd8489ee8a43e6a1a2"
+        },
+        {
+          "file": "icon-amt__zeiger.png",
+          "kind": "part",
+          "part": "zeiger",
+          "path": "/Volumes/Extern/Documents/Obsidian/02 Wiki/Projects/Family Assistant/Design/Icons v1/icon-amt__zeiger.png",
+          "sha256": "a6b405bc37443ccaa5b28336695ae27d4238504265b66782b4082eb5276f254b"
+        }
+      ]
+    },
+    "frist": {
+      "priority": "A",
+      "subject": "a small rounded desk calendar page with a teal corner fold",
+      "animation": "Ecke knickt um",
+      "source": "/Users/julian/.codex/generated_images/01a16ff0-9f36-73c0-8018-f01b2b74ce12/exec-b389e46f-d2c1-492b-9541-5f8ad31b131a.png",
+      "rawBase": "/Users/julian/.codex/generated_images/01a16ff0-9f36-73c0-8018-f01b2b74ce12/exec-aa081601-a592-4456-84d3-5af0d544edbd.png",
+      "rawLayers": [
+        {
+          "name": "ecke",
+          "path": "/Users/julian/.codex/generated_images/01a16ff0-9f36-73c0-8018-f01b2b74ce12/exec-a4356f49-9cc8-40d0-91f9-853d018c7985.png"
+        }
+      ],
+      "rawStates": [],
+      "crop": {
+        "left": 258,
+        "top": 234,
+        "width": 765,
+        "height": 750
+      },
+      "scale": 0.8366013071895425,
+      "target": [
+        640,
+        627
+      ],
+      "silhouetteIoU": 0.9896493928510347,
+      "registrationColorError": 0.018309542573086472,
+      "layerOrder": "base-first",
+      "pixelExactRecomposition": true,
+      "files": [
+        {
+          "file": "icon-frist.png",
+          "kind": "whole",
+          "path": "/Volumes/Extern/Documents/Obsidian/02 Wiki/Projects/Family Assistant/Design/Icons v1/icon-frist.png",
+          "sha256": "dea4789917222062a0e6e97546812cd8396f30323cbbad2c8df83b2ce20a8ab5"
+        },
+        {
+          "file": "icon-frist__base.png",
+          "kind": "base",
+          "path": "/Volumes/Extern/Documents/Obsidian/02 Wiki/Projects/Family Assistant/Design/Icons v1/icon-frist__base.png",
+          "sha256": "f4d3aefcb2dbe588eecc8197a92b7f4af983ee35e8b88fa356adb797fa2973c3"
+        },
+        {
+          "file": "icon-frist__ecke.png",
+          "kind": "part",
+          "part": "ecke",
+          "path": "/Volumes/Extern/Documents/Obsidian/02 Wiki/Projects/Family Assistant/Design/Icons v1/icon-frist__ecke.png",
+          "sha256": "fc14612dcab6edffea2b97ead5c1ec66420a3b1448d506c30304961b4cfda4ef"
+        }
+      ]
+    },
+    "kalender": {
+      "priority": "A",
+      "subject": "a small desk calendar with rings, blank page, teal top",
+      "animation": "Blatt blättert",
+      "source": "/Users/julian/.codex/generated_images/01a16ff0-9f36-73c0-8018-f01b2b74ce12/exec-c115d62e-7db9-4dd2-99b3-23f92f9565dd.png",
+      "rawBase": "/Users/julian/.codex/generated_images/01a16ff0-9f36-73c0-8018-f01b2b74ce12/exec-727e6f44-c079-49cf-85ee-3e922bfa7b5c.png",
+      "rawLayers": [
+        {
+          "name": "blatt",
+          "path": "/Users/julian/.codex/generated_images/01a16ff0-9f36-73c0-8018-f01b2b74ce12/exec-9dc3357f-daf6-4f7d-ae81-8a96b901dc38.png"
+        }
+      ],
+      "rawStates": [],
+      "crop": {
+        "left": 258,
+        "top": 250,
+        "width": 769,
+        "height": 771
+      },
+      "scale": 0.8300907911802854,
+      "target": [
+        638,
+        640
+      ],
+      "silhouetteIoU": 0.9752957100782892,
+      "registrationColorError": 0.06856867950952229,
+      "layerOrder": "base-first",
+      "pixelExactRecomposition": true,
+      "files": [
+        {
+          "file": "icon-kalender.png",
+          "kind": "whole",
+          "path": "/Volumes/Extern/Documents/Obsidian/02 Wiki/Projects/Family Assistant/Design/Icons v1/icon-kalender.png",
+          "sha256": "55b9adb90a6b2538ef848729e494f2c0b3ad79bed2e9e6127b5ab1dfb71c624a"
+        },
+        {
+          "file": "icon-kalender__base.png",
+          "kind": "base",
+          "path": "/Volumes/Extern/Documents/Obsidian/02 Wiki/Projects/Family Assistant/Design/Icons v1/icon-kalender__base.png",
+          "sha256": "59fce66e6049aed007493c3f640e0055b1dccede7491837693c2719e17faaef4"
+        },
+        {
+          "file": "icon-kalender__blatt.png",
+          "kind": "part",
+          "part": "blatt",
+          "path": "/Volumes/Extern/Documents/Obsidian/02 Wiki/Projects/Family Assistant/Design/Icons v1/icon-kalender__blatt.png",
+          "sha256": "5e778554e89e47eaaaaa3380648dadc201fcc5cc10eac837e1521fd04f62349f"
+        }
+      ]
+    },
+    "telefon": {
+      "priority": "A",
+      "subject": "a retro rounded phone receiver in sand color",
+      "animation": "klingelt",
+      "source": "/Users/julian/.codex/generated_images/01a16ff0-9f36-73c0-8018-f01b2b74ce12/exec-e47bd188-ef0a-4dfa-9b3b-63cf85726b32.png",
+      "rawBase": null,
+      "rawLayers": [],
+      "rawStates": [],
+      "crop": {
+        "left": 266,
+        "top": 245,
+        "width": 746,
+        "height": 772
+      },
+      "scale": 0.8290155440414507,
+      "target": [
+        618,
+        640
+      ],
+      "silhouetteIoU": 1,
+      "registrationColorError": 0,
+      "layerOrder": "base-first",
+      "pixelExactRecomposition": null,
+      "files": [
+        {
+          "file": "icon-telefon.png",
+          "kind": "whole",
+          "path": "/Volumes/Extern/Documents/Obsidian/02 Wiki/Projects/Family Assistant/Design/Icons v1/icon-telefon.png",
+          "sha256": "59ca31327d1139abaeb52949c74043768056d8f09a5d78ddc3d5a079c06dd4b2"
+        }
+      ]
+    },
+    "chat": {
+      "priority": "A",
+      "subject": "two soft rounded speech bubbles, cream and sage",
+      "animation": "Blase ploppt auf",
+      "source": "/Users/julian/.codex/generated_images/01a16ff0-9f36-73c0-8018-f01b2b74ce12/exec-b7a6f90d-6891-439a-bd69-3965cbb95aa1.png",
+      "rawBase": "/Users/julian/.codex/generated_images/01a16ff0-9f36-73c0-8018-f01b2b74ce12/exec-7946c1d1-5a04-4625-8c5b-250a28f516af.png",
+      "rawLayers": [
+        {
+          "name": "zweite-blase",
+          "path": "/Users/julian/.codex/generated_images/01a16ff0-9f36-73c0-8018-f01b2b74ce12/exec-3409b8f8-79ce-4487-914d-b9578975a302.png"
+        }
+      ],
+      "rawStates": [],
+      "crop": {
+        "left": 233,
+        "top": 340,
+        "width": 799,
+        "height": 658
+      },
+      "scale": 0.8010012515644556,
+      "target": [
+        640,
+        527
+      ],
+      "silhouetteIoU": 0.7906734655703841,
+      "registrationColorError": 0.18796159024438006,
+      "layerOrder": "base-first",
+      "pixelExactRecomposition": true,
+      "files": [
+        {
+          "file": "icon-chat.png",
+          "kind": "whole",
+          "path": "/Volumes/Extern/Documents/Obsidian/02 Wiki/Projects/Family Assistant/Design/Icons v1/icon-chat.png",
+          "sha256": "6370929db92466e2cddc4bf0eefda295e00410d48d5806533a41e7aadb7a6ecd"
+        },
+        {
+          "file": "icon-chat__base.png",
+          "kind": "base",
+          "path": "/Volumes/Extern/Documents/Obsidian/02 Wiki/Projects/Family Assistant/Design/Icons v1/icon-chat__base.png",
+          "sha256": "38d71b5cd860d52ee6b2634b2038d5d2e7d299e632c09f5fe3de19ae50034ad6"
+        },
+        {
+          "file": "icon-chat__zweite-blase.png",
+          "kind": "part",
+          "part": "zweite-blase",
+          "path": "/Volumes/Extern/Documents/Obsidian/02 Wiki/Projects/Family Assistant/Design/Icons v1/icon-chat__zweite-blase.png",
+          "sha256": "2896fd864b8885a71e72942e2567610e1d18e8c313ea73bb2166588f06e33179"
+        }
+      ]
+    },
+    "zuhause": {
+      "priority": "A",
+      "subject": "a small rounded house with a warm lit window",
+      "animation": "Fenster geht an",
+      "source": "/Users/julian/.codex/generated_images/01a16ff0-9f36-73c0-8018-f01b2b74ce12/exec-2197b0f4-5ac6-4030-b4b9-451c0e14a23f.png",
+      "rawBase": null,
+      "rawLayers": [],
+      "rawStates": [
+        {
+          "name": "dunkel",
+          "path": "/Users/julian/.codex/generated_images/01a16ff0-9f36-73c0-8018-f01b2b74ce12/exec-32760023-7771-47c7-977c-d7d00616807d.png"
+        }
+      ],
+      "crop": {
+        "left": 280,
+        "top": 294,
+        "width": 707,
+        "height": 707
+      },
+      "scale": 0.9052333804809052,
+      "target": [
+        640,
+        640
+      ],
+      "silhouetteIoU": 1,
+      "registrationColorError": 0,
+      "layerOrder": "base-first",
+      "pixelExactRecomposition": null,
+      "files": [
+        {
+          "file": "icon-zuhause.png",
+          "kind": "whole",
+          "path": "/Volumes/Extern/Documents/Obsidian/02 Wiki/Projects/Family Assistant/Design/Icons v1/icon-zuhause.png",
+          "sha256": "e5855d300a7ebb09e31e9cf809a237a7b4fa1a9a6540bbf34f5bbe3e4cd37215"
+        },
+        {
+          "file": "icon-zuhause__state-dunkel.png",
+          "kind": "state",
+          "state": "dunkel",
+          "path": "/Volumes/Extern/Documents/Obsidian/02 Wiki/Projects/Family Assistant/Design/Icons v1/icon-zuhause__state-dunkel.png",
+          "sha256": "e5a1481d6781db226723264f32f74ed848589946c39c50df25aa9023e1bd4046"
+        }
+      ]
+    },
+    "einkauf": {
+      "priority": "A",
+      "subject": "a soft paper shopping bag with a baguette and a leaf of greens peeking out",
+      "animation": "hüpft",
+      "source": "/Users/julian/.codex/generated_images/01a16ff0-9f36-73c0-8018-f01b2b74ce12/exec-9dcafff2-2c36-42bf-8101-5065dde77d77.png",
+      "rawBase": null,
+      "rawLayers": [],
+      "rawStates": [],
+      "crop": {
+        "left": 304,
+        "top": 199,
+        "width": 671,
+        "height": 870
+      },
+      "scale": 0.735632183908046,
+      "target": [
+        494,
+        640
+      ],
+      "silhouetteIoU": 1,
+      "registrationColorError": 0,
+      "layerOrder": "base-first",
+      "pixelExactRecomposition": null,
+      "files": [
+        {
+          "file": "icon-einkauf.png",
+          "kind": "whole",
+          "path": "/Volumes/Extern/Documents/Obsidian/02 Wiki/Projects/Family Assistant/Design/Icons v1/icon-einkauf.png",
+          "sha256": "6aa90b28b4be685323006f601ffaba13f1ea8d4a7f0ab74befa3dc7e1336f1b9"
+        }
+      ]
+    },
+    "kochtopf": {
+      "priority": "A",
+      "subject": "a ceramic cooking pot with a lid and a wisp of steam",
+      "animation": "Deckel klappert, Dampf steigt",
+      "source": "/Users/julian/.codex/generated_images/01a16ff0-9f36-73c0-8018-f01b2b74ce12/exec-327733d2-97d9-4d3f-92d7-3d05d2f8476e.png",
+      "rawBase": "/Users/julian/.codex/generated_images/01a16ff0-9f36-73c0-8018-f01b2b74ce12/exec-01e9d49d-b456-4c28-a2ab-f1ec9975b646.png",
+      "rawLayers": [
+        {
+          "name": "deckel",
+          "path": "/Users/julian/.codex/generated_images/01a16ff0-9f36-73c0-8018-f01b2b74ce12/exec-1af25f73-75f8-4030-a90a-00bd9fd5f741.png"
+        },
+        {
+          "name": "dampf",
+          "path": "/Users/julian/.codex/generated_images/01a16ff0-9f36-73c0-8018-f01b2b74ce12/exec-7a2d0a60-6aaf-4ee1-b36c-43db5579caf0.png"
+        }
+      ],
+      "rawStates": [],
+      "crop": {
+        "left": 180,
+        "top": 156,
+        "width": 894,
+        "height": 935
+      },
+      "scale": 0.6844919786096256,
+      "target": [
+        612,
+        640
+      ],
+      "silhouetteIoU": 0.9652523212678622,
+      "registrationColorError": 0.026628244642458252,
+      "layerOrder": "base-first",
+      "pixelExactRecomposition": true,
+      "files": [
+        {
+          "file": "icon-kochtopf.png",
+          "kind": "whole",
+          "path": "/Volumes/Extern/Documents/Obsidian/02 Wiki/Projects/Family Assistant/Design/Icons v1/icon-kochtopf.png",
+          "sha256": "55ce6ef3febb187a45dd4cf969220e0104757af4f560a4b834d36a9a2b8dd805"
+        },
+        {
+          "file": "icon-kochtopf__base.png",
+          "kind": "base",
+          "path": "/Volumes/Extern/Documents/Obsidian/02 Wiki/Projects/Family Assistant/Design/Icons v1/icon-kochtopf__base.png",
+          "sha256": "44d0984ae3c4bd986ea89f82bcee265361def2700af8f7ba44cb5ebdebb1b56e"
+        },
+        {
+          "file": "icon-kochtopf__deckel.png",
+          "kind": "part",
+          "part": "deckel",
+          "path": "/Volumes/Extern/Documents/Obsidian/02 Wiki/Projects/Family Assistant/Design/Icons v1/icon-kochtopf__deckel.png",
+          "sha256": "83c1129fcbe071fa3a8f7a34b4fbda82903abf1160a9ccb90682710e97ba7e7b"
+        },
+        {
+          "file": "icon-kochtopf__dampf.png",
+          "kind": "part",
+          "part": "dampf",
+          "path": "/Volumes/Extern/Documents/Obsidian/02 Wiki/Projects/Family Assistant/Design/Icons v1/icon-kochtopf__dampf.png",
+          "sha256": "719dc4febf31c27de6b7dd4732300817abbc0b57f1300d432c91060f122a2542"
+        }
+      ]
+    },
+    "geschenk": {
+      "priority": "A",
+      "subject": "a small gift box with a teal ribbon",
+      "animation": "Deckel springt",
+      "source": "/Users/julian/.codex/generated_images/01a16ff0-9f36-73c0-8018-f01b2b74ce12/exec-782ede44-e7c5-4dfd-9aa7-a51504cd5acc.png",
+      "rawBase": "/Users/julian/.codex/generated_images/01a16ff0-9f36-73c0-8018-f01b2b74ce12/exec-afcb3a81-f415-4c95-a5c3-28fc8046a2a9.png",
+      "rawLayers": [
+        {
+          "name": "deckel",
+          "path": "/Users/julian/.codex/generated_images/01a16ff0-9f36-73c0-8018-f01b2b74ce12/exec-f81d673b-a4ce-4787-8e1a-4e1069a1d73c.png"
+        }
+      ],
+      "rawStates": [],
+      "crop": {
+        "left": 249,
+        "top": 285,
+        "width": 770,
+        "height": 785
+      },
+      "scale": 0.8152866242038217,
+      "target": [
+        628,
+        640
+      ],
+      "silhouetteIoU": 0.9265629119843,
+      "registrationColorError": 0.12499674257337816,
+      "layerOrder": "base-first",
+      "pixelExactRecomposition": true,
+      "files": [
+        {
+          "file": "icon-geschenk.png",
+          "kind": "whole",
+          "path": "/Volumes/Extern/Documents/Obsidian/02 Wiki/Projects/Family Assistant/Design/Icons v1/icon-geschenk.png",
+          "sha256": "39b8d8458d823e0245c117c46e972959b7b04b71ce844ac056facba64d9ccdf7"
+        },
+        {
+          "file": "icon-geschenk__base.png",
+          "kind": "base",
+          "path": "/Volumes/Extern/Documents/Obsidian/02 Wiki/Projects/Family Assistant/Design/Icons v1/icon-geschenk__base.png",
+          "sha256": "5a4945527bd5b5e0959df77012d44329445a30c4fd2a1dad56bf85c7202975aa"
+        },
+        {
+          "file": "icon-geschenk__deckel.png",
+          "kind": "part",
+          "part": "deckel",
+          "path": "/Volumes/Extern/Documents/Obsidian/02 Wiki/Projects/Family Assistant/Design/Icons v1/icon-geschenk__deckel.png",
+          "sha256": "bb220c27ce4c1cb6a3b3912788d6cdc2fa6ceab020dc641bc16dd7a5b1adcb03"
+        }
+      ]
+    },
+    "geburtstag": {
+      "priority": "A",
+      "subject": "a small round cake with one candle",
+      "animation": "Flamme flackert",
+      "source": "/Users/julian/.codex/generated_images/01a16ff0-9f36-73c0-8018-f01b2b74ce12/exec-8b6adc41-d0b4-45df-8277-7247f2b0054c.png",
+      "rawBase": "/Users/julian/.codex/generated_images/01a16ff0-9f36-73c0-8018-f01b2b74ce12/exec-c6c70957-2f97-41dc-b773-9b93ecb0327a.png",
+      "rawLayers": [
+        {
+          "name": "flamme",
+          "path": "/Users/julian/.codex/generated_images/01a16ff0-9f36-73c0-8018-f01b2b74ce12/exec-a552dc90-1ca3-4dc3-b31c-3aa3f1c5fef2.png"
+        }
+      ],
+      "rawStates": [],
+      "crop": {
+        "left": 321,
+        "top": 210,
+        "width": 611,
+        "height": 840
+      },
+      "scale": 0.7619047619047619,
+      "target": [
+        466,
+        640
+      ],
+      "silhouetteIoU": 0.9741253438069475,
+      "registrationColorError": 0.02352364142297515,
+      "layerOrder": "base-first",
+      "pixelExactRecomposition": true,
+      "files": [
+        {
+          "file": "icon-geburtstag.png",
+          "kind": "whole",
+          "path": "/Volumes/Extern/Documents/Obsidian/02 Wiki/Projects/Family Assistant/Design/Icons v1/icon-geburtstag.png",
+          "sha256": "4f9f13128563923a17caafee16ad8bbc4a4c1e781a7b6391cf5d7ab0cd679c74"
+        },
+        {
+          "file": "icon-geburtstag__base.png",
+          "kind": "base",
+          "path": "/Volumes/Extern/Documents/Obsidian/02 Wiki/Projects/Family Assistant/Design/Icons v1/icon-geburtstag__base.png",
+          "sha256": "fd17d1803baadceb1bd4bddb4cb91571f324ce1dcac66feba1bfab31980f4958"
+        },
+        {
+          "file": "icon-geburtstag__flamme.png",
+          "kind": "part",
+          "part": "flamme",
+          "path": "/Volumes/Extern/Documents/Obsidian/02 Wiki/Projects/Family Assistant/Design/Icons v1/icon-geburtstag__flamme.png",
+          "sha256": "bb8ff4de0dc2665e1d9a33e896f38777da2e3b322b412554a587e795a3827d9f"
+        }
+      ]
+    },
+    "einladung": {
+      "priority": "A",
+      "subject": "a rounded invitation card standing upright with a small teal star",
+      "animation": "Stern funkelt",
+      "source": "/Users/julian/.codex/generated_images/01a16ff0-9f36-73c0-8018-f01b2b74ce12/exec-d86806d9-edf9-4c3d-82e4-d52b09d09ff0.png",
+      "rawBase": "/Users/julian/.codex/generated_images/01a16ff0-9f36-73c0-8018-f01b2b74ce12/exec-9f3a738d-8554-4aec-b468-6182a4584abd.png",
+      "rawLayers": [
+        {
+          "name": "stern",
+          "path": "/Users/julian/.codex/generated_images/01a16ff0-9f36-73c0-8018-f01b2b74ce12/exec-1221ee68-10a3-4ecd-a4c8-927f46f437fb.png"
+        }
+      ],
+      "rawStates": [],
+      "crop": {
+        "left": 348,
+        "top": 265,
+        "width": 585,
+        "height": 750
+      },
+      "scale": 0.8533333333333334,
+      "target": [
+        499,
+        640
+      ],
+      "silhouetteIoU": 0.9831212119996631,
+      "registrationColorError": 0.0991820384930557,
+      "layerOrder": "parts-first",
+      "pixelExactRecomposition": true,
+      "files": [
+        {
+          "file": "icon-einladung.png",
+          "kind": "whole",
+          "path": "/Volumes/Extern/Documents/Obsidian/02 Wiki/Projects/Family Assistant/Design/Icons v1/icon-einladung.png",
+          "sha256": "7bd92f8e54ac81df345fcdd008d03293070427cc98decd6b5ca6aac73ab28a2b"
+        },
+        {
+          "file": "icon-einladung__base.png",
+          "kind": "base",
+          "path": "/Volumes/Extern/Documents/Obsidian/02 Wiki/Projects/Family Assistant/Design/Icons v1/icon-einladung__base.png",
+          "sha256": "6dcb954063ed44d8b21ac274f708d220ade5ff7aa2d5bb71a5dd2c41429b3f36"
+        },
+        {
+          "file": "icon-einladung__stern.png",
+          "kind": "part",
+          "part": "stern",
+          "path": "/Volumes/Extern/Documents/Obsidian/02 Wiki/Projects/Family Assistant/Design/Icons v1/icon-einladung__stern.png",
+          "sha256": "70268aed60065e878761200a4f602784507fb42698b7919ce1dbc665fcb2543f"
+        }
+      ]
+    },
+    "reise": {
+      "priority": "A",
+      "subject": "a small rounded suitcase in teal with a sand handle",
+      "animation": "rollt",
+      "source": "/Users/julian/.codex/generated_images/01a16ff0-9f36-73c0-8018-f01b2b74ce12/exec-350dc513-84e8-43e5-a13b-1b0da2c8926f.png",
+      "rawBase": null,
+      "rawLayers": [],
+      "rawStates": [],
+      "crop": {
+        "left": 346,
+        "top": 227,
+        "width": 583,
+        "height": 817
+      },
+      "scale": 0.7833537331701347,
+      "target": [
+        457,
+        640
+      ],
+      "silhouetteIoU": 1,
+      "registrationColorError": 0,
+      "layerOrder": "base-first",
+      "pixelExactRecomposition": null,
+      "files": [
+        {
+          "file": "icon-reise.png",
+          "kind": "whole",
+          "path": "/Volumes/Extern/Documents/Obsidian/02 Wiki/Projects/Family Assistant/Design/Icons v1/icon-reise.png",
+          "sha256": "652e2f7c8d9eaad39bace22a62addfb0e41db7ee4c0df5c28877904e2f9a5c3b"
+        }
+      ]
+    },
+    "sync": {
+      "priority": "B",
+      "subject": "two rounded arrows forming a circle, sage",
+      "animation": "dreht sich",
+      "source": "/Users/julian/.codex/generated_images/01a16ff0-9f36-73c0-8018-f01b2b74ce12/exec-d239108b-22b9-4bce-8448-6a703ae2735a.png",
+      "rawBase": null,
+      "rawLayers": [
+        {
+          "name": "pfeile",
+          "path": "/Users/julian/.codex/generated_images/01a16ff0-9f36-73c0-8018-f01b2b74ce12/exec-d239108b-22b9-4bce-8448-6a703ae2735a.png"
+        }
+      ],
+      "rawStates": [],
+      "crop": {
+        "left": 236,
+        "top": 314,
+        "width": 788,
+        "height": 664
+      },
+      "scale": 0.8121827411167513,
+      "target": [
+        640,
+        539
+      ],
+      "silhouetteIoU": 1,
+      "registrationColorError": 4.2310069101922483e-7,
+      "layerOrder": "base-first",
+      "pixelExactRecomposition": true,
+      "files": [
+        {
+          "file": "icon-sync.png",
+          "kind": "whole",
+          "path": "/Volumes/Extern/Documents/Obsidian/02 Wiki/Projects/Family Assistant/Design/Icons v1/icon-sync.png",
+          "sha256": "7899a86c9264107591e0c42d1d60ceec19580f6d2415c286e4652c51c2746c3f"
+        },
+        {
+          "file": "icon-sync__base.png",
+          "kind": "base",
+          "path": "/Volumes/Extern/Documents/Obsidian/02 Wiki/Projects/Family Assistant/Design/Icons v1/icon-sync__base.png",
+          "sha256": "ffea58548f169a32ef77c56d3394e459f2e44293f1f13a1fcc75a03f7d8414fd"
+        },
+        {
+          "file": "icon-sync__pfeile.png",
+          "kind": "part",
+          "part": "pfeile",
+          "path": "/Volumes/Extern/Documents/Obsidian/02 Wiki/Projects/Family Assistant/Design/Icons v1/icon-sync__pfeile.png",
+          "sha256": "8603c7133f945bf056fee1795cdde170084497d18fd88b27eedaf79c0ce956ff"
+        }
+      ]
+    },
+    "glocke": {
+      "priority": "B",
+      "subject": "a small rounded bell in sand with a teal clapper",
+      "animation": "schwingt",
+      "source": "/Users/julian/.codex/generated_images/01a16ff0-9f36-73c0-8018-f01b2b74ce12/exec-b8bc8244-1418-40c3-917d-079c31db48bc.png",
+      "rawBase": "/Users/julian/.codex/generated_images/01a16ff0-9f36-73c0-8018-f01b2b74ce12/exec-67e82866-c111-4978-a999-f05a5997bdbe.png",
+      "rawLayers": [
+        {
+          "name": "kloeppel",
+          "path": "/Users/julian/.codex/generated_images/01a16ff0-9f36-73c0-8018-f01b2b74ce12/exec-69846c6a-0e83-4823-af6d-48a06b7176e6.png"
+        }
+      ],
+      "rawStates": [],
+      "crop": {
+        "left": 287,
+        "top": 259,
+        "width": 651,
+        "height": 718
+      },
+      "scale": 0.8913649025069638,
+      "target": [
+        580,
+        640
+      ],
+      "silhouetteIoU": 0.9942059621286404,
+      "registrationColorError": 0.03169182937316553,
+      "layerOrder": "base-first",
+      "pixelExactRecomposition": true,
+      "files": [
+        {
+          "file": "icon-glocke.png",
+          "kind": "whole",
+          "path": "/Volumes/Extern/Documents/Obsidian/02 Wiki/Projects/Family Assistant/Design/Icons v1/icon-glocke.png",
+          "sha256": "a16d09ca972e1b2626ed9fffd1a873fb6fb42adb1cd4324c2e540cb8fc258d3f"
+        },
+        {
+          "file": "icon-glocke__base.png",
+          "kind": "base",
+          "path": "/Volumes/Extern/Documents/Obsidian/02 Wiki/Projects/Family Assistant/Design/Icons v1/icon-glocke__base.png",
+          "sha256": "f691614182087c631b1c2580e874fd076cfc3da4ddb4e0a424c03087c1610a45"
+        },
+        {
+          "file": "icon-glocke__kloeppel.png",
+          "kind": "part",
+          "part": "kloeppel",
+          "path": "/Volumes/Extern/Documents/Obsidian/02 Wiki/Projects/Family Assistant/Design/Icons v1/icon-glocke__kloeppel.png",
+          "sha256": "ee2bbcc62727fa1ad2d596f7964e61184fef55e30090245bd0f4780328a3184d"
+        }
+      ]
+    },
+    "thermometer": {
+      "priority": "B",
+      "subject": "a rounded digital thermometer in cream with a small teal display, no numbers",
+      "animation": "Anzeige färbt sich",
+      "source": "/Users/julian/.codex/generated_images/01a16ff0-9f36-73c0-8018-f01b2b74ce12/exec-c7ce731a-0a18-49f1-8866-05f5baa490fb.png",
+      "rawBase": null,
+      "rawLayers": [],
+      "rawStates": [
+        {
+          "name": "blush",
+          "path": "/Users/julian/.codex/generated_images/01a16ff0-9f36-73c0-8018-f01b2b74ce12/exec-62a63604-4d29-4228-9ad9-45ecb6b2e89d.png"
+        }
+      ],
+      "crop": {
+        "left": 227,
+        "top": 410,
+        "width": 840,
+        "height": 475
+      },
+      "scale": 0.7619047619047619,
+      "target": [
+        640,
+        362
+      ],
+      "silhouetteIoU": 1,
+      "registrationColorError": 0,
+      "layerOrder": "base-first",
+      "pixelExactRecomposition": null,
+      "files": [
+        {
+          "file": "icon-thermometer.png",
+          "kind": "whole",
+          "path": "/Volumes/Extern/Documents/Obsidian/02 Wiki/Projects/Family Assistant/Design/Icons v1/icon-thermometer.png",
+          "sha256": "e401032d3bebbc8857d15b52f5060eca2772e2ffca3e3894d6af91f66223830c"
+        },
+        {
+          "file": "icon-thermometer__state-blush.png",
+          "kind": "state",
+          "state": "blush",
+          "path": "/Volumes/Extern/Documents/Obsidian/02 Wiki/Projects/Family Assistant/Design/Icons v1/icon-thermometer__state-blush.png",
+          "sha256": "8ee95b92fdd2e659c35a5d96563d59b24a99ce269cc8391b0078b7de069865bf"
+        }
+      ]
+    },
+    "schloss": {
+      "priority": "B",
+      "subject": "a rounded padlock in sage with a teal shackle",
+      "animation": "Bügel klickt zu",
+      "source": "/Users/julian/.codex/generated_images/01a16ff0-9f36-73c0-8018-f01b2b74ce12/exec-49e192ea-9f10-4fd7-bb41-3df582160d62.png",
+      "rawBase": "/Users/julian/.codex/generated_images/01a16ff0-9f36-73c0-8018-f01b2b74ce12/exec-7875a360-0454-46c3-bd80-ff90010e8713.png",
+      "rawLayers": [
+        {
+          "name": "buegel",
+          "path": "/Users/julian/.codex/generated_images/01a16ff0-9f36-73c0-8018-f01b2b74ce12/exec-acdba9bd-3365-49c2-9000-d4c803c2f5a1.png"
+        }
+      ],
+      "rawStates": [],
+      "crop": {
+        "left": 334,
+        "top": 283,
+        "width": 585,
+        "height": 730
+      },
+      "scale": 0.8767123287671232,
+      "target": [
+        513,
+        640
+      ],
+      "silhouetteIoU": 0.9626923076923077,
+      "registrationColorError": 0.03746035259142676,
+      "layerOrder": "base-first",
+      "pixelExactRecomposition": true,
+      "files": [
+        {
+          "file": "icon-schloss.png",
+          "kind": "whole",
+          "path": "/Volumes/Extern/Documents/Obsidian/02 Wiki/Projects/Family Assistant/Design/Icons v1/icon-schloss.png",
+          "sha256": "24fb37ce973cf01aacc25ebf13f41572f9650476b65305837f996c95d14987bf"
+        },
+        {
+          "file": "icon-schloss__base.png",
+          "kind": "base",
+          "path": "/Volumes/Extern/Documents/Obsidian/02 Wiki/Projects/Family Assistant/Design/Icons v1/icon-schloss__base.png",
+          "sha256": "5e1fb4bcce960cc3ffff92a2bb013d5b0f80c444c9fbb55d6884d1393292292b"
+        },
+        {
+          "file": "icon-schloss__buegel.png",
+          "kind": "part",
+          "part": "buegel",
+          "path": "/Volumes/Extern/Documents/Obsidian/02 Wiki/Projects/Family Assistant/Design/Icons v1/icon-schloss__buegel.png",
+          "sha256": "67ac5e5e5dec652c204ee29edc272c24b28804c86e92a2d37b5f5046d841c7fb"
+        }
+      ]
+    },
+    "zahn": {
+      "priority": "B",
+      "subject": "a single soft rounded baby tooth, cream with a tiny sparkle",
+      "animation": "funkelt",
+      "source": "/Users/julian/.codex/generated_images/01a16ff0-9f36-73c0-8018-f01b2b74ce12/exec-7381180a-2756-4982-a23c-9c93598bed2a.png",
+      "rawBase": "/Users/julian/.codex/generated_images/01a16ff0-9f36-73c0-8018-f01b2b74ce12/exec-a0bc50ad-8268-4492-a787-8510e2e8c912.png",
+      "rawLayers": [
+        {
+          "name": "funkeln",
+          "path": "/Users/julian/.codex/generated_images/01a16ff0-9f36-73c0-8018-f01b2b74ce12/exec-45b21a16-ac5b-43d1-a4aa-8554b8ea12ca.png"
+        }
+      ],
+      "rawStates": [],
+      "crop": {
+        "left": 333,
+        "top": 344,
+        "width": 621,
+        "height": 599
+      },
+      "scale": 1.0305958132045088,
+      "target": [
+        640,
+        617
+      ],
+      "silhouetteIoU": 0.9949613716932898,
+      "registrationColorError": 0.016614769009732334,
+      "layerOrder": "base-first",
+      "pixelExactRecomposition": true,
+      "files": [
+        {
+          "file": "icon-zahn.png",
+          "kind": "whole",
+          "path": "/Volumes/Extern/Documents/Obsidian/02 Wiki/Projects/Family Assistant/Design/Icons v1/icon-zahn.png",
+          "sha256": "99c23825a0c48adb5c4029af47159d8073590ff47cadd6bf95dc43d36e381431"
+        },
+        {
+          "file": "icon-zahn__base.png",
+          "kind": "base",
+          "path": "/Volumes/Extern/Documents/Obsidian/02 Wiki/Projects/Family Assistant/Design/Icons v1/icon-zahn__base.png",
+          "sha256": "a77f06ac2356b0ac65b9554cf94276fc37eeb84d0f51a8f52439a66d0b24ca3d"
+        },
+        {
+          "file": "icon-zahn__funkeln.png",
+          "kind": "part",
+          "part": "funkeln",
+          "path": "/Volumes/Extern/Documents/Obsidian/02 Wiki/Projects/Family Assistant/Design/Icons v1/icon-zahn__funkeln.png",
+          "sha256": "ccbe4d62cb07875c24a918521fd8166188dd6ab922f12f705a66e05d89124f96"
+        }
+      ]
+    },
+    "rassel": {
+      "priority": "B",
+      "subject": "a baby rattle with a round sage head and cream handle",
+      "animation": "rasselt",
+      "source": "/Users/julian/.codex/generated_images/01a16ff0-9f36-73c0-8018-f01b2b74ce12/exec-eb5f1745-c48d-400c-b911-f0b3f5687d09.png",
+      "rawBase": null,
+      "rawLayers": [],
+      "rawStates": [],
+      "crop": {
+        "left": 305,
+        "top": 286,
+        "width": 688,
+        "height": 769
+      },
+      "scale": 0.8322496749024707,
+      "target": [
+        573,
+        640
+      ],
+      "silhouetteIoU": 1,
+      "registrationColorError": 0,
+      "layerOrder": "base-first",
+      "pixelExactRecomposition": null,
+      "files": [
+        {
+          "file": "icon-rassel.png",
+          "kind": "whole",
+          "path": "/Volumes/Extern/Documents/Obsidian/02 Wiki/Projects/Family Assistant/Design/Icons v1/icon-rassel.png",
+          "sha256": "b3194fd8654bef7305c0cc53ee1a32b69db51f24d4ede1f867e61daafdefd277"
+        }
+      ]
+    },
+    "fussabdruck": {
+      "priority": "B",
+      "subject": "a small baby footprint pressed into a soft clay disc",
+      "animation": "Abdruck drückt sich ein",
+      "source": "/Users/julian/.codex/generated_images/01a16ff0-9f36-73c0-8018-f01b2b74ce12/exec-2a0bebe5-af47-4396-91b1-5f8dc3822b89.png",
+      "rawBase": null,
+      "rawLayers": [],
+      "rawStates": [],
+      "crop": {
+        "left": 263,
+        "top": 326,
+        "width": 726,
+        "height": 597
+      },
+      "scale": 0.8815426997245179,
+      "target": [
+        640,
+        526
+      ],
+      "silhouetteIoU": 1,
+      "registrationColorError": 0,
+      "layerOrder": "base-first",
+      "pixelExactRecomposition": null,
+      "files": [
+        {
+          "file": "icon-fussabdruck.png",
+          "kind": "whole",
+          "path": "/Volumes/Extern/Documents/Obsidian/02 Wiki/Projects/Family Assistant/Design/Icons v1/icon-fussabdruck.png",
+          "sha256": "042f26b28564910ff7ba04ea5f427d64b6f84084bab13a0d0eaae9859ef3b537"
+        }
+      ]
+    },
+    "ultraschall": {
+      "priority": "B",
+      "subject": "a small rounded ultrasound photo card with an abstract soft shape, no text",
+      "animation": "taucht weich auf",
+      "source": "/Users/julian/.codex/generated_images/01a16ff0-9f36-73c0-8018-f01b2b74ce12/exec-c27b1849-5fb1-4699-a5a3-0bbd12c3bb58.png",
+      "rawBase": null,
+      "rawLayers": [],
+      "rawStates": [],
+      "crop": {
+        "left": 280,
+        "top": 301,
+        "width": 710,
+        "height": 707
+      },
+      "scale": 0.9014084507042254,
+      "target": [
+        640,
+        637
+      ],
+      "silhouetteIoU": 1,
+      "registrationColorError": 0,
+      "layerOrder": "base-first",
+      "pixelExactRecomposition": null,
+      "files": [
+        {
+          "file": "icon-ultraschall.png",
+          "kind": "whole",
+          "path": "/Volumes/Extern/Documents/Obsidian/02 Wiki/Projects/Family Assistant/Design/Icons v1/icon-ultraschall.png",
+          "sha256": "069d15bebb132498a32013ced92d35cbac827ee7356afde6207446bdd1dd68e3"
+        }
+      ]
+    },
+    "krankenkasse": {
+      "priority": "B",
+      "subject": "a rounded health insurance card in sage with a small cross, no text",
+      "animation": "dreht sich",
+      "source": "/Users/julian/.codex/generated_images/01a16ff0-9f36-73c0-8018-f01b2b74ce12/exec-4c7d66ce-a8f9-4ce5-9b96-4c2d9c5249e0.png",
+      "rawBase": null,
+      "rawLayers": [],
+      "rawStates": [],
+      "crop": {
+        "left": 276,
+        "top": 374,
+        "width": 725,
+        "height": 548
+      },
+      "scale": 0.8827586206896552,
+      "target": [
+        640,
+        484
+      ],
+      "silhouetteIoU": 1,
+      "registrationColorError": 0,
+      "layerOrder": "base-first",
+      "pixelExactRecomposition": null,
+      "files": [
+        {
+          "file": "icon-krankenkasse.png",
+          "kind": "whole",
+          "path": "/Volumes/Extern/Documents/Obsidian/02 Wiki/Projects/Family Assistant/Design/Icons v1/icon-krankenkasse.png",
+          "sha256": "898d20cf8ffdf7bda75eec41641e4c1fd96a5b5af84e8d2da762894be66ccf38"
+        }
+      ]
+    },
+    "babyschale": {
+      "priority": "B",
+      "subject": "a rounded infant car seat in sky with a sand handle",
+      "animation": "Bügel klappt",
+      "source": "/Users/julian/.codex/generated_images/01a16ff0-9f36-73c0-8018-f01b2b74ce12/exec-b40a591c-bbf7-4713-ab39-10285d48446d.png",
+      "rawBase": "/Users/julian/.codex/generated_images/01a16ff0-9f36-73c0-8018-f01b2b74ce12/exec-50f6535e-813c-4725-ad10-e266262e1625.png",
+      "rawLayers": [
+        {
+          "name": "buegel",
+          "path": "/Users/julian/.codex/generated_images/01a16ff0-9f36-73c0-8018-f01b2b74ce12/exec-314dfe9f-9636-4af8-b6cf-f81c754bac5a.png"
+        }
+      ],
+      "rawStates": [],
+      "crop": {
+        "left": 234,
+        "top": 203,
+        "width": 831,
+        "height": 908
+      },
+      "scale": 0.7048458149779736,
+      "target": [
+        586,
+        640
+      ],
+      "silhouetteIoU": 0.8804517301342295,
+      "registrationColorError": 0.13502359497428898,
+      "layerOrder": "base-first",
+      "pixelExactRecomposition": true,
+      "files": [
+        {
+          "file": "icon-babyschale.png",
+          "kind": "whole",
+          "path": "/Volumes/Extern/Documents/Obsidian/02 Wiki/Projects/Family Assistant/Design/Icons v1/icon-babyschale.png",
+          "sha256": "f81be390ee097c001bc5096518be08025f460660ae9cd27debd17fdc0e31c966"
+        },
+        {
+          "file": "icon-babyschale__base.png",
+          "kind": "base",
+          "path": "/Volumes/Extern/Documents/Obsidian/02 Wiki/Projects/Family Assistant/Design/Icons v1/icon-babyschale__base.png",
+          "sha256": "e187844b04dcb67d4945b5525ae96e396eff9b55fb840c758f60856c71e3363b"
+        },
+        {
+          "file": "icon-babyschale__buegel.png",
+          "kind": "part",
+          "part": "buegel",
+          "path": "/Volumes/Extern/Documents/Obsidian/02 Wiki/Projects/Family Assistant/Design/Icons v1/icon-babyschale__buegel.png",
+          "sha256": "12c74563ff80edd69225ff5da8d40a53fc71d6a5445b46824d5f393a4f820ad2"
+        }
+      ]
+    },
+    "rechnung": {
+      "priority": "B",
+      "subject": "a short receipt curling at the bottom, cream",
+      "animation": "rollt sich aus",
+      "source": "/Users/julian/.codex/generated_images/01a16ff0-9f36-73c0-8018-f01b2b74ce12/exec-b7e3b826-cc88-4326-823f-e5ef2ff20ca3.png",
+      "rawBase": null,
+      "rawLayers": [],
+      "rawStates": [],
+      "crop": {
+        "left": 265,
+        "top": 264,
+        "width": 728,
+        "height": 750
+      },
+      "scale": 0.8533333333333334,
+      "target": [
+        621,
+        640
+      ],
+      "silhouetteIoU": 1,
+      "registrationColorError": 0,
+      "layerOrder": "base-first",
+      "pixelExactRecomposition": null,
+      "files": [
+        {
+          "file": "icon-rechnung.png",
+          "kind": "whole",
+          "path": "/Volumes/Extern/Documents/Obsidian/02 Wiki/Projects/Family Assistant/Design/Icons v1/icon-rechnung.png",
+          "sha256": "b4ab545749d03de02b6332560560a5833192a3543ba1a77ea8e3eea5687bf630"
+        }
+      ]
+    },
+    "hebamme": {
+      "priority": "B",
+      "subject": "a rounded doctor's bag in sage with a small teal heart clasp",
+      "animation": "Tasche öffnet sich",
+      "source": "/Users/julian/.codex/generated_images/01a16ff0-9f36-73c0-8018-f01b2b74ce12/exec-0b43496d-d0a1-4c7c-a98f-0df034d5d4df.png",
+      "rawBase": "/Users/julian/.codex/generated_images/01a16ff0-9f36-73c0-8018-f01b2b74ce12/exec-65d7eb30-0970-4ef8-bd28-ae9fe08d28a6.png",
+      "rawLayers": [
+        {
+          "name": "verschluss",
+          "path": "/Users/julian/.codex/generated_images/01a16ff0-9f36-73c0-8018-f01b2b74ce12/exec-b9fa3937-d0c1-459e-b648-d5f40a52d7fc.png"
+        }
+      ],
+      "rawStates": [],
+      "crop": {
+        "left": 254,
+        "top": 298,
+        "width": 764,
+        "height": 697
+      },
+      "scale": 0.837696335078534,
+      "target": [
+        640,
+        584
+      ],
+      "silhouetteIoU": 0.9593209456323297,
+      "registrationColorError": 0.04292352757133632,
+      "layerOrder": "base-first",
+      "pixelExactRecomposition": true,
+      "files": [
+        {
+          "file": "icon-hebamme.png",
+          "kind": "whole",
+          "path": "/Volumes/Extern/Documents/Obsidian/02 Wiki/Projects/Family Assistant/Design/Icons v1/icon-hebamme.png",
+          "sha256": "b93b9dfc50fdad3b4f6dc2a2c39aaa859a28fafdb97018794fb3b4f56575af4e"
+        },
+        {
+          "file": "icon-hebamme__base.png",
+          "kind": "base",
+          "path": "/Volumes/Extern/Documents/Obsidian/02 Wiki/Projects/Family Assistant/Design/Icons v1/icon-hebamme__base.png",
+          "sha256": "6035838a75a6bb4a3b1bcab4c66e214e6b90056d846568064912ebcddb1a4b56"
+        },
+        {
+          "file": "icon-hebamme__verschluss.png",
+          "kind": "part",
+          "part": "verschluss",
+          "path": "/Volumes/Extern/Documents/Obsidian/02 Wiki/Projects/Family Assistant/Design/Icons v1/icon-hebamme__verschluss.png",
+          "sha256": "de103e4ff24840b3810815d317ade54525ae2f5d96fd5f9231459a9d62b79eae"
+        }
+      ]
+    },
+    "vertrag": {
+      "priority": "B",
+      "subject": "a folded document with a small teal wax seal",
+      "animation": "Siegel drückt sich drauf",
+      "source": "/Users/julian/.codex/generated_images/01a16ff0-9f36-73c0-8018-f01b2b74ce12/exec-b1e1da5d-fb07-447a-b78f-03619f0f4bc4.png",
+      "rawBase": "/Users/julian/.codex/generated_images/01a16ff0-9f36-73c0-8018-f01b2b74ce12/exec-dd6df3bb-94c7-4e29-bda4-43c35a9a6f82.png",
+      "rawLayers": [
+        {
+          "name": "siegel",
+          "path": "/Users/julian/.codex/generated_images/01a16ff0-9f36-73c0-8018-f01b2b74ce12/exec-16b5470f-43b8-4c13-a1a2-58cf24baa315.png"
+        }
+      ],
+      "rawStates": [],
+      "crop": {
+        "left": 188,
+        "top": 330,
+        "width": 907,
+        "height": 639
+      },
+      "scale": 0.7056229327453142,
+      "target": [
+        640,
+        451
+      ],
+      "silhouetteIoU": 0.9779432728702748,
+      "registrationColorError": 0.01990916565220199,
+      "layerOrder": "base-first",
+      "pixelExactRecomposition": true,
+      "files": [
+        {
+          "file": "icon-vertrag.png",
+          "kind": "whole",
+          "path": "/Volumes/Extern/Documents/Obsidian/02 Wiki/Projects/Family Assistant/Design/Icons v1/icon-vertrag.png",
+          "sha256": "58bf826b26dba7fe999450d504d884bb62a36ac769c2efdf794edd5cd92ea632"
+        },
+        {
+          "file": "icon-vertrag__base.png",
+          "kind": "base",
+          "path": "/Volumes/Extern/Documents/Obsidian/02 Wiki/Projects/Family Assistant/Design/Icons v1/icon-vertrag__base.png",
+          "sha256": "1332fd2bae66e0c96a8d2ed52591eab19c3e1059cf82828d9ea6df4317b30398"
+        },
+        {
+          "file": "icon-vertrag__siegel.png",
+          "kind": "part",
+          "part": "siegel",
+          "path": "/Volumes/Extern/Documents/Obsidian/02 Wiki/Projects/Family Assistant/Design/Icons v1/icon-vertrag__siegel.png",
+          "sha256": "a88847421bd6aa2b06bc5de921c0923185c78ee113a39797f032db25fa44ece7"
+        }
+      ]
+    },
+    "stempel": {
+      "priority": "B",
+      "subject": "a rounded rubber stamp in teal with a wooden handle",
+      "animation": "stempelt",
+      "source": "/Users/julian/.codex/generated_images/01a16ff0-9f36-73c0-8018-f01b2b74ce12/exec-fff8faf9-e256-47f3-ba6c-d1fb3784c951.png",
+      "rawBase": null,
+      "rawLayers": [
+        {
+          "name": "stempel",
+          "path": "/Users/julian/.codex/generated_images/01a16ff0-9f36-73c0-8018-f01b2b74ce12/exec-fff8faf9-e256-47f3-ba6c-d1fb3784c951.png"
+        }
+      ],
+      "rawStates": [],
+      "crop": {
+        "left": 331,
+        "top": 196,
+        "width": 592,
+        "height": 856
+      },
+      "scale": 0.7476635514018691,
+      "target": [
+        443,
+        640
+      ],
+      "silhouetteIoU": 1,
+      "registrationColorError": 2.1024922943657412e-7,
+      "layerOrder": "base-first",
+      "pixelExactRecomposition": true,
+      "files": [
+        {
+          "file": "icon-stempel.png",
+          "kind": "whole",
+          "path": "/Volumes/Extern/Documents/Obsidian/02 Wiki/Projects/Family Assistant/Design/Icons v1/icon-stempel.png",
+          "sha256": "96ab503b99426344f2a4357d3dfa8cb38ec8fee71904d498565df2c2dbe73b6c"
+        },
+        {
+          "file": "icon-stempel__base.png",
+          "kind": "base",
+          "path": "/Volumes/Extern/Documents/Obsidian/02 Wiki/Projects/Family Assistant/Design/Icons v1/icon-stempel__base.png",
+          "sha256": "ffea58548f169a32ef77c56d3394e459f2e44293f1f13a1fcc75a03f7d8414fd"
+        },
+        {
+          "file": "icon-stempel__stempel.png",
+          "kind": "part",
+          "part": "stempel",
+          "path": "/Volumes/Extern/Documents/Obsidian/02 Wiki/Projects/Family Assistant/Design/Icons v1/icon-stempel__stempel.png",
+          "sha256": "a0bf40e04791d891d647732f8757fae199e301c1c468fdafa05152019dcbfadb"
+        }
+      ]
+    },
+    "schluessel": {
+      "priority": "B",
+      "subject": "a rounded house key in sand on a teal ring",
+      "animation": "schwingt",
+      "source": "/Users/julian/.codex/generated_images/01a16ff0-9f36-73c0-8018-f01b2b74ce12/exec-8474f17f-d90b-46cf-ab14-03d4af979044.png",
+      "rawBase": null,
+      "rawLayers": [],
+      "rawStates": [],
+      "crop": {
+        "left": 272,
+        "top": 274,
+        "width": 742,
+        "height": 724
+      },
+      "scale": 0.862533692722372,
+      "target": [
+        640,
+        624
+      ],
+      "silhouetteIoU": 1,
+      "registrationColorError": 0,
+      "layerOrder": "base-first",
+      "pixelExactRecomposition": null,
+      "files": [
+        {
+          "file": "icon-schluessel.png",
+          "kind": "whole",
+          "path": "/Volumes/Extern/Documents/Obsidian/02 Wiki/Projects/Family Assistant/Design/Icons v1/icon-schluessel.png",
+          "sha256": "a8434d93b3618bffadca4e7efa10be3ef58ebe7e970529bdbcf269cb07dcd76b"
+        }
+      ]
+    },
+    "paket": {
+      "priority": "B",
+      "subject": "a small rounded cardboard parcel with a teal tape strip",
+      "animation": "Klappe öffnet",
+      "source": "/Users/julian/.codex/generated_images/01a16ff0-9f36-73c0-8018-f01b2b74ce12/exec-1acefcfe-5e2d-4f96-9187-23229f37811f.png",
+      "rawBase": "/Users/julian/.codex/generated_images/01a16ff0-9f36-73c0-8018-f01b2b74ce12/exec-34cc4e25-728a-4ac5-8171-448b7d7795bf.png",
+      "rawLayers": [
+        {
+          "name": "klappe",
+          "path": "/Users/julian/.codex/generated_images/01a16ff0-9f36-73c0-8018-f01b2b74ce12/exec-8d0649ec-66bc-4ba2-a5f3-321339693b29.png"
+        }
+      ],
+      "rawStates": [],
+      "crop": {
+        "left": 265,
+        "top": 271,
+        "width": 730,
+        "height": 740
+      },
+      "scale": 0.8648648648648649,
+      "target": [
+        631,
+        640
+      ],
+      "silhouetteIoU": 0.9746302609236672,
+      "registrationColorError": 0.08368784637689042,
+      "layerOrder": "parts-first",
+      "pixelExactRecomposition": true,
+      "files": [
+        {
+          "file": "icon-paket.png",
+          "kind": "whole",
+          "path": "/Volumes/Extern/Documents/Obsidian/02 Wiki/Projects/Family Assistant/Design/Icons v1/icon-paket.png",
+          "sha256": "e0eab2f0506a723f8f980df52e1ecc2431a7630a02e5d2c4150c04c6ab7144be"
+        },
+        {
+          "file": "icon-paket__base.png",
+          "kind": "base",
+          "path": "/Volumes/Extern/Documents/Obsidian/02 Wiki/Projects/Family Assistant/Design/Icons v1/icon-paket__base.png",
+          "sha256": "7cfa15c2cc35f8b2f09bc2efc8b80a695e44a97accdb526a1bcf019db9b206fb"
+        },
+        {
+          "file": "icon-paket__klappe.png",
+          "kind": "part",
+          "part": "klappe",
+          "path": "/Volumes/Extern/Documents/Obsidian/02 Wiki/Projects/Family Assistant/Design/Icons v1/icon-paket__klappe.png",
+          "sha256": "c71b88c4666aef596407794898047d2e660fc372473dcf9cd7bdfd8eb0520a67"
+        }
+      ]
+    },
+    "waesche": {
+      "priority": "B",
+      "subject": "a small stack of folded soft towels in sage and cream",
+      "animation": "Tuch faltet sich",
+      "source": "/Users/julian/.codex/generated_images/01a16ff0-9f36-73c0-8018-f01b2b74ce12/exec-d95d1804-4538-44bb-881a-28649e7ad26c.png",
+      "rawBase": "/Users/julian/.codex/generated_images/01a16ff0-9f36-73c0-8018-f01b2b74ce12/exec-eff993e4-5c63-4c80-a8c5-572c78f869c8.png",
+      "rawLayers": [
+        {
+          "name": "oberstes-tuch",
+          "path": "/Users/julian/.codex/generated_images/01a16ff0-9f36-73c0-8018-f01b2b74ce12/exec-a64d8cb4-603d-404d-9d47-03b9bd313bc9.png"
+        }
+      ],
+      "rawStates": [],
+      "crop": {
+        "left": 203,
+        "top": 341,
+        "width": 917,
+        "height": 653
+      },
+      "scale": 0.697928026172301,
+      "target": [
+        640,
+        456
+      ],
+      "silhouetteIoU": 0.8771827347285739,
+      "registrationColorError": 0.15091432592469678,
+      "layerOrder": "parts-first",
+      "pixelExactRecomposition": true,
+      "files": [
+        {
+          "file": "icon-waesche.png",
+          "kind": "whole",
+          "path": "/Volumes/Extern/Documents/Obsidian/02 Wiki/Projects/Family Assistant/Design/Icons v1/icon-waesche.png",
+          "sha256": "f7d400dc56447c91cd4ae2f1f790894d82f6634637e3751dc686b46bc059bfd9"
+        },
+        {
+          "file": "icon-waesche__base.png",
+          "kind": "base",
+          "path": "/Volumes/Extern/Documents/Obsidian/02 Wiki/Projects/Family Assistant/Design/Icons v1/icon-waesche__base.png",
+          "sha256": "c5d70ebaf46885240705d9f804015e699f0f178463af31be07d5b419157fc033"
+        },
+        {
+          "file": "icon-waesche__oberstes-tuch.png",
+          "kind": "part",
+          "part": "oberstes-tuch",
+          "path": "/Volumes/Extern/Documents/Obsidian/02 Wiki/Projects/Family Assistant/Design/Icons v1/icon-waesche__oberstes-tuch.png",
+          "sha256": "941c080302f8d9964c78801d04ece225353813193657151dcdeec8788f65cde2"
+        }
+      ]
+    },
+    "putzen": {
+      "priority": "B",
+      "subject": "a rounded spray bottle in sky with a sage nozzle",
+      "animation": "sprüht",
+      "source": "/Users/julian/.codex/generated_images/01a16ff0-9f36-73c0-8018-f01b2b74ce12/exec-520537db-1ded-402b-aac5-f6608f74ab3f.png",
+      "rawBase": "/Users/julian/.codex/generated_images/01a16ff0-9f36-73c0-8018-f01b2b74ce12/exec-f1c0ab61-e1b3-45d4-a2d1-6f9ee7e25993.png",
+      "rawLayers": [
+        {
+          "name": "spruehnebel",
+          "path": "/Users/julian/.codex/generated_images/01a16ff0-9f36-73c0-8018-f01b2b74ce12/exec-eb060030-feee-4c0e-b9ca-ffae28e8903d.png"
+        }
+      ],
+      "rawStates": [],
+      "crop": {
+        "left": 339,
+        "top": 205,
+        "width": 775,
+        "height": 869
+      },
+      "scale": 0.7364787111622555,
+      "target": [
+        571,
+        640
+      ],
+      "silhouetteIoU": 0.9912245998921058,
+      "registrationColorError": 0.01728668929659018,
+      "layerOrder": "base-first",
+      "pixelExactRecomposition": true,
+      "files": [
+        {
+          "file": "icon-putzen.png",
+          "kind": "whole",
+          "path": "/Volumes/Extern/Documents/Obsidian/02 Wiki/Projects/Family Assistant/Design/Icons v1/icon-putzen.png",
+          "sha256": "6c83658d8fd04dbdc4b849a1a3eacc65bc350744da8cd629e8ced55d51f0e16b"
+        },
+        {
+          "file": "icon-putzen__base.png",
+          "kind": "base",
+          "path": "/Volumes/Extern/Documents/Obsidian/02 Wiki/Projects/Family Assistant/Design/Icons v1/icon-putzen__base.png",
+          "sha256": "3d7146dd0f2bc3f3562067bdf989704444deaf13e8bc0b3e164f0572cbd6d1d1"
+        },
+        {
+          "file": "icon-putzen__spruehnebel.png",
+          "kind": "part",
+          "part": "spruehnebel",
+          "path": "/Volumes/Extern/Documents/Obsidian/02 Wiki/Projects/Family Assistant/Design/Icons v1/icon-putzen__spruehnebel.png",
+          "sha256": "36ed660963fad5727d558537b4b0f0f5ea32581a346f93458d9ffcf4bab75623"
+        }
+      ]
+    },
+    "muell": {
+      "priority": "B",
+      "subject": "a small rounded bin in sage with a lid",
+      "animation": "Deckel klappt",
+      "source": "/Users/julian/.codex/generated_images/01a16ff0-9f36-73c0-8018-f01b2b74ce12/exec-d0c2d02d-4a7f-483c-aaf9-05b006917c02.png",
+      "rawBase": "/Users/julian/.codex/generated_images/01a16ff0-9f36-73c0-8018-f01b2b74ce12/exec-7fcb0f7a-7572-4eb1-ba14-a27a1e769e7c.png",
+      "rawLayers": [
+        {
+          "name": "deckel",
+          "path": "/Users/julian/.codex/generated_images/01a16ff0-9f36-73c0-8018-f01b2b74ce12/exec-cba2ad49-b169-4ea2-8ac4-4e831e61b7ba.png"
+        }
+      ],
+      "rawStates": [],
+      "crop": {
+        "left": 347,
+        "top": 344,
+        "width": 555,
+        "height": 652
+      },
+      "scale": 0.9815950920245399,
+      "target": [
+        545,
+        640
+      ],
+      "silhouetteIoU": 0.968294538582633,
+      "registrationColorError": 0.027634116813391438,
+      "layerOrder": "base-first",
+      "pixelExactRecomposition": true,
+      "files": [
+        {
+          "file": "icon-muell.png",
+          "kind": "whole",
+          "path": "/Volumes/Extern/Documents/Obsidian/02 Wiki/Projects/Family Assistant/Design/Icons v1/icon-muell.png",
+          "sha256": "67423eaa40bc642bfbc0b125e63355db7fa62ec91ef509cc26f5a4bf70fb14ed"
+        },
+        {
+          "file": "icon-muell__base.png",
+          "kind": "base",
+          "path": "/Volumes/Extern/Documents/Obsidian/02 Wiki/Projects/Family Assistant/Design/Icons v1/icon-muell__base.png",
+          "sha256": "e9a4eef1b179ba4b5d5ce0eef3d7585a76a5e69e5da567012098cc6fff862f75"
+        },
+        {
+          "file": "icon-muell__deckel.png",
+          "kind": "part",
+          "part": "deckel",
+          "path": "/Volumes/Extern/Documents/Obsidian/02 Wiki/Projects/Family Assistant/Design/Icons v1/icon-muell__deckel.png",
+          "sha256": "90127d67d1385e57c1715c4048fe64799143d7af80da49f2693a0101bff19160"
+        }
+      ]
+    },
+    "auto": {
+      "priority": "B",
+      "subject": "a small rounded family car in sky",
+      "animation": "wippt und rollt",
+      "source": "/Users/julian/.codex/generated_images/01a16ff0-9f36-73c0-8018-f01b2b74ce12/exec-3951e179-f0ea-4604-89ed-2cef4fde0319.png",
+      "rawBase": "/Users/julian/.codex/generated_images/01a16ff0-9f36-73c0-8018-f01b2b74ce12/exec-c447398d-4ac4-4c71-8db2-a260cd05f977.png",
+      "rawLayers": [
+        {
+          "name": "raeder",
+          "path": "/Users/julian/.codex/generated_images/01a16ff0-9f36-73c0-8018-f01b2b74ce12/exec-d636e134-b880-4f01-ad11-8b56b8128cd5.png"
+        }
+      ],
+      "rawStates": [],
+      "crop": {
+        "left": 185,
+        "top": 330,
+        "width": 913,
+        "height": 653
+      },
+      "scale": 0.7009857612267251,
+      "target": [
+        640,
+        458
+      ],
+      "silhouetteIoU": 0.9777685112902991,
+      "registrationColorError": 0.047070967571825655,
+      "layerOrder": "base-first",
+      "pixelExactRecomposition": true,
+      "files": [
+        {
+          "file": "icon-auto.png",
+          "kind": "whole",
+          "path": "/Volumes/Extern/Documents/Obsidian/02 Wiki/Projects/Family Assistant/Design/Icons v1/icon-auto.png",
+          "sha256": "34265f77cf4874de96f15a4fdb2e9f7d44dcbf98dda4bb447c021717c5cb7976"
+        },
+        {
+          "file": "icon-auto__base.png",
+          "kind": "base",
+          "path": "/Volumes/Extern/Documents/Obsidian/02 Wiki/Projects/Family Assistant/Design/Icons v1/icon-auto__base.png",
+          "sha256": "bff058c8ae3654d0de18f269da90dc9fe441dcd8d6cce136fd9ce0cdd50747ba"
+        },
+        {
+          "file": "icon-auto__raeder.png",
+          "kind": "part",
+          "part": "raeder",
+          "path": "/Volumes/Extern/Documents/Obsidian/02 Wiki/Projects/Family Assistant/Design/Icons v1/icon-auto__raeder.png",
+          "sha256": "1ea54dae9054b7cfb1ae49e442528338d038fc456c1abfcac311f66edcc6b9aa"
+        }
+      ]
+    },
+    "handwerker": {
+      "priority": "B",
+      "subject": "a rounded hammer and wrench crossed, sand and teal",
+      "animation": "klopft",
+      "source": "/Users/julian/.codex/generated_images/01a16ff0-9f36-73c0-8018-f01b2b74ce12/exec-0b743dd4-e68e-4e2c-98fd-927f7888460f.png",
+      "rawBase": "/Users/julian/.codex/generated_images/01a16ff0-9f36-73c0-8018-f01b2b74ce12/exec-967f75e5-2006-4f3a-b2bf-3cb40b7ec608.png",
+      "rawLayers": [
+        {
+          "name": "hammer",
+          "path": "/Users/julian/.codex/generated_images/01a16ff0-9f36-73c0-8018-f01b2b74ce12/exec-7c77eac0-a494-4aac-b9a5-1e7953b79bfe.png"
+        }
+      ],
+      "rawStates": [],
+      "crop": {
+        "left": 236,
+        "top": 242,
+        "width": 831,
+        "height": 781
+      },
+      "scale": 0.7701564380264742,
+      "target": [
+        640,
+        601
+      ],
+      "silhouetteIoU": 0.9492706531628358,
+      "registrationColorError": 0.04857593630827722,
+      "layerOrder": "base-first",
+      "pixelExactRecomposition": true,
+      "files": [
+        {
+          "file": "icon-handwerker.png",
+          "kind": "whole",
+          "path": "/Volumes/Extern/Documents/Obsidian/02 Wiki/Projects/Family Assistant/Design/Icons v1/icon-handwerker.png",
+          "sha256": "355a5d4fc3794db31491b864e6184b6f9c18bfa2f7159d2e60583832f3631e06"
+        },
+        {
+          "file": "icon-handwerker__base.png",
+          "kind": "base",
+          "path": "/Volumes/Extern/Documents/Obsidian/02 Wiki/Projects/Family Assistant/Design/Icons v1/icon-handwerker__base.png",
+          "sha256": "9f13aec08550cf2d2e3fcd6f1c73705dbe0c0d4b978a96eb239c8b6e30a13c44"
+        },
+        {
+          "file": "icon-handwerker__hammer.png",
+          "kind": "part",
+          "part": "hammer",
+          "path": "/Volumes/Extern/Documents/Obsidian/02 Wiki/Projects/Family Assistant/Design/Icons v1/icon-handwerker__hammer.png",
+          "sha256": "a525788df7b99c6df244e4253a8340724d5122965e45368b779c2aaba7a23fe0"
+        }
+      ]
+    },
+    "rucksack": {
+      "priority": "B",
+      "subject": "a small rounded kids backpack in sky with a teal zip",
+      "animation": "wippt",
+      "source": "/Users/julian/.codex/generated_images/01a16ff0-9f36-73c0-8018-f01b2b74ce12/exec-12ac8975-ecb9-40b4-b7a6-f5ce3802a50f.png",
+      "rawBase": null,
+      "rawLayers": [],
+      "rawStates": [],
+      "crop": {
+        "left": 297,
+        "top": 242,
+        "width": 706,
+        "height": 789
+      },
+      "scale": 0.8111533586818758,
+      "target": [
+        573,
+        640
+      ],
+      "silhouetteIoU": 1,
+      "registrationColorError": 0,
+      "layerOrder": "base-first",
+      "pixelExactRecomposition": null,
+      "files": [
+        {
+          "file": "icon-rucksack.png",
+          "kind": "whole",
+          "path": "/Volumes/Extern/Documents/Obsidian/02 Wiki/Projects/Family Assistant/Design/Icons v1/icon-rucksack.png",
+          "sha256": "b8454460482b80b5bd576e9823f823ca4673501586718193e815da80fe68e858"
+        }
+      ]
+    },
+    "schwimmen": {
+      "priority": "B",
+      "subject": "a soft rounded swim ring in blush and cream",
+      "animation": "schaukelt auf Wellen",
+      "source": "/Users/julian/.codex/generated_images/01a16ff0-9f36-73c0-8018-f01b2b74ce12/exec-07745a1a-2116-4752-b364-d3db1a40cb14.png",
+      "rawBase": null,
+      "rawLayers": [],
+      "rawStates": [],
+      "crop": {
+        "left": 251,
+        "top": 333,
+        "width": 752,
+        "height": 592
+      },
+      "scale": 0.851063829787234,
+      "target": [
+        640,
+        504
+      ],
+      "silhouetteIoU": 1,
+      "registrationColorError": 0,
+      "layerOrder": "base-first",
+      "pixelExactRecomposition": null,
+      "files": [
+        {
+          "file": "icon-schwimmen.png",
+          "kind": "whole",
+          "path": "/Volumes/Extern/Documents/Obsidian/02 Wiki/Projects/Family Assistant/Design/Icons v1/icon-schwimmen.png",
+          "sha256": "4854dfc82dbc06e48106f4a984b62e189eb98631029bb8de29447490f74bd809"
+        }
+      ]
+    },
+    "kita": {
+      "priority": "B",
+      "subject": "a small rounded building block tower, three blocks in sage, blush and sand",
+      "animation": "Block plumpst drauf",
+      "source": "/Users/julian/.codex/generated_images/01a16ff0-9f36-73c0-8018-f01b2b74ce12/exec-410c4f5a-5f28-4c34-9cc5-9d2d156a378a.png",
+      "rawBase": "/Users/julian/.codex/generated_images/01a16ff0-9f36-73c0-8018-f01b2b74ce12/exec-0e0d0c4b-c45e-4241-9dc4-9835966837f3.png",
+      "rawLayers": [
+        {
+          "name": "oberer-block",
+          "path": "/Users/julian/.codex/generated_images/01a16ff0-9f36-73c0-8018-f01b2b74ce12/exec-53c4f67a-673f-4b18-bf42-c82a4c16dedf.png"
+        }
+      ],
+      "rawStates": [],
+      "crop": {
+        "left": 371,
+        "top": 276,
+        "width": 515,
+        "height": 749
+      },
+      "scale": 0.8544726301735648,
+      "target": [
+        440,
+        640
+      ],
+      "silhouetteIoU": 0.9718086608983145,
+      "registrationColorError": 0.026360454517759563,
+      "layerOrder": "base-first",
+      "pixelExactRecomposition": true,
+      "files": [
+        {
+          "file": "icon-kita.png",
+          "kind": "whole",
+          "path": "/Volumes/Extern/Documents/Obsidian/02 Wiki/Projects/Family Assistant/Design/Icons v1/icon-kita.png",
+          "sha256": "db6595cb78e8cbc8d76e26cecaeebe347796eb540fb6b0befee33521f43a25dc"
+        },
+        {
+          "file": "icon-kita__base.png",
+          "kind": "base",
+          "path": "/Volumes/Extern/Documents/Obsidian/02 Wiki/Projects/Family Assistant/Design/Icons v1/icon-kita__base.png",
+          "sha256": "fcf012f3b63e1190613ba2a21c3c63d79aa1dff2819a70e8a321f33a87279849"
+        },
+        {
+          "file": "icon-kita__oberer-block.png",
+          "kind": "part",
+          "part": "oberer-block",
+          "path": "/Volumes/Extern/Documents/Obsidian/02 Wiki/Projects/Family Assistant/Design/Icons v1/icon-kita__oberer-block.png",
+          "sha256": "d78fdf26803455d0439b797563792fee04ba24752f52b0ca8c6cc9c840d8e6a0"
+        }
+      ]
+    }
+  }
+}

@@ -12,6 +12,12 @@ Ein ruhiger, gemeinsamer Familienkalender für beide Eltern, der mitdenkt. Der E
 
 Details: `docs/spec-v2.md` (Spec v2) und `docs/v1-flow-spec-abgleich.md`.
 
+## Wo was liegt
+- `docs/research/`: Review, Spec v1/v2, Ideen-Backlog, Design-Brief und Review-Analysen (TimeTree, Podz, Babyjahr-Apps, Eingänge)
+- `docs/design-notes/`: Stil-Prinzipien (Airbnb, Notion, App-Stile), GPT-Bildprompts für die Icons
+- `docs/memory/`: Projekt-Gedächtnis aus „New Project Ideas“ (Entscheidungen, Design-Verlauf, Icons, Agent-Machbarkeit, Kita-Warnung). Das neue Projekt sollte es in sein eigenes Gedächtnis übernehmen.
+- `design/icon-motion/`: Icon-Animations-Engine (v4 ist die Basis, template4.html + engine4.js) und 512er-Icons
+
 ## Design
 - Canvas (Quelle der Wahrheit, 50 Boards, Version 37): https://claude.ai/artifact/2D3QEB3EFs2MSUy7CVkCno
 - Regeln: `docs/DESIGN.md`, vor allem Abschnitt „Einfachheit“ mit 8 Regeln (Wabi × Devouring Details).
