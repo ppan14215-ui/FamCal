@@ -4,11 +4,12 @@
  * Apple keynotes sell: a pain everyone knows, then the moment it goes away.
  * Big words carry the message, the stage underneath proves it with real UI.
  *
- * 1  Post vom Amt.         A letter lands, the deadline hides in the text.
- * 2  Foto. Fertig.         The letter turns into one row with the deadline.
- * 3  Für euch beide.       Tom takes the U5. Mental load, shared.
- * 4  Weiß, was bei euch gilt.  City facts arrive, each with its source.
- * 5  The promise.          The calm page with everything on it. Holds.
+ * 1  Sag es einfach.      A spoken sentence becomes Tom's Termin (Pivot 26.10.).
+ * 2  Post vom Amt.         A letter lands, the deadline hides in the text.
+ * 3  Foto. Fertig.         The letter turns into one row with the deadline.
+ * 4  Für euch beide.       Tom takes the U5. Mental load, shared.
+ * 5  Weiß, was bei euch gilt.  City facts arrive, each with its source.
+ * 6  The promise.          The calm page with everything on it. Holds.
  *
  * Plays once, never loops. Tapping the stage jumps to the next scene, the
  * bars on top show where you are. Reduced motion shows the last scene.
@@ -29,11 +30,12 @@ import type { ClayName } from '../lib/clayIcons';
 
 type Scene = { title: string; sub: string; ms: number };
 const SCENES: Scene[] = [
+  { title: 'Sag es einfach', sub: 'Ein Satz reicht. Der Kalender trägt ein, für wen es ist, und sagt, wenn es sich beißt.', ms: 3600 },
   { title: 'Post vom Amt', sub: 'Irgendwo im dritten Absatz steht eine Frist.', ms: 2600 },
   { title: 'Foto. Fertig', sub: 'Der Assistent liest mit, trägt die Frist ein und sagt euch, was zu tun ist.', ms: 2900 },
   { title: 'Für euch beide', sub: 'Nicht nur für den, der zufällig dran denkt.', ms: 2700 },
   { title: 'Weiß, was bei euch gilt', sub: 'Feiertage, Kita-Portal, Bürgeramt. Immer mit Quelle.', ms: 2900 },
-  { title: 'Euer Familienkalender, der mitdenkt', sub: 'Ohne Werbung, nichts verschwindet. Termine, Fristen und Einkauf an einem ruhigen Ort.', ms: 0 },
+  { title: 'Euer Kalender, mit dem ihr redet', sub: 'Für euch beide, ohne Werbung, nichts verschwindet. Termine, Fristen und Einkauf an einem ruhigen Ort.', ms: 0 },
 ];
 const LAST = SCENES.length - 1;
 const STAGE = 300;
@@ -61,13 +63,46 @@ export default function Intro() {
       </View>
       <Pressable accessibilityLabel={i < LAST ? 'Weiter im Intro' : undefined} onPress={next} style={{ height: STAGE, justifyContent: 'center' }}>
         <Animated.View key={i} entering={FadeIn.duration(200)} exiting={leave} style={{ flex: 1, justifyContent: 'center' }}>
-          {i === 0 ? <Post /> : i === 1 ? <Scanned /> : i === 2 ? <Both /> : i === 3 ? <Local /> : <Calm />}
+          {i === 0 ? <Talk /> : i === 1 ? <Post /> : i === 2 ? <Scanned /> : i === 3 ? <Both /> : i === 4 ? <Local /> : <Calm />}
         </Animated.View>
       </Pressable>
       <Animated.View key={`t${i}`} entering={enter()} style={{ gap: 8, minHeight: 112 }}>
         <Txt size={36} line={42} weight={700} tracking={-1.2}>{s.title}<Dot /></Txt>
         <Txt size={17} line={25} color={tokens.sub}>{s.sub}</Txt>
       </Animated.View>
+    </View>
+  );
+}
+
+/** 1 · A sentence is typed as if spoken, then lands as Tom's Termin. */
+const SAID = 'Tom bringt Ben Donnerstag 9:30 zur U6';
+function Talk() {
+  const [n, setN] = useState(0);
+  useEffect(() => {
+    if (n >= SAID.length) { const id = setTimeout(haptics.success, 250); return () => clearTimeout(id); }
+    const id = setTimeout(() => setN(n + 2), n ? 38 : 500);
+    return () => clearTimeout(id);
+  }, [n]);
+  const done = n >= SAID.length;
+  return (
+    <View style={{ gap: 12 }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, padding: 6, paddingLeft: 16, borderRadius: 26, backgroundColor: tokens.row, borderWidth: 1, borderColor: done ? tokens.hair : tokens.ink }}>
+        <Txt size={16} line={22} style={{ flex: 1 }}>{SAID.slice(0, n) || ' '}</Txt>
+        <View style={{ width: 44, height: 44, borderRadius: 999, backgroundColor: tokens.ink, alignItems: 'center', justifyContent: 'center' }}>
+          <LineIcon name="mic" size={21} color="#FFFFFF" />
+        </View>
+      </View>
+      {done ? (
+        <>
+          <Animated.View entering={enter(0)}>
+            <Row icon="stethoskop" title="U6" meta="Do 29. Okt · 9:30 · Tom bringt Ben" right={<Avatar p="T" letter="T" size={30} />} />
+          </Animated.View>
+          <Animated.View entering={enter(1)} style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingLeft: 6 }}>
+            <LineIcon name="clock" size={14} color={tokens.frist} />
+            <Txt size={13.5} weight={600} color={tokens.frist}>Tom arbeitet da. Soll Julia gehen?</Txt>
+          </Animated.View>
+        </>
+      ) : null}
     </View>
   );
 }
@@ -90,7 +125,7 @@ function Bar({ state, ms }: { state: 'done' | 'now' | 'next'; ms: number }) {
 
 // ─── Scenes ────────────────────────────────────────────────────────────────
 
-/** 1 · The letter lands slightly crooked, the deadline line gets a marker. */
+/** 2 · The letter lands slightly crooked, the deadline line gets a marker. */
 function Post() {
   return (
     <View style={{ alignItems: 'center' }}>
@@ -102,7 +137,7 @@ function Post() {
   );
 }
 
-/** 2 · The same letter, now a row: deadline, task, who added it. */
+/** 3 · The same letter, now a row: deadline, task, who added it. */
 function Scanned() {
   useEffect(() => { const id = setTimeout(haptics.success, 700); return () => clearTimeout(id); }, []);
   return (
@@ -121,7 +156,7 @@ function Scanned() {
   );
 }
 
-/** 3 · A task finds its person. */
+/** 4 · A task finds its person. */
 function Both() {
   const [taken, setTaken] = useState(false);
   useEffect(() => { const id = setTimeout(() => { setTaken(true); haptics.tap(); }, 1000); return () => clearTimeout(id); }, []);
@@ -149,7 +184,7 @@ function Both() {
   );
 }
 
-/** 4 · What the city means for you, each fact with where it comes from. */
+/** 5 · What the city means for you, each fact with where it comes from. */
 function Local() {
   const facts: { icon: ClayName; title: string; src: string }[] = [
     { icon: 'kalender', title: 'Feiertage für euer Bundesland', src: 'Gemeindeverzeichnis' },
@@ -174,7 +209,7 @@ function Local() {
   );
 }
 
-/** 5 · The calm page. Everything from before, in one place, no banner. */
+/** 6 · The calm page. Everything from before, in one place, no banner. */
 function Calm() {
   const [done, setDone] = useState(false);
   useEffect(() => { const id = setTimeout(() => { setDone(true); haptics.success(); }, 1100); return () => clearTimeout(id); }, []);

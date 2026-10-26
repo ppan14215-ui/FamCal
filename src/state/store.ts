@@ -187,6 +187,8 @@ export const actions = {
     set((s) => ({ events: s.events.map((e) => (e.id === id ? { ...e, date: w.date, endDate: w.endDate, start: w.start ?? '00:00', end: w.end, allDay: !w.start } : e)) }));
     return before;
   },
+  /** Rückgängig after a spoken entry. */
+  removeEvent(id: string) { set((s) => ({ events: s.events.filter((e) => e.id !== id) })); },
   restoreEvent(e: CalEvent) { set((s) => ({ events: s.events.map((x) => (x.id === e.id ? e : x)) })); },
   /** Everything on a Termin stays editable (Julian 26.10.). */
   updateEvent(id: string, patch: Partial<CalEvent>) { set((s) => ({ events: s.events.map((e) => (e.id === id ? { ...e, ...patch } : e)) })); },

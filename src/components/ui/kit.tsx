@@ -27,11 +27,16 @@ type ScreenProps = {
   gap?: number;
   scroll?: boolean;
   padTop?: number;
+  /** Extra room at the end, e.g. for the talk field docked above the nav. */
+  padBottom?: number;
+  /** For screens that scroll something into view themselves. */
+  scrollRef?: React.RefObject<ScrollView | null>;
+  onScrollY?: (y: number) => void;
 };
 
-export function Screen({ children, tab, footer, bg = tokens.bg, gap = 14, scroll = true, padTop = 8 }: ScreenProps) {
+export function Screen({ children, tab, footer, bg = tokens.bg, gap = 14, scroll = true, padTop = 8, padBottom = 0, scrollRef, onScrollY }: ScreenProps) {
   const insets = useSafeAreaInsets();
-  const bottom = tab ? 110 + insets.bottom : footer ? 16 : 34 + insets.bottom;
+  const bottom = (tab ? 110 + insets.bottom : footer ? 16 : 34 + insets.bottom) + padBottom;
   // Content arrives instead of appearing (docs/MOTION.md).
   const content = (
     <Animated.View entering={rise()} style={{ gap, paddingHorizontal: 18, paddingTop: padTop, paddingBottom: bottom, flexGrow: 1 }}>{children}</Animated.View>
@@ -39,7 +44,7 @@ export function Screen({ children, tab, footer, bg = tokens.bg, gap = 14, scroll
   return (
     <View style={{ flex: 1, backgroundColor: bg, paddingTop: insets.top }}>
       {scroll ? (
-        <ScrollView style={{ flex: 1 }} contentContainerStyle={{ flexGrow: 1 }} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+        <ScrollView ref={scrollRef} onScroll={onScrollY ? (e) => onScrollY(e.nativeEvent.contentOffset.y) : undefined} scrollEventThrottle={16} style={{ flex: 1 }} contentContainerStyle={{ flexGrow: 1 }} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
           {content}
         </ScrollView>
       ) : (

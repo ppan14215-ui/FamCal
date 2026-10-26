@@ -18,6 +18,8 @@ const LINK = 'familie.app/j/huber-7Q2';
 export default function Partner() {
   const names = useStore((s) => s.names);
   const sel = useStore((s) => s.colors);
+  // Without a child there is no first year to plan: straight to the calendar (Pivot 26.10.).
+  const kid = useStore((s) => s.kid);
   // The screen takes on the partner's colour as soon as it is picked (Julian 26.10.).
   const partner = personPalette[sel.T];
   return (
@@ -29,7 +31,8 @@ export default function Partner() {
           icon="send"
           onPress={async () => {
             await Share.share({ message: `${names.J} lädt dich in euren Familienkalender ein: https://${LINK}` }).catch(() => {});
-            router.push('/onboarding/jahr');
+            if (kid) router.push('/onboarding/jahr');
+            else router.replace('/heute');
           }}
         />
       }

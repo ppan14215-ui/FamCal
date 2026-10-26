@@ -4,6 +4,16 @@ Alle sichtbaren Änderungen an FamCal. Neueste oben. Agenten und Menschen: Ände
 
 ## Unreleased
 
+### Pivot 26.10.: ein gemeinsamer Kalender, mit dem ihr redet
+- Heute ist jetzt der sprechende Kalender. Unten ein Feld mit Foto, Text und Mikro wie in einer Chat App. Wo ein Chat seinen Verlauf zeigt, steht euer Kalender für die nächsten sieben Tage.
+- Ein Satz wird ein Termin für die richtige Person: „Tom bringt Ben Dienstag 10 Uhr zur Krabbelgruppe“, „Erstelle mir einen Termin für Freitag bei meinem Kinderarzt“. Ohne Uhrzeit fragt er nach, ohne Person fragt er, wer geht. Rückgängig geht immer.
+- Er sagt, woher er etwas weiß: die Adresse vom Kinderarzt kommt aus dem letzten Termin dort. Er warnt, wenn sich etwas beißt („Tom arbeitet da bis 14:00“).
+- Fragen bekommen Antworten aus dem Kalender: „Wann haben wir beide frei?“ (Arbeit schon abgezogen), „Was steht am Wochenende an?“, „Wann ist die U5?“, „Wer bringt Ben zur U6?“.
+- Die Glaskugel: beim Zuhören sitzt sie im Mikroknopf. Danach wächst sie als Welle über den ganzen Bildschirm, in den Farben von euch beiden, und zeigt ihre Denkschritte. Am Ende zieht sie sich zu einem Tropfen zusammen, der an seinen Tag fliegt, dort leuchtet der neue Termin kurz auf.
+- Im Testlink ist das Mikro gesperrt. Dann spricht die App einen Beispielsatz und sagt das auch.
+- Babyjahr ist optional: ohne Kind geht es nach „Zu zweit“ direkt zum Kalender. Das Intro beginnt jetzt mit „Sag es einfach“.
+- Noch ohne Sprachmodell: das Verstehen sind feste Regeln in src/lib/talk.ts.
+
 ### Kommentare vom 26.10. abends
 - Termin: ein anderes Symbol aus der Auswahl wird jetzt übernommen. Vorher ging die Wahl verloren. Die Herkunft zeigt nicht mehr doppelt „Aus: Aus“.
 - Icons in Zeilen und Listen nochmals größer: Zeilen 46 statt 34, Listenpunkte 42 statt 30, Kacheln füllen 90 statt 78 Prozent.
