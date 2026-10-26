@@ -8,3 +8,6 @@ web-build/
 .DS_Store
 ios/
 android/
+expo-env.d.ts
+.claude/*
+!.claude/skills/

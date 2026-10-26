@@ -1,0 +1,38 @@
+{
+  "expo": {
+    "name": "FamCal",
+    "slug": "famcal",
+    "version": "0.1.0",
+    "scheme": "famcal",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "backgroundColor": "#F5F5F4",
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.julian.famcal"
+    },
+    "android": {
+      "package": "com.julian.famcal",
+      "adaptiveIcon": {
+        "backgroundColor": "#F5F5F4"
+      }
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "single",
+      "name": "FamCal",
+      "themeColor": "#F5F5F4"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-font",
+      "expo-localization"
+    ],
+    "experiments": {
+      "typedRoutes": false
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    }
+  }
+}
