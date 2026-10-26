@@ -18,8 +18,11 @@ const LINK = 'familie.app/j/huber-7Q2';
 export default function Partner() {
   const names = useStore((s) => s.names);
   const sel = useStore((s) => s.colors);
+  // The screen takes on the partner's colour as soon as it is picked (Julian 26.10.).
+  const partner = personPalette[sel.T];
   return (
     <Screen
+      bg={partner.bg}
       footer={
         <Btn
           label="Einladung senden"
@@ -32,7 +35,7 @@ export default function Partner() {
       }
     >
       <BackBar center={<StepDots i={5} />} />
-      <H1>Zu zweit</H1>
+      <H1 dot={partner.fg}>Zu zweit</H1>
       <Lead>{`${names.T || 'Dein Partner'} bekommt einen Link. Ein iPhone ist nicht nötig, die App läuft auch auf Android.`}</Lead>
       <Card>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>

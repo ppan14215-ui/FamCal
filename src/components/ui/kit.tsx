@@ -52,13 +52,13 @@ export function Screen({ children, tab, footer, bg = tokens.bg, gap = 14, scroll
 
 // ─── Type ──────────────────────────────────────────────────────────────────
 
-export function H1({ children, sub, right, size = 34 }: { children: React.ReactNode; sub?: string; right?: React.ReactNode; size?: number }) {
+export function H1({ children, sub, right, size = 34, dot }: { children: React.ReactNode; sub?: string; right?: React.ReactNode; size?: number; dot?: string }) {
   return (
     <View style={{ flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', gap: 12 }}>
       <View style={{ flex: 1, gap: 2 }}>
         {sub ? <Txt size={15} color={tokens.sub}>{sub}</Txt> : null}
         <Txt size={size} line={Math.round(size * 1.18)} weight={700} tracking={-1}>
-          {children}<Dot />
+          {children}<Dot color={dot} />
         </Txt>
       </View>
       {right}

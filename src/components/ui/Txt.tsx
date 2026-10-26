@@ -39,6 +39,6 @@ export default function Txt({ size = 16, line, weight = 400, color = tokens.ink,
 }
 
 /** Headline period / question mark in teal, as on every canvas board. */
-export function Dot({ char = '.' }: { char?: string }) {
-  return <Text style={{ color: tokens.done }}>{char}</Text>;
+export function Dot({ char = '.', color = tokens.done }: { char?: string; color?: string }) {
+  return <Text style={{ color }}>{char}</Text>;
 }
