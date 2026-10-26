@@ -1,0 +1,4 @@
+{
+  "nav": { "heute": "Today", "kalender": "Calendar", "listen": "Lists", "eingang": "Inbox", "neu": "New" },
+  "common": { "back": "Back", "cancel": "Cancel", "done": "Done", "undo": "Undo", "later": "Later", "next": "Next", "save": "Save" }
+}
