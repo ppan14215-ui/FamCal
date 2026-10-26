@@ -53,9 +53,11 @@ export default function Termin() {
   const picked = useStore((s) => s.draftSymbol);
   const picking = useRef(false);
   useEffect(() => {
-    if (!picking.current || !e || !picked) return;
+    // The picker opens with the current symbol as draft; only a different one counts.
+    if (!picking.current || !e || !picked || picked === e.icon) return;
     picking.current = false;
-    if (picked !== e.icon) { actions.updateEvent(e.id, { icon: picked }); haptics.commit(); }
+    actions.updateEvent(e.id, { icon: picked });
+    haptics.commit();
     actions.clearDraftSymbol();
   }, [picked]);
   if (!e) return null;
