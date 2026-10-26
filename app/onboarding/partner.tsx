@@ -31,7 +31,7 @@ export default function Partner() {
         />
       }
     >
-      <BackBar center={<StepDots i={4} />} />
+      <BackBar center={<StepDots i={5} />} />
       <H1>Zu zweit</H1>
       <Lead>{`${names.T || 'Dein Partner'} bekommt einen Link. Ein iPhone ist nicht nötig, die App läuft auch auf Android.`}</Lead>
       <Card>

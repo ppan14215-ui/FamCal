@@ -25,7 +25,7 @@ export default function Jahr() {
   const title = kid?.name ? `${kid.name}${/[sxzß]$/i.test(kid.name) ? '’' : 's'} erstes Jahr` : 'Euer erstes Jahr';
   return (
     <Screen footer={<Btn label="Aufgaben verteilen" onPress={() => router.push('/onboarding/karten')} />}>
-      <BackBar center={<StepDots i={5} />} />
+      <BackBar center={<StepDots i={6} />} />
       <H1>{title}</H1>
       <Txt size={16} line={24} color={tokens.sub} style={{ marginTop: -8 }}>
         Ihr müsst nichts eintragen. Aus {kid?.due ? 'dem errechneten Termin' : 'dem Geburtsdatum'} haben wir <Txt size={16} line={24} weight={700}>{total} Termine und Fristen</Txt> schon in euren Kalender gelegt.

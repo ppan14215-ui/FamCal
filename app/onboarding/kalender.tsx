@@ -26,7 +26,7 @@ export default function Kalender() {
   const next = () => router.push('/onboarding/partner');
   return (
     <Screen footer={<><Btn label="Weiter" onPress={next} /><TextLink label="Später" weight={400} onPress={next} /></>}>
-      <BackBar center={<StepDots i={3} />} />
+      <BackBar center={<StepDots i={4} />} />
       <H1>Eure Kalender</H1>
       <Lead>Damit nichts doppelt ist. Ihr wählt, welche Kalender hier erscheinen, der Rest bleibt privat.</Lead>
       <View style={{ gap: 8 }}>

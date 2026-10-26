@@ -15,7 +15,7 @@ export default function Karten() {
   const decided = total - open.length;
   return (
     <Screen gap={16}>
-      <BackBar center={<StepDots i={6} />} />
+      <BackBar center={<StepDots i={7} />} />
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' }}>
         <Txt size={22} weight={700} tracking={-0.5}>Wer kümmert sich<Dot char="?" /></Txt>
         <Meta>{open.length ? `${Math.min(decided + 1, total)} von ${total}` : 'fertig'}</Meta>

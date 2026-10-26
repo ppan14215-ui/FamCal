@@ -11,6 +11,7 @@ import type { PersonId } from '../theme';
 import { TODAY, BEN_BORN } from '../lib/dates';
 import { persons, personPalette } from '../theme';
 import { firstYear, Kid } from '../data/firstYear';
+import { findCity } from '../data/cities';
 
 export type CalView = 'tag' | 'woche' | 'monat' | 'jahr';
 
@@ -18,6 +19,8 @@ type State = {
   names: { J: string; T: string };
   /** The child from onboarding; null until then. */
   kid: Kid | null;
+  /** Where the family lives (first onboarding step). */
+  city: string;
   /** Connected calendars (onboarding "Eure Kalender"). */
   calendars: { provider: string; account: string; ids: string[] }[];
   /** Sample family loaded ("Ich wurde eingeladen", Einstellungen). */
@@ -50,6 +53,7 @@ type State = {
 const initial = (): State => ({
   names: { J: '', T: '' },
   kid: null,
+  city: '',
   calendars: [],
   demo: false,
   colors: { J: 0, T: 1 },
@@ -140,6 +144,7 @@ export const actions = {
   reset() { state = initial(); applyNames(state.names); actions.setColor('J', 0); actions.setColor('T', 1); },
   loadDemo() { const d = demo(); applyNames(d.names!); set(() => d); actions.setColor('J', 0); actions.setColor('T', 1); },
   setNames(names: { J: string; T: string }) { applyNames(names); set(() => ({ names })); },
+  setCity(city: string) { set(() => ({ city })); },
   /** A person's colour shows everywhere they appear, so `persons` changes with it. */
   setColor(p: PersonId, i: number) {
     const c = personPalette[i];
@@ -148,7 +153,7 @@ export const actions = {
   },
   /** From "Eure Kinder": the first year is planned from the date alone. */
   setKid(kid: Kid) {
-    const { milestones, cards } = firstYear(kid);
+    const { milestones, cards } = firstYear(kid, findCity(state.city));
     set(() => ({ kid, milestones, onboardingCards: cards }));
   },
   connectCalendar(provider: string, account: string, ids: string[], events: CalEvent[]) {
@@ -179,6 +184,24 @@ export const actions = {
     return before;
   },
   restoreEvent(e: CalEvent) { set((s) => ({ events: s.events.map((x) => (x.id === e.id ? e : x)) })); },
+  /** Everything on a Termin stays editable (Julian 26.10.). */
+  updateEvent(id: string, patch: Partial<CalEvent>) { set((s) => ({ events: s.events.map((e) => (e.id === id ? { ...e, ...patch } : e)) })); },
+  /** Empty text removes the line. */
+  editBring(eid: string, bid: string, t: string) {
+    set((s) => ({ events: s.events.map((e) => (e.id === eid ? { ...e, bring: t.trim() ? e.bring?.map((b) => (b.id === bid ? { ...b, t: t.trim() } : b)) : e.bring?.filter((b) => b.id !== bid) } : e)) }));
+  },
+  deleteBring(eid: string, bid: string) {
+    const e = state.events.find((x) => x.id === eid);
+    const i = e?.bring?.findIndex((b) => b.id === bid) ?? -1;
+    if (!e || i < 0) return;
+    const gone = e.bring![i];
+    set((s) => ({ events: s.events.map((x) => (x.id === eid ? { ...x, bring: x.bring?.filter((b) => b.id !== bid) } : x)) }));
+    toast(`„${gone.t}“ gelöscht`, () => set((s) => ({ events: s.events.map((x) => (x.id === eid ? { ...x, bring: [...(x.bring ?? []).slice(0, i), gone, ...(x.bring ?? []).slice(i)] } : x)) })));
+  },
+  cycleBringWho(eid: string, bid: string) {
+    const next = (w?: 'J' | 'T' | null) => (w === 'J' ? 'T' : w === 'T' ? null : 'J');
+    set((s) => ({ events: s.events.map((e) => (e.id === eid ? { ...e, bring: e.bring?.map((b) => (b.id === bid ? { ...b, who: next(b.who) } : b)) } : e)) }));
+  },
   setEventWho(id: string, who: Who) { set((s) => ({ events: s.events.map((e) => (e.id === id ? { ...e, who } : e)) })); },
   toggleBring(eid: string, bid: string) {
     set((s) => ({ events: s.events.map((e) => (e.id === eid ? { ...e, bring: e.bring?.map((b) => (b.id === bid ? { ...b, done: !b.done } : b)) } : e)) }));

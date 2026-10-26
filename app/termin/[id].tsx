@@ -1,15 +1,23 @@
-/** Termin: clay stage on top, who goes, what to bring, where it came from. */
-import React, { useState } from 'react';
-import { View } from 'react-native';
-import { useLocalSearchParams } from 'expo-router';
+/**
+ * Termin: clay stage on top, who goes, what to bring, where it came from.
+ * Everything stays editable (Julian 26.10.): symbol, title, place, day and
+ * time, who goes, and every line of what to bring and who brings it.
+ */
+import React, { useEffect, useRef, useState } from 'react';
+import { View, TextInput, Platform } from 'react-native';
+import { useLocalSearchParams, router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ScrollView } from 'react-native';
-import { BackBar, Card, Chip, Meta, Check, Hint } from '../../src/components/ui/kit';
+import { BackBar, Card, Chip, Meta } from '../../src/components/ui/kit';
+import ItemRow from '../../src/components/ItemRow';
+import SourceLink from '../../src/components/SourceLink';
+import PressScale from '../../src/components/ui/PressScale';
+import LineIcon from '../../src/components/ui/LineIcon';
 import Txt, { Dot } from '../../src/components/ui/Txt';
 import { ClayIcon } from '../../src/components/ui/Clay';
 import { Owner } from '../../src/components/ui/Person';
 import AddInline from '../../src/components/AddInline';
-import { tokens, tint, persons } from '../../src/theme';
+import { tokens, tint, persons, fonts } from '../../src/theme';
 import { useStore, actions, toast, get } from '../../src/state/store';
 import WhenField from '../../src/components/WhenField';
 import { whenLine, When } from '../../src/lib/when';
@@ -30,6 +38,8 @@ function whoLine(who: Who, title: string): { t: string; s: string } {
   return { t: 'Noch niemand', s: 'Wer geht hin?' };
 }
 
+const noOutline = Platform.OS === 'web' ? ({ outlineStyle: 'none' } as any) : null;
+
 const addMin = (t: string, m: number) => { const v = Math.min(1439, minutes(t) + m); return `${String(Math.floor(v / 60)).padStart(2, '0')}:${String(v % 60).padStart(2, '0')}`; };
 
 export default function Termin() {
@@ -38,7 +48,17 @@ export default function Termin() {
   const insets = useSafeAreaInsets();
   const all = useStore((s) => s.events);
   const [draft, setDraft] = useState<When | null>(null);
+  // Symbol: the picker writes draftSymbol; we take it over when we asked.
+  const picked = useStore((s) => s.draftSymbol);
+  const picking = useRef(false);
+  useEffect(() => {
+    if (!picking.current || !e || !picked) return;
+    picking.current = false;
+    if (picked !== e.icon) { actions.updateEvent(e.id, { icon: picked }); haptics.commit(); }
+    actions.clearDraftSymbol();
+  }, [picked]);
   if (!e) return null;
+  const pickIcon = () => { haptics.select(); picking.current = true; actions.pickSymbol(e.icon); router.push('/symbol'); };
   const now: When = { date: e.date, endDate: e.endDate, start: e.allDay ? undefined : e.start, end: e.end, repeat: e.repeat };
   // Moving keeps the duration when only the start changes.
   const change = (w: When) => {
@@ -61,18 +81,23 @@ export default function Termin() {
     return `Gleichzeitig: ${o.title}, ${name}, ${hm(o.start)}${o.end ? ' bis ' + hm(o.end) : ''}.`;
   };
   const w = whoLine(e.who, e.title);
+  const added = (e.bring ?? []).filter((b) => b.by === 'assistent' && b.src);
   return (
     <ScrollView style={{ flex: 1, backgroundColor: tokens.bg }} contentContainerStyle={{ paddingBottom: insets.bottom + 34 }} keyboardShouldPersistTaps="handled">
       <View style={{ backgroundColor: tint(e.icon), paddingTop: insets.top + 8 }}>
         <View style={{ paddingHorizontal: 18 }}><BackBar /></View>
-        <View style={{ height: 200, alignItems: 'center', justifyContent: 'center' }}>
-          <ClayIcon name={e.icon} size={160} />
-        </View>
+        <PressScale scale={0.97} accessibilityLabel="Symbol ändern" onPress={pickIcon} style={{ height: 200, alignItems: 'center', justifyContent: 'center' }}>
+          <ClayIcon key={e.icon} name={e.icon} size={160} />
+          <View style={{ position: 'absolute', right: 18, bottom: 14, flexDirection: 'row', alignItems: 'center', gap: 5, height: 30, paddingHorizontal: 11, borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.7)' }}>
+            <LineIcon name="sparkle" size={13} color={tokens.ink} />
+            <Txt size={13} weight={600}>Symbol</Txt>
+          </View>
+        </PressScale>
       </View>
       <View style={{ paddingHorizontal: 18, paddingTop: 16, gap: 14 }}>
         <View style={{ gap: 4 }}>
-          <Txt size={30} line={36} weight={700} tracking={-0.8}>{e.title}<Dot /></Txt>
-          {e.place || e.sub ? <Meta>{e.place ?? e.sub}</Meta> : null}
+          <EditText key={`t-${e.title}`} value={e.title} size={30} weight={700} placeholder="Titel" onCommit={(t) => t && actions.updateEvent(e.id, { title: t })} />
+          <EditText key={`p-${e.place ?? e.sub ?? ''}`} value={e.place ?? e.sub ?? ''} size={15} weight={400} color={tokens.sub} placeholder="Ort oder Notiz hinzufügen" onCommit={(t) => actions.updateEvent(e.id, e.place !== undefined || !e.sub ? { place: t || undefined } : { sub: t || undefined })} />
         </View>
         <WhenField card value={draft ?? now} onChange={change} onDone={done} extra={overlap} />
         <Card pad={14}>
@@ -87,18 +112,51 @@ export default function Termin() {
         </Card>
         <Card pad={14} gap={10}>
           <Txt size={13} weight={600} color={tokens.sub}>Mitnehmen</Txt>
-          {(e.bring ?? []).map((b) => (
-            <View key={b.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-              <Check done={b.done} onPress={() => actions.toggleBring(e.id, b.id)} />
-              <Txt size={15} strike={b.done} color={b.done ? tokens.mute : tokens.ink}>{b.t}</Txt>
-            </View>
-          ))}
+          <View style={{ marginHorizontal: -14 }}>
+            {(e.bring ?? []).map((b) => (
+              <ItemRow
+                key={b.id}
+                title={b.t}
+                meta={b.by === 'assistent' ? `Vom Assistenten ergänzt${b.src ? ' · ' + b.src : ''}` : undefined}
+                metaColor={tokens.done}
+                done={b.done}
+                who={b.who ?? null}
+                onToggle={() => actions.toggleBring(e.id, b.id)}
+                onEdit={(t) => actions.editBring(e.id, b.id, t)}
+                onCycleWho={() => actions.cycleBringWho(e.id, b.id)}
+                onDelete={() => actions.deleteBring(e.id, b.id)}
+                editHint="Leer lassen löscht die Zeile"
+              />
+            ))}
+          </View>
+          {added.length ? <SourceLink prefix={`${added.length} Dinge ergänzt nach`} s={{ label: added[0].src!, url: added[0].url }} /> : null}
           <View style={{ marginHorizontal: -14, marginBottom: -14 }}>
             <AddInline placeholder="Hinzufügen" onAdd={(t) => actions.addBring(e.id, t)} />
           </View>
         </Card>
-        {e.source ? <Hint icon="sparkle">{e.source}</Hint> : null}
+        {e.source ? <SourceLink prefix="Aus" s={{ label: e.source }} /> : null}
       </View>
     </ScrollView>
+  );
+}
+
+/** Text that looks like text and edits in place; empty puts the old text back. */
+function EditText({ value, size, weight, color = tokens.ink, placeholder, onCommit }: { value: string; size: number; weight: 400 | 600 | 700; color?: string; placeholder: string; onCommit: (t: string) => void }) {
+  const [t, setT] = useState(value);
+  const commit = () => { const v = t.trim(); if (v !== value) { haptics.commit(); onCommit(v); } if (!v && size > 20) setT(value); };
+  return (
+    <TextInput
+      value={t}
+      onChangeText={setT}
+      onBlur={commit}
+      onSubmitEditing={commit}
+      returnKeyType="done"
+      multiline={size > 20 && Platform.OS !== 'web'}
+      blurOnSubmit
+      placeholder={placeholder}
+      placeholderTextColor={tokens.mute}
+      selectionColor={tokens.ink}
+      style={[{ fontFamily: fonts[weight], fontSize: size, lineHeight: Math.round(size * 1.2), letterSpacing: size > 20 ? -0.8 : 0, color, padding: 0 }, noOutline]}
+    />
   );
 }

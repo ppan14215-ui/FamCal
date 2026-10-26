@@ -197,7 +197,7 @@ export function CancelBar({ onCancel, right }: { onCancel?: () => void; right?: 
   );
 }
 
-export function StepDots({ i, n = 7 }: { i: number; n?: number }) {
+export function StepDots({ i, n = 8 }: { i: number; n?: number }) {
   return (
     <View style={{ flexDirection: 'row', gap: 5 }}>
       {Array.from({ length: n }).map((_, j) => (

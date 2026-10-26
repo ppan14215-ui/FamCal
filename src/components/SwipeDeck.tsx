@@ -20,6 +20,7 @@ import type { Task } from '../state/types';
 import type { PersonId } from '../theme';
 import { Platform } from 'react-native';
 import PressScale from './ui/PressScale';
+import SourceLink from './SourceLink';
 
 type Dir = 'J' | 'T' | 'later';
 type Fling = { dir: Dir; id: string; n: number };
@@ -132,7 +133,9 @@ function TopCard({ card, live, fling, onRelease, onGone }: {
 
   const decide = useCallback((d: Dir) => { haptics.commit(); onRelease(card, d); }, [onRelease, card]);
   const done = useCallback(() => onGone(card.id), [onGone, card.id]);
-  const tick = useCallback(() => haptics.select(), []);
+  // Past the lock-in the object plays its own story once (Julian 26.10.).
+  const [armed, setArmed] = useState(false);
+  const tick = useCallback((c: number) => { if (c !== 0) haptics.select(); setArmed(c !== 0); }, []);
 
   const flyTo = (d: Dir, v = 0) => {
     'worklet';
@@ -170,7 +173,7 @@ function TopCard({ card, live, fling, onRelease, onGone }: {
       x.value = e.translationX;
       y.value = e.translationY * 0.25;
       const c = x.value > LOCK ? 1 : x.value < -LOCK ? -1 : 0;
-      if (c !== crossed.value) { crossed.value = c; if (c !== 0) scheduleOnRN(tick); }
+      if (c !== crossed.value) { crossed.value = c; scheduleOnRN(tick, c); }
     })
     .onEnd((e) => {
       const flick = Math.abs(x.value) >= FLICK_MIN && Math.abs(e.velocityX) > FLICK_V;
@@ -197,6 +200,20 @@ function TopCard({ card, live, fling, onRelease, onGone }: {
   const stage = useAnimatedStyle(() => ({
     backgroundColor: interpolateColor(x.value, [-LOCK, 0, LOCK], [persons.J.tint, base, persons.T.tint]),
   }));
+  // The object rides along with the drag: it lags behind the card, leans into
+  // the direction and lifts towards the lock-in, so the hand feels the weight.
+  const object = useAnimatedStyle((): any => {
+    const k = interpolate(Math.abs(x.value), [0, LOCK], [0, 1], Extrapolation.CLAMP);
+    const e = 1 - Math.pow(1 - k, 3);
+    return {
+      transform: [
+        { translateX: interpolate(x.value, [-300, 0, 300], [-26, 0, 26], Extrapolation.CLAMP) },
+        { translateY: -10 * e },
+        { rotate: `${interpolate(x.value, [-300, 0, 300], [12, 0, -12], Extrapolation.CLAMP)}deg` },
+        { scale: 1 + 0.08 * e },
+      ],
+    };
+  });
   const tagT = useAnimatedStyle(() => ({ opacity: interpolate(x.value, [20, LOCK], [0, 1], Extrapolation.CLAMP) }));
   const tagJ = useAnimatedStyle(() => ({ opacity: interpolate(x.value, [-20, -LOCK], [0, 1], Extrapolation.CLAMP) }));
 
@@ -209,12 +226,13 @@ function TopCard({ card, live, fling, onRelease, onGone }: {
         <Animated.View style={[{ height: 210, alignItems: 'center', justifyContent: 'center' }, stage]}>
           <Tag p="T" style={[{ left: 14 }, tagT]} />
           <Tag p="J" style={[{ right: 14 }, tagJ]} />
-          <ClayIcon name={card.icon} size={150} />
+          <Animated.View style={object}><ClayIcon name={card.icon} size={150} celebrate={armed} /></Animated.View>
         </Animated.View>
         <View style={{ paddingVertical: 18, paddingHorizontal: 20, gap: 8 }}>
           {card.dueLabel ? <Meta color={card.frist ? tokens.frist : tokens.sub}>{card.dueLabel}</Meta> : null}
           <Txt size={24} line={30} weight={700} tracking={-0.5}>{card.title}</Txt>
           {card.text ? <Txt size={15} line={22} color={tokens.sub}>{card.text}</Txt> : null}
+          {card.url ? <SourceLink prefix="Direkt hin" s={{ label: card.url.replace(/^https:\/\//, '').split('/')[0], url: card.url }} /> : null}
         </View>
       </Animated.View>
     </GestureDetector>

@@ -3,7 +3,13 @@ import type { PersonId } from '../theme';
 
 export type Who = PersonId | 'both' | null;
 
-export type Bring = { id: string; t: string; done: boolean };
+export type Bring = {
+  id: string; t: string; done: boolean;
+  /** Who brings it along; empty means whoever goes. */
+  who?: 'J' | 'T' | null;
+  /** Added by the assistent, with the page it came from. */
+  by?: 'assistent'; src?: string; url?: string;
+};
 
 export type CalEvent = {
   id: string;
@@ -41,6 +47,8 @@ export type Task = {
   who: Who;
   done: boolean;
   doneBy?: PersonId;
+  /** Where to do it (the city's Kita portal and the like). */
+  url?: string;
 };
 
 export type Item = { id: string; name: string; qty?: number; note?: string; who: PersonId | null; done: boolean };

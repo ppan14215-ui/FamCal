@@ -8,6 +8,7 @@
 import { TODAY, addDays, daysBetween, short, dayNum, MONTHS_SHORT, monthIdx } from '../lib/dates';
 import type { Milestone, Task } from '../state/types';
 import type { ClayName } from '../lib/clayIcons';
+import type { City } from './cities';
 
 export type Kid = { name: string; born?: string; due?: string; land?: string };
 
@@ -20,9 +21,12 @@ export function addMonths(iso: string, n: number): string {
 }
 const dm = (iso: string) => `${dayNum(iso)}. ${MONTHS_SHORT[monthIdx(iso)]}`;
 
-type Plan = { key: string; icon: ClayName; title: string; when: string; sub: string; frist?: boolean; task?: string; text?: string };
+type Plan = { key: string; icon: ClayName; title: string; when: string; sub: string; frist?: boolean; task?: string; text?: string; url?: string };
 
-function afterBirth(b: string, name: string): Plan[] {
+function afterBirth(b: string, name: string, city?: City): Plan[] {
+  const kita = city
+    ? `In ${city.name} über ${city.kita.name}. ${city.kita.how} Viele Kitas vergeben ein halbes Jahr im Voraus.`
+    : 'Über das Kita-Portal der Stadt. Viele Kitas vergeben ein halbes Jahr im Voraus.';
   return [
     { key: 'standesamt', icon: 'urkunde', title: 'Geburt beim Standesamt anzeigen', when: addDays(b, 7), sub: 'innerhalb einer Woche', frist: true, task: 'Geburtsurkunde holen', text: 'Mit Ausweisen, Heiratsurkunde oder Vaterschaftsanerkennung. Gleich drei Kopien mitnehmen.' },
     { key: 'u2', icon: 'u-heft', title: 'U2', when: addDays(b, 5), sub: '3.–10. Lebenstag' },
@@ -34,7 +38,7 @@ function afterBirth(b: string, name: string): Plan[] {
     { key: 'impf2', icon: 'impfung', title: 'Zweite Impfungen', when: addMonths(b, 4), sub: 'mit 4 Monaten' },
     { key: 'kg', icon: 'kindergeld', title: 'Kindergeld beantragen', when: addMonths(b, 6), sub: 'rückwirkend sechs Monate', frist: true, task: 'Kindergeld beantragen', text: 'Bei der Familienkasse, mit Steuer-ID des Kindes. Die kommt einige Wochen nach der Geburt per Post.' },
     { key: 'u5', icon: 'u-heft', title: 'U5', when: addMonths(b, 6), sub: '6.–7. Monat' },
-    { key: 'kita', icon: 'kita', title: 'Kita-Platz anfragen', when: addMonths(b, 6), sub: 'für den Start mit etwa einem Jahr', task: 'Kita-Platz anfragen', text: 'Über das Kita-Portal der Stadt. Viele Kitas vergeben ein halbes Jahr im Voraus.' },
+    { key: 'kita', icon: 'kita', title: 'Kita-Platz anfragen', when: addMonths(b, 6), sub: 'für den Start mit etwa einem Jahr', task: 'Kita-Platz anfragen', text: kita, url: city?.kita.url },
     { key: 'u6', icon: 'stethoskop', title: 'U6', when: addMonths(b, 10), sub: '10.–12. Monat' },
     { key: 'impf3', icon: 'impfung', title: 'Dritte Impfungen', when: addMonths(b, 11), sub: 'mit 11 Monaten' },
     { key: 'bday', icon: 'geburtstag', title: 'Erster Geburtstag', when: addMonths(b, 12), sub: short(addMonths(b, 12)) },
@@ -54,9 +58,9 @@ function beforeBirth(d: string): Plan[] {
 }
 
 /** Milestones for the year ring and the cards for "Wer kümmert sich?". */
-export function firstYear(kid: Kid): { milestones: Milestone[]; cards: Task[] } {
+export function firstYear(kid: Kid, city?: City): { milestones: Milestone[]; cards: Task[] } {
   const name = kid.name || 'euer Kind';
-  const plan = kid.born ? afterBirth(kid.born, name) : kid.due ? [...beforeBirth(kid.due), ...afterBirth(kid.due, name).filter((p) => p.key !== 'u2')] : [];
+  const plan = kid.born ? afterBirth(kid.born, name, city) : kid.due ? [...beforeBirth(kid.due), ...afterBirth(kid.due, name, city).filter((p) => p.key !== 'u2')] : [];
   const milestones: Milestone[] = plan.map((p) => {
     const past = p.when < TODAY;
     return {
@@ -70,7 +74,7 @@ export function firstYear(kid: Kid): { milestones: Milestone[]; cards: Task[] } 
     .map((p) => {
       const d = daysBetween(TODAY, p.when);
       const label = d < 0 ? `war am ${dm(p.when)}` : d === 0 ? 'heute' : d < 14 ? `${short(p.when)} · in ${d} Tagen` : `${p.frist ? 'Frist ' : ''}${dm(p.when)} · noch ${Math.floor(d / 7)} Wochen`;
-      return { id: `o-${p.key}`, title: p.task!, icon: p.icon, due: p.when, dueLabel: label, frist: p.frist, who: null, done: false, text: p.text };
+      return { id: `o-${p.key}`, title: p.task!, icon: p.icon, due: p.when, dueLabel: label, frist: p.frist, who: null, done: false, text: p.text, url: p.url };
     });
   return { milestones, cards };
 }

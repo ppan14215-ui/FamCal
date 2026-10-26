@@ -15,12 +15,13 @@ import { ClayIcon } from '../src/components/ui/Clay';
 import { Avatar, Pair } from '../src/components/ui/Person';
 import { TitleInput } from '../src/components/Field';
 import { tokens, tint, persons, fonts } from '../src/theme';
-import { useStore, actions, toast } from '../src/state/store';
+import { useStore, actions, toast, get } from '../src/state/store';
 import WhenField from '../src/components/WhenField';
 import type { When } from '../src/lib/when';
 import { haptics } from '../src/lib/haptics';
 import { symbolLabel, isSport } from '../src/data/symbols';
 import { newId } from '../src/data/sample';
+import { findCity, passBring, isPassTermin } from '../src/data/cities';
 import type { ClayName } from '../src/lib/clayIcons';
 import type { Who } from '../src/state/types';
 import PressScale from '../src/components/ui/PressScale';
@@ -78,7 +79,10 @@ export default function TerminNeu() {
   }, [recent]);
 
   const save = () => {
+    // Pass or ID at the city office: the assistant adds what to bring, with its source.
+    const pass = isPassTermin(title);
     actions.addEvent({
+      bring: pass ? passBring(findCity(get().city)) : undefined,
       id: newId('e'), title: title.trim() || 'Termin', sub: place, icon, date: when.date, endDate: when.endDate,
       start: when.start ?? '00:00', end: when.end, allDay: !when.start, who, place,
       repeat: when.repeat,
@@ -87,7 +91,7 @@ export default function TerminNeu() {
     actions.setCalDay(when.date);
     actions.setCalView('tag');
     haptics.success();
-    toast('Termin gespeichert');
+    toast(pass ? 'Termin gespeichert, Mitbringliste ergänzt' : 'Termin gespeichert');
     goBack();
     router.navigate('/kalender');
   };

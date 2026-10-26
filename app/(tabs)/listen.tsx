@@ -83,12 +83,12 @@ function ClayTabs({ lists, active }: { lists: List[]; active: string }) {
   );
 }
 
-/** The chosen tab's clay icon lifts a little; tapping it is the person's own action. */
+/** The chosen tab lifts and its clay icon plays its story (Julian 26.10.: "bringt Leben rein"). */
 function TabIcon({ icon, on }: { icon: ClayName; on: boolean }) {
   const v = useSharedValue(on ? 1 : 0);
   useEffect(() => { v.value = withSpring(on ? 1 : 0, on ? springs.reveal : springs.smooth); }, [on]);
   const st = useAnimatedStyle((): any => ({ opacity: 0.75 + 0.25 * v.value, transform: [{ translateY: -3 * v.value }, { scale: 1 + 0.06 * v.value }] }));
-  return <Animated.View style={st}><ClayIcon name={icon} size={46} /></Animated.View>;
+  return <Animated.View style={st}><ClayIcon name={icon} size={46} celebrate={on} /></Animated.View>;
 }
 
 function Aufgaben({ tasks }: { tasks: Task[] }) {

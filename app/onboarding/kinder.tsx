@@ -17,7 +17,8 @@ import { tokens, rise, rowIn, rowOut } from '../../src/theme';
 import { TODAY, daysBetween } from '../../src/lib/dates';
 import { haptics } from '../../src/lib/haptics';
 import type { When } from '../../src/lib/when';
-import { actions } from '../../src/state/store';
+import { actions, get } from '../../src/state/store';
+import { findCity } from '../../src/data/cities';
 
 const LAENDER = [
   'Baden-Württemberg', 'Bayern', 'Berlin', 'Brandenburg', 'Bremen', 'Hamburg', 'Hessen', 'Mecklenburg-Vorpommern',
@@ -38,14 +39,16 @@ export default function Kinder() {
   const [mode, setMode] = useState<'da' | 'unterwegs'>('da');
   const [name, setName] = useState('');
   const [born, setBorn] = useState<When | null>(null);
-  const [land, setLand] = useState<string | null>(null);
+  // The Bundesland follows from the city when the app knows it; still changeable.
+  const city = findCity(get().city);
+  const [land, setLand] = useState<string | null>(city?.land ?? null);
   const [kids, setKids] = useState(1);
   const [name2, setName2] = useState('');
   const da = mode === 'da';
   const who = name.trim() || (da ? 'Euer Kind' : 'Euer Baby');
   return (
     <Screen footer={<Btn label="Weiter" disabled={!born} onPress={() => { actions.setKid({ name: name.trim(), born: da ? born?.date : undefined, due: da ? undefined : born?.date, land: land ?? undefined }); router.push('/onboarding/kalender'); }} />}>
-      <BackBar center={<StepDots i={2} />} />
+      <BackBar center={<StepDots i={3} />} />
       <H1>Eure Kinder</H1>
       <Seg height={38} items={[{ key: 'da', label: 'Schon da' }, { key: 'unterwegs', label: 'Noch unterwegs' }]} value={mode} onChange={(k) => { setMode(k as 'da' | 'unterwegs'); setBorn(null); }} />
       <Field label="Name" value={name} onChangeText={setName} placeholder={da ? 'Zum Beispiel Ben' : 'Falls ihr ihn schon wisst'} />
@@ -61,7 +64,7 @@ export default function Kinder() {
         right={born ? <Meta>{da ? age(born.date) : `SSW ${ssw(born.date)}`}</Meta> : <LineIcon name="cal" size={20} color={tokens.sub} />}
         extra={(w) => (da ? `${who} ist ${age(w.date)} alt.` : `Heute ist SSW ${ssw(w.date)}.`)}
       />
-      <Dropdown label="Bundesland" placeholder="Bundesland wählen" value={land} options={LAENDER} onChange={setLand} hint="Für Feiertage, Elterngeld und Kita-Fristen." />
+      <Dropdown label="Bundesland" placeholder="Bundesland wählen" value={land} options={LAENDER} onChange={setLand} hint={city && land === city.land ? `Aus ${city.name}. Für Feiertage, Elterngeld und Kita-Fristen.` : "Für Feiertage, Elterngeld und Kita-Fristen."} />
       {kids > 1 ? <Animated.View entering={rise()}><Field label="Name des zweiten Kindes" value={name2} onChangeText={setName2} placeholder="Name" /></Animated.View> : null}
       <PressScale
         onPress={() => { haptics.select(); setKids(2); }}
