@@ -4,6 +4,11 @@ Alle sichtbaren Änderungen an FamCal. Neueste oben. Agenten und Menschen: Ände
 
 ## Unreleased
 
+### Jede Stadt kennt ihr Bundesland, Geburtsdatum mit Jahr
+- „Wo wohnt ihr?“ kennt alle 10.942 Gemeinden aus dem Gemeindeverzeichnis des Statistischen Bundesamts (Stand 2017). Beim Tippen kommen Vorschläge mit Bundesland, darunter steht zum Beispiel „Fürth liegt in Bayern“. Gibt es den Ort mehrmals, reicht ein Tipp auf „Nein, Fürth in Hessen“.
+- Das Bundesland beim Kind ist damit vorausgewählt. Der Stadt Schritt zeigt für nicht geprüfte Orte wenigstens die Feiertage des Landes.
+- Geburtstag und errechneter Termin haben ein eigenes Datumsfeld: eintippen wie „14.9.2022“ oder „14. September 2022“, oder im Kalender erst Jahr, dann Monat, dann Tag wählen. Vier Jahre zurück sind drei Tipps. Keine Uhrzeiten mehr als Beispiele.
+
 ### Echte Kalender vom Handy
 - In der App liest FamCal jetzt die Kalender, die schon auf dem Handy sind (iCloud, Google, Outlook) über expo-calendar. Ihr wählt pro Konto, welche erscheinen, und wem sie gehören. Arbeitskalender erscheinen nur als gestreifter Block, Feiertage kommen nach Bundesland dazu. FamCal liest nur und schreibt nichts zurück.
 - Im Web Testlink bleibt die Anmeldung simuliert, dort gibt es keine Gerätekalender.

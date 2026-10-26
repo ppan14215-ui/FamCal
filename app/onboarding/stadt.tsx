@@ -18,6 +18,7 @@ import type { ClayName } from '../../src/lib/clayIcons';
 
 export default function Stadt() {
   const name = useStore((s) => s.city);
+  const land = useStore((s) => s.land);
   const city = findCity(name);
   const facts: { icon: ClayName; title: string; body: string; src?: Source }[] = city
     ? [
@@ -37,7 +38,7 @@ export default function Stadt() {
       }
     >
       <BackBar center={<StepDots i={2} />} />
-      <H1>{city ? `Das gilt in ${city.name}` : `${name || 'Eure Stadt'}, notiert`}</H1>
+      <H1>{city ? `Das gilt in ${city.name}` : land ? `${name}, ${land}` : `${name || 'Eure Stadt'}, notiert`}</H1>
       <Lead>{city ? 'Hat der Assistent auf den Seiten eurer Stadt nachgeschlagen. Ihr müsst davon nichts eintragen.' : 'Der Assistent schlägt nach, was in eurer Stadt gilt: Kita-Portal, Bürgeramt, Feiertage.'}</Lead>
       {city ? (
         <View style={{ gap: 8 }}>
@@ -53,9 +54,21 @@ export default function Stadt() {
           ))}
         </View>
       ) : (
+        <View style={{ gap: 8 }}>
+          {land ? (
+            <Animated.View entering={rise(1)} style={{ flexDirection: 'row', gap: 12, padding: 12, borderRadius: 20, backgroundColor: tokens.row }}>
+              <Tile name="kalender" size={48} radius={14} />
+              <View style={{ flex: 1, gap: 3 }}>
+                <Txt size={16} line={21} weight={600}>{`Feiertage für ${land}`}</Txt>
+                <Txt size={14} line={20} color={tokens.sub}>Kommen von selbst in euren Kalender, sobald ihr einen verbindet.</Txt>
+                <Txt size={12.5} color={tokens.mute}>Bundesland laut Gemeindeverzeichnis des Statistischen Bundesamts</Txt>
+              </View>
+            </Animated.View>
+          ) : null}
         <View style={{ padding: 16, borderRadius: 20, backgroundColor: tokens.row, gap: 6 }}>
-          <Txt size={16} weight={600}>Im Prototyp noch nicht nachgeschlagen</Txt>
-          <Txt size={14} line={20} color={tokens.sub}>{`Geprüft sind ${CITIES.map((c) => c.name).join(', ')}. In der App liest der Assistent das auf der Seite eurer Stadt nach und zeigt die Quelle dazu.`}</Txt>
+          <Txt size={16} weight={600}>{land ? 'Der Rest folgt' : 'Im Prototyp noch nicht nachgeschlagen'}</Txt>
+          <Txt size={14} line={20} color={tokens.sub}>{`Kita-Portal und Bürgeramt sind im Prototyp nur für ${CITIES.map((c) => c.name).join(', ')} geprüft. In der App liest der Assistent das auf der Seite eurer Stadt nach und zeigt die Quelle dazu.`}</Txt>
+        </View>
         </View>
       )}
       {city ? <Hint icon="sparkle">{`So nutze ich das: Der Kita-Platz steht mit Link zu ${city.kita.name} in eurem Plan, und bei einem Termin im ${city.amt} steht darunter, was mit muss. Alles mit Quelle, alles änderbar.`}</Hint> : null}

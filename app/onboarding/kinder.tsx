@@ -11,14 +11,13 @@ import { Screen, BackBar, StepDots, H1, Btn, Seg, Meta } from '../../src/compone
 import Txt from '../../src/components/ui/Txt';
 import LineIcon from '../../src/components/ui/LineIcon';
 import { Field } from '../../src/components/Field';
-import WhenField from '../../src/components/WhenField';
+import DateField from '../../src/components/DateField';
 import PressScale from '../../src/components/ui/PressScale';
 import { tokens, rise, rowIn, rowOut } from '../../src/theme';
 import { TODAY, daysBetween } from '../../src/lib/dates';
 import { haptics } from '../../src/lib/haptics';
 import type { When } from '../../src/lib/when';
 import { actions, get } from '../../src/state/store';
-import { findCity } from '../../src/data/cities';
 
 const LAENDER = [
   'Baden-Württemberg', 'Bayern', 'Berlin', 'Brandenburg', 'Bremen', 'Hamburg', 'Hessen', 'Mecklenburg-Vorpommern',
@@ -40,8 +39,8 @@ export default function Kinder() {
   const [name, setName] = useState('');
   const [born, setBorn] = useState<When | null>(null);
   // The Bundesland follows from the city when the app knows it; still changeable.
-  const city = findCity(get().city);
-  const [land, setLand] = useState<string | null>(city?.land ?? null);
+  const { city, land: cityLand } = get();
+  const [land, setLand] = useState<string | null>(cityLand || null);
   const [kids, setKids] = useState(1);
   const [name2, setName2] = useState('');
   const da = mode === 'da';
@@ -52,19 +51,16 @@ export default function Kinder() {
       <H1>Eure Kinder</H1>
       <Seg height={38} items={[{ key: 'da', label: 'Schon da' }, { key: 'unterwegs', label: 'Noch unterwegs' }]} value={mode} onChange={(k) => { setMode(k as 'da' | 'unterwegs'); setBorn(null); }} />
       <Field label="Name" value={name} onChangeText={setName} placeholder={da ? 'Zum Beispiel Ben' : 'Falls ihr ihn schon wisst'} />
-      <WhenField
+      <DateField
         key={mode}
-        card
-        kind="tag"
         past={da}
-        closeOnPick
         label={da ? 'Geboren am' : 'Errechneter Termin'}
-        value={born}
-        onChange={setBorn}
+        value={born?.date ?? null}
+        onChange={(d) => setBorn({ date: d })}
         right={born ? <Meta>{da ? age(born.date) : `SSW ${ssw(born.date)}`}</Meta> : <LineIcon name="cal" size={20} color={tokens.sub} />}
-        extra={(w) => (da ? `${who} ist ${age(w.date)} alt.` : `Heute ist SSW ${ssw(w.date)}.`)}
+        extra={(d) => (da ? `${who} ist ${age(d)} alt.` : `Heute ist SSW ${ssw(d)}.`)}
       />
-      <Dropdown label="Bundesland" placeholder="Bundesland wählen" value={land} options={LAENDER} onChange={setLand} hint={city && land === city.land ? `Aus ${city.name}. Für Feiertage, Elterngeld und Kita-Fristen.` : "Für Feiertage, Elterngeld und Kita-Fristen."} />
+      <Dropdown label="Bundesland" placeholder="Bundesland wählen" value={land} options={LAENDER} onChange={setLand} hint={city && cityLand && land === cityLand ? `Aus ${city}. Für Feiertage, Elterngeld und Kita-Fristen.` : 'Für Feiertage, Elterngeld und Kita-Fristen.'} />
       {kids > 1 ? <Animated.View entering={rise()}><Field label="Name des zweiten Kindes" value={name2} onChangeText={setName2} placeholder="Name" /></Animated.View> : null}
       <PressScale
         onPress={() => { haptics.select(); setKids(2); }}

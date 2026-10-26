@@ -12,6 +12,7 @@ import { TODAY, BEN_BORN } from '../lib/dates';
 import { persons, personPalette } from '../theme';
 import { firstYear, Kid } from '../data/firstYear';
 import { findCity } from '../data/cities';
+import { findPlace } from '../lib/places';
 
 export type CalView = 'tag' | 'woche' | 'monat' | 'jahr';
 
@@ -19,8 +20,9 @@ type State = {
   names: { J: string; T: string };
   /** The child from onboarding; null until then. */
   kid: Kid | null;
-  /** Where the family lives (first onboarding step). */
+  /** Where the family lives (first onboarding step) and its Bundesland. */
   city: string;
+  land: string;
   /** Connected calendars (onboarding "Eure Kalender"). */
   calendars: { provider: string; account: string; ids: string[] }[];
   /** Sample family loaded ("Ich wurde eingeladen", Einstellungen). */
@@ -54,6 +56,7 @@ const initial = (): State => ({
   names: { J: '', T: '' },
   kid: null,
   city: '',
+  land: '',
   calendars: [],
   demo: false,
   colors: { J: 0, T: 1 },
@@ -144,7 +147,8 @@ export const actions = {
   reset() { state = initial(); applyNames(state.names); actions.setColor('J', 0); actions.setColor('T', 1); },
   loadDemo() { const d = demo(); applyNames(d.names!); set(() => d); actions.setColor('J', 0); actions.setColor('T', 1); },
   setNames(names: { J: string; T: string }) { applyNames(names); set(() => ({ names })); },
-  setCity(city: string) { set(() => ({ city })); },
+  /** The Bundesland follows from the city (Destatis list); the family can correct it. */
+  setCity(city: string, land?: string) { set(() => ({ city, land: land ?? findCity(city)?.land ?? findPlace(city)?.land ?? '' })); },
   /** A person's colour shows everywhere they appear, so `persons` changes with it. */
   setColor(p: PersonId, i: number) {
     const c = personPalette[i];
