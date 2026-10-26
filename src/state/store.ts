@@ -322,6 +322,14 @@ export const actions = {
     }
   },
   createList(list: List) { set((s) => ({ lists: [...s.lists, list], activeList: list.id })); },
+  /** Removes a whole list; the toast brings it back at the same place. */
+  deleteList(id: string) {
+    const i = state.lists.findIndex((l) => l.id === id);
+    if (i < 0) return;
+    const gone = state.lists[i];
+    set((s) => ({ lists: s.lists.filter((l) => l.id !== id), activeList: s.activeList === id ? 'aufgaben' : s.activeList }));
+    toast(`„${gone.name}“ gelöscht`, () => set((s) => ({ lists: [...s.lists.slice(0, i), gone, ...s.lists.slice(i)], activeList: gone.id })));
+  },
 
   // Hints
   dismissHint(k: 'abo' | 'urlaub') { set((s) => ({ hints: { ...s.hints, [k]: false } })); },

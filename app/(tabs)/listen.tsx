@@ -2,7 +2,7 @@
  * Listen: the only place with content tabs (Julian 26.10.). Clay tabs on top:
  * Aufgaben, Einkauf, own lists (Kliniktasche, Geschenke), + Neu.
  */
-import React, { useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo, useRef } from 'react';
 import { View, ScrollView } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 import { router } from 'expo-router';
@@ -52,9 +52,19 @@ export default function Listen() {
 
 function ClayTabs({ lists, active }: { lists: List[]; active: string }) {
   const tabs: { id: string; name: string; icon: ClayName }[] = [{ id: 'aufgaben', name: 'Aufgaben', icon: 'erledigt' }, ...lists.map((l) => ({ id: l.id, name: l.name, icon: l.icon }))];
+  // Every tab is as wide as its name; more lists than fit scroll sideways and
+  // the chosen one slides into view (Julian 26.10.: "Schrift überlappt").
+  const scroller = useRef<ScrollView>(null);
+  const xs = useRef<Record<string, { x: number; w: number }>>({});
+  const width = useRef(0);
+  const reveal = (id: string) => {
+    const t = xs.current[id];
+    if (t && width.current) scroller.current?.scrollTo({ x: Math.max(0, t.x + t.w / 2 - width.current / 2), animated: true });
+  };
+  useEffect(() => reveal(active), [active, lists.length]);
   return (
-    <View style={{ marginHorizontal: -18, borderBottomWidth: 1, borderBottomColor: tokens.hair }}>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 8, gap: 2, flexGrow: 1 }}>
+    <View style={{ marginHorizontal: -18, borderBottomWidth: 1, borderBottomColor: tokens.hair }} onLayout={(e) => { width.current = e.nativeEvent.layout.width; }}>
+      <ScrollView ref={scroller} horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 8, gap: 2, flexGrow: 1 }}>
         {tabs.map((t) => {
           const on = t.id === active;
           return (
@@ -63,10 +73,11 @@ function ClayTabs({ lists, active }: { lists: List[]; active: string }) {
               accessibilityRole="tab"
               accessibilityState={{ selected: on }}
               onPress={() => { if (!on) { haptics.select(); actions.setActiveList(t.id); } }}
-              style={{ minWidth: 74, flexGrow: 1, alignItems: 'center', gap: 2, paddingBottom: 10, borderBottomWidth: 2, borderBottomColor: on ? tokens.ink : 'transparent' }}
+              onLayout={(e) => { xs.current[t.id] = { x: e.nativeEvent.layout.x, w: e.nativeEvent.layout.width }; if (on) reveal(t.id); }}
+              style={{ minWidth: 74, flexGrow: 1, flexShrink: 0, paddingHorizontal: 8, alignItems: 'center', gap: 2, paddingBottom: 10, borderBottomWidth: 2, borderBottomColor: on ? tokens.ink : 'transparent' }}
             >
               <TabIcon icon={t.icon} on={on} />
-              <Txt size={12.5} weight={on ? 600 : 500} color={on ? tokens.ink : tokens.sub} numberOfLines={1}>{t.name}</Txt>
+              <Txt size={12.5} weight={on ? 600 : 500} color={on ? tokens.ink : tokens.sub} numberOfLines={1} style={{ flexShrink: 0 }}>{t.name}</Txt>
             </PressScale>
           );
         })}
@@ -180,6 +191,14 @@ function Packliste({ list }: { list: List }) {
       ) : null}
       <Sections list={list} counts />
       <AddInline placeholder="Hinzufügen …" onAdd={(t) => actions.addItem(list.id, t)} />
+      <PressScale
+        accessibilityLabel={`Liste ${list.name} löschen`}
+        onPress={() => { haptics.tap(); actions.deleteList(list.id); }}
+        style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 14 }}
+      >
+        <LineIcon name="x" size={16} color={tokens.frist} />
+        <Txt size={15} weight={600} color={tokens.frist}>Liste löschen</Txt>
+      </PressScale>
     </>
   );
 }

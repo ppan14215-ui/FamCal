@@ -47,7 +47,7 @@ export default function FotoKamera() {
         </Animated.View>
       </View>
       <View style={{ position: 'absolute', bottom: insets.bottom + 34, left: 0, right: 0, alignItems: 'center', gap: 14 }}>
-        <Txt size={14} color="rgba(255,255,255,0.8)">Alles im Rahmen, gleich geht’s weiter</Txt>
+        <Txt size={14} line={19} center color="rgba(255,255,255,0.8)" style={{ paddingHorizontal: 40 }}>Im Testlink liegt ein Beispielbrief im Rahmen. In der App ist das eure Kamera.</Txt>
         <PressScale accessibilityLabel="Aufnehmen" onPress={shoot} scale={0.92} style={{ width: 76, height: 76, borderRadius: 999, borderWidth: 4, borderColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center' }}>
           <View style={{ width: 60, height: 60, borderRadius: 999, backgroundColor: '#FFFFFF' }} />
         </PressScale>

@@ -4,6 +4,13 @@ Alle sichtbaren Änderungen an FamCal. Neueste oben. Agenten und Menschen: Ände
 
 ## Unreleased
 
+### Kommentare vom 26.10. abends
+- Neues Intro: fünf kurze Szenen statt einer Schleife. Post vom Amt, Foto und fertig, für euch beide, weiß was bei euch gilt, dann das Versprechen. Läuft einmal, Tippen springt weiter, Balken oben zeigen den Stand.
+- Einkauf ergänzen: das Eingabefeld sitzt unten am Daumen und fährt mit der Tastatur hoch, Treffer erscheinen direkt darüber.
+- Listen: Tabs sind so breit wie ihr Name, scrollen seitlich und der gewählte rückt ins Bild. Eigene Listen lassen sich unten mit „Liste löschen“ entfernen, mit Rückgängig.
+- Termin: ohne Ort zeigt der Termin kein leeres Feld mehr, nur „+ Ort oder Notiz“.
+- Foto: der Beispielbrief hat echten Text statt grauer Balken, und die Kamera sagt ehrlich, dass im Testlink ein Beispielbrief liegt.
+
 ### Jede Stadt kennt ihr Bundesland, Geburtsdatum mit Jahr
 - „Wo wohnt ihr?“ kennt alle 10.942 Gemeinden aus dem Gemeindeverzeichnis des Statistischen Bundesamts (Stand 2017). Beim Tippen kommen Vorschläge mit Bundesland, darunter steht zum Beispiel „Fürth liegt in Bayern“. Gibt es den Ort mehrmals, reicht ein Tipp auf „Nein, Fürth in Hessen“.
 - Das Bundesland beim Kind ist damit vorausgewählt. Der Stadt Schritt zeigt für nicht geprüfte Orte wenigstens die Feiertage des Landes.

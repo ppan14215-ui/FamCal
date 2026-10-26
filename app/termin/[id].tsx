@@ -48,6 +48,7 @@ export default function Termin() {
   const insets = useSafeAreaInsets();
   const all = useStore((s) => s.events);
   const [draft, setDraft] = useState<When | null>(null);
+  const [addPlace, setAddPlace] = useState(false);
   // Symbol: the picker writes draftSymbol; we take it over when we asked.
   const picked = useStore((s) => s.draftSymbol);
   const picking = useRef(false);
@@ -97,7 +98,15 @@ export default function Termin() {
       <View style={{ paddingHorizontal: 18, paddingTop: 16, gap: 14 }}>
         <View style={{ gap: 4 }}>
           <EditText key={`t-${e.title}`} value={e.title} size={30} weight={700} placeholder="Titel" onCommit={(t) => t && actions.updateEvent(e.id, { title: t })} />
-          <EditText key={`p-${e.place ?? e.sub ?? ''}`} value={e.place ?? e.sub ?? ''} size={15} weight={400} color={tokens.sub} placeholder="Ort oder Notiz hinzufügen" onCommit={(t) => actions.updateEvent(e.id, e.place !== undefined || !e.sub ? { place: t || undefined } : { sub: t || undefined })} />
+          {/* An empty place shows no field, only a quiet link that opens one (Julian 26.10.). */}
+          {e.place || e.sub || addPlace ? (
+            <EditText key={`p-${e.place ?? e.sub ?? ''}`} value={e.place ?? e.sub ?? ''} size={15} weight={400} color={tokens.sub} placeholder="Ort oder Notiz" autoFocus={addPlace} onDone={() => setAddPlace(false)} onCommit={(t) => { actions.updateEvent(e.id, e.place !== undefined || !e.sub ? { place: t || undefined } : { sub: t || undefined }); }} />
+          ) : (
+            <PressScale hitSlop={8} onPress={() => { haptics.select(); setAddPlace(true); }} style={{ flexDirection: 'row', alignItems: 'center', gap: 5, alignSelf: 'flex-start' }}>
+              <LineIcon name="plus" size={14} color={tokens.sub} />
+              <Txt size={15} color={tokens.sub}>Ort oder Notiz</Txt>
+            </PressScale>
+          )}
         </View>
         <WhenField card value={draft ?? now} onChange={change} onDone={done} extra={overlap} />
         <Card pad={14}>
@@ -141,13 +150,14 @@ export default function Termin() {
 }
 
 /** Text that looks like text and edits in place; empty puts the old text back. */
-function EditText({ value, size, weight, color = tokens.ink, placeholder, onCommit }: { value: string; size: number; weight: 400 | 600 | 700; color?: string; placeholder: string; onCommit: (t: string) => void }) {
+function EditText({ value, size, weight, color = tokens.ink, placeholder, autoFocus, onDone, onCommit }: { value: string; size: number; weight: 400 | 600 | 700; color?: string; placeholder: string; autoFocus?: boolean; onDone?: () => void; onCommit: (t: string) => void }) {
   const [t, setT] = useState(value);
-  const commit = () => { const v = t.trim(); if (v !== value) { haptics.commit(); onCommit(v); } if (!v && size > 20) setT(value); };
+  const commit = () => { const v = t.trim(); if (v !== value) { haptics.commit(); onCommit(v); } if (!v && size > 20) setT(value); onDone?.(); };
   return (
     <TextInput
       value={t}
       onChangeText={setT}
+      autoFocus={autoFocus}
       onBlur={commit}
       onSubmitEditing={commit}
       returnKeyType="done"

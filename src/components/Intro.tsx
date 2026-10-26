@@ -1,203 +1,209 @@
 /**
- * First-launch intro (Julian 26.10.: "ein wunderschön animiertes Video statt
- * der vier Icons"). Built as real UI on one clock instead of a video file, so
- * it is sharp, light and plays the same on the web link.
+ * First-launch intro (Julian 26.10.: "ein einzigartiger Moment, den Nutzer
+ * über den Value zu überzeugen"). Five short scenes, one idea each, the way
+ * Apple keynotes sell: a pain everyone knows, then the moment it goes away.
+ * Big words carry the message, the stage underneath proves it with real UI.
  *
- * One idea: everything that lands on you ends up sorted on one calm page.
- * Each clay object arrives from above, holds, then flies into its row and
- * becomes that row's tile (same object, same path every time).
+ * 1  Post vom Amt.         A letter lands, the deadline hides in the text.
+ * 2  Foto. Fertig.         The letter turns into one row with the deadline.
+ * 3  Für euch beide.       Tom takes the U5. Mental load, shared.
+ * 4  Weiß, was bei euch gilt.  City facts arrive, each with its source.
+ * 5  The promise.          The calm page with everything on it. Holds.
  *
- * Storyboard (ms from mount):
- *    0  "Heute" card rises in, empty.
- *  300  A: the letter (umschlag-euro) drops in above the card, holds.
- * 1200  A flies into row 1, shrinks into its tile. "Elterngeld beantragen,
- *       Frist 12. Dez" writes in. Haptic tick on landing.
- * 2300  B: the stethoscope arrives the same way, lands in row 2: "U5 bei
- *       Dr. Weber". 3300 Tom's avatar slides in: he takes it.
- * 3900  C: the shopping bag lands in row 3: "Hafermilch". 4900 the check
- *       fills (the only bounce, it is the person's own kind of action),
- *       success haptic.
- * 5500  One light sweep over the card. Then it holds still.
- * Tap skips to the end. Reduced motion shows the end state at once.
+ * Plays once, never loops. Tapping the stage jumps to the next scene, the
+ * bars on top show where you are. Reduced motion shows the last scene.
+ * Contrast to TimeTree and Co. (docs/research): no ads, nothing disappears,
+ * both parents, the assistant does the paperwork.
  */
 import React, { useEffect, useState } from 'react';
-import { View, Pressable, LayoutChangeEvent, Platform } from 'react-native';
-import Animated, { useSharedValue, useAnimatedStyle, withTiming, Easing, useReducedMotion, cancelAnimation, SharedValue } from 'react-native-reanimated';
-import Svg, { Defs, LinearGradient, Stop, Rect } from 'react-native-svg';
-import Txt from './ui/Txt';
+import { View, Pressable } from 'react-native';
+import Animated, { FadeIn, FadeInDown, FadeOut, ZoomIn, useAnimatedStyle, useSharedValue, withTiming, Easing, useReducedMotion, cancelAnimation } from 'react-native-reanimated';
+import Txt, { Dot } from './ui/Txt';
 import LineIcon from './ui/LineIcon';
-import { ClayIcon } from './ui/Clay';
+import { ClayIcon, Tile } from './ui/Clay';
 import { Avatar } from './ui/Person';
-import { tokens, tint } from '../theme';
+import Letter from './Letter';
+import { tokens } from '../theme';
 import { haptics } from '../lib/haptics';
 import type { ClayName } from '../lib/clayIcons';
 
-// ─── Choreography ──────────────────────────────────────────────────────────
-const T_CARD = 0;
-const SCENES = [300, 2300, 3900]; // A, B, C arrive
-const IN = 450;      // drop in
-const HOLD = 450;    // readable hold before it flies
-const FLY = 520;     // into the row
-const TEXT = 320;    // row text writes in
-const T_TOM = 3300;
-const T_CHECK = 4900;
-const T_SHEEN = 5500;
-const T_END = 6400;
-
-// ─── Geometry ──────────────────────────────────────────────────────────────
-const PAD = 16;
-const HEAD = 58;
-const ROW = 66;
-const TILE = 46;
-const HERO = 120;
-const STAGE_H = 150 + HEAD + ROW * 3 + PAD;
-const CARD_TOP = 150;
-
-const ROWS: { icon: ClayName; title: string; meta: string; metaColor?: string }[] = [
-  { icon: 'umschlag-euro', title: 'Elterngeld beantragen', meta: 'Frist 12. Dez · aus der Post', metaColor: tokens.frist },
-  { icon: 'stethoskop', title: 'U5 bei Dr. Weber', meta: 'Do 12. Nov · 9:30' },
-  { icon: 'einkauf', title: 'Hafermilch', meta: 'Einkauf · Supermarkt' },
+type Scene = { title: string; sub: string; ms: number };
+const SCENES: Scene[] = [
+  { title: 'Post vom Amt', sub: 'Irgendwo im dritten Absatz steht eine Frist.', ms: 2600 },
+  { title: 'Foto. Fertig', sub: 'Der Assistent liest mit, trägt die Frist ein und sagt euch, was zu tun ist.', ms: 2900 },
+  { title: 'Für euch beide', sub: 'Nicht nur für den, der zufällig dran denkt.', ms: 2700 },
+  { title: 'Weiß, was bei euch gilt', sub: 'Feiertage, Kita-Portal, Bürgeramt. Immer mit Quelle.', ms: 2900 },
+  { title: 'Euer Familienkalender, der mitdenkt', sub: 'Ohne Werbung, nichts verschwindet. Termine, Fristen und Einkauf an einem ruhigen Ort.', ms: 0 },
 ];
+const LAST = SCENES.length - 1;
+const STAGE = 300;
 
-// Worklet easings (same curves as theme easing.out / easing.inOut).
-const out = (x: number) => { 'worklet'; return 1 - Math.pow(1 - x, 3); };
-const inOut = (x: number) => { 'worklet'; return x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2; };
-const p = (t: number, a: number, d: number) => { 'worklet'; return Math.max(0, Math.min(1, (t - a) / d)); };
-
-const shadow = Platform.select({
-  web: { boxShadow: '0 24px 60px rgba(22,35,42,.10), 0 2px 6px rgba(22,35,42,.05)' } as any,
-  default: { shadowColor: '#16232A', shadowOpacity: 0.1, shadowRadius: 30, shadowOffset: { width: 0, height: 24 }, elevation: 6 },
-});
+const enter = (i = 0) => FadeInDown.duration(420).delay(i * 140);
+const leave = FadeOut.duration(160);
 
 export default function Intro() {
-  const t = useSharedValue(0);
   const reduced = useReducedMotion();
-  const [w, setW] = useState(0);
+  const [i, setI] = useState(reduced ? LAST : 0);
 
   useEffect(() => {
-    if (!w) return;
-    if (reduced) { t.value = T_END; return; }
-    t.value = withTiming(T_END, { duration: T_END, easing: Easing.linear });
-    // Accents land on the meaningful moment, not when motion starts.
-    const ids = [
-      ...SCENES.map((s) => setTimeout(haptics.select, s + IN + HOLD + FLY)),
-      setTimeout(haptics.tap, T_TOM + 200),
-      setTimeout(haptics.success, T_CHECK + 120),
-    ];
-    return () => ids.forEach(clearTimeout);
-  }, [w, reduced]);
+    if (i >= LAST) return;
+    const id = setTimeout(() => setI(i + 1), SCENES[i].ms);
+    return () => clearTimeout(id);
+  }, [i]);
 
-  const skip = () => { cancelAnimation(t); t.value = withTiming(T_END, { duration: 240, easing: Easing.out(Easing.cubic) }); };
-
-  const card = useAnimatedStyle((): any => {
-    const k = out(p(t.value, T_CARD, 420));
-    return { opacity: k, transform: [{ translateY: (1 - k) * 18 }] };
-  });
+  const next = () => { if (i < LAST) { haptics.select(); setI(i + 1); } };
+  const s = SCENES[i];
 
   return (
-    <Pressable accessibilityLabel="Intro überspringen" onPress={skip} onLayout={(e: LayoutChangeEvent) => setW(e.nativeEvent.layout.width)} style={{ height: STAGE_H }}>
-      {w ? (
-        <>
-          <Animated.View style={[{ position: 'absolute', left: 0, right: 0, top: CARD_TOP, borderRadius: 28, backgroundColor: tokens.row, overflow: 'hidden', paddingHorizontal: PAD, paddingBottom: PAD }, shadow, card]}>
-            <View style={{ height: HEAD, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-              <Txt size={22} weight={700} tracking={-0.6}>Heute</Txt>
-              <Txt size={13.5} color={tokens.sub}>Do 29. Oktober</Txt>
-            </View>
-            {ROWS.map((r, i) => <IntroRow key={r.icon} i={i} row={r} t={t} />)}
-            <Sheen t={t} w={w} />
-          </Animated.View>
-          {ROWS.map((r, i) => <Hero key={r.icon} i={i} icon={r.icon} t={t} w={w} />)}
-        </>
-      ) : null}
-    </Pressable>
-  );
-}
-
-/** Row content; its tile is drawn by the Hero that lands in it. */
-function IntroRow({ i, row, t }: { i: number; row: (typeof ROWS)[number]; t: SharedValue<number> }) {
-  const land = SCENES[i] + IN + HOLD + FLY;
-  const text = useAnimatedStyle((): any => {
-    const k = out(p(t.value, land - 120, TEXT));
-    return { opacity: k, transform: [{ translateX: (1 - k) * 10 }] };
-  });
-  const slot = useAnimatedStyle(() => ({ opacity: 1 - p(t.value, land - 80, 120) }));
-  const tom = useAnimatedStyle((): any => {
-    const k = out(p(t.value, T_TOM, 360));
-    return { opacity: k, transform: [{ translateX: (1 - k) * 28 }, { scale: 0.8 + 0.2 * k }] };
-  });
-  const ring = useAnimatedStyle(() => ({ opacity: out(p(t.value, land, 240)) }));
-  // The check: fill springs once (critically damped would feel dead here).
-  const fill = useAnimatedStyle((): any => {
-    const x = p(t.value, T_CHECK, 380);
-    const s = x === 0 ? 0 : 1 + Math.sin(x * Math.PI) * 0.18 * (1 - x) + (1 - out(Math.min(1, x * 2))) * -0.6;
-    return { opacity: Math.min(1, x * 3), transform: [{ scale: Math.max(0, s) }] };
-  });
-  const strike = useAnimatedStyle(() => ({ opacity: 1 - 0.45 * out(p(t.value, T_CHECK + 120, 260)) }));
-  return (
-    <View style={{ height: ROW, flexDirection: 'row', alignItems: 'center', gap: 12, borderTopWidth: 1, borderTopColor: tokens.hair }}>
-      <Animated.View style={[{ width: TILE, height: TILE, borderRadius: 14, backgroundColor: tokens.bg }, slot]} />
-      <Animated.View style={[{ flex: 1, minWidth: 0, gap: 1 }, text]}>
-        <Animated.View style={i === 2 ? strike : undefined}>
-          <Txt size={16} line={21} weight={600} numberOfLines={1}>{row.title}</Txt>
+    <View style={{ gap: 18 }}>
+      <View style={{ flexDirection: 'row', gap: 4 }}>
+        {SCENES.map((x, k) => <Bar key={k} state={k < i ? 'done' : k === i ? 'now' : 'next'} ms={x.ms} />)}
+      </View>
+      <Pressable accessibilityLabel={i < LAST ? 'Weiter im Intro' : undefined} onPress={next} style={{ height: STAGE, justifyContent: 'center' }}>
+        <Animated.View key={i} entering={FadeIn.duration(200)} exiting={leave} style={{ flex: 1, justifyContent: 'center' }}>
+          {i === 0 ? <Post /> : i === 1 ? <Scanned /> : i === 2 ? <Both /> : i === 3 ? <Local /> : <Calm />}
         </Animated.View>
-        <Txt size={13} line={18} color={row.metaColor ?? tokens.sub} numberOfLines={1}>{row.meta}</Txt>
+      </Pressable>
+      <Animated.View key={`t${i}`} entering={enter()} style={{ gap: 8, minHeight: 112 }}>
+        <Txt size={36} line={42} weight={700} tracking={-1.2}>{s.title}<Dot /></Txt>
+        <Txt size={17} line={25} color={tokens.sub}>{s.sub}</Txt>
       </Animated.View>
-      {i === 1 ? <Animated.View style={tom}><Avatar p="T" letter="T" size={28} /></Animated.View> : null}
-      {i === 2 ? (
-        <Animated.View style={[{ width: 26, height: 26, borderRadius: 999, borderWidth: 1.5, borderColor: tokens.circleLine, alignItems: 'center', justifyContent: 'center' }, ring]}>
-          <Animated.View style={[{ position: 'absolute', top: -1.5, left: -1.5, width: 26, height: 26, borderRadius: 999, backgroundColor: tokens.done, alignItems: 'center', justifyContent: 'center' }, fill]}>
-            <LineIcon name="check" size={16} color="#FFFFFF" stroke={2.4} />
-          </Animated.View>
-        </Animated.View>
-      ) : null}
     </View>
   );
 }
 
-/** The clay object: drops in, holds, flies into its row and becomes the tile. */
-function Hero({ i, icon, t, w }: { i: number; icon: ClayName; t: SharedValue<number>; w: number }) {
-  const s = SCENES[i];
-  const from = { x: w / 2, y: 70 };
-  const to = { x: PAD + TILE / 2, y: CARD_TOP + HEAD + i * ROW + ROW / 2 };
-  const end = TILE / HERO;
-  const st = useAnimatedStyle((): any => {
-    const a = out(p(t.value, s, IN));
-    const f = inOut(p(t.value, s + IN + HOLD, FLY));
-    const x = from.x + (to.x - from.x) * f;
-    const y = from.y - 26 * (1 - a) + (to.y - from.y) * f;
-    const sc = (0.92 + 0.08 * a) * (1 + (end - 1) * f);
-    return { opacity: a, transform: [{ translateX: x - HERO / 2 }, { translateY: y - HERO / 2 }, { scale: sc }] };
-  });
-  // Tinted tile grows in under the object as it lands.
-  const tile = useAnimatedStyle(() => ({ opacity: p(t.value, s + IN + HOLD + FLY * 0.55, FLY * 0.45) }));
+/** One segment of the progress bar on top, like a story. */
+function Bar({ state, ms }: { state: 'done' | 'now' | 'next'; ms: number }) {
+  const v = useSharedValue(state === 'done' ? 1 : 0);
+  useEffect(() => {
+    cancelAnimation(v);
+    if (state === 'now') { v.value = 0; v.value = ms ? withTiming(1, { duration: ms, easing: Easing.linear }) : 1; }
+    else v.value = state === 'done' ? 1 : 0;
+  }, [state]);
+  const fill = useAnimatedStyle(() => ({ width: `${v.value * 100}%` as any }));
   return (
-    <Animated.View pointerEvents="none" style={[{ position: 'absolute', left: 0, top: 0, width: HERO, height: HERO, alignItems: 'center', justifyContent: 'center' }, st]}>
-      <Animated.View style={[{ position: 'absolute', width: HERO, height: HERO, borderRadius: HERO * 0.3, backgroundColor: tint(icon) }, tile]} />
-      <ClayIcon name={icon} size={HERO * 0.82} />
+    <View style={{ flex: 1, height: 3, borderRadius: 999, backgroundColor: tokens.hair, overflow: 'hidden' }}>
+      <Animated.View style={[{ height: '100%', backgroundColor: tokens.ink, borderRadius: 999 }, fill]} />
+    </View>
+  );
+}
+
+// ─── Scenes ────────────────────────────────────────────────────────────────
+
+/** 1 · The letter lands slightly crooked, the deadline line gets a marker. */
+function Post() {
+  return (
+    <View style={{ alignItems: 'center' }}>
+      <Animated.View entering={FadeInDown.duration(520)} style={{ width: 236, height: 290, transform: [{ rotate: '-4deg' }] }}>
+        <Letter scale={0.82} />
+        <Animated.View entering={FadeIn.duration(260).delay(1100)} style={{ position: 'absolute', left: 14, right: 14, top: 148, height: 34, borderRadius: 8, borderWidth: 2, borderColor: tokens.frist }} />
+      </Animated.View>
+    </View>
+  );
+}
+
+/** 2 · The same letter, now a row: deadline, task, who added it. */
+function Scanned() {
+  useEffect(() => { const id = setTimeout(haptics.success, 700); return () => clearTimeout(id); }, []);
+  return (
+    <View style={{ gap: 10 }}>
+      <Animated.View entering={ZoomIn.duration(420)} style={{ alignSelf: 'center' }}>
+        <Tile name="umschlag-euro" size={104} radius={30} />
+      </Animated.View>
+      <Animated.View entering={enter(2)}>
+        <Row icon="umschlag-euro" title="Arbeitgeberbescheinigung nachreichen" meta="Frist 12. Dez · Elterngeld" metaColor={tokens.frist} />
+      </Animated.View>
+      <Animated.View entering={enter(3)} style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingLeft: 6 }}>
+        <LineIcon name="sparkle" size={13} color={tokens.done} />
+        <Txt size={13.5} weight={600} color={tokens.done}>Vom Assistenten eingetragen, mit Erinnerung 2 Wochen vorher</Txt>
+      </Animated.View>
+    </View>
+  );
+}
+
+/** 3 · A task finds its person. */
+function Both() {
+  const [taken, setTaken] = useState(false);
+  useEffect(() => { const id = setTimeout(() => { setTaken(true); haptics.tap(); }, 1000); return () => clearTimeout(id); }, []);
+  return (
+    <View style={{ gap: 10 }}>
+      <Animated.View entering={enter(0)}>
+        <Row icon="stethoskop" title="U5 bei Dr. Weber" meta="Do 12. Nov · 9:30" right={
+          <View style={{ flexDirection: 'row' }}>
+            <View style={{ opacity: taken ? 0.35 : 1 }}><Avatar p="J" letter="J" size={30} ring={tokens.row} /></View>
+            <View style={{ marginLeft: -8 }}><Avatar p="T" letter="T" size={30} ring={tokens.row} /></View>
+          </View>
+        } />
+      </Animated.View>
+      {taken ? (
+        <Animated.View entering={ZoomIn.duration(320)} style={{ alignSelf: 'flex-end', flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 8, paddingLeft: 6, paddingRight: 14, borderRadius: 999, backgroundColor: tokens.row }}>
+          <Avatar p="T" letter="T" size={26} />
+          <Txt size={14.5} weight={600}>Tom übernimmt</Txt>
+          <LineIcon name="check" size={16} color={tokens.done} stroke={2.4} />
+        </Animated.View>
+      ) : null}
+      <Animated.View entering={enter(2)}>
+        <Row icon="einkauf" title="Windeln Gr. 2" meta="Einkauf · Julia hat es auf dem Zettel" />
+      </Animated.View>
+    </View>
+  );
+}
+
+/** 4 · What the city means for you, each fact with where it comes from. */
+function Local() {
+  const facts: { icon: ClayName; title: string; src: string }[] = [
+    { icon: 'kalender', title: 'Feiertage für euer Bundesland', src: 'Gemeindeverzeichnis' },
+    { icon: 'kita', title: 'Kita-Platz über das Portal der Stadt', src: 'Seite der Stadt' },
+    { icon: 'reisepass', title: 'Pass fürs Baby: was mit muss', src: 'Bürgeramt' },
+  ];
+  return (
+    <View style={{ gap: 8 }}>
+      {facts.map((f, k) => (
+        <Animated.View key={f.icon} entering={enter(k)} style={{ flexDirection: 'row', alignItems: 'center', gap: 12, padding: 10, borderRadius: 20, backgroundColor: tokens.row }}>
+          <Tile name={f.icon} size={48} radius={14} />
+          <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
+            <Txt size={15.5} line={20} weight={600} numberOfLines={1}>{f.title}</Txt>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
+              <LineIcon name="sparkle" size={11} color={tokens.done} />
+              <Txt size={12.5} color={tokens.done}>{`Quelle: ${f.src}`}</Txt>
+            </View>
+          </View>
+        </Animated.View>
+      ))}
+    </View>
+  );
+}
+
+/** 5 · The calm page. Everything from before, in one place, no banner. */
+function Calm() {
+  const [done, setDone] = useState(false);
+  useEffect(() => { const id = setTimeout(() => { setDone(true); haptics.success(); }, 1100); return () => clearTimeout(id); }, []);
+  return (
+    <Animated.View entering={FadeInDown.duration(420)} style={{ borderRadius: 28, backgroundColor: tokens.row, paddingHorizontal: 16, paddingBottom: 8 }}>
+      <View style={{ height: 52, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+        <Txt size={21} weight={700} tracking={-0.6}>Heute</Txt>
+        <Txt size={13.5} color={tokens.sub}>Do 29. Oktober</Txt>
+      </View>
+      <Row flat icon="umschlag-euro" title="Arbeitgeberbescheinigung" meta="Frist 12. Dez" metaColor={tokens.frist} />
+      <Row flat icon="stethoskop" title="U5 bei Dr. Weber" meta="Do 12. Nov · Tom" right={<Avatar p="T" letter="T" size={26} />} />
+      <Row flat icon="einkauf" title="Windeln Gr. 2" meta={done ? 'erledigt von Julia' : 'Einkauf'} strike={done} right={
+        <View style={{ width: 26, height: 26, borderRadius: 999, borderWidth: done ? 0 : 1.5, borderColor: tokens.circleLine, backgroundColor: done ? tokens.done : 'transparent', alignItems: 'center', justifyContent: 'center' }}>
+          {done ? <Animated.View entering={ZoomIn.duration(260)}><LineIcon name="check" size={16} color="#FFFFFF" stroke={2.4} /></Animated.View> : null}
+        </View>
+      } />
     </Animated.View>
   );
 }
 
-/** One soft light pass over the finished card. */
-function Sheen({ t, w }: { t: SharedValue<number>; w: number }) {
-  const st = useAnimatedStyle((): any => {
-    const k = inOut(p(t.value, T_SHEEN, 700));
-    return { opacity: k > 0 && k < 1 ? 1 : 0, transform: [{ translateX: -160 + (w + 160) * k }, { rotate: '12deg' }] };
-  });
+function Row({ icon, title, meta, metaColor, right, flat, strike }: { icon: ClayName; title: string; meta: string; metaColor?: string; right?: React.ReactNode; flat?: boolean; strike?: boolean }) {
   return (
-    <Animated.View pointerEvents="none" style={[{ position: 'absolute', top: -40, bottom: -40, width: 120 }, st]}>
-      <Svg width="100%" height="100%">
-        <Defs>
-          <LinearGradient id="sheen" x1="0" y1="0" x2="1" y2="0">
-            <Stop offset="0" stopColor="#FFFFFF" stopOpacity={0} />
-            <Stop offset="0.5" stopColor="#FFFFFF" stopOpacity={0.7} />
-            <Stop offset="1" stopColor="#FFFFFF" stopOpacity={0} />
-          </LinearGradient>
-        </Defs>
-        <Rect x="0" y="0" width="100%" height="100%" fill="url(#sheen)" />
-      </Svg>
-    </Animated.View>
+    <View style={[{ flexDirection: 'row', alignItems: 'center', gap: 12 }, flat ? { height: 62, borderTopWidth: 1, borderTopColor: tokens.hair } : { padding: 10, borderRadius: 20, backgroundColor: tokens.row }]}>
+      {flat ? <ClayIcon name={icon} size={40} /> : <Tile name={icon} size={48} radius={14} />}
+      <View style={{ flex: 1, minWidth: 0, gap: 1 }}>
+        <Txt size={16} line={21} weight={600} numberOfLines={1} strike={strike} color={strike ? tokens.mute : tokens.ink}>{title}</Txt>
+        <Txt size={13} line={18} color={metaColor ?? tokens.sub} numberOfLines={1}>{meta}</Txt>
+      </View>
+      {right}
+    </View>
   );
 }
-
-export const INTRO_MS = T_END;

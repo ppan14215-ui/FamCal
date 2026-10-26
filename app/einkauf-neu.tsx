@@ -14,9 +14,13 @@ import { tokens, fonts } from '../src/theme';
 import { useStore, actions } from '../src/state/store';
 import { catalog, oftBeiEuch, parseItem, sectionFor } from '../src/data/sample';
 import { haptics } from '../src/lib/haptics';
+import { useKeyboardInset } from '../src/lib/keyboard';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import PressScale from '../src/components/ui/PressScale';
 
 export default function EinkaufNeu() {
+  const kb = useKeyboardInset();
+  const insets = useSafeAreaInsets();
   const [q, setQ] = useState('');
   const list = useStore((s) => s.lists.find((l) => l.id === 'einkauf'));
   const onList = useMemo(() => new Set(list?.sections.flatMap((s) => s.items).filter((i) => !i.done).map((i) => i.name.toLowerCase()) ?? []), [list]);
@@ -45,53 +49,60 @@ export default function EinkaufNeu() {
     setQ('');
   };
 
+  // The input sits at the bottom where the thumb is and rides up with the
+  // keyboard; hits appear right above it (Julian 26.10.).
   return (
-    <Screen gap={14}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-        <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10, height: 48, paddingHorizontal: 14, borderRadius: 16, backgroundColor: tokens.row, borderWidth: 1.5, borderColor: tokens.ink }}>
-          <LineIcon name="plus" size={20} color={tokens.sub} />
-          <TextInput
-            autoFocus
-            value={q}
-            onChangeText={setQ}
-            onSubmitEditing={() => (hits[0] && exact ? (pick(hits[0].name), setQ('')) : addFree())}
-            blurOnSubmit={false}
-            placeholder="Was fehlt?"
-            placeholderTextColor={tokens.mute}
-            selectionColor={tokens.ink}
-            returnKeyType="done"
-            style={[{ flex: 1, fontFamily: fonts[500], fontSize: 17, color: tokens.ink }, Platform.OS === 'web' ? ({ outlineStyle: 'none' } as any) : null]}
-          />
+    <Screen
+      gap={14}
+      footer={
+        <View style={{ gap: 10, marginBottom: kb ? Math.max(0, kb - insets.bottom) : 0 }}>
+          {name ? (
+            <Group>
+              {hits.map((h) => {
+                const added = onList.has(h.name.toLowerCase());
+                return (
+                  <PressScale key={h.name} onPress={() => pick(h.name)} style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 13, paddingHorizontal: 16, backgroundColor: tokens.row }}>
+                    <View style={{ flex: 1 }}>
+                      <Txt size={16} weight={added ? 600 : 500} color={added ? tokens.done : tokens.ink}>{h.name}</Txt>
+                      <Meta>{`${h.section === 'drogerie' ? 'Drogerie' : 'Supermarkt'}${h.last ? ' · ' + h.last : ''}`}</Meta>
+                    </View>
+                    <LineIcon name={added ? 'check' : 'plus'} size={18} color={added ? tokens.done : tokens.sub} stroke={added ? 2.4 : 1.8} />
+                  </PressScale>
+                );
+              })}
+              {!exact ? (
+                <PressScale onPress={addFree} style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 13, paddingHorizontal: 16, backgroundColor: tokens.row }}>
+                  <View style={{ flex: 1 }}>
+                    <Txt size={16} weight={500}>{`„${q.trim()}“ als neues Ding`}</Txt>
+                    <Meta>{sectionFor(name) === 'drogerie' ? 'kommt zu Drogerie' : 'kommt zu Supermarkt'}</Meta>
+                  </View>
+                  <LineIcon name="plus" size={18} color={tokens.sub} />
+                </PressScale>
+              ) : null}
+            </Group>
+          ) : null}
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, height: 48, paddingHorizontal: 14, borderRadius: 16, backgroundColor: tokens.row, borderWidth: 1.5, borderColor: tokens.ink }}>
+            <LineIcon name="plus" size={20} color={tokens.sub} />
+            <TextInput
+              autoFocus
+              value={q}
+              onChangeText={setQ}
+              onSubmitEditing={() => (hits[0] && exact ? (pick(hits[0].name), setQ('')) : addFree())}
+              blurOnSubmit={false}
+              placeholder="Was fehlt?"
+              placeholderTextColor={tokens.mute}
+              selectionColor={tokens.ink}
+              returnKeyType="done"
+              style={[{ flex: 1, fontFamily: fonts[500], fontSize: 17, color: tokens.ink }, Platform.OS === 'web' ? ({ outlineStyle: 'none' } as any) : null]}
+            />
+          </View>
         </View>
+      }
+    >
+      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+        <Txt size={22} weight={700} tracking={-0.4}>Einkauf ergänzen</Txt>
         <PressScale hitSlop={10} onPress={() => goBack()}><Txt size={15} weight={600}>Fertig</Txt></PressScale>
       </View>
-
-      {name ? (
-        <Group>
-          {hits.map((h) => {
-            const added = onList.has(h.name.toLowerCase());
-            return (
-              <PressScale key={h.name} onPress={() => pick(h.name)} style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 13, paddingHorizontal: 16, backgroundColor: tokens.row }}>
-                <View style={{ flex: 1 }}>
-                  <Txt size={16} weight={added ? 600 : 500} color={added ? tokens.done : tokens.ink}>{h.name}</Txt>
-                  <Meta>{`${h.section === 'drogerie' ? 'Drogerie' : 'Supermarkt'}${h.last ? ' · ' + h.last : ''}`}</Meta>
-                </View>
-                <LineIcon name={added ? 'check' : 'plus'} size={18} color={added ? tokens.done : tokens.sub} stroke={added ? 2.4 : 1.8} />
-              </PressScale>
-            );
-          })}
-          {!exact ? (
-            <PressScale onPress={addFree} style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 13, paddingHorizontal: 16, backgroundColor: tokens.row }}>
-              <View style={{ flex: 1 }}>
-                <Txt size={16} weight={500}>{`„${q.trim()}“ als neues Ding`}</Txt>
-                <Meta>{sectionFor(name) === 'drogerie' ? 'kommt zu Drogerie' : 'kommt zu Supermarkt'}</Meta>
-              </View>
-              <LineIcon name="plus" size={18} color={tokens.sub} />
-            </PressScale>
-          ) : null}
-        </Group>
-      ) : null}
-
       <H2>Oft bei euch</H2>
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
         {oftBeiEuch.map((n) => {
