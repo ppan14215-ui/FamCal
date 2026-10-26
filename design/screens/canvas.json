@@ -1,0 +1,500 @@
+{
+ "v": 3,
+ "createdOnFiles": {
+  "v": 1,
+  "at": "2026-10-26T16:51:10Z"
+ },
+ "title": "Familienassistent v1 Flow",
+ "launch": {
+  "view": "canvas"
+ },
+ "pages": [],
+ "boards": {
+  "Main.dc.html": {
+   "x": 0,
+   "y": 0,
+   "w": 390,
+   "h": 844,
+   "title": "1 · Willkommen",
+   "is_interactive": true
+  },
+  "V1-Onb-Eltern.dc.html": {
+   "x": 470,
+   "y": 0,
+   "w": 390,
+   "h": 844,
+   "title": "2 · Über euch",
+   "is_interactive": true
+  },
+  "V1-Onb-Baby.dc.html": {
+   "x": 940,
+   "y": 0,
+   "w": 390,
+   "h": 844,
+   "title": "3 · Eure Kinder",
+   "is_interactive": true
+  },
+  "V1-Onb-Kalender.dc.html": {
+   "x": 1410,
+   "y": 0,
+   "w": 390,
+   "h": 844,
+   "title": "4 · Eure Kalender",
+   "is_interactive": true
+  },
+  "V1-Onb-Partner.dc.html": {
+   "x": 1880,
+   "y": 0,
+   "w": 390,
+   "h": 844,
+   "title": "5 · Partner einladen",
+   "is_interactive": true
+  },
+  "V1-Onb-Jahr.dc.html": {
+   "x": 2350,
+   "y": 0,
+   "w": 390,
+   "h": 844,
+   "title": "6 · Euer erstes Jahr",
+   "is_interactive": true
+  },
+  "V1-Onb-Karten.dc.html": {
+   "x": 2820,
+   "y": 0,
+   "w": 390,
+   "h": 844,
+   "title": "7 · Wer kümmert sich?",
+   "is_interactive": true
+  },
+  "V1-Onb-Karten-Links.dc.html": {
+   "x": 3290,
+   "y": 0,
+   "w": 390,
+   "h": 844,
+   "title": "7b · Wischen nach links",
+   "is_interactive": true
+  },
+  "V1-Heute.dc.html": {
+   "x": 0,
+   "y": 1400,
+   "w": 390,
+   "h": 844,
+   "title": "Heute",
+   "is_interactive": true
+  },
+  "V1-Kal-Tag.dc.html": {
+   "x": 470,
+   "y": 1400,
+   "w": 390,
+   "h": 844,
+   "title": "Kalender · Tag",
+   "is_interactive": true
+  },
+  "V1-Kal-Woche.dc.html": {
+   "x": 940,
+   "y": 1400,
+   "w": 390,
+   "h": 844,
+   "title": "Kalender · Woche",
+   "is_interactive": true
+  },
+  "V1-Kal-Monat.dc.html": {
+   "x": 1410,
+   "y": 1400,
+   "w": 390,
+   "h": 844,
+   "title": "Kalender · Monat",
+   "is_interactive": true
+  },
+  "V1-Termin.dc.html": {
+   "x": 1880,
+   "y": 1400,
+   "w": 390,
+   "h": 844,
+   "title": "Termin",
+   "is_interactive": true
+  },
+  "V1-Jahr.dc.html": {
+   "x": 2350,
+   "y": 1400,
+   "w": 390,
+   "h": 844,
+   "title": "Jahr",
+   "is_interactive": true
+  },
+  "V1-Neu.dc.html": {
+   "x": 0,
+   "y": 2800,
+   "w": 390,
+   "h": 844,
+   "title": "Neu",
+   "is_interactive": true
+  },
+  "V1-Foto-Kamera.dc.html": {
+   "x": 470,
+   "y": 2800,
+   "w": 390,
+   "h": 844,
+   "title": "Foto · Aufnehmen",
+   "is_interactive": true
+  },
+  "V1-Eingang.dc.html": {
+   "x": 0,
+   "y": 4200,
+   "w": 390,
+   "h": 844,
+   "title": "Eingang",
+   "is_interactive": true
+  },
+  "V1-Aufgaben.dc.html": {
+   "x": 2820,
+   "y": 1400,
+   "w": 390,
+   "h": 844,
+   "title": "Listen · Aufgaben",
+   "is_interactive": true
+  },
+  "V1-Einkauf.dc.html": {
+   "x": 3760,
+   "y": 1400,
+   "w": 390,
+   "h": 844,
+   "title": "Listen · Einkauf",
+   "is_interactive": true
+  },
+  "V1-Einkauf-Neu.dc.html": {
+   "x": 5170,
+   "y": 1400,
+   "w": 390,
+   "h": 844,
+   "title": "Einkauf · Hinzufügen",
+   "is_interactive": true
+  },
+  "V1-Einkauf-Wischen.dc.html": {
+   "x": 5640,
+   "y": 1400,
+   "w": 390,
+   "h": 844,
+   "title": "Einkauf · Wischen",
+   "is_interactive": true
+  },
+  "V1-Einkauf-Bearbeiten.dc.html": {
+   "x": 6110,
+   "y": 1400,
+   "w": 390,
+   "h": 844,
+   "title": "Einkauf · Bearbeiten (wie Wabi)",
+   "is_interactive": true
+  },
+  "V1-Einkauf-Hinweis.dc.html": {
+   "x": 6580,
+   "y": 1400,
+   "w": 390,
+   "h": 844,
+   "title": "Einkauf · Assistent erkennt Muster",
+   "is_interactive": true
+  },
+  "V1-Einkauf-Abo.dc.html": {
+   "x": 7050,
+   "y": 1400,
+   "w": 390,
+   "h": 844,
+   "title": "Einkauf · Abo-Optionen",
+   "is_interactive": true
+  },
+  "V1-Liste-Neu.dc.html": {
+   "x": 4230,
+   "y": 1400,
+   "w": 390,
+   "h": 844,
+   "title": "Listen · Neue Liste",
+   "is_interactive": true
+  },
+  "V1-Liste-Klinik.dc.html": {
+   "x": 4700,
+   "y": 1400,
+   "w": 390,
+   "h": 844,
+   "title": "Listen · Kliniktasche",
+   "is_interactive": true
+  },
+  "V1-Karten.dc.html": {
+   "x": 470,
+   "y": 4200,
+   "w": 390,
+   "h": 844,
+   "title": "Aufgaben aufteilen",
+   "is_interactive": true
+  },
+  "V1-Entwurf.dc.html": {
+   "x": 940,
+   "y": 4200,
+   "w": 390,
+   "h": 844,
+   "title": "Entwurf · Anlass",
+   "is_interactive": true
+  },
+  "V1-Entwurf-Text.dc.html": {
+   "x": 1410,
+   "y": 4200,
+   "w": 390,
+   "h": 844,
+   "title": "Entwurf · Text",
+   "is_interactive": true
+  },
+  "V1-Push.dc.html": {
+   "x": 0,
+   "y": 5600,
+   "w": 390,
+   "h": 844,
+   "title": "Hinweise · Sperrbildschirm",
+   "is_interactive": true
+  },
+  "V1-Teilen.dc.html": {
+   "x": 470,
+   "y": 5600,
+   "w": 390,
+   "h": 844,
+   "title": "Eingang · Teilen aus Chat",
+   "is_interactive": true
+  },
+  "V1-Chat.dc.html": {
+   "x": 940,
+   "y": 5600,
+   "w": 390,
+   "h": 844,
+   "title": "Assistent · Chat",
+   "is_interactive": true
+  },
+  "V1-Wissen.dc.html": {
+   "x": 1410,
+   "y": 5600,
+   "w": 390,
+   "h": 844,
+   "title": "Assistent · Was ich weiß",
+   "is_interactive": true
+  },
+  "V1-Dokumente.dc.html": {
+   "x": 1880,
+   "y": 4200,
+   "w": 390,
+   "h": 844,
+   "title": "Eingang · Dokumente",
+   "is_interactive": true
+  },
+  "V1-Einstellungen.dc.html": {
+   "x": 2350,
+   "y": 5600,
+   "w": 390,
+   "h": 844,
+   "title": "Einstellungen",
+   "is_interactive": true
+  },
+  "V1-Plus.dc.html": {
+   "x": 2820,
+   "y": 5600,
+   "w": 390,
+   "h": 844,
+   "title": "Plus",
+   "is_interactive": true
+  },
+  "V1-System.dc.html": {
+   "x": 0,
+   "y": 7000,
+   "w": 1100,
+   "h": 1420,
+   "title": "Designsystem v2 · Einfachheit"
+  },
+  "V1-Widgets.dc.html": {
+   "x": 1180,
+   "y": 7000,
+   "w": 1000,
+   "h": 340,
+   "title": "Widgets"
+  },
+  "V1-Termin-Neu.dc.html": {
+   "x": 2350,
+   "y": 2800,
+   "w": 390,
+   "h": 844,
+   "title": "Neuer Termin",
+   "is_interactive": true
+  },
+  "V1-Foto-Warten.dc.html": {
+   "x": 940,
+   "y": 2800,
+   "w": 390,
+   "h": 844,
+   "title": "Foto · Wird gelesen",
+   "is_interactive": true
+  },
+  "V1-Foto-Analyse.dc.html": {
+   "x": 1410,
+   "y": 2800,
+   "w": 390,
+   "h": 844,
+   "title": "Foto · Verstanden",
+   "is_interactive": true
+  },
+  "V1-Foto-Zettel.dc.html": {
+   "x": 1880,
+   "y": 2800,
+   "w": 390,
+   "h": 844,
+   "title": "Dokumente · Infozettel",
+   "is_interactive": true
+  },
+  "V1-Termin-Icon.dc.html": {
+   "x": 2820,
+   "y": 2800,
+   "w": 390,
+   "h": 844,
+   "title": "Neuer Termin · Symbol wählen",
+   "is_interactive": true
+  },
+  "V1-Termin-Fussball.dc.html": {
+   "x": 3290,
+   "y": 2800,
+   "w": 390,
+   "h": 844,
+   "title": "Neuer Termin · Fußball, wiederkehrend",
+   "is_interactive": true
+  },
+  "V1-Jahr-Halten.dc.html": {
+   "x": 2350,
+   "y": 7000,
+   "w": 390,
+   "h": 844,
+   "title": "Jahr · 1 Halten",
+   "is_interactive": true
+  },
+  "V1-Jahr-Ziehen.dc.html": {
+   "x": 2820,
+   "y": 7000,
+   "w": 390,
+   "h": 844,
+   "title": "Jahr · 2 Ziehen",
+   "is_interactive": true
+  },
+  "V1-Jahr-Loslassen.dc.html": {
+   "x": 3290,
+   "y": 7000,
+   "w": 390,
+   "h": 844,
+   "title": "Jahr · 3 Loslassen",
+   "is_interactive": true
+  },
+  "V1-Liste-Vorschlag.dc.html": {
+   "x": 7520,
+   "y": 1400,
+   "w": 390,
+   "h": 844,
+   "title": "Listen · Assistent schlägt Vorlage vor",
+   "is_interactive": true
+  },
+  "V1-Liste-Neu-Urlaub.dc.html": {
+   "x": 7990,
+   "y": 1400,
+   "w": 390,
+   "h": 844,
+   "title": "Listen · Neue Liste aus Vorschlag",
+   "is_interactive": true
+  }
+ },
+ "order": [
+  "Main.dc.html",
+  "V1-Onb-Eltern.dc.html",
+  "V1-Onb-Baby.dc.html",
+  "V1-Onb-Kalender.dc.html",
+  "V1-Onb-Partner.dc.html",
+  "V1-Onb-Jahr.dc.html",
+  "V1-Onb-Karten.dc.html",
+  "V1-Onb-Karten-Links.dc.html",
+  "V1-Heute.dc.html",
+  "V1-Kal-Tag.dc.html",
+  "V1-Kal-Woche.dc.html",
+  "V1-Kal-Monat.dc.html",
+  "V1-Termin.dc.html",
+  "V1-Jahr.dc.html",
+  "V1-Neu.dc.html",
+  "V1-Foto-Kamera.dc.html",
+  "V1-Eingang.dc.html",
+  "V1-Aufgaben.dc.html",
+  "V1-Einkauf.dc.html",
+  "V1-Einkauf-Neu.dc.html",
+  "V1-Einkauf-Wischen.dc.html",
+  "V1-Einkauf-Bearbeiten.dc.html",
+  "V1-Einkauf-Hinweis.dc.html",
+  "V1-Einkauf-Abo.dc.html",
+  "V1-Liste-Neu.dc.html",
+  "V1-Liste-Klinik.dc.html",
+  "V1-Karten.dc.html",
+  "V1-Entwurf.dc.html",
+  "V1-Entwurf-Text.dc.html",
+  "V1-Push.dc.html",
+  "V1-Teilen.dc.html",
+  "V1-Chat.dc.html",
+  "V1-Wissen.dc.html",
+  "V1-Dokumente.dc.html",
+  "V1-Einstellungen.dc.html",
+  "V1-Plus.dc.html",
+  "V1-System.dc.html",
+  "V1-Widgets.dc.html",
+  "V1-Termin-Neu.dc.html",
+  "V1-Foto-Warten.dc.html",
+  "V1-Foto-Analyse.dc.html",
+  "V1-Foto-Zettel.dc.html",
+  "V1-Termin-Icon.dc.html",
+  "V1-Termin-Fussball.dc.html",
+  "V1-Jahr-Halten.dc.html",
+  "V1-Jahr-Ziehen.dc.html",
+  "V1-Jahr-Loslassen.dc.html",
+  "V1-Liste-Vorschlag.dc.html",
+  "V1-Liste-Neu-Urlaub.dc.html"
+ ],
+ "notes": {
+  "t0": {
+   "x": 0,
+   "y": -260,
+   "text": "1 · Onboarding: Eltern, Kinder (falls ja), Kalender, Partner, erstes Jahr, Karten",
+   "kind": "title1",
+   "maxW": 3680
+  },
+  "t1": {
+   "x": 0,
+   "y": 1140,
+   "text": "2 · Heute (ohne Tabs), Kalender (Tag, Woche, Monat, Termin, Jahr), Listen mit Clay-Tabs (Aufgaben, Einkauf, neue Liste, Kliniktasche, Einkauf hinzufügen, wischen, bearbeiten, Assistent erkennt Abo-Muster, schlägt Listen-Vorlage vor)",
+   "kind": "title1",
+   "maxW": 8440
+  },
+  "t2": {
+   "x": 0,
+   "y": 2540,
+   "text": "3 · Neu: Foto wird gelesen, verstanden, Infozettel; neuer Termin, Symbol aus allen Clay-Icons, wiederkehrender Termin",
+   "kind": "title1",
+   "maxW": 3680
+  },
+  "t3": {
+   "x": 0,
+   "y": 3940,
+   "text": "4 · Eingang (Neu und Dokumente mit Fristen), Aufgaben aufteilen, Entwürfe",
+   "kind": "title1",
+   "maxW": 2270
+  },
+  "t4": {
+   "x": 0,
+   "y": 5340,
+   "text": "5 · Hinweise, Teilen, Assistent, Einstellungen, Plus",
+   "kind": "title1",
+   "maxW": 3210
+  },
+  "t5": {
+   "x": 0,
+   "y": 6740,
+   "text": "6 · Designsystem v2 (Einfachheit), Widgets, Jahresring: halten, ziehen, loslassen",
+   "kind": "title1",
+   "maxW": 3210
+  }
+ },
+ "designSystems": []
+}

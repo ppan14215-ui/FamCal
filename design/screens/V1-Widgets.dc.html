@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<title>Widgets</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+html,body{margin:0;overflow:hidden;scrollbar-width:none}html::-webkit-scrollbar,body::-webkit-scrollbar,*::-webkit-scrollbar{display:none}x-dc{display:block}a{color:#16232A}button{font-family:inherit;cursor:pointer}@keyframes hop{0%,100%{transform:translateY(0)}40%{transform:translateY(-6px) scale(.98,1.03)}70%{transform:translateY(0) scale(1.04,.96)}}img[src*='assets/']:hover{animation:hop .7s cubic-bezier(.23,1,.32,1)}@media (prefers-reduced-motion: reduce){img{animation:none !important}}
+</style>
+</helmet>
+<div style="position: relative; width: 1000px; height: 340px; box-sizing: border-box; background: #F5F5F4; color: #16232A; font-family: Geist, system-ui, sans-serif; display: flex; flex-direction: column; overflow: hidden">
+
+<div style="padding: 40px 44px; display: flex; flex-direction: column; gap: 22px; background: #DDE3E6; height: 100%; box-sizing: border-box">
+<span style="font-size: 28px; font-weight: 700; letter-spacing: -.8px">Widgets<span style="color: #075056">.</span></span>
+<div style="display: flex; gap: 22px; align-items: flex-start">
+<div style="width: 170px; height: 170px; border-radius: 26px; background: #E6EEF4; padding: 14px; box-sizing: border-box; display: flex; flex-direction: column; justify-content: space-between"><img src="assets/icon-stethoskop.webp" alt="" style="width: 58px; height: 58px; object-fit: contain; flex-shrink: 0"><span style="display: flex; flex-direction: column"><span style="font-size: 11px; font-weight: 700; color: #075056">In 40 Min</span><span style="font-size: 16px; font-weight: 700; line-height: 20px">U6 bei Dr. Weber</span><span style="font-size: 12px; color: #5B666B">Tom bringt Ben</span></span></div>
+<div style="width: 364px; height: 170px; border-radius: 26px; background: #FFFFFF; padding: 14px 16px; box-sizing: border-box; display: flex; flex-direction: column; gap: 8px"><span style="font-size: 13px; font-weight: 700">Heute<span style="color: #075056">.</span> <span style="font-weight: 500; color: #5B666B">Do 30.</span></span><div style="display: flex; align-items: center; gap: 10px"><span style="width: 34px; height: 34px; border-radius: 10px; background: #E6EEF4; display: flex; align-items: center; justify-content: center; flex-shrink: 0"><img src="assets/icon-stethoskop.webp" alt="" style="width: 26px; height: 26px; object-fit: contain; flex-shrink: 0"></span><span style="flex: 1; font-size: 14px; font-weight: 600">U6 bei Dr. Weber</span><span style="font-size: 12.5px; color: #5B666B">9:30</span></div><div style="display: flex; align-items: center; gap: 10px"><span style="width: 34px; height: 34px; border-radius: 10px; background: #E7EDE4; display: flex; align-items: center; justify-content: center; flex-shrink: 0"><img src="assets/icon-yogamatte.webp" alt="" style="width: 26px; height: 26px; object-fit: contain; flex-shrink: 0"></span><span style="flex: 1; font-size: 14px; font-weight: 600">Rückbildung</span><span style="font-size: 12.5px; color: #5B666B">14:00</span></div><div style="display: flex; align-items: center; gap: 10px"><span style="width: 34px; height: 34px; border-radius: 10px; background: #F2EEE7; display: flex; align-items: center; justify-content: center; flex-shrink: 0"><img src="assets/icon-kochtopf.webp" alt="" style="width: 26px; height: 26px; object-fit: contain; flex-shrink: 0"></span><span style="flex: 1; font-size: 14px; font-weight: 600">Oma Renate</span><span style="font-size: 12.5px; color: #5B666B">18:30</span></div></div>
+<div style="width: 170px; height: 170px; border-radius: 26px; background: #F7EDE1; padding: 14px; box-sizing: border-box; display: flex; flex-direction: column; justify-content: space-between"><img src="assets/icon-umschlag-euro.webp" alt="" style="width: 58px; height: 58px; object-fit: contain; flex-shrink: 0"><span style="display: flex; flex-direction: column"><span style="font-size: 11px; font-weight: 700; color: #C2410C">Frist · 7 Wochen</span><span style="font-size: 16px; font-weight: 700; line-height: 20px">Elterngeld</span><span style="font-size: 12px; color: #5B666B">Bescheinigung fehlt</span></span></div>
+</div></div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1000,"height":340}}'>
+class Component extends DCLogic {
+renderVals() { return {}; }
+}
+</script>
+</body>
+</html>
