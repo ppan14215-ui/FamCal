@@ -1,12 +1,14 @@
 /** Einkauf · Abo-Optionen. The parents close the subscription themselves. */
 import React from 'react';
-import { View, Pressable } from 'react-native';
+import { View } from 'react-native';
 import { router } from 'expo-router';
+import { goBack } from '../src/lib/nav';
 import { Screen, BackBar, Btn, Card, Meta } from '../src/components/ui/kit';
 import Txt from '../src/components/ui/Txt';
 import LineIcon from '../src/components/ui/LineIcon';
 import { tokens } from '../src/theme';
 import { actions, toast } from '../src/state/store';
+import PressScale from '../src/components/ui/PressScale';
 
 const OPTS = [
   { key: 'drogerie', t: 'Drogerie-Abo', sub: 'Lieferung alle 2 Wochen · jederzeit pausieren', price: 'ca. –10 %' },
@@ -26,7 +28,7 @@ export default function Abo() {
             label={label}
             onPress={() => {
               actions.dismissHint('abo');
-              router.back();
+              goBack();
               toast(sel === 'selbst' ? 'Bleibt auf eurer Liste' : 'Im Prototyp öffnet sich hier der Händler');
             }}
           />
@@ -40,13 +42,13 @@ export default function Abo() {
       </View>
       <View style={{ gap: 8 }}>
         {OPTS.map((o) => (
-          <Pressable key={o.key} onPress={() => setSel(o.key)} style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 14, paddingHorizontal: 16, borderRadius: 18, backgroundColor: tokens.row, borderWidth: 1.5, borderColor: sel === o.key ? tokens.ink : 'transparent' }}>
+          <PressScale key={o.key} onPress={() => setSel(o.key)} style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 14, paddingHorizontal: 16, borderRadius: 18, backgroundColor: tokens.row, borderWidth: 1.5, borderColor: sel === o.key ? tokens.ink : 'transparent' }}>
             <View style={{ flex: 1, gap: 2 }}>
               <Txt size={16} weight={600}>{o.t}</Txt>
               <Meta>{o.sub}</Meta>
             </View>
             {o.price ? <Txt size={15} weight={600}>{o.price}</Txt> : null}
-          </Pressable>
+          </PressScale>
         ))}
       </View>
       <Card pad={14}>

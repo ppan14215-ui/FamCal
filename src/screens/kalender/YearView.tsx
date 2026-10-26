@@ -1,5 +1,5 @@
 /**
- * Jahr: Bens erstes Jahr as a ring (Canvas v36, row 6).
+ * Jahr: the child's first year as a ring (Canvas v36, row 6).
  * 1 Halten: the ring thickens (10 → 14, 160 ms), a handle appears on today,
  *   haptic tick. No new screen.
  * 2 Ziehen: the week number rolls along, every milestone gives a tick; the
@@ -13,7 +13,8 @@ import { View, Text } from 'react-native';
 import { router } from 'expo-router';
 import Svg, { Circle, Path } from 'react-native-svg';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
-import Animated, { useAnimatedStyle, useSharedValue, withTiming, withSpring, runOnJS, FadeIn, FadeOut } from 'react-native-reanimated';
+import Animated, { useAnimatedStyle, useSharedValue, withTiming, withSpring, FadeIn, FadeOut } from 'react-native-reanimated';
+import { scheduleOnRN } from 'react-native-worklets';
 import { H2, Meta } from '../../components/ui/kit';
 import Txt from '../../components/ui/Txt';
 import { Tile } from '../../components/ui/Clay';
@@ -30,7 +31,9 @@ const R = SIZE / 2 - 22;
 const YEAR = 365;
 const SNAP = 0.022;
 
-const fracOf = (date: string) => Math.max(0, Math.min(1, daysBetween(BEN_BORN, date) / YEAR));
+// The ring starts at the birth (or due) date of the child from onboarding.
+let BORN = BEN_BORN;
+const fracOf = (date: string) => Math.max(0, Math.min(1, daysBetween(BORN, date) / YEAR));
 const pt = (f: number) => {
   const a = -Math.PI / 2 + 2 * Math.PI * f;
   return { x: C + R * Math.cos(a), y: C + R * Math.sin(a) };
@@ -42,16 +45,18 @@ const arc = (from: number, to: number) => {
   const large = to - from > 0.5 ? 1 : 0;
   return `M ${a.x} ${a.y} A ${R} ${R} 0 ${large} 1 ${b.x} ${b.y}`;
 };
-const TODAY_F = fracOf(TODAY);
 
 function weekLabel(w: number) {
-  const d = addDays(BEN_BORN, w * 7);
+  const d = addDays(BORN, w * 7);
   const n = dayNum(d);
   const part = n <= 10 ? 'Anfang' : n <= 20 ? 'Mitte' : 'Ende';
   return `Woche · ${part} ${MONTHS[monthIdx(d)]}`;
 }
 
 export default function YearView() {
+  const kid = useStore((s) => s.kid);
+  BORN = kid?.born ?? kid?.due ?? BEN_BORN;
+  const TODAY_F = fracOf(TODAY);
   const milestones = useStore((s) => s.milestones);
   const sorted = useMemo(() => [...milestones].sort((a, b) => a.date.localeCompare(b.date)), [milestones]);
   const marks = useMemo(() => sorted.map((m) => ({ id: m.id, f: fracOf(m.date) })), [sorted]);
@@ -95,7 +100,7 @@ export default function YearView() {
       knobF.value = TODAY_F;
       lastWeek.value = -1;
       lastNear.value = '';
-      runOnJS(onHold)();
+      scheduleOnRN(onHold);
     })
     .onUpdate((e) => {
       const a = Math.atan2(e.y - C, e.x - C);
@@ -106,18 +111,22 @@ export default function YearView() {
       if (knobF.value < 0.2 && f > 0.8) f = 0;
       let nid = '';
       let snapF = f;
+      // Snap to the nearest milestone, not the first one in range.
+      let best = SNAP;
       for (let i = 0; i < marks.length; i++) {
-        if (Math.abs(marks[i].f - f) < SNAP) { nid = marks[i].id; snapF = marks[i].f; break; }
+        const d = Math.abs(marks[i].f - f);
+        if (d < best) { best = d; nid = marks[i].id; snapF = marks[i].f; }
       }
       knobF.value = snapF;
-      const w = Math.round(snapF * 52);
+      // Week of life counted from days, so the label matches the date.
+      const w = Math.floor(Math.round(snapF * YEAR) / 7);
       if (nid !== lastNear.value) {
         lastNear.value = nid;
         lastWeek.value = w;
-        runOnJS(onMove)(snapF, w, nid);
+        scheduleOnRN(onMove, snapF, w, nid);
       } else if (w !== lastWeek.value) {
         lastWeek.value = w;
-        runOnJS(onWeek)(snapF, w);
+        scheduleOnRN(onWeek, snapF, w);
       }
     })
     .onFinalize(() => {
@@ -125,7 +134,7 @@ export default function YearView() {
       thick.value = withTiming(10, { duration: 160 });
       if (!nid) knobF.value = withSpring(TODAY_F, springs.smooth);
       knobOn.value = withTiming(0, { duration: 240 });
-      runOnJS(onRelease)(nid);
+      scheduleOnRN(onRelease, nid);
       lastNear.value = '';
     });
 
@@ -160,8 +169,8 @@ export default function YearView() {
               })}
             </Svg>
             <View pointerEvents="none" style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, alignItems: 'center', justifyContent: 'center' }}>
-              <Txt size={40} line={46} weight={700} tracking={-1.5} style={{ fontVariant: ['tabular-nums'] }}>{String(week ?? Math.floor(daysBetween(BEN_BORN, TODAY) / 7))}</Txt>
-              <Meta>{week !== null ? weekLabel(week) : 'Wochen alt'}</Meta>
+              <Txt size={40} line={46} weight={700} tracking={-1.5} style={{ fontVariant: ['tabular-nums'] }}>{String(week ?? Math.max(0, Math.floor(daysBetween(BORN, TODAY) / 7)))}</Txt>
+              <Meta>{week !== null ? weekLabel(week) : BORN > TODAY ? `noch ${Math.ceil(daysBetween(TODAY, BORN) / 7)} Wochen` : 'Wochen alt'}</Meta>
             </View>
             <Animated.View pointerEvents="none" style={[{ position: 'absolute', top: 0, left: 0, width: 30, height: 30, borderRadius: 999, backgroundColor: '#FFFFFF', borderWidth: 3, borderColor: tokens.ink }, knob]} />
           </Animated.View>

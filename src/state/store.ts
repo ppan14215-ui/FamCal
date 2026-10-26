@@ -8,12 +8,22 @@ import * as S from '../data/sample';
 import type { CalEvent, Task, List, InboxItem, Doc, Milestone, Toast, Item, Who } from './types';
 import type { ClayName } from '../lib/clayIcons';
 import type { PersonId } from '../theme';
-import { TODAY } from '../lib/dates';
+import { TODAY, BEN_BORN } from '../lib/dates';
+import { persons, personPalette } from '../theme';
+import { firstYear, Kid } from '../data/firstYear';
 
 export type CalView = 'tag' | 'woche' | 'monat' | 'jahr';
 
 type State = {
   names: { J: string; T: string };
+  /** The child from onboarding; null until then. */
+  kid: Kid | null;
+  /** Connected calendars (onboarding "Eure Kalender"). */
+  calendars: { provider: string; account: string; ids: string[] }[];
+  /** Sample family loaded ("Ich wurde eingeladen", Einstellungen). */
+  demo: boolean;
+  /** Palette index per person (Partner screen). */
+  colors: Record<PersonId, number>;
   events: CalEvent[];
   tasks: Task[];
   lists: List[];
@@ -33,8 +43,40 @@ type State = {
   plan: 'gruender' | 'jahr' | 'monat';
 };
 
+/**
+ * A first launch is empty (Julian 26.10.): everything on screen comes from
+ * what the family enters in onboarding. The sample family is one tap away.
+ */
 const initial = (): State => ({
+  names: { J: '', T: '' },
+  kid: null,
+  calendars: [],
+  demo: false,
+  colors: { J: 0, T: 1 },
+  events: [],
+  tasks: [],
+  lists: [{ ...S.shopping, sections: S.shopping.sections.map((sec) => ({ ...sec, items: [] })) }],
+  inbox: [],
+  docs: [],
+  milestones: [],
+  onboardingCards: [],
+  toast: null,
+  calView: 'tag',
+  calDay: TODAY,
+  activeList: 'aufgaben',
+  recentSymbols: [],
+  draftSymbol: null,
+  hints: { abo: false, urlaub: false },
+  photoTaken: false,
+  plan: 'gruender',
+});
+
+/** Julia, Tom and Ben as in the canvas. */
+const demo = (): Partial<State> => ({
   names: { J: 'Julia', T: 'Tom' },
+  kid: { name: 'Ben', born: BEN_BORN, land: 'Bayern' },
+  calendars: [{ provider: 'google', account: 'tom.huber@gmail.com', ids: ['familie', 'arbeit'] }],
+  demo: true,
   events: S.events,
   tasks: S.tasks,
   lists: [S.shopping, S.kliniktasche(), S.geschenke()],
@@ -42,18 +84,17 @@ const initial = (): State => ({
   docs: S.docs,
   milestones: S.milestones,
   onboardingCards: S.onboardingCards,
-  toast: null,
-  calView: 'tag',
-  calDay: TODAY,
-  activeList: 'aufgaben',
-  recentSymbols: [],
-  draftSymbol: null,
   hints: { abo: true, urlaub: true },
-  photoTaken: false,
-  plan: 'gruender',
 });
 
+/** Names show everywhere through `persons`, so they are kept in step. */
+function applyNames(n: { J: string; T: string }) {
+  persons.J.name = n.J || 'Ich';
+  persons.T.name = n.T || 'Partner';
+}
+
 let state = initial();
+applyNames(state.names);
 const subs = new Set<() => void>();
 
 export function get() { return state; }
@@ -81,6 +122,11 @@ export function dismissToast() { set(() => ({ toast: null })); }
 
 // ─── Helpers ───────────────────────────────────────────────────────────────
 
+const mix = (a: string, b: string, k: number) => {
+  const h = (x: string) => [1, 3, 5].map((i) => parseInt(x.slice(i, i + 2), 16));
+  const [A, B] = [h(a), h(b)];
+  return '#' + A.map((v, i) => Math.round(v + (B[i] - v) * k).toString(16).padStart(2, '0')).join('');
+};
 const nextWho = (w: PersonId | null): PersonId | null => (w === 'T' ? 'J' : w === 'J' ? null : 'T');
 const mapList = (lists: List[], listId: string, f: (l: List) => List) => lists.map((l) => (l.id === listId ? f(l) : l));
 const mapItems = (l: List, f: (i: Item) => Item | null): List => ({
@@ -91,13 +137,48 @@ const mapItems = (l: List, f: (i: Item) => Item | null): List => ({
 // ─── Actions ───────────────────────────────────────────────────────────────
 
 export const actions = {
-  reset() { state = initial(); subs.forEach((l) => l()); },
-  setNames(names: { J: string; T: string }) { set(() => ({ names })); },
+  reset() { state = initial(); applyNames(state.names); actions.setColor('J', 0); actions.setColor('T', 1); },
+  loadDemo() { const d = demo(); applyNames(d.names!); set(() => d); actions.setColor('J', 0); actions.setColor('T', 1); },
+  setNames(names: { J: string; T: string }) { applyNames(names); set(() => ({ names })); },
+  /** A person's colour shows everywhere they appear, so `persons` changes with it. */
+  setColor(p: PersonId, i: number) {
+    const c = personPalette[i];
+    Object.assign(persons[p], { tint: c.bg, ink: c.fg, stripe: mix(c.bg, c.fg, 0.14), colorName: c.name });
+    set((s) => ({ colors: { ...s.colors, [p]: i } }));
+  },
+  /** From "Eure Kinder": the first year is planned from the date alone. */
+  setKid(kid: Kid) {
+    const { milestones, cards } = firstYear(kid);
+    set(() => ({ kid, milestones, onboardingCards: cards }));
+  },
+  connectCalendar(provider: string, account: string, ids: string[], events: CalEvent[]) {
+    set((s) => ({
+      calendars: [...s.calendars.filter((c) => c.provider !== provider), ...(ids.length ? [{ provider, account, ids }] : [])],
+      events: [...s.events.filter((e) => e.cal !== provider), ...events.map((e) => ({ ...e, cal: provider }))],
+    }));
+  },
+  /** Cards decided in onboarding become tasks; open ones stay without owner. */
+  cardsToTasks() {
+    set((s) => ({
+      tasks: [...s.tasks.filter((t) => !s.onboardingCards.some((c) => `t-${c.id}` === t.id)), ...s.onboardingCards.map((c) => ({ ...c, id: `t-${c.id}` }))],
+    }));
+  },
 
   // Calendar
   setCalView(v: CalView) { set(() => ({ calView: v })); },
   setCalDay(d: string) { set(() => ({ calDay: d })); },
-  addEvent(e: CalEvent) { set((s) => ({ events: [...s.events.filter((x) => x.id !== e.id), e] })); },
+  /** Saving the same title on the same day and time again replaces it. */
+  addEvent(e: CalEvent) {
+    set((s) => ({ events: [...s.events.filter((x) => x.id !== e.id && !(x.title === e.title && x.date === e.date && x.start === e.start)), e] }));
+  },
+  /** Verschieben: new day and time, Rückgängig puts it back. */
+  moveEvent(id: string, w: { date: string; start?: string; end?: string; endDate?: string }) {
+    const before = state.events.find((e) => e.id === id);
+    if (!before) return;
+    set((s) => ({ events: s.events.map((e) => (e.id === id ? { ...e, date: w.date, endDate: w.endDate, start: w.start ?? '00:00', end: w.end, allDay: !w.start } : e)) }));
+    return before;
+  },
+  restoreEvent(e: CalEvent) { set((s) => ({ events: s.events.map((x) => (x.id === e.id ? e : x)) })); },
   setEventWho(id: string, who: Who) { set((s) => ({ events: s.events.map((e) => (e.id === id ? { ...e, who } : e)) })); },
   toggleBring(eid: string, bid: string) {
     set((s) => ({ events: s.events.map((e) => (e.id === eid ? { ...e, bring: e.bring?.map((b) => (b.id === bid ? { ...b, done: !b.done } : b)) } : e)) }));
@@ -112,17 +193,28 @@ export const actions = {
   },
   assignTask(id: string, who: Who) { set((s) => ({ tasks: s.tasks.map((t) => (t.id === id ? { ...t, who } : t)) })); },
   cycleTaskWho(id: string) {
-    set((s) => ({ tasks: s.tasks.map((t) => (t.id === id ? { ...t, who: nextWho(t.who === 'both' ? null : t.who) } : t)) }));
+    // A done task keeps an owner (it shows who did it), so it cycles Tom <-> Julia only.
+    set((s) => ({ tasks: s.tasks.map((t) => {
+      if (t.id !== id) return t;
+      const next = nextWho(t.who === 'both' ? null : t.who);
+      return { ...t, who: t.done && !next ? 'T' : next };
+    }) }));
   },
-  renameTask(id: string, title: string) { set((s) => ({ tasks: s.tasks.map((t) => (t.id === id ? { ...t, title } : t)) })); },
+  renameTask(id: string, title: string) {
+    const t = title.trim();
+    if (!t) return actions.deleteTask(id);
+    set((s) => ({ tasks: s.tasks.map((x) => (x.id === id ? { ...x, title: t } : x)) }));
+  },
   addTask(title: string) {
     set((s) => ({ tasks: [...s.tasks, { id: S.newId('t'), title, icon: 'erledigt', who: null, done: false, text: 'Neu angelegt. Wer übernimmt?' }] }));
   },
   deleteTask(id: string) {
-    const before = state.tasks;
-    const t = before.find((x) => x.id === id);
+    const idx = state.tasks.findIndex((x) => x.id === id);
+    const t = state.tasks[idx];
+    if (!t) return;
     set((s) => ({ tasks: s.tasks.filter((x) => x.id !== id) }));
-    toast(`${t?.title ?? 'Aufgabe'} gelöscht`, () => set(() => ({ tasks: before })));
+    // Undo puts back only this task, so changes made meanwhile survive.
+    toast(`${t.title} gelöscht`, () => set((s) => (s.tasks.some((x) => x.id === id) ? {} : { tasks: [...s.tasks.slice(0, idx), t, ...s.tasks.slice(idx)] })));
   },
   /** Move a card to the back of the unassigned stack ("Später"). */
   laterTask(id: string) {
@@ -169,10 +261,17 @@ export const actions = {
     }));
   },
   deleteItem(listId: string, itemId: string) {
-    const before = state.lists;
-    let name = '';
-    set((s) => ({ lists: mapList(s.lists, listId, (l) => mapItems(l, (i) => { if (i.id === itemId) { name = S.itemText(i).replace(/^\d+ /, ''); return null; } return i; })) }));
-    toast(`${name} gelöscht`, () => set(() => ({ lists: before })));
+    const list = state.lists.find((l) => l.id === listId);
+    let at: { sid: string; idx: number; item: Item } | null = null;
+    list?.sections.forEach((sec) => sec.items.forEach((i, idx) => { if (i.id === itemId) at = { sid: sec.id, idx, item: i }; }));
+    if (!at) return;
+    const { sid, idx, item } = at as { sid: string; idx: number; item: Item };
+    set((s) => ({ lists: mapList(s.lists, listId, (l) => mapItems(l, (i) => (i.id === itemId ? null : i))) }));
+    toast(`${S.itemText(item).replace(/^\d+ /, '')} gelöscht`, () => set((s) => ({
+      lists: mapList(s.lists, listId, (l) => (l.sections.some((sec) => sec.items.some((i) => i.id === itemId)) ? l : {
+        ...l, sections: l.sections.map((sec) => (sec.id === sid ? { ...sec, items: [...sec.items.slice(0, idx), item, ...sec.items.slice(idx)] } : sec)),
+      })),
+    })));
   },
   addItem(listId: string, text: string, sectionId?: string) {
     const p = S.parseItem(text);
@@ -190,7 +289,7 @@ export const actions = {
     const l = state.lists.find((x) => x.id === 'einkauf')!;
     const existing = l.sections.flatMap((s) => s.items).find((i) => i.name.toLowerCase() === name.toLowerCase() && !i.done);
     if (existing) {
-      set((s) => ({ lists: mapList(s.lists, 'einkauf', (ll) => mapItems(ll, (i) => (i.id === existing.id ? null : i))) }));
+      actions.deleteItem('einkauf', existing.id);
     } else {
       actions.addItem('einkauf', name);
     }
@@ -205,9 +304,9 @@ export const actions = {
     const item = state.inbox.find((x) => x.id === id);
     if (!item) return;
     if (!yes) {
-      const before = state.inbox;
+      const idx = state.inbox.indexOf(item);
       set((s) => ({ inbox: s.inbox.filter((x) => x.id !== id) }));
-      toast('Verworfen', () => set(() => ({ inbox: before })));
+      toast('Verworfen', () => set((s) => (s.inbox.some((x) => x.id === id) ? {} : { inbox: [...s.inbox.slice(0, idx), item, ...s.inbox.slice(idx)] })));
       return;
     }
     set((s) => ({
@@ -218,7 +317,7 @@ export const actions = {
     toast('Eingetragen');
   },
   assignDoc(id: string) {
-    set((s) => ({ docs: s.docs.map((d) => (d.id === id ? { ...d, who: d.who === 'J' ? 'T' : d.who === 'T' ? null : 'J' } : d)) }));
+    set((s) => ({ docs: s.docs.map((d) => (d.id === id ? { ...d, who: nextWho(d.who === 'both' ? null : d.who ?? null) } : d)) }));
   },
 
   // Symbols

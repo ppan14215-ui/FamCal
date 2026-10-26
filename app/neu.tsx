@@ -1,7 +1,8 @@
 /** Neu: the "+" sheet. Foto, Termin, Aufgabe, Entwurf; ask the assistant; or forward by mail. */
 import React from 'react';
-import { View, Pressable } from 'react-native';
+import { View } from 'react-native';
 import { router } from 'expo-router';
+import { goBack } from '../src/lib/nav';
 import * as Clipboard from 'expo-clipboard';
 import Sheet from '../src/components/Sheet';
 import Txt, { Dot } from '../src/components/ui/Txt';
@@ -16,7 +17,7 @@ import type { ClayName } from '../src/lib/clayIcons';
 const MAIL = 'huber-7q2@familie.app';
 
 export default function Neu() {
-  const go = (fn: () => void) => { router.back(); setTimeout(fn, 30); };
+  const go = (fn: () => void) => { goBack(); setTimeout(fn, 30); };
   const opts: { icon: ClayName; t: string; s: string; onPress: () => void }[] = [
     { icon: 'kamera-scan', t: 'Foto', s: 'Brief, Zettel, Bescheid', onPress: () => go(() => router.push('/foto-kamera')) },
     { icon: 'kalender', t: 'Termin', s: 'für euch oder Ben', onPress: () => go(() => router.push('/termin-neu')) },
@@ -40,14 +41,14 @@ export default function Neu() {
         <Txt size={15.5} weight={600} style={{ flex: 1 }}>Frag den Assistenten</Txt>
         <LineIcon name="mic" size={20} color={tokens.sub} />
       </PressScale>
-      <Pressable
+      <PressScale
         onPress={async () => { await Clipboard.setStringAsync(MAIL).catch(() => {}); toast('Adresse kopiert'); }}
         style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 12, paddingHorizontal: 14, borderRadius: 18, backgroundColor: tokens.row }}
       >
         <LineIcon name="inbox" size={20} color={tokens.sub} />
         <Txt size={14} color={tokens.sub} style={{ flex: 1 }}>Oder weiterleiten an <Txt size={14} weight={700}>{MAIL}</Txt></Txt>
         <LineIcon name="copy" size={18} color={tokens.sub} />
-      </Pressable>
+      </PressScale>
     </Sheet>
   );
 }

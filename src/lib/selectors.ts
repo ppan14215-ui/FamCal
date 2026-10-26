@@ -12,8 +12,9 @@ export function nextEvent(events: CalEvent[]): CalEvent | undefined {
   return eventsOn(events, TODAY, false).find((e) => minutes(e.end ?? e.start) > minutes(NOW));
 }
 
+/** Due today, or already late: a missed date must not drop off Heute. */
 export function tasksDueToday(tasks: Task[]): Task[] {
-  return tasks.filter((t) => !t.done && t.due === TODAY && t.who);
+  return tasks.filter((t) => !t.done && !!t.due && t.due <= TODAY && t.who).sort((a, b) => a.due!.localeCompare(b.due!));
 }
 
 /** Deadlines in the next ~3 months, for Heute ("Bald fällig") and Dokumente. */

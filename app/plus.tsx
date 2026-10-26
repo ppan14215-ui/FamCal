@@ -1,12 +1,14 @@
 /** Plus: organising stays free; Plus takes work off you. Prices from HANDOFF (Gründerjahr 29 €). */
 import React from 'react';
-import { View, Pressable } from 'react-native';
+import { View } from 'react-native';
 import { router } from 'expo-router';
+import { goBack } from '../src/lib/nav';
 import { Screen, BackBar, H1, Lead, Btn, Meta } from '../src/components/ui/kit';
 import Txt from '../src/components/ui/Txt';
 import LineIcon from '../src/components/ui/LineIcon';
 import { tokens } from '../src/theme';
 import { useStore, actions, toast } from '../src/state/store';
+import PressScale from '../src/components/ui/PressScale';
 
 const PLANS = [
   { key: 'gruender', t: 'Gründerjahr', price: '29 €', sub: 'danach 39,99 € im Jahr', badge: 'NUR ERSTE 200 FAMILIEN' },
@@ -20,7 +22,7 @@ export default function Plus() {
     <Screen
       footer={
         <>
-          <Btn label="14 Tage gratis testen" onPress={() => { router.back(); toast('Im Prototyp ohne Kauf'); }} />
+          <Btn label="14 Tage gratis testen" onPress={() => { goBack(); toast('Im Prototyp ohne Kauf'); }} />
           <Txt size={13} color={tokens.sub} center>Kündigen mit einem Tipp. Was gratis ist, bleibt gratis.</Txt>
         </>
       }
@@ -40,7 +42,7 @@ export default function Plus() {
         {PLANS.map((p) => {
           const on = plan === p.key;
           return (
-            <Pressable key={p.key} onPress={() => actions.setPlan(p.key)} style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 14, paddingHorizontal: 16, borderRadius: 20, backgroundColor: tokens.row, borderWidth: 2, borderColor: on ? tokens.ink : 'transparent', marginTop: 'badge' in p ? 8 : 0 }}>
+            <PressScale key={p.key} onPress={() => actions.setPlan(p.key)} style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 14, paddingHorizontal: 16, borderRadius: 20, backgroundColor: tokens.row, borderWidth: 2, borderColor: on ? tokens.ink : 'transparent', marginTop: 'badge' in p ? 8 : 0 }}>
               {'badge' in p ? (
                 <View style={{ position: 'absolute', top: -11, left: 14, height: 22, paddingHorizontal: 10, borderRadius: 999, backgroundColor: tokens.done, justifyContent: 'center' }}>
                   <Txt size={11.5} weight={700} color="#FFFFFF">{p.badge}</Txt>
@@ -51,7 +53,7 @@ export default function Plus() {
                 <Meta>{p.sub}</Meta>
               </View>
               <Txt size={18} weight={700}>{p.price}</Txt>
-            </Pressable>
+            </PressScale>
           );
         })}
       </View>

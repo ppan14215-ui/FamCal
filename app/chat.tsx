@@ -3,8 +3,9 @@
  * family shares. Prototype: answers are scripted, no real model.
  */
 import React, { useRef, useState } from 'react';
-import { View, Pressable, ScrollView, TextInput, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, ScrollView, TextInput, KeyboardAvoidingView, Platform } from 'react-native';
 import { router } from 'expo-router';
+import { goBack } from '../src/lib/nav';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import { RoundButton, Chip, Meta, Chevron } from '../src/components/ui/kit';
@@ -15,6 +16,7 @@ import { Avatar } from '../src/components/ui/Person';
 import { tokens, fonts } from '../src/theme';
 import { toast } from '../src/state/store';
 import { haptics } from '../src/lib/haptics';
+import PressScale from '../src/components/ui/PressScale';
 
 type Msg = { id: number; me?: boolean; text?: string; kind?: 'u5' | 'wissen' };
 
@@ -58,7 +60,7 @@ export default function Chat() {
   return (
     <KeyboardAvoidingView style={{ flex: 1, backgroundColor: tokens.bg }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <View style={{ paddingTop: insets.top + 8, paddingHorizontal: 18, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-        <RoundButton icon="back" label="Zurück" onPress={() => (router.canGoBack() ? router.back() : router.replace('/heute'))} />
+        <RoundButton icon="back" label="Zurück" onPress={() => goBack()} />
         <View style={{ alignItems: 'center' }}>
           <Txt size={16} weight={600}>Assistent</Txt>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
@@ -88,10 +90,10 @@ export default function Chat() {
                 </View>
               </View>
             ) : m.kind === 'wissen' ? (
-              <Pressable onPress={() => router.push('/wissen')} style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 12, paddingHorizontal: 14, borderRadius: 20, borderBottomLeftRadius: 6, backgroundColor: tokens.row }}>
+              <PressScale onPress={() => router.push('/wissen')} style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 12, paddingHorizontal: 14, borderRadius: 20, borderBottomLeftRadius: 6, backgroundColor: tokens.row }}>
                 <Txt size={15.5} line={22} style={{ flex: 1 }}>Alles, was ich weiß, steht hier. Ihr könnt jeden Punkt ändern oder löschen.</Txt>
                 <Chevron />
-              </Pressable>
+              </PressScale>
             ) : (
               <View style={{ paddingVertical: 11, paddingHorizontal: 14, borderRadius: 20, backgroundColor: m.me ? '#E9ECEB' : tokens.row, borderBottomRightRadius: m.me ? 6 : 20, borderBottomLeftRadius: m.me ? 20 : 6 }}>
                 <Txt size={15.5} line={22}>{m.text}</Txt>
@@ -112,16 +114,16 @@ export default function Chat() {
             returnKeyType="send"
             style={[{ flex: 1, fontFamily: fonts[400], fontSize: 15.5, color: tokens.ink, paddingVertical: 8 }, Platform.OS === 'web' ? ({ outlineStyle: 'none' } as any) : null]}
           />
-          <Pressable accessibilityLabel="Foto" onPress={() => router.push('/foto-kamera')} style={{ width: 40, height: 40, alignItems: 'center', justifyContent: 'center' }}>
+          <PressScale accessibilityLabel="Foto" onPress={() => router.push('/foto-kamera')} style={{ width: 40, height: 40, alignItems: 'center', justifyContent: 'center' }}>
             <LineIcon name="camera" size={20} color={tokens.sub} />
-          </Pressable>
-          <Pressable
+          </PressScale>
+          <PressScale
             accessibilityLabel={text ? 'Senden' : 'Sprachnotiz'}
             onPress={text ? send : () => toast('Sprachnotiz kommt später')}
             style={{ width: 40, height: 40, borderRadius: 999, backgroundColor: tokens.ink, alignItems: 'center', justifyContent: 'center' }}
           >
             <LineIcon name={text ? 'send' : 'mic'} size={20} color="#FFFFFF" />
-          </Pressable>
+          </PressScale>
         </View>
       </View>
     </KeyboardAvoidingView>

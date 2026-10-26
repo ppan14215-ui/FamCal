@@ -6,6 +6,7 @@ import { Screen, BackBar, StepDots, Meta, TextLink, Hint } from '../../src/compo
 import Txt, { Dot } from '../../src/components/ui/Txt';
 import SwipeDeck from '../../src/components/SwipeDeck';
 import { useStore, actions } from '../../src/state/store';
+import { persons } from '../../src/theme';
 
 export default function Karten() {
   const cards = useStore((s) => s.onboardingCards);
@@ -27,8 +28,8 @@ export default function Karten() {
           <Meta>Ihr könnt es jederzeit in Listen ändern.</Meta>
         </View>
       )}
-      <Hint center>Links zu Julia, rechts zu Tom. Ihr entscheidet, die App schlägt niemanden vor.</Hint>
-      <TextLink label="Fertig, zu Heute" color="#16232A" onPress={() => router.replace('/heute')} />
+      <Hint center>{`Links zu ${persons.J.name}, rechts zu ${persons.T.name}. Ihr entscheidet, die App schlägt niemanden vor.`}</Hint>
+      <TextLink label="Fertig, zu Heute" color="#16232A" onPress={() => { actions.cardsToTasks(); router.replace('/heute'); }} />
     </Screen>
   );
 }

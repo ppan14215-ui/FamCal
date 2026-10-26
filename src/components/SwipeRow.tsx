@@ -7,7 +7,8 @@
 import React, { useCallback } from 'react';
 import { View, Pressable, LayoutChangeEvent } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
-import Animated, { useAnimatedStyle, useSharedValue, withSpring, withTiming, runOnJS, interpolate, Extrapolation } from 'react-native-reanimated';
+import Animated, { useAnimatedStyle, useSharedValue, withSpring, withTiming, interpolate, Extrapolation } from 'react-native-reanimated';
+import { scheduleOnRN } from 'react-native-worklets';
 import Txt from './ui/Txt';
 import LineIcon from './ui/LineIcon';
 import { tokens, springs, motion } from '../theme';
@@ -33,16 +34,16 @@ export default function SwipeRow({ children, onDelete, bg = tokens.row }: { chil
       // Rightward: rubber band, never reveals anything.
       x.value = raw > 0 ? raw * 0.15 : raw;
       const nowArmed = -x.value > w.value * 0.5;
-      if (nowArmed !== armed.value) { armed.value = nowArmed; runOnJS(tick)(); }
+      if (nowArmed !== armed.value) { armed.value = nowArmed; scheduleOnRN(tick); }
     })
     .onEnd((e) => {
       const far = -x.value > w.value * 0.5 || (e.velocityX < -900 && -x.value > 40);
       if (far) {
-        x.value = withTiming(-w.value, { duration: motion.micro }, (done) => { if (done) runOnJS(fire)(); });
+        x.value = withTiming(-w.value, { duration: motion.micro }, (done) => { if (done) scheduleOnRN(fire); });
       } else if (-x.value > OPEN * 0.6) {
-        x.value = withSpring(-OPEN, springs.smooth);
+        x.value = withSpring(-OPEN, { ...springs.smooth, velocity: e.velocityX });
       } else {
-        x.value = withSpring(0, springs.snapBack);
+        x.value = withSpring(0, { ...springs.snapBack, velocity: e.velocityX });
       }
       armed.value = false;
     });
@@ -60,14 +61,15 @@ export default function SwipeRow({ children, onDelete, bg = tokens.row }: { chil
       <Animated.View style={[{ position: 'absolute', right: 0, top: 0, bottom: 0, backgroundColor: tokens.danger }, action]}>
         <Pressable
           accessibilityLabel="Löschen"
-          onPress={() => { x.value = withTiming(-w.value, { duration: motion.micro }, (d) => { if (d) runOnJS(fire)(); }); }}
+          onPress={() => { x.value = withTiming(-w.value, { duration: motion.micro }, (d) => { if (d) scheduleOnRN(fire); }); }}
           style={{ flex: 1, alignItems: 'center', justifyContent: 'center', gap: 2 }}
         >
           <LineIcon name="x" size={18} color="#FFFFFF" stroke={2.2} />
           <Txt size={13} weight={600} color="#FFFFFF">Löschen</Txt>
         </Pressable>
       </Animated.View>
-      <GestureDetector gesture={pan}>
+      {/* pan-y keeps vertical scrolling alive on mobile web */}
+      <GestureDetector gesture={pan} touchAction="pan-y">
         <Animated.View style={[{ backgroundColor: bg }, row]}>{children}</Animated.View>
       </GestureDetector>
     </View>

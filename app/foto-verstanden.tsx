@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { View } from 'react-native';
 import { router } from 'expo-router';
+import { goBack } from '../src/lib/nav';
 import { Screen, BackBar, Btn, TextLink, Group, LineRow, Meta, Check } from '../src/components/ui/kit';
 import Txt from '../src/components/ui/Txt';
 import { Tile, ClayIcon } from '../src/components/ui/Clay';
@@ -31,7 +32,7 @@ export default function FotoVerstanden() {
       gap={12}
       footer={
         <>
-          <TextLink label="Nichts davon" onPress={() => router.back()} />
+          <TextLink label="Nichts davon" onPress={() => goBack()} />
           <Btn label="Übernehmen" disabled={!Object.values(on).some(Boolean)} onPress={take} />
         </>
       }

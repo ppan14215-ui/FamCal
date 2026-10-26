@@ -5,6 +5,7 @@
 import React, { useMemo, useState } from 'react';
 import { View, Pressable, StyleSheet } from 'react-native';
 import { router } from 'expo-router';
+import { goBack } from '../../src/lib/nav';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { FadeOut, LinearTransition } from 'react-native-reanimated';
 import Svg, { Defs, LinearGradient, Stop, Rect } from 'react-native-svg';
@@ -14,12 +15,13 @@ import { ClayIcon } from '../../src/components/ui/Clay';
 import { useStore, toast } from '../../src/state/store';
 import { addDays, monday, daysBetween, count, TODAY } from '../../src/lib/dates';
 import { haptics } from '../../src/lib/haptics';
+import PressScale from '../../src/components/ui/PressScale';
 
 const WHITE = '#FFFFFF';
 
 function Notif({ title, body, when, actions, onPress }: { title: string; body: string; when: string; actions?: { label: string; onPress: () => void }[]; onPress?: () => void }) {
   return (
-    <Pressable onPress={onPress} style={{ paddingTop: 12, paddingHorizontal: 14, paddingBottom: actions ? 0 : 12, borderRadius: 22, backgroundColor: 'rgba(245,245,244,0.22)', gap: 4, overflow: 'hidden' }}>
+    <PressScale onPress={onPress} style={{ paddingTop: 12, paddingHorizontal: 14, paddingBottom: actions ? 0 : 12, borderRadius: 22, backgroundColor: 'rgba(245,245,244,0.22)', gap: 4, overflow: 'hidden' }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
         <View style={{ width: 22, height: 22, borderRadius: 6, backgroundColor: '#F5F5F4', alignItems: 'center', justifyContent: 'center' }}>
           <ClayIcon name="kalender" size={18} />
@@ -42,7 +44,7 @@ function Notif({ title, body, when, actions, onPress }: { title: string; body: s
           ))}
         </View>
       ) : null}
-    </Pressable>
+    </PressScale>
   );
 }
 
@@ -83,7 +85,7 @@ export default function Sperrbildschirm() {
         <Rect x="0" y="0" width="100%" height="100%" fill="url(#lock)" />
       </Svg>
       <View style={{ paddingTop: insets.top + 8, paddingHorizontal: 14 }}>
-        <RoundButton icon="x" label="Schließen" bg="rgba(255,255,255,0.18)" color={WHITE} onPress={() => (router.canGoBack() ? router.back() : router.replace('/heute'))} />
+        <RoundButton icon="x" label="Schließen" bg="rgba(255,255,255,0.18)" color={WHITE} onPress={() => goBack()} />
       </View>
       <View style={{ paddingHorizontal: 14, gap: 10 }}>
         <View style={{ alignItems: 'center', marginBottom: 26 }}>

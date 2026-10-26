@@ -2,6 +2,7 @@
 import React from 'react';
 import { View } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
+import { goBack } from '../../src/lib/nav';
 import Sheet from '../../src/components/Sheet';
 import { Btn, Meta } from '../../src/components/ui/kit';
 import Txt from '../../src/components/ui/Txt';
@@ -9,7 +10,7 @@ import { Tile } from '../../src/components/ui/Clay';
 import { Owner } from '../../src/components/ui/Person';
 import { milestoneSub } from '../../src/components/Timeline';
 import { tokens } from '../../src/theme';
-import { useStore, toast } from '../../src/state/store';
+import { useStore, actions } from '../../src/state/store';
 
 export default function Meilenstein() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -17,7 +18,8 @@ export default function Meilenstein() {
   if (!m) return null;
   const open = () => {
     if (m.id === 'm-eg') router.replace('/infozettel');
-    else { router.back(); toast(`${m.title} ist im Kalender eingetragen`); }
+    // Opens the day of the milestone in the calendar.
+    else { actions.setCalDay(m.date); actions.setCalView('tag'); router.replace('/kalender'); }
   };
   return (
     <Sheet bg={tokens.row}>
@@ -32,7 +34,7 @@ export default function Meilenstein() {
       {m.text ? <Txt size={15} line={22} color={tokens.sub}>{m.text}</Txt> : null}
       <View style={{ flexDirection: 'row', gap: 8 }}>
         <Btn label="Öffnen" onPress={open} style={{ flex: 1 }} />
-        <Btn label="Zu heute" primary={false} onPress={() => router.back()} />
+        <Btn label="Zu heute" primary={false} onPress={() => goBack()} />
       </View>
     </Sheet>
   );

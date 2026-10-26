@@ -4,8 +4,9 @@
  * clay object may move.
  */
 import React, { useEffect, useState } from 'react';
-import { View, Pressable } from 'react-native';
+import { View } from 'react-native';
 import { router } from 'expo-router';
+import { goBack } from '../src/lib/nav';
 import Animated, { FadeIn, useAnimatedStyle, useSharedValue, withRepeat, withSequence, withTiming, withSpring } from 'react-native-reanimated';
 import { Screen } from '../src/components/ui/kit';
 import Txt from '../src/components/ui/Txt';
@@ -13,6 +14,7 @@ import LineIcon from '../src/components/ui/LineIcon';
 import { ClayIcon } from '../src/components/ui/Clay';
 import { tokens, tint, springs } from '../src/theme';
 import { haptics } from '../src/lib/haptics';
+import PressScale from '../src/components/ui/PressScale';
 
 const STEPS = ['Brief der Elterngeldstelle', 'Frist gefunden: 12. Dezember', 'Was zu tun ist', 'Wo es hingehört'];
 
@@ -34,12 +36,12 @@ export default function FotoLesen() {
   return (
     <Screen bg="#F7F5F0" scroll={false}>
       <View style={{ flexDirection: 'row', justifyContent: 'flex-end' }}>
-        <Pressable hitSlop={10} onPress={() => router.back()}><Txt size={15} color={tokens.sub}>Abbrechen</Txt></Pressable>
+        <PressScale hitSlop={10} onPress={() => goBack()}><Txt size={15} color={tokens.sub}>Abbrechen</Txt></PressScale>
       </View>
       <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', gap: 40 }}>
-        <Pressable accessibilityLabel="Weiter" onPress={() => router.replace('/foto-verstanden')} style={{ width: 220, height: 220, borderRadius: 56, backgroundColor: tint('umschlag-euro'), alignItems: 'center', justifyContent: 'center' }}>
+        <PressScale accessibilityLabel="Weiter" onPress={() => router.replace('/foto-verstanden')} style={{ width: 220, height: 220, borderRadius: 56, backgroundColor: tint('umschlag-euro'), alignItems: 'center', justifyContent: 'center' }}>
           <Animated.View style={icon}><ClayIcon name="brief-gelesen" size={170} /></Animated.View>
-        </Pressable>
+        </PressScale>
         <View style={{ gap: 14, width: 260 }}>
           {STEPS.map((s, i) => {
             const state = i < done ? 'ok' : i === done ? 'run' : 'wait';

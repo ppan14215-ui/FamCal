@@ -1,6 +1,6 @@
 /** Einstellungen: family address, calendar sync, hints, language, export, Plus. */
 import React from 'react';
-import { View, Pressable } from 'react-native';
+import { View } from 'react-native';
 import { router } from 'expo-router';
 import * as Clipboard from 'expo-clipboard';
 import { Screen, BackBar, H1, H2, Group, Meta, Chevron } from '../src/components/ui/kit';
@@ -14,14 +14,14 @@ import type { ClayName } from '../src/lib/clayIcons';
 
 function SRow({ icon, t, s, right, onPress }: { icon: ClayName; t: string; s: string; right?: React.ReactNode; onPress?: () => void }) {
   return (
-    <Pressable onPress={onPress} style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 10, paddingHorizontal: 14, backgroundColor: tokens.row }}>
+    <PressScale onPress={onPress} style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 10, paddingHorizontal: 14, backgroundColor: tokens.row }}>
       <Tile name={icon} size={30} radius={10} />
       <View style={{ flex: 1 }}>
         <Txt size={15.5} weight={600}>{t}</Txt>
         <Meta>{s}</Meta>
       </View>
       {right ?? <Chevron />}
-    </Pressable>
+    </PressScale>
   );
 }
 const Dot = () => <View style={{ width: 8, height: 8, borderRadius: 999, backgroundColor: tokens.ok }} />;
@@ -55,7 +55,8 @@ export default function Einstellungen() {
         <SRow icon="glocke" t="Hinweise · Sperrbildschirm" s="So sehen Push-Hinweise aus" onPress={() => router.push('/demo/sperrbildschirm')} />
         <SRow icon="chat" t="Teilen aus einem Chat" s="Nachricht aus WhatsApp übernehmen" onPress={() => router.push('/demo/teilen')} />
         <SRow icon="kalender" t="Widgets" s="Homescreen, klein und mittel" onPress={() => router.push('/demo/widgets')} />
-        <SRow icon="zuhause" t="Onboarding neu starten" s="Beispieldaten zurücksetzen" onPress={() => { actions.reset(); router.dismissAll(); router.replace('/onboarding'); }} />
+        <SRow icon="u-heft" t="Beispielfamilie laden" s="Julia, Tom und Ben mit vollem Kalender" onPress={() => { actions.loadDemo(); router.dismissAll(); router.replace('/heute'); }} />
+        <SRow icon="zuhause" t="Onboarding neu starten" s="Alles leeren, wie beim ersten Öffnen" onPress={() => { actions.reset(); router.dismissAll(); router.replace('/onboarding'); }} />
       </Group>
       <Txt size={12.5} line={17} color={tokens.mute} center>Prototyp ohne Login und ohne echte KI. Alles bleibt auf diesem Gerät und ist nach dem Neuladen wieder wie am Anfang.</Txt>
     </Screen>

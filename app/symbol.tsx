@@ -1,7 +1,8 @@
 /** Neuer Termin · Symbol wählen: every clay icon, grouped, searchable. */
 import React, { useState } from 'react';
-import { View, Pressable, ScrollView, TextInput, Platform } from 'react-native';
+import { View, ScrollView, TextInput, Platform } from 'react-native';
 import { router } from 'expo-router';
+import { goBack } from '../src/lib/nav';
 import Sheet from '../src/components/Sheet';
 import Txt from '../src/components/ui/Txt';
 import LineIcon from '../src/components/ui/LineIcon';
@@ -11,6 +12,7 @@ import { useStore, actions } from '../src/state/store';
 import { SYMBOL_GROUPS, symbolLabel } from '../src/data/symbols';
 import { haptics } from '../src/lib/haptics';
 import type { ClayName } from '../src/lib/clayIcons';
+import PressScale from '../src/components/ui/PressScale';
 
 export default function Symbol() {
   const current = useStore((s) => s.draftSymbol);
@@ -23,14 +25,14 @@ export default function Symbol() {
     haptics.select();
     setSel(n);
     actions.pickSymbol(n);
-    setTimeout(() => router.back(), 140);
+    setTimeout(() => goBack(), 140);
   };
 
   return (
     <Sheet bg={tokens.row} top={70} scrollable style={{ paddingBottom: 0, gap: 12 }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
         <Txt size={20} weight={700} tracking={-0.4}>Symbol</Txt>
-        <Pressable hitSlop={10} onPress={() => router.back()}><Txt size={15} weight={600}>Fertig</Txt></Pressable>
+        <PressScale hitSlop={10} onPress={() => goBack()}><Txt size={15} weight={600}>Fertig</Txt></PressScale>
       </View>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, height: 44, paddingHorizontal: 14, borderRadius: 14, backgroundColor: '#F1F1EF' }}>
         <LineIcon name="sparkle" size={16} color={tokens.sub} />
@@ -52,13 +54,13 @@ export default function Symbol() {
                 const on = n === sel;
                 return (
                   <View key={n} style={{ width: `${100 / 6}%`, padding: 2 }}>
-                    <Pressable
+                    <PressScale
                       accessibilityLabel={symbolLabel(n)}
                       onPress={() => choose(n)}
                       style={{ aspectRatio: 1, borderRadius: 16, alignItems: 'center', justifyContent: 'center', backgroundColor: on ? tint(n) : 'transparent', borderWidth: 2, borderColor: on ? tokens.ink : 'transparent' }}
                     >
                       <ClayIcon name={n} size={40} />
-                    </Pressable>
+                    </PressScale>
                   </View>
                 );
               })}

@@ -9,9 +9,9 @@ import { Avatar } from '../../src/components/ui/Person';
 import { actions } from '../../src/state/store';
 
 export default function Eltern() {
-  const [j, setJ] = useState('Julia');
-  const [t, setT] = useState('Tom');
-  const go = (path: '/onboarding/kinder' | '/onboarding/kalender') => { actions.setNames({ J: j, T: t }); router.push(path); };
+  const [j, setJ] = useState('');
+  const [t, setT] = useState('');
+  const go = (path: '/onboarding/kinder' | '/onboarding/kalender') => { actions.setNames({ J: j.trim(), T: t.trim() }); router.push(path); };
   return (
     <Screen
       footer={
@@ -26,10 +26,10 @@ export default function Eltern() {
       <H1>Über euch</H1>
       <Lead>Alles geht von euch beiden aus. Jeder bekommt eine Farbe, daran erkennt ihr später, wer was übernimmt.</Lead>
       <View style={{ gap: 8 }}>
-        <Field label="Dein Name" value={j} onChangeText={setJ} right={<Avatar p="J" size={30} />} />
-        <Field label="Name deines Partners" value={t} onChangeText={setT} right={<Avatar p="T" size={30} />} />
+        <Field label="Dein Name" value={j} onChangeText={setJ} placeholder="Zum Beispiel Julia" right={<Avatar p="J" size={30} />} />
+        <Field label="Name deines Partners" value={t} onChangeText={setT} placeholder="Zum Beispiel Tom" right={<Avatar p="T" size={30} />} />
       </View>
-      <Hint>{`${t || 'Deinen Partner'} lädst du gleich ein. Den Namen kann er selbst ändern.`}</Hint>
+      <Hint>{`${t.trim() || 'Deinen Partner'} lädst du gleich ein. Den Namen kann ${t.trim() ? 'er oder sie' : 'die Person'} selbst ändern.`}</Hint>
     </Screen>
   );
 }

@@ -1,6 +1,6 @@
 /** Kalender · Tag: week strip, then the day as a timeline. */
 import React, { useMemo } from 'react';
-import { View, Pressable } from 'react-native';
+import { View } from 'react-native';
 import { router } from 'expo-router';
 import { H2, Meta } from '../../components/ui/kit';
 import Txt from '../../components/ui/Txt';
@@ -11,6 +11,7 @@ import { tokens, persons, PersonId } from '../../theme';
 import { useStore, actions } from '../../state/store';
 import { eventsOn } from '../../lib/selectors';
 import { addDays, monday, dayNum, WD_SHORT, weekday, WD_LONG, hm, TODAY } from '../../lib/dates';
+import PressScale from '../../components/ui/PressScale';
 
 export function WeekStrip({ day, onSelect }: { day: string; onSelect: (d: string) => void }) {
   const events = useStore((s) => s.events);
@@ -22,7 +23,7 @@ export function WeekStrip({ day, onSelect }: { day: string; onSelect: (d: string
         const on = d === day;
         const has = events.some((e) => e.date === d && !e.work);
         return (
-          <Pressable
+          <PressScale
             key={d}
             onPress={() => onSelect(d)}
             accessibilityLabel={`${WD_LONG[weekday(d)]} ${dayNum(d)}.`}
@@ -31,7 +32,7 @@ export function WeekStrip({ day, onSelect }: { day: string; onSelect: (d: string
             <Txt size={12} color={tokens.sub}>{WD_SHORT[weekday(d)]}</Txt>
             <Txt size={19} line={22} weight={d === TODAY ? 700 : 600}>{String(dayNum(d))}</Txt>
             <View style={{ width: 5, height: 5, borderRadius: 999, backgroundColor: has ? tokens.done : 'transparent' }} />
-          </Pressable>
+          </PressScale>
         );
       })}
     </View>
@@ -68,7 +69,7 @@ export default function DayView() {
             return (
               <View key={e.id} style={{ flexDirection: 'row', gap: 12, alignItems: 'flex-start' }}>
                 <Txt size={13} weight={600} style={{ width: 52, paddingTop: 6 }}>{hm(e.start)}</Txt>
-                <Pressable onPress={() => router.push(`/termin/${e.id}`)} style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                <PressScale onPress={() => router.push(`/termin/${e.id}`)} style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 12 }}>
                   {!last ? <View style={{ position: 'absolute', left: 25, top: 54, bottom: -12, width: 2, backgroundColor: tokens.hair }} /> : null}
                   <Tile name={e.icon} size={52} radius={16} />
                   <View style={{ flex: 1 }}>
@@ -76,7 +77,7 @@ export default function DayView() {
                     {e.sub ? <Meta>{e.sub}</Meta> : null}
                   </View>
                   <Owner who={e.who} />
-                </Pressable>
+                </PressScale>
               </View>
             );
           })}

@@ -5,9 +5,10 @@
  * takes something (HANDOFF): the stack is neutral until a parent decides.
  */
 import React, { useEffect, useState, useCallback } from 'react';
-import { View, Pressable, useWindowDimensions } from 'react-native';
+import { View, useWindowDimensions } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
-import Animated, { useAnimatedStyle, useSharedValue, withSpring, withTiming, runOnJS, interpolate, interpolateColor, Extrapolation } from 'react-native-reanimated';
+import Animated, { useAnimatedStyle, useSharedValue, withSpring, withTiming, interpolate, interpolateColor, Extrapolation } from 'react-native-reanimated';
+import { scheduleOnRN } from 'react-native-worklets';
 import Txt from './ui/Txt';
 import LineIcon from './ui/LineIcon';
 import { ClayIcon } from './ui/Clay';
@@ -18,8 +19,10 @@ import { haptics } from '../lib/haptics';
 import type { Task } from '../state/types';
 import type { PersonId } from '../theme';
 import { Platform } from 'react-native';
+import PressScale from './ui/PressScale';
 
 type Dir = 'J' | 'T' | 'later';
+type Fling = { dir: Dir; id: string; n: number };
 type Props = {
   cards: Task[];
   onDecide: (id: string, d: Dir) => void;
@@ -32,9 +35,22 @@ const cardShadow = Platform.select({
 });
 
 export default function SwipeDeck({ cards, onDecide, height = 430 }: Props) {
-  const [fling, setFling] = useState<{ dir: Dir; n: number } | null>(null);
+  const [fling, setFling] = useState<Fling | null>(null);
+  // Cards decided by a swipe keep flying off on top while the next one is
+  // already live (Namore: the vote fires at release, not after the fly-off).
+  const [leaving, setLeaving] = useState<Task[]>([]);
   const top = cards[0];
   const back = cards.slice(1, 3);
+  const live = top && !leaving.some((l) => l.id === top.id) ? top : undefined;
+
+  const release = useCallback((card: Task, d: Dir) => {
+    setFling(null);
+    if (d !== 'later') setLeaving((l) => [...l, card]);
+    onDecide(card.id, d);
+  }, [onDecide]);
+  const gone = useCallback((id: string) => setLeaving((l) => l.filter((c) => c.id !== id)), []);
+
+  const press = (dir: Dir) => live && setFling({ dir, id: live.id, n: Date.now() });
 
   return (
     <View style={{ gap: 16 }}>
@@ -46,7 +62,7 @@ export default function SwipeDeck({ cards, onDecide, height = 430 }: Props) {
             const depth = arr.length - i; // 2 = furthest
             return (
               <View
-                key={c.id}
+                key={`b-${c.id}`}
                 style={{
                   position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, borderRadius: 30, overflow: 'hidden', backgroundColor: tokens.row,
                   opacity: depth === 2 ? 0.6 : 0.85,
@@ -59,12 +75,21 @@ export default function SwipeDeck({ cards, onDecide, height = 430 }: Props) {
               </View>
             );
           })}
-        {top ? <TopCard key={top.id} card={top} fling={fling} onDone={(d) => onDecide(top.id, d)} /> : null}
+        {(live ? [live, ...leaving] : leaving).map((c) => (
+          <TopCard
+            key={`t-${c.id}`}
+            card={c}
+            live={c === live}
+            fling={c === live && fling?.id === c.id ? fling : null}
+            onRelease={release}
+            onGone={gone}
+          />
+        ))}
       </View>
       <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 30 }}>
-        <RoundAction label={persons.J.name} onPress={() => top && setFling({ dir: 'J', n: Date.now() })}><Avatar p="J" size={34} /></RoundAction>
-        <RoundAction label="Später" onPress={() => top && setFling({ dir: 'later', n: Date.now() })}><LineIcon name="clock" size={24} /></RoundAction>
-        <RoundAction label={persons.T.name} onPress={() => top && setFling({ dir: 'T', n: Date.now() })}><Avatar p="T" size={34} /></RoundAction>
+        <RoundAction label={persons.J.name} onPress={() => press('J')}><Avatar p="J" size={34} /></RoundAction>
+        <RoundAction label="Später" onPress={() => press('later')}><LineIcon name="clock" size={24} /></RoundAction>
+        <RoundAction label={persons.T.name} onPress={() => press('T')}><Avatar p="T" size={34} /></RoundAction>
       </View>
     </View>
   );
@@ -73,40 +98,59 @@ export default function SwipeDeck({ cards, onDecide, height = 430 }: Props) {
 function RoundAction({ children, label, onPress }: { children: React.ReactNode; label: string; onPress: () => void }) {
   return (
     <View style={{ alignItems: 'center', gap: 6 }}>
-      <Pressable
+      <PressScale
         accessibilityLabel={label}
         onPress={onPress}
-        style={({ pressed }) => ({ width: 64, height: 64, borderRadius: 999, backgroundColor: tokens.row, borderWidth: 1, borderColor: tokens.hair, alignItems: 'center', justifyContent: 'center', transform: [{ scale: pressed ? 0.94 : 1 }] })}
+        scale={0.92}
+        style={{ width: 64, height: 64, borderRadius: 999, backgroundColor: tokens.row, borderWidth: 1, borderColor: tokens.hair, alignItems: 'center', justifyContent: 'center' }}
       >
         {children}
-      </Pressable>
+      </PressScale>
       <Txt size={13} color={tokens.sub}>{label}</Txt>
     </View>
   );
 }
 
-function TopCard({ card, fling, onDone }: { card: Task; fling: { dir: Dir; n: number } | null; onDone: (d: Dir) => void }) {
+// Namore swipe deck values: 80 pt lock-in, a flick counts above 800 px/s
+// once the card moved 30 pt, tilt never passes 15 degrees.
+const LOCK = 80;
+const FLICK_V = 800;
+const FLICK_MIN = 30;
+const FLY_MS = 220;
+
+function TopCard({ card, live, fling, onRelease, onGone }: {
+  card: Task; live: boolean; fling: Fling | null;
+  onRelease: (card: Task, d: Dir) => void; onGone: (id: string) => void;
+}) {
   const { width } = useWindowDimensions();
   const x = useSharedValue(0);
   const y = useSharedValue(0);
   const enter = useSharedValue(0.96);
   const crossed = useSharedValue(0);
-  const TH = 110;
 
   useEffect(() => { enter.value = withSpring(1, springs.smooth); }, []);
 
-  const finish = useCallback((d: Dir) => { haptics.commit(); onDone(d); }, [onDone]);
+  const decide = useCallback((d: Dir) => { haptics.commit(); onRelease(card, d); }, [onRelease, card]);
+  const done = useCallback(() => onGone(card.id), [onGone, card.id]);
   const tick = useCallback(() => haptics.select(), []);
 
-  const flyTo = (d: Dir) => {
+  const flyTo = (d: Dir, v = 0) => {
     'worklet';
     if (d === 'later') {
+      // "Später" moves the card to the back; it may come straight back as the
+      // top card, so it springs home once the store has reordered.
       y.value = withTiming(60, { duration: 200 });
-      x.value = withTiming(0, { duration: 200 }, () => runOnJS(finish)(d));
+      x.value = withTiming(0, { duration: 200 }, () => {
+        scheduleOnRN(decide, d);
+        y.value = withSpring(0, springs.smooth);
+      });
       return;
     }
     const to = d === 'T' ? width * 1.3 : -width * 1.3;
-    x.value = withTiming(to, { duration: 220 }, () => runOnJS(finish)(d));
+    // A fast flick leaves faster, never slower than the base fly-off.
+    const dur = Math.abs(v) > 0 ? Math.max(120, Math.min(FLY_MS, (Math.abs(to - x.value) / Math.abs(v)) * 1000)) : FLY_MS;
+    x.value = withTiming(to, { duration: dur }, () => scheduleOnRN(done));
+    scheduleOnRN(decide, d);
   };
 
   // Buttons below the stack fling the same card.
@@ -119,36 +163,49 @@ function TopCard({ card, fling, onDone }: { card: Task; fling: { dir: Dir; n: nu
   }, [fling]);
 
   const pan = Gesture.Pan()
+    .enabled(live)
+    .activeOffsetX([-15, 15])
+    .failOffsetY([-30, 30])
     .onUpdate((e) => {
       x.value = e.translationX;
       y.value = e.translationY * 0.25;
-      const c = x.value > TH ? 1 : x.value < -TH ? -1 : 0;
-      if (c !== crossed.value) { crossed.value = c; if (c !== 0) runOnJS(tick)(); }
+      const c = x.value > LOCK ? 1 : x.value < -LOCK ? -1 : 0;
+      if (c !== crossed.value) { crossed.value = c; if (c !== 0) scheduleOnRN(tick); }
     })
     .onEnd((e) => {
-      if (x.value > TH || e.velocityX > 900) flyTo('T');
-      else if (x.value < -TH || e.velocityX < -900) flyTo('J');
-      else { x.value = withSpring(0, springs.snapBack); y.value = withSpring(0, springs.snapBack); }
+      const flick = Math.abs(x.value) >= FLICK_MIN && Math.abs(e.velocityX) > FLICK_V;
+      const right = x.value > LOCK || (flick && e.velocityX > 0);
+      const left = x.value < -LOCK || (flick && e.velocityX < 0);
+      if (right) flyTo('T', e.velocityX);
+      else if (left) flyTo('J', e.velocityX);
+      else {
+        // Springs carry the release velocity so the card settles, not snaps.
+        x.value = withSpring(0, { ...springs.snapBack, velocity: e.velocityX });
+        y.value = withSpring(0, { ...springs.snapBack, velocity: e.velocityY * 0.25 });
+      }
     });
 
   const cardStyle = useAnimatedStyle((): any => ({
     transform: [
       { translateX: x.value },
       { translateY: y.value },
-      { rotate: `${interpolate(x.value, [-200, 0, 200], [-8, 0, 8])}deg` },
+      { rotate: `${interpolate(x.value, [-300, 0, 300], [-15, 0, 15], Extrapolation.CLAMP)}deg` },
       { scale: enter.value },
     ],
   }));
   const base = tint(card.icon);
   const stage = useAnimatedStyle(() => ({
-    backgroundColor: interpolateColor(x.value, [-TH, 0, TH], [persons.J.tint, base, persons.T.tint]),
+    backgroundColor: interpolateColor(x.value, [-LOCK, 0, LOCK], [persons.J.tint, base, persons.T.tint]),
   }));
-  const tagT = useAnimatedStyle(() => ({ opacity: interpolate(x.value, [20, 80], [0, 1], Extrapolation.CLAMP) }));
-  const tagJ = useAnimatedStyle(() => ({ opacity: interpolate(x.value, [-20, -80], [0, 1], Extrapolation.CLAMP) }));
+  const tagT = useAnimatedStyle(() => ({ opacity: interpolate(x.value, [20, LOCK], [0, 1], Extrapolation.CLAMP) }));
+  const tagJ = useAnimatedStyle(() => ({ opacity: interpolate(x.value, [-20, -LOCK], [0, 1], Extrapolation.CLAMP) }));
 
   return (
     <GestureDetector gesture={pan}>
-      <Animated.View style={[{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, borderRadius: 30, backgroundColor: tokens.row, overflow: 'hidden' }, cardShadow, cardStyle]}>
+      <Animated.View
+        pointerEvents={live ? 'auto' : 'none'}
+        style={[{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, borderRadius: 30, backgroundColor: tokens.row, overflow: 'hidden' }, cardShadow, cardStyle]}
+      >
         <Animated.View style={[{ height: 210, alignItems: 'center', justifyContent: 'center' }, stage]}>
           <Tag p="T" style={[{ left: 14 }, tagT]} />
           <Tag p="J" style={[{ right: 14 }, tagJ]} />

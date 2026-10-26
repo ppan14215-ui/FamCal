@@ -1,9 +1,10 @@
 /** "Hinzufügen …" row that turns into a text field in place; stays open for the next entry. */
 import React, { useState } from 'react';
-import { View, Pressable, TextInput, Platform } from 'react-native';
+import { View, TextInput, Platform } from 'react-native';
 import Txt from './ui/Txt';
 import LineIcon from './ui/LineIcon';
 import { tokens, fonts } from '../theme';
+import PressScale from './ui/PressScale';
 
 export default function AddInline({ placeholder, onAdd, mic, onPress }: { placeholder: string; onAdd?: (t: string) => void; mic?: boolean; onPress?: () => void }) {
   const [open, setOpen] = useState(false);
@@ -13,7 +14,7 @@ export default function AddInline({ placeholder, onAdd, mic, onPress }: { placeh
     setText('');
   };
   return (
-    <Pressable
+    <PressScale
       onPress={onPress ?? (() => setOpen(true))}
       style={{ flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 48, paddingHorizontal: 14, borderRadius: 20, backgroundColor: tokens.row, borderWidth: open ? 1.5 : 0, borderColor: tokens.ink }}
     >
@@ -38,6 +39,6 @@ export default function AddInline({ placeholder, onAdd, mic, onPress }: { placeh
         </View>
       )}
       {mic ? <LineIcon name="mic" size={20} color={tokens.sub} /> : null}
-    </Pressable>
+    </PressScale>
   );
 }

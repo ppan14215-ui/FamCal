@@ -1,6 +1,6 @@
 /** Widgets (V1-Widgets): homescreen small and medium, filled from the live sample data. */
 import React, { useMemo } from 'react';
-import { View, Pressable } from 'react-native';
+import { View } from 'react-native';
 import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Txt, { Dot } from '../../src/components/ui/Txt';
@@ -11,19 +11,20 @@ import { useStore } from '../../src/state/store';
 import { eventsOn, nextEvent } from '../../src/lib/selectors';
 import { TODAY, WD_SHORT, weekday, dayNum, hm, soon, until } from '../../src/lib/dates';
 import type { ClayName } from '../../src/lib/clayIcons';
+import PressScale from '../../src/components/ui/PressScale';
 
 const SMALL = 160;
 
 function Small({ icon, kicker, kickerColor, title, sub, onPress }: { icon: ClayName; kicker: string; kickerColor: string; title: string; sub?: string; onPress: () => void }) {
   return (
-    <Pressable onPress={onPress} style={{ width: SMALL, height: SMALL, borderRadius: 26, backgroundColor: tint(icon), padding: 14, justifyContent: 'space-between' }}>
+    <PressScale onPress={onPress} style={{ width: SMALL, height: SMALL, borderRadius: 26, backgroundColor: tint(icon), padding: 14, justifyContent: 'space-between' }}>
       <ClayIcon name={icon} size={54} />
       <View>
         <Txt size={11} weight={700} color={kickerColor}>{kicker}</Txt>
         <Txt size={16} line={20} weight={700} numberOfLines={2}>{title}</Txt>
         {sub ? <Txt size={12} color={tokens.sub} numberOfLines={1}>{sub}</Txt> : null}
       </View>
-    </Pressable>
+    </PressScale>
   );
 }
 
@@ -50,7 +51,7 @@ export default function Widgets() {
               <Small icon={eg.icon} kicker={`Frist · ${until(eg.frist)}`} kickerColor={tokens.frist} title="Elterngeld" sub="Bescheinigung fehlt" onPress={() => router.push('/infozettel')} />
             ) : null}
           </View>
-          <Pressable onPress={() => router.dismissTo('/heute')} style={{ width: SMALL * 2 + 18, height: SMALL, borderRadius: 26, backgroundColor: tokens.row, paddingVertical: 14, paddingHorizontal: 16, gap: 8 }}>
+          <PressScale onPress={() => router.dismissTo('/heute')} style={{ width: SMALL * 2 + 18, height: SMALL, borderRadius: 26, backgroundColor: tokens.row, paddingVertical: 14, paddingHorizontal: 16, gap: 8 }}>
             <Txt size={13} weight={700}>
               Heute<Dot /> <Txt size={13} weight={500} color={tokens.sub}>{WD_SHORT[weekday(TODAY)]} {dayNum(TODAY)}.</Txt>
             </Txt>
@@ -61,7 +62,7 @@ export default function Widgets() {
                 <Txt size={12.5} color={tokens.sub}>{hm(e.start)}</Txt>
               </View>
             ))}
-          </Pressable>
+          </PressScale>
         </View>
         <View style={{ marginTop: 24 }}>
           <Hint center>Im Prototyp nur zum Anschauen. Tippen öffnet die passende Stelle in der App.</Hint>

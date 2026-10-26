@@ -189,10 +189,13 @@ export function sectionFor(name: string): 'drogerie' | 'supermarkt' {
 export function parseItem(text: string): { name: string; qty?: number; note?: string } {
   let t = text.trim();
   let qty: number | undefined;
-  const m = t.match(/^(\d+)\s*(?:x\s+)?(.+)$/i);
-  if (m) { qty = Number(m[1]); t = m[2]; }
+  let unit: string | undefined;
+  // "500 g Mehl": number plus unit becomes the note, "2 Hafermilch" a quantity.
+  const u = t.match(/^(\d+(?:[.,]\d+)?\s*(?:g|kg|ml|l|Stk|Pck)\.?)\s+(.+)$/i);
+  const m = !u && t.match(/^(\d+)(?:\s*x)?\s+(.+)$/i);
+  if (u) { unit = u[1]; t = u[2]; } else if (m) { qty = Number(m[1]); t = m[2]; }
   const [name, ...rest] = t.split(',');
-  const note = rest.join(',').trim() || undefined;
+  const note = [unit, rest.join(',').trim()].filter(Boolean).join(', ') || undefined;
   return { name: name.trim(), qty: qty && qty > 1 ? qty : undefined, note };
 }
 export function itemText(i: Item): string {

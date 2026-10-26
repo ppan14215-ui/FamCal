@@ -3,8 +3,9 @@
  * to the app; it recognises the date and only enters it after "Eintragen".
  */
 import React, { useState } from 'react';
-import { View, Pressable } from 'react-native';
+import { View } from 'react-native';
 import { router } from 'expo-router';
+import { goBack } from '../../src/lib/nav';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import Txt from '../../src/components/ui/Txt';
@@ -15,6 +16,7 @@ import { tokens } from '../../src/theme';
 import { actions, toast } from '../../src/state/store';
 import { haptics } from '../../src/lib/haptics';
 import type { CalEvent } from '../../src/state/types';
+import PressScale from '../../src/components/ui/PressScale';
 
 const EVENT: CalEvent = {
   id: 'e-laterne', title: 'Laternenbasteln', sub: 'Krabbelgruppe Südstadt', icon: 'geburtstag',
@@ -25,12 +27,12 @@ const EVENT: CalEvent = {
 
 function App({ children, label, on, onPress }: { children: React.ReactNode; label: string; on?: boolean; onPress: () => void }) {
   return (
-    <Pressable onPress={onPress} style={{ width: 70, alignItems: 'center', gap: 6 }}>
+    <PressScale onPress={onPress} style={{ width: 70, alignItems: 'center', gap: 6 }}>
       <View style={{ width: 60, height: 60, borderRadius: 16, backgroundColor: tokens.row, alignItems: 'center', justifyContent: 'center', borderWidth: on ? 3 : 0, borderColor: tokens.done }}>
         {children}
       </View>
       <Txt size={12} line={15} center>{label}</Txt>
-    </Pressable>
+    </PressScale>
   );
 }
 
@@ -53,7 +55,7 @@ export default function Teilen() {
     <View style={{ flex: 1, backgroundColor: '#E9E4DC' }}>
       <View style={{ paddingTop: insets.top + 8, paddingHorizontal: 16, gap: 10 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-          <RoundButton icon="x" label="Schließen" onPress={() => (router.canGoBack() ? router.back() : router.replace('/heute'))} />
+          <RoundButton icon="x" label="Schließen" onPress={() => goBack()} />
           <Txt size={13} color={tokens.sub}>Chat „Krabbelgruppe Südstadt“</Txt>
           <View style={{ width: 40 }} />
         </View>

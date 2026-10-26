@@ -2,17 +2,17 @@
  * Layout and control primitives. Each maps 1:1 to a helper in design/gen.py
  * (h1, h2, meta, group, card, btn, back, seg, toggle, chip, note, row, wrow).
  */
-import React, { useEffect } from 'react';
-import { ScrollView, StyleProp, View, ViewStyle, Pressable, Platform } from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import { ScrollView, StyleProp, View, ViewStyle, Platform, LayoutChangeEvent } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring, withTiming, interpolateColor } from 'react-native-reanimated';
-import { router } from 'expo-router';
 import Txt, { Dot } from './Txt';
 import LineIcon, { LineName } from './LineIcon';
 import PressScale from './PressScale';
 import { Tile, ClayIcon } from './Clay';
 import { ClayName } from '../../lib/clayIcons';
-import { tokens, springs, motion } from '../../theme';
+import { tokens, springs, rise, rowIn, rowOut, rowLayout } from '../../theme';
+import { goBack } from '../../lib/nav';
 import { haptics } from '../../lib/haptics';
 
 // ─── Screen ────────────────────────────────────────────────────────────────
@@ -32,8 +32,9 @@ type ScreenProps = {
 export function Screen({ children, tab, footer, bg = tokens.bg, gap = 14, scroll = true, padTop = 8 }: ScreenProps) {
   const insets = useSafeAreaInsets();
   const bottom = tab ? 110 + insets.bottom : footer ? 16 : 34 + insets.bottom;
+  // Content arrives instead of appearing (docs/MOTION.md).
   const content = (
-    <View style={{ gap, paddingHorizontal: 18, paddingTop: padTop, paddingBottom: bottom, flexGrow: 1 }}>{children}</View>
+    <Animated.View entering={rise()} style={{ gap, paddingHorizontal: 18, paddingTop: padTop, paddingBottom: bottom, flexGrow: 1 }}>{children}</Animated.View>
   );
   return (
     <View style={{ flex: 1, backgroundColor: bg, paddingTop: insets.top }}>
@@ -44,7 +45,7 @@ export function Screen({ children, tab, footer, bg = tokens.bg, gap = 14, scroll
       ) : (
         <View style={{ flex: 1 }}>{content}</View>
       )}
-      {footer ? <View style={{ paddingHorizontal: 18, paddingBottom: 18 + insets.bottom, paddingTop: 8, gap: 8 }}>{footer}</View> : null}
+      {footer ? <Animated.View entering={rise(2)} style={{ paddingHorizontal: 18, paddingBottom: 18 + insets.bottom, paddingTop: 8, gap: 8 }}>{footer}</Animated.View> : null}
     </View>
   );
 }
@@ -84,15 +85,29 @@ export function Lead({ children }: { children: React.ReactNode }) {
 
 // ─── Surfaces ──────────────────────────────────────────────────────────────
 
-/** White rows separated by 1px hairlines inside one rounded block. */
+/**
+ * White rows separated by 1px hairlines inside one rounded block. Rows rise
+ * in one stagger apart on first show; later rows fade in or out and their
+ * neighbours slide into place. Give rows a key so the right one leaves.
+ */
 export function Group({ children, style }: { children: React.ReactNode; style?: StyleProp<ViewStyle> }) {
   const kids = React.Children.toArray(children).filter(Boolean);
+  const first = useRef(true);
+  useEffect(() => { first.current = false; }, []);
   return (
-    <View style={[{ borderRadius: 20, overflow: 'hidden', backgroundColor: tokens.row }, style]}>
+    <Animated.View layout={rowLayout} style={[{ borderRadius: 20, overflow: 'hidden', backgroundColor: tokens.row }, style]}>
       {kids.map((k, i) => (
-        <View key={i} style={i > 0 ? { borderTopWidth: 1, borderTopColor: tokens.hair } : undefined}>{k}</View>
+        <Animated.View
+          key={(k as React.ReactElement).key ?? i}
+          entering={first.current ? rise(i) : rowIn}
+          exiting={rowOut}
+          layout={rowLayout}
+          style={i > 0 ? { borderTopWidth: 1, borderTopColor: tokens.hair } : undefined}
+        >
+          {k}
+        </Animated.View>
       ))}
-    </View>
+    </Animated.View>
   );
 }
 
@@ -146,9 +161,9 @@ export function Btn({ label, onPress, primary = true, icon, style, height = 54, 
 
 export function TextLink({ label, onPress, color = tokens.sub, weight = 600 }: { label: string; onPress?: () => void; color?: string; weight?: 400 | 600 }) {
   return (
-    <Pressable onPress={onPress} hitSlop={10} style={{ alignSelf: 'center', paddingVertical: 4 }}>
+    <PressScale onPress={onPress} hitSlop={10} scale={0.94} style={{ alignSelf: 'center', paddingVertical: 4 }}>
       <Txt size={15} weight={weight} color={color} center>{label}</Txt>
-    </Pressable>
+    </PressScale>
   );
 }
 
@@ -164,7 +179,7 @@ export function RoundButton({ icon, onPress, label, bg = tokens.row, size = 40, 
 export function BackBar({ center, onBack }: { center?: React.ReactNode; onBack?: () => void }) {
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', minHeight: 40 }}>
-      <RoundButton icon="back" label="Zurück" onPress={onBack ?? (() => (router.canGoBack() ? router.back() : router.replace('/heute')))} />
+      <RoundButton icon="back" label="Zurück" onPress={onBack ?? goBack} />
       {center ?? null}
       <View style={{ width: 40 }} />
     </View>
@@ -174,9 +189,9 @@ export function BackBar({ center, onBack }: { center?: React.ReactNode; onBack?:
 export function CancelBar({ onCancel, right }: { onCancel?: () => void; right?: React.ReactNode }) {
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', minHeight: 32 }}>
-      <Pressable hitSlop={10} onPress={onCancel ?? (() => (router.canGoBack() ? router.back() : router.replace('/heute')))}>
+      <PressScale hitSlop={10} scale={0.94} onPress={onCancel ?? goBack}>
         <Txt size={15} color={tokens.sub}>Abbrechen</Txt>
-      </Pressable>
+      </PressScale>
       {right ?? <View />}
     </View>
   );
@@ -192,26 +207,36 @@ export function StepDots({ i, n = 7 }: { i: number; n?: number }) {
   );
 }
 
-/** Segmented control on a grey track; the active item is a white pill. */
+/**
+ * Segmented control on a grey track; the white pill slides to the tapped
+ * item on a spring instead of jumping.
+ */
 export function Seg<T extends string>({ items, value, onChange, height = 34 }: { items: { key: T; label: string }[]; value: T; onChange: (k: T) => void; height?: number }) {
+  const idx = Math.max(0, items.findIndex((it) => it.key === value));
+  const [w, setW] = useState(0);
+  const x = useSharedValue(idx);
+  useEffect(() => { x.value = withSpring(idx, springs.smooth); }, [idx]);
+  const pill = useAnimatedStyle(() => ({ transform: [{ translateX: x.value * w }] }));
+  const onLayout = (e: LayoutChangeEvent) => setW((e.nativeEvent.layout.width - 8) / items.length);
   return (
-    <View style={{ flexDirection: 'row', padding: 4, borderRadius: 999, backgroundColor: tokens.segBg }}>
+    <View onLayout={onLayout} style={{ flexDirection: 'row', padding: 4, borderRadius: 999, backgroundColor: tokens.segBg }}>
+      {w ? <Animated.View pointerEvents="none" style={[{ position: 'absolute', left: 4, top: 4, width: w, height, borderRadius: 999, backgroundColor: tokens.row }, shadowSm, pill]} /> : null}
       {items.map((it) => {
         const on = it.key === value;
         return (
-          <Pressable
+          <PressScale
             key={it.key}
             accessibilityRole="tab"
             accessibilityState={{ selected: on }}
+            scale={0.95}
             onPress={() => { if (!on) { haptics.select(); onChange(it.key); } }}
             style={{
               flex: 1, height, borderRadius: 999, alignItems: 'center', justifyContent: 'center',
-              backgroundColor: on ? tokens.row : 'transparent',
-              ...(on ? shadowSm : null),
+              backgroundColor: !w && on ? tokens.row : 'transparent',
             }}
           >
             <Txt size={14.5} weight={on ? 600 : 400} color={on ? tokens.ink : tokens.sub}>{it.label}</Txt>
-          </Pressable>
+          </PressScale>
         );
       })}
     </View>
@@ -225,15 +250,15 @@ export const shadowSm: ViewStyle = Platform.select({
 
 export function Toggle({ value, onChange }: { value: boolean; onChange: (v: boolean) => void }) {
   const x = useSharedValue(value ? 1 : 0);
-  useEffect(() => { x.value = withTiming(value ? 1 : 0, { duration: motion.micro }); }, [value]);
+  useEffect(() => { x.value = withSpring(value ? 1 : 0, springs.snappy); }, [value]);
   const track = useAnimatedStyle(() => ({ backgroundColor: interpolateColor(x.value, [0, 1], [tokens.dotOff, tokens.done]) }));
   const knob = useAnimatedStyle(() => ({ transform: [{ translateX: x.value * 20 }] }));
   return (
-    <Pressable accessibilityRole="switch" accessibilityState={{ checked: value }} hitSlop={8} onPress={() => { haptics.select(); onChange(!value); }}>
+    <PressScale accessibilityRole="switch" accessibilityState={{ checked: value }} hitSlop={8} scale={0.94} onPress={() => { haptics.select(); onChange(!value); }}>
       <Animated.View style={[{ width: 48, height: 28, borderRadius: 999, padding: 3 }, track]}>
         <Animated.View style={[{ width: 22, height: 22, borderRadius: 999, backgroundColor: '#FFFFFF' }, shadowSm, knob]} />
       </Animated.View>
-    </Pressable>
+    </PressScale>
   );
 }
 
@@ -257,9 +282,10 @@ export function Check({ done, onPress, size = 26 }: { done: boolean; onPress?: (
   const s = useSharedValue(1);
   const v = useSharedValue(done ? 1 : 0);
   useEffect(() => {
-    v.value = withTiming(done ? 1 : 0, { duration: motion.micro });
+    // Completing is the person's own action, so the fill may overshoot once.
+    v.value = done ? withSpring(1, springs.reveal) : withTiming(0, { duration: 120 });
   }, [done]);
-  const fill = useAnimatedStyle(() => ({ opacity: v.value, transform: [{ scale: 0.6 + 0.4 * v.value }] }));
+  const fill = useAnimatedStyle(() => ({ opacity: Math.min(1, v.value), transform: [{ scale: 0.4 + 0.6 * v.value }] }));
   const outer = useAnimatedStyle(() => ({ transform: [{ scale: s.value }] }));
   const inner = (
     <Animated.View style={[{ width: size, height: size, borderRadius: 999, borderWidth: 1.5, borderColor: tokens.circleLine, alignItems: 'center', justifyContent: 'center' }, outer]}>
@@ -270,18 +296,19 @@ export function Check({ done, onPress, size = 26 }: { done: boolean; onPress?: (
   );
   if (!onPress) return inner;
   return (
-    <Pressable
+    <PressScale
       accessibilityRole="checkbox"
       accessibilityState={{ checked: done }}
       hitSlop={10}
+      scale={0.85}
       onPress={() => {
         if (!done) haptics.success(); else haptics.tap();
-        s.value = withSpring(0.85, springs.snappy, () => { s.value = withSpring(1, springs.reveal); });
+        s.value = withSpring(1.12, springs.snappy, () => { s.value = withSpring(1, springs.reveal); });
         onPress();
       }}
     >
       {inner}
-    </Pressable>
+    </PressScale>
   );
 }
 
@@ -306,7 +333,7 @@ export function Row({ icon, title, sub, subColor, right, time, strike, onPress, 
   const body = (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: lead === 'tile' ? 10 : 12, paddingHorizontal: 14, paddingLeft: lead === 'tile' ? 10 : 14, backgroundColor: tokens.row }}>
       {time !== undefined ? <Txt size={13.5} weight={600} style={{ width: 44 }}>{time}</Txt> : null}
-      {lead === 'clay' ? <ClayIcon name={icon} size={34} /> : <Tile name={icon} size={tileSize} radius={tileSize >= 48 ? 16 : 14} />}
+      {lead === 'clay' ? <ClayIcon name={icon} size={34} celebrate={strike} /> : <Tile name={icon} size={tileSize} radius={tileSize >= 48 ? 16 : 14} celebrate={strike} />}
       <View style={{ flex: 1, minWidth: 0, gap: 1 }}>
         <Txt size={16} line={21} weight={600} strike={strike} color={strike ? tokens.mute : tokens.ink} numberOfLines={2}>{title}</Txt>
         {sub ? <Meta color={subColor}>{sub}</Meta> : null}
@@ -314,7 +341,7 @@ export function Row({ icon, title, sub, subColor, right, time, strike, onPress, 
       {right}
     </View>
   );
-  return onPress ? <Pressable onPress={onPress} style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}>{body}</Pressable> : body;
+  return onPress ? <PressScale onPress={onPress} scale={0.98}>{body}</PressScale> : body;
 }
 
 /** Standalone rounded row (canvas `row()`), e.g. calendar sources, templates. */
@@ -354,7 +381,7 @@ export function LineRow({ icon, value, right, onPress, weight = 600, color = tok
       {right}
     </View>
   );
-  return onPress ? <Pressable onPress={onPress}>{body}</Pressable> : body;
+  return onPress ? <PressScale onPress={onPress} scale={0.98}>{body}</PressScale> : body;
 }
 
 export function Chevron() {
@@ -363,11 +390,11 @@ export function Chevron() {
 
 export function AddRow({ label, onPress, mic }: { label: string; onPress?: () => void; mic?: boolean }) {
   return (
-    <Pressable onPress={onPress} style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12, paddingHorizontal: 14, borderRadius: 20, backgroundColor: tokens.row }}>
+    <PressScale onPress={onPress} scale={0.985} style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12, paddingHorizontal: 14, borderRadius: 20, backgroundColor: tokens.row }}>
       <LineIcon name="plus" size={20} color={tokens.sub} />
       <Txt size={16} color={tokens.mute} style={{ flex: 1 }}>{label}</Txt>
       {mic ? <LineIcon name="mic" size={20} color={tokens.sub} /> : null}
-    </Pressable>
+    </PressScale>
   );
 }
 

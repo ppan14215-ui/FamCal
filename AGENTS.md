@@ -20,6 +20,7 @@ Arbeitsweise für KI-Agenten und Menschen in diesem Repo. Vorlage ist Namore (`p
 - Erledigt nur per Tipp auf den Haken. Nur nach links wischen löscht, danach Rückgängig. Text antippen macht die Zeile zum Textfeld.
 - Heute hat keine Tabs. Listen hat Clay-Tabs. Bottom-Nav ist eine schwebende Pille plus runder „+“-Button.
 - Pro Screen ein dunkles Element. Farbe nur im Objekt (Clay-Icon und seine Kachel).
+- Jeder Tipp antwortet mit Bewegung. Regeln und Bausteine in [docs/MOTION.md](docs/MOTION.md).
 
 ## Technik
 - Expo SDK 55, expo-router, React Native 0.83, React 19.2, Reanimated 4 mit react-native-worklets (Babel-Plugin zuletzt), gesture-handler, react-native-svg, expo-haptics, i18next, react-native-web, EAS.

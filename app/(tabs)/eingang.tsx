@@ -4,7 +4,7 @@
  * and shows up in Heute and Kalender automatically.
  */
 import React, { useMemo, useState } from 'react';
-import { View, Pressable } from 'react-native';
+import { View } from 'react-native';
 import { router } from 'expo-router';
 import Animated, { LinearTransition, FadeIn } from 'react-native-reanimated';
 import { Screen, H1, H2, Seg, Card, Chip, Meta, Group, Row, Chevron } from '../../src/components/ui/kit';
@@ -12,11 +12,12 @@ import Txt from '../../src/components/ui/Txt';
 import LineIcon from '../../src/components/ui/LineIcon';
 import { Tile } from '../../src/components/ui/Clay';
 import { Pair, Avatar } from '../../src/components/ui/Person';
-import { tokens } from '../../src/theme';
+import { tokens, persons } from '../../src/theme';
 import { useStore, actions } from '../../src/state/store';
 import { upcomingFristen } from '../../src/lib/selectors';
 import { dayNum, MONTHS_SHORT, monthIdx, until } from '../../src/lib/dates';
 import type { InboxItem } from '../../src/state/types';
+import PressScale from '../../src/components/ui/PressScale';
 
 export default function Eingang() {
   const inbox = useStore((s) => s.inbox);
@@ -25,7 +26,7 @@ export default function Eingang() {
   const ok = inbox.filter((i) => i.state === 'ok');
   return (
     <Screen tab gap={12}>
-      <H1 right={<Pressable accessibilityLabel="Familie und Einstellungen" onPress={() => router.push('/einstellungen')}><Pair /></Pressable>}>Eingang</H1>
+      <H1 right={<PressScale accessibilityLabel="Familie und Einstellungen" onPress={() => router.push('/einstellungen')}><Pair /></PressScale>}>Eingang</H1>
       <Seg items={[{ key: 'neu', label: ask.length ? `Neu · ${ask.length}` : 'Neu' }, { key: 'docs', label: 'Dokumente' }]} value={tab} onChange={(k) => setTab(k as 'neu' | 'docs')} />
       {tab === 'neu' ? (
         <>
@@ -36,9 +37,9 @@ export default function Eingang() {
               {ask.map((i) => <InboxCard key={i.id} item={i} />)}
             </>
           ) : (
-            <Card pad={18}><Txt size={15} color={tokens.sub}>Alles bestätigt. Neues kommt per Foto, Mail an huber-7q2@familie.app oder über Teilen.</Txt></Card>
+            <Card pad={18}><Txt size={15} color={tokens.sub}>{ok.length ? 'Alles bestätigt.' : 'Noch nichts eingegangen.'} Neues kommt per Foto, Mail an huber-7q2@familie.app oder über Teilen.</Txt></Card>
           )}
-          <H2 right="diese Woche">Eingetragen</H2>
+          {ok.length ? <H2 right="diese Woche">Eingetragen</H2> : null}
           {ok.map((i) => <InboxCard key={i.id} item={i} />)}
         </>
       ) : (
@@ -102,11 +103,11 @@ function Dokumente() {
             key={d.id}
             icon={d.icon}
             title={d.title}
-            sub={d.missing && d.who ? `fehlt · ${d.who === 'J' ? 'Julia' : 'Tom'} kümmert sich` : d.sub}
+            sub={d.missing && d.who ? `fehlt · ${persons[d.who === 'J' ? 'J' : 'T'].name} kümmert sich` : d.sub}
             right={
               d.missing ? (
                 d.who && d.who !== 'both' ? (
-                  <Pressable onPress={() => actions.assignDoc(d.id)}><Avatar p={d.who} size={26} /></Pressable>
+                  <PressScale onPress={() => actions.assignDoc(d.id)}><Avatar p={d.who} size={26} /></PressScale>
                 ) : (
                   <Chip onPress={() => actions.assignDoc(d.id)}>Wer?</Chip>
                 )

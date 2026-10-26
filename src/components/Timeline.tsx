@@ -1,12 +1,14 @@
 /** Milestone rows with a connecting line (canvas `tl_rows`). */
 import React from 'react';
-import { View, Pressable } from 'react-native';
+import { View } from 'react-native';
 import Txt from './ui/Txt';
 import { Tile } from './ui/Clay';
 import { Check, Meta } from './ui/kit';
-import { tokens } from '../theme';
+import Animated from 'react-native-reanimated';
+import { tokens, rowIn, rowOut, rowLayout } from '../theme';
 import type { Milestone } from '../state/types';
 import { until, dayNum, MONTHS_SHORT, monthIdx } from '../lib/dates';
+import PressScale from './ui/PressScale';
 
 export function milestoneSub(m: Milestone): string {
   if (m.frist && !m.done) return `Frist ${dayNum(m.date)}. ${MONTHS_SHORT[monthIdx(m.date)]} · ${until(m.date)}`;
@@ -17,20 +19,21 @@ export default function Timeline({ items, onToggle, onPress, highlight }: { item
   return (
     <View style={{ gap: 12 }}>
       {items.map((m, i) => (
-        <Pressable
-          key={m.id}
+        <Animated.View key={m.id} entering={rowIn} exiting={rowOut} layout={rowLayout}>
+        <PressScale
           disabled={!onPress}
           onPress={() => onPress?.(m)}
           style={{ flexDirection: 'row', alignItems: 'center', gap: 12, borderRadius: 18, margin: -6, padding: 6, borderWidth: highlight === m.id ? 1.5 : 0, borderColor: tokens.ink }}
         >
           {i < items.length - 1 ? <View style={{ position: 'absolute', left: 31, top: 58, bottom: -14, width: 2, backgroundColor: tokens.hair }} /> : null}
-          <Tile name={m.icon} size={52} radius={16} />
+          <Tile name={m.icon} size={52} radius={16} celebrate={m.done} />
           <View style={{ flex: 1 }}>
             <Txt size={16} weight={600} strike={m.done} color={m.done ? tokens.mute : tokens.ink}>{m.title}</Txt>
             <Meta color={m.frist && !m.done ? tokens.frist : tokens.sub}>{milestoneSub(m)}</Meta>
           </View>
           <Check done={m.done} onPress={onToggle ? () => onToggle(m.id) : undefined} />
-        </Pressable>
+        </PressScale>
+        </Animated.View>
       ))}
     </View>
   );

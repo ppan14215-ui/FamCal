@@ -1,12 +1,13 @@
 /** Kalender · Woche: hour grid 8 to 19, work as stripes, events as tinted blocks. */
 import React, { useMemo } from 'react';
-import { View, Pressable } from 'react-native';
+import { View } from 'react-native';
 import { router } from 'expo-router';
 import Txt from '../../components/ui/Txt';
 import Stripes from '../../components/Stripes';
-import { tokens, tint, PersonId } from '../../theme';
+import { tokens, tint, PersonId, persons } from '../../theme';
 import { useStore, actions } from '../../state/store';
 import { addDays, monday, dayNum, WD_SHORT, weekday, minutes, TODAY } from '../../lib/dates';
+import PressScale from '../../components/ui/PressScale';
 
 const FROM = 8;
 const TO = 19;
@@ -20,7 +21,8 @@ export default function WeekView() {
   const start = monday(day);
   const days = useMemo(() => Array.from({ length: 7 }, (_, i) => addDays(start, i)), [start]);
   const hours = Array.from({ length: TO - FROM }, (_, i) => FROM + i);
-  const top = (t: string) => ((minutes(t) - FROM * 60) / 60) * HP;
+  // Times outside the grid sit at its edge instead of disappearing.
+  const top = (t: string) => ((Math.max(FROM * 60, Math.min(TO * 60 - 30, minutes(t))) - FROM * 60) / 60) * HP;
 
   return (
     <>
@@ -29,12 +31,12 @@ export default function WeekView() {
           {days.map((d) => {
             const sel = d === day;
             return (
-              <Pressable key={d} onPress={() => { actions.setCalDay(d); actions.setCalView('tag'); }} style={{ flex: 1, alignItems: 'center', gap: 2 }}>
+              <PressScale key={d} onPress={() => { actions.setCalDay(d); actions.setCalView('tag'); }} style={{ flex: 1, alignItems: 'center', gap: 2 }}>
                 <Txt size={11.5} color={tokens.sub}>{WD_SHORT[weekday(d)]}</Txt>
                 <View style={{ width: 28, height: 28, borderRadius: 999, backgroundColor: sel ? tokens.ink : 'transparent', alignItems: 'center', justifyContent: 'center' }}>
                   <Txt size={15} weight={600} color={sel ? '#FFFFFF' : tokens.ink}>{String(dayNum(d))}</Txt>
                 </View>
-              </Pressable>
+              </PressScale>
             );
           })}
         </View>
@@ -53,16 +55,16 @@ export default function WeekView() {
                   {list.filter((e) => e.work).map((e) => (
                     <Stripes key={e.id} p={(e.who === 'J' ? 'J' : 'T') as PersonId} radius={8} style={{ position: 'absolute', left: 1, right: 1, top: top(e.start), height: top(e.end ?? e.start) - top(e.start), opacity: 0.9 }} />
                   ))}
-                  {list.filter((e) => !e.work && minutes(e.start) >= FROM * 60 && minutes(e.start) < TO * 60).map((e) => {
-                    const h = Math.max(28, (e.end ? top(e.end) - top(e.start) : HP * 0.8) - 4);
+                  {list.filter((e) => !e.work).map((e) => {
+                    const h = Math.max(28, (e.end && top(e.end) > top(e.start) ? top(e.end) - top(e.start) : HP * 0.8) - 4);
                     return (
-                      <Pressable
+                      <PressScale
                         key={e.id}
                         onPress={() => router.push(`/termin/${e.id}`)}
                         style={{ position: 'absolute', left: 3, right: 3, top: top(e.start) + 2, height: h, borderRadius: 8, backgroundColor: tint(e.icon), borderWidth: 1.5, borderColor: '#FFFFFF', paddingVertical: 3, paddingHorizontal: 4, overflow: 'hidden' }}
                       >
                         <Txt size={10.5} line={13} weight={700} numberOfLines={2}>{SHORT[e.title] ?? e.title.split(' ')[0]}</Txt>
-                      </Pressable>
+                      </PressScale>
                     );
                   })}
                   {d === TODAY ? <View style={{ position: 'absolute', left: -2, right: -2, top: top('08:50'), height: 2, backgroundColor: tokens.done }} /> : null}
@@ -76,7 +78,7 @@ export default function WeekView() {
         {(['T', 'J'] as PersonId[]).map((p) => (
           <View key={p} style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
             <Stripes p={p} radius={4} style={{ width: 18, height: 12 }} />
-            <Txt size={13} color={tokens.sub}>{p === 'T' ? 'Tom arbeitet' : 'Julia arbeitet'}</Txt>
+            <Txt size={13} color={tokens.sub}>{`${persons[p].name} arbeitet`}</Txt>
           </View>
         ))}
       </View>

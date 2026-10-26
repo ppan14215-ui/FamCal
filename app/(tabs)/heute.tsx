@@ -3,9 +3,9 @@
  * tasks due today, deadlines that are getting close.
  */
 import React, { useMemo } from 'react';
-import { View, Pressable } from 'react-native';
+import { View } from 'react-native';
 import { router } from 'expo-router';
-import { Screen, H1, H2, Group, Row, Meta, Chevron, Check } from '../../src/components/ui/kit';
+import { Screen, H1, H2, Group, Row, Meta, Chevron, Check, Hint } from '../../src/components/ui/kit';
 import Txt from '../../src/components/ui/Txt';
 import { Tile } from '../../src/components/ui/Clay';
 import { Avatar, Pair, Owner } from '../../src/components/ui/Person';
@@ -30,7 +30,7 @@ export default function Heute() {
 
   return (
     <Screen tab gap={14}>
-      <H1 sub={long(TODAY)} right={<Pressable accessibilityLabel="Familie und Einstellungen" onPress={() => router.push('/einstellungen')}><Pair /></Pressable>}>Heute</H1>
+      <H1 sub={long(TODAY)} right={<PressScale accessibilityLabel="Familie und Einstellungen" onPress={() => router.push('/einstellungen')}><Pair /></PressScale>}>Heute</H1>
       <Txt size={20} line={27} weight={600} tracking={-0.3} style={{ marginTop: -4 }}>{sentence}</Txt>
 
       {hero ? (
@@ -56,9 +56,11 @@ export default function Heute() {
             <Row key={e.id} icon={e.icon} title={e.title} sub={e.sub} time={hm(e.start)} onPress={() => router.push(`/termin/${e.id}`)} right={<Owner who={e.who} />} />
           ))}
           {due.map((t) => (
-            <Row key={t.id} icon="erledigt" title={t.title} sub={`Aufgabe · ${t.dueLabel}`} time="" strike={t.done} right={<View style={{ flexDirection: 'row', gap: 10, alignItems: 'center' }}><Owner who={t.who} /><Check done={t.done} onPress={() => actions.toggleTask(t.id)} /></View>} />
+            <Row key={t.id} icon={t.icon} title={t.title} sub={`Aufgabe · ${t.dueLabel}`} time="" strike={t.done} right={<View style={{ flexDirection: 'row', gap: 10, alignItems: 'center' }}><Owner who={t.who} /><Check done={t.done} onPress={() => actions.toggleTask(t.id)} /></View>} />
           ))}
         </Group>
+      ) : !hero ? (
+        <Hint icon="plus">Mit Plus unten rechts tragt ihr einen Termin, eine Aufgabe oder den Einkauf ein. Post und Briefe kommen über Eingang.</Hint>
       ) : null}
 
       {fristen.length ? (

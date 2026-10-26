@@ -2,8 +2,9 @@
  * Listen: the only place with content tabs (Julian 26.10.). Clay tabs on top:
  * Aufgaben, Einkauf, own lists (Kliniktasche, Geschenke), + Neu.
  */
-import React, { useMemo } from 'react';
-import { View, Pressable, ScrollView } from 'react-native';
+import React, { useEffect, useMemo } from 'react';
+import { View, ScrollView } from 'react-native';
+import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 import { router } from 'expo-router';
 import { Screen, H1, H2, Group, Meta } from '../../src/components/ui/kit';
 import Txt from '../../src/components/ui/Txt';
@@ -14,7 +15,7 @@ import PressScale from '../../src/components/ui/PressScale';
 import ItemRow from '../../src/components/ItemRow';
 import AddInline from '../../src/components/AddInline';
 import HintCard from '../../src/components/HintCard';
-import { tokens } from '../../src/theme';
+import { tokens, springs, swapIn, persons } from '../../src/theme';
 import { useStore, actions } from '../../src/state/store';
 import { itemMeta, itemText } from '../../src/data/sample';
 import { haptics } from '../../src/lib/haptics';
@@ -40,9 +41,11 @@ export default function Listen() {
 
   return (
     <Screen tab gap={12}>
-      <H1 sub={sub} right={<Pressable accessibilityLabel="Familie und Einstellungen" onPress={() => router.push('/einstellungen')}><Pair /></Pressable>}>Listen</H1>
+      <H1 sub={sub} right={<PressScale accessibilityLabel="Familie und Einstellungen" onPress={() => router.push('/einstellungen')}><Pair /></PressScale>}>Listen</H1>
       <ClayTabs lists={lists} active={active} />
-      {active === 'aufgaben' ? <Aufgaben tasks={tasks} /> : list?.kind === 'shopping' ? <Einkauf list={list} /> : list ? <Packliste list={list} /> : null}
+      <Animated.View key={active} entering={swapIn} style={{ gap: 12 }}>
+        {active === 'aufgaben' ? <Aufgaben tasks={tasks} /> : list?.kind === 'shopping' ? <Einkauf list={list} /> : list ? <Packliste list={list} /> : null}
+      </Animated.View>
     </Screen>
   );
 }
@@ -55,29 +58,37 @@ function ClayTabs({ lists, active }: { lists: List[]; active: string }) {
         {tabs.map((t) => {
           const on = t.id === active;
           return (
-            <Pressable
+            <PressScale
               key={t.id}
               accessibilityRole="tab"
               accessibilityState={{ selected: on }}
               onPress={() => { if (!on) { haptics.select(); actions.setActiveList(t.id); } }}
               style={{ minWidth: 74, flexGrow: 1, alignItems: 'center', gap: 2, paddingBottom: 10, borderBottomWidth: 2, borderBottomColor: on ? tokens.ink : 'transparent' }}
             >
-              <View style={{ opacity: on ? 1 : 0.75 }}><ClayIcon name={t.icon} size={46} /></View>
+              <TabIcon icon={t.icon} on={on} />
               <Txt size={12.5} weight={on ? 600 : 500} color={on ? tokens.ink : tokens.sub} numberOfLines={1}>{t.name}</Txt>
-            </Pressable>
+            </PressScale>
           );
         })}
-        <Pressable
+        <PressScale
           accessibilityLabel="Neue Liste"
           onPress={() => router.push('/liste-neu')}
           style={{ width: 56, alignItems: 'center', gap: 2, paddingBottom: 10, borderBottomWidth: 2, borderBottomColor: 'transparent' }}
         >
           <View style={{ width: 46, height: 46, alignItems: 'center', justifyContent: 'center' }}><LineIcon name="plus" size={24} color={tokens.sub} /></View>
           <Txt size={12.5} color={tokens.sub}>Neu</Txt>
-        </Pressable>
+        </PressScale>
       </ScrollView>
     </View>
   );
+}
+
+/** The chosen tab's clay icon lifts a little; tapping it is the person's own action. */
+function TabIcon({ icon, on }: { icon: ClayName; on: boolean }) {
+  const v = useSharedValue(on ? 1 : 0);
+  useEffect(() => { v.value = withSpring(on ? 1 : 0, on ? springs.reveal : springs.smooth); }, [on]);
+  const st = useAnimatedStyle((): any => ({ opacity: 0.75 + 0.25 * v.value, transform: [{ translateY: -3 * v.value }, { scale: 1 + 0.06 * v.value }] }));
+  return <Animated.View style={st}><ClayIcon name={icon} size={46} /></Animated.View>;
 }
 
 function Aufgaben({ tasks }: { tasks: Task[] }) {
@@ -116,7 +127,7 @@ function Aufgaben({ tasks }: { tasks: Task[] }) {
             key={t.id}
             icon={t.icon}
             title={t.title}
-            meta={t.done ? `erledigt von ${t.doneBy === 'T' ? 'Tom' : 'Julia'}` : t.dueLabel}
+            meta={t.done ? `erledigt von ${persons[t.doneBy ?? 'J'].name}` : t.dueLabel}
             metaColor={t.frist && !t.done ? tokens.frist : undefined}
             done={t.done}
             who={t.who}

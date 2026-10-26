@@ -5,6 +5,7 @@
 import React, { useState } from 'react';
 import { View } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
+import { goBack } from '../src/lib/nav';
 import { Screen, CancelBar, Btn, CardRow } from '../src/components/ui/kit';
 import Txt from '../src/components/ui/Txt';
 import { TitleInput } from '../src/components/Field';
@@ -55,7 +56,7 @@ export default function ListeNeu() {
           onPress={() => {
             actions.createList(build(sel, name.trim()));
             if (fromHint) actions.dismissHint('urlaub');
-            router.back();
+            goBack();
           }}
         />
       }

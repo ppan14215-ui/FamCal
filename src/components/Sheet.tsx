@@ -7,7 +7,8 @@
 import React, { useEffect, useCallback } from 'react';
 import { Pressable, StyleProp, ViewStyle, useWindowDimensions, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
-import Animated, { useAnimatedStyle, useSharedValue, withTiming, withSpring, runOnJS, interpolate } from 'react-native-reanimated';
+import Animated, { useAnimatedStyle, useSharedValue, withTiming, withSpring, interpolate } from 'react-native-reanimated';
+import { scheduleOnRN } from 'react-native-worklets';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { SheetHandle } from './ui/kit';
@@ -35,10 +36,11 @@ export default function Sheet({ children, bg = tokens.bg, top, style, onClose, s
   const close = useCallback(() => {
     if (onClose) onClose();
     else if (router.canGoBack()) router.back();
+    else router.replace('/heute');
   }, [onClose]);
 
   const dismiss = () => {
-    y.value = withTiming(height, { duration: motion.sheetOut, easing: easing.drawer }, (d) => { if (d) runOnJS(close)(); });
+    y.value = withTiming(height, { duration: motion.sheetOut, easing: easing.drawer }, (d) => { if (d) scheduleOnRN(close); });
   };
 
   const pan = Gesture.Pan()
@@ -49,9 +51,9 @@ export default function Sheet({ children, bg = tokens.bg, top, style, onClose, s
     })
     .onEnd((e) => {
       if (drag.value > 120 || e.velocityY > 900) {
-        y.value = withTiming(height, { duration: 220, easing: easing.drawer }, (d) => { if (d) runOnJS(close)(); });
+        y.value = withTiming(height, { duration: 220, easing: easing.drawer }, (d) => { if (d) scheduleOnRN(close); });
       } else {
-        drag.value = withSpring(0, springs.smooth);
+        drag.value = withSpring(0, { ...springs.smooth, velocity: e.velocityY });
       }
     });
 

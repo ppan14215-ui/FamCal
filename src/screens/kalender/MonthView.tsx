@@ -1,6 +1,6 @@
 /** Kalender · Monat: day cells tinted by their first event, list for the selected day. */
 import React, { useMemo } from 'react';
-import { View, Pressable } from 'react-native';
+import { View } from 'react-native';
 import { router } from 'expo-router';
 import { H2, Group, Row, RoundButton } from '../../components/ui/kit';
 import Txt from '../../components/ui/Txt';
@@ -10,6 +10,7 @@ import { tokens, tint } from '../../theme';
 import { useStore, actions } from '../../state/store';
 import { eventsOn } from '../../lib/selectors';
 import { addDays, monday, dayNum, monthIdx, year, parse, iso, WD_SHORT, weekday, MONTHS_SHORT, hm, TODAY } from '../../lib/dates';
+import PressScale from '../../components/ui/PressScale';
 
 const HEAD = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'];
 
@@ -53,7 +54,7 @@ export default function MonthView() {
           const isToday = d === TODAY;
           return (
             <View key={d} style={{ width: `${100 / 7}%`, paddingHorizontal: 2 }}>
-              <Pressable
+              <PressScale
                 onPress={() => inMonth && actions.setCalDay(d)}
                 style={{
                   height: 52, borderRadius: 14, alignItems: 'center', paddingTop: 4, gap: 1,
@@ -68,7 +69,7 @@ export default function MonthView() {
                   {evs[0] ? <ClayIcon name={evs[0].icon} size={20} /> : null}
                   {evs.length > 1 ? <Txt size={10.5} weight={700} color={tokens.sub}>{`+${evs.length - 1}`}</Txt> : null}
                 </View>
-              </Pressable>
+              </PressScale>
             </View>
           );
         })}

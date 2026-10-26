@@ -4,8 +4,10 @@ import { View } from 'react-native';
 import Txt from './Txt';
 import { persons, PersonId, tokens } from '../../theme';
 
-export function Avatar({ p, size = 28, ring }: { p: PersonId; size?: number; ring?: string }) {
+export function Avatar({ p, size = 28, ring, letter }: { p: PersonId; size?: number; ring?: string; letter?: string }) {
   const c = persons[p];
+  // The initial follows the name the family typed in, J/T only as a fallback.
+  const l = letter ?? (c.name.trim()[0]?.toUpperCase() || p);
   return (
     <View
       style={{
@@ -13,7 +15,7 @@ export function Avatar({ p, size = 28, ring }: { p: PersonId; size?: number; rin
         borderWidth: ring ? 2 : 0, borderColor: ring,
       }}
     >
-      <Txt size={Math.round(size * 0.42)} line={Math.round(size * 0.5)} weight={600} color={c.ink}>{p}</Txt>
+      <Txt size={Math.round(size * 0.42)} line={Math.round(size * 0.5)} weight={600} color={c.ink}>{l}</Txt>
     </View>
   );
 }

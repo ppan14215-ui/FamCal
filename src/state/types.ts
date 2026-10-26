@@ -11,12 +11,17 @@ export type CalEvent = {
   sub?: string;
   icon: ClayName;
   date: string; // ISO
+  /** Last day of a multi-day entry. */
+  endDate?: string;
   start: string; // HH:MM
+  allDay?: boolean;
   end?: string;
   who: Who;
   place?: string;
   bring?: Bring[];
   source?: string;
+  /** Connected calendar it came from (google, icloud, outlook). */
+  cal?: string;
   repeat?: string;
   /** Work blocks come from synced calendars and only show as a striped block. */
   work?: boolean;
