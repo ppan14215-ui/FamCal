@@ -99,7 +99,7 @@ function TabIcon({ icon, on }: { icon: ClayName; on: boolean }) {
   const v = useSharedValue(on ? 1 : 0);
   useEffect(() => { v.value = withSpring(on ? 1 : 0, on ? springs.reveal : springs.smooth); }, [on]);
   const st = useAnimatedStyle((): any => ({ opacity: 0.75 + 0.25 * v.value, transform: [{ translateY: -3 * v.value }, { scale: 1 + 0.06 * v.value }] }));
-  return <Animated.View style={st}><ClayIcon name={icon} size={46} celebrate={on} /></Animated.View>;
+  return <Animated.View style={st}><ClayIcon name={icon} size={54} celebrate={on} /></Animated.View>;
 }
 
 function Aufgaben({ tasks }: { tasks: Task[] }) {

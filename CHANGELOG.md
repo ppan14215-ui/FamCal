@@ -6,6 +6,7 @@ Alle sichtbaren Änderungen an FamCal. Neueste oben. Agenten und Menschen: Ände
 
 ### Kommentare vom 26.10. abends
 - Termin: ein anderes Symbol aus der Auswahl wird jetzt übernommen. Vorher ging die Wahl verloren. Die Herkunft zeigt nicht mehr doppelt „Aus: Aus“.
+- Icons in Zeilen und Listen nochmals größer: Zeilen 46 statt 34, Listenpunkte 42 statt 30, Kacheln füllen 90 statt 78 Prozent.
 - Clay Icons füllen ihre Fläche jetzt aus und wirken überall etwa ein Drittel größer. Die Bilder hatten rund ein Drittel leeren Rand.
 - Neues Intro: fünf kurze Szenen statt einer Schleife. Post vom Amt, Foto und fertig, für euch beide, weiß was bei euch gilt, dann das Versprechen. Läuft einmal, Tippen springt weiter, Balken oben zeigen den Stand.
 - Einkauf ergänzen: das Eingabefeld sitzt unten am Daumen und fährt mit der Tastatur hoch, Treffer erscheinen direkt darüber.

@@ -52,7 +52,7 @@ export default function FotoVerstanden() {
         {PARTS.map((p) => (
           <LineRow
             key={p.key}
-            lead={<ClayIcon name={p.icon} size={28} />}
+            lead={<ClayIcon name={p.icon} size={38} />}
             value={p.label}
             weight={500}
             right={

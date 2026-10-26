@@ -66,7 +66,7 @@ export default function MonthView() {
                   <Txt size={14} weight={isToday ? 700 : 500} color={isToday ? '#FFFFFF' : inMonth ? tokens.ink : '#C4C9CB'}>{String(dayNum(d))}</Txt>
                 </View>
                 <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                  {evs[0] ? <ClayIcon name={evs[0].icon} size={20} /> : null}
+                  {evs[0] ? <ClayIcon name={evs[0].icon} size={24} /> : null}
                   {evs.length > 1 ? <Txt size={10.5} weight={700} color={tokens.sub}>{`+${evs.length - 1}`}</Txt> : null}
                 </View>
               </PressScale>

@@ -34,7 +34,7 @@ export function ClayIcon({ name, size = 40, style, celebrate }: { name: ClayName
   );
 }
 
-export function Tile({ name, size = 52, radius, ratio = 0.78, bg, style, celebrate }: { name: ClayName; size?: number; radius?: number; ratio?: number; bg?: string; style?: StyleProp<ViewStyle>; celebrate?: boolean }) {
+export function Tile({ name, size = 52, radius, ratio = 0.9, bg, style, celebrate }: { name: ClayName; size?: number; radius?: number; ratio?: number; bg?: string; style?: StyleProp<ViewStyle>; celebrate?: boolean }) {
   return (
     <View
       style={[

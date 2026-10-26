@@ -333,7 +333,7 @@ export function Row({ icon, title, sub, subColor, right, time, strike, onPress, 
   const body = (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: lead === 'tile' ? 10 : 12, paddingHorizontal: 14, paddingLeft: lead === 'tile' ? 10 : 14, backgroundColor: tokens.row }}>
       {time !== undefined ? <Txt size={13.5} weight={600} style={{ width: 44 }}>{time}</Txt> : null}
-      {lead === 'clay' ? <ClayIcon name={icon} size={34} celebrate={strike} /> : <Tile name={icon} size={tileSize} radius={tileSize >= 48 ? 16 : 14} celebrate={strike} />}
+      {lead === 'clay' ? <ClayIcon name={icon} size={46} celebrate={strike} /> : <Tile name={icon} size={tileSize} radius={tileSize >= 48 ? 16 : 14} celebrate={strike} />}
       <View style={{ flex: 1, minWidth: 0, gap: 1 }}>
         <Txt size={16} line={21} weight={600} strike={strike} color={strike ? tokens.mute : tokens.ink} numberOfLines={2}>{title}</Txt>
         {sub ? <Meta color={subColor}>{sub}</Meta> : null}

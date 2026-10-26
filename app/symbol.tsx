@@ -59,7 +59,7 @@ export default function Symbol() {
                       onPress={() => choose(n)}
                       style={{ aspectRatio: 1, borderRadius: 16, alignItems: 'center', justifyContent: 'center', backgroundColor: on ? tint(n) : 'transparent', borderWidth: 2, borderColor: on ? tokens.ink : 'transparent' }}
                     >
-                      <ClayIcon name={n} size={40} />
+                      <ClayIcon name={n} size={48} />
                     </PressScale>
                   </View>
                 );

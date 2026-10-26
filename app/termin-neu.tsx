@@ -136,7 +136,7 @@ export default function TerminNeu() {
                   onPress={() => { haptics.select(); setIcon(c.icon); }}
                   style={{ flex: 1, alignItems: 'center', gap: 2, paddingTop: 8, paddingBottom: 6, paddingHorizontal: 4, borderRadius: 16, backgroundColor: on ? tint(c.icon) : tokens.row, borderWidth: 1.5, borderColor: on ? tokens.ink : 'transparent' }}
                 >
-                  <View style={{ opacity: on ? 1 : 0.55 }}><ClayIcon name={c.icon} size={34} /></View>
+                  <View style={{ opacity: on ? 1 : 0.55 }}><ClayIcon name={c.icon} size={42} /></View>
                   <Txt size={11.5} weight={on ? 600 : 500} color={on ? tokens.ink : tokens.sub} numberOfLines={1}>{c.label}</Txt>
                 </PressScale>
               );

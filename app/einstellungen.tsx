@@ -15,7 +15,7 @@ import type { ClayName } from '../src/lib/clayIcons';
 function SRow({ icon, t, s, right, onPress }: { icon: ClayName; t: string; s: string; right?: React.ReactNode; onPress?: () => void }) {
   return (
     <PressScale onPress={onPress} style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 10, paddingHorizontal: 14, backgroundColor: tokens.row }}>
-      <Tile name={icon} size={30} radius={10} />
+      <Tile name={icon} size={38} radius={12} />
       <View style={{ flex: 1 }}>
         <Txt size={15.5} weight={600}>{t}</Txt>
         <Meta>{s}</Meta>

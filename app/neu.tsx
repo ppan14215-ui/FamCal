@@ -37,7 +37,7 @@ export default function Neu() {
         ))}
       </View>
       <PressScale scale={0.985} onPress={() => go(() => router.push('/chat'))} style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 10, paddingLeft: 10, paddingRight: 14, borderRadius: 20, backgroundColor: tokens.row }}>
-        <ClayIcon name="chat" size={40} />
+        <ClayIcon name="chat" size={48} />
         <Txt size={15.5} weight={600} style={{ flex: 1 }}>Frag den Assistenten</Txt>
         <LineIcon name="mic" size={20} color={tokens.sub} />
       </PressScale>

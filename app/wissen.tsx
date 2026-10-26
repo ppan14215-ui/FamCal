@@ -16,9 +16,9 @@ type K = { id: string; lead: React.ReactNode; t: string; s: string };
 const FAMILIE: K[] = [
   { id: 'j', lead: <Avatar p="J" size={30} />, t: 'Julia', s: 'Mama · Farbe Rosa' },
   { id: 't', lead: <Avatar p="T" size={30} />, t: 'Tom', s: 'Papa · Farbe Blau' },
-  { id: 'b', lead: <Tile name="schnuller" size={30} radius={10} />, t: 'Ben', s: `${weeksOld()} Wochen · geboren 14. Sep 2026` },
+  { id: 'b', lead: <Tile name="schnuller" size={38} radius={12} />, t: 'Ben', s: `${weeksOld()} Wochen · geboren 14. Sep 2026` },
 ];
-const tile = (n: ClayName) => <Tile name={n} size={30} radius={10} />;
+const tile = (n: ClayName) => <Tile name={n} size={38} radius={12} />;
 const MENSCHEN: K[] = [
   { id: 'w', lead: tile('stethoskop'), t: 'Dr. Weber', s: 'Kinderarzt · Hauptstr. 12' },
   { id: 's', lead: tile('hebamme'), t: 'Sarah Lind', s: 'Hebamme' },

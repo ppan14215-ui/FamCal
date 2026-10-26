@@ -56,7 +56,7 @@ export default function ItemRow({ title, editText, meta, metaColor, done, who, i
     <View style={{ paddingVertical: editing ? 12 : 10, paddingHorizontal: 14, backgroundColor: tokens.row, gap: 6 }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
         <Check done={done} onPress={onToggle} />
-        {icon ? <ClayIcon name={icon} size={30} celebrate={done} /> : null}
+        {icon ? <ClayIcon name={icon} size={42} celebrate={done} /> : null}
         {editing ? (
           <TextInput
             value={text}
