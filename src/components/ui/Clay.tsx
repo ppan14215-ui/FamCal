@@ -13,6 +13,8 @@ import { clayMotion, ClayMotionSpec } from '../../lib/clayMotion';
 import { tint } from '../../theme';
 
 const DUR = 1250;
+/** Measured: objects span 53 to 66 % of the 1024 canvas, 64 % on average. */
+const FILL = 1.35;
 
 export function ClayIcon({ name, size = 40, style, celebrate }: { name: ClayName; size?: number; style?: StyleProp<any>; celebrate?: boolean }) {
   const [n, setN] = useState(0);
@@ -21,8 +23,15 @@ export function ClayIcon({ name, size = 40, style, celebrate }: { name: ClayName
     if (celebrate && !prev.current) setN((x) => x + 1);
     prev.current = celebrate;
   }, [celebrate]);
-  if (!n) return <Image source={clayIcons[name]} style={[{ width: size, height: size }, style]} resizeMode="contain" accessibilityIgnoresInvertColors />;
-  return <ClayMotion key={n} name={name} size={size} style={style} />;
+  // The renders leave about a third of their canvas empty, so the object is
+  // drawn larger than its box and fills it (Julian 26.10.: "Icons überall zu
+  // klein, sieht man kaum aufm Pixel 10").
+  const big = Math.round(size * FILL);
+  return (
+    <View style={[{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }, style]}>
+      {n ? <ClayMotion key={n} name={name} size={big} /> : <Image source={clayIcons[name]} style={{ width: big, height: big }} resizeMode="contain" accessibilityIgnoresInvertColors />}
+    </View>
+  );
 }
 
 export function Tile({ name, size = 52, radius, ratio = 0.78, bg, style, celebrate }: { name: ClayName; size?: number; radius?: number; ratio?: number; bg?: string; style?: StyleProp<ViewStyle>; celebrate?: boolean }) {

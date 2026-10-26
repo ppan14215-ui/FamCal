@@ -5,6 +5,7 @@ Alle sichtbaren Änderungen an FamCal. Neueste oben. Agenten und Menschen: Ände
 ## Unreleased
 
 ### Kommentare vom 26.10. abends
+- Clay Icons füllen ihre Fläche jetzt aus und wirken überall etwa ein Drittel größer. Die Bilder hatten rund ein Drittel leeren Rand.
 - Neues Intro: fünf kurze Szenen statt einer Schleife. Post vom Amt, Foto und fertig, für euch beide, weiß was bei euch gilt, dann das Versprechen. Läuft einmal, Tippen springt weiter, Balken oben zeigen den Stand.
 - Einkauf ergänzen: das Eingabefeld sitzt unten am Daumen und fährt mit der Tastatur hoch, Treffer erscheinen direkt darüber.
 - Listen: Tabs sind so breit wie ihr Name, scrollen seitlich und der gewählte rückt ins Bild. Eigene Listen lassen sich unten mit „Liste löschen“ entfernen, mit Rückgängig.
