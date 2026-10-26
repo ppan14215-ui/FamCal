@@ -4,6 +4,11 @@ Alle sichtbaren Änderungen an FamCal. Neueste oben. Agenten und Menschen: Ände
 
 ## Unreleased
 
+### Echte Kalender vom Handy
+- In der App liest FamCal jetzt die Kalender, die schon auf dem Handy sind (iCloud, Google, Outlook) über expo-calendar. Ihr wählt pro Konto, welche erscheinen, und wem sie gehören. Arbeitskalender erscheinen nur als gestreifter Block, Feiertage kommen nach Bundesland dazu. FamCal liest nur und schreibt nichts zurück.
+- Im Web Testlink bleibt die Anmeldung simuliert, dort gibt es keine Gerätekalender.
+- Einstellungen zeigen die wirklich verbundenen Kalender und führen zur Auswahl zurück. Der Titel zeigt eure Namen statt „Familie Huber“.
+
 ### Stadt, Assistent mit Quellen, alles bearbeitbar
 - Onboarding fragt zuerst Namen und Stadt. Danach zeigt „Das gilt in Köln“, was der Assistent nachgeschlagen hat (Kita-Portal, Bürgeramt, Feiertage), jeweils mit Quelle. Im Prototyp geprüft für Köln, München, Düsseldorf, Berlin und Hamburg. Das Bundesland kommt aus der Stadt.
 - Die Karte „Kita-Platz anfragen“ nennt das Portal der Stadt und verlinkt es (Köln: LITTLE BIRD).

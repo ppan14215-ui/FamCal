@@ -16,6 +16,7 @@
   "dependencies": {
     "@expo-google-fonts/geist": "^0.4.2",
     "expo": "~55.0.28",
+    "expo-calendar": "~55.0.19",
     "expo-clipboard": "~55.0.15",
     "expo-constants": "~55.0.15",
     "expo-font": "~55.0.8",

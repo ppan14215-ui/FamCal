@@ -9,7 +9,7 @@ import LineIcon from '../src/components/ui/LineIcon';
 import { Tile, ClayIcon } from '../src/components/ui/Clay';
 import PressScale from '../src/components/ui/PressScale';
 import { tokens } from '../src/theme';
-import { actions, toast } from '../src/state/store';
+import { actions, toast, useStore } from '../src/state/store';
 import type { ClayName } from '../src/lib/clayIcons';
 
 function SRow({ icon, t, s, right, onPress }: { icon: ClayName; t: string; s: string; right?: React.ReactNode; onPress?: () => void }) {
@@ -26,15 +26,28 @@ function SRow({ icon, t, s, right, onPress }: { icon: ClayName; t: string; s: st
 }
 const Dot = () => <View style={{ width: 8, height: 8, borderRadius: 999, backgroundColor: tokens.ok }} />;
 
+const CAL_NAME: Record<string, { t: string; icon: ClayName }> = {
+  device: { t: 'Kalender auf diesem Handy', icon: 'kalender' },
+  google: { t: 'Google Kalender', icon: 'sync' },
+  icloud: { t: 'iCloud-Kalender', icon: 'kalender' },
+  outlook: { t: 'Outlook', icon: 'telefon' },
+};
+
 export default function Einstellungen() {
+  const cals = useStore((s) => s.calendars);
+  const demo = useStore((s) => s.demo);
+  const names = useStore((s) => s.names);
+  const openCals = () => router.push({ pathname: '/onboarding/kalender', params: { zurueck: '1' } });
   return (
     <Screen gap={12}>
       <BackBar />
-      <H1>Familie Huber</H1>
+      <H1>{demo ? 'Familie Huber' : [names.J, names.T].filter(Boolean).join(' und ') || 'Eure Familie'}</H1>
       <Group>
         <SRow icon="eingang" t="huber-7q2@familie.app" s="Familienadresse · weiterleiten oder hinterlegen" right={<LineIcon name="copy" size={18} color={tokens.sub} />} onPress={async () => { await Clipboard.setStringAsync('huber-7q2@familie.app').catch(() => {}); toast('Adresse kopiert'); }} />
-        <SRow icon="sync" t="Google Kalender" s="synchron · vor 2 Min" right={<Dot />} />
-        <SRow icon="kalender" t="iCloud" s="Abo · Erinnerungen kommen per Push" right={<Dot />} />
+        {cals.map((c) => (
+          <SRow key={c.provider} icon={CAL_NAME[c.provider]?.icon ?? 'kalender'} t={CAL_NAME[c.provider]?.t ?? c.provider} s={`${c.ids.length} Kalender · ${c.account}`} right={<Dot />} onPress={openCals} />
+        ))}
+        <SRow icon="sync" t={cals.length ? 'Weitere Kalender' : 'Kalender verbinden'} s={cals.length ? 'Auswahl ändern oder hinzufügen' : 'Damit nichts doppelt ist'} onPress={openCals} />
       </Group>
       <Group>
         <SRow icon="glocke" t="Hinweise" s="Nur Wichtiges · Ruhe 21–7 Uhr" onPress={() => router.push('/demo/sperrbildschirm')} />
