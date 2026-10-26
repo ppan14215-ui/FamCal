@@ -43,7 +43,8 @@ function shape(n: LineName, p: any) {
     case 'send': return <Path {...p} d="M4 12l16-8-6 16-3-7z" />;
     case 'flash': return <Path {...p} d="M13 3L5 14h6l-1 7 8-11h-6z" />;
     case 'pin': return <><Path {...p} d="M12 21s-6-5.5-6-11a6 6 0 0 1 12 0c0 5.5-6 11-6 11z" /><Circle {...p} cx={12} cy={10} r={2} /></>;
-    case 'sparkle': return <Path {...p} d="M12 4l1.8 5.2L19 11l-5.2 1.8L12 18l-1.8-5.2L5 11l5.2-1.8z" />;
+    // Two soft four-point stars, filled, like the assistant's mark elsewhere.
+    case 'sparkle': return <><Path fill={p.stroke} d="M10 3.5c.5 4.3 2.2 6 6.5 6.5-4.3.5-6 2.2-6.5 6.5-.5-4.3-2.2-6-6.5-6.5 4.3-.5 6-2.2 6.5-6.5z" /><Path fill={p.stroke} d="M18 13.5c.25 2.1 1.1 2.95 3.2 3.2-2.1.25-2.95 1.1-3.2 3.2-.25-2.1-1.1-2.95-3.2-3.2 2.1-.25 2.95-1.1 3.2-3.2z" /></>;
     case 'settings': return <><Circle {...p} cx={12} cy={12} r={3} /><Path {...p} d="M19 12a7 7 0 0 0-.1-1.2l2-1.5-2-3.4-2.3.9a7 7 0 0 0-2-1.2L14.2 3h-4l-.4 2.6a7 7 0 0 0-2 1.2l-2.4-.9-2 3.4 2 1.5A7 7 0 0 0 5 12c0 .4 0 .8.1 1.2l-2 1.5 2 3.4 2.3-.9a7 7 0 0 0 2 1.2l.4 2.6h4l.4-2.6a7 7 0 0 0 2-1.2l2.3.9 2-3.4-2-1.5c.1-.4.1-.8.1-1.2z" /></>;
     case 'papier': return <><Path {...p} d="M4 20h4L19 9l-4-4L4 16z" /><Path {...p} d="M13.5 6.5l4 4" /></>;
     case 'users': return <><Circle {...p} cx={9} cy={9} r={3} /><Circle {...p} cx={17} cy={10} r={2.5} /><Path {...p} d="M3 19c0-3 3-5 6-5s6 2 6 5M15 15c3 0 6 1 6 4" /></>;

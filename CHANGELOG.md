@@ -7,6 +7,7 @@ Alle sichtbaren Änderungen an FamCal. Neueste oben. Agenten und Menschen: Ände
 ### Jede Stadt kennt ihr Bundesland, Geburtsdatum mit Jahr
 - „Wo wohnt ihr?“ kennt alle 10.942 Gemeinden aus dem Gemeindeverzeichnis des Statistischen Bundesamts (Stand 2017). Beim Tippen kommen Vorschläge mit Bundesland, darunter steht zum Beispiel „Fürth liegt in Bayern“. Gibt es den Ort mehrmals, reicht ein Tipp auf „Nein, Fürth in Hessen“.
 - Das Bundesland beim Kind ist damit vorausgewählt. Der Stadt Schritt zeigt für nicht geprüfte Orte wenigstens die Feiertage des Landes.
+- Erstes Jahr: abgehakte Termine bleiben mit Haken stehen und zeigen „erledigt“. Im Web Link läuft die Liste ohne Layout Animation, die in mobilem Safari Zeilen verschieben kann. Der Assistenten Funke ist neu gezeichnet.
 - „Zu zweit“ nimmt die Farbe des Partners an: Hintergrund und Punkt im Titel wechseln mit, sobald sie gewählt ist.
 - Geburtstag und errechneter Termin haben ein eigenes Datumsfeld: eintippen wie „14.9.2022“ oder „14. September 2022“, oder im Kalender erst Jahr, dann Monat, dann Tag wählen. Vier Jahre zurück sind drei Tipps. Keine Uhrzeiten mehr als Beispiele.
 

@@ -1,6 +1,6 @@
 /** Milestone rows with a connecting line (canvas `tl_rows`). */
 import React from 'react';
-import { View } from 'react-native';
+import { View, Platform } from 'react-native';
 import Txt from './ui/Txt';
 import { Tile } from './ui/Clay';
 import { Check, Meta } from './ui/kit';
@@ -12,14 +12,20 @@ import PressScale from './ui/PressScale';
 
 export function milestoneSub(m: Milestone): string {
   if (m.frist && !m.done) return `Frist ${dayNum(m.date)}. ${MONTHS_SHORT[monthIdx(m.date)]} · ${until(m.date)}`;
+  if (m.done) return m.sub.replace(/\s*·\s*schon erledigt\?$/, '') + ' · erledigt';
   return m.sub;
 }
+
+// A ticked row stays where it is (Julian 26.10.: "abhaken anstatt verschwinden").
+// Reanimated's layout transition can pin a row out of place in mobile Safari,
+// so the web link skips it.
+const layout = Platform.OS === 'web' ? undefined : rowLayout;
 
 export default function Timeline({ items, onToggle, onPress, highlight }: { items: Milestone[]; onToggle?: (id: string) => void; onPress?: (m: Milestone) => void; highlight?: string | null }) {
   return (
     <View style={{ gap: 12 }}>
       {items.map((m, i) => (
-        <Animated.View key={m.id} entering={rowIn} exiting={rowOut} layout={rowLayout}>
+        <Animated.View key={m.id} entering={rowIn} exiting={rowOut} layout={layout}>
         <PressScale
           disabled={!onPress}
           onPress={() => onPress?.(m)}
