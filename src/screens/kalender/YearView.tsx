@@ -144,7 +144,7 @@ export default function YearView() {
 
   return (
     <>
-      <View style={{ alignSelf: 'center', width: SIZE, height: SIZE, marginTop: nearM ? 8 : 0 }}>
+      <View style={{ alignSelf: 'center', width: SIZE, height: SIZE, marginTop: nearM ? 8 : 0, zIndex: 2 }}>
         <GestureDetector gesture={pan}>
           <Animated.View style={[{ width: SIZE, height: SIZE }, ringW]}>
             <Svg width={SIZE} height={SIZE}>
