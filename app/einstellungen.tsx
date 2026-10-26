@@ -1,0 +1,63 @@
+/** Einstellungen: family address, calendar sync, hints, language, export, Plus. */
+import React from 'react';
+import { View, Pressable } from 'react-native';
+import { router } from 'expo-router';
+import * as Clipboard from 'expo-clipboard';
+import { Screen, BackBar, H1, H2, Group, Meta, Chevron } from '../src/components/ui/kit';
+import Txt from '../src/components/ui/Txt';
+import LineIcon from '../src/components/ui/LineIcon';
+import { Tile, ClayIcon } from '../src/components/ui/Clay';
+import PressScale from '../src/components/ui/PressScale';
+import { tokens } from '../src/theme';
+import { actions, toast } from '../src/state/store';
+import type { ClayName } from '../src/lib/clayIcons';
+
+function SRow({ icon, t, s, right, onPress }: { icon: ClayName; t: string; s: string; right?: React.ReactNode; onPress?: () => void }) {
+  return (
+    <Pressable onPress={onPress} style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 10, paddingHorizontal: 14, backgroundColor: tokens.row }}>
+      <Tile name={icon} size={30} radius={10} />
+      <View style={{ flex: 1 }}>
+        <Txt size={15.5} weight={600}>{t}</Txt>
+        <Meta>{s}</Meta>
+      </View>
+      {right ?? <Chevron />}
+    </Pressable>
+  );
+}
+const Dot = () => <View style={{ width: 8, height: 8, borderRadius: 999, backgroundColor: tokens.ok }} />;
+
+export default function Einstellungen() {
+  return (
+    <Screen gap={12}>
+      <BackBar />
+      <H1>Familie Huber</H1>
+      <Group>
+        <SRow icon="eingang" t="huber-7q2@familie.app" s="Familienadresse · weiterleiten oder hinterlegen" right={<LineIcon name="copy" size={18} color={tokens.sub} />} onPress={async () => { await Clipboard.setStringAsync('huber-7q2@familie.app').catch(() => {}); toast('Adresse kopiert'); }} />
+        <SRow icon="sync" t="Google Kalender" s="synchron · vor 2 Min" right={<Dot />} />
+        <SRow icon="kalender" t="iCloud" s="Abo · Erinnerungen kommen per Push" right={<Dot />} />
+      </Group>
+      <Group>
+        <SRow icon="glocke" t="Hinweise" s="Nur Wichtiges · Ruhe 21–7 Uhr" onPress={() => router.push('/demo/sperrbildschirm')} />
+        <SRow icon="chat" t="Sprache" s="Julia Deutsch · Tom English" onPress={() => toast('Englisch kommt nach dem Prototyp')} />
+        <SRow icon="paket" t="Export" s="Kalender (ICS) und alle Daten (JSON)" onPress={() => toast('Export kommt mit dem Backend')} />
+      </Group>
+      <PressScale scale={0.985} onPress={() => router.push('/plus')} style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12, paddingHorizontal: 14, borderRadius: 20, backgroundColor: tokens.row }}>
+        <ClayIcon name="hand-nimmt" size={44} />
+        <View style={{ flex: 1 }}>
+          <Txt size={15.5} weight={600}>Plus testen</Txt>
+          <Meta>7 von 10 Erfassungen diesen Monat genutzt</Meta>
+        </View>
+        <Chevron />
+      </PressScale>
+
+      <H2>Prototyp</H2>
+      <Group>
+        <SRow icon="glocke" t="Hinweise · Sperrbildschirm" s="So sehen Push-Hinweise aus" onPress={() => router.push('/demo/sperrbildschirm')} />
+        <SRow icon="chat" t="Teilen aus einem Chat" s="Nachricht aus WhatsApp übernehmen" onPress={() => router.push('/demo/teilen')} />
+        <SRow icon="kalender" t="Widgets" s="Homescreen, klein und mittel" onPress={() => router.push('/demo/widgets')} />
+        <SRow icon="zuhause" t="Onboarding neu starten" s="Beispieldaten zurücksetzen" onPress={() => { actions.reset(); router.dismissAll(); router.replace('/onboarding'); }} />
+      </Group>
+      <Txt size={12.5} line={17} color={tokens.mute} center>Prototyp ohne Login und ohne echte KI. Alles bleibt auf diesem Gerät und ist nach dem Neuladen wieder wie am Anfang.</Txt>
+    </Screen>
+  );
+}
