@@ -4,6 +4,13 @@ Alle sichtbaren Änderungen an FamCal. Neueste oben. Agenten und Menschen: Ände
 
 ## Unreleased
 
+### 14 Tage Plus, danach 30 Sätze im Monat gratis (27.10.)
+
+- Jede Familie startet mit 14 Tagen Plus. Danach versteht Claude 30 Sätze im Monat gratis, mit Plus unbegrenzt. Eingeladene nutzen den Plan ihrer Familie mit.
+- Ist das Monatslimit erreicht, sagt die App das einmal und versteht weiter mit ihren eigenen Regeln. Bei 5 übrigen Sätzen kommt ein kurzer Hinweis.
+- Die Datenbank prüft den Plan, bevor Claude gefragt wird. Ein gesperrter Satz kostet nichts. Plus kann sich niemand selbst geben, das setzt später nur das Bezahlen.
+- Für alle bleibt die Grenze von 60 Sätzen pro Person und Tag.
+
 ### Sprechen zuerst: neues Intro und kürzeres Onboarding (27.10.)
 
 - Das Intro zeigt jetzt nur noch, was den Kalender ausmacht: ein gesprochener Satz wird zum Termin, er landet sofort auf beiden Handys, „Eine Stunde später“ verschiebt ihn, „Wann haben wir beide frei?“ findet die Lücke, und Google, iCloud und Outlook ziehen in einem Schritt mit um. Kein Behördenbrief mehr.

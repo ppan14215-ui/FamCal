@@ -8,18 +8,16 @@
  *   { text, today: "2026-10-27", now: "14:10", names: { J: "Julian", T: "Anna" }, lang: "de" | "en" }
  * Response: the shape of `Termin` below, or { error }.
  *
- * Cost guard (Julian 27.10.): every call is counted per person and day
- * (count_ai_call). Above DAILY_LIMIT the function answers 429 without asking
- * Claude, and the app falls back to its own rules. One call costs about
- * 0.03 cent, so the limit caps one account at roughly 2 cent a day.
+ * Plan and cost guard (Julian 27.10.): use_ai_call checks the family's plan
+ * before Claude is asked. Every family starts with 14 days of Plus, then 30
+ * sentences a month stay free; Plus is unlimited. Nobody gets more than 60 a
+ * day. When a limit is reached the function answers 429 with the reason, and
+ * the app falls back to its own rules. One call costs about 0.03 cent.
  */
 import Anthropic from 'npm:@anthropic-ai/sdk@0.137.0';
 import { z } from 'npm:zod@4.1.12';
 import { zodOutputFormat } from 'npm:@anthropic-ai/sdk@0.137.0/helpers/zod';
 import { createClient } from 'npm:@supabase/supabase-js@2';
-
-/** A busy family says about 20 sentences a day; 60 leaves room and stops scripts. */
-const DAILY_LIMIT = 60;
 
 const Termin = z.object({
   // termin: something to put in the calendar. frage: the sentence asks about the calendar. unklar: neither.
@@ -76,9 +74,9 @@ Deno.serve(async (req) => {
   const db = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_ANON_KEY') ?? req.headers.get('apikey') ?? '', {
     global: { headers: { Authorization: req.headers.get('Authorization') ?? '' } },
   });
-  const { data: calls, error: countError } = await db.rpc('count_ai_call');
+  const { data: allowed, error: countError } = await db.rpc('use_ai_call');
   if (countError) return json({ error: 'not_signed_in' }, 401);
-  if (calls > DAILY_LIMIT) return json({ error: 'limit' }, 429);
+  if (!allowed.ok) return json({ error: 'limit', reason: allowed.reason, tier: allowed.tier }, 429);
 
   const wd = WD[new Date(`${today}T12:00:00Z`).getUTCDay()];
   const names = `J = ${input.names?.J || 'Elternteil 1'}, T = ${input.names?.T || 'Elternteil 2'}`;
@@ -93,7 +91,7 @@ Deno.serve(async (req) => {
       messages: [{ role: 'user', content: `Heute ist ${wd}, ${today}, ${input.now ?? ''} Uhr. Eltern: ${names}. Sprache der App: ${input.lang === 'en' ? 'Englisch' : 'Deutsch'}.\n\nSatz: ${text}` }],
     });
     if (res.stop_reason === 'refusal' || !res.parsed_output) return json({ error: 'not_understood' }, 422);
-    return json(res.parsed_output);
+    return json({ ...res.parsed_output, left: allowed.left ?? null });
   } catch (e) {
     const status = e instanceof Anthropic.RateLimitError ? 429 : e instanceof Anthropic.APIError ? 502 : 500;
     console.error('verstehen', e);

@@ -32,7 +32,7 @@ export default function Plus() {
       <H1>Plus</H1>
       <Lead>{tx('Organisieren bleibt gratis, für immer. Plus nimmt euch Arbeit ab.', 'Organising stays free, forever. Plus takes work off your hands.')}</Lead>
       <View style={{ gap: 8 }}>
-        {[tx('Claude versteht jeden Satz, auch lange und verschachtelte', 'Claude understands every sentence, even long and tangled ones'), tx('Unbegrenzt erfassen: Mails, Fotos, Geteiltes', 'Capture without limits: mails, photos, shared links'), tx('Entwürfe für Absagen, Anträge, Antworten', 'Drafts for cancellations, forms and replies')].map((t) => (
+        {[tx('Unbegrenzt sprechen statt 30 Sätze im Monat, Claude versteht auch lange Sätze', 'Talk without limits instead of 30 sentences a month, Claude understands long sentences too'), tx('Unbegrenzt erfassen: Mails, Fotos, Geteiltes', 'Capture without limits: mails, photos, shared links'), tx('Entwürfe für Absagen, Anträge, Antworten', 'Drafts for cancellations, forms and replies')].map((t) => (
           <View key={t} style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
             <LineIcon name="check" size={18} color={tokens.done} stroke={2.2} />
             <Txt size={15}>{t}</Txt>
