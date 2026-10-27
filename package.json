@@ -23,6 +23,7 @@
     "expo-calendar": "~55.0.19",
     "expo-clipboard": "~55.0.15",
     "expo-constants": "~55.0.15",
+    "expo-dev-client": "~55.0.41",
     "expo-font": "~55.0.8",
     "expo-haptics": "~55.0.16",
     "expo-linking": "~55.0.16",

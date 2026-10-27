@@ -51,6 +51,13 @@
     },
     "runtimeVersion": {
       "policy": "appVersion"
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "8e6b21e8-8233-4246-b477-94244b55771f"
+      }
+    },
+    "owner": "123dermensch"
   }
 }
