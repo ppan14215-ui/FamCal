@@ -19,7 +19,7 @@ import { tokens, fonts } from '../theme';
 import { haptics } from '../lib/haptics';
 import { setTyping } from '../lib/keyboard';
 import { LIVE } from '../lib/live';
-import { tx, EN } from '../i18n/lang';
+import { tx, SPEECH_LANG } from '../i18n/lang';
 
 // Phones and tablets: Enter on the screen keyboard adds a line.
 const TOUCH = Platform.OS !== 'web' || (typeof window !== 'undefined' && !!window.matchMedia?.('(pointer: coarse)').matches);
@@ -109,7 +109,7 @@ export default function TalkBar({ onSend, onPlus, suggestions = [], spoken, plac
     if (!SR) return say(sentence);
     try {
       const r = new SR();
-      r.lang = EN ? 'en-US' : 'de-DE';
+      r.lang = SPEECH_LANG;
       r.interimResults = true;
       let heard = '';
       let failed = false;
@@ -146,7 +146,7 @@ export default function TalkBar({ onSend, onPlus, suggestions = [], spoken, plac
         SR.addListener('end', () => { subs.forEach((x) => x.remove()); setListening(false); if (heard) send(heard); }),
       ];
       stopNative.current = () => SR.stop();
-      SR.start({ lang: EN ? 'en-US' : 'de-DE', interimResults: true, continuous: false, addsPunctuation: true });
+      SR.start({ lang: SPEECH_LANG, interimResults: true, continuous: false, addsPunctuation: true });
     } catch {
       fail();
     }

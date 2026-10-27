@@ -4,6 +4,10 @@ Alle sichtbaren Änderungen an FamCal. Neueste oben. Agenten und Menschen: Ände
 
 ## Unreleased
 
+### Mikro versteht Deutsch auch auf englischen Handys (27.10.)
+
+- Das Mikro hörte bisher in der Sprache der App. Auf einem Handy mit Englisch als erster Sprache war das Englisch, Deutsch kam gar nicht an. Jetzt hört es Deutsch, sobald Deutsch irgendwo in den Sprachen des Handys steht.
+
 ### Kein Warten mehr auf Claude (27.10.)
 
 - Gemessen braucht Claude 2 bis 4 Sekunden pro Satz. Deshalb zeigt die App den Termin jetzt sofort mit ihren eigenen Regeln. Claude liest den Satz gleichzeitig und korrigiert danach still, was die Regeln falsch verstanden haben. Der Termin leuchtet dabei kurz auf.
