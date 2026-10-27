@@ -31,3 +31,16 @@ export async function blueprintOnline(name: string): Promise<Blueprint | null> {
   if (!bp?.blocks?.length) return null;
   return { blocks: bp.blocks.filter((b) => BLOCKS.includes(b)).slice(0, 5), source: bp.source === 'books' || bp.source === 'movies' ? bp.source : null, seenLabel: bp.seenLabel?.slice(0, 20) };
 }
+
+const NAMES: Record<Block, () => string> = {
+  cover: () => tx('Cover', 'cover'), stars: () => tx('Bewertung', 'rating'), seen: () => '', year: () => tx('Jahr', 'year'),
+  by: () => tx('Autor oder Regie', 'author or director'), link: () => 'Link', date: () => tx('Datum', 'date'),
+  price: () => tx('Preis', 'price'), place: () => tx('Ort', 'place'), note: () => tx('Notiz', 'note'),
+};
+
+/** "Mit Cover, Bewertung und Gesehen." for the plan and the new list screen. */
+export function blocksLine(bp: Blueprint): string {
+  const parts = bp.blocks.map((b) => (b === 'seen' ? bp.seenLabel ?? tx('Erledigt', 'Done') : NAMES[b]())).filter(Boolean).slice(0, 4);
+  const list = parts.length < 2 ? parts.join('') : `${parts.slice(0, -1).join(', ')} ${tx('und', 'and')} ${parts[parts.length - 1]}`;
+  return tx(`Mit ${list}.`, `With ${list}.`) + (bp.source ? tx(' Cover suche ich selbst.', ' I find the covers myself.') : '');
+}

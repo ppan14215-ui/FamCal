@@ -9,6 +9,7 @@
 import type { CalEvent, Who, List } from '../state/types';
 import { get, actions, toast } from '../state/store';
 import { persons } from '../theme/tokens';
+import { blueprintFor, blocksLine } from './blueprint';
 import { understand, findWhen, whoOf, clean, Reply, fromModel } from './talk';
 import { canUnderstand, understandOnline } from './verstehen';
 import { tx, EN } from '../i18n/lang';
@@ -241,7 +242,8 @@ function listeNeu(said: string): Plan {
   const name = (head || tx('Neue Liste', 'New list')).trim().replace(/^(die|den|das)\s+/i, '').replace(/^./, (c) => c.toUpperCase());
   const items = tail ? splitItems(tail) : [];
   const urlaub = /urlaub|reise|ostsee|pack|holiday|vacation|trip/i.test(name);
-  const steps = [tx(`Neue Liste „${name}“.`, `New list “${name}”.`), items.length ? tx(`Mit ${items.join(', ')}.`, `With ${items.join(', ')}.`) : urlaub ? tx('Vorlage Urlaub mit Baby, 24 Dinge.', 'Template holiday with baby, 24 things.') : tx('Noch leer, sagt einfach, was drauf soll.', 'Still empty, just say what goes on it.')];
+  const bp = blueprintFor(name);
+  const steps = [tx(`Neue Liste „${name}“.`, `New list “${name}”.`), ...(bp ? [blocksLine(bp)] : []), items.length ? tx(`Mit ${items.join(', ')}.`, `With ${items.join(', ')}.`) : urlaub ? tx('Vorlage Urlaub mit Baby, 24 Dinge.', 'Template holiday with baby, 24 things.') : tx('Noch leer, sagt einfach, was drauf soll.', 'Still empty, just say what goes on it.')];
   return {
     head: tx('Ich lege eine neue Liste an', 'Creating a new list'),
     steps,
