@@ -57,12 +57,12 @@ const pad = (n: number) => String(n).padStart(2, '0');
 const day = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 const hm = (d: Date) => `${pad(d.getHours())}:${pad(d.getMinutes())}`;
 
-/** Events of the chosen calendars, one week back and three months ahead. */
-export async function importDeviceEvents(cals: DeviceCal[], who: PersonId): Promise<CalEvent[]> {
+/** Events of the chosen calendars, one week back and three months ahead (a move takes a year). */
+export async function importDeviceEvents(cals: DeviceCal[], who: PersonId, ahead = 92): Promise<CalEvent[]> {
   const on = cals.filter((c) => c.on);
   if (!on.length) return [];
   const from = new Date(`${addDays(TODAY, -7)}T00:00:00`);
-  const to = new Date(`${addDays(TODAY, 92)}T23:59:59`);
+  const to = new Date(`${addDays(TODAY, ahead)}T23:59:59`);
   const events = await Calendar.getEventsAsync(on.map((c) => c.id), from, to);
   return events.map((e): CalEvent => {
     const cal = on.find((c) => c.id === e.calendarId);
@@ -86,4 +86,16 @@ export async function importDeviceEvents(cals: DeviceCal[], who: PersonId): Prom
       source: `Aus ${cal?.account ?? 'dem Gerätekalender'} · ${cal?.title ?? ''}`.trim(),
     };
   });
+}
+
+/**
+ * Umzug (Julian 27.10.: "einfache Migration von bestehenden Kalendern"). In
+ * the real app the family's own Termine are copied into FamCal, so both
+ * parents see them and FamCal becomes the calendar they talk to. Work stays a
+ * private block on this phone. The ids are stable, so moving twice copies
+ * nothing twice.
+ */
+export function moveIn(events: CalEvent[]): { copy: CalEvent[]; keep: CalEvent[] } {
+  const copy = events.filter((e) => !e.work).map((e) => ({ ...e, id: e.id.replace(/^dev-/, 'imp-'), work: undefined }));
+  return { copy, keep: events.filter((e) => e.work) };
 }

@@ -17,7 +17,8 @@ import { Avatar } from '../../src/components/ui/Person';
 import { tokens, fonts, persons, rise, rowIn, rowOut } from '../../src/theme';
 import { useStore, actions, toast } from '../../src/state/store';
 import { PROVIDERS, Provider, FoundCal, found, importEvents } from '../../src/data/calendars';
-import { hasDeviceCalendars, askAccess, listCalendars, importDeviceEvents, DeviceCal } from '../../src/lib/deviceCalendars';
+import { hasDeviceCalendars, askAccess, listCalendars, importDeviceEvents, moveIn, DeviceCal } from '../../src/lib/deviceCalendars';
+import { LIVE } from '../../src/lib/live';
 import { haptics } from '../../src/lib/haptics';
 import type { PersonId } from '../../src/theme';
 
@@ -146,12 +147,21 @@ function DeviceCard({ conn }: { conn?: { account: string; ids: string[] } }) {
   const save = async () => {
     setBusy(true);
     try {
-      const events = await importDeviceEvents(cals, owner);
+      const events = await importDeviceEvents(cals, owner, LIVE ? 365 : 92);
       const holidays = importEvents('icloud', ['feiertage'], owner, kid?.land);
       const ids = cals.filter((c) => c.on).map((c) => c.id);
-      actions.connectCalendar('device', 'Dieses Handy', ids, [...events, ...holidays]);
-      haptics.success();
-      toast(ids.length ? `${ids.length} Kalender verbunden, ${events.length} Termine` : 'Kalender getrennt');
+      if (LIVE) {
+        // Real app: the family's Termine move into the shared calendar, work stays a private block here.
+        const { copy, keep } = moveIn(events);
+        actions.connectCalendar('device', 'Dieses Handy', ids, [...keep, ...holidays]);
+        actions.addEvents(copy);
+        haptics.success();
+        toast(ids.length ? `${copy.length} Termine übernommen, für euch beide sichtbar` : 'Kalender getrennt');
+      } else {
+        actions.connectCalendar('device', 'Dieses Handy', ids, [...events, ...holidays]);
+        haptics.success();
+        toast(ids.length ? `${ids.length} Kalender verbunden, ${events.length} Termine` : 'Kalender getrennt');
+      }
       setState('idle');
     } catch {
       haptics.warning();

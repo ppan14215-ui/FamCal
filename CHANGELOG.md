@@ -9,6 +9,7 @@ Alle sichtbaren Änderungen an FamCal. Neueste oben. Agenten und Menschen: Ände
 - Anmelden mit Apple oder Google, ohne Passwort. Danach startest du eure Familie oder gibst den Code deines Partners ein und teilt denselben Kalender.
 - Termine liegen in Supabase und erscheinen sofort auf beiden Handys. Jede Familie sieht nur ihre eigenen Daten.
 - Das Mikro hört in der App direkt auf dem Handy zu, der Ton verlässt das Gerät nicht. Den Satz liest Claude und macht daraus den Termin mit Datum, Uhrzeit, wer und wo. Ohne Netz übernehmen die bisherigen Regeln.
+- Umzug von bestehenden Kalendern: in der echten App übernimmt „Kalender auf diesem Handy“ eure Termine der nächsten zwölf Monate aus iCloud, Google oder Outlook in FamCal, für beide sichtbar. Arbeit bleibt ein privater Block auf deinem Handy. Zweimal übernehmen legt nichts doppelt an.
 - In der echten App gilt das echte Datum. Der Testlink bleibt beim Beispieltag 29. Oktober und braucht kein Konto.
 
 ### Kalender scrollt endlos, Tabs weichen der Tastatur (27.10.)

@@ -189,6 +189,10 @@ export const actions = {
     return before;
   },
   /** Rückgängig after a spoken entry. */
+  /** Many at once (a calendar moving in); an id that is already there is kept as it is. */
+  addEvents(list: CalEvent[]) {
+    set((s) => { const have = new Set(s.events.map((e) => e.id)); return { events: [...s.events, ...list.filter((e) => !have.has(e.id))] }; });
+  },
   removeEvent(id: string) { set((s) => ({ events: s.events.filter((e) => e.id !== id) })); },
   restoreEvent(e: CalEvent) { set((s) => ({ events: s.events.map((x) => (x.id === e.id ? e : x)) })); },
   /** Everything on a Termin stays editable (Julian 26.10.). */
