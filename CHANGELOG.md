@@ -6,6 +6,8 @@ Alle sichtbaren Änderungen an FamCal. Neueste oben. Agenten und Menschen: Ände
 
 ### Kalender scrollt endlos, Tabs weichen der Tastatur (27.10.)
 
+- Heute ist in der Wochenleiste dunkel markiert. Wer woanders ist, bekommt oben einen „Heute“ Knopf, der zurückspringt.
+- Die Eingabetaste der Handytastatur schickt ab, statt eine neue Zeile zu machen.
 - Kalender Tag: Titel, Umschalter und Wochenleiste bleiben oben stehen, nur die Tage scrollen. Die Leiste zeigt mit ihrem Rahmen den Tag, den man gerade sieht, und gleitet in die nächste Woche, wenn man sie erreicht. Die Liste geht endlos weiter, freie Tage sind eine ruhige Zeile, jede Woche beginnt mit einer Trennlinie. Tippen auf einen Tag scrollt dorthin.
 - Beim Tippen ins Sprechfeld verschwinden die Tabs, das Feld sitzt direkt über der Tastatur.
 - Listen: die Icons in den Tabs haben Platz zum Springen und werden nicht mehr abgeschnitten.

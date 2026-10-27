@@ -70,10 +70,14 @@ export function WeekStrip({ day, onSelect }: { day: string; onSelect: (d: string
               onPress={() => onSelect(d)}
               accessibilityLabel={`${WD_LONG[weekday(d)]} ${dayNum(d)}.`}
               accessibilityState={{ selected: d === day }}
-              style={{ flex: 1, height: 66, borderRadius: 18, backgroundColor: d === TODAY ? tokens.chipBg : tokens.row, alignItems: 'center', justifyContent: 'center', gap: 3 }}
+              style={{ flex: 1, height: 66, borderRadius: 18, backgroundColor: tokens.row, alignItems: 'center', justifyContent: 'center', gap: 3 }}
             >
               <Txt size={12} color={tokens.sub}>{WD_SHORT[weekday(d)]}</Txt>
-              <Txt size={19} line={22} weight={d === TODAY ? 700 : 600}>{String(dayNum(d))}</Txt>
+              {d === TODAY ? (
+                <View style={{ width: 28, height: 28, marginVertical: -3, borderRadius: 999, backgroundColor: tokens.ink, alignItems: 'center', justifyContent: 'center' }}>
+                  <Txt size={16} line={20} weight={700} color="#FFFFFF">{String(dayNum(d))}</Txt>
+                </View>
+              ) : <Txt size={19} line={22} weight={600}>{String(dayNum(d))}</Txt>}
               <View style={{ width: 5, height: 5, borderRadius: 999, backgroundColor: has ? tokens.done : 'transparent' }} />
             </PressScale>
           );
@@ -225,11 +229,26 @@ function WeekLine({ start }: { start: string }) {
   );
 }
 
+/** Back to today, shown only while you are somewhere else (Julian 27.10.). */
+function TodayChip({ away, above, onPress }: { away: boolean; above: boolean; onPress: () => void }) {
+  const v = useSharedValue(away ? 1 : 0);
+  useEffect(() => { v.value = withSpring(away ? 1 : 0, springs.smooth); }, [away]);
+  const st = useAnimatedStyle(() => ({ opacity: v.value, transform: [{ scale: 0.85 + 0.15 * v.value }] }));
+  return (
+    <Animated.View pointerEvents={away ? 'auto' : 'none'} style={st}>
+      <PressScale accessibilityLabel="Zu heute springen" onPress={onPress} style={{ flexDirection: 'row', alignItems: 'center', gap: 4, height: 34, paddingLeft: 12, paddingRight: 10, borderRadius: 999, backgroundColor: tokens.ink }}>
+        <Txt size={14} weight={600} color="#FFFFFF">Heute</Txt>
+        <View style={{ transform: [{ rotate: above ? '-90deg' : '90deg' }] }}><LineIcon name="chev" size={14} color="#FFFFFF" stroke={2.2} /></View>
+      </PressScale>
+    </Animated.View>
+  );
+}
+
 const FIRST = addDays(monday(TODAY), -14);
 const MORE = 28;
 
 /** The week strip and the endless list of days under it, as one piece. */
-export default function DayView({ header }: { header: React.ReactNode }) {
+export default function DayView({ header }: { header: (today: React.ReactNode) => React.ReactNode }) {
   const day = useStore((s) => s.calDay);
   const events = useStore((s) => s.events);
   const tasks = useStore((s) => s.tasks);
@@ -285,7 +304,7 @@ export default function DayView({ header }: { header: React.ReactNode }) {
   return (
     <View style={{ flex: 1 }}>
       <View style={{ paddingHorizontal: 18, paddingTop: 8, paddingBottom: 12, gap: 14, backgroundColor: tokens.bg, zIndex: 2, borderBottomWidth: 1, borderBottomColor: shadow ? tokens.hair : 'transparent' }}>
-        {header}
+        {header(<TodayChip away={day !== TODAY} above={day > TODAY} onPress={() => pick(TODAY)} />)}
         <WeekStrip day={day} onSelect={pick} />
       </View>
       <ScrollView

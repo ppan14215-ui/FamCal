@@ -33,7 +33,7 @@ export default function Kalender() {
   if (view === 'tag') {
     return (
       <View style={{ flex: 1, backgroundColor: tokens.bg, paddingTop: insets.top }}>
-        <DayView header={<><H1 right={pair}>{month}</H1><Seg items={VIEWS} value={view} onChange={actions.setCalView} /></>} />
+        <DayView header={(today) => <><H1 right={<View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>{today}{pair}</View>}>{month}</H1><Seg items={VIEWS} value={view} onChange={actions.setCalView} /></>} />
       </View>
     );
   }

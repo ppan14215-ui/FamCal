@@ -52,6 +52,7 @@ export default function TalkBar({ onSend, onPlus, suggestions = [], spoken, plac
   const [demo, setDemo] = useState(false);
   const [boxH, setBoxH] = useState(MIN_H);
   const field = useRef<TextInput>(null);
+  const shift = useRef(false);
   const turn = useRef(0);
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
   useEffect(() => () => { timers.current.forEach(clearTimeout); setTyping(false); }, []);
@@ -127,10 +128,17 @@ export default function TalkBar({ onSend, onPlus, suggestions = [], spoken, plac
         onBlur={() => setTyping(false)}
         multiline
         value={text}
-        onChangeText={setText}
+        onChangeText={(v) => {
+          // Phone keyboards often send no Enter key event, only a new line in the text. Treat that as send too.
+          if (Platform.OS === 'web' && !shift.current && (v.match(/\n/g)?.length ?? 0) > (text.match(/\n/g)?.length ?? 0)) return send(v.replace(/\n/g, ' '));
+          shift.current = false;
+          setText(v);
+        }}
+        enterKeyHint="send"
         onContentSizeChange={Platform.OS === 'web' ? undefined : (e) => setBoxH(Math.min(MAX_H, Math.max(MIN_H, e.nativeEvent.contentSize.height + PAD * 2)))}
         // Enter sends, Shift plus Enter makes a new line, as in a chat app.
         onKeyPress={(e: any) => {
+          shift.current = e.nativeEvent.key === 'Enter' && !!e.nativeEvent.shiftKey;
           if (Platform.OS === 'web' && e.nativeEvent.key === 'Enter' && !e.nativeEvent.shiftKey && !e.nativeEvent.isComposing) { e.preventDefault(); send(); }
         }}
         scrollEnabled={boxH >= MAX_H}
