@@ -29,6 +29,21 @@ export function useAuth(): Auth {
 
 export type SignIn = { error: string | null; name?: string };
 
+/**
+ * Test builds only (Julian 27.10., on holiday without Google set up): one shared
+ * test account whose email and password come from the EAS preview environment.
+ * Store builds never get these variables, so the button does not exist there.
+ */
+const TEST_EMAIL = process.env.EXPO_PUBLIC_TEST_EMAIL;
+const TEST_PASSWORD = process.env.EXPO_PUBLIC_TEST_PASSWORD;
+export const canTestSignIn = !!(supabase && TEST_EMAIL && TEST_PASSWORD);
+
+export async function signInForTest(): Promise<SignIn> {
+  if (!supabase || !TEST_EMAIL || !TEST_PASSWORD) return { error: 'no_test_account' };
+  const { error } = await supabase.auth.signInWithPassword({ email: TEST_EMAIL, password: TEST_PASSWORD });
+  return { error: error?.message ?? null };
+}
+
 export async function signInWithApple(): Promise<SignIn> {
   if (!supabase) return { error: 'offline' };
   if (Platform.OS !== 'ios') {
