@@ -78,7 +78,7 @@ language plpgsql security definer set search_path = '' as $$
 declare f public.families;
 begin
   if auth.uid() is null then raise exception 'not signed in'; end if;
-  select fam.* into f from public.families fam join public.family_members m on m.family_id = fam.id where m.user_id = auth.uid() limit 1;
+  select fam.* into f from public.families fam join public.family_members m on m.family_id = fam.id where m.user_id = auth.uid() order by m.joined_at desc limit 1;
   if found then return f; end if;
   insert into public.families (created_by) values (auth.uid()) returning * into f;
   insert into public.family_members (family_id, user_id, role, display_name) values (f.id, auth.uid(), 'J', coalesce(name, ''));
