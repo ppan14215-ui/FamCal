@@ -74,8 +74,8 @@ export function WeekStrip({ day, onSelect }: { day: string; onSelect: (d: string
             >
               <Txt size={12} color={tokens.sub}>{WD_SHORT[weekday(d)]}</Txt>
               {d === TODAY ? (
-                <View style={{ width: 28, height: 28, marginVertical: -3, borderRadius: 999, backgroundColor: tokens.ink, alignItems: 'center', justifyContent: 'center' }}>
-                  <Txt size={16} line={20} weight={700} color="#FFFFFF">{String(dayNum(d))}</Txt>
+                <View style={{ width: 30, height: 30, marginVertical: -4, borderRadius: 999, borderWidth: 1.5, borderColor: tokens.ink, alignItems: 'center', justifyContent: 'center' }}>
+                  <Txt size={16} line={20} weight={700}>{String(dayNum(d))}</Txt>
                 </View>
               ) : <Txt size={19} line={22} weight={600}>{String(dayNum(d))}</Txt>}
               <View style={{ width: 5, height: 5, borderRadius: 999, backgroundColor: has ? tokens.done : 'transparent' }} />
