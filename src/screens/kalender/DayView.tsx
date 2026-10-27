@@ -42,7 +42,7 @@ export function WeekStrip({ day, onSelect }: { day: string; onSelect: (d: string
   const [w, setW] = useState(0);
   const slot = w ? (w - GAP * 6) / 7 : 0;
   const idx = days.indexOf(day);
-  // The outline glides to the day in view.
+  // Today keeps its outline; a soft shade glides to the day in view (Julian 27.10.).
   const x = useSharedValue(idx);
   useEffect(() => { x.value = withSpring(idx, springs.smooth); }, [idx]);
   const ring = useAnimatedStyle(() => ({ transform: [{ translateX: x.value * (slot + GAP) }] }));
@@ -70,20 +70,16 @@ export function WeekStrip({ day, onSelect }: { day: string; onSelect: (d: string
               onPress={() => onSelect(d)}
               accessibilityLabel={`${WD_LONG[weekday(d)]} ${dayNum(d)}.`}
               accessibilityState={{ selected: d === day }}
-              style={{ flex: 1, height: 66, borderRadius: 18, backgroundColor: tokens.row, alignItems: 'center', justifyContent: 'center', gap: 3 }}
+              style={{ flex: 1, height: 66, borderRadius: 18, backgroundColor: tokens.row, borderWidth: 1.5, borderColor: d === TODAY ? tokens.ink : 'transparent', alignItems: 'center', justifyContent: 'center', gap: 3 }}
             >
               <Txt size={12} color={tokens.sub}>{WD_SHORT[weekday(d)]}</Txt>
-              {d === TODAY ? (
-                <View style={{ width: 30, height: 30, marginVertical: -4, borderRadius: 999, borderWidth: 1.5, borderColor: tokens.ink, alignItems: 'center', justifyContent: 'center' }}>
-                  <Txt size={16} line={20} weight={700}>{String(dayNum(d))}</Txt>
-                </View>
-              ) : <Txt size={19} line={22} weight={600}>{String(dayNum(d))}</Txt>}
+              <Txt size={19} line={22} weight={d === TODAY ? 700 : 600}>{String(dayNum(d))}</Txt>
               <View style={{ width: 5, height: 5, borderRadius: 999, backgroundColor: has ? tokens.done : 'transparent' }} />
             </PressScale>
           );
         })}
       </Animated.View>
-      {slot && idx >= 0 ? <Animated.View pointerEvents="none" style={[{ position: 'absolute', left: 0, top: 0, width: slot, height: 66, borderRadius: 18, borderWidth: 1.5, borderColor: tokens.ink }, ring]} /> : null}
+      {slot && idx >= 0 ? <Animated.View pointerEvents="none" style={[{ position: 'absolute', left: 0, top: 0, width: slot, height: 66, borderRadius: 18, backgroundColor: 'rgba(22,35,42,0.08)' }, ring]} /> : null}
     </View>
   );
 }
