@@ -13,6 +13,7 @@ import { SYMBOL_GROUPS, symbolLabel } from '../src/data/symbols';
 import { haptics } from '../src/lib/haptics';
 import type { ClayName } from '../src/lib/clayIcons';
 import PressScale from '../src/components/ui/PressScale';
+import { tx } from '../src/i18n/lang';
 
 export default function Symbol() {
   const current = useStore((s) => s.draftSymbol);
@@ -31,15 +32,15 @@ export default function Symbol() {
   return (
     <Sheet bg={tokens.row} top={70} scrollable style={{ paddingBottom: 0, gap: 12 }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-        <Txt size={20} weight={700} tracking={-0.4}>Symbol</Txt>
-        <PressScale hitSlop={10} onPress={() => goBack()}><Txt size={15} weight={600}>Fertig</Txt></PressScale>
+        <Txt size={20} weight={700} tracking={-0.4}>{tx('Symbol', 'Icon')}</Txt>
+        <PressScale hitSlop={10} onPress={() => goBack()}><Txt size={15} weight={600}>{tx('Fertig', 'Done')}</Txt></PressScale>
       </View>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, height: 44, paddingHorizontal: 14, borderRadius: 14, backgroundColor: '#F1F1EF' }}>
         <LineIcon name="sparkle" size={16} color={tokens.sub} />
         <TextInput
           value={q}
           onChangeText={setQ}
-          placeholder="Suchen, z. B. Fußball"
+          placeholder={tx('Suchen, z. B. Fußball', 'Search, e.g. soccer')}
           placeholderTextColor={tokens.mute}
           selectionColor={tokens.ink}
           style={[{ flex: 1, fontFamily: fonts[400], fontSize: 16, color: tokens.ink }, Platform.OS === 'web' ? ({ outlineStyle: 'none' } as any) : null]}
@@ -67,7 +68,7 @@ export default function Symbol() {
             </View>
           </View>
         ))}
-        {!groups.length ? <Txt size={15} color={tokens.sub}>Kein Symbol gefunden.</Txt> : null}
+        {!groups.length ? <Txt size={15} color={tokens.sub}>{tx('Kein Symbol gefunden.', 'No icon found.')}</Txt> : null}
       </ScrollView>
     </Sheet>
   );

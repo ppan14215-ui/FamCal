@@ -7,12 +7,13 @@ import { Check, Meta } from './ui/kit';
 import Animated from 'react-native-reanimated';
 import { tokens, rowIn, rowOut, rowLayout } from '../theme';
 import type { Milestone } from '../state/types';
-import { until, dayNum, MONTHS_SHORT, monthIdx } from '../lib/dates';
+import { until, dayNum, MONTHS_SHORT, monthIdx, dmShort } from '../lib/dates';
 import PressScale from './ui/PressScale';
+import { tx } from '../i18n/lang';
 
 export function milestoneSub(m: Milestone): string {
-  if (m.frist && !m.done) return `Frist ${dayNum(m.date)}. ${MONTHS_SHORT[monthIdx(m.date)]} · ${until(m.date)}`;
-  if (m.done) return m.sub.replace(/\s*·\s*schon erledigt\?$/, '') + ' · erledigt';
+  if (m.frist && !m.done) return `${tx('Frist', 'Due')} ${dmShort(m.date)} · ${until(m.date)}`;
+  if (m.done) return m.sub.replace(/\s*·\s*schon erledigt\?$/, '') + tx(' · erledigt', ' · done');
   return m.sub;
 }
 

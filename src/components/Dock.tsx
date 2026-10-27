@@ -29,6 +29,7 @@ import { useKeyboardInset, useTyping } from '../lib/keyboard';
 import { hm } from '../lib/dates';
 import { haptics } from '../lib/haptics';
 import type { CalEvent, Who } from '../state/types';
+import { tx, quote } from '../i18n/lang';
 
 const STEP_MS = 850;
 const TIMES = ['09:00', '10:30', '14:00', '16:00'];
@@ -63,7 +64,7 @@ function EventCard({ e, needsTime, onUndo }: { e: CalEvent; needsTime?: boolean;
     <Animated.View entering={FadeIn.duration(220)} style={{ gap: 10 }}>
       {needsTime ? (
         <View style={{ gap: 6 }}>
-          <Txt size={15} weight={600}>Um wie viel Uhr?</Txt>
+          <Txt size={15} weight={600}>{tx('Um wie viel Uhr?', 'What time?')}</Txt>
           <View style={{ flexDirection: 'row', gap: 6, flexWrap: 'wrap' }}>
             {TIMES.map((t) => <Chip key={t} bg={!live.allDay && live.start === t ? tokens.doneSoft : tokens.chipBg} onPress={() => at(t)}>{hm(t)}</Chip>)}
           </View>
@@ -71,19 +72,19 @@ function EventCard({ e, needsTime, onUndo }: { e: CalEvent; needsTime?: boolean;
       ) : null}
       {!live.who ? (
         <View style={{ gap: 6 }}>
-          <Txt size={15} weight={600}>Wer geht?</Txt>
+          <Txt size={15} weight={600}>{tx('Wer geht?', 'Who\'s going?')}</Txt>
           <View style={{ flexDirection: 'row', gap: 6, flexWrap: 'wrap' }}>
             <Chip icon={<Avatar p="J" size={18} />} onPress={() => pick('J')}>{persons.J.name}</Chip>
             <Chip icon={<Avatar p="T" size={18} />} onPress={() => pick('T')}>{persons.T.name}</Chip>
-            <Chip icon={<Pair size={16} ring={tokens.chipBg} />} onPress={() => pick('both')}>Beide</Chip>
+            <Chip icon={<Pair size={16} ring={tokens.chipBg} />} onPress={() => pick('both')}>{tx('Beide', 'Both')}</Chip>
           </View>
         </View>
       ) : null}
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
         <LineIcon name="check" size={15} color={tokens.done} stroke={2.4} />
-        <Txt size={14} weight={600} color={tokens.done} style={{ flex: 1 }}>Eingetragen, ihr seht es beide</Txt>
-        <TextLink label="Rückgängig" onPress={onUndo} />
-        <TextLink label="Öffnen" color={tokens.ink} onPress={() => router.push(`/termin/${e.id}`)} />
+        <Txt size={14} weight={600} color={tokens.done} style={{ flex: 1 }}>{tx('Eingetragen, ihr seht es beide', 'Added, you both see it')}</Txt>
+        <TextLink label={tx('Rückgängig', 'Undo')} onPress={onUndo} />
+        <TextLink label={tx('Öffnen', 'Open')} color={tokens.ink} onPress={() => router.push(`/termin/${e.id}`)} />
       </View>
     </Animated.View>
   );
@@ -160,7 +161,7 @@ export default function Dock() {
     const n = ++heard.current;
     if (thinksOnline(ctx, said, pending)) {
       // Claude reads it (real app); the card says so until the answer is back, then the steps play as usual.
-      setVeil({ phase: 'think', origin, target: null, lines: ['Lese deinen Satz'], shown: 0, said });
+      setVeil({ phase: 'think', origin, target: null, lines: [tx('Lese deinen Satz', 'Reading your sentence')], shown: 0, said });
       planOnline(ctx, said, pending).then((p) => { if (heard.current === n) play(p, said, false); });
       return;
     }
@@ -214,8 +215,8 @@ export default function Dock() {
         <Animated.View key={turn.id} entering={FadeInDown.duration(220)} exiting={FadeOut.duration(150)} style={[{ maxHeight: 320, borderRadius: 26, backgroundColor: tokens.row }, shadow]}>
           <ScrollView contentContainerStyle={{ padding: 16, gap: 12 }} showsVerticalScrollIndicator={false}>
             <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 10 }}>
-              <Txt size={14} line={20} color={tokens.sub} style={{ flex: 1 }}>{`„${turn.said}“`}</Txt>
-              <PressScale accessibilityLabel="Schließen" hitSlop={10} onPress={() => { setTurn(null); light(null); }}>
+              <Txt size={14} line={20} color={tokens.sub} style={{ flex: 1 }}>{quote(turn.said)}</Txt>
+              <PressScale accessibilityLabel={tx('Schließen', 'Close')} hitSlop={10} onPress={() => { setTurn(null); light(null); }}>
                 <LineIcon name="x" size={18} color={tokens.mute} />
               </PressScale>
             </View>

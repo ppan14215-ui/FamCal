@@ -28,17 +28,18 @@ import Fresh from '../../src/components/Fresh';
 import { useScroller } from '../../src/lib/landing';
 import { useDockSpace } from '../../src/lib/dockSpace';
 import type { Who } from '../../src/state/types';
+import { tx } from '../../src/i18n/lang';
 
 const NEXT: Record<string, Who> = { T: 'J', J: 'both', both: null, null: 'T' };
 
 function whoLine(who: Who, title: string): { t: string; s: string } {
   const kid = get().kid?.name;
   const withKid = !!kid && /U\d|Impf|Pass|Arzt|Dr\./.test(title);
-  const go = (p: 'J' | 'T') => (withKid ? `${persons[p].name} bringt ${kid}` : `${persons[p].name} geht hin`);
-  if (who === 'T') return { t: go('T'), s: 'selbst übernommen' };
-  if (who === 'J') return { t: go('J'), s: 'selbst übernommen' };
-  if (who === 'both') return { t: 'Ihr geht beide', s: 'zusammen' };
-  return { t: 'Noch niemand', s: 'Wer geht hin?' };
+  const go = (p: 'J' | 'T') => (withKid ? tx(`${persons[p].name} bringt ${kid}`, `${persons[p].name} takes ${kid}`) : tx(`${persons[p].name} geht hin`, `${persons[p].name} is going`));
+  if (who === 'T') return { t: go('T'), s: tx('selbst übernommen', 'took it') };
+  if (who === 'J') return { t: go('J'), s: tx('selbst übernommen', 'took it') };
+  if (who === 'both') return { t: tx('Ihr geht beide', 'You both go'), s: tx('zusammen', 'together') };
+  return { t: tx('Noch niemand', 'Nobody yet'), s: tx('Wer geht hin?', "Who's going?") };
 }
 
 const noOutline = Platform.OS === 'web' ? ({ outlineStyle: 'none' } as any) : null;
@@ -80,15 +81,15 @@ export default function Termin() {
     if (!draft || whenLine(draft) === whenLine(now)) return setDraft(null);
     const before = actions.moveEvent(e.id, draft);
     setDraft(null);
-    toast(`Verschoben auf ${WD_SHORT[weekday(draft.date)]}${draft.start ? ' ' + hm(draft.start) : ''}`, before ? () => actions.restoreEvent(before) : undefined);
+    toast(`${tx('Verschoben auf', 'Moved to')} ${WD_SHORT[weekday(draft.date)]}${draft.start ? ' ' + hm(draft.start) : ''}`, before ? () => actions.restoreEvent(before) : undefined);
   };
   const overlap = (w: When) => {
     if (!w.start) return undefined;
     const a = minutes(w.start); const b = w.end ? minutes(w.end) : a + 30;
     const o = all.find((x: CalEvent) => x.id !== e.id && !x.work && x.date === w.date && minutes(x.start) < b && (x.end ? minutes(x.end) : minutes(x.start) + 30) > a);
     if (!o) return undefined;
-    const name = o.who === 'J' ? persons.J.name : o.who === 'T' ? persons.T.name : o.who === 'both' ? 'ihr beide' : 'noch niemand';
-    return `Gleichzeitig: ${o.title}, ${name}, ${hm(o.start)}${o.end ? ' bis ' + hm(o.end) : ''}.`;
+    const name = o.who === 'J' ? persons.J.name : o.who === 'T' ? persons.T.name : o.who === 'both' ? tx('ihr beide', 'both of you') : tx('noch niemand', 'nobody yet');
+    return `${tx('Gleichzeitig', 'At the same time')}: ${o.title}, ${name}, ${hm(o.start)}${o.end ? ` ${tx('bis', 'to')} ` + hm(o.end) : ''}.`;
   };
   const w = whoLine(e.who, e.title);
   const added = (e.bring ?? []).filter((b) => b.by === 'assistent' && b.src);
@@ -96,24 +97,24 @@ export default function Termin() {
     <ScrollView ref={scroll} onScroll={(ev) => track(ev.nativeEvent.contentOffset.y)} scrollEventThrottle={16} style={{ flex: 1, backgroundColor: tokens.bg }} contentContainerStyle={{ paddingBottom: insets.bottom + 34 + dock }} keyboardShouldPersistTaps="handled">
       <View style={{ backgroundColor: tint(e.icon), paddingTop: insets.top + 8 }}>
         <View style={{ paddingHorizontal: 18 }}><BackBar /></View>
-        <PressScale scale={0.97} accessibilityLabel="Symbol ändern" onPress={pickIcon} style={{ height: 200, alignItems: 'center', justifyContent: 'center' }}>
+        <PressScale scale={0.97} accessibilityLabel={tx('Symbol ändern', 'Change icon')} onPress={pickIcon} style={{ height: 200, alignItems: 'center', justifyContent: 'center' }}>
           <ClayIcon key={e.icon} name={e.icon} size={160} />
           <View style={{ position: 'absolute', right: 18, bottom: 14, flexDirection: 'row', alignItems: 'center', gap: 5, height: 30, paddingHorizontal: 11, borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.7)' }}>
             <LineIcon name="sparkle" size={13} color={tokens.ink} />
-            <Txt size={13} weight={600}>Symbol</Txt>
+            <Txt size={13} weight={600}>{tx('Symbol', 'Icon')}</Txt>
           </View>
         </PressScale>
       </View>
       <View style={{ paddingHorizontal: 18, paddingTop: 16, gap: 14 }}>
         <Fresh id={`${e.id}:title`} radius={12} style={{ gap: 4 }}>
-          <EditText key={`t-${e.title}`} value={e.title} size={30} weight={700} placeholder="Titel" onCommit={(t) => t && actions.updateEvent(e.id, { title: t })} />
+          <EditText key={`t-${e.title}`} value={e.title} size={30} weight={700} placeholder={tx('Titel', 'Title')} onCommit={(t) => t && actions.updateEvent(e.id, { title: t })} />
           {/* An empty place shows no field, only a quiet link that opens one (Julian 26.10.). */}
           {e.place || e.sub || addPlace ? (
-            <EditText key={`p-${e.place ?? e.sub ?? ''}`} value={e.place ?? e.sub ?? ''} size={15} weight={400} color={tokens.sub} placeholder="Ort oder Notiz" autoFocus={addPlace} onDone={() => setAddPlace(false)} onCommit={(t) => { actions.updateEvent(e.id, e.place !== undefined || !e.sub ? { place: t || undefined } : { sub: t || undefined }); }} />
+            <EditText key={`p-${e.place ?? e.sub ?? ''}`} value={e.place ?? e.sub ?? ''} size={15} weight={400} color={tokens.sub} placeholder={tx('Ort oder Notiz', 'Place or note')} autoFocus={addPlace} onDone={() => setAddPlace(false)} onCommit={(t) => { actions.updateEvent(e.id, e.place !== undefined || !e.sub ? { place: t || undefined } : { sub: t || undefined }); }} />
           ) : (
             <PressScale hitSlop={8} onPress={() => { haptics.select(); setAddPlace(true); }} style={{ flexDirection: 'row', alignItems: 'center', gap: 5, alignSelf: 'flex-start' }}>
               <LineIcon name="plus" size={14} color={tokens.sub} />
-              <Txt size={15} color={tokens.sub}>Ort oder Notiz</Txt>
+              <Txt size={15} color={tokens.sub}>{tx('Ort oder Notiz', 'Place or note')}</Txt>
             </PressScale>
           )}
         </Fresh>
@@ -128,18 +129,18 @@ export default function Termin() {
               <Txt size={15} weight={600}>{w.t}</Txt>
               <Meta>{w.s}</Meta>
             </View>
-            <Chip onPress={() => { haptics.select(); actions.setEventWho(e.id, NEXT[String(e.who)]); }}>Ändern</Chip>
+            <Chip onPress={() => { haptics.select(); actions.setEventWho(e.id, NEXT[String(e.who)]); }}>{tx('Ändern', 'Change')}</Chip>
           </View>
         </Card>
         </Fresh>
         <Card pad={14} gap={10}>
-          <Txt size={13} weight={600} color={tokens.sub}>Mitnehmen</Txt>
+          <Txt size={13} weight={600} color={tokens.sub}>{tx('Mitnehmen', 'Bring')}</Txt>
           <View style={{ marginHorizontal: -14 }}>
             {(e.bring ?? []).map((b) => (
               <Fresh key={b.id} id={`bring:${b.id}`}>
               <ItemRow
                 title={b.t}
-                meta={b.by === 'assistent' ? `Vom Assistenten ergänzt${b.src ? ' · ' + b.src : ''}` : undefined}
+                meta={b.by === 'assistent' ? `${tx('Vom Assistenten ergänzt', 'Added by the assistant')}${b.src ? ' · ' + b.src : ''}` : undefined}
                 metaColor={tokens.done}
                 done={b.done}
                 who={b.who ?? null}
@@ -147,17 +148,17 @@ export default function Termin() {
                 onEdit={(t) => actions.editBring(e.id, b.id, t)}
                 onCycleWho={() => actions.cycleBringWho(e.id, b.id)}
                 onDelete={() => actions.deleteBring(e.id, b.id)}
-                editHint="Leer lassen löscht die Zeile"
+                editHint={tx('Leer lassen löscht die Zeile', 'Leave empty to delete the line')}
               />
               </Fresh>
             ))}
           </View>
-          {added.length ? <SourceLink prefix={`${added.length} Dinge ergänzt nach`} s={{ label: added[0].src!, url: added[0].url }} /> : null}
+          {added.length ? <SourceLink prefix={tx(`${added.length} Dinge ergänzt nach`, `${added.length} things added from`)} s={{ label: added[0].src!, url: added[0].url }} /> : null}
           <View style={{ marginHorizontal: -14, marginBottom: -14 }}>
-            <AddInline placeholder="Hinzufügen" onAdd={(t) => actions.addBring(e.id, t)} />
+            <AddInline placeholder={tx('Hinzufügen', 'Add')} onAdd={(t) => actions.addBring(e.id, t)} />
           </View>
         </Card>
-        {e.source ? <SourceLink prefix="Aus" s={{ label: e.source }} /> : null}
+        {e.source ? <SourceLink prefix={tx('Aus', 'From')} s={{ label: e.source }} /> : null}
       </View>
     </ScrollView>
   );

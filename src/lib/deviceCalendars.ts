@@ -11,6 +11,7 @@ import { TODAY, addDays } from './dates';
 import type { CalEvent } from '../state/types';
 import type { PersonId } from '../theme';
 import type { ClayName } from './clayIcons';
+import { tx } from '../i18n/lang';
 
 export const hasDeviceCalendars = Platform.OS === 'ios' || Platform.OS === 'android';
 
@@ -32,7 +33,7 @@ export async function listCalendars(): Promise<DeviceCal[]> {
   return all
     .filter((c) => c.isVisible !== false)
     .map((c) => {
-      const account = c.source?.name || c.ownerAccount || 'Dieses Gerät';
+      const account = c.source?.name || c.ownerAccount || tx('Dieses Gerät', 'This device');
       const work = WORK.test(c.title) || c.source?.type === Calendar.SourceType.EXCHANGE;
       return { id: c.id, title: c.title, account, color: c.color, work, on: !SKIP.test(c.title) };
     })
@@ -73,7 +74,7 @@ export async function importDeviceEvents(cals: DeviceCal[], who: PersonId, ahead
     const work = !!cal?.work;
     return {
       id: `dev-${e.id}-${day(s)}`,
-      title: work ? 'Arbeit' : e.title || 'Termin',
+      title: work ? tx('Arbeit', 'Work') : e.title || tx('Termin', 'Event'),
       icon: work ? 'kalender' : iconFor(e.title ?? ''),
       date: day(s),
       endDate: multi ? day(en) : undefined,
@@ -83,7 +84,7 @@ export async function importDeviceEvents(cals: DeviceCal[], who: PersonId, ahead
       place: work ? undefined : e.location || undefined,
       who,
       work,
-      source: `Aus ${cal?.account ?? 'dem Gerätekalender'} · ${cal?.title ?? ''}`.trim(),
+      source: tx(`Aus ${cal?.account ?? 'dem Gerätekalender'} · ${cal?.title ?? ''}`, `From ${cal?.account ?? 'the device calendar'} · ${cal?.title ?? ''}`).trim(),
     };
   });
 }

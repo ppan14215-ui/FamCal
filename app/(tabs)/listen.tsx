@@ -22,6 +22,7 @@ import { haptics } from '../../src/lib/haptics';
 import Fresh from '../../src/components/Fresh';
 import type { List, Task } from '../../src/state/types';
 import type { ClayName } from '../../src/lib/clayIcons';
+import { tx } from '../../src/i18n/lang';
 
 export default function Listen() {
   const lists = useStore((s) => s.lists);
@@ -32,17 +33,17 @@ export default function Listen() {
   const sub = useMemo(() => {
     if (active === 'aufgaben') {
       const mine = tasks.filter((t) => t.who);
-      return `${mine.filter((t) => !t.done).length} offen, ${mine.filter((t) => t.done).length} erledigt`;
+      return tx(`${mine.filter((t) => !t.done).length} offen, ${mine.filter((t) => t.done).length} erledigt`, `${mine.filter((t) => !t.done).length} open, ${mine.filter((t) => t.done).length} done`);
     }
     if (!list) return '';
     const items = list.sections.flatMap((s) => s.items);
-    if (list.kind === 'shopping') return `${list.name} · ${items.filter((i) => !i.done).length} Dinge`;
-    return `${list.name} · ${items.filter((i) => i.done).length} von ${items.length} gepackt`;
+    if (list.kind === 'shopping') return tx(`${list.name} · ${items.filter((i) => !i.done).length} Dinge`, `${list.name} · ${items.filter((i) => !i.done).length} items`);
+    return tx(`${list.name} · ${items.filter((i) => i.done).length} von ${items.length} gepackt`, `${list.name} · ${items.filter((i) => i.done).length} of ${items.length} packed`);
   }, [active, tasks, list]);
 
   return (
     <Screen tab gap={12}>
-      <H1 sub={sub} right={<PressScale accessibilityLabel="Familie und Einstellungen" onPress={() => router.push('/einstellungen')}><Pair /></PressScale>}>Listen</H1>
+      <H1 sub={sub} right={<PressScale accessibilityLabel={tx('Familie und Einstellungen', 'Family and settings')} onPress={() => router.push('/einstellungen')}><Pair /></PressScale>}>{tx('Listen', 'Lists')}</H1>
       <ClayTabs lists={lists} active={active} />
       <Animated.View key={active} entering={swapIn} style={{ gap: 12 }}>
         {active === 'aufgaben' ? <Aufgaben tasks={tasks} /> : list?.kind === 'shopping' ? <Einkauf list={list} /> : list ? <Packliste list={list} /> : null}
@@ -54,7 +55,7 @@ export default function Listen() {
 const HOP = 28;
 
 function ClayTabs({ lists, active }: { lists: List[]; active: string }) {
-  const tabs: { id: string; name: string; icon: ClayName }[] = [{ id: 'aufgaben', name: 'Aufgaben', icon: 'erledigt' }, ...lists.map((l) => ({ id: l.id, name: l.name, icon: l.icon }))];
+  const tabs: { id: string; name: string; icon: ClayName }[] = [{ id: 'aufgaben', name: tx('Aufgaben', 'Tasks'), icon: 'erledigt' }, ...lists.map((l) => ({ id: l.id, name: l.name, icon: l.icon }))];
   // Every tab is as wide as its name; more lists than fit scroll sideways and
   // the chosen one slides into view (Julian 26.10.: "Schrift überlappt").
   const scroller = useRef<ScrollView>(null);
@@ -87,12 +88,12 @@ function ClayTabs({ lists, active }: { lists: List[]; active: string }) {
           );
         })}
         <PressScale
-          accessibilityLabel="Neue Liste"
+          accessibilityLabel={tx('Neue Liste', 'New list')}
           onPress={() => router.push('/liste-neu')}
           style={{ width: 56, alignItems: 'center', gap: 2, paddingBottom: 10, borderBottomWidth: 2, borderBottomColor: 'transparent' }}
         >
           <View style={{ width: 46, height: 46, alignItems: 'center', justifyContent: 'center' }}><LineIcon name="plus" size={24} color={tokens.sub} /></View>
-          <Txt size={12.5} color={tokens.sub}>Neu</Txt>
+          <Txt size={12.5} color={tokens.sub}>{tx('Neu', 'New')}</Txt>
         </PressScale>
       </ScrollView>
     </View>
@@ -118,11 +119,11 @@ function Aufgaben({ tasks }: { tasks: Task[] }) {
         <HintCard
           icon="reise"
           tile
-          kicker="Neu im Kalender: Ostsee, 20.–27. März"
-          title="Packliste für Urlaub mit Baby anlegen?"
-          body="24 Dinge als Vorlage, ihr streicht, was ihr nicht braucht."
-          yes="Ansehen"
-          no="Später"
+          kicker={tx('Neu im Kalender: Ostsee, 20.–27. März', 'New in the calendar: Baltic Sea, March 20 to 27')}
+          title={tx('Packliste für Urlaub mit Baby anlegen?', 'Make a packing list for a trip with the baby?')}
+          body={tx('24 Dinge als Vorlage, ihr streicht, was ihr nicht braucht.', '24 things to start with, you cross out what you don\'t need.')}
+          yes={tx('Ansehen', 'View')}
+          no={tx('Später', 'Later')}
           onYes={() => router.push({ pathname: '/liste-neu', params: { vorschlag: 'urlaub' } })}
           onNo={() => actions.dismissHint('urlaub')}
         />
@@ -131,8 +132,8 @@ function Aufgaben({ tasks }: { tasks: Task[] }) {
         <PressScale scale={0.985} onPress={() => router.push('/aufteilen')} style={{ flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 14, paddingHorizontal: 16, borderRadius: 24, backgroundColor: tokens.row }}>
           <ClayIcon name="hand-nimmt" size={56} />
           <View style={{ flex: 1, gap: 2 }}>
-            <Txt size={17} weight={600}>{`${nobody.length} ohne Zuständigen`}</Txt>
-            <Meta>Gemeinsam aufteilen</Meta>
+            <Txt size={17} weight={600}>{tx(`${nobody.length} ohne Zuständigen`, `${nobody.length} with nobody on it`)}</Txt>
+            <Meta>{tx('Gemeinsam aufteilen', 'Split them together')}</Meta>
           </View>
           <LineIcon name="chev" size={18} color={tokens.mute} />
         </PressScale>
@@ -143,7 +144,7 @@ function Aufgaben({ tasks }: { tasks: Task[] }) {
           <ItemRow
             icon={t.icon}
             title={t.title}
-            meta={t.done ? `erledigt von ${persons[t.doneBy ?? 'J'].name}` : t.dueLabel}
+            meta={t.done ? tx(`erledigt von ${persons[t.doneBy ?? 'J'].name}`, `done by ${persons[t.doneBy ?? 'J'].name}`) : t.dueLabel}
             metaColor={t.frist && !t.done ? tokens.frist : undefined}
             done={t.done}
             who={t.who}
@@ -151,13 +152,13 @@ function Aufgaben({ tasks }: { tasks: Task[] }) {
             onEdit={(txt) => actions.renameTask(t.id, txt)}
             onCycleWho={() => actions.cycleTaskWho(t.id)}
             onDelete={() => actions.deleteTask(t.id)}
-            editHint="Text antippen ändert den Titel"
+            editHint={tx('Text antippen ändert den Titel', 'Tap the text to change the title')}
           />
           </Fresh>
         ))}
       </Group>
-      <AddInline placeholder="Aufgabe hinzufügen …" onAdd={actions.addTask} />
-      <Txt size={13.5} line={19} color={tokens.sub}>Neue Aufgaben ohne Person landen im Stapel „ohne Zuständigen“. Ihr entscheidet, wer sie übernimmt.</Txt>
+      <AddInline placeholder={tx('Aufgabe hinzufügen …', 'Add a task …')} onAdd={actions.addTask} />
+      <Txt size={13.5} line={19} color={tokens.sub}>{tx('Neue Aufgaben ohne Person landen im Stapel „ohne Zuständigen“. Ihr entscheidet, wer sie übernimmt.', 'New tasks without a person go to the “nobody on it” pile. You decide who takes them.')}</Txt>
     </>
   );
 }
@@ -166,21 +167,21 @@ function Einkauf({ list }: { list: List }) {
   const hints = useStore((s) => s.hints);
   return (
     <>
-      <AddInline placeholder="Hinzufügen …" mic onPress={() => router.push('/einkauf-neu')} />
+      <AddInline placeholder={tx('Hinzufügen …', 'Add …')} mic onPress={() => router.push('/einkauf-neu')} />
       {hints.abo ? (
         <HintCard
           icon="windeln"
-          kicker="Aufgefallen"
-          title="Windeln und Feuchttücher kauft ihr etwa alle 12 Tage."
-          body="Soll ich ein Abo für euch aufsetzen? Dann kommen sie von selbst, meist etwas günstiger. Ihr bestätigt vorher."
-          yes="Ja, aufsetzen"
-          no="Nein, danke"
+          kicker={tx('Aufgefallen', 'Noticed')}
+          title={tx('Windeln und Feuchttücher kauft ihr etwa alle 12 Tage.', 'You buy diapers and wipes about every 12 days.')}
+          body={tx('Soll ich ein Abo für euch aufsetzen? Dann kommen sie von selbst, meist etwas günstiger. Ihr bestätigt vorher.', 'Should I set up a subscription? Then they arrive on their own, usually a bit cheaper. You confirm first.')}
+          yes={tx('Ja, aufsetzen', 'Yes, set it up')}
+          no={tx('Nein, danke', 'No, thanks')}
           onYes={() => router.push('/abo')}
           onNo={() => actions.dismissHint('abo')}
         />
       ) : null}
       <Sections list={list} />
-      <Txt size={13.5} line={19} color={tokens.sub}>Haken antippen: erledigt. Text antippen: bearbeiten. Nach links wischen: löschen.</Txt>
+      <Txt size={13.5} line={19} color={tokens.sub}>{tx('Haken antippen: erledigt. Text antippen: bearbeiten. Nach links wischen: löschen.', 'Tap the check: done. Tap the text: edit. Swipe left: delete.')}</Txt>
     </>
   );
 }
@@ -196,14 +197,14 @@ function Packliste({ list }: { list: List }) {
         </View>
       ) : null}
       <Sections list={list} counts />
-      <AddInline placeholder="Hinzufügen …" onAdd={(t) => actions.addItem(list.id, t)} />
+      <AddInline placeholder={tx('Hinzufügen …', 'Add …')} onAdd={(t) => actions.addItem(list.id, t)} />
       <PressScale
-        accessibilityLabel={`Liste ${list.name} löschen`}
+        accessibilityLabel={tx(`Liste ${list.name} löschen`, `Delete list ${list.name}`)}
         onPress={() => { haptics.tap(); actions.deleteList(list.id); }}
         style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 14 }}
       >
         <LineIcon name="x" size={16} color={tokens.frist} />
-        <Txt size={15} weight={600} color={tokens.frist}>Liste löschen</Txt>
+        <Txt size={15} weight={600} color={tokens.frist}>{tx('Liste löschen', 'Delete list')}</Txt>
       </PressScale>
     </>
   );
@@ -216,7 +217,7 @@ function Sections({ list, counts }: { list: List; counts?: boolean }) {
         const open = sec.items.filter((i) => !i.done);
         const done = sec.items.filter((i) => i.done);
         if (!sec.items.length && list.kind === 'shopping') return null;
-        const right = counts ? `${done.length} von ${sec.items.length}` : String(open.length);
+        const right = counts ? tx(`${done.length} von ${sec.items.length}`, `${done.length} of ${sec.items.length}`) : String(open.length);
         const ordered = list.kind === 'shopping' ? [...open, ...done] : sec.items;
         return (
           <View key={sec.id} style={{ gap: 12 }}>
@@ -240,7 +241,7 @@ function Sections({ list, counts }: { list: List; counts?: boolean }) {
                 ))}
               </Group>
             ) : (
-              <Meta>Noch leer.</Meta>
+              <Meta>{tx('Noch leer.', 'Still empty.')}</Meta>
             )}
           </View>
         );

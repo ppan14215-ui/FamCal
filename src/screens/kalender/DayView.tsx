@@ -27,11 +27,12 @@ import Fresh from '../../components/Fresh';
 import LineIcon from '../../components/ui/LineIcon';
 import type { CalEvent, Task, Doc } from '../../state/types';
 import { eventsOn } from '../../lib/selectors';
-import { addDays, monday, dayNum, WD_SHORT, weekday, WD_LONG, hm, TODAY, short, until, MONTHS_SHORT, monthIdx, daysBetween } from '../../lib/dates';
+import { addDays, monday, dayNum, WD_SHORT, weekday, WD_LONG, hm, TODAY, short, until, MONTHS_SHORT, monthIdx, daysBetween, dmShort, wdDay } from '../../lib/dates';
 import { upcomingFristen } from '../../lib/selectors';
 import { dayLabel } from '../../lib/talk';
 import PressScale from '../../components/ui/PressScale';
 import { haptics } from '../../lib/haptics';
+import { tx } from '../../i18n/lang';
 
 const GAP = 5;
 
@@ -48,17 +49,17 @@ export function WeekStrip({ day, onSelect }: { day: string; onSelect: (d: string
   const ring = useAnimatedStyle(() => ({ transform: [{ translateX: x.value * (slot + GAP) }] }));
   // A new week slides in from the side it comes from.
   const prev = useRef(start);
-  const tx = useSharedValue(0);
+  const slideX = useSharedValue(0);
   const op = useSharedValue(1);
   useEffect(() => {
     if (prev.current === start) return;
     const dir = start > prev.current ? 1 : -1;
     prev.current = start;
-    tx.value = dir * 36; op.value = 0.2;
-    tx.value = withTiming(0, { duration: 320, easing: Easing.bezier(0.22, 1, 0.36, 1) });
+    slideX.value = dir * 36; op.value = 0.2;
+    slideX.value = withTiming(0, { duration: 320, easing: Easing.bezier(0.22, 1, 0.36, 1) });
     op.value = withTiming(1, { duration: 240 });
   }, [start]);
-  const row = useAnimatedStyle(() => ({ opacity: op.value, transform: [{ translateX: tx.value }] }));
+  const row = useAnimatedStyle(() => ({ opacity: op.value, transform: [{ translateX: slideX.value }] }));
   return (
     <View onLayout={(e) => setW(e.nativeEvent.layout.width)}>
       <Animated.View style={[{ flexDirection: 'row', gap: GAP }, row]}>
@@ -68,7 +69,7 @@ export function WeekStrip({ day, onSelect }: { day: string; onSelect: (d: string
             <PressScale
               key={d}
               onPress={() => onSelect(d)}
-              accessibilityLabel={`${WD_LONG[weekday(d)]} ${dayNum(d)}.`}
+              accessibilityLabel={wdDay(d, true)}
               accessibilityState={{ selected: d === day }}
               style={{ flex: 1, height: 66, borderRadius: 18, backgroundColor: d === TODAY ? tokens.doneSoft : tokens.row, alignItems: 'center', justifyContent: 'center', gap: 3 }}
             >
@@ -94,7 +95,7 @@ function Item({ e, last }: { e: CalEvent; last: boolean }) {
     <Fresh id={e.id}>
       <PressScale scale={0.985} onPress={() => router.push(`/termin/${e.id}`)} style={{ paddingVertical: 12, paddingHorizontal: 14, gap: 6, borderBottomWidth: last ? 0 : 1, borderBottomColor: tokens.hair }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-          <Txt size={13.5} weight={600} style={{ width: 42 }}>{e.allDay ? 'Tag' : hm(e.start)}</Txt>
+          <Txt size={13.5} weight={600} style={{ width: 42 }}>{e.allDay ? tx('Tag', 'All day') : hm(e.start)}</Txt>
           <Tile name={e.icon} size={46} radius={14} />
           <View style={{ flex: 1, minWidth: 0 }}>
             <Txt size={16} line={21} weight={600} numberOfLines={1}>{e.title}</Txt>
@@ -106,7 +107,7 @@ function Item({ e, last }: { e: CalEvent; last: boolean }) {
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginLeft: 42 + 12 + 46 + 12 }}>
             <LineIcon name={open.length ? 'list' : 'check'} size={14} color={open.length ? tokens.sub : tokens.done} />
             <Txt size={13} line={18} color={open.length ? tokens.sub : tokens.done} numberOfLines={1} style={{ flex: 1 }}>
-              {open.length ? `Mitbringen: ${open.map((b) => b.t).join(', ')}` : 'Alles dabei'}
+              {open.length ? tx(`Mitbringen: ${open.map((b) => b.t).join(', ')}`, `Bring: ${open.map((b) => b.t).join(', ')}`) : tx('Alles dabei', 'All packed')}
             </Txt>
           </View>
         ) : null}
@@ -129,7 +130,7 @@ function WorkLine({ work }: { work: CalEvent[] }) {
         return (
           <Stripes key={w.id} p={p} style={{ flexDirection: 'row', alignItems: 'center', gap: 6, height: 26, paddingHorizontal: 8, borderRadius: 999 }}>
             <Avatar p={p} size={16} />
-            <Txt size={12.5} weight={600} color={persons[p].ink}>{`Arbeit ${hm(w.start)} bis ${hm(w.end ?? '')}`}</Txt>
+            <Txt size={12.5} weight={600} color={persons[p].ink}>{tx(`Arbeit ${hm(w.start)} bis ${hm(w.end ?? '')}`, `Work ${hm(w.start)} to ${hm(w.end ?? '')}`)}</Txt>
           </Stripes>
         );
       })}
@@ -147,7 +148,7 @@ function Day({ date, events, tasks, docs, onY }: { date: string; events: CalEven
     return (
       <View onLayout={(e) => onY(e.nativeEvent.layout.y)} style={{ flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', opacity: past ? 0.6 : 1 }}>
         <Txt size={16} line={22} weight={600} color={tokens.sub}>{dayLabel(date)}</Txt>
-        <Txt size={13.5} color={tokens.mute}>frei</Txt>
+        <Txt size={13.5} color={tokens.mute}>{tx('frei', 'free')}</Txt>
       </View>
     );
   }
@@ -155,23 +156,23 @@ function Day({ date, events, tasks, docs, onY }: { date: string; events: CalEven
     <View onLayout={(e) => onY(e.nativeEvent.layout.y)} style={{ gap: 8, opacity: past ? 0.6 : 1 }}>
       <View style={{ flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between' }}>
         <Txt size={21} line={26} weight={700} tracking={-0.4}>{dayLabel(date)}</Txt>
-        <Txt size={13.5} color={tokens.sub}>{date === TODAY || date === addDays(TODAY, 1) ? `${WD_LONG[weekday(date)]}, ${dayNum(date)}. ${MONTHS_SHORT[monthIdx(date)]}` : past ? 'vorbei' : until(date)}</Txt>
+        <Txt size={13.5} color={tokens.sub}>{date === TODAY || date === addDays(TODAY, 1) ? `${WD_LONG[weekday(date)]}, ${dmShort(date)}` : past ? 'vorbei' : until(date)}</Txt>
       </View>
       <WorkLine work={work} />
       {empty ? (
-        <Meta>{date === TODAY ? 'Heute steht nichts an. Sag unten einfach, was ansteht.' : 'Sonst frei.'}</Meta>
+        <Meta>{date === TODAY ? tx('Heute steht nichts an. Sag unten einfach, was ansteht.', 'Nothing today. Just say below what\'s coming up.') : tx('Sonst frei.', 'Otherwise free.')}</Meta>
       ) : (
         <View style={{ borderRadius: 20, overflow: 'hidden', backgroundColor: tokens.row }}>
           {real.map((e, i) => <Item key={e.id} e={e} last={i === real.length - 1 && !tasks.length && !docs.length} />)}
           {tasks.length ? (
             <View style={{ borderTopWidth: real.length ? 1 : 0, borderTopColor: tokens.hair }}>
-              <Sub>Aufgaben</Sub>
+              <Sub>{tx('Aufgaben', 'Tasks')}</Sub>
               {tasks.map((t) => (
                 <Fresh key={t.id} id={t.id}>
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 10, paddingHorizontal: 14 }}>
                     <Check done={t.done} onPress={() => actions.toggleTask(t.id)} />
                     <Txt size={15.5} weight={600} strike={t.done} color={t.done ? tokens.mute : tokens.ink} style={{ flex: 1 }} numberOfLines={1}>{t.title}</Txt>
-                    {t.due && t.due < date ? <Txt size={12.5} color={tokens.frist}>{`seit ${short(t.due)}`}</Txt> : null}
+                    {t.due && t.due < date ? <Txt size={12.5} color={tokens.frist}>{tx(`seit ${short(t.due)}`, `since ${short(t.due)}`)}</Txt> : null}
                     <Owner who={t.who} />
                   </View>
                 </Fresh>
@@ -180,7 +181,7 @@ function Day({ date, events, tasks, docs, onY }: { date: string; events: CalEven
           ) : null}
           {docs.length ? (
             <View style={{ borderTopWidth: real.length || tasks.length ? 1 : 0, borderTopColor: tokens.hair }}>
-              <Sub>Frist</Sub>
+              <Sub>{tx('Frist', 'Due')}</Sub>
               {docs.map((d) => (
                 <PressScale key={d.id} onPress={d.route ? () => router.push(d.route as any) : undefined} style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 10, paddingHorizontal: 14 }}>
                   <Tile name={d.icon} size={36} radius={11} />
@@ -207,7 +208,7 @@ function Fristen() {
         <PressScale key={d.id} onPress={d.route ? () => router.push(d.route as any) : undefined} style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 9, paddingHorizontal: 14, borderTopWidth: i ? 1 : 0, borderTopColor: tokens.hair }}>
           <LineIcon name="clock" size={16} color={tokens.frist} />
           <Txt size={14.5} weight={600} style={{ flex: 1 }} numberOfLines={1}>{d.title}</Txt>
-          <Txt size={13} color={tokens.frist}>{`Frist ${dayNum(d.frist!)}. ${MONTHS_SHORT[monthIdx(d.frist!)]} · ${until(d.frist!)}`}</Txt>
+          <Txt size={13} color={tokens.frist}>{`${tx('Frist', 'Due')} ${dmShort(d.frist!)} · ${until(d.frist!)}`}</Txt>
         </PressScale>
       ))}
     </View>
@@ -219,7 +220,7 @@ function WeekLine({ start }: { start: string }) {
   const end = addDays(start, 6);
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 6 }}>
-      <Txt size={12} weight={600} tracking={0.4} color={tokens.mute}>{`${dayNum(start)}. ${MONTHS_SHORT[monthIdx(start)]} bis ${dayNum(end)}. ${MONTHS_SHORT[monthIdx(end)]}`.toUpperCase()}</Txt>
+      <Txt size={12} weight={600} tracking={0.4} color={tokens.mute}>{`${dmShort(start)} ${tx('bis', 'to')} ${dmShort(end)}`.toUpperCase()}</Txt>
       <View style={{ flex: 1, height: 1, backgroundColor: tokens.hair }} />
     </View>
   );
@@ -232,8 +233,8 @@ function TodayChip({ away, above, onPress }: { away: boolean; above: boolean; on
   const st = useAnimatedStyle(() => ({ opacity: v.value, transform: [{ scale: 0.85 + 0.15 * v.value }] }));
   return (
     <Animated.View pointerEvents={away ? 'auto' : 'none'} style={st}>
-      <PressScale accessibilityLabel="Zu heute springen" onPress={onPress} style={{ flexDirection: 'row', alignItems: 'center', gap: 4, height: 34, paddingLeft: 12, paddingRight: 10, borderRadius: 999, backgroundColor: tokens.ink }}>
-        <Txt size={14} weight={600} color="#FFFFFF">Heute</Txt>
+      <PressScale accessibilityLabel={tx('Zu heute springen', 'Jump to today')} onPress={onPress} style={{ flexDirection: 'row', alignItems: 'center', gap: 4, height: 34, paddingLeft: 12, paddingRight: 10, borderRadius: 999, backgroundColor: tokens.ink }}>
+        <Txt size={14} weight={600} color="#FFFFFF">{tx('Heute', 'Today')}</Txt>
         <View style={{ transform: [{ rotate: above ? '-90deg' : '90deg' }] }}><LineIcon name="chev" size={14} color="#FFFFFF" stroke={2.2} /></View>
       </PressScale>
     </Animated.View>

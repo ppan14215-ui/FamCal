@@ -8,6 +8,7 @@ import { Platform } from 'react-native';
 import { useSyncExternalStore } from 'react';
 import type { Session } from '@supabase/supabase-js';
 import { supabase } from './cloud';
+import { tx } from '../i18n/lang';
 
 type Auth = { session: Session | null; ready: boolean };
 let auth: Auth = { session: null, ready: !supabase };
@@ -38,7 +39,7 @@ export async function signInWithApple(): Promise<SignIn> {
     // Loaded on tap so a build without the native module still starts.
     const Apple = await import('expo-apple-authentication');
     const cred = await Apple.signInAsync({ requestedScopes: [Apple.AppleAuthenticationScope.FULL_NAME, Apple.AppleAuthenticationScope.EMAIL] });
-    if (!cred.identityToken) return { error: 'Apple hat kein Token geschickt.' };
+    if (!cred.identityToken) return { error: tx('Apple hat kein Token geschickt.', 'Apple sent no token.') };
     const { error } = await supabase.auth.signInWithIdToken({ provider: 'apple', token: cred.identityToken });
     // Apple shares the name only on the very first sign-in, so it is passed on right away.
     return { error: error?.message ?? null, name: cred.fullName?.givenName ?? undefined };
@@ -72,7 +73,7 @@ export async function signInWithGoogle(): Promise<SignIn> {
       const res = await GoogleSignin.signIn();
       if (res.type === 'cancelled') return { error: null };
       const token = res.data.idToken;
-      if (!token) return { error: 'Google hat kein Token geschickt.' };
+      if (!token) return { error: tx('Google hat kein Token geschickt.', 'Google sent no token.') };
       const { error } = await supabase.auth.signInWithIdToken({ provider: 'google', token });
       return { error: error?.message ?? null, name: res.data.user.givenName ?? undefined };
     } catch (e) {

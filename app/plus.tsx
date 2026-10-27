@@ -1,4 +1,4 @@
-/** Plus: organising stays free; Plus takes work off you. Prices from HANDOFF (Gründerjahr 29 €). */
+/** Plus: organising stays free; Plus takes work off you. Prices from the business plan (Julian 27.10.: Premium, 79 € a year, Gründerjahr 49 €). */
 import React from 'react';
 import { View } from 'react-native';
 import { router } from 'expo-router';
@@ -9,11 +9,12 @@ import LineIcon from '../src/components/ui/LineIcon';
 import { tokens } from '../src/theme';
 import { useStore, actions, toast } from '../src/state/store';
 import PressScale from '../src/components/ui/PressScale';
+import { tx } from '../src/i18n/lang';
 
 const PLANS = [
-  { key: 'gruender', t: 'Gründerjahr', price: '29 €', sub: 'danach 39,99 € im Jahr', badge: 'NUR ERSTE 200 FAMILIEN' },
-  { key: 'jahr', t: 'Jährlich', price: '39,99 €', sub: 'pro Haushalt, für euch beide' },
-  { key: 'monat', t: 'Monatlich', price: '4,99 €', sub: 'jederzeit kündbar' },
+  { key: 'gruender', t: tx('Gründerjahr', 'Founder year'), price: tx('49 €', '$49'), sub: tx('danach 79 € im Jahr', 'then $79.99 a year'), badge: tx('NUR ERSTE 1.000 FAMILIEN', 'FIRST 1,000 FAMILIES ONLY') },
+  { key: 'jahr', t: tx('Jährlich', 'Yearly'), price: tx('79 €', '$79.99'), sub: tx('pro Familie, für euch beide', 'per family, for both of you') },
+  { key: 'monat', t: tx('Monatlich', 'Monthly'), price: tx('8,99 €', '$8.99'), sub: tx('jederzeit kündbar', 'cancel any time') },
 ] as const;
 
 export default function Plus() {
@@ -22,16 +23,16 @@ export default function Plus() {
     <Screen
       footer={
         <>
-          <Btn label="14 Tage gratis testen" onPress={() => { goBack(); toast('Im Prototyp ohne Kauf'); }} />
-          <Txt size={13} color={tokens.sub} center>Kündigen mit einem Tipp. Was gratis ist, bleibt gratis.</Txt>
+          <Btn label={tx('14 Tage gratis testen', 'Try 14 days free')} onPress={() => { goBack(); toast(tx('Im Prototyp ohne Kauf', 'No purchase in the prototype')); }} />
+          <Txt size={13} color={tokens.sub} center>{tx('Kündigen mit einem Tipp. Was gratis ist, bleibt gratis. Eingeladene sind immer gratis.', 'Cancel with one tap. What is free stays free. Invited family members are always free.')}</Txt>
         </>
       }
     >
       <BackBar />
       <H1>Plus</H1>
-      <Lead>Organisieren bleibt gratis, für immer. Plus nimmt euch Arbeit ab.</Lead>
+      <Lead>{tx('Organisieren bleibt gratis, für immer. Plus nimmt euch Arbeit ab.', 'Organising stays free, forever. Plus takes work off your hands.')}</Lead>
       <View style={{ gap: 8 }}>
-        {['Unbegrenzt erfassen: Mails, Fotos, Geteiltes', 'Dokumente und Fristen mit Vorausschau', 'Entwürfe für Absagen, Anträge, Antworten'].map((t) => (
+        {[tx('Claude versteht jeden Satz, auch lange und verschachtelte', 'Claude understands every sentence, even long and tangled ones'), tx('Unbegrenzt erfassen: Mails, Fotos, Geteiltes', 'Capture without limits: mails, photos, shared links'), tx('Entwürfe für Absagen, Anträge, Antworten', 'Drafts for cancellations, forms and replies')].map((t) => (
           <View key={t} style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
             <LineIcon name="check" size={18} color={tokens.done} stroke={2.2} />
             <Txt size={15}>{t}</Txt>

@@ -14,6 +14,7 @@ import { firstYear, Kid } from '../data/firstYear';
 import { findCity } from '../data/cities';
 import { findPlace } from '../lib/places';
 import { dueLabel } from '../lib/when';
+import { tx } from '../i18n/lang';
 
 export type CalView = 'tag' | 'woche' | 'monat' | 'jahr';
 
@@ -97,7 +98,7 @@ const demo = (): Partial<State> => ({
 
 /** Names show everywhere through `persons`, so they are kept in step. */
 function applyNames(n: { J: string; T: string }) {
-  persons.J.name = n.J || 'Ich';
+  persons.J.name = n.J || tx('Ich', 'Me');
   persons.T.name = n.T || 'Partner';
 }
 
@@ -207,7 +208,7 @@ export const actions = {
     if (!e || i < 0) return;
     const gone = e.bring![i];
     set((s) => ({ events: s.events.map((x) => (x.id === eid ? { ...x, bring: x.bring?.filter((b) => b.id !== bid) } : x)) }));
-    toast(`„${gone.t}“ gelöscht`, () => set((s) => ({ events: s.events.map((x) => (x.id === eid ? { ...x, bring: [...(x.bring ?? []).slice(0, i), gone, ...(x.bring ?? []).slice(i)] } : x)) })));
+    toast(tx(`„${gone.t}“ gelöscht`, `“${gone.t}” deleted`), () => set((s) => ({ events: s.events.map((x) => (x.id === eid ? { ...x, bring: [...(x.bring ?? []).slice(0, i), gone, ...(x.bring ?? []).slice(i)] } : x)) })));
   },
   cycleBringWho(eid: string, bid: string) {
     const next = (w?: 'J' | 'T' | null) => (w === 'J' ? 'T' : w === 'T' ? null : 'J');
@@ -243,7 +244,7 @@ export const actions = {
   },
   addTask(title: string, due?: string, who: Who = null): string {
     const id = S.newId('t');
-    set((s) => ({ tasks: [...s.tasks, { id, title, icon: 'erledigt', who, done: false, due, dueLabel: due ? dueLabel(due) : undefined, text: 'Neu angelegt. Wer übernimmt?' }] }));
+    set((s) => ({ tasks: [...s.tasks, { id, title, icon: 'erledigt', who, done: false, due, dueLabel: due ? dueLabel(due) : undefined, text: tx('Neu angelegt. Wer übernimmt?', 'New. Who takes it?') }] }));
     return id;
   },
   deleteTask(id: string) {
@@ -252,7 +253,7 @@ export const actions = {
     if (!t) return;
     set((s) => ({ tasks: s.tasks.filter((x) => x.id !== id) }));
     // Undo puts back only this task, so changes made meanwhile survive.
-    toast(`${t.title} gelöscht`, () => set((s) => (s.tasks.some((x) => x.id === id) ? {} : { tasks: [...s.tasks.slice(0, idx), t, ...s.tasks.slice(idx)] })));
+    toast(tx(`${t.title} gelöscht`, `${t.title} deleted`), () => set((s) => (s.tasks.some((x) => x.id === id) ? {} : { tasks: [...s.tasks.slice(0, idx), t, ...s.tasks.slice(idx)] })));
   },
   /** Move a card to the back of the unassigned stack ("Später"). */
   laterTask(id: string) {
@@ -305,7 +306,7 @@ export const actions = {
     if (!at) return;
     const { sid, idx, item } = at as { sid: string; idx: number; item: Item };
     set((s) => ({ lists: mapList(s.lists, listId, (l) => mapItems(l, (i) => (i.id === itemId ? null : i))) }));
-    toast(`${S.itemText(item).replace(/^\d+ /, '')} gelöscht`, () => set((s) => ({
+    toast(tx(`${S.itemText(item).replace(/^\d+ /, '')} gelöscht`, `${S.itemText(item).replace(/^\d+ /, '')} deleted`), () => set((s) => ({
       lists: mapList(s.lists, listId, (l) => (l.sections.some((sec) => sec.items.some((i) => i.id === itemId)) ? l : {
         ...l, sections: l.sections.map((sec) => (sec.id === sid ? { ...sec, items: [...sec.items.slice(0, idx), item, ...sec.items.slice(idx)] } : sec)),
       })),
@@ -341,7 +342,7 @@ export const actions = {
     if (i < 0) return;
     const gone = state.lists[i];
     set((s) => ({ lists: s.lists.filter((l) => l.id !== id), activeList: s.activeList === id ? 'aufgaben' : s.activeList }));
-    toast(`„${gone.name}“ gelöscht`, () => set((s) => ({ lists: [...s.lists.slice(0, i), gone, ...s.lists.slice(i)], activeList: gone.id })));
+    toast(tx(`„${gone.name}“ gelöscht`, `“${gone.name}” deleted`), () => set((s) => ({ lists: [...s.lists.slice(0, i), gone, ...s.lists.slice(i)], activeList: gone.id })));
   },
 
   // Hints
@@ -354,7 +355,7 @@ export const actions = {
     if (!yes) {
       const idx = state.inbox.indexOf(item);
       set((s) => ({ inbox: s.inbox.filter((x) => x.id !== id) }));
-      toast('Verworfen', () => set((s) => (s.inbox.some((x) => x.id === id) ? {} : { inbox: [...s.inbox.slice(0, idx), item, ...s.inbox.slice(idx)] })));
+      toast(tx('Verworfen', 'Dismissed'), () => set((s) => (s.inbox.some((x) => x.id === id) ? {} : { inbox: [...s.inbox.slice(0, idx), item, ...s.inbox.slice(idx)] })));
       return;
     }
     set((s) => ({
@@ -362,7 +363,7 @@ export const actions = {
       events: item.adds?.event ? [...s.events, item.adds.event] : s.events,
       tasks: item.adds?.task ? [...s.tasks, item.adds.task] : s.tasks,
     }));
-    toast('Eingetragen');
+    toast(tx('Eingetragen', 'Added'));
   },
   assignDoc(id: string) {
     set((s) => ({ docs: s.docs.map((d) => (d.id === id ? { ...d, who: nextWho(d.who === 'both' ? null : d.who ?? null) } : d)) }));

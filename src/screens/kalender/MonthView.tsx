@@ -14,13 +14,14 @@ import { Owner } from '../../components/ui/Person';
 import { tokens, tint } from '../../theme';
 import { useStore, actions } from '../../state/store';
 import { eventsOn } from '../../lib/selectors';
-import { addDays, monday, dayNum, monthIdx, year, parse, iso, WD_SHORT, weekday, MONTHS_SHORT, hm, TODAY } from '../../lib/dates';
+import { addDays, monday, dayNum, monthIdx, year, parse, iso, WD_SHORT, weekday, MONTHS_SHORT, hm, TODAY, MONTHS, short } from '../../lib/dates';
 import PressScale from '../../components/ui/PressScale';
+import { tx } from '../../i18n/lang';
 
-const HEAD = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'];
+const HEAD = tx('Mo Di Mi Do Fr Sa So', 'Mo Tu We Th Fr Sa Su').split(' ');
 
 export function monthTitle(day: string) {
-  return { month: ['Januar', 'Februar', 'März', 'April', 'Mai', 'Juni', 'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'][monthIdx(day)], year: year(day) };
+  return { month: MONTHS[monthIdx(day)], year: year(day) };
 }
 
 export function shiftMonth(day: string, n: number): string {
@@ -82,7 +83,7 @@ export default function MonthView() {
           );
         })}
       </View>
-      <H2 right={`${list.length} ${list.length === 1 ? 'Termin' : 'Termine'}`}>{`${WD_SHORT[weekday(day)]} ${dayNum(day)}. ${MONTHS_SHORT[m]}`}</H2>
+      <H2 right={`${list.length} ${list.length === 1 ? tx('Termin', 'event') : tx('Termine', 'events')}`}>{short(day)}</H2>
       {list.length ? (
         <Group>
           {list.map((e) => (
@@ -90,7 +91,7 @@ export default function MonthView() {
           ))}
         </Group>
       ) : (
-        <Txt size={14} color={tokens.sub}>Nichts eingetragen.</Txt>
+        <Txt size={14} color={tokens.sub}>{tx('Nichts eingetragen.', 'Nothing planned.')}</Txt>
       )}
     </>
   );
@@ -100,9 +101,9 @@ export function MonthArrows() {
   const day = useStore((s) => s.calDay);
   return (
     <View style={{ flexDirection: 'row', gap: 6 }}>
-      <RoundButton icon="back" label="Voriger Monat" size={34} onPress={() => actions.setCalDay(shiftMonth(day, -1))} />
+      <RoundButton icon="back" label={tx('Voriger Monat', 'Previous month')} size={34} onPress={() => actions.setCalDay(shiftMonth(day, -1))} />
       <View style={{ transform: [{ scaleX: -1 }] }}>
-        <RoundButton icon="back" label="Nächster Monat" size={34} onPress={() => actions.setCalDay(shiftMonth(day, 1))} />
+        <RoundButton icon="back" label={tx('Nächster Monat', 'Next month')} size={34} onPress={() => actions.setCalDay(shiftMonth(day, 1))} />
       </View>
     </View>
   );

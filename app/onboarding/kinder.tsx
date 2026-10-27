@@ -18,6 +18,7 @@ import { TODAY, daysBetween } from '../../src/lib/dates';
 import { haptics } from '../../src/lib/haptics';
 import type { When } from '../../src/lib/when';
 import { actions, get } from '../../src/state/store';
+import { tx, EN } from '../../src/i18n/lang';
 
 const LAENDER = [
   'Baden-Württemberg', 'Bayern', 'Berlin', 'Brandenburg', 'Bremen', 'Hamburg', 'Hessen', 'Mecklenburg-Vorpommern',
@@ -26,10 +27,10 @@ const LAENDER = [
 
 const age = (born: string) => {
   const d = daysBetween(born, TODAY);
-  if (d < 14) return d === 1 ? '1 Tag' : `${d} Tage`;
-  if (d < 7 * 9) return `${Math.floor(d / 7)} Wochen`;
+  if (d < 14) return d === 1 ? tx('1 Tag', '1 day') : tx(`${d} Tage`, `${d} days`);
+  if (d < 7 * 9) return tx(`${Math.floor(d / 7)} Wochen`, `${Math.floor(d / 7)} weeks`);
   const m = Math.floor(d / 30.44);
-  return m < 24 ? `${m} Monate` : `${Math.floor(m / 12)} Jahre`;
+  return m < 24 ? tx(`${m} Monate`, `${m} months`) : tx(`${Math.floor(m / 12)} Jahre`, `${Math.floor(m / 12)} years`);
 };
 // Pregnancy week from the due date (40 weeks).
 const ssw = (due: string) => 40 - Math.ceil(daysBetween(TODAY, due) / 7) + 1;
@@ -44,30 +45,31 @@ export default function Kinder() {
   const [kids, setKids] = useState(1);
   const [name2, setName2] = useState('');
   const da = mode === 'da';
-  const who = name.trim() || (da ? 'Euer Kind' : 'Euer Baby');
+  const who = name.trim() || (da ? tx('Euer Kind', 'Your child') : tx('Euer Baby', 'Your baby'));
   return (
-    <Screen footer={<Btn label="Weiter" disabled={!born} onPress={() => { actions.setKid({ name: name.trim(), born: da ? born?.date : undefined, due: da ? undefined : born?.date, land: land ?? undefined }); router.push('/onboarding/kalender'); }} />}>
+    <Screen footer={<Btn label={tx('Weiter', 'Next')} disabled={!born} onPress={() => { actions.setKid({ name: name.trim(), born: da ? born?.date : undefined, due: da ? undefined : born?.date, land: land ?? undefined }); router.push('/onboarding/kalender'); }} />}>
       <BackBar center={<StepDots i={3} />} />
-      <H1>Eure Kinder</H1>
-      <Seg height={38} items={[{ key: 'da', label: 'Schon da' }, { key: 'unterwegs', label: 'Noch unterwegs' }]} value={mode} onChange={(k) => { setMode(k as 'da' | 'unterwegs'); setBorn(null); }} />
-      <Field label="Name" value={name} onChangeText={setName} placeholder={da ? 'Zum Beispiel Ben' : 'Falls ihr ihn schon wisst'} />
+      <H1>{tx('Eure Kinder', 'Your children')}</H1>
+      <Seg height={38} items={[{ key: 'da', label: tx('Schon da', 'Already here') }, { key: 'unterwegs', label: tx('Noch unterwegs', 'On the way') }]} value={mode} onChange={(k) => { setMode(k as 'da' | 'unterwegs'); setBorn(null); }} />
+      <Field label="Name" value={name} onChangeText={setName} placeholder={da ? tx('Zum Beispiel Ben', 'For example Ben') : tx('Falls ihr ihn schon wisst', 'If you already know it')} />
       <DateField
         key={mode}
         past={da}
-        label={da ? 'Geboren am' : 'Errechneter Termin'}
+        label={da ? tx('Geboren am', 'Born on') : tx('Errechneter Termin', 'Due date')}
         value={born?.date ?? null}
         onChange={(d) => setBorn({ date: d })}
-        right={born ? <Meta>{da ? age(born.date) : `SSW ${ssw(born.date)}`}</Meta> : <LineIcon name="cal" size={20} color={tokens.sub} />}
-        extra={(d) => (da ? `${who} ist ${age(d)} alt.` : `Heute ist SSW ${ssw(d)}.`)}
+        right={born ? <Meta>{da ? age(born.date) : tx(`SSW ${ssw(born.date)}`, `Week ${ssw(born.date)}`)}</Meta> : <LineIcon name="cal" size={20} color={tokens.sub} />}
+        extra={(d) => (da ? tx(`${who} ist ${age(d)} alt.`, `${who} is ${age(d)} old.`) : tx(`Heute ist SSW ${ssw(d)}.`, `Today is week ${ssw(d)} of pregnancy.`))}
       />
-      <Dropdown label="Bundesland" placeholder="Bundesland wählen" value={land} options={LAENDER} onChange={setLand} hint={city && cityLand && land === cityLand ? `Aus ${city}. Für Feiertage, Elterngeld und Kita-Fristen.` : 'Für Feiertage, Elterngeld und Kita-Fristen.'} />
-      {kids > 1 ? <Animated.View entering={rise()}><Field label="Name des zweiten Kindes" value={name2} onChangeText={setName2} placeholder="Name" /></Animated.View> : null}
+      {/* The state only matters in Germany (holidays, Elterngeld, Kita deadlines). */}
+      {EN ? null : <Dropdown label="Bundesland" placeholder={tx('Bundesland wählen', 'Choose a state')} value={land} options={LAENDER} onChange={setLand} hint={city && cityLand && land === cityLand ? tx(`Aus ${city}. Für Feiertage, Elterngeld und Kita-Fristen.`, `From ${city}. For holidays and deadlines.`) : tx('Für Feiertage, Elterngeld und Kita-Fristen.', 'For holidays and deadlines.')} />}
+      {kids > 1 ? <Animated.View entering={rise()}><Field label={tx('Name des zweiten Kindes', 'Second child’s name')} value={name2} onChangeText={setName2} placeholder="Name" /></Animated.View> : null}
       <PressScale
         onPress={() => { haptics.select(); setKids(2); }}
         style={{ height: 52, borderRadius: 18, borderWidth: 1.5, borderColor: tokens.dotOff, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 }}
       >
         <LineIcon name="plus" size={18} />
-        <Txt size={15} weight={600}>Weiteres Kind hinzufügen</Txt>
+        <Txt size={15} weight={600}>{tx('Weiteres Kind hinzufügen', 'Add another child')}</Txt>
       </PressScale>
     </Screen>
   );

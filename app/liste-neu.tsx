@@ -14,13 +14,14 @@ import { actions } from '../src/state/store';
 import { templates, kliniktasche, listFromTemplate } from '../src/data/sample';
 import type { ClayName } from '../src/lib/clayIcons';
 import type { List } from '../src/state/types';
+import { tx } from '../src/i18n/lang';
 
 type Key = 'leer' | 'klinik' | 'urlaub' | 'erst';
 const TPL: { key: Key; icon?: ClayName; title: string; sub: string; name: string }[] = [
-  { key: 'leer', title: 'Leer', sub: 'Ihr tragt selbst ein', name: '' },
-  { key: 'klinik', icon: 'hebamme', title: 'Kliniktasche', sub: '18 Dinge für Geburt und Wochenbett', name: 'Kliniktasche' },
-  { key: 'urlaub', icon: 'reise', title: 'Urlaub mit Baby', sub: 'Packliste, 24 Dinge', name: 'Urlaub mit Baby' },
-  { key: 'erst', icon: 'einkauf', title: 'Erstausstattung', sub: 'Was ihr vor der Geburt braucht', name: 'Erstausstattung' },
+  { key: 'leer', title: tx('Leer', 'Empty'), sub: tx('Ihr tragt selbst ein', 'You add things yourself'), name: '' },
+  { key: 'klinik', icon: 'hebamme', title: 'Kliniktasche', sub: tx('18 Dinge für Geburt und Wochenbett', '18 things for the birth and the first days'), name: 'Kliniktasche' },
+  { key: 'urlaub', icon: 'reise', title: 'Urlaub mit Baby', sub: tx('Packliste, 24 Dinge', 'Packing list, 24 things'), name: 'Urlaub mit Baby' },
+  { key: 'erst', icon: 'einkauf', title: 'Erstausstattung', sub: tx('Was ihr vor der Geburt braucht', 'What you need before the birth'), name: 'Erstausstattung' },
 ];
 
 function build(key: Key, name: string): List {
@@ -51,7 +52,7 @@ export default function ListeNeu() {
       gap={12}
       footer={
         <Btn
-          label="Liste anlegen"
+          label={tx('Liste anlegen', 'Create list')}
           disabled={!name.trim()}
           onPress={() => {
             actions.createList(build(sel, name.trim()));
@@ -62,15 +63,15 @@ export default function ListeNeu() {
       }
     >
       <CancelBar />
-      <TitleInput value={name} onChangeText={setName} placeholder="Name der Liste" sub={fromHint ? 'Fällig vor Abreise am Sa 20. März' : 'Für euch beide sichtbar'} />
-      <Txt size={15} weight={600} style={{ marginTop: 4 }}>Womit anfangen?</Txt>
+      <TitleInput value={name} onChangeText={setName} placeholder={tx('Name der Liste', 'List name')} sub={fromHint ? tx('Fällig vor Abreise am Sa 20. März', 'Due before leaving on Sat March 20') : tx('Für euch beide sichtbar', 'Visible to both of you')} />
+      <Txt size={15} weight={600} style={{ marginTop: 4 }}>{tx('Womit anfangen?', 'Start with what?')}</Txt>
       <View style={{ gap: 8 }}>
         {order.map((k) => {
           const t = TPL.find((x) => x.key === k)!;
-          return <CardRow key={k} icon={t.icon} empty={!t.icon} title={t.title} sub={fromHint && k === 'urlaub' ? 'Packliste, 24 Dinge · passt zu eurem Urlaub' : t.sub} selected={sel === k} onPress={() => pick(k)} />;
+          return <CardRow key={k} icon={t.icon} empty={!t.icon} title={t.title} sub={fromHint && k === 'urlaub' ? tx('Packliste, 24 Dinge · passt zu eurem Urlaub', 'Packing list, 24 things · fits your trip') : t.sub} selected={sel === k} onPress={() => pick(k)} />;
         })}
       </View>
-      {fromHint ? <Txt size={13.5} line={19} color={tokens.sub}>Name, Datum und Vorlage kommen aus dem Urlaub in eurem Kalender.</Txt> : null}
+      {fromHint ? <Txt size={13.5} line={19} color={tokens.sub}>{tx('Name, Datum und Vorlage kommen aus dem Urlaub in eurem Kalender.', 'Name, date and template come from the trip in your calendar.')}</Txt> : null}
     </Screen>
   );
 }

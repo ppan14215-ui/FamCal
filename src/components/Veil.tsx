@@ -15,6 +15,7 @@ import Txt from './ui/Txt';
 import LineIcon from './ui/LineIcon';
 import Orb, { Clouds } from './Orb';
 import { tokens } from '../theme';
+import { tx, quote } from '../i18n/lang';
 
 export type Pt = { x: number; y: number };
 export type VeilPhase = 'off' | 'think' | 'land';
@@ -120,10 +121,10 @@ export default function Veil({ phase, origin, target, lines, shown, said, onLand
 
       <Animated.View style={[{ position: 'absolute', left: 20, right: 20, top: centre.y + ORB / 2 + 28, alignItems: 'center' }, words]}>
         <View style={[{ width: '100%', maxWidth: 420, borderRadius: 22, backgroundColor: tokens.row, padding: 16, gap: 12, borderWidth: 1, borderColor: tokens.hair }]}>
-          {said ? <Txt size={13.5} line={19} color={tokens.sub} numberOfLines={2}>{`„${said}“`}</Txt> : null}
+          {said ? <Txt size={13.5} line={19} color={tokens.sub} numberOfLines={2}>{quote(said)}</Txt> : null}
           {lines.length ? lines.map((l, i) => (
             <Step key={i} label={l} state={i < shown ? 'done' : i === shown ? 'now' : 'next'} />
-          )) : <Step label="Denke nach …" state="now" />}
+          )) : <Step label={tx('Denke nach …', 'Thinking …')} state="now" />}
         </View>
       </Animated.View>
     </View>

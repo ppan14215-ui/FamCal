@@ -13,11 +13,12 @@ import { startSync } from '../src/lib/sync';
 import { get } from '../src/state/store';
 import { tokens } from '../src/theme';
 import { haptics } from '../src/lib/haptics';
+import { tx } from '../src/i18n/lang';
 
 /** After any sign-in: load the family, then the calendar or, for a new family, onboarding. */
 export async function afterSignIn(name?: string): Promise<string | null> {
   const res = await startSync(name);
-  if (res.error) return 'Die Verbindung hat nicht geklappt. Bitte noch einmal versuchen.';
+  if (res.error) return tx('Die Verbindung hat nicht geklappt. Bitte noch einmal versuchen.', 'Could not connect. Please try again.');
   const s = get();
   router.replace(s.events.length || s.names.T ? '/kalender' : '/familie');
   return null;
@@ -35,7 +36,7 @@ export default function Anmelden() {
     const r = await fn();
     // Web leaves the page for the provider; the app comes back signed in (see index).
     if (Platform.OS === 'web' && !r.error) return;
-    if (r.error) { setBusy(null); return setError('Anmelden hat nicht geklappt. Bitte noch einmal.'); }
+    if (r.error) { setBusy(null); return setError(tx('Anmelden hat nicht geklappt. Bitte noch einmal.', 'Sign-in did not work. Please try again.')); }
     const failed = await afterSignIn(r.name);
     setBusy(null);
     if (failed) setError(failed);
@@ -47,9 +48,9 @@ export default function Anmelden() {
       gap={28}
       footer={
         <View style={{ gap: 10 }}>
-          {apple ? <Btn label={busy === 'apple' ? 'Einen Moment …' : 'Mit Apple fortfahren'} onPress={() => go('apple', signInWithApple)} /> : null}
-          <Btn label={busy === 'google' ? 'Einen Moment …' : 'Mit Google fortfahren'} primary={!apple} onPress={() => go('google', signInWithGoogle)} />
-          {error ? <Meta color={tokens.danger}>{error}</Meta> : <Hint center>Ihr meldet euch beide an und teilt einen Kalender.</Hint>}
+          {apple ? <Btn label={busy === 'apple' ? tx('Einen Moment …', 'One moment …') : tx('Mit Apple fortfahren', 'Continue with Apple')} onPress={() => go('apple', signInWithApple)} /> : null}
+          <Btn label={busy === 'google' ? tx('Einen Moment …', 'One moment …') : tx('Mit Google fortfahren', 'Continue with Google')} primary={!apple} onPress={() => go('google', signInWithGoogle)} />
+          {error ? <Meta color={tokens.danger}>{error}</Meta> : <Hint center>{tx('Ihr meldet euch beide an und teilt einen Kalender.', 'You both sign in and share one calendar.')}</Hint>}
         </View>
       }
     >

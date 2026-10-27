@@ -18,6 +18,7 @@ import { haptics } from '../lib/haptics';
 import type { ClayName } from '../lib/clayIcons';
 import type { Who } from '../state/types';
 import PressScale from './ui/PressScale';
+import { tx } from '../i18n/lang';
 
 type Props = {
   title: string;
@@ -36,7 +37,7 @@ type Props = {
   editHint?: string;
 };
 
-export default function ItemRow({ title, editText, meta, metaColor, done, who, icon, onToggle, onEdit, onCycleWho, onDelete, onPressTitle, editHint = 'Menge und Notiz einfach mitschreiben' }: Props) {
+export default function ItemRow({ title, editText, meta, metaColor, done, who, icon, onToggle, onEdit, onCycleWho, onDelete, onPressTitle, editHint = tx('Menge und Notiz einfach mitschreiben', 'Just add amount and note') }: Props) {
   const [editing, setEditing] = useState(false);
   const [text, setText] = useState(editText ?? title);
 
@@ -86,7 +87,7 @@ export default function ItemRow({ title, editText, meta, metaColor, done, who, i
         <PressScale
           hitSlop={10}
           disabled={!onCycleWho}
-          accessibilityLabel="Zuständig wechseln"
+          accessibilityLabel={tx('Zuständig wechseln', 'Change who\'s on it')}
           onPress={() => { haptics.select(); onCycleWho?.(); }}
         >
           {who || (onCycleWho && !done) ? <Owner who={who} size={editing ? 26 : 22} /> : null}

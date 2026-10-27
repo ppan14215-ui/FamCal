@@ -16,6 +16,7 @@ import { ClayName } from '../../lib/clayIcons';
 import { tokens, springs, rise, rowIn, rowOut, rowLayout } from '../../theme';
 import { goBack } from '../../lib/nav';
 import { haptics } from '../../lib/haptics';
+import { tx } from '../../i18n/lang';
 
 // ─── Screen ────────────────────────────────────────────────────────────────
 
@@ -191,7 +192,7 @@ export function RoundButton({ icon, onPress, label, bg = tokens.row, size = 40, 
 export function BackBar({ center, onBack }: { center?: React.ReactNode; onBack?: () => void }) {
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', minHeight: 40 }}>
-      <RoundButton icon="back" label="Zurück" onPress={onBack ?? goBack} />
+      <RoundButton icon="back" label={tx('Zurück', 'Back')} onPress={onBack ?? goBack} />
       {center ?? null}
       <View style={{ width: 40 }} />
     </View>
@@ -202,7 +203,7 @@ export function CancelBar({ onCancel, right }: { onCancel?: () => void; right?: 
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', minHeight: 32 }}>
       <PressScale hitSlop={10} scale={0.94} onPress={onCancel ?? goBack}>
-        <Txt size={15} color={tokens.sub}>Abbrechen</Txt>
+        <Txt size={15} color={tokens.sub}>{tx('Abbrechen', 'Cancel')}</Txt>
       </PressScale>
       {right ?? <View />}
     </View>

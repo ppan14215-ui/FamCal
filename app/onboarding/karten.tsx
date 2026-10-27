@@ -7,6 +7,7 @@ import Txt, { Dot } from '../../src/components/ui/Txt';
 import SwipeDeck from '../../src/components/SwipeDeck';
 import { useStore, actions } from '../../src/state/store';
 import { persons } from '../../src/theme';
+import { tx } from '../../src/i18n/lang';
 
 export default function Karten() {
   const cards = useStore((s) => s.onboardingCards);
@@ -17,19 +18,19 @@ export default function Karten() {
     <Screen gap={16}>
       <BackBar center={<StepDots i={7} />} />
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' }}>
-        <Txt size={22} weight={700} tracking={-0.5}>Wer kümmert sich<Dot char="?" /></Txt>
-        <Meta>{open.length ? `${Math.min(decided + 1, total)} von ${total}` : 'fertig'}</Meta>
+        <Txt size={22} weight={700} tracking={-0.5}>{tx('Wer kümmert sich', 'Who takes care of it')}<Dot char="?" /></Txt>
+        <Meta>{open.length ? tx(`${Math.min(decided + 1, total)} von ${total}`, `${Math.min(decided + 1, total)} of ${total}`) : 'fertig'}</Meta>
       </View>
       {open.length ? (
         <SwipeDeck cards={open} onDecide={(id, d) => (d === 'later' ? actions.laterCard(id) : actions.assignCard(id, d))} />
       ) : (
         <View style={{ height: 430, alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-          <Txt size={22} weight={700}>Alles verteilt.</Txt>
-          <Meta>Ihr könnt es jederzeit in Listen ändern.</Meta>
+          <Txt size={22} weight={700}>{tx('Alles verteilt.', 'All shared out.')}</Txt>
+          <Meta>{tx('Ihr könnt es jederzeit in Listen ändern.', 'You can change it any time in Lists.')}</Meta>
         </View>
       )}
-      <Hint center>{`Links zu ${persons.J.name}, rechts zu ${persons.T.name}. Ihr entscheidet, die App schlägt niemanden vor.`}</Hint>
-      <TextLink label="Fertig, zum Kalender" color="#16232A" onPress={() => { actions.cardsToTasks(); router.replace('/kalender'); }} />
+      <Hint center>{tx(`Links zu ${persons.J.name}, rechts zu ${persons.T.name}. Ihr entscheidet, die App schlägt niemanden vor.`, `Left for ${persons.J.name}, right for ${persons.T.name}. You decide, the app never suggests anyone.`)}</Hint>
+      <TextLink label={tx('Fertig, zum Kalender', 'Done, to the calendar')} color="#16232A" onPress={() => { actions.cardsToTasks(); router.replace('/kalender'); }} />
     </Screen>
   );
 }

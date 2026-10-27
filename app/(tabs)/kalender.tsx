@@ -14,12 +14,13 @@ import WeekView from '../../src/screens/kalender/WeekView';
 import MonthView, { monthTitle, MonthArrows } from '../../src/screens/kalender/MonthView';
 import YearView from '../../src/screens/kalender/YearView';
 import PressScale from '../../src/components/ui/PressScale';
+import { tx } from '../../src/i18n/lang';
 
 const VIEWS: { key: CalView; label: string }[] = [
-  { key: 'tag', label: 'Tag' },
-  { key: 'woche', label: 'Woche' },
-  { key: 'monat', label: 'Monat' },
-  { key: 'jahr', label: 'Jahr' },
+  { key: 'tag', label: tx('Tag', 'Day') },
+  { key: 'woche', label: tx('Woche', 'Week') },
+  { key: 'monat', label: tx('Monat', 'Month') },
+  { key: 'jahr', label: tx('Jahr', 'Year') },
 ];
 
 export default function Kalender() {
@@ -28,7 +29,7 @@ export default function Kalender() {
   const kid = useStore((s) => s.kid);
   const { month, year } = monthTitle(day);
   const insets = useSafeAreaInsets();
-  const pair = <PressScale accessibilityLabel="Familie und Einstellungen" onPress={() => router.push('/einstellungen')}><Pair /></PressScale>;
+  const pair = <PressScale accessibilityLabel={tx('Familie und Einstellungen', 'Family and settings')} onPress={() => router.push('/einstellungen')}><Pair /></PressScale>;
   // Tag keeps title, switch and week strip in place; only the days scroll (Julian 27.10.).
   if (view === 'tag') {
     return (
@@ -40,7 +41,7 @@ export default function Kalender() {
   return (
     <Screen tab gap={14}>
       {view === 'jahr' ? (
-        <H1 right={pair}>{kid?.name ? `${kid.name}${/[sxzß]$/i.test(kid.name) ? '’' : 's'} Jahr` : 'Euer Jahr'}</H1>
+        <H1 right={pair}>{kid?.name ? tx(`${kid.name}${/[sxzß]$/i.test(kid.name) ? '’' : 's'} Jahr`, `${kid.name}’s year`) : tx('Euer Jahr', 'Your year')}</H1>
       ) : view === 'monat' ? (
         <H1 sub={String(year)} right={<View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}><MonthArrows />{pair}</View>}>{month}</H1>
       ) : (

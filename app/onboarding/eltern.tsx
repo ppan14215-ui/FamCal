@@ -13,6 +13,7 @@ import { findPlace, suggestPlaces, namesakes, Place } from '../../src/lib/places
 import { tokens } from '../../src/theme';
 import { haptics } from '../../src/lib/haptics';
 import { setMyName } from '../../src/lib/sync';
+import { tx } from '../../src/i18n/lang';
 
 export default function Eltern() {
   const [j, setJ] = useState('');
@@ -32,21 +33,21 @@ export default function Eltern() {
     router.push('/onboarding/stadt');
   };
   return (
-    <Screen footer={<Btn label="Weiter" disabled={!j.trim() || !city.trim()} onPress={next} />}>
+    <Screen footer={<Btn label={tx('Weiter', 'Next')} disabled={!j.trim() || !city.trim()} onPress={next} />}>
       <BackBar center={<StepDots i={1} />} />
-      <H1>Über euch</H1>
-      <Lead>Wie ihr heißt und wo ihr wohnt. Daraus sucht der Assistent zusammen, was in eurer Stadt gilt.</Lead>
+      <H1>{tx('Über euch', 'About you')}</H1>
+      <Lead>{tx('Wie ihr heißt und wo ihr wohnt. Daraus sucht der Assistent zusammen, was in eurer Stadt gilt.', 'Your names and where you live. The assistant uses it to look up what applies in your city.')}</Lead>
       <View style={{ gap: 8 }}>
-        <Field label="Dein Name" value={j} onChangeText={setJ} placeholder="Zum Beispiel Julia" right={<Avatar p="J" letter={j.trim()[0]?.toUpperCase() || 'J'} size={30} />} />
-        <Field label="Name deines Partners" value={t} onChangeText={setT} placeholder="Zum Beispiel Tom" right={<Avatar p="T" letter={t.trim()[0]?.toUpperCase() || 'T'} size={30} />} />
-        <Field label="Wo wohnt ihr?" value={city} onChangeText={setCity} placeholder="Stadt oder Gemeinde" />
+        <Field label={tx('Dein Name', 'Your name')} value={j} onChangeText={setJ} placeholder={tx('Zum Beispiel Julia', 'For example Julia')} right={<Avatar p="J" letter={j.trim()[0]?.toUpperCase() || 'J'} size={30} />} />
+        <Field label={tx('Name deines Partners', 'Your partner’s name')} value={t} onChangeText={setT} placeholder={tx('Zum Beispiel Tom', 'For example Tom')} right={<Avatar p="T" letter={t.trim()[0]?.toUpperCase() || 'T'} size={30} />} />
+        <Field label={tx('Wo wohnt ihr?', 'Where do you live?')} value={city} onChangeText={setCity} placeholder={tx('Stadt oder Gemeinde', 'City or town')} />
       </View>
       {place ? (
         <View style={{ gap: 6, marginTop: -4, paddingHorizontal: 4 }}>
-          <Meta color={tokens.done}>{`${place.name} liegt in ${place.land}. Das Bundesland übernehmen wir für Feiertage und Fristen.`}</Meta>
+          <Meta color={tokens.done}>{tx(`${place.name} liegt in ${place.land}. Das Bundesland übernehmen wir für Feiertage und Fristen.`, `${place.name} is in ${place.land}. We use the state for public holidays and deadlines.`)}</Meta>
           {others.length ? (
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
-              {others.slice(0, 3).map((o) => <PlaceChip key={o.land} label={`Nein, ${o.name} in ${o.land}`} onPress={() => pick(o)} />)}
+              {others.slice(0, 3).map((o) => <PlaceChip key={o.land} label={tx(`Nein, ${o.name} in ${o.land}`, `No, ${o.name} in ${o.land}`)} onPress={() => pick(o)} />)}
             </View>
           ) : null}
         </View>
@@ -59,7 +60,7 @@ export default function Eltern() {
           <View style={{ width: 12 }} />
         </ScrollView>
       )}
-      <Hint>{`${t.trim() || 'Deinen Partner'} lädst du gleich ein. Den Namen kann ${t.trim() ? 'er oder sie' : 'die Person'} selbst ändern.`}</Hint>
+      <Hint>{tx(`${t.trim() || 'Deinen Partner'} lädst du gleich ein. Den Namen kann ${t.trim() ? 'er oder sie' : 'die Person'} selbst ändern.`, `You will invite ${t.trim() || 'your partner'} in a moment. They can change their name themselves.`)}</Hint>
     </Screen>
   );
 }

@@ -3,6 +3,7 @@
  * scrolled. "Do 15 Uhr", "übermorgen", "12.11. 930-1015", "jeden Di 19-2030",
  * "20.-27.3." all become a When. Everything is relative to the fixed TODAY.
  */
+import { EN, tx } from '../i18n/lang';
 import { TODAY, addDays, weekday, year, daysBetween, short, long, hm, minutes, WD_LONG, MONTHS_SHORT, monthIdx, dayNum } from './dates';
 
 export type When = {
@@ -54,10 +55,57 @@ function timeLoose(t: string): string | null {
  */
 const MONTH_WORDS = ['jan', 'feb', 'mä', 'apr', 'mai', 'jun', 'jul', 'aug', 'sep', 'okt', 'nov', 'dez'];
 
+const EN_MONTHS: Record<string, string> = {
+  january: 'januar', jan: 'januar', february: 'februar', feb: 'februar', march: 'märz', mar: 'märz', april: 'april', apr: 'april',
+  may: 'mai', june: 'juni', jun: 'juni', july: 'juli', jul: 'juli', august: 'august', aug: 'august', september: 'september',
+  sept: 'september', sep: 'september', october: 'oktober', oct: 'oktober', november: 'november', nov: 'november', december: 'dezember', dec: 'dezember',
+};
+const EN_WD: Record<string, string> = {
+  sunday: 'sonntag', sun: 'sonntag', monday: 'montag', mon: 'montag', tuesday: 'dienstag', tue: 'dienstag', tues: 'dienstag',
+  wednesday: 'mittwoch', wed: 'mittwoch', thursday: 'donnerstag', thu: 'donnerstag', thur: 'donnerstag', thurs: 'donnerstag',
+  friday: 'freitag', fri: 'freitag', saturday: 'samstag', sat: 'samstag',
+};
+const EN_MON = Object.keys(EN_MONTHS).join('|');
+
+/**
+ * English into the German forms below, so one reader serves both languages:
+ * "next Friday at 3pm" → "nächsten freitag 15", "Nov 12th" → "12. november".
+ * Only words that are never German are touched; "am" counts as a.m. on
+ * English phones only, since "um 10 am Montag" is German.
+ */
+function fromEnglish(t: string): string {
+  if (EN) {
+    t = t.replace(/ (\d{1,2})(?::(\d{2}))? ?(a\.?m\.?|p\.?m\.?)(?= )/g, (_, h, m, ap) => {
+      let hh = Number(h) % 12;
+      if (ap.startsWith('p')) hh += 12;
+      return ` ${hh}:${m ?? '00'}`;
+    });
+  } else {
+    t = t.replace(/ (\d{1,2})(?::(\d{2}))? ?(p\.?m\.?)(?= )/g, (_, h, m) => ` ${(Number(h) % 12) + 12}:${m ?? '00'}`);
+  }
+  t = t.replace(/ noon /g, ' 12:00 ').replace(/ midnight /g, ' 0:00 ')
+    .replace(/(\d)(st|nd|rd|th)(?= )/g, '$1')
+    .replace(/ (?:the )?day after tomorrow /g, ' übermorgen ')
+    .replace(/ tomorrow /g, ' morgen ').replace(/ (today|tonight|this evening) /g, ' heute ').replace(/ yesterday /g, ' gestern ')
+    .replace(/ next week /g, ' nächste woche ').replace(/ (every week|weekly) /g, ' jede woche ').replace(/ all day /g, ' ganztägig ')
+    .replace(/ in (a|an|one) (day|week)s? /g, ' in einer $2 ').replace(/ in (two|three) /g, (_, n) => ` in ${n === 'two' ? 'zwei' : 'drei'} `)
+    .replace(/ in (\S+) days? /g, ' in $1 tagen ').replace(/ in (\S+) weeks? /g, ' in $1 wochen ')
+    .replace(/ in einer day /g, ' in einer tag ').replace(/ in einer week /g, ' in einer woche ')
+    .replace(/ every /g, ' jeden ').replace(/ (next|this coming) /g, ' nächsten ')
+    .replace(/ (on|at|from|the|this) /g, ' ').replace(/ (until|till|to|through) /g, ' bis ');
+  // "Nov 12", "November 12 2027" and "12 Nov"
+  t = t.replace(new RegExp(` (${EN_MON})\\.? (\\d{1,2}),?(?: (\\d{4}))? `, 'g'), (_, m, d, y) => ` ${d}. ${EN_MONTHS[m]}${y ? ' ' + y : ''} `);
+  t = t.replace(new RegExp(` (\\d{1,2}) (${EN_MON})\\.?(?= )`, 'g'), (_, d, m) => ` ${d}. ${EN_MONTHS[m]}`);
+  t = t.replace(/ ([a-z]+)\.?(?= )/g, (w, x) => (EN_WD[x] ? ` ${EN_WD[x]}` : w));
+  return t;
+}
+
 export function parseWhen(input: string, opts: { past?: boolean; base?: string } = {}): When | null {
   const base = opts.base ?? TODAY;
-  let t = ` ${input.toLowerCase().replace(/\s+/g, ' ').trim()} `;
+  let t = ` ${input.toLowerCase().replace(/,/g, ' ').replace(/\s+/g, ' ').trim()} `;
   if (!t.trim()) return null;
+  // Twice: one regex pass cannot see two neighbouring words that both need the shared space.
+  t = fromEnglish(fromEnglish(t));
   t = t.replace(/ (um|am|ab|von) /g, ' ').replace(/ bis /g, '-').replace(/–/g, '-');
   let date: string | undefined;
   let endDate: string | undefined;
@@ -134,10 +182,10 @@ export function parseWhen(input: string, opts: { past?: boolean; base?: string }
   if (wd) {
     const n = WD[wd[2]];
     if (!date) date = nextWd(n, wd[1]?.startsWith('n') ? addDays(base, 1) : base);
-    if (wd[1]?.startsWith('jede')) repeat = `Jeden ${WD_LONG[n]}`;
+    if (wd[1]?.startsWith('jede')) repeat = tx(`Jeden ${WD_LONG[n]}`, `Every ${WD_LONG[n]}`);
     t = t.replace(wd[0], ' ');
   }
-  if (/ (jede woche|wöchentlich) /.test(t)) { repeat = 'Jede Woche'; t = t.replace(/ (jede woche|wöchentlich) /, ' '); }
+  if (/ (jede woche|wöchentlich) /.test(t)) { repeat = tx('Jede Woche', 'Every week'); t = t.replace(/ (jede woche|wöchentlich) /, ' '); }
 
   // Times: "930-1015", "9:30-10:15", "19-2030", "15 uhr", "15h", "9:30"
   t = t.replace(/ uhr /g, ' ').replace(/(\d)h /g, '$1 ').replace(/(\d) uhr/g, '$1');
@@ -168,9 +216,9 @@ const yearIfOther = (d: string) => (year(d) !== year(TODAY) ? ` ${year(d)}` : ''
 /** Collapsed line: "Do 12. Nov · 9:30–10:15", "Sa 20. bis Sa 27. März 2027". */
 export function whenLine(w: When): string {
   if (w.endDate) {
-    const same = monthIdx(w.date) === monthIdx(w.endDate);
+    const same = !EN && monthIdx(w.date) === monthIdx(w.endDate);
     const a = same ? `${short(w.date).split(' ').slice(0, 2).join(' ')}` : short(w.date);
-    return `${a} bis ${short(w.endDate)}${yearIfOther(w.endDate)}`;
+    return `${a} ${tx('bis', 'to')} ${short(w.endDate)}${yearIfOther(w.endDate)}`;
   }
   const time = w.start ? ` · ${hm(w.start)}${w.end ? '–' + hm(w.end) : ''}` : '';
   return `${short(w.date)}${yearIfOther(w.date)}${time}${w.repeat ? ' · ' + w.repeat : ''}`;
@@ -178,36 +226,38 @@ export function whenLine(w: When): string {
 
 function dur(a: string, b: string) {
   const m = minutes(b) - minutes(a);
-  if (m < 60) return `${m} Minuten`;
+  if (m < 60) return tx(`${m} Minuten`, `${m} minutes`);
   const h = Math.floor(m / 60); const r = m % 60;
-  return r ? `${h} Std ${r} Min` : h === 1 ? '1 Stunde' : `${h} Stunden`;
+  return r ? tx(`${h} Std ${r} Min`, `${h} h ${r} min`) : h === 1 ? tx('1 Stunde', '1 hour') : tx(`${h} Stunden`, `${h} hours`);
 }
 
 /** The sentence under the field: "Donnerstag, 12. November, 9:30 bis 10:15. 45 Minuten." */
 export function whenSentence(w: When): string {
   if (w.endDate) {
     const n = daysBetween(w.date, w.endDate) + 1;
-    return `${long(w.date)}${year(w.date) !== year(w.endDate) ? yearIfOther(w.date) : ''} bis ${long(w.endDate)}${yearIfOther(w.endDate)}. Ganztägig, ${n} Tage.`;
+    return `${long(w.date)}${year(w.date) !== year(w.endDate) ? yearIfOther(w.date) : ''} ${tx('bis', 'to')} ${long(w.endDate)}${yearIfOther(w.endDate)}. ${tx(`Ganztägig, ${n} Tage.`, `All day, ${n} days.`)}`;
   }
   const d = `${long(w.date)}${yearIfOther(w.date)}`;
-  const rel = w.date === TODAY ? 'Heute, ' : w.date === addDays(TODAY, 1) ? 'Morgen, ' : '';
+  const rel = w.date === TODAY ? tx('Heute, ', 'Today, ') : w.date === addDays(TODAY, 1) ? tx('Morgen, ', 'Tomorrow, ') : '';
   const day = rel ? rel + d.split(', ')[1] : d;
-  if (!w.start) return `${day}. Ganztägig.${w.repeat ? ' ' + w.repeat + '.' : ''}`;
-  if (!w.end) return `${day}, ${hm(w.start)}. Wie lange?${w.repeat ? ' ' + w.repeat + '.' : ''}`;
-  return `${day}, ${hm(w.start)} bis ${hm(w.end)}. ${dur(w.start, w.end)}.${w.repeat ? ' ' + w.repeat + '.' : ''}`;
+  if (!w.start) return `${day}. ${tx('Ganztägig.', 'All day.')}${w.repeat ? ' ' + w.repeat + '.' : ''}`;
+  if (!w.end) return `${day}, ${hm(w.start)}. ${tx('Wie lange?', 'How long?')}${w.repeat ? ' ' + w.repeat + '.' : ''}`;
+  return `${day}, ${hm(w.start)} ${tx('bis', 'to')} ${hm(w.end)}. ${dur(w.start, w.end)}.${w.repeat ? ' ' + w.repeat + '.' : ''}`;
 }
 
 /** Text that parses back to the same When, used to prefill the field. */
 export function whenText(w: When): string {
   if (w.endDate) return `${dayNum(w.date)}.${monthIdx(w.date) + 1}.-${dayNum(w.endDate)}.${monthIdx(w.endDate) + 1}.`;
-  const d = `${dayNum(w.date)}.${monthIdx(w.date) + 1}.${yearIfOther(w.date) || w.date < TODAY ? year(w.date) : ''}`;
-  const t = w.start ? ` ${hm(w.start)}${w.end ? '-' + hm(w.end) : ''}` : '';
-  return `${w.repeat?.startsWith('Jeden ') ? 'jeden ' + w.repeat.slice(6, 8) + ' ' : ''}${d}${t}`;
+  const y = yearIfOther(w.date) || w.date < TODAY ? year(w.date) : '';
+  const d = EN ? `${MONTHS_SHORT[monthIdx(w.date)]} ${dayNum(w.date)}${y ? ' ' + y : ''}` : `${dayNum(w.date)}.${monthIdx(w.date) + 1}.${y}`;
+  const t = w.start ? ` ${hm(w.start)}${w.end ? (EN ? ' to ' : '-') + hm(w.end) : ''}` : '';
+  const every = w.repeat?.match(/^(?:Jeden|Every) (\w{3})/);
+  return `${every ? tx('jeden ', 'every ') + every[1].slice(0, EN ? 3 : 2) + ' ' : ''}${d}${t}`;
 }
 
 /** Task title with a deadline: "Passfotos machen bis Fr" → title + due. */
 export function splitDue(text: string): { title: string; due?: string } {
-  const m = text.match(/^(.*\S)\s+bis\s+(.+)$/i);
+  const m = text.match(/^(.*\S)\s+(?:bis|by|until|due)\s+(.+)$/i);
   if (!m) return { title: text.trim() };
   const w = parseWhen(m[2]);
   return w ? { title: m[1].trim(), due: w.date } : { title: text.trim() };
@@ -215,7 +265,7 @@ export function splitDue(text: string): { title: string; due?: string } {
 
 /** "bis Fr 30. Okt" */
 export function dueLabel(due: string): string {
-  return `bis ${short(due)}${yearIfOther(due)}`;
+  return `${tx('bis', 'by')} ${short(due)}${yearIfOther(due)}`;
 }
 
 export const monthChip = (iso: string) => MONTHS_SHORT[monthIdx(iso)];

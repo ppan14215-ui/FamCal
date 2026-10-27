@@ -27,15 +27,16 @@ import Letter from './Letter';
 import { tokens } from '../theme';
 import { haptics } from '../lib/haptics';
 import type { ClayName } from '../lib/clayIcons';
+import { tx } from '../i18n/lang';
 
 type Scene = { title: string; sub: string; ms: number };
 const SCENES: Scene[] = [
-  { title: 'Sag es einfach', sub: 'Ein Satz reicht. Der Kalender trägt ein, für wen es ist, und sagt, wenn es sich beißt.', ms: 3600 },
-  { title: 'Post vom Amt', sub: 'Irgendwo im dritten Absatz steht eine Frist.', ms: 2600 },
-  { title: 'Foto. Fertig', sub: 'Der Assistent liest mit, trägt die Frist ein und sagt euch, was zu tun ist.', ms: 2900 },
-  { title: 'Für euch beide', sub: 'Nicht nur für den, der zufällig dran denkt.', ms: 2700 },
-  { title: 'Weiß, was bei euch gilt', sub: 'Feiertage, Kita-Portal, Bürgeramt. Immer mit Quelle.', ms: 2900 },
-  { title: 'Euer Kalender, mit dem ihr redet', sub: 'Für euch beide, ohne Werbung, nichts verschwindet. Termine, Fristen und Einkauf an einem ruhigen Ort.', ms: 0 },
+  { title: tx('Sag es einfach', 'Just say it'), sub: tx('Ein Satz reicht. Der Kalender trägt ein, für wen es ist, und sagt, wenn es sich beißt.', 'One sentence is enough. The calendar adds it, notes who it is for, and tells you when it clashes.'), ms: 3600 },
+  { title: tx('Post vom Amt', 'A letter with a deadline'), sub: tx('Irgendwo im dritten Absatz steht eine Frist.', 'Somewhere in the third paragraph there is a due date.'), ms: 2600 },
+  { title: tx('Foto. Fertig', 'Snap. Done'), sub: tx('Der Assistent liest mit, trägt die Frist ein und sagt euch, was zu tun ist.', 'The assistant reads along, adds the deadline and tells you what to do.'), ms: 2900 },
+  { title: tx('Für euch beide', 'For both of you'), sub: tx('Nicht nur für den, der zufällig dran denkt.', 'Not just for whoever happens to remember.'), ms: 2700 },
+  { title: tx('Weiß, was bei euch gilt', 'Knows your local rules'), sub: tx('Feiertage, Kita-Portal, Bürgeramt. Immer mit Quelle.', 'Holidays, school portals, local offices. Always with a source.'), ms: 2900 },
+  { title: tx('Euer Kalender, mit dem ihr redet', 'The calendar you talk to'), sub: tx('Für euch beide, ohne Werbung, nichts verschwindet. Termine, Fristen und Einkauf an einem ruhigen Ort.', 'For both of you, no ads, nothing gets lost. Plans, deadlines and shopping in one calm place.'), ms: 0 },
 ];
 const LAST = SCENES.length - 1;
 const STAGE = 300;
@@ -61,7 +62,7 @@ export default function Intro() {
       <View style={{ flexDirection: 'row', gap: 4 }}>
         {SCENES.map((x, k) => <Bar key={k} state={k < i ? 'done' : k === i ? 'now' : 'next'} ms={x.ms} />)}
       </View>
-      <Pressable accessibilityLabel={i < LAST ? 'Weiter im Intro' : undefined} onPress={next} style={{ height: STAGE, justifyContent: 'center' }}>
+      <Pressable accessibilityLabel={i < LAST ? tx('Weiter im Intro', 'Next in intro') : undefined} onPress={next} style={{ height: STAGE, justifyContent: 'center' }}>
         <Animated.View key={i} entering={FadeIn.duration(200)} exiting={leave} style={{ flex: 1, justifyContent: 'center' }}>
           {i === 0 ? <Talk /> : i === 1 ? <Post /> : i === 2 ? <Scanned /> : i === 3 ? <Both /> : i === 4 ? <Local /> : <Calm />}
         </Animated.View>
@@ -75,7 +76,7 @@ export default function Intro() {
 }
 
 /** 1 · A sentence is typed as if spoken, then lands as Tom's Termin. */
-const SAID = 'Tom bringt Ben Donnerstag 9:30 zur U6';
+const SAID = tx('Tom bringt Ben Donnerstag 9:30 zur U6', 'Tom takes Ben to the checkup Thursday 9:30');
 function Talk() {
   const [n, setN] = useState(0);
   useEffect(() => {
@@ -95,11 +96,11 @@ function Talk() {
       {done ? (
         <>
           <Animated.View entering={enter(0)}>
-            <Row icon="stethoskop" title="U6" meta="Do 29. Okt · 9:30 · Tom bringt Ben" right={<Avatar p="T" letter="T" size={30} />} />
+            <Row icon="stethoskop" title={tx('U6', 'Checkup')} meta={tx('Do 29. Okt · 9:30 · Tom bringt Ben', 'Thu Oct 29 · 9:30 · Tom takes Ben')} right={<Avatar p="T" letter="T" size={30} />} />
           </Animated.View>
           <Animated.View entering={enter(1)} style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingLeft: 6 }}>
             <LineIcon name="clock" size={14} color={tokens.frist} />
-            <Txt size={13.5} weight={600} color={tokens.frist}>Tom arbeitet da. Soll Julia gehen?</Txt>
+            <Txt size={13.5} weight={600} color={tokens.frist}>{tx('Tom arbeitet da. Soll Julia gehen?', 'Tom is at work then. Should Julia go?')}</Txt>
           </Animated.View>
         </>
       ) : null}
@@ -146,11 +147,11 @@ function Scanned() {
         <Tile name="umschlag-euro" size={104} radius={30} />
       </Animated.View>
       <Animated.View entering={enter(2)}>
-        <Row icon="umschlag-euro" title="Arbeitgeberbescheinigung nachreichen" meta="Frist 12. Dez · Elterngeld" metaColor={tokens.frist} />
+        <Row icon="umschlag-euro" title={tx('Arbeitgeberbescheinigung nachreichen', 'Send employer letter')} meta={tx('Frist 12. Dez · Elterngeld', 'Due Dec 12 · Parental leave')} metaColor={tokens.frist} />
       </Animated.View>
       <Animated.View entering={enter(3)} style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingLeft: 6 }}>
         <LineIcon name="sparkle" size={13} color={tokens.done} />
-        <Txt size={13.5} weight={600} color={tokens.done}>Vom Assistenten eingetragen, mit Erinnerung 2 Wochen vorher</Txt>
+        <Txt size={13.5} weight={600} color={tokens.done}>{tx('Vom Assistenten eingetragen, mit Erinnerung 2 Wochen vorher', 'Added by the assistant, reminder 2 weeks ahead')}</Txt>
       </Animated.View>
     </View>
   );
@@ -163,7 +164,7 @@ function Both() {
   return (
     <View style={{ gap: 10 }}>
       <Animated.View entering={enter(0)}>
-        <Row icon="stethoskop" title="U5 bei Dr. Weber" meta="Do 12. Nov · 9:30" right={
+        <Row icon="stethoskop" title={tx('U5 bei Dr. Weber', 'Checkup with Dr. Weber')} meta={tx('Do 12. Nov · 9:30', 'Thu Nov 12 · 9:30')} right={
           <View style={{ flexDirection: 'row' }}>
             <View style={{ opacity: taken ? 0.35 : 1 }}><Avatar p="J" letter="J" size={30} ring={tokens.row} /></View>
             <View style={{ marginLeft: -8 }}><Avatar p="T" letter="T" size={30} ring={tokens.row} /></View>
@@ -173,12 +174,12 @@ function Both() {
       {taken ? (
         <Animated.View entering={ZoomIn.duration(320)} style={{ alignSelf: 'flex-end', flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 8, paddingLeft: 6, paddingRight: 14, borderRadius: 999, backgroundColor: tokens.row }}>
           <Avatar p="T" letter="T" size={26} />
-          <Txt size={14.5} weight={600}>Tom übernimmt</Txt>
+          <Txt size={14.5} weight={600}>{tx('Tom übernimmt', 'Tom takes it')}</Txt>
           <LineIcon name="check" size={16} color={tokens.done} stroke={2.4} />
         </Animated.View>
       ) : null}
       <Animated.View entering={enter(2)}>
-        <Row icon="einkauf" title="Windeln Gr. 2" meta="Einkauf · Julia hat es auf dem Zettel" />
+        <Row icon="einkauf" title={tx('Windeln Gr. 2', 'Diapers size 2')} meta={tx('Einkauf · Julia hat es auf dem Zettel', 'Shopping · on Julia’s list')} />
       </Animated.View>
     </View>
   );
@@ -187,9 +188,9 @@ function Both() {
 /** 5 · What the city means for you, each fact with where it comes from. */
 function Local() {
   const facts: { icon: ClayName; title: string; src: string }[] = [
-    { icon: 'kalender', title: 'Feiertage für euer Bundesland', src: 'Gemeindeverzeichnis' },
-    { icon: 'kita', title: 'Kita-Platz über das Portal der Stadt', src: 'Seite der Stadt' },
-    { icon: 'reisepass', title: 'Pass fürs Baby: was mit muss', src: 'Bürgeramt' },
+    { icon: 'kalender', title: tx('Feiertage für euer Bundesland', 'Public holidays where you live'), src: tx('Gemeindeverzeichnis', 'Official register') },
+    { icon: 'kita', title: tx('Kita-Platz über das Portal der Stadt', 'Daycare spot via the city portal'), src: tx('Seite der Stadt', 'City website') },
+    { icon: 'reisepass', title: tx('Pass fürs Baby: was mit muss', 'Baby passport: what to bring'), src: tx('Bürgeramt', 'Local office') },
   ];
   return (
     <View style={{ gap: 8 }}>
@@ -200,7 +201,7 @@ function Local() {
             <Txt size={15.5} line={20} weight={600} numberOfLines={1}>{f.title}</Txt>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
               <LineIcon name="sparkle" size={11} color={tokens.done} />
-              <Txt size={12.5} color={tokens.done}>{`Quelle: ${f.src}`}</Txt>
+              <Txt size={12.5} color={tokens.done}>{`${tx('Quelle', 'Source')}: ${f.src}`}</Txt>
             </View>
           </View>
         </Animated.View>
@@ -216,12 +217,12 @@ function Calm() {
   return (
     <Animated.View entering={FadeInDown.duration(420)} style={{ borderRadius: 28, backgroundColor: tokens.row, paddingHorizontal: 16, paddingBottom: 8 }}>
       <View style={{ height: 52, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-        <Txt size={21} weight={700} tracking={-0.6}>Heute</Txt>
-        <Txt size={13.5} color={tokens.sub}>Do 29. Oktober</Txt>
+        <Txt size={21} weight={700} tracking={-0.6}>{tx('Heute', 'Today')}</Txt>
+        <Txt size={13.5} color={tokens.sub}>{tx('Do 29. Oktober', 'Thu October 29')}</Txt>
       </View>
-      <Row flat icon="umschlag-euro" title="Arbeitgeberbescheinigung" meta="Frist 12. Dez" metaColor={tokens.frist} />
-      <Row flat icon="stethoskop" title="U5 bei Dr. Weber" meta="Do 12. Nov · Tom" right={<Avatar p="T" letter="T" size={26} />} />
-      <Row flat icon="einkauf" title="Windeln Gr. 2" meta={done ? 'erledigt von Julia' : 'Einkauf'} strike={done} right={
+      <Row flat icon="umschlag-euro" title={tx('Arbeitgeberbescheinigung', 'Employer letter')} meta={tx('Frist 12. Dez', 'Due Dec 12')} metaColor={tokens.frist} />
+      <Row flat icon="stethoskop" title={tx('U5 bei Dr. Weber', 'Checkup with Dr. Weber')} meta={tx('Do 12. Nov · Tom', 'Thu Nov 12 · Tom')} right={<Avatar p="T" letter="T" size={26} />} />
+      <Row flat icon="einkauf" title={tx('Windeln Gr. 2', 'Diapers size 2')} meta={done ? tx('erledigt von Julia', 'done by Julia') : tx('Einkauf', 'Shopping')} strike={done} right={
         <View style={{ width: 26, height: 26, borderRadius: 999, borderWidth: done ? 0 : 1.5, borderColor: tokens.circleLine, backgroundColor: done ? tokens.done : 'transparent', alignItems: 'center', justifyContent: 'center' }}>
           {done ? <Animated.View entering={ZoomIn.duration(260)}><LineIcon name="check" size={16} color="#FFFFFF" stroke={2.4} /></Animated.View> : null}
         </View>

@@ -19,6 +19,7 @@ import { tokens, fonts } from '../theme';
 import { haptics } from '../lib/haptics';
 import { setTyping } from '../lib/keyboard';
 import { LIVE } from '../lib/live';
+import { tx, EN } from '../i18n/lang';
 
 // Phones and tablets: Enter on the screen keyboard adds a line.
 const TOUCH = Platform.OS !== 'web' || (typeof window !== 'undefined' && !!window.matchMedia?.('(pointer: coarse)').matches);
@@ -31,7 +32,7 @@ const MAX_H = LINE * 4 + PAD * 2;
 // A long hint stays on one line and ends in dots instead of growing the field.
 if (Platform.OS === 'web' && typeof document !== 'undefined') {
   const css = document.createElement('style');
-  css.textContent = 'textarea[aria-label="Was steht an?"]::placeholder{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}';
+  css.textContent = 'textarea[aria-label="Was steht an?"]::placeholder,textarea[aria-label="What\'s on?"]::placeholder{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}';
   document.head.appendChild(css);
 }
 
@@ -51,7 +52,7 @@ type Props = {
   placeholder?: string;
 };
 
-export default function TalkBar({ onSend, onPlus, suggestions = [], spoken, placeholder = 'Sag oder schreib, was ansteht …' }: Props) {
+export default function TalkBar({ onSend, onPlus, suggestions = [], spoken, placeholder = tx('Sag oder schreib, was ansteht …', 'Say or type what\'s coming up …') }: Props) {
   const [text, setText] = useState('');
   const [listening, setListening] = useState(false);
   const [demo, setDemo] = useState(false);
@@ -108,7 +109,7 @@ export default function TalkBar({ onSend, onPlus, suggestions = [], spoken, plac
     if (!SR) return say(sentence);
     try {
       const r = new SR();
-      r.lang = 'de-DE';
+      r.lang = EN ? 'en-US' : 'de-DE';
       r.interimResults = true;
       let heard = '';
       let failed = false;
@@ -145,7 +146,7 @@ export default function TalkBar({ onSend, onPlus, suggestions = [], spoken, plac
         SR.addListener('end', () => { subs.forEach((x) => x.remove()); setListening(false); if (heard) send(heard); }),
       ];
       stopNative.current = () => SR.stop();
-      SR.start({ lang: 'de-DE', interimResults: true, continuous: false, addsPunctuation: true });
+      SR.start({ lang: EN ? 'en-US' : 'de-DE', interimResults: true, continuous: false, addsPunctuation: true });
     } catch {
       fail();
     }
@@ -153,7 +154,7 @@ export default function TalkBar({ onSend, onPlus, suggestions = [], spoken, plac
 
   const input = (
     <View style={[{ flexDirection: 'row', alignItems: 'flex-end', gap: 4, padding: 6, paddingLeft: 6, borderRadius: boxH > MIN_H ? 26 : 30, backgroundColor: tokens.row, borderWidth: 1, borderColor: listening ? tokens.ink : tokens.hair }, lift]}>
-      <PressScale accessibilityLabel="Foto, Termin, Aufgabe" onPress={onPlus} style={{ width: 44, height: 44, marginBottom: 2, borderRadius: 999, alignItems: 'center', justifyContent: 'center', backgroundColor: tokens.chipBg }}>
+      <PressScale accessibilityLabel={tx('Foto, Termin, Aufgabe', 'Photo, event, task')} onPress={onPlus} style={{ width: 44, height: 44, marginBottom: 2, borderRadius: 999, alignItems: 'center', justifyContent: 'center', backgroundColor: tokens.chipBg }}>
         <LineIcon name="plus" size={22} color={tokens.ink} stroke={2} />
       </PressScale>
       <TextInput
@@ -173,15 +174,15 @@ export default function TalkBar({ onSend, onPlus, suggestions = [], spoken, plac
         }}
         scrollEnabled={boxH >= MAX_H}
         editable={!demo}
-        placeholder={listening ? 'Ich höre zu …' : placeholder}
+        placeholder={listening ? tx('Ich höre zu …', 'Listening …') : placeholder}
         placeholderTextColor={tokens.mute}
         selectionColor={tokens.ink}
         returnKeyType={TOUCH ? 'default' : 'send'}
-        accessibilityLabel="Was steht an?"
+        accessibilityLabel={tx('Was steht an?', 'What\'s on?')}
         style={[{ flex: 1, minWidth: 0, height: boxH, marginBottom: 2, fontFamily: fonts[400], fontSize: 16.5, lineHeight: LINE, color: tokens.ink, paddingVertical: PAD, paddingHorizontal: 8, textAlignVertical: 'top' }, Platform.OS === 'web' ? ({ outlineStyle: 'none' } as any) : null]}
       />
       <PressScale
-        accessibilityLabel={text && !listening ? 'Senden' : 'Sprechen'}
+        accessibilityLabel={text && !listening ? tx('Senden', 'Send') : tx('Sprechen', 'Speak')}
         onPress={text && !listening ? () => send() : listen}
         style={{ width: 48, height: 48, borderRadius: 999, backgroundColor: listening ? 'transparent' : tokens.ink, alignItems: 'center', justifyContent: 'center' }}
       >
@@ -193,7 +194,7 @@ export default function TalkBar({ onSend, onPlus, suggestions = [], spoken, plac
   return (
     <View style={{ gap: 8 }}>
       {demo ? (
-        <Txt size={12.5} line={17} color={tokens.sub} style={{ paddingHorizontal: 10 }}>Im Testlink ist das Mikro gesperrt, darum spreche ich einen Beispielsatz. In der App hört es euch zu.</Txt>
+        <Txt size={12.5} line={17} color={tokens.sub} style={{ paddingHorizontal: 10 }}>{tx('Im Testlink ist das Mikro gesperrt, darum spreche ich einen Beispielsatz. In der App hört es euch zu.', 'The test link can\'t use the microphone, so I say a sample sentence. The app listens to you.')}</Txt>
       ) : suggestions.length ? (
         <ScrollView horizontal showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="handled" contentContainerStyle={{ gap: 6, paddingHorizontal: 2 }}>
           {suggestions.map((s) => (

@@ -17,6 +17,7 @@ import { haptics } from '../src/lib/haptics';
 import { useKeyboardInset } from '../src/lib/keyboard';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import PressScale from '../src/components/ui/PressScale';
+import { tx } from '../src/i18n/lang';
 
 export default function EinkaufNeu() {
   const kb = useKeyboardInset();
@@ -64,7 +65,7 @@ export default function EinkaufNeu() {
                   <PressScale key={h.name} onPress={() => pick(h.name)} style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 13, paddingHorizontal: 16, backgroundColor: tokens.row }}>
                     <View style={{ flex: 1 }}>
                       <Txt size={16} weight={added ? 600 : 500} color={added ? tokens.done : tokens.ink}>{h.name}</Txt>
-                      <Meta>{`${h.section === 'drogerie' ? 'Drogerie' : 'Supermarkt'}${h.last ? ' · ' + h.last : ''}`}</Meta>
+                      <Meta>{`${h.section === 'drogerie' ? tx('Drogerie', 'Drugstore') : tx('Supermarkt', 'Supermarket')}${h.last ? ' · ' + h.last : ''}`}</Meta>
                     </View>
                     <LineIcon name={added ? 'check' : 'plus'} size={18} color={added ? tokens.done : tokens.sub} stroke={added ? 2.4 : 1.8} />
                   </PressScale>
@@ -73,8 +74,8 @@ export default function EinkaufNeu() {
               {!exact ? (
                 <PressScale onPress={addFree} style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 13, paddingHorizontal: 16, backgroundColor: tokens.row }}>
                   <View style={{ flex: 1 }}>
-                    <Txt size={16} weight={500}>{`„${q.trim()}“ als neues Ding`}</Txt>
-                    <Meta>{sectionFor(name) === 'drogerie' ? 'kommt zu Drogerie' : 'kommt zu Supermarkt'}</Meta>
+                    <Txt size={16} weight={500}>{tx(`„${q.trim()}“ als neues Ding`, `“${q.trim()}” as a new item`)}</Txt>
+                    <Meta>{sectionFor(name) === 'drogerie' ? tx('kommt zu Drogerie', 'goes to drugstore') : tx('kommt zu Supermarkt', 'goes to supermarket')}</Meta>
                   </View>
                   <LineIcon name="plus" size={18} color={tokens.sub} />
                 </PressScale>
@@ -89,7 +90,7 @@ export default function EinkaufNeu() {
               onChangeText={setQ}
               onSubmitEditing={() => (hits[0] && exact ? (pick(hits[0].name), setQ('')) : addFree())}
               blurOnSubmit={false}
-              placeholder="Was fehlt?"
+              placeholder={tx('Was fehlt?', 'What\'s missing?')}
               placeholderTextColor={tokens.mute}
               selectionColor={tokens.ink}
               returnKeyType="done"
@@ -100,10 +101,10 @@ export default function EinkaufNeu() {
       }
     >
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-        <Txt size={22} weight={700} tracking={-0.4}>Einkauf ergänzen</Txt>
-        <PressScale hitSlop={10} onPress={() => goBack()}><Txt size={15} weight={600}>Fertig</Txt></PressScale>
+        <Txt size={22} weight={700} tracking={-0.4}>{tx('Einkauf ergänzen', 'Add to shopping')}</Txt>
+        <PressScale hitSlop={10} onPress={() => goBack()}><Txt size={15} weight={600}>{tx('Fertig', 'Done')}</Txt></PressScale>
       </View>
-      <H2>Oft bei euch</H2>
+      <H2>{tx('Oft bei euch', 'You often buy')}</H2>
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
         {oftBeiEuch.map((n) => {
           const on = onList.has(n.toLowerCase());
@@ -119,7 +120,7 @@ export default function EinkaufNeu() {
           );
         })}
       </View>
-      <Txt size={13.5} line={19} color={tokens.sub}>Tippen fügt hinzu, nochmal tippen nimmt es wieder raus. Wir sortieren es selbst in Drogerie oder Supermarkt. Menge und Notiz einfach mitschreiben: „2 Hafermilch, ungesüßt“.</Txt>
+      <Txt size={13.5} line={19} color={tokens.sub}>{tx('Tippen fügt hinzu, nochmal tippen nimmt es wieder raus. Wir sortieren es selbst in Drogerie oder Supermarkt. Menge und Notiz einfach mitschreiben: „2 Hafermilch, ungesüßt“.', 'Tap to add, tap again to remove. We sort it into drugstore or supermarket. Just add amount and note: “2 oat milk, unsweetened”.')}</Txt>
     </Screen>
   );
 }

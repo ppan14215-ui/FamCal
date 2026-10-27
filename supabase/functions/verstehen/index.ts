@@ -1,11 +1,11 @@
 /**
  * Verstehen (Julian 27.10.: "Handy hört, Claude versteht"). The phone turns
- * speech into text on the device; this function turns one German sentence
- * into a Termin. The API key lives only here, as the secret
+ * speech into text on the device; this function turns one sentence, German
+ * or English, into a Termin. The API key lives only here, as the secret
  * ANTHROPIC_API_KEY, never in the app.
  *
  * Request (signed in, JWT checked by Supabase):
- *   { text, today: "2026-10-27", now: "14:10", names: { J: "Julian", T: "Anna" } }
+ *   { text, today: "2026-10-27", now: "14:10", names: { J: "Julian", T: "Anna" }, lang: "de" | "en" }
  * Response: the shape of `Termin` below, or { error }.
  */
 import Anthropic from 'npm:@anthropic-ai/sdk@0.137.0';
@@ -29,21 +29,21 @@ const Termin = z.object({
   question: z.string().nullable(),
 });
 
-const WD = ['Sonntag', 'Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag'];
+const WD = ['Sonntag (Sunday)', 'Montag (Monday)', 'Dienstag (Tuesday)', 'Mittwoch (Wednesday)', 'Donnerstag (Thursday)', 'Freitag (Friday)', 'Samstag (Saturday)'];
 
 const SYSTEM = `Du trägst Termine für eine Familie mit zwei Eltern in einen geteilten Kalender ein.
-Du bekommst einen gesprochenen oder getippten deutschen Satz und gibst genau einen Termin als JSON zurück.
+Du bekommst einen gesprochenen oder getippten Satz auf Deutsch oder Englisch und gibst genau einen Termin als JSON zurück.
 
 Regeln:
-- Datum als YYYY-MM-DD, Uhrzeiten als HH:MM (24 Stunden). Relative Angaben ("morgen", "nächsten Freitag", "in zwei Wochen", "am 12.") rechnest du vom heutigen Datum aus. "Nächsten Freitag" ist der kommende Freitag, außer heute ist Freitag, dann eine Woche später.
+- Datum als YYYY-MM-DD, Uhrzeiten als HH:MM (24 Stunden). Relative Angaben ("morgen", "nächsten Freitag", "in zwei Wochen", "am 12.", "tomorrow", "next Friday", "on the 12th") rechnest du vom heutigen Datum aus. "Nächsten Freitag" und "next Friday" sind der kommende Freitag, außer heute ist Freitag, dann eine Woche später. "3pm" ist 15:00.
 - Ohne Uhrzeit bleiben start und end null (ganztägig). Mit Startzeit ohne Ende: end bleibt null, die App setzt die Dauer.
-- title ist kurz wie in einem Kalender ("Zahnarzt", "Elternabend Kita", "Oma kommt"). Personen, Zeit und Ort gehören nicht in den Titel. sub ist ein optionaler Zusatz ("Kontrolle", "mit Ben").
+- title ist kurz wie in einem Kalender ("Zahnarzt", "Elternabend Kita", "Dentist", "Grandma visits"), in der Sprache des Satzes. Personen, Zeit und Ort gehören nicht in den Titel. sub ist ein optionaler Zusatz ("Kontrolle", "mit Ben").
 - who: J oder T, wenn der Satz einen der beiden Eltern nennt (Namen stehen unten), both für "wir", "beide", "zusammen", sonst null. Kinder sind keine Eltern.
-- place nur, wenn ein Ort genannt ist. repeat als kurzer deutscher Text ("Jeden Dienstag"), sonst null.
+- place nur, wenn ein Ort genannt ist. repeat als kurzer Text in der Sprache der App ("Jeden Dienstag", "Every Tuesday"), sonst null.
 - bring: Dinge, die mitgenommen werden sollen ("Impfpass mitnehmen" ergibt ["Impfpass"]).
-- steps: zwei bis vier sehr kurze deutsche Sätze, was du verstanden hast, für eine Liste unter dem Eingabefeld. Zum Beispiel "Zahnarzt am Freitag, 30. Oktober um 15 Uhr." und "Für Julian.". Keine Gedankenstriche.
-- Fehlt etwas Wichtiges (kein Datum), setze kind auf termin, date auf null und stelle in question eine kurze Rückfrage.
-- Ist der Satz eine Frage an den Kalender ("Was steht morgen an?"), setze kind auf frage und lasse die Felder leer.
+- steps: zwei bis vier sehr kurze Sätze in der Sprache der App (steht unten), was du verstanden hast, für eine Liste unter dem Eingabefeld. Zum Beispiel "Zahnarzt am Freitag, 30. Oktober um 15 Uhr." und "Für Julian.". Keine Gedankenstriche.
+- Fehlt etwas Wichtiges (kein Datum), setze kind auf termin, date auf null und stelle in question eine kurze Rückfrage in der Sprache der App.
+- Ist der Satz eine Frage an den Kalender ("Was steht morgen an?", "What's on tomorrow?"), setze kind auf frage und lasse die Felder leer.
 - Ist es weder Termin noch Frage, setze kind auf unklar.`;
 
 const cors = {
@@ -57,7 +57,7 @@ Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors });
   const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { ...cors, 'Content-Type': 'application/json' } });
 
-  let input: { text?: string; today?: string; now?: string; names?: { J?: string; T?: string } };
+  let input: { text?: string; today?: string; now?: string; names?: { J?: string; T?: string }; lang?: string };
   try { input = await req.json(); } catch { return json({ error: 'bad_json' }, 400); }
   const text = (input.text ?? '').trim().slice(0, 500);
   const today = /^\d{4}-\d{2}-\d{2}$/.test(input.today ?? '') ? input.today! : new Date().toISOString().slice(0, 10);
@@ -73,7 +73,7 @@ Deno.serve(async (req) => {
       system: SYSTEM,
       // Short answers matter more than depth here: the family waits with the orb spinning.
       output_config: { effort: 'low', format: zodOutputFormat(Termin) },
-      messages: [{ role: 'user', content: `Heute ist ${wd}, ${today}, ${input.now ?? ''} Uhr. Eltern: ${names}.\n\nSatz: ${text}` }],
+      messages: [{ role: 'user', content: `Heute ist ${wd}, ${today}, ${input.now ?? ''} Uhr. Eltern: ${names}. Sprache der App: ${input.lang === 'en' ? 'Englisch' : 'Deutsch'}.\n\nSatz: ${text}` }],
     });
     if (res.stop_reason === 'refusal' || !res.parsed_output) return json({ error: 'not_understood' }, 422);
     return json(res.parsed_output);

@@ -1,7 +1,7 @@
 /**
- * Schreibzeile (Canvas Zeile 7, Julian 26.10.). "Wann" is one line. Tapping
+ * Schreibzeile (Canvas Zeile 7, Julian 26.10.). tx('Wann', 'When') is one line. Tapping
  * it turns it into a text field, like a shopping line; underneath stands the
- * sentence it understood and a few chips. "Kalender" swaps the keyboard for a
+ * sentence it understood and a few chips. tx('Kalender', 'Calendar') swaps the keyboard for a
  * month grid, and the device remembers that choice for next time.
  * Rule 8 exception: only date fields show extras under the field.
  */
@@ -14,11 +14,12 @@ import PressScale from './ui/PressScale';
 import { Meta } from './ui/kit';
 import MonthGrid, { firstOf, shiftMonth } from './MonthGrid';
 import { tokens, fonts, persons, rise, swapIn } from '../theme';
-import { TODAY, addDays, WD_SHORT, weekday, dayNum, minutes, MONTHS_SHORT, monthIdx, long, dayMonth, year } from '../lib/dates';
+import { TODAY, addDays, WD_SHORT, WD_LONG, weekday, dayNum, minutes, MONTHS_SHORT, monthIdx, long, dayMonth, year } from '../lib/dates';
 import { parseWhen, whenLine, whenSentence, whenText, When } from '../lib/when';
 import { getPref, setPref } from '../lib/prefs';
 import { haptics } from '../lib/haptics';
 import { useStore } from '../state/store';
+import { tx, EN } from '../i18n/lang';
 
 type Mode = 'text' | 'cal';
 type Props = {
@@ -49,7 +50,7 @@ const plusMin = (t: string, m: number) => {
   return `${String(Math.floor(v / 60)).padStart(2, '0')}:${String(v % 60).padStart(2, '0')}`;
 };
 
-export default function WhenField({ value, onChange, kind = 'termin', past, icon = 'clock', label, placeholder = 'Wann? Zum Beispiel morgen 15 Uhr', right, extra, card, closeOnPick, onDone }: Props) {
+export default function WhenField({ value, onChange, kind = 'termin', past, icon = 'clock', label, placeholder = tx('Wann? Zum Beispiel morgen 15 Uhr', 'When? For example tomorrow 3pm'), right, extra, card, closeOnPick, onDone }: Props) {
   const [open, setOpen] = useState(false);
   const [mode, setMode] = useState<Mode>('text');
   const [text, setText] = useState('');
@@ -121,17 +122,17 @@ export default function WhenField({ value, onChange, kind = 'termin', past, icon
   const chips: { label: string; on?: boolean; run: () => void }[] = [];
   if (mode === 'text') {
     if (kind === 'termin' && shown) {
-      chips.push({ label: '+1 Tag', run: () => apply({ ...shown, date: addDays(shown.date, 1), endDate: shown.endDate && addDays(shown.endDate, 1) }) });
-      if (shown.start) chips.push({ label: '+1 Std', run: () => apply({ ...shown, start: plusMin(shown.start!, 60), end: shown.end && plusMin(shown.end, 60) }) });
-      if (!shown.repeat) chips.push({ label: 'Jede Woche', run: () => apply({ ...shown, repeat: `Jeden ${['Sonntag', 'Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag'][weekday(shown.date)]}` }) });
-      if (shown.start) chips.push({ label: 'Ganztägig', run: () => apply({ ...shown, start: undefined, end: undefined }) });
+      chips.push({ label: tx('+1 Tag', '+1 day'), run: () => apply({ ...shown, date: addDays(shown.date, 1), endDate: shown.endDate && addDays(shown.endDate, 1) }) });
+      if (shown.start) chips.push({ label: tx('+1 Std', '+1 hour'), run: () => apply({ ...shown, start: plusMin(shown.start!, 60), end: shown.end && plusMin(shown.end, 60) }) });
+      if (!shown.repeat) chips.push({ label: tx('Jede Woche', 'Every week'), run: () => apply({ ...shown, repeat: tx(`Jeden ${WD_LONG[weekday(shown.date)]}`, `Every ${WD_LONG[weekday(shown.date)]}`) }) });
+      if (shown.start) chips.push({ label: tx('Ganztägig', 'All day'), run: () => apply({ ...shown, start: undefined, end: undefined }) });
     } else if (kind === 'termin') {
-      chips.push({ label: `Heute · ${WD_SHORT[weekday(TODAY)]}`, run: () => apply({ date: TODAY }) });
-      chips.push({ label: `Morgen · ${WD_SHORT[weekday(addDays(TODAY, 1))]}`, run: () => apply({ date: addDays(TODAY, 1) }) });
-      for (let i = 2; i < 7; i++) { const d = addDays(TODAY, i); chips.push({ label: `${WD_SHORT[weekday(d)]} ${dayNum(d)}.`, run: () => apply({ date: d }) }); }
+      chips.push({ label: tx(`Heute · ${WD_SHORT[weekday(TODAY)]}`, `Today · ${WD_SHORT[weekday(TODAY)]}`), run: () => apply({ date: TODAY }) });
+      chips.push({ label: tx(`Morgen · ${WD_SHORT[weekday(addDays(TODAY, 1))]}`, `Tomorrow · ${WD_SHORT[weekday(addDays(TODAY, 1))]}`), run: () => apply({ date: addDays(TODAY, 1) }) });
+      for (let i = 2; i < 7; i++) { const d = addDays(TODAY, i); chips.push({ label: `${WD_SHORT[weekday(d)]} ${dayNum(d)}${EN ? '' : '.'}`, run: () => apply({ date: d }) }); }
     }
   } else if (kind === 'termin' && value?.start && !value.endDate) {
-    for (const [l, m] of [['30 Min', 30], ['45 Min', 45], ['1 Std', 60], ['1,5 Std', 90], ['2 Std', 120]] as const) {
+    for (const [l, m] of [[tx('30 Min', '30 min'), 30], [tx('45 Min', '45 min'), 45], [tx('1 Std', '1 h'), 60], [tx('1,5 Std', '1.5 h'), 90], [tx('2 Std', '2 h'), 120]] as const) {
       const on = !!value.end && minutes(value.end) - minutes(value.start) === m;
       chips.push({ label: l, on, run: () => onChange({ ...value, end: plusMin(value.start!, m) }) });
     }
@@ -143,10 +144,10 @@ export default function WhenField({ value, onChange, kind = 'termin', past, icon
   }
 
   const sentence = mode === 'text' && text.trim() && !parsed
-    ? 'Das verstehe ich noch nicht. Zum Beispiel: Do 15 Uhr, 12.11. 9:30-10:15 oder jeden Di 19-20:30.'
-    : tooLate ? 'Das liegt nach heute.'
+    ? tx('Das verstehe ich noch nicht. Zum Beispiel: Do 15 Uhr, 12.11. 9:30-10:15 oder jeden Di 19-20:30.', 'I don\'t get that yet. For example: Thu 3pm, Nov 12 9:30am to 10:15am or every Tue 7pm to 8:30pm.')
+    : tooLate ? tx('Das liegt nach heute.', 'That is after today.')
     : shown ? [kind === 'tag' ? `${long(shown.date)} ${year(shown.date)}.` : whenSentence(shown), extra?.(shown)].filter(Boolean).join(' ')
-    : kind === 'tag' ? 'Tag, Monat und Jahr, zum Beispiel 14.9.2026.' : 'Tag und Uhrzeit, gern auch jeden Dienstag.';
+    : kind === 'tag' ? tx('Tag, Monat und Jahr, zum Beispiel 14.9.2026.', 'Day, month and year, for example Sep 14 2026.') : tx('Tag und Uhrzeit, gern auch jeden Dienstag.', 'Day and time, or every Tuesday.');
 
   const valueText = value ? (kind === 'tag' ? `${dayMonth(value.date)} ${year(value.date)}` : whenLine(value)) : '';
   const head = (
@@ -160,7 +161,7 @@ export default function WhenField({ value, onChange, kind = 'termin', past, icon
             onChangeText={onText}
             autoFocus
             selectTextOnFocus
-            placeholder={kind === 'tag' ? 'Zum Beispiel 14.9.2026' : placeholder}
+            placeholder={kind === 'tag' ? tx('Zum Beispiel 14.9.2026', 'For example Sep 14 2026') : placeholder}
             placeholderTextColor={tokens.mute}
             selectionColor={tokens.ink}
             returnKeyType="done"
@@ -168,14 +169,14 @@ export default function WhenField({ value, onChange, kind = 'termin', past, icon
             style={[{ fontFamily: fonts[600], fontSize: label ? 18 : 16, color: tokens.ink, padding: 0 }, noOutline]}
           />
         ) : (
-          <PressScale scale={0.98} onPress={open ? close : begin} accessibilityLabel={label ?? 'Wann'}>
-            <Txt size={label ? 18 : 16} weight={600} color={value ? tokens.ink : tokens.mute} numberOfLines={1}>{value ? valueText : kind === 'tag' ? 'Datum wählen' : 'Wann?'}</Txt>
+          <PressScale scale={0.98} onPress={open ? close : begin} accessibilityLabel={label ?? tx('Wann', 'When')}>
+            <Txt size={label ? 18 : 16} weight={600} color={value ? tokens.ink : tokens.mute} numberOfLines={1}>{value ? valueText : kind === 'tag' ? tx('Datum wählen', 'Pick a date') : tx('Wann?', 'When?')}</Txt>
           </PressScale>
         )}
       </View>
       {open ? (
         <PressScale hitSlop={10} scale={0.92} onPress={() => { haptics.select(); close(); }}>
-          <Txt size={15} weight={600}>Fertig</Txt>
+          <Txt size={15} weight={600}>{tx('Fertig', 'Done')}</Txt>
         </PressScale>
       ) : right}
     </View>
@@ -191,7 +192,7 @@ export default function WhenField({ value, onChange, kind = 'termin', past, icon
         <Animated.View entering={rise()} style={{ gap: 10, paddingLeft: label || card ? 0 : 32 }}>
           <Meta color={tooLate || (mode === 'text' && text.trim() && !parsed) ? tokens.frist : tokens.sub}>{sentence}</Meta>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="handled" contentContainerStyle={{ gap: 6 }} style={{ marginRight: -16 }}>
-            <WChip icon={mode === 'text' ? 'cal' : 'papier'} label={mode === 'text' ? 'Kalender' : 'Tastatur'} onPress={() => switchTo(mode === 'text' ? 'cal' : 'text')} />
+            <WChip icon={mode === 'text' ? 'cal' : 'papier'} label={mode === 'text' ? tx('Kalender', 'Calendar') : tx('Tastatur', 'Keyboard')} onPress={() => switchTo(mode === 'text' ? 'cal' : 'text')} />
             {chips.map((c) => <WChip key={c.label} label={c.label} on={c.on} onPress={() => { haptics.select(); c.run(); }} />)}
           </ScrollView>
           {mode === 'cal' ? (

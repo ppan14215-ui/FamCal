@@ -1,7 +1,7 @@
 /**
  * Swipe left to delete (Julian 26.10.: nur nach links wischen löscht, danach
  * Rückgängig; nach rechts wischen gibt es nicht). A short swipe parks the row
- * on the red "Löschen" button; a long or fast swipe deletes right away.
+ * on the red tx('Löschen', 'Delete') button; a long or fast swipe deletes right away.
  * Rightward drags meet rubber-band resistance and spring back.
  */
 import React, { useCallback } from 'react';
@@ -13,6 +13,7 @@ import Txt from './ui/Txt';
 import LineIcon from './ui/LineIcon';
 import { tokens, springs, motion } from '../theme';
 import { haptics } from '../lib/haptics';
+import { tx } from '../i18n/lang';
 
 const OPEN = 96;
 
@@ -60,12 +61,12 @@ export default function SwipeRow({ children, onDelete, bg = tokens.row }: { chil
     <View onLayout={onLayout} style={{ overflow: 'hidden', backgroundColor: bg }}>
       <Animated.View style={[{ position: 'absolute', right: 0, top: 0, bottom: 0, backgroundColor: tokens.danger }, action]}>
         <Pressable
-          accessibilityLabel="Löschen"
+          accessibilityLabel={tx('Löschen', 'Delete')}
           onPress={() => { x.value = withTiming(-w.value, { duration: motion.micro }, (d) => { if (d) scheduleOnRN(fire); }); }}
           style={{ flex: 1, alignItems: 'center', justifyContent: 'center', gap: 2 }}
         >
           <LineIcon name="x" size={18} color="#FFFFFF" stroke={2.2} />
-          <Txt size={13} weight={600} color="#FFFFFF">Löschen</Txt>
+          <Txt size={13} weight={600} color="#FFFFFF">{tx('Löschen', 'Delete')}</Txt>
         </Pressable>
       </Animated.View>
       {/* pan-y keeps vertical scrolling alive on mobile web */}

@@ -1,7 +1,7 @@
 /**
  * "Wer kümmert sich?" card stack. Left = Julia, right = Tom, the clay stage
  * tints in that person's colour while dragging, release past the threshold
- * assigns. "Später" sends the card to the back. The app never suggests who
+ * assigns. tx('Später', 'Later') sends the card to the back. The app never suggests who
  * takes something (HANDOFF): the stack is neutral until a parent decides.
  */
 import React, { useEffect, useState, useCallback } from 'react';
@@ -21,6 +21,7 @@ import type { PersonId } from '../theme';
 import { Platform } from 'react-native';
 import PressScale from './ui/PressScale';
 import SourceLink from './SourceLink';
+import { tx } from '../i18n/lang';
 
 type Dir = 'J' | 'T' | 'later';
 type Fling = { dir: Dir; id: string; n: number };
@@ -89,7 +90,7 @@ export default function SwipeDeck({ cards, onDecide, height = 430 }: Props) {
       </View>
       <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 30 }}>
         <RoundAction label={persons.J.name} onPress={() => press('J')}><Avatar p="J" size={34} /></RoundAction>
-        <RoundAction label="Später" onPress={() => press('later')}><LineIcon name="clock" size={24} /></RoundAction>
+        <RoundAction label={tx('Später', 'Later')} onPress={() => press('later')}><LineIcon name="clock" size={24} /></RoundAction>
         <RoundAction label={persons.T.name} onPress={() => press('T')}><Avatar p="T" size={34} /></RoundAction>
       </View>
     </View>
@@ -140,7 +141,7 @@ function TopCard({ card, live, fling, onRelease, onGone }: {
   const flyTo = (d: Dir, v = 0) => {
     'worklet';
     if (d === 'later') {
-      // "Später" moves the card to the back; it may come straight back as the
+      // tx('Später', 'Later') moves the card to the back; it may come straight back as the
       // top card, so it springs home once the store has reordered.
       y.value = withTiming(60, { duration: 200 });
       x.value = withTiming(0, { duration: 200 }, () => {
@@ -232,7 +233,7 @@ function TopCard({ card, live, fling, onRelease, onGone }: {
           {card.dueLabel ? <Meta color={card.frist ? tokens.frist : tokens.sub}>{card.dueLabel}</Meta> : null}
           <Txt size={24} line={30} weight={700} tracking={-0.5}>{card.title}</Txt>
           {card.text ? <Txt size={15} line={22} color={tokens.sub}>{card.text}</Txt> : null}
-          {card.url ? <SourceLink prefix="Direkt hin" s={{ label: card.url.replace(/^https:\/\//, '').split('/')[0], url: card.url }} /> : null}
+          {card.url ? <SourceLink prefix={tx('Direkt hin', 'Go now')} s={{ label: card.url.replace(/^https:\/\//, '').split('/')[0], url: card.url }} /> : null}
         </View>
       </Animated.View>
     </GestureDetector>

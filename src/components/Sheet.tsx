@@ -13,6 +13,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { SheetHandle } from './ui/kit';
 import { tokens, easing, motion, springs } from '../theme';
+import { tx } from '../i18n/lang';
 
 type Props = {
   children: React.ReactNode;
@@ -63,7 +64,7 @@ export default function Sheet({ children, bg = tokens.bg, top, style, onClose, s
   return (
     <View style={{ flex: 1 }}>
       <Animated.View style={[{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: tokens.scrim }, scrimStyle]}>
-        <Pressable accessibilityLabel="Schließen" style={{ flex: 1 }} onPress={dismiss} />
+        <Pressable accessibilityLabel={tx('Schließen', 'Close')} style={{ flex: 1 }} onPress={dismiss} />
       </Animated.View>
       {scrollable ? (
         <Animated.View style={[sheetBase(bg, top, insets.bottom), style, sheetStyle]}>

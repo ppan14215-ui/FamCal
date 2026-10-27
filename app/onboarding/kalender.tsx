@@ -21,6 +21,7 @@ import { hasDeviceCalendars, askAccess, listCalendars, importDeviceEvents, moveI
 import { LIVE } from '../../src/lib/live';
 import { haptics } from '../../src/lib/haptics';
 import type { PersonId } from '../../src/theme';
+import { tx } from '../../src/i18n/lang';
 
 type Step = 'login' | 'pick';
 
@@ -30,16 +31,16 @@ export default function Kalender() {
   const { zurueck } = useLocalSearchParams<{ zurueck?: string }>();
   const next = () => (zurueck ? goBack() : router.push('/onboarding/partner'));
   return (
-    <Screen footer={<><Btn label="Weiter" onPress={next} />{zurueck ? null : <TextLink label="Später" weight={400} onPress={next} />}</>}>
+    <Screen footer={<><Btn label={tx('Weiter', 'Next')} onPress={next} />{zurueck ? null : <TextLink label={tx('Später', 'Later')} weight={400} onPress={next} />}</>}>
       <BackBar center={zurueck ? undefined : <StepDots i={4} />} />
-      <H1>Eure Kalender</H1>
-      <Lead>Damit nichts doppelt ist. Ihr wählt, welche Kalender hier erscheinen, der Rest bleibt privat.</Lead>
+      <H1>{tx('Eure Kalender', 'Your calendars')}</H1>
+      <Lead>{tx('Damit nichts doppelt ist. Ihr wählt, welche Kalender hier erscheinen, der Rest bleibt privat.', 'So nothing is double booked. You choose which calendars show up here, the rest stays private.')}</Lead>
       <View style={{ gap: 8 }}>
         {hasDeviceCalendars
           ? <DeviceCard conn={connected.find((c) => c.provider === 'device')} />
           : PROVIDERS.map((p) => <ProviderCard key={p.key} p={p} conn={connected.find((c) => c.provider === p.key)} />)}
       </View>
-      <Hint icon="lock">Arbeitstermine erscheinen nur als gestreifter Block „Arbeit“.</Hint>
+      <Hint icon="lock">{tx('Arbeitstermine erscheinen nur als gestreifter Block „Arbeit“.', 'Work events only show as a striped “Work” block.')}</Hint>
     </Screen>
   );
 }
@@ -53,7 +54,7 @@ function ProviderCard({ p, conn }: { p: (typeof PROVIDERS)[number]; conn?: { acc
 
   const start = () => { haptics.select(); setStep(conn ? 'pick' : 'login'); if (conn) { setMail(conn.account); setCals(found(p.key).map((c) => ({ ...c, on: conn.ids.includes(c.id) }))); } };
   const login = () => {
-    if (!/.+@.+\..+/.test(mail.trim())) { haptics.warning(); toast('Bitte eine E-Mail-Adresse eingeben'); return; }
+    if (!/.+@.+\..+/.test(mail.trim())) { haptics.warning(); toast(tx('Bitte eine E-Mail-Adresse eingeben', 'Please enter an email address')); return; }
     haptics.select();
     setCals(found(p.key));
     setStep('pick');
@@ -62,11 +63,11 @@ function ProviderCard({ p, conn }: { p: (typeof PROVIDERS)[number]; conn?: { acc
     const ids = cals.filter((c) => c.on).map((c) => c.id);
     actions.connectCalendar(p.key, mail.trim(), ids, importEvents(p.key as Provider, ids, owner, kid?.land));
     haptics.success();
-    toast(ids.length ? `${ids.length} ${ids.length === 1 ? 'Kalender' : 'Kalender'} verbunden` : `${p.title} getrennt`);
+    toast(ids.length ? tx(`${ids.length} Kalender verbunden`, `${ids.length} ${ids.length === 1 ? 'calendar' : 'calendars'} connected`) : tx(`${p.title} getrennt`, `${p.title} disconnected`));
     setStep(null);
   };
 
-  const sub = conn ? `${conn.ids.length} Kalender · ${conn.account}` : 'nicht verbunden';
+  const sub = conn ? tx(`${conn.ids.length} Kalender · ${conn.account}`, `${conn.ids.length} calendars · ${conn.account}`) : 'nicht verbunden';
   return (
     <View style={{ borderRadius: 20, backgroundColor: tokens.row, overflow: 'hidden' }}>
       <PressScale scale={0.985} onPress={step ? () => setStep(null) : start} style={{ flexDirection: 'row', alignItems: 'center', gap: 12, padding: 10, paddingRight: 14 }}>
@@ -75,13 +76,13 @@ function ProviderCard({ p, conn }: { p: (typeof PROVIDERS)[number]; conn?: { acc
           <Txt size={16} line={21} weight={600}>{p.title}</Txt>
           <Meta color={conn ? tokens.done : tokens.sub}>{sub}</Meta>
         </View>
-        {step ? <Txt size={15} color={tokens.sub}>Schließen</Txt> : <View style={{ paddingHorizontal: 12, height: 32, borderRadius: 999, backgroundColor: conn ? tokens.chipBg : tokens.ink, alignItems: 'center', justifyContent: 'center' }}><Txt size={13.5} weight={600} color={conn ? tokens.ink : '#FFFFFF'}>{conn ? 'Ändern' : 'Verbinden'}</Txt></View>}
+        {step ? <Txt size={15} color={tokens.sub}>{tx('Schließen', 'Close')}</Txt> : <View style={{ paddingHorizontal: 12, height: 32, borderRadius: 999, backgroundColor: conn ? tokens.chipBg : tokens.ink, alignItems: 'center', justifyContent: 'center' }}><Txt size={13.5} weight={600} color={conn ? tokens.ink : '#FFFFFF'}>{conn ? tx('Ändern', 'Change') : 'Verbinden'}</Txt></View>}
       </PressScale>
 
       {step === 'login' ? (
         <Animated.View key="login" entering={rowIn} exiting={rowOut} style={{ gap: 10, paddingHorizontal: 14, paddingBottom: 14 }}>
           <View style={{ gap: 2, paddingVertical: 10, paddingHorizontal: 14, borderRadius: 14, backgroundColor: tokens.bg }}>
-            <Txt size={13} color={tokens.sub}>{`Bei ${p.title.replace('-Kalender', '').replace(' Kalender', '')} anmelden`}</Txt>
+            <Txt size={13} color={tokens.sub}>{tx(`Bei ${p.title.replace('-Kalender', '').replace(' Kalender', '')} anmelden`, `Sign in to ${p.title.replace('-Kalender', '').replace(' Kalender', '')}`)}</Txt>
             <TextInput
               value={mail}
               onChangeText={setMail}
@@ -95,14 +96,14 @@ function ProviderCard({ p, conn }: { p: (typeof PROVIDERS)[number]; conn?: { acc
               style={[{ fontFamily: fonts[600], fontSize: 17, color: tokens.ink, padding: 0 }, Platform.OS === 'web' ? ({ outlineStyle: 'none' } as any) : null]}
             />
           </View>
-          <Btn label="Weiter" height={46} onPress={login} />
-          <Txt size={12.5} color={tokens.mute} center>Im Prototyp ohne echte Anmeldung.</Txt>
+          <Btn label={tx('Weiter', 'Next')} height={46} onPress={login} />
+          <Txt size={12.5} color={tokens.mute} center>{tx('Im Prototyp ohne echte Anmeldung.', 'No real sign-in in the prototype.')}</Txt>
         </Animated.View>
       ) : null}
 
       {step === 'pick' ? (
         <Animated.View key="pick" entering={rowIn} exiting={rowOut} style={{ gap: 4, paddingHorizontal: 14, paddingBottom: 14 }}>
-          <Txt size={13} color={tokens.sub} style={{ paddingVertical: 4 }}>{`Gefunden in ${mail.trim()}`}</Txt>
+          <Txt size={13} color={tokens.sub} style={{ paddingVertical: 4 }}>{tx(`Gefunden in ${mail.trim()}`, `Found in ${mail.trim()}`)}</Txt>
           {cals.map((c, i) => (
             <Animated.View key={c.id} entering={rise(i)} style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 8 }}>
               <View style={{ flex: 1, gap: 1 }}>
@@ -113,7 +114,7 @@ function ProviderCard({ p, conn }: { p: (typeof PROVIDERS)[number]; conn?: { acc
             </Animated.View>
           ))}
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 8 }}>
-            <Txt size={14} color={tokens.sub} style={{ flex: 1 }}>Wem gehört der Kalender?</Txt>
+            <Txt size={14} color={tokens.sub} style={{ flex: 1 }}>{tx('Wem gehört der Kalender?', 'Whose calendar is it?')}</Txt>
             {(['J', 'T'] as PersonId[]).map((w) => (
               <PressScale key={w} scale={0.92} onPress={() => { haptics.select(); setOwner(w); }} style={{ flexDirection: 'row', alignItems: 'center', gap: 6, height: 34, paddingLeft: 4, paddingRight: 12, borderRadius: 999, backgroundColor: owner === w ? persons[w].tint : tokens.chipBg }}>
                 <Avatar p={w} size={26} ring={owner === w ? '#FFFFFF' : undefined} />
@@ -121,7 +122,7 @@ function ProviderCard({ p, conn }: { p: (typeof PROVIDERS)[number]; conn?: { acc
               </PressScale>
             ))}
           </View>
-          <Btn label="Übernehmen" height={46} onPress={save} />
+          <Btn label={tx('Übernehmen', 'Add')} height={46} onPress={save} />
         </Animated.View>
       ) : null}
     </View>
@@ -153,44 +154,44 @@ function DeviceCard({ conn }: { conn?: { account: string; ids: string[] } }) {
       if (LIVE) {
         // Real app: the family's Termine move into the shared calendar, work stays a private block here.
         const { copy, keep } = moveIn(events);
-        actions.connectCalendar('device', 'Dieses Handy', ids, [...keep, ...holidays]);
+        actions.connectCalendar('device', tx('Dieses Handy', 'This phone'), ids, [...keep, ...holidays]);
         actions.addEvents(copy);
         haptics.success();
-        toast(ids.length ? `${copy.length} Termine übernommen, für euch beide sichtbar` : 'Kalender getrennt');
+        toast(ids.length ? tx(`${copy.length} Termine übernommen, für euch beide sichtbar`, `${copy.length} events moved in, visible to both of you`) : tx('Kalender getrennt', 'Calendars disconnected'));
       } else {
-        actions.connectCalendar('device', 'Dieses Handy', ids, [...events, ...holidays]);
+        actions.connectCalendar('device', tx('Dieses Handy', 'This phone'), ids, [...events, ...holidays]);
         haptics.success();
-        toast(ids.length ? `${ids.length} Kalender verbunden, ${events.length} Termine` : 'Kalender getrennt');
+        toast(ids.length ? tx(`${ids.length} Kalender verbunden, ${events.length} Termine`, `${ids.length} calendars connected, ${events.length} events`) : tx('Kalender getrennt', 'Calendars disconnected'));
       }
       setState('idle');
     } catch {
       haptics.warning();
-      toast('Kalender konnten nicht gelesen werden');
+      toast(tx('Kalender konnten nicht gelesen werden', 'Could not read the calendars'));
     } finally { setBusy(false); }
   };
 
   const accounts = cals.map((c) => c.account).filter((a, i, l) => l.indexOf(a) === i);
-  const sub = conn ? `${conn.ids.length} Kalender verbunden` : 'iCloud, Google und Outlook vom Handy';
+  const sub = conn ? tx(`${conn.ids.length} Kalender verbunden`, `${conn.ids.length} calendars connected`) : tx('iCloud, Google und Outlook vom Handy', 'iCloud, Google and Outlook from your phone');
   return (
     <View style={{ borderRadius: 20, backgroundColor: tokens.row, overflow: 'hidden' }}>
       <PressScale scale={0.985} onPress={start} style={{ flexDirection: 'row', alignItems: 'center', gap: 12, padding: 10, paddingRight: 14 }}>
         <Tile name="kalender" size={48} radius={14} />
         <View style={{ flex: 1, gap: 1 }}>
-          <Txt size={16} line={21} weight={600}>Kalender auf diesem Handy</Txt>
+          <Txt size={16} line={21} weight={600}>{tx('Kalender auf diesem Handy', 'Calendars on this phone')}</Txt>
           <Meta color={conn ? tokens.done : tokens.sub}>{sub}</Meta>
         </View>
-        {state !== 'idle' ? <Txt size={15} color={tokens.sub}>Schließen</Txt> : <View style={{ paddingHorizontal: 12, height: 32, borderRadius: 999, backgroundColor: conn ? tokens.chipBg : tokens.ink, alignItems: 'center', justifyContent: 'center' }}><Txt size={13.5} weight={600} color={conn ? tokens.ink : '#FFFFFF'}>{conn ? 'Ändern' : 'Verbinden'}</Txt></View>}
+        {state !== 'idle' ? <Txt size={15} color={tokens.sub}>{tx('Schließen', 'Close')}</Txt> : <View style={{ paddingHorizontal: 12, height: 32, borderRadius: 999, backgroundColor: conn ? tokens.chipBg : tokens.ink, alignItems: 'center', justifyContent: 'center' }}><Txt size={13.5} weight={600} color={conn ? tokens.ink : '#FFFFFF'}>{conn ? tx('Ändern', 'Change') : 'Verbinden'}</Txt></View>}
       </PressScale>
 
       {state === 'denied' ? (
         <Animated.View entering={rowIn} exiting={rowOut} style={{ paddingHorizontal: 14, paddingBottom: 14 }}>
-          <Txt size={14} line={20} color={tokens.sub}>Ohne Zugriff bleibt euer Kalender hier leer. Ihr könnt ihn jederzeit in den Einstellungen des Handys unter FamCal freigeben.</Txt>
+          <Txt size={14} line={20} color={tokens.sub}>{tx('Ohne Zugriff bleibt euer Kalender hier leer. Ihr könnt ihn jederzeit in den Einstellungen des Handys unter FamCal freigeben.', 'Without access your calendar stays empty here. You can allow it any time in your phone’s settings under FamCal.')}</Txt>
         </Animated.View>
       ) : null}
 
       {state === 'pick' ? (
         <Animated.View entering={rowIn} exiting={rowOut} style={{ gap: 4, paddingHorizontal: 14, paddingBottom: 14 }}>
-          {!cals.length ? <Txt size={14} color={tokens.sub}>Auf diesem Handy ist noch kein Kalender eingerichtet.</Txt> : null}
+          {!cals.length ? <Txt size={14} color={tokens.sub}>{tx('Auf diesem Handy ist noch kein Kalender eingerichtet.', 'There is no calendar set up on this phone yet.')}</Txt> : null}
           {accounts.map((a) => (
             <View key={a} style={{ gap: 2 }}>
               <Txt size={13} color={tokens.sub} style={{ paddingTop: 6 }}>{a}</Txt>
@@ -199,7 +200,7 @@ function DeviceCard({ conn }: { conn?: { account: string; ids: string[] } }) {
                   <View style={{ width: 10, height: 10, borderRadius: 999, backgroundColor: c.color }} />
                   <View style={{ flex: 1, gap: 1 }}>
                     <Txt size={15.5} weight={600}>{c.title}</Txt>
-                    {c.work ? <Meta>nur als gestreifter Block</Meta> : null}
+                    {c.work ? <Meta>{tx('nur als gestreifter Block', 'only as a striped block')}</Meta> : null}
                   </View>
                   <Toggle value={c.on} onChange={(v) => setCals(cals.map((x) => (x.id === c.id ? { ...x, on: v } : x)))} />
                 </Animated.View>
@@ -207,7 +208,7 @@ function DeviceCard({ conn }: { conn?: { account: string; ids: string[] } }) {
             </View>
           ))}
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 8 }}>
-            <Txt size={14} color={tokens.sub} style={{ flex: 1 }}>Wem gehören die Kalender?</Txt>
+            <Txt size={14} color={tokens.sub} style={{ flex: 1 }}>{tx('Wem gehören die Kalender?', 'Whose calendars are these?')}</Txt>
             {(['J', 'T'] as PersonId[]).map((w) => (
               <PressScale key={w} scale={0.92} onPress={() => { haptics.select(); setOwner(w); }} style={{ flexDirection: 'row', alignItems: 'center', gap: 6, height: 34, paddingLeft: 4, paddingRight: 12, borderRadius: 999, backgroundColor: owner === w ? persons[w].tint : tokens.chipBg }}>
                 <Avatar p={w} size={26} ring={owner === w ? '#FFFFFF' : undefined} />
@@ -215,8 +216,8 @@ function DeviceCard({ conn }: { conn?: { account: string; ids: string[] } }) {
               </PressScale>
             ))}
           </View>
-          <Btn label={busy ? 'Liest Termine …' : 'Übernehmen'} height={46} disabled={busy} onPress={save} />
-          <Txt size={12.5} color={tokens.mute} center>Bleibt auf dem Handy. FamCal liest nur, schreibt nichts zurück.</Txt>
+          <Btn label={busy ? tx('Liest Termine …', 'Reading events …') : tx('Übernehmen', 'Add')} height={46} disabled={busy} onPress={save} />
+          <Txt size={12.5} color={tokens.mute} center>{tx('Bleibt auf dem Handy. FamCal liest nur, schreibt nichts zurück.', 'Stays on the phone. FamCal only reads, it never writes back.')}</Txt>
         </Animated.View>
       ) : null}
     </View>

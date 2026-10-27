@@ -11,6 +11,11 @@ Alle sichtbaren Änderungen an FamCal. Neueste oben. Agenten und Menschen: Ände
 - Das Mikro hört in der App direkt auf dem Handy zu, der Ton verlässt das Gerät nicht. Den Satz liest Claude und macht daraus den Termin mit Datum, Uhrzeit, wer und wo. Ohne Netz übernehmen die bisherigen Regeln.
 - Umzug von bestehenden Kalendern: in der echten App übernimmt „Kalender auf diesem Handy“ eure Termine der nächsten zwölf Monate aus iCloud, Google oder Outlook in FamCal, für beide sichtbar. Arbeit bleibt ein privater Block auf deinem Handy. Zweimal übernehmen legt nichts doppelt an.
 - In der echten App gilt das echte Datum. Der Testlink bleibt beim Beispieltag 29. Oktober und braucht kein Konto.
+- Deutsch und Englisch von Anfang an: die App folgt der Sprache des Handys. Kalender, Listen, Sprechleiste, Anmelden, Onboarding, Einstellungen und Plus gibt es in beiden Sprachen. Englische Sätze wie „Julia has the dentist Friday at 3pm“ oder „every Tuesday 7pm“ werden verstanden, auch ohne Claude. Uhrzeiten stehen auf Englisch als 3pm. Im Testlink zeigt „#en“ am Ende des Links die englische Fassung.
+- Plus kostet 79 € im Jahr oder 8,99 € im Monat, die ersten 1.000 Familien zahlen im ersten Jahr 49 €. Eingeladene Familienmitglieder sind immer gratis.
+- Einstellungen in der echten App: Familiencode zum Kopieren und Abmelden. Der Bereich Prototyp bleibt nur im Testlink.
+- Neuer Termin startet in der echten App leer auf heute statt mit dem Beispiel U5.
+- Noch auf Deutsch: Chat, Wissen, Entwurf, Foto, Infozettel, Meilensteine und die Vorlagen der Packlisten. Die kommen mit dem neuen Zielbild.
 
 ### Kalender scrollt endlos, Tabs weichen der Tastatur (27.10.)
 

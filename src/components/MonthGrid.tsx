@@ -12,8 +12,9 @@ import PressScale from './ui/PressScale';
 import { tokens, swapIn } from '../theme';
 import { TODAY, MONTHS, addDays, weekday, dayNum, monthIdx, year } from '../lib/dates';
 import { haptics } from '../lib/haptics';
+import { tx, EN } from '../i18n/lang';
 
-const WD = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'];
+const WD = tx('Mo Di Mi Do Fr Sa So', 'Mo Tu We Th Fr Sa Su').split(' ');
 const BAND = '#EFEFEC';
 
 /** First day of the month containing the date. */
@@ -48,8 +49,8 @@ export default function MonthGrid({ month, onMonth, date, endDate, dots = {}, ma
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 4 }}>
         <Txt size={15} weight={600}>{`${MONTHS[monthIdx(month)]} ${year(month)}`}</Txt>
         <View style={{ flexDirection: 'row', gap: 6 }}>
-          <Arrow icon="back" label="Monat zurück" onPress={() => onMonth(shiftMonth(month, -1))} />
-          <Arrow icon="chev" label="Monat vor" disabled={!canNext} onPress={() => onMonth(shiftMonth(month, 1))} />
+          <Arrow icon="back" label={tx('Monat zurück', 'Previous month')} onPress={() => onMonth(shiftMonth(month, -1))} />
+          <Arrow icon="chev" label={tx('Monat vor', 'Next month')} disabled={!canNext} onPress={() => onMonth(shiftMonth(month, 1))} />
         </View>
       </View>
       <View style={{ flexDirection: 'row' }}>
@@ -70,7 +71,7 @@ export default function MonthGrid({ month, onMonth, date, endDate, dots = {}, ma
                     <View style={{ position: 'absolute', top: 2, bottom: 2, left: d === date && c !== 0 ? '50%' : 0, right: d === endDate && c !== 6 ? '50%' : 0, backgroundColor: BAND }} />
                   ) : null}
                   <PressScale
-                    accessibilityLabel={`${dayNum(d)}. ${MONTHS[monthIdx(d)]}`}
+                    accessibilityLabel={(EN ? `${MONTHS[monthIdx(d)]} ${dayNum(d)}` : `${dayNum(d)}. ${MONTHS[monthIdx(d)]}`)}
                     accessibilityState={{ selected: ring, disabled: off }}
                     disabled={!!max && d > max}
                     scale={0.88}

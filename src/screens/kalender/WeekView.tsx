@@ -17,8 +17,9 @@ import Txt from '../../components/ui/Txt';
 import Stripes from '../../components/Stripes';
 import { tokens, tint, PersonId, persons } from '../../theme';
 import { useStore, actions } from '../../state/store';
-import { addDays, monday, dayNum, WD_SHORT, weekday, minutes, TODAY, MONTHS_SHORT, monthIdx, hm } from '../../lib/dates';
+import { addDays, monday, dayNum, WD_SHORT, weekday, minutes, TODAY, MONTHS_SHORT, monthIdx, hm, dmShort } from '../../lib/dates';
 import PressScale from '../../components/ui/PressScale';
+import { tx } from '../../i18n/lang';
 
 const FROM = 8;
 const TO = 19;
@@ -91,7 +92,7 @@ export default function WeekView() {
   const gestures = Gesture.Simultaneous(pan, pinch);
   const slide = useAnimatedStyle(() => ({ opacity: op.value, transform: [{ translateX: x.value }] }));
   const end = addDays(start, n - 1);
-  const label = `${dayNum(start)}. ${MONTHS_SHORT[monthIdx(start)]} bis ${dayNum(end)}. ${MONTHS_SHORT[monthIdx(end)]}`;
+  const label = `${dmShort(start)} ${tx('bis', 'to')} ${dmShort(end)}`;
   // Times outside the grid sit at its edge instead of disappearing.
   const top = (t: string) => ((Math.max(FROM * 60, Math.min(TO * 60 - 30, minutes(t))) - FROM * 60) / 60) * HP;
 
@@ -99,11 +100,11 @@ export default function WeekView() {
   return (
     <>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-        <PressScale accessibilityLabel="Vorige Woche" onPress={() => slideTo(-1, 160)} style={round}>
+        <PressScale accessibilityLabel={tx('Vorige Woche', 'Previous week')} onPress={() => slideTo(-1, 160)} style={round}>
           <View style={{ transform: [{ rotate: '180deg' }] }}><LineIcon name="chev" size={16} color={tokens.ink} /></View>
         </PressScale>
         <Txt size={15} weight={600} style={{ flex: 1, textAlign: 'center' }}>{label}</Txt>
-        <PressScale accessibilityLabel="Nächste Woche" onPress={() => slideTo(1, 160)} style={round}>
+        <PressScale accessibilityLabel={tx('Nächste Woche', 'Next week')} onPress={() => slideTo(1, 160)} style={round}>
           <LineIcon name="chev" size={16} color={tokens.ink} />
         </PressScale>
       </View>
@@ -147,7 +148,7 @@ export default function WeekView() {
                         style={{ position: 'absolute', left: 3, right: 3, top: top(e.start) + 2, height: h, borderRadius: 8, backgroundColor: tint(e.icon), borderWidth: 1.5, borderColor: '#FFFFFF', paddingVertical: 3, paddingHorizontal: 4, overflow: 'hidden' }}
                       >
                         <Txt size={wide ? 12.5 : 10.5} line={wide ? 16 : 13} weight={700} numberOfLines={wide ? Math.max(1, Math.floor(h / 17) - 1) : 2}>{wide ? e.title : SHORT[e.title] ?? e.title.split(' ')[0]}</Txt>
-                        {big && h >= 44 && !e.allDay ? <Txt size={wide ? 12 : 10} line={wide ? 15 : 12} color={tokens.sub} numberOfLines={1}>{wide && e.end ? `${hm(e.start)} bis ${hm(e.end)}` : hm(e.start)}</Txt> : null}
+                        {big && h >= 44 && !e.allDay ? <Txt size={wide ? 12 : 10} line={wide ? 15 : 12} color={tokens.sub} numberOfLines={1}>{wide && e.end ? `${hm(e.start)} ${tx('bis', 'to')} ${hm(e.end)}` : hm(e.start)}</Txt> : null}
                       </PressScale>
                     );
                   })}
@@ -164,14 +165,14 @@ export default function WeekView() {
         {(['T', 'J'] as PersonId[]).map((p) => (
           <View key={p} style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
             <Stripes p={p} radius={4} style={{ width: 18, height: 12 }} />
-            <Txt size={13} color={tokens.sub}>{`${persons[p].name} arbeitet`}</Txt>
+            <Txt size={13} color={tokens.sub}>{tx(`${persons[p].name} arbeitet`, `${persons[p].name} at work`)}</Txt>
           </View>
         ))}
         <View style={{ flex: 1 }} />
-        <PressScale accessibilityLabel="Kleiner" onPress={() => step(-1)} style={[round, { opacity: HP <= HP_MIN ? 0.4 : 1 }]}>
+        <PressScale accessibilityLabel={tx('Kleiner', 'Smaller')} onPress={() => step(-1)} style={[round, { opacity: HP <= HP_MIN ? 0.4 : 1 }]}>
           <View style={{ width: 12, height: 2, borderRadius: 2, backgroundColor: tokens.ink }} />
         </PressScale>
-        <PressScale accessibilityLabel="Größer" onPress={() => step(1)} style={[round, { opacity: HP >= HP_MAX ? 0.4 : 1 }]}>
+        <PressScale accessibilityLabel={tx('Größer', 'Larger')} onPress={() => step(1)} style={[round, { opacity: HP >= HP_MAX ? 0.4 : 1 }]}>
           <LineIcon name="plus" size={16} color={tokens.ink} stroke={2} />
         </PressScale>
       </View>

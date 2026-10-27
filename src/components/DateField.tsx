@@ -1,7 +1,7 @@
 /**
  * An exact day: birth date or due date (Julian 26.10.: "beim Geburtsdatum
  * geht es immer um ein genaues Datum", years back must be one tap away).
- * Typing "14.9.2022" is the fast way. "Kalender" shows year, month and day at
+ * Typing "14.9.2022" is the fast way. tx('Kalender', 'Calendar') shows year, month and day at
  * once, so four years back is three taps, never 48 arrow presses. The device
  * remembers which of the two was used last, like the Wann line.
  */
@@ -18,6 +18,7 @@ import { TODAY, MONTHS, MONTHS_SHORT, monthIdx, year, dayNum, dayMonth, long } f
 import { parseDay } from '../lib/day';
 import { getPref, setPref } from '../lib/prefs';
 import { haptics } from '../lib/haptics';
+import { tx } from '../i18n/lang';
 
 type Props = {
   label: string;
@@ -84,10 +85,10 @@ export default function DateField({ label, value, onChange, past, right, extra }
   };
 
   const sentence = mode === 'text' && text.trim() && !parsed
-    ? 'Bitte als Tag, Monat und Jahr, zum Beispiel 14.9.2022 oder 14. September 2022.'
-    : wrongSide ? (past ? 'Das liegt nach heute.' : 'Das liegt vor heute.')
+    ? tx('Bitte als Tag, Monat und Jahr, zum Beispiel 14.9.2022 oder 14. September 2022.', 'Please as day, month and year, for example 14.9.2022 or 14 September 2022.')
+    : wrongSide ? (past ? tx('Das liegt nach heute.', 'That is after today.') : tx('Das liegt vor heute.', 'That is before today.'))
     : shown ? [`${long(shown)} ${year(shown)}.`, extra?.(shown)].filter(Boolean).join(' ')
-    : past ? 'Tag, Monat und Jahr, zum Beispiel 14.9.2022.' : 'Den Tag aus dem Mutterpass, zum Beispiel 12.3.2027.';
+    : past ? tx('Tag, Monat und Jahr, zum Beispiel 14.9.2022.', 'Day, month and year, for example 14.9.2022.') : tx('Den Tag aus dem Mutterpass, zum Beispiel 12.3.2027.', 'The due date from your scan, for example 12.3.2027.');
 
   return (
     <View style={{ gap: 10, paddingVertical: 12, paddingHorizontal: 16, borderRadius: 18, backgroundColor: tokens.row }}>
@@ -101,7 +102,7 @@ export default function DateField({ label, value, onChange, past, right, extra }
               autoFocus
               selectTextOnFocus
               keyboardType={Platform.OS === 'ios' ? 'numbers-and-punctuation' : 'default'}
-              placeholder="TT.MM.JJJJ"
+              placeholder={tx('TT.MM.JJJJ', 'DD.MM.YYYY')}
               placeholderTextColor={tokens.mute}
               selectionColor={tokens.ink}
               returnKeyType="done"
@@ -110,13 +111,13 @@ export default function DateField({ label, value, onChange, past, right, extra }
             />
           ) : (
             <PressScale scale={0.98} onPress={open ? close : begin} accessibilityLabel={label}>
-              <Txt size={18} weight={600} color={value ? tokens.ink : tokens.mute} numberOfLines={1}>{value ? `${dayMonth(value)} ${year(value)}` : 'Datum wählen'}</Txt>
+              <Txt size={18} weight={600} color={value ? tokens.ink : tokens.mute} numberOfLines={1}>{value ? `${dayMonth(value)} ${year(value)}` : tx('Datum wählen', 'Pick a date')}</Txt>
             </PressScale>
           )}
         </View>
         {open ? (
           <PressScale hitSlop={10} scale={0.92} onPress={() => { haptics.select(); close(); }}>
-            <Txt size={15} weight={600}>Fertig</Txt>
+            <Txt size={15} weight={600}>{tx('Fertig', 'Done')}</Txt>
           </PressScale>
         ) : right}
       </View>
@@ -125,7 +126,7 @@ export default function DateField({ label, value, onChange, past, right, extra }
         <Animated.View entering={rise()} style={{ gap: 10 }}>
           <Meta color={(mode === 'text' && text.trim() && !parsed) || wrongSide ? tokens.frist : tokens.sub}>{sentence}</Meta>
           <View style={{ flexDirection: 'row' }}>
-            <Chip icon={mode === 'text' ? 'cal' : 'papier'} label={mode === 'text' ? 'Kalender' : 'Tastatur'} onPress={() => switchTo(mode === 'text' ? 'cal' : 'text')} />
+            <Chip icon={mode === 'text' ? 'cal' : 'papier'} label={mode === 'text' ? tx('Kalender', 'Calendar') : tx('Tastatur', 'Keyboard')} onPress={() => switchTo(mode === 'text' ? 'cal' : 'text')} />
           </View>
           {mode === 'cal' ? (
             <Animated.View entering={swapIn} style={{ gap: 12 }}>
@@ -157,7 +158,7 @@ function Chip({ label, icon, on, disabled, onPress, style }: { label: string; ic
     <PressScale
       onPress={disabled ? undefined : onPress}
       scale={0.94}
-      accessibilityLabel={label === String(Number(label)) ? `Jahr ${label}` : MONTHS[MONTHS_SHORT.indexOf(label)] ?? label}
+      accessibilityLabel={label === String(Number(label)) ? tx(`Jahr ${label}`, `Year ${label}`) : MONTHS[MONTHS_SHORT.indexOf(label)] ?? label}
       style={[{ height: 34, paddingHorizontal: 12, borderRadius: 999, flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: on ? tokens.row : '#EFEFEC', borderWidth: on ? 1.5 : 0, borderColor: tokens.ink, opacity: disabled ? 0.35 : 1 }, style]}
     >
       {icon ? <LineIcon name={icon} size={14} color={tokens.ink} /> : null}
