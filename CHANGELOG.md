@@ -4,6 +4,11 @@ Alle sichtbaren Änderungen an FamCal. Neueste oben. Agenten und Menschen: Ände
 
 ## Unreleased
 
+### Listen mit eigenem Symbol und Sammlungen ohne Haken (27.10.)
+
+- Beim Anlegen einer Liste tippst du auf das Symbol und suchst dir eins aus, wie in Notion. Ohne Auswahl passt es sich dem Namen an.
+- Neue Vorlage Sammlung: Listen ohne Haken, zum Beispiel Filme, Bücher oder Ideen. Nach links wischen löscht weiter.
+
 ### Mehr Symbole, und das passende kommt von selbst (27.10.)
 
 - 106 neue Symbole, zum Beispiel Friseur, Zug, Elternabend, Spielplatz, Frühstück und alle Sportarten. Im Symbol Auswahl stehen sie in ihren Gruppen, dazu eine neue Gruppe Arbeit.

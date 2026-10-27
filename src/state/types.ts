@@ -60,7 +60,8 @@ export type List = {
   name: string;
   icon: ClayName;
   sub?: string;
-  kind: 'shopping' | 'packing';
+  /** collection: plain rows without a check, e.g. films to watch (Julian 27.10.). */
+  kind: 'shopping' | 'packing' | 'collection';
   sections: Section[];
 };
 

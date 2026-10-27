@@ -1,45 +1,72 @@
 /**
  * Listen · Neue Liste. Same screen from "+ Neu" and from the assistant's
  * suggestion; from a suggestion, name, date and template are pre-filled.
+ * Like Notion the list gets its own icon (Julian 27.10.): it follows the
+ * name or template until you pick one. A Sammlung has no checks, for films,
+ * books or ideas.
  */
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { goBack } from '../src/lib/nav';
 import { Screen, CancelBar, Btn, CardRow } from '../src/components/ui/kit';
 import Txt from '../src/components/ui/Txt';
+import PressScale from '../src/components/ui/PressScale';
+import { ClayIcon } from '../src/components/ui/Clay';
 import { TitleInput } from '../src/components/Field';
-import { tokens } from '../src/theme';
-import { actions } from '../src/state/store';
+import { tokens, tint } from '../src/theme';
+import { actions, useStore } from '../src/state/store';
 import { templates, kliniktasche, listFromTemplate } from '../src/data/sample';
+import { iconFor } from '../src/lib/iconWords';
+import { haptics } from '../src/lib/haptics';
 import type { ClayName } from '../src/lib/clayIcons';
 import type { List } from '../src/state/types';
 import { tx } from '../src/i18n/lang';
 
-type Key = 'leer' | 'klinik' | 'urlaub' | 'erst';
+type Key = 'leer' | 'sammlung' | 'klinik' | 'urlaub' | 'erst';
 const TPL: { key: Key; icon?: ClayName; title: string; sub: string; name: string }[] = [
-  { key: 'leer', title: tx('Leer', 'Empty'), sub: tx('Ihr tragt selbst ein', 'You add things yourself'), name: '' },
+  { key: 'leer', title: tx('Leer', 'Empty'), sub: tx('Zum Abhaken, ihr tragt selbst ein', 'To check off, you add things yourself'), name: '' },
+  { key: 'sammlung', icon: 'notizblock', title: tx('Sammlung', 'Collection'), sub: tx('Ohne Haken, z. B. Filme, Bücher, Ideen', 'No checks, e.g. films, books, ideas'), name: '' },
   { key: 'klinik', icon: 'hebamme', title: 'Kliniktasche', sub: tx('18 Dinge für Geburt und Wochenbett', '18 things for the birth and the first days'), name: 'Kliniktasche' },
   { key: 'urlaub', icon: 'reise', title: 'Urlaub mit Baby', sub: tx('Packliste, 24 Dinge', 'Packing list, 24 things'), name: 'Urlaub mit Baby' },
   { key: 'erst', icon: 'einkauf', title: 'Erstausstattung', sub: tx('Was ihr vor der Geburt braucht', 'What you need before the birth'), name: 'Erstausstattung' },
 ];
 
-function build(key: Key, name: string): List {
+function build(key: Key, name: string, icon: ClayName): List {
   if (key === 'klinik') {
     const l = kliniktasche();
-    return { ...l, name, sections: l.sections.map((s) => ({ ...s, items: s.items.map((i) => ({ ...i, done: false, who: null })) })) };
+    return { ...l, name, icon, sections: l.sections.map((s) => ({ ...s, items: s.items.map((i) => ({ ...i, done: false, who: null })) })) };
   }
-  if (key === 'urlaub') return listFromTemplate(name, 'reise', templates.urlaub);
-  if (key === 'erst') return listFromTemplate(name, 'einkauf', templates.erstausstattung);
-  return listFromTemplate(name, 'karten', null);
+  if (key === 'urlaub') return listFromTemplate(name, icon, templates.urlaub);
+  if (key === 'erst') return listFromTemplate(name, icon, templates.erstausstattung);
+  if (key === 'sammlung') return { ...listFromTemplate(name, icon, null), kind: 'collection' };
+  return listFromTemplate(name, icon, null);
 }
+
+/** The icon a list gets when nobody picked one: from its name, else from its template. */
+const autoIcon = (name: string, key: Key): ClayName => {
+  const t = TPL.find((x) => x.key === key)!;
+  const fromName = name === t.name ? 'kalender' : iconFor(name);
+  return fromName !== 'kalender' ? fromName : t.icon ?? 'karten';
+};
 
 export default function ListeNeu() {
   const { vorschlag } = useLocalSearchParams<{ vorschlag?: string }>();
   const fromHint = vorschlag === 'urlaub';
+  const draft = useStore((s) => s.draftSymbol);
   const [sel, setSel] = useState<Key>(fromHint ? 'urlaub' : 'klinik');
   const [name, setName] = useState(fromHint ? 'Ostsee mit Ben' : 'Kliniktasche');
-  const order = fromHint ? (['urlaub', 'leer', 'klinik', 'erst'] as Key[]) : (['leer', 'klinik', 'urlaub', 'erst'] as Key[]);
+  const [picked, setPicked] = useState<ClayName | null>(null);
+  const order = fromHint ? (['urlaub', 'leer', 'sammlung', 'klinik', 'erst'] as Key[]) : (['leer', 'sammlung', 'klinik', 'urlaub', 'erst'] as Key[]);
+  const icon = picked ?? autoIcon(name, sel);
+
+  // The picker writes draftSymbol; taken over once, and cleared when leaving.
+  useEffect(() => () => actions.clearDraftSymbol(), []);
+  useEffect(() => {
+    if (!draft) return;
+    setPicked(draft);
+    actions.clearDraftSymbol();
+  }, [draft]);
 
   const pick = (k: Key) => {
     const prev = TPL.find((t) => t.key === sel)!;
@@ -55,7 +82,7 @@ export default function ListeNeu() {
           label={tx('Liste anlegen', 'Create list')}
           disabled={!name.trim()}
           onPress={() => {
-            actions.createList(build(sel, name.trim()));
+            actions.createList(build(sel, name.trim(), icon));
             if (fromHint) actions.dismissHint('urlaub');
             goBack();
           }}
@@ -63,7 +90,16 @@ export default function ListeNeu() {
       }
     >
       <CancelBar />
-      <TitleInput value={name} onChangeText={setName} placeholder={tx('Name der Liste', 'List name')} sub={fromHint ? tx('Fällig vor Abreise am Sa 20. März', 'Due before leaving on Sat March 20') : tx('Für euch beide sichtbar', 'Visible to both of you')} />
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
+        <PressScale
+          accessibilityLabel={tx('Symbol der Liste ändern', 'Change the list icon')}
+          onPress={() => { haptics.select(); router.push('/symbol'); }}
+          style={{ width: 64, height: 64, borderRadius: 20, backgroundColor: tint(icon), alignItems: 'center', justifyContent: 'center' }}
+        >
+          <ClayIcon name={icon} size={52} />
+        </PressScale>
+        <TitleInput value={name} onChangeText={setName} placeholder={tx('Name der Liste', 'List name')} sub={fromHint ? tx('Fällig vor Abreise am Sa 20. März', 'Due before leaving on Sat March 20') : tx('Symbol antippen zum Ändern', 'Tap the icon to change it')} />
+      </View>
       <Txt size={15} weight={600} style={{ marginTop: 4 }}>{tx('Womit anfangen?', 'Start with what?')}</Txt>
       <View style={{ gap: 8 }}>
         {order.map((k) => {

@@ -35,9 +35,11 @@ type Props = {
   onDelete?: () => void;
   onPressTitle?: () => void;
   editHint?: string;
+  /** Collections have no check: a film to watch is never done. */
+  noCheck?: boolean;
 };
 
-export default function ItemRow({ title, editText, meta, metaColor, done, who, icon, onToggle, onEdit, onCycleWho, onDelete, onPressTitle, editHint = tx('Menge und Notiz einfach mitschreiben', 'Just add amount and note') }: Props) {
+export default function ItemRow({ title, editText, meta, metaColor, done, who, icon, onToggle, onEdit, onCycleWho, onDelete, onPressTitle, noCheck, editHint = tx('Menge und Notiz einfach mitschreiben', 'Just add amount and note') }: Props) {
   const [editing, setEditing] = useState(false);
   const [text, setText] = useState(editText ?? title);
 
@@ -56,7 +58,7 @@ export default function ItemRow({ title, editText, meta, metaColor, done, who, i
   const body = (
     <View style={{ paddingVertical: editing ? 12 : 10, paddingHorizontal: 14, backgroundColor: tokens.row, gap: 6 }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-        <Check done={done} onPress={onToggle} />
+        {noCheck ? null : <Check done={done} onPress={onToggle} />}
         {icon ? <ClayIcon name={icon} size={42} celebrate={done} /> : null}
         {editing ? (
           <TextInput
@@ -93,7 +95,7 @@ export default function ItemRow({ title, editText, meta, metaColor, done, who, i
           {who || (onCycleWho && !done) ? <Owner who={who} size={editing ? 26 : 22} /> : null}
         </PressScale>
       </View>
-      {editing ? <Txt size={13} color={tokens.mute} style={{ paddingLeft: 38 }}>{editHint}</Txt> : null}
+      {editing ? <Txt size={13} color={tokens.mute} style={{ paddingLeft: noCheck ? 0 : 38 }}>{editHint}</Txt> : null}
     </View>
   );
 

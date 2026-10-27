@@ -37,6 +37,7 @@ export default function Listen() {
     }
     if (!list) return '';
     const items = list.sections.flatMap((s) => s.items);
+    if (list.kind === 'collection') return tx(`${list.name} · ${items.length} ${items.length === 1 ? 'Eintrag' : 'Einträge'}`, `${list.name} · ${items.length} ${items.length === 1 ? 'entry' : 'entries'}`);
     if (list.kind === 'shopping') return tx(`${list.name} · ${items.filter((i) => !i.done).length} Dinge`, `${list.name} · ${items.filter((i) => !i.done).length} items`);
     return tx(`${list.name} · ${items.filter((i) => i.done).length} von ${items.length} gepackt`, `${list.name} · ${items.filter((i) => i.done).length} of ${items.length} packed`);
   }, [active, tasks, list]);
@@ -189,14 +190,15 @@ function Einkauf({ list }: { list: List }) {
 function Packliste({ list }: { list: List }) {
   const items = list.sections.flatMap((s) => s.items);
   const pct = items.length ? items.filter((i) => i.done).length / items.length : 0;
+  const plain = list.kind === 'collection';
   return (
     <>
-      {items.length ? (
+      {items.length && !plain ? (
         <View style={{ height: 6, borderRadius: 999, backgroundColor: tokens.hair, overflow: 'hidden' }}>
           <View style={{ width: `${Math.round(pct * 100)}%`, height: '100%', backgroundColor: tokens.done }} />
         </View>
       ) : null}
-      <Sections list={list} counts />
+      <Sections list={list} counts={!plain} />
       <AddInline placeholder={tx('Hinzufügen …', 'Add …')} onAdd={(t) => actions.addItem(list.id, t)} />
       <PressScale
         accessibilityLabel={tx(`Liste ${list.name} löschen`, `Delete list ${list.name}`)}
@@ -217,11 +219,12 @@ function Sections({ list, counts }: { list: List; counts?: boolean }) {
         const open = sec.items.filter((i) => !i.done);
         const done = sec.items.filter((i) => i.done);
         if (!sec.items.length && list.kind === 'shopping') return null;
-        const right = counts ? tx(`${done.length} von ${sec.items.length}`, `${done.length} of ${sec.items.length}`) : String(open.length);
+        const plain = list.kind === 'collection';
+        const right = plain ? String(sec.items.length) : counts ? tx(`${done.length} von ${sec.items.length}`, `${done.length} of ${sec.items.length}`) : String(open.length);
         const ordered = list.kind === 'shopping' ? [...open, ...done] : sec.items;
         return (
           <View key={sec.id} style={{ gap: 12 }}>
-            <H2 right={right}>{sec.title}</H2>
+            {plain && list.sections.length === 1 ? null : <H2 right={right}>{sec.title}</H2>}
             {ordered.length ? (
               <Group>
                 {ordered.map((i) => (
@@ -230,11 +233,12 @@ function Sections({ list, counts }: { list: List; counts?: boolean }) {
                     title={i.name}
                     editText={itemText(i)}
                     meta={itemMeta(i)}
-                    done={i.done}
+                    done={plain ? false : i.done}
+                    noCheck={plain}
                     who={i.who}
                     onToggle={() => actions.toggleItem(list.id, i.id)}
                     onEdit={(t) => actions.editItem(list.id, i.id, t)}
-                    onCycleWho={() => actions.cycleItemWho(list.id, i.id)}
+                    onCycleWho={plain ? undefined : () => actions.cycleItemWho(list.id, i.id)}
                     onDelete={() => actions.deleteItem(list.id, i.id)}
                   />
                   </Fresh>
