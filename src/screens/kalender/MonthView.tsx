@@ -1,6 +1,11 @@
-/** Kalender · Monat: day cells tinted by their first event, list for the selected day. */
+/**
+ * Kalender · Monat: day cells tinted by their first event, list for the selected
+ * day. The grid fills the screen height (Julian 27.10.), the icon sits in the
+ * middle of its cell and further Termine show as a small count under it.
+ * Today is green like in the day strip, the chosen day has the outline.
+ */
 import React, { useMemo } from 'react';
-import { View } from 'react-native';
+import { View, useWindowDimensions } from 'react-native';
 import { router } from 'expo-router';
 import { H2, Group, Row, RoundButton } from '../../components/ui/kit';
 import Txt from '../../components/ui/Txt';
@@ -38,10 +43,15 @@ export default function MonthView() {
     return out;
   }, [start, m]);
   const list = useMemo(() => eventsOn(events, day, false), [events, day]);
+  // Title, switch and weekday row take about 290, the talk field and tabs about 200.
+  const { height: H } = useWindowDimensions();
+  const rows = cells.length / 7;
+  const cellH = Math.round(Math.max(60, Math.min(104, (H - 490) / rows)));
+  const icon = Math.round(Math.min(40, cellH * 0.4));
 
   return (
     <>
-      <View style={{ flexDirection: 'row', flexWrap: 'wrap', rowGap: 4 }}>
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', rowGap: 5 }}>
         {HEAD.map((h) => (
           <View key={h} style={{ width: `${100 / 7}%`, alignItems: 'center', paddingBottom: 2 }}>
             <Txt size={12} weight={600} color={tokens.sub}>{h}</Txt>
@@ -57,18 +67,16 @@ export default function MonthView() {
               <PressScale
                 onPress={() => inMonth && actions.setCalDay(d)}
                 style={{
-                  height: 52, borderRadius: 14, alignItems: 'center', paddingTop: 4, gap: 1,
-                  backgroundColor: evs.length && !sel ? tint(evs[0].icon) : inMonth ? tokens.row : 'transparent',
-                  borderWidth: sel ? 1.5 : 0, borderColor: tokens.ink,
+                  height: cellH, borderRadius: 14, alignItems: 'center', paddingTop: 6,
+                  backgroundColor: isToday ? tokens.doneSoft : evs.length ? tint(evs[0].icon) : inMonth ? tokens.row : 'transparent',
+                  borderWidth: 1.5, borderColor: sel ? tokens.ink : 'transparent',
                 }}
               >
-                <View style={{ width: 26, height: 26, borderRadius: 999, alignItems: 'center', justifyContent: 'center', backgroundColor: isToday ? tokens.ink : 'transparent' }}>
-                  <Txt size={14} weight={isToday ? 700 : 500} color={isToday ? '#FFFFFF' : inMonth ? tokens.ink : '#C4C9CB'}>{String(dayNum(d))}</Txt>
+                <Txt size={14} line={18} weight={isToday ? 700 : 500} color={isToday ? tokens.done : inMonth ? tokens.ink : '#C4C9CB'}>{String(dayNum(d))}</Txt>
+                <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingBottom: 4 }}>
+                  {evs[0] ? <ClayIcon name={evs[0].icon} size={icon} /> : null}
                 </View>
-                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                  {evs[0] ? <ClayIcon name={evs[0].icon} size={24} /> : null}
-                  {evs.length > 1 ? <Txt size={10.5} weight={700} color={tokens.sub}>{`+${evs.length - 1}`}</Txt> : null}
-                </View>
+                {evs.length > 1 ? <Txt size={10} line={12} weight={700} color={tokens.sub} style={{ marginTop: -2, marginBottom: 5 }}>{`+${evs.length - 1}`}</Txt> : null}
               </PressScale>
             </View>
           );

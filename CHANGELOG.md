@@ -6,6 +6,7 @@ Alle sichtbaren Änderungen an FamCal. Neueste oben. Agenten und Menschen: Ände
 
 ### Kalender scrollt endlos, Tabs weichen der Tastatur (27.10.)
 
+- Monat: das Raster nutzt die Höhe des Bildschirms, die Icons sitzen frei in ihrer Kachel, weitere Termine stehen als „+3“ darunter statt daneben. Heute ist grün, der gewählte Tag hat den Rahmen.
 - Woche: seitlich wischen oder die Pfeile wechseln zur vorigen und nächsten Woche, die neue gleitet von der Seite herein. Mit zwei Fingern oder Plus und Minus zoomen: größer zeigt die Uhrzeiten, ganz groß drei Tage mit vollen Titeln.
 - Heute ist in der Wochenleiste farbig, der Rahmen um die ganze Kachel zeigt den Tag im Blick und gleitet mit. Wer woanders ist, bekommt oben einen „Heute“ Knopf, der zurückspringt.
 - Wie in der Claude App: auf dem Handy macht die Eingabetaste eine neue Zeile, abgeschickt wird mit dem Pfeil. Mit echter Tastatur schickt Enter ab. Der Pfeil springt beim Antippen nicht mehr weg.
