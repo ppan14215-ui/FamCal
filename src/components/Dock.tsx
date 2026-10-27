@@ -25,7 +25,7 @@ import { plan, Ctx, Result, SPOKEN, HINTS, PLACEHOLDER } from '../lib/act';
 import { dayLabel, slotLine } from '../lib/talk';
 import { locate, light } from '../lib/landing';
 import { setDockSpace } from '../lib/dockSpace';
-import { useKeyboardInset } from '../lib/keyboard';
+import { useKeyboardInset, useTyping } from '../lib/keyboard';
 import { hm } from '../lib/dates';
 import { haptics } from '../lib/haptics';
 import type { CalEvent, Who } from '../state/types';
@@ -125,6 +125,7 @@ export default function Dock() {
   const where = useWhere();
   const insets = useSafeAreaInsets();
   const kb = useKeyboardInset();
+  const typing = useTyping();
   const { width: W, height: H } = useWindowDimensions();
   const [turn, setTurn] = useState<Turn | null>(null);
   const [h, setH] = useState(0);
@@ -139,11 +140,12 @@ export default function Dock() {
 
   if (!where) return null;
   const navTop = Math.max(insets.bottom, 12) + 10 + 58 + 10;
-  const bottom = kb > 0 ? kb + 8 : where.tab ? navTop : insets.bottom + 12 + where.lift;
+  // Typing hides the tabs, so the field drops into their place right above the keyboard.
+  const bottom = kb > 0 ? kb + 8 : where.tab && !typing ? navTop : insets.bottom + 12 + (where.tab ? 0 : where.lift);
   const origin = { x: W - 14 - 6 - 24, y: H - bottom - 6 - 24 };
   // On tabs the nav stays on top of the fade, it starts just above it.
   // Above a footer button (liste-neu) the fade starts at the field, so the button stays clear.
-  const fadeFrom = kb ? 0 : where.tab ? navTop - 6 : where.lift ? bottom - 8 : 0;
+  const fadeFrom = kb || (where.tab && typing) ? 0 : where.tab ? navTop - 6 : where.lift ? bottom - 8 : 0;
   const kind = where.ctx.kind;
   const pending = turn?.result.kind === 'answer' && turn.result.reply.kind === 'ask' ? { title: turn.result.reply.title, who: turn.result.reply.who } : null;
 

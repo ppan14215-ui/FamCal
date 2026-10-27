@@ -1,6 +1,8 @@
 /** Kalender: everything with a time. Tag, Woche, Monat, Jahr in one place. */
 import React from 'react';
 import { View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { tokens } from '../../src/theme';
 import Animated from 'react-native-reanimated';
 import { swapIn } from '../../src/theme';
 import { router } from 'expo-router';
@@ -25,7 +27,16 @@ export default function Kalender() {
   const day = useStore((s) => s.calDay);
   const kid = useStore((s) => s.kid);
   const { month, year } = monthTitle(day);
+  const insets = useSafeAreaInsets();
   const pair = <PressScale accessibilityLabel="Familie und Einstellungen" onPress={() => router.push('/einstellungen')}><Pair /></PressScale>;
+  // Tag keeps title, switch and week strip in place; only the days scroll (Julian 27.10.).
+  if (view === 'tag') {
+    return (
+      <View style={{ flex: 1, backgroundColor: tokens.bg, paddingTop: insets.top }}>
+        <DayView header={<><H1 right={pair}>{month}</H1><Seg items={VIEWS} value={view} onChange={actions.setCalView} /></>} />
+      </View>
+    );
+  }
   return (
     <Screen tab gap={14}>
       {view === 'jahr' ? (
@@ -37,7 +48,7 @@ export default function Kalender() {
       )}
       <Seg items={VIEWS} value={view} onChange={actions.setCalView} />
       <Animated.View key={view} entering={swapIn} style={{ gap: 14 }}>
-        {view === 'tag' ? <DayView /> : view === 'woche' ? <WeekView /> : view === 'monat' ? <MonthView /> : <YearView />}
+        {view === 'woche' ? <WeekView /> : view === 'monat' ? <MonthView /> : <YearView />}
       </Animated.View>
     </Screen>
   );

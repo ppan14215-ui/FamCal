@@ -130,7 +130,7 @@ function termin(said: string, id: string): Plan {
     const w: When = found.when;
     const len = e.end && !e.allDay ? minutes(e.end) - minutes(e.start) : 60;
     // Only a time keeps the day, only a day keeps the time.
-    const onlyTime = !/(\d{1,2}\.\d{1,2}|montag|dienstag|mittwoch|donnerstag|freitag|samstag|sonntag|\bmo\b|\bdi\b|\bmi\b|\bdo\b|\bfr\b|\bsa\b|\bso\b|morgen|heute|woche)/i.test(found ? words.slice(found.from, found.to).join(' ') : '');
+    const onlyTime = !/(\d{1,2}\.\d{1,2}|montag|dienstag|mittwoch|donnerstag|freitag|samstag|sonntag|\bmo\b|\bdi\b|\bmi\b|\bdo\b|\bfr\b|\bsa\b|\bso\b|morgen|heute|woche|januar|februar|märz|april|mai|juni|juli|august|september|oktober|november|dezember)/i.test(found ? words.slice(found.from, found.to).join(' ') : '');
     const date = onlyTime ? e.date : w.date;
     const start = w.start ?? (e.allDay ? undefined : e.start);
     const end = w.end ?? (start ? addMin(start, len) : undefined);

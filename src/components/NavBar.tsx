@@ -5,7 +5,7 @@
  */
 import React, { useEffect, useState } from 'react';
 import { View, Platform, LayoutChangeEvent } from 'react-native';
-import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
+import Animated, { useAnimatedStyle, useSharedValue, withSpring, withTiming, Easing } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { router } from 'expo-router';
@@ -15,6 +15,7 @@ import LineIcon, { LineName } from './ui/LineIcon';
 import PressScale from './ui/PressScale';
 import { tokens, springs } from '../theme';
 import { haptics } from '../lib/haptics';
+import { useTyping } from '../lib/keyboard';
 
 const TABS: { name: string; key: string; icon: LineName }[] = [
   { name: 'kalender', key: 'nav.kalender', icon: 'cal' },
@@ -41,9 +42,14 @@ export default function NavBar({ state, navigation }: BottomTabBarProps) {
   const x = useSharedValue(idx);
   useEffect(() => { x.value = withSpring(idx, springs.smooth); }, [idx]);
   const pill = useAnimatedStyle(() => ({ transform: [{ translateX: x.value * (w + 2) }] }));
+  // While typing the keyboard takes this place, so the bar slides away.
+  const typing = useTyping();
+  const away = useSharedValue(0);
+  useEffect(() => { away.value = withTiming(typing ? 1 : 0, { duration: typing ? 180 : 260, easing: Easing.bezier(0.22, 1, 0.36, 1) }); }, [typing]);
+  const hide = useAnimatedStyle(() => ({ opacity: 1 - away.value, transform: [{ translateY: away.value * 40 }] }));
   const onLayout = (e: LayoutChangeEvent) => setW((e.nativeEvent.layout.width - 8 - 2 * (TABS.length - 1)) / TABS.length);
   return (
-    <View pointerEvents="box-none" style={{ position: 'absolute', left: 14, right: 14, bottom: Math.max(insets.bottom, 12) + 10, flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+    <Animated.View pointerEvents={typing ? 'none' : 'box-none'} style={[{ position: 'absolute', left: 14, right: 14, bottom: Math.max(insets.bottom, 12) + 10, flexDirection: 'row', alignItems: 'center', gap: 10 }, hide]}>
       <View accessibilityRole="tablist" onLayout={onLayout} style={[{ flex: 1, flexDirection: 'row', gap: 2, padding: 4, borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.96)' }, floatShadow]}>
         {w ? <Animated.View pointerEvents="none" style={[{ position: 'absolute', left: 4, top: 4, bottom: 4, width: w, borderRadius: 999, backgroundColor: '#EFEFEC' }, pill]} /> : null}
         {TABS.map((tab) => {
@@ -65,6 +71,6 @@ export default function NavBar({ state, navigation }: BottomTabBarProps) {
           );
         })}
       </View>
-    </View>
+    </Animated.View>
   );
 }

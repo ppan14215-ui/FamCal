@@ -52,6 +52,8 @@ function timeLoose(t: string): string | null {
  * Reads a When from text. `past` picks the last occurrence of a day without
  * year (birth dates), otherwise the next one.
  */
+const MONTH_WORDS = ['jan', 'feb', 'mä', 'apr', 'mai', 'jun', 'jul', 'aug', 'sep', 'okt', 'nov', 'dez'];
+
 export function parseWhen(input: string, opts: { past?: boolean; base?: string } = {}): When | null {
   const base = opts.base ?? TODAY;
   let t = ` ${input.toLowerCase().replace(/\s+/g, ' ').trim()} `;
@@ -94,6 +96,18 @@ export function parseWhen(input: string, opts: { past?: boolean; base?: string }
       const y = yearFor(m, d, dm[3]);
       if (valid(y, m, d)) date = isoOf(y, m, d);
       t = t.replace(dm[0], ' ');
+    }
+  }
+
+  // Month names: "12. November", "3 märz 2027"
+  if (!date) {
+    const mn = t.match(/ (\d{1,2})\.? (januar|jan|februar|feb|märz|maerz|mär|april|apr|mai|juni|jun|juli|jul|august|aug|september|sept|sep|oktober|okt|november|nov|dezember|dez)\.?(?: (\d{4}))? /);
+    if (mn) {
+      const d = Number(mn[1]);
+      const m = MONTH_WORDS.findIndex((x) => mn[2].startsWith(x)) + 1;
+      const y = yearFor(m, d, mn[3]);
+      if (m && valid(y, m, d)) date = isoOf(y, m, d);
+      t = t.replace(mn[0], ' ');
     }
   }
 

@@ -4,6 +4,13 @@ Alle sichtbaren Änderungen an FamCal. Neueste oben. Agenten und Menschen: Ände
 
 ## Unreleased
 
+### Kalender scrollt endlos, Tabs weichen der Tastatur (27.10.)
+
+- Kalender Tag: Titel, Umschalter und Wochenleiste bleiben oben stehen, nur die Tage scrollen. Die Leiste zeigt mit ihrem Rahmen den Tag, den man gerade sieht, und gleitet in die nächste Woche, wenn man sie erreicht. Die Liste geht endlos weiter, freie Tage sind eine ruhige Zeile, jede Woche beginnt mit einer Trennlinie. Tippen auf einen Tag scrollt dorthin.
+- Beim Tippen ins Sprechfeld verschwinden die Tabs, das Feld sitzt direkt über der Tastatur.
+- Listen: die Icons in den Tabs haben Platz zum Springen und werden nicht mehr abgeschnitten.
+- Datum mit Monatsnamen wird verstanden („Am 12. November Zahnarzt um 10“), auch wenn Tag und Uhrzeit getrennt stehen.
+
 ### Eingabe und Ablauf wie in einer Chat App (27.10.)
 
 - Das Textfeld wächst mit dem Text nach oben, bis vier Zeilen, danach scrollt es. Enter schickt ab, Shift und Enter macht eine neue Zeile.

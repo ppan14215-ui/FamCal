@@ -4,7 +4,7 @@
  * Keyboard hochschieben"). Native reads the keyboard frame; mobile Safari and
  * Chrome shrink the visual viewport instead.
  */
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useSyncExternalStore } from 'react';
 import { Keyboard, Platform } from 'react-native';
 
 export function useKeyboardInset(): number {
@@ -23,4 +23,14 @@ export function useKeyboardInset(): number {
     return () => { show.remove(); hide.remove(); };
   }, []);
   return inset;
+}
+
+// Whether someone is typing in the talk field. Android Chrome shrinks the whole
+// window for the keyboard, so the inset above stays 0 there; focus is the
+// signal that works everywhere (Julian 27.10.: tabs go away while typing).
+let typing = false;
+const subs = new Set<() => void>();
+export function setTyping(on: boolean) { if (typing !== on) { typing = on; subs.forEach((l) => l()); } }
+export function useTyping() {
+  return useSyncExternalStore((l) => { subs.add(l); return () => { subs.delete(l); }; }, () => typing, () => false);
 }

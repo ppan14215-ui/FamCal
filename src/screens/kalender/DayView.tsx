@@ -1,12 +1,20 @@
 /**
  * Kalender · Tag (Julian 27.10.: the calendar is the key view, content nested
- * with hierarchy). Week strip on top, then day after day from the chosen one.
+ * with hierarchy). The week strip stays on top while only the days scroll
+ * underneath, endlessly, week after week. The strip follows along: its outline
+ * glides to the day you are looking at and the week slides over when you
+ * cross into the next one.
  * Each day is one card: who works when, the Termine with what to bring right
  * under them, then the day's tasks and deadlines. Everything a spoken change
  * touches can light up (Fresh).
  */
-import React, { useMemo } from 'react';
-import { View } from 'react-native';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { View, ScrollView } from 'react-native';
+import Animated, { useSharedValue, useAnimatedStyle, withSpring, withTiming, Easing } from 'react-native-reanimated';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { springs } from '../../theme';
+import { useScroller } from '../../lib/landing';
+import { useDockSpace } from '../../lib/dockSpace';
 import { router } from 'expo-router';
 import { Meta, Check } from '../../components/ui/kit';
 import Txt from '../../components/ui/Txt';
@@ -23,29 +31,55 @@ import { addDays, monday, dayNum, WD_SHORT, weekday, WD_LONG, hm, TODAY, short, 
 import { upcomingFristen } from '../../lib/selectors';
 import { dayLabel } from '../../lib/talk';
 import PressScale from '../../components/ui/PressScale';
+import { haptics } from '../../lib/haptics';
+
+const GAP = 5;
 
 export function WeekStrip({ day, onSelect }: { day: string; onSelect: (d: string) => void }) {
   const events = useStore((s) => s.events);
   const start = monday(day);
   const days = Array.from({ length: 7 }, (_, i) => addDays(start, i));
+  const [w, setW] = useState(0);
+  const slot = w ? (w - GAP * 6) / 7 : 0;
+  const idx = days.indexOf(day);
+  // The outline glides to the day in view.
+  const x = useSharedValue(idx);
+  useEffect(() => { x.value = withSpring(idx, springs.smooth); }, [idx]);
+  const ring = useAnimatedStyle(() => ({ transform: [{ translateX: x.value * (slot + GAP) }] }));
+  // A new week slides in from the side it comes from.
+  const prev = useRef(start);
+  const tx = useSharedValue(0);
+  const op = useSharedValue(1);
+  useEffect(() => {
+    if (prev.current === start) return;
+    const dir = start > prev.current ? 1 : -1;
+    prev.current = start;
+    tx.value = dir * 36; op.value = 0.2;
+    tx.value = withTiming(0, { duration: 320, easing: Easing.bezier(0.22, 1, 0.36, 1) });
+    op.value = withTiming(1, { duration: 240 });
+  }, [start]);
+  const row = useAnimatedStyle(() => ({ opacity: op.value, transform: [{ translateX: tx.value }] }));
   return (
-    <View style={{ flexDirection: 'row', gap: 5 }}>
-      {days.map((d) => {
-        const on = d === day;
-        const has = events.some((e) => e.date === d && !e.work);
-        return (
-          <PressScale
-            key={d}
-            onPress={() => onSelect(d)}
-            accessibilityLabel={`${WD_LONG[weekday(d)]} ${dayNum(d)}.`}
-            style={{ flex: 1, height: 66, borderRadius: 18, backgroundColor: tokens.row, borderWidth: on ? 1.5 : 0, borderColor: tokens.ink, alignItems: 'center', justifyContent: 'center', gap: 3 }}
-          >
-            <Txt size={12} color={tokens.sub}>{WD_SHORT[weekday(d)]}</Txt>
-            <Txt size={19} line={22} weight={d === TODAY ? 700 : 600}>{String(dayNum(d))}</Txt>
-            <View style={{ width: 5, height: 5, borderRadius: 999, backgroundColor: has ? tokens.done : 'transparent' }} />
-          </PressScale>
-        );
-      })}
+    <View onLayout={(e) => setW(e.nativeEvent.layout.width)}>
+      <Animated.View style={[{ flexDirection: 'row', gap: GAP }, row]}>
+        {days.map((d) => {
+          const has = events.some((e) => e.date === d && !e.work);
+          return (
+            <PressScale
+              key={d}
+              onPress={() => onSelect(d)}
+              accessibilityLabel={`${WD_LONG[weekday(d)]} ${dayNum(d)}.`}
+              accessibilityState={{ selected: d === day }}
+              style={{ flex: 1, height: 66, borderRadius: 18, backgroundColor: d === TODAY ? tokens.chipBg : tokens.row, alignItems: 'center', justifyContent: 'center', gap: 3 }}
+            >
+              <Txt size={12} color={tokens.sub}>{WD_SHORT[weekday(d)]}</Txt>
+              <Txt size={19} line={22} weight={d === TODAY ? 700 : 600}>{String(dayNum(d))}</Txt>
+              <View style={{ width: 5, height: 5, borderRadius: 999, backgroundColor: has ? tokens.done : 'transparent' }} />
+            </PressScale>
+          );
+        })}
+      </Animated.View>
+      {slot && idx >= 0 ? <Animated.View pointerEvents="none" style={[{ position: 'absolute', left: 0, top: 0, width: slot, height: 66, borderRadius: 18, borderWidth: 1.5, borderColor: tokens.ink }, ring]} /> : null}
     </View>
   );
 }
@@ -103,19 +137,29 @@ function WorkLine({ work }: { work: CalEvent[] }) {
   );
 }
 
-function Day({ date, events, tasks, docs }: { date: string; events: CalEvent[]; tasks: Task[]; docs: Doc[] }) {
+function Day({ date, events, tasks, docs, onY }: { date: string; events: CalEvent[]; tasks: Task[]; docs: Doc[]; onY: (y: number) => void }) {
   const work = events.filter((e) => e.work);
   const real = events.filter((e) => !e.work).sort(byStart);
   const empty = !real.length && !tasks.length && !docs.length;
+  const past = date < TODAY;
+  // A free day is one quiet line, so the busy ones carry the page.
+  if (empty && date !== TODAY && !work.length) {
+    return (
+      <View onLayout={(e) => onY(e.nativeEvent.layout.y)} style={{ flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', opacity: past ? 0.6 : 1 }}>
+        <Txt size={16} line={22} weight={600} color={tokens.sub}>{dayLabel(date)}</Txt>
+        <Txt size={13.5} color={tokens.mute}>frei</Txt>
+      </View>
+    );
+  }
   return (
-    <View style={{ gap: 8 }}>
+    <View onLayout={(e) => onY(e.nativeEvent.layout.y)} style={{ gap: 8, opacity: past ? 0.6 : 1 }}>
       <View style={{ flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between' }}>
         <Txt size={21} line={26} weight={700} tracking={-0.4}>{dayLabel(date)}</Txt>
-        <Txt size={13.5} color={tokens.sub}>{date === TODAY || date === addDays(TODAY, 1) ? `${WD_LONG[weekday(date)]}, ${dayNum(date)}. ${MONTHS_SHORT[monthIdx(date)]}` : until(date)}</Txt>
+        <Txt size={13.5} color={tokens.sub}>{date === TODAY || date === addDays(TODAY, 1) ? `${WD_LONG[weekday(date)]}, ${dayNum(date)}. ${MONTHS_SHORT[monthIdx(date)]}` : past ? 'vorbei' : until(date)}</Txt>
       </View>
       <WorkLine work={work} />
       {empty ? (
-        <Meta>{date === TODAY ? 'Heute steht nichts an. Sag unten einfach, was ansteht.' : 'Nichts eingetragen. Ein freier Tag.'}</Meta>
+        <Meta>{date === TODAY ? 'Heute steht nichts an. Sag unten einfach, was ansteht.' : 'Sonst frei.'}</Meta>
       ) : (
         <View style={{ borderRadius: 20, overflow: 'hidden', backgroundColor: tokens.row }}>
           {real.map((e, i) => <Item key={e.id} e={e} last={i === real.length - 1 && !tasks.length && !docs.length} />)}
@@ -170,27 +214,104 @@ function Fristen() {
   );
 }
 
-export default function DayView() {
+/** A quiet line where a new week starts. */
+function WeekLine({ start }: { start: string }) {
+  const end = addDays(start, 6);
+  return (
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 6 }}>
+      <Txt size={12} weight={600} tracking={0.4} color={tokens.mute}>{`${dayNum(start)}. ${MONTHS_SHORT[monthIdx(start)]} bis ${dayNum(end)}. ${MONTHS_SHORT[monthIdx(end)]}`.toUpperCase()}</Txt>
+      <View style={{ flex: 1, height: 1, backgroundColor: tokens.hair }} />
+    </View>
+  );
+}
+
+const FIRST = addDays(monday(TODAY), -14);
+const MORE = 28;
+
+/** The week strip and the endless list of days under it, as one piece. */
+export default function DayView({ header }: { header: React.ReactNode }) {
   const day = useStore((s) => s.calDay);
   const events = useStore((s) => s.events);
   const tasks = useStore((s) => s.tasks);
   const docs = useStore((s) => s.docs);
-  // Seven days from the chosen one, plus any later day something was just said for.
-  const days = useMemo(() => {
-    const ds = Array.from({ length: 7 }, (_, i) => addDays(day, i));
-    for (const e of events) if (e.source?.startsWith('Gesagt') && e.date > ds[6] && daysBetween(day, e.date) < 120 && !ds.includes(e.date)) ds.push(e.date);
-    return ds.sort().map((date) => ({
+  const insets = useSafeAreaInsets();
+  const dock = useDockSpace();
+  const ref = useRef<ScrollView>(null);
+  const track = useScroller(ref);
+  const ys = useRef<Record<string, number>>({});
+  const view = useRef(0);
+  const [shadow, setShadow] = useState(false);
+  // Far enough to show whatever was just said, then four more weeks each time the end comes near.
+  const latest = useMemo(() => events.reduce((m, e) => (e.date > m && daysBetween(TODAY, e.date) < 180 ? e.date : m), TODAY), [events]);
+  const [count, setCount] = useState(() => Math.max(daysBetween(FIRST, day) + MORE, 56));
+  const total = Math.max(count, daysBetween(FIRST, latest) + 8);
+  const days = useMemo(() => Array.from({ length: total }, (_, i) => {
+    const date = addDays(FIRST, i);
+    return {
       date,
       events: events.filter((e) => e.date === date),
       tasks: tasks.filter((t) => t.who !== undefined && t.due && (t.due === date || (date === TODAY && t.due < TODAY && !t.done))),
       docs: docs.filter((d) => d.frist === date),
-    })).filter((d, i) => i === 0 || d.events.some((e) => !e.work) || d.tasks.length || d.docs.length);
-  }, [day, events, tasks, docs]);
+    };
+  }), [total, events, tasks, docs]);
+
+  // Opens at the chosen day, once.
+  const opened = useRef(false);
+  const first = useRef(day);
+  const onY = (date: string, y: number) => {
+    ys.current[date] = y;
+    if (!opened.current && date === first.current) {
+      opened.current = true;
+      requestAnimationFrame(() => ref.current?.scrollTo({ y: Math.max(0, y - 2), animated: false }));
+    }
+  };
+
+  // The day at the top of the list is the day the strip shows.
+  const seen = useRef(day);
+  const spy = (y: number) => {
+    let top = days[0].date;
+    for (const d of days) { const dy = ys.current[d.date]; if (dy !== undefined && dy <= y + 24) top = d.date; else if (dy !== undefined) break; }
+    if (top !== seen.current) { seen.current = top; actions.setCalDay(top); }
+  };
+
+  const pick = (d: string) => {
+    haptics.select();
+    seen.current = d;
+    actions.setCalDay(d);
+    const y = ys.current[d];
+    if (y !== undefined) ref.current?.scrollTo({ y: Math.max(0, y - 2), animated: true });
+  };
+
   return (
-    <>
-      <WeekStrip day={day} onSelect={actions.setCalDay} />
-      {day === TODAY ? <Fristen /> : null}
-      {days.map((d) => <Day key={d.date} {...d} />)}
-    </>
+    <View style={{ flex: 1 }}>
+      <View style={{ paddingHorizontal: 18, paddingTop: 8, paddingBottom: 12, gap: 14, backgroundColor: tokens.bg, zIndex: 2, borderBottomWidth: 1, borderBottomColor: shadow ? tokens.hair : 'transparent' }}>
+        {header}
+        <WeekStrip day={day} onSelect={pick} />
+      </View>
+      <ScrollView
+        ref={ref}
+        style={{ flex: 1 }}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+        scrollEventThrottle={16}
+        onLayout={(e) => { view.current = e.nativeEvent.layout.height; }}
+        onScroll={(e) => {
+          const { contentOffset, contentSize } = e.nativeEvent;
+          track(contentOffset.y);
+          spy(contentOffset.y);
+          if (shadow !== contentOffset.y > 4) setShadow(contentOffset.y > 4);
+          if (contentSize.height - contentOffset.y - view.current < 900) setCount((c) => (c < total + 1 ? total + MORE : c));
+        }}
+        contentContainerStyle={{ paddingHorizontal: 18, paddingTop: 14, paddingBottom: 110 + insets.bottom + dock, gap: 18 }}
+      >
+        {days.map((d) => (
+          <React.Fragment key={d.date}>
+            {weekday(d.date) === 1 && d.date !== FIRST ? <WeekLine start={d.date} /> : null}
+            {d.date === TODAY ? <Fristen /> : null}
+            <Day {...d} onY={(y) => onY(d.date, y)} />
+          </React.Fragment>
+        ))}
+      </ScrollView>
+    </View>
   );
 }

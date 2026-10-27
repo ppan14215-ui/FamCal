@@ -16,6 +16,7 @@ import { Chip } from './ui/kit';
 import Orb from './Orb';
 import { tokens, fonts } from '../theme';
 import { haptics } from '../lib/haptics';
+import { setTyping } from '../lib/keyboard';
 
 const LINE = 22;
 const PAD = 11;
@@ -53,7 +54,7 @@ export default function TalkBar({ onSend, onPlus, suggestions = [], spoken, plac
   const field = useRef<TextInput>(null);
   const turn = useRef(0);
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
-  useEffect(() => () => timers.current.forEach(clearTimeout), []);
+  useEffect(() => () => { timers.current.forEach(clearTimeout); setTyping(false); }, []);
 
   // On the web the textarea never shrinks by itself, so measure it fresh.
   useEffect(() => {
@@ -122,6 +123,8 @@ export default function TalkBar({ onSend, onPlus, suggestions = [], spoken, plac
       </PressScale>
       <TextInput
         ref={field}
+        onFocus={() => setTyping(true)}
+        onBlur={() => setTyping(false)}
         multiline
         value={text}
         onChangeText={setText}

@@ -51,6 +51,8 @@ export default function Listen() {
   );
 }
 
+const HOP = 28;
+
 function ClayTabs({ lists, active }: { lists: List[]; active: string }) {
   const tabs: { id: string; name: string; icon: ClayName }[] = [{ id: 'aufgaben', name: 'Aufgaben', icon: 'erledigt' }, ...lists.map((l) => ({ id: l.id, name: l.name, icon: l.icon }))];
   // Every tab is as wide as its name; more lists than fit scroll sideways and
@@ -64,8 +66,10 @@ function ClayTabs({ lists, active }: { lists: List[]; active: string }) {
   };
   useEffect(() => reveal(active), [active, lists.length]);
   return (
-    <View style={{ marginHorizontal: -18, borderBottomWidth: 1, borderBottomColor: tokens.hair }} onLayout={(e) => { width.current = e.nativeEvent.layout.width; }}>
-      <ScrollView ref={scroller} horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 8, gap: 2, flexGrow: 1 }}>
+    // A scroll view clips its content, so it gets headroom above the icons for
+    // their hops and pulls itself up by the same amount (Julian 27.10.).
+    <View style={{ marginHorizontal: -18, marginTop: -HOP, borderBottomWidth: 1, borderBottomColor: tokens.hair, zIndex: 2 }} onLayout={(e) => { width.current = e.nativeEvent.layout.width; }}>
+      <ScrollView ref={scroller} horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 8, paddingTop: HOP, gap: 2, flexGrow: 1 }}>
         {tabs.map((t) => {
           const on = t.id === active;
           return (

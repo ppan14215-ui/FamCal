@@ -54,9 +54,21 @@ const iconFor = (title: string): ClayName => ICONS.find(([re]) => re.test(title.
  * The longest run of words that reads as a day or time ("Donnerstag 9:30",
  * "am Freitag um 15 Uhr"). A bare number only counts next to "um" or "Uhr".
  */
-export function findWhen(words: string[]): { when: When; from: number; to: number } | null {
+export function findWhen(words: string[]): { when: When; from: number; to: number; also?: { from: number; to: number } } | null {
+  const first = windowIn(words, () => true);
+  if (!first) return null;
+  // "Am 12. November Zahnarzt um 10": the day and the time can sit apart.
+  if (!first.when.start) {
+    const time = windowIn(words, (i, len) => i + len <= first.from || i >= first.to);
+    if (time?.when.start) return { ...first, when: { ...first.when, start: time.when.start, end: time.when.end }, also: { from: time.from, to: time.to } };
+  }
+  return first;
+}
+
+function windowIn(words: string[], ok: (i: number, len: number) => boolean): { when: When; from: number; to: number } | null {
   for (let len = Math.min(6, words.length); len >= 1; len--) {
     for (let i = 0; i + len <= words.length; i++) {
+      if (!ok(i, len)) continue;
       const part = words.slice(i, i + len).map(clean);
       const bare = part.every((w) => /^\d{1,2}$/.test(w) || ['um', 'am', 'ab', 'von', 'bis'].includes(w));
       if (bare && !part.includes('um')) continue;
@@ -229,7 +241,7 @@ export function understand(input: string, events: CalEvent[], pending?: { title:
 
   const words = q.split(/\s+/);
   const found = findWhen(words);
-  const rest = found ? [...words.slice(0, found.from), ...words.slice(found.to)] : words;
+  const rest = found ? words.filter((_, i) => !(i >= found.from && i < found.to) && !(found.also && i >= found.also.from && i < found.also.to)) : words;
   let who = whoOf(rest);
   let { title, sub } = titleOf(rest.join(' '));
   if (pending && (!title || found)) {
