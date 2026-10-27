@@ -10,7 +10,7 @@ import * as Calendar from 'expo-calendar';
 import { TODAY, addDays } from './dates';
 import type { CalEvent } from '../state/types';
 import type { PersonId } from '../theme';
-import type { ClayName } from './clayIcons';
+import { iconFor } from './iconWords';
 import { tx } from '../i18n/lang';
 
 export const hasDeviceCalendars = Platform.OS === 'ios' || Platform.OS === 'android';
@@ -40,19 +40,6 @@ export async function listCalendars(): Promise<DeviceCal[]> {
     .sort((a, b) => a.account.localeCompare(b.account) || a.title.localeCompare(b.title));
 }
 
-// A clay symbol from the title; the family can change it on the Termin.
-const ICONS: [RegExp, ClayName][] = [
-  [/zahnarzt/i, 'zahnarzt'],
-  [/\bU\d\b|kinderarzt|arzt|dr\.|praxis/i, 'stethoskop'],
-  [/impf/i, 'impfung'],
-  [/geburtstag|birthday/i, 'geburtstag'],
-  [/kita|kindergarten|krippe/i, 'kita'],
-  [/pass|ausweis|bürgeramt|kundenzentrum|amt\b/i, 'reisepass'],
-  [/essen|dinner|abendessen|kochen|brunch/i, 'kochtopf'],
-  [/einkauf|supermarkt/i, 'einkauf'],
-  [/hebamme/i, 'hebamme'],
-];
-const iconFor = (title: string): ClayName => ICONS.find(([r]) => r.test(title))?.[1] ?? 'kalender';
 
 const pad = (n: number) => String(n).padStart(2, '0');
 const day = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;

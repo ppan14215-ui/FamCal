@@ -4,6 +4,11 @@ Alle sichtbaren Änderungen an FamCal. Neueste oben. Agenten und Menschen: Ände
 
 ## Unreleased
 
+### Mehr Symbole, und das passende kommt von selbst (27.10.)
+
+- 106 neue Symbole, zum Beispiel Friseur, Zug, Elternabend, Spielplatz, Frühstück und alle Sportarten. Im Symbol Auswahl stehen sie in ihren Gruppen, dazu eine neue Gruppe Arbeit.
+- Sagst du „Fußball am Montag mit Freunden“, bekommt der Termin den Ball. Die App erkennt jetzt viel mehr Wörter auf Deutsch und Englisch, auch bei Terminen aus dem Handykalender.
+
 ### Sprechen überall und passende Icons (27.10.)
 
 - Wer im Kalender „Pack Nudeln auf die Einkaufsliste“ sagt, bekommt keinen Termin mehr, sondern Nudeln auf der Einkaufsliste. Claude erkennt Einkäufe und Aufgaben von jedem Bildschirm aus. Haben die Regeln schon einen Termin angelegt, nimmt Claude ihn wieder heraus.

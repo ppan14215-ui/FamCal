@@ -8,6 +8,7 @@ import { clayIcons, type ClayName } from './clayIcons';
 import type { PersonId } from '../theme/tokens';
 import { persons } from '../theme/tokens';
 import { parseWhen, When } from './when';
+import { iconFor } from './iconWords';
 import { TODAY, NOW, addDays, weekday, minutes, long, short, hm, count } from './dates';
 import { byTime } from './selectors';
 import { tx, EN } from '../i18n/lang';
@@ -39,17 +40,6 @@ export function whoOf(words: string[]): Who {
   return j ? 'J' : t ? 'T' : null;
 }
 
-const ICONS: [RegExp, ClayName][] = [
-  [/zahn|dentist/, 'zahnarzt'], [/tierarzt|\bvet\b/, 'tierarzt'], [/impf|vaccin|shot/, 'impfung'], [/hebamme|midwife/, 'hebamme'],
-  [/arzt|\bu\d\b|praxis|kinderärzt|doktor|dr\.|doctor|pediatric|checkup|clinic/, 'stethoskop'], [/schwimm|swim/, 'schwimmen'],
-  [/geburtstag|birthday|bday/, 'geburtstag'], [/oma|opa|essen|kochen|grill|grandma|grandpa|dinner|lunch|brunch|bbq/, 'kochtopf'], [/kita|krippe|daycare|nursery|preschool/, 'kita'],
-  [/schule|school/, 'schule'], [/amt|pass|ausweis|dmv|office/, 'amt'], [/fußball|fussball|soccer|football/, 'fussball'],
-  [/yoga|rückbildung|pilates/, 'yogamatte'], [/einkauf|markt|supermarkt|grocer|shopping/, 'einkauf'],
-  [/urlaub|reise|vacation|holiday|trip/, 'reise'], [/flug|flughafen|flight|airport/, 'flugzeug'], [/zoo|spazier|kinderwagen|walk|stroller/, 'kinderwagen'],
-  [/handwerker|reparatur|plumber|repair|electrician/, 'handwerker'], [/müll|trash|garbage|bins/, 'muell'], [/tennis/, 'tennis'], [/laufen|joggen|\brun\b|running|jog/, 'laufen'],
-  [/musik|konzert|music|concert/, 'musik'], [/krabbel|pekip|baby|playgroup/, 'fussabdruck'], [/anruf|telefon|\bcall\b|phone/, 'telefon'],
-];
-const iconFor = (title: string): ClayName => ICONS.find(([re]) => re.test(title.toLowerCase()))?.[1] ?? 'kalender';
 
 /**
  * The longest run of words that reads as a day or time ("Donnerstag 9:30",
