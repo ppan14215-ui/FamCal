@@ -42,11 +42,13 @@ a { color: inherit }
 :focus-visible { outline: 2px solid var(--teal); outline-offset: 3px; border-radius: 8px }
 
 body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 30; background: var(--bg) }
-.nav { position: fixed; z-index: 20; top: calc(env(safe-area-inset-top, 0px) + 14px); left: 50%; transform: translateX(-50%); width: min(380px, calc(100% - 32px)); display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 6px 6px 6px 16px; border-radius: 999px; background: var(--glass); -webkit-backdrop-filter: blur(16px) saturate(1.4); backdrop-filter: blur(16px) saturate(1.4); box-shadow: inset 0 0 0 1px var(--hair) }
+.nav { position: fixed; z-index: 20; top: calc(env(safe-area-inset-top, 0px) + 14px); left: 50%; transform: translateX(-50%); width: max-content; max-width: calc(100% - 32px); display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 6px 6px 6px 16px; border-radius: 999px; background: var(--glass); -webkit-backdrop-filter: blur(16px) saturate(1.4); backdrop-filter: blur(16px) saturate(1.4); box-shadow: inset 0 0 0 1px var(--hair) }
 .brand { display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 15.5px; text-decoration: none }
 .brand img { width: 24px; height: 24px }
 .nav .acts { display: flex; gap: 6px }
+@media (max-width: 440px) { .nav .acts .proto { display: none } }
 .nb { height: 34px; padding: 0 14px; border-radius: 999px; display: inline-flex; align-items: center; gap: 6px; font-size: 13.5px; font-weight: 600; text-decoration: none; background: var(--surface); box-shadow: inset 0 0 0 1px var(--hair) }
+.nb.lang { border: 0; color: var(--ink); cursor: pointer; padding: 0 11px; font-family: 'Geist Mono', ui-monospace, monospace; font-size: 12.5px }
 .nb.mode { width: 34px; padding: 0; justify-content: center; border: 0; color: var(--ink); cursor: pointer }
 .nb.mode .sun { display: none }
 :root[data-mode="dark"] .nb.mode .sun { display: block }
@@ -221,17 +223,17 @@ h1 { font-weight: 600; font-size: clamp(40px, 6.4vw, 78px); line-height: 1.02; l
 }
 </style>
 
-<nav class="nav" aria-label="Hauptnavigation">
+<nav class="nav" data-i18n-aria="nav">
   <a class="brand" href="#">{{img:kalender}}FamCal</a>
-  <span class="acts"><button class="nb mode" id="mode" type="button" aria-label="Dunkler Modus" aria-pressed="false"><svg class="moon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></svg><svg class="sun" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg></button><a class="nb" href="https://claude.ai/artifact/NfyQBbzthKG9d21rTXfM1F" target="_blank" rel="noopener">Prototyp</a><a class="nb dark" href="#liste">Warteliste</a></span>
+  <span class="acts"><button class="nb lang" id="lang" type="button" lang="en">EN</button><button class="nb mode" id="mode" type="button" aria-label="Dunkler Modus" aria-pressed="false"><svg class="moon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></svg><svg class="sun" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg></button><a class="nb proto" href="https://claude.ai/artifact/NfyQBbzthKG9d21rTXfM1F" target="_blank" rel="noopener" data-i18n="navProto">Prototyp</a><a class="nb dark" href="#liste" data-i18n="navList">Warteliste</a></span>
 </nav>
 
 <div class="scrolly" id="scrolly">
   <div class="sticky" id="sticky">
     <div class="hero-text" id="heroText">
-      <h1>Ein Kalender, mit dem ihr redet</h1>
-      <p class="lede">FamCal ist der gemeinsame Familienkalender für zwei Eltern. Sagt einen Termin, und er steht an der richtigen Stelle.</p>
-      <div class="cta-row"><a class="btn btn-primary" href="#liste">Auf die Warteliste</a><a class="btn btn-ghost" href="https://claude.ai/artifact/NfyQBbzthKG9d21rTXfM1F" target="_blank" rel="noopener">Prototyp ansehen</a></div>
+      <h1 data-i18n="h1">Ein Kalender, mit dem ihr redet</h1>
+      <p class="lede" data-i18n="lede"></p>
+      <div class="cta-row"><a class="btn btn-primary" href="#liste" data-i18n="cta1">Auf die Warteliste</a><a class="btn btn-ghost" href="https://claude.ai/artifact/NfyQBbzthKG9d21rTXfM1F" target="_blank" rel="noopener" data-i18n="cta2">Prototyp ansehen</a></div>
     </div>
 
     <div class="ph side" data-pos="-2" aria-hidden="true"><div class="screen"><span class="island"></span><div class="scr shot" data-scr-name="monat" style="background:{{bg:monat}}"><div class="status"><span>8:50</span><span>●●●</span></div><img src="{{shot:monat}}" alt=""></div></div></div>
@@ -239,7 +241,7 @@ h1 { font-weight: 600; font-size: clamp(40px, 6.4vw, 78px); line-height: 1.02; l
     <div class="ph side" data-pos="1" aria-hidden="true"><div class="screen"><span class="island"></span><div class="scr shot" data-scr-name="eingang" style="background:{{bg:eingang}}"><div class="status"><span>8:50</span><span>●●●</span></div><img src="{{shot:eingang}}" alt=""></div></div></div>
     <div class="ph side" data-pos="2" aria-hidden="true"><div class="screen"><span class="island"></span><div class="scr shot" data-scr-name="onb" style="background:{{bg:onb}}"><div class="status"><span>8:50</span><span>●●●</span></div><img src="{{shot:onb}}" alt=""></div></div></div>
 
-    <div class="ph" id="mainPhone" role="img" aria-label="Echte Screens aus dem FamCal Prototyp: Tagesansicht, ein gesprochener Satz wird eingetragen, Termindetails, Woche nach Personen."><div class="screen" id="mainScreen"><span class="island"></span>
+    <div class="ph" id="mainPhone" role="img" data-i18n-aria="phone"><div class="screen" id="mainScreen"><span class="island"></span>
       <div class="scr shot" data-scr-name="tag" style="background:{{bg:tag}}"><div class="status"><span>8:50</span><span>●●●</span></div><img src="{{shot:tag}}" alt=""></div>
       <div class="scr shot stacked" data-scr-name="talk3" style="background:{{bg:talk3}}"><div class="status"><span>8:50</span><span>●●●</span></div><img src="{{shot:talk3}}" alt=""></div>
       <div class="scr shot stacked" data-scr-name="termin" style="background:{{bg:termin}}"><div class="status"><span>8:50</span><span>●●●</span></div><img src="{{shot:termin}}" alt=""></div>
@@ -257,17 +259,17 @@ h1 { font-weight: 600; font-size: clamp(40px, 6.4vw, 78px); line-height: 1.02; l
 <div class="darkband" id="liste">
   <div class="in">
     <div>
-      <h2>Bald zu zweit zum Ausprobieren.</h2>
-      <p>Tragt euch ein, dann melden wir uns, sobald ihr FamCal gemeinsam testen könnt. Zuerst mit der Vorlage Babyalltag.</p>
-      <form class="wl" id="wl"><label for="mail" class="sr">E‑Mail</label><input id="mail" type="email" required placeholder="eure@mail.de" autocomplete="email"><button type="submit">Eintragen</button></form>
-      <div class="note" id="wlnote">Vorschau: Das Formular speichert noch nichts.</div>
+      <h2 data-i18n="wlH"></h2>
+      <p data-i18n="wlP"></p>
+      <form class="wl" id="wl"><label for="mail" class="sr" data-i18n="mail">E‑Mail</label><input id="mail" type="email" required data-i18n-ph="ph" autocomplete="email"><button type="submit" data-i18n="submit"></button></form>
+      <div class="note" id="wlnote" data-i18n="note"></div>
     </div>
     <div class="trio">
-      <div><b>Auf Deutsch gedacht</b><span>Versteht „übermorgen“, „halb drei“ und Elternbriefe.</span></div>
-      <div><b>Keine Werbung</b><span>Eure Termine gehören euch und werden nicht vermarktet.</span></div>
-      <div><b>Beide Eltern gleich</b><span>Niemand ist Admin, beide sehen und ändern alles.</span></div>
+      <div><b data-i18n="t1"></b><span data-i18n="t1s"></span></div>
+      <div><b data-i18n="t2"></b><span data-i18n="t2s"></span></div>
+      <div><b data-i18n="t3"></b><span data-i18n="t3s"></span></div>
     </div>
-    <div class="foot"><span>FamCal · Arbeitsname · Köln</span><span>Ein Familienkalender, mit dem ihr redet.</span></div>
+    <div class="foot"><span data-i18n="f1"></span><span data-i18n="f2"></span></div>
   </div>
 </div>
 
@@ -281,23 +283,75 @@ const ease = t => t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
 const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 // Hell/Dunkel: Standard hell, Wahl wird pro Browser gemerkt
-function setMode(m) { document.documentElement.dataset.mode = m; $('mode').setAttribute('aria-pressed', m === 'dark'); $('mode').setAttribute('aria-label', m === 'dark' ? 'Heller Modus' : 'Dunkler Modus'); try { localStorage.setItem('famcal-mode', m) } catch (e) {} }
+function setMode(m) { document.documentElement.dataset.mode = m; $('mode').setAttribute('aria-pressed', m === 'dark'); $('mode').setAttribute('aria-label', T[lang][m === 'dark' ? 'light' : 'dark']); try { localStorage.setItem('famcal-mode', m) } catch (e) {} }
+
+// Sprache: Deutsch und Englisch, Standard aus dem Browser, Wahl wird gemerkt
+const T = {
+  de: {
+    nav: 'Hauptnavigation', navProto: 'Prototyp', navList: 'Warteliste', other: 'English', dark: 'Dunkler Modus', light: 'Heller Modus',
+    h1: 'Ein Kalender, mit dem ihr redet',
+    lede: 'FamCal ist der smarte gemeinsame Kalender für Familien, Paare und alle, die Termine teilen. Sagt einen Termin, und er steht an der richtigen Stelle.',
+    cta1: 'Auf die Warteliste', cta2: 'Prototyp ansehen',
+    phone: 'Echte Screens aus dem FamCal Prototyp: Tagesansicht, ein gesprochener Satz wird eingetragen, Termindetails, Woche nach Personen.',
+    wlH: 'Bald gemeinsam zum Ausprobieren.', wlP: 'Tragt euch ein, dann melden wir uns, sobald ihr FamCal gemeinsam testen könnt.',
+    mail: 'E‑Mail', ph: 'eure@mail.de', submit: 'Eintragen', note: 'Vorschau: Das Formular speichert noch nichts.', thanks: 'Danke! In dieser Vorschau wird noch nichts gespeichert.',
+    t1: 'In eurer Sprache', t1s: 'Deutsch und Englisch ab dem ersten Tag. Versteht „übermorgen“ und „halb drei“.',
+    t2: 'Keine Werbung', t2s: 'Eure Termine gehören euch und werden nicht vermarktet.',
+    t3: 'Alle gleichberechtigt', t3s: 'Niemand ist Admin, alle sehen und ändern alles.',
+    f1: 'FamCal · Arbeitsname · Köln', f2: 'Ein Kalender, mit dem ihr redet.',
+    feats: [
+      { h: "Ein Satz, und der Termin steht.", p: "Sagt es so, wie ihr es einander sagen würdet. FamCal schreibt den Termin in den richtigen Tag, mit Uhrzeit, Ort und wer hingeht. Kein Formular und kein Chatverlauf.",
+        f: [["Sprechen, tippen, fotografieren", "Eine Zeile unten auf jedem Screen, auch für Einladungen und Briefe."], ["Mitdenken am Ort", "Die Schritte erscheinen dort, wo der Termin entsteht, und haken sich ab."], ["Alles bleibt bearbeitbar", "Antippen, und die Zeile wird zum Textfeld."]] },
+      { h: "Er kennt euren Alltag.", p: "FamCal merkt sich, was ihr einmal gesagt habt, und ergänzt, was bei euch vor Ort gilt. Alles, was er selbst ergänzt, ist markiert und hat eine Quelle.",
+        f: [["Orte vom letzten Mal", "Praxis, Büro, Verein oder Oma müsst ihr nur einmal nennen."], ["Was bei euch gilt", "Feiertage, Schulferien und Öffnungszeiten."], ["Immer mit Quelle", "Jede Ergänzung zeigt, woher sie kommt."]] },
+      { h: "Ein Kalender für alle.", p: "Jeder Termin hat einen Besitzer in seiner Farbe. Wer was macht, seht ihr auf einen Blick, ohne dass einer den Sekretär spielt.",
+        f: [["Wer, ohne zuzuweisen", "„Tom holt Mia ab“ landet bei Tom."], ["Leise statt laut", "Keine Werbung, keine Streaks. Nur Fristen melden sich."], ["Vorlagen für jede Phase", "Baby, Schulstart, Umzug oder Urlaub, fertig zum Loslegen."]] }
+    ]
+  },
+  en: {
+    nav: 'Main navigation', navProto: 'Prototype', navList: 'Waitlist', other: 'Deutsch', dark: 'Dark mode', light: 'Light mode',
+    h1: 'A calendar you can talk to',
+    lede: 'FamCal is the smart shared calendar for families, couples and anyone who shares a schedule. Say an appointment and it lands in the right place.',
+    cta1: 'Join the waitlist', cta2: 'See the prototype',
+    phone: 'Real screens from the FamCal prototype, in German: day view, a spoken sentence being added, event details, week by person.',
+    wlH: 'Try it together soon.', wlP: 'Sign up and we will let you know as soon as you can test FamCal together.',
+    mail: 'Email', ph: 'you@email.com', submit: 'Sign up', note: 'Preview: the form does not save anything yet.', thanks: 'Thanks! Nothing is saved in this preview yet.',
+    t1: 'In your language', t1s: 'English and German from day one. Gets “day after tomorrow” and “half past two”.',
+    t2: 'No ads', t2s: 'Your events belong to you and are never sold.',
+    t3: 'Everyone equal', t3s: 'No admins. Everyone sees and edits everything.',
+    f1: 'FamCal · working name · Cologne', f2: 'A calendar you can talk to.',
+    feats: [
+      { h: "One sentence, and it's in.", p: "Say it the way you would tell each other. FamCal puts it on the right day, with time, place and who is going. No forms and no chat log.",
+        f: [["Speak, type or snap a photo", "One line at the bottom of every screen, even for invitations and letters."], ["Thinks along in place", "The steps show up right where the event is created and tick themselves off."], ["Everything stays editable", "Tap a line and it turns into a text field."]] },
+      { h: "It knows your routine.", p: "FamCal remembers what you told it once and adds what applies where you live. Everything it adds on its own is marked and has a source.",
+        f: [["Places from last time", "Name the doctor, the office, the club or grandma just once."], ["What applies locally", "Public holidays, school breaks and opening hours."], ["Always with a source", "Every addition shows where it came from."]] },
+      { h: "One calendar for everyone.", p: "Every event has an owner in their own color. You see who does what at a glance, without anyone playing secretary.",
+        f: [["Who, without assigning", "“Tom picks up Mia” lands with Tom."], ["Quiet, not loud", "No ads, no streaks. Only deadlines speak up."], ["Templates for every phase", "New baby, first school day, moving or holidays, ready to go."]] }
+    ]
+  }
+};
+let lang = 'de';
+try { lang = localStorage.getItem('famcal-lang') || ((navigator.language || 'de').toLowerCase().startsWith('de') ? 'de' : 'en') } catch (e) {}
+if (!T[lang]) lang = 'de';
+let FEATS = T[lang].feats;
+const featsHTML = f => f.map(([b, s]) => `<div class="feat"><b>${b}</b><span>${s}</span></div>`).join('');
+function setLang(l) {
+  lang = l; FEATS = T[l].feats; const t = T[l];
+  document.documentElement.lang = l;
+  document.querySelectorAll('[data-i18n]').forEach(n => { n.textContent = t[n.dataset.i18n] });
+  document.querySelectorAll('[data-i18n-aria]').forEach(n => n.setAttribute('aria-label', t[n.dataset.i18nAria]));
+  document.querySelectorAll('[data-i18n-ph]').forEach(n => { n.placeholder = t[n.dataset.i18nPh] });
+  const other = l === 'de' ? 'en' : 'de';
+  $('lang').textContent = other.toUpperCase(); $('lang').lang = other; $('lang').setAttribute('aria-label', t.other);
+  $('mode').setAttribute('aria-label', t[document.documentElement.dataset.mode === 'dark' ? 'light' : 'dark']);
+  $('innerL').innerHTML = FEATS.map((x, i) => `<div class="blk"><span class="num">${i + 1} / 3</span><h2>${x.h}</h2><p>${x.p}</p></div>`).join('');
+  $('innerR').innerHTML = FEATS.map(x => `<div class="blk">${featsHTML(x.f)}</div>`).join('');
+  $('srFeat').innerHTML = FEATS.map(x => `<h2>${x.h}</h2><p>${x.p}</p><ul>${x.f.map(([b, s]) => `<li>${b}: ${s}</li>`).join('')}</ul>`).join('');
+}
+setLang(lang);
 let savedMode = 'light'; try { savedMode = localStorage.getItem('famcal-mode') || 'light' } catch (e) {}
 setMode(savedMode);
 $('mode').addEventListener('click', () => setMode(document.documentElement.dataset.mode === 'dark' ? 'light' : 'dark'));
-
-const FEATS = [
-  { h: "Ein Satz, und der Termin steht.", p: "Sagt es so, wie ihr es dem Partner sagen würdet. FamCal schreibt den Termin in den richtigen Tag, mit Uhrzeit, Ort und wer hingeht. Kein Formular und kein Chatverlauf.",
-    f: [["Sprechen, tippen, fotografieren", "Eine Zeile unten auf jedem Screen, auch für den Elternbrief."], ["Mitdenken am Ort", "Die Schritte erscheinen dort, wo der Termin entsteht, und haken sich ab."], ["Alles bleibt bearbeitbar", "Antippen, und die Zeile wird zum Textfeld."]] },
-  { h: "Er kennt euren Kinderarzt.", p: "FamCal merkt sich, was ihr einmal gesagt habt, und ergänzt, was in eurer Stadt gilt. Alles, was er selbst ergänzt, ist markiert und hat eine Quelle.",
-    f: [["Adressen vom letzten Mal", "Praxis, Kita und Oma müsst ihr nur einmal nennen."], ["Was in eurer Stadt gilt", "Feiertage, Schulferien, Bürgeramt und Kitaportal."], ["Immer mit Quelle", "Jede Ergänzung zeigt, woher sie kommt."]] },
-  { h: "Ein Kalender für zwei.", p: "Jeder Termin hat einen Besitzer in seiner Farbe. Wer was macht, seht ihr auf einen Blick, ohne dass einer den Sekretär spielt.",
-    f: [["Wer, ohne zuzuweisen", "„Tom holt Mia ab“ landet bei Tom."], ["Leise statt laut", "Keine Werbung, keine Streaks. Nur Fristen melden sich."], ["Vorlagen für jede Phase", "Babyalltag zuerst, Kita‑Start und Geburtstage folgen."]] }
-];
-const featsHTML = f => f.map(([b, s]) => `<div class="feat"><b>${b}</b><span>${s}</span></div>`).join('');
-$('innerL').innerHTML = FEATS.map((x, i) => `<div class="blk"><span class="num">${i + 1} / 3</span><h2>${x.h}</h2><p>${x.p}</p></div>`).join('');
-$('innerR').innerHTML = FEATS.map(x => `<div class="blk">${featsHTML(x.f)}</div>`).join('');
-$('srFeat').innerHTML = FEATS.map(x => `<h2>${x.h}</h2><p>${x.p}</p><ul>${x.f.map(([b, s]) => `<li>${b}: ${s}</li>`).join('')}</ul>`).join('');
 
 // Choreografie am Scroll: Telefon steht, Screens schieben sich übereinander
 const PW = 320, PH = 656;
@@ -410,5 +464,7 @@ function buildMobile() {
 lastW = document.documentElement.clientWidth; lastH = innerHeight;
 measure();
 
-$('wl').addEventListener('submit', e => { e.preventDefault(); $('wlnote').textContent = 'Danke! In dieser Vorschau wird noch nichts gespeichert.' });
+$('lang').addEventListener('click', () => { const l = lang === 'de' ? 'en' : 'de'; setLang(l); try { localStorage.setItem('famcal-lang', l) } catch (e) {} measure() });
+
+$('wl').addEventListener('submit', e => { e.preventDefault(); $('wlnote').textContent = T[lang].thanks });
 </script>
