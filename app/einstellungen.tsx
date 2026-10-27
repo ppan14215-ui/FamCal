@@ -68,7 +68,7 @@ export default function Einstellungen() {
         <SRow icon="glocke" t="Hinweise · Sperrbildschirm" s="So sehen Push-Hinweise aus" onPress={() => router.push('/demo/sperrbildschirm')} />
         <SRow icon="chat" t="Teilen aus einem Chat" s="Nachricht aus WhatsApp übernehmen" onPress={() => router.push('/demo/teilen')} />
         <SRow icon="kalender" t="Widgets" s="Homescreen, klein und mittel" onPress={() => router.push('/demo/widgets')} />
-        <SRow icon="u-heft" t="Beispielfamilie laden" s="Julia, Tom und Ben mit vollem Kalender" onPress={() => { actions.loadDemo(); router.dismissAll(); router.replace('/heute'); }} />
+        <SRow icon="u-heft" t="Beispielfamilie laden" s="Julia, Tom und Ben mit vollem Kalender" onPress={() => { actions.loadDemo(); router.dismissAll(); router.replace('/kalender'); }} />
         <SRow icon="zuhause" t="Onboarding neu starten" s="Alles leeren, wie beim ersten Öffnen" onPress={() => { actions.reset(); router.dismissAll(); router.replace('/onboarding'); }} />
       </Group>
       <Txt size={12.5} line={17} color={tokens.mute} center>Prototyp ohne Login und ohne echte KI. Alles bleibt auf diesem Gerät und ist nach dem Neuladen wieder wie am Anfang.</Txt>

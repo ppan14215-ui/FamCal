@@ -36,7 +36,7 @@ export default function Sheet({ children, bg = tokens.bg, top, style, onClose, s
   const close = useCallback(() => {
     if (onClose) onClose();
     else if (router.canGoBack()) router.back();
-    else router.replace('/heute');
+    else router.replace('/kalender');
   }, [onClose]);
 
   const dismiss = () => {

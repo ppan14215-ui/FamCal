@@ -13,7 +13,7 @@ export default function Willkommen() {
       footer={
         <>
           <Btn label="Los geht’s" onPress={() => { actions.reset(); router.push('/onboarding/eltern'); }} />
-          <TextLink label="Ich wurde eingeladen" weight={400} onPress={() => { actions.loadDemo(); router.replace('/heute'); }} />
+          <TextLink label="Ich wurde eingeladen" weight={400} onPress={() => { actions.loadDemo(); router.replace('/kalender'); }} />
         </>
       }
     >

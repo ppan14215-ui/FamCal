@@ -2,6 +2,8 @@
  * Layout and control primitives. Each maps 1:1 to a helper in design/gen.py
  * (h1, h2, meta, group, card, btn, back, seg, toggle, chip, note, row, wrow).
  */
+import { useDockSpace } from '../../lib/dockSpace';
+import { useScroller } from '../../lib/landing';
 import React, { useEffect, useRef, useState } from 'react';
 import { ScrollView, StyleProp, View, ViewStyle, Platform, LayoutChangeEvent } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -36,7 +38,12 @@ type ScreenProps = {
 
 export function Screen({ children, tab, footer, bg = tokens.bg, gap = 14, scroll = true, padTop = 8, padBottom = 0, scrollRef, onScrollY }: ScreenProps) {
   const insets = useSafeAreaInsets();
-  const bottom = (tab ? 110 + insets.bottom : footer ? 16 : 34 + insets.bottom) + padBottom;
+  // The talk dock floats over the end of every screen (Julian 27.10.), so leave room for it.
+  const dock = useDockSpace();
+  const own = useRef<ScrollView>(null);
+  const ref = scrollRef ?? own;
+  const track = useScroller(ref);
+  const bottom = (tab ? 110 + insets.bottom : footer ? 16 : 34 + insets.bottom) + padBottom + (footer ? 0 : dock);
   // Content arrives instead of appearing (docs/MOTION.md).
   const content = (
     <Animated.View entering={rise()} style={{ gap, paddingHorizontal: 18, paddingTop: padTop, paddingBottom: bottom, flexGrow: 1 }}>{children}</Animated.View>
@@ -44,7 +51,7 @@ export function Screen({ children, tab, footer, bg = tokens.bg, gap = 14, scroll
   return (
     <View style={{ flex: 1, backgroundColor: bg, paddingTop: insets.top }}>
       {scroll ? (
-        <ScrollView ref={scrollRef} onScroll={onScrollY ? (e) => onScrollY(e.nativeEvent.contentOffset.y) : undefined} scrollEventThrottle={16} style={{ flex: 1 }} contentContainerStyle={{ flexGrow: 1 }} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+        <ScrollView ref={ref} onScroll={(e) => { track(e.nativeEvent.contentOffset.y); onScrollY?.(e.nativeEvent.contentOffset.y); }} scrollEventThrottle={16} style={{ flex: 1 }} contentContainerStyle={{ flexGrow: 1 }} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
           {content}
         </ScrollView>
       ) : (

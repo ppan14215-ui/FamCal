@@ -18,7 +18,7 @@ const FACTS = [
 export default function Infozettel() {
   const [drive, setDrive] = useState(true);
   return (
-    <Screen footer={<Btn label="Fertig" onPress={() => router.dismissTo('/heute')} />}>
+    <Screen footer={<Btn label="Fertig" onPress={() => router.dismissTo('/kalender')} />}>
       <BackBar center={<Meta>Dokumente</Meta>} />
       <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 14, paddingTop: 8, paddingHorizontal: 2 }}>
         <ClayIcon name="umschlag-euro" size={56} />

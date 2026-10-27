@@ -13,6 +13,7 @@ import { Geist_600SemiBold } from '@expo-google-fonts/geist/600SemiBold';
 import { Geist_700Bold } from '@expo-google-fonts/geist/700Bold';
 import ToastHost from '../src/components/ToastHost';
 import { VeilHost } from '../src/components/Veil';
+import Dock from '../src/components/Dock';
 import { tokens } from '../src/theme';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
@@ -51,6 +52,7 @@ export default function RootLayout() {
             <Stack.Screen name="demo/teilen" options={{ animation: 'fade' }} />
             <Stack.Screen name="demo/widgets" />
           </Stack>
+          <Dock />
           <VeilHost />
           <ToastHost />
         </WebInsets>

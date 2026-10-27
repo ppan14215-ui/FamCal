@@ -4,6 +4,14 @@ Alle sichtbaren Änderungen an FamCal. Neueste oben. Agenten und Menschen: Ände
 
 ## Unreleased
 
+### Sprechen überall, Kalender als Startansicht (27.10.)
+
+- Ein Sprechfeld für die ganze App. Es weiß, wo ihr seid: im Kalender wird ein Satz zum Termin oder zur Antwort, auf einem Termin ändert er diesen Termin, auf einer Liste füllt er diese Liste, beim Anlegen baut er die neue Liste.
+- Termin per Stimme: wer geht, was mitkommt, eine Stunde später, neuer Tag oder Ort, absagen mit Rückgängig.
+- Listen per Stimme: mehrere Dinge auf einmal, Mengen werden zusammengeführt, Doppeltes wird erkannt.
+- Nach jeder Änderung fliegt die Kugel genau an die geänderte Stelle und die leuchtet kurz auf.
+- Heute Tab entfernt, der Kalender ist die Startansicht. Jeder Tag ist eine Karte mit Terminen, darunter Mitbringen, Aufgaben und Fristen.
+
 ### Pivot 26.10.: ein gemeinsamer Kalender, mit dem ihr redet
 - Heute ist jetzt der sprechende Kalender. Unten ein Feld mit Foto, Text und Mikro wie in einer Chat App. Wo ein Chat seinen Verlauf zeigt, steht euer Kalender für die nächsten sieben Tage.
 - Ein Satz wird ein Termin für die richtige Person: „Tom bringt Ben Dienstag 10 Uhr zur Krabbelgruppe“, „Erstelle mir einen Termin für Freitag bei meinem Kinderarzt“. Ohne Uhrzeit fragt er nach, ohne Person fragt er, wer geht. Rückgängig geht immer.

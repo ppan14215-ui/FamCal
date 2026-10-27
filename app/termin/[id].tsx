@@ -24,6 +24,9 @@ import { whenLine, When } from '../../src/lib/when';
 import { WD_SHORT, weekday, hm, minutes } from '../../src/lib/dates';
 import type { CalEvent } from '../../src/state/types';
 import { haptics } from '../../src/lib/haptics';
+import Fresh from '../../src/components/Fresh';
+import { useScroller } from '../../src/lib/landing';
+import { useDockSpace } from '../../src/lib/dockSpace';
 import type { Who } from '../../src/state/types';
 
 const NEXT: Record<string, Who> = { T: 'J', J: 'both', both: null, null: 'T' };
@@ -49,6 +52,10 @@ export default function Termin() {
   const all = useStore((s) => s.events);
   const [draft, setDraft] = useState<When | null>(null);
   const [addPlace, setAddPlace] = useState(false);
+  // Spoken changes land on the fields below (Julian 27.10.).
+  const scroll = useRef<ScrollView>(null);
+  const track = useScroller(scroll);
+  const dock = useDockSpace();
   // Symbol: the picker writes draftSymbol; we take it over when we asked.
   const picked = useStore((s) => s.draftSymbol);
   const picking = useRef(false);
@@ -86,7 +93,7 @@ export default function Termin() {
   const w = whoLine(e.who, e.title);
   const added = (e.bring ?? []).filter((b) => b.by === 'assistent' && b.src);
   return (
-    <ScrollView style={{ flex: 1, backgroundColor: tokens.bg }} contentContainerStyle={{ paddingBottom: insets.bottom + 34 }} keyboardShouldPersistTaps="handled">
+    <ScrollView ref={scroll} onScroll={(ev) => track(ev.nativeEvent.contentOffset.y)} scrollEventThrottle={16} style={{ flex: 1, backgroundColor: tokens.bg }} contentContainerStyle={{ paddingBottom: insets.bottom + 34 + dock }} keyboardShouldPersistTaps="handled">
       <View style={{ backgroundColor: tint(e.icon), paddingTop: insets.top + 8 }}>
         <View style={{ paddingHorizontal: 18 }}><BackBar /></View>
         <PressScale scale={0.97} accessibilityLabel="Symbol ändern" onPress={pickIcon} style={{ height: 200, alignItems: 'center', justifyContent: 'center' }}>
@@ -98,7 +105,7 @@ export default function Termin() {
         </PressScale>
       </View>
       <View style={{ paddingHorizontal: 18, paddingTop: 16, gap: 14 }}>
-        <View style={{ gap: 4 }}>
+        <Fresh id={`${e.id}:title`} radius={12} style={{ gap: 4 }}>
           <EditText key={`t-${e.title}`} value={e.title} size={30} weight={700} placeholder="Titel" onCommit={(t) => t && actions.updateEvent(e.id, { title: t })} />
           {/* An empty place shows no field, only a quiet link that opens one (Julian 26.10.). */}
           {e.place || e.sub || addPlace ? (
@@ -109,8 +116,11 @@ export default function Termin() {
               <Txt size={15} color={tokens.sub}>Ort oder Notiz</Txt>
             </PressScale>
           )}
-        </View>
-        <WhenField card value={draft ?? now} onChange={change} onDone={done} extra={overlap} />
+        </Fresh>
+        <Fresh id={`${e.id}:when`} radius={22}>
+          <WhenField card value={draft ?? now} onChange={change} onDone={done} extra={overlap} />
+        </Fresh>
+        <Fresh id={`${e.id}:who`} radius={22}>
         <Card pad={14}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
             <Owner who={e.who} size={32} />
@@ -121,12 +131,13 @@ export default function Termin() {
             <Chip onPress={() => { haptics.select(); actions.setEventWho(e.id, NEXT[String(e.who)]); }}>Ändern</Chip>
           </View>
         </Card>
+        </Fresh>
         <Card pad={14} gap={10}>
           <Txt size={13} weight={600} color={tokens.sub}>Mitnehmen</Txt>
           <View style={{ marginHorizontal: -14 }}>
             {(e.bring ?? []).map((b) => (
+              <Fresh key={b.id} id={`bring:${b.id}`}>
               <ItemRow
-                key={b.id}
                 title={b.t}
                 meta={b.by === 'assistent' ? `Vom Assistenten ergänzt${b.src ? ' · ' + b.src : ''}` : undefined}
                 metaColor={tokens.done}
@@ -138,6 +149,7 @@ export default function Termin() {
                 onDelete={() => actions.deleteBring(e.id, b.id)}
                 editHint="Leer lassen löscht die Zeile"
               />
+              </Fresh>
             ))}
           </View>
           {added.length ? <SourceLink prefix={`${added.length} Dinge ergänzt nach`} s={{ label: added[0].src!, url: added[0].url }} /> : null}

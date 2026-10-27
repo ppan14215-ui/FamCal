@@ -1,6 +1,7 @@
 /**
  * Bottom navigation (Julian 25.10.): a floating pill with line icons and
- * labels, next to a round dark "+" button. Clay icons never appear here.
+ * labels. Clay icons never appear here. Since 27.10. the "+" lives in the
+ * talk field above it, which is on every screen.
  */
 import React, { useEffect, useState } from 'react';
 import { View, Platform, LayoutChangeEvent } from 'react-native';
@@ -16,7 +17,6 @@ import { tokens, springs } from '../theme';
 import { haptics } from '../lib/haptics';
 
 const TABS: { name: string; key: string; icon: LineName }[] = [
-  { name: 'heute', key: 'nav.heute', icon: 'home' },
   { name: 'kalender', key: 'nav.kalender', icon: 'cal' },
   { name: 'listen', key: 'nav.listen', icon: 'list' },
   { name: 'eingang', key: 'nav.eingang', icon: 'inbox' },
@@ -65,13 +65,6 @@ export default function NavBar({ state, navigation }: BottomTabBarProps) {
           );
         })}
       </View>
-      <PressScale
-        accessibilityLabel={t('nav.neu')}
-        onPress={() => { haptics.tap(); router.push('/neu'); }}
-        style={[{ width: 58, height: 58, borderRadius: 999, backgroundColor: tokens.ink, alignItems: 'center', justifyContent: 'center' }, plusShadow]}
-      >
-        <LineIcon name="plus" size={26} color="#FFFFFF" stroke={2.2} />
-      </PressScale>
     </View>
   );
 }

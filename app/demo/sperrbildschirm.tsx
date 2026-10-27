@@ -108,7 +108,7 @@ export default function Sperrbildschirm() {
           </Animated.View>
         ) : null}
         <Animated.View layout={LinearTransition.duration(240)}>
-          <Notif title="Eure Woche" body={preview} when="So 18:00" onPress={() => router.dismissTo('/heute')} />
+          <Notif title="Eure Woche" body={preview} when="So 18:00" onPress={() => router.dismissTo('/kalender')} />
         </Animated.View>
         <Txt size={13} color={WHITE} center style={{ opacity: 0.75, marginTop: 8 }}>Nur Wichtiges: höchstens 1 Hinweis am Tag plus Sonntags-Vorschau.</Txt>
       </View>

@@ -13,6 +13,7 @@ import { persons, personPalette } from '../theme';
 import { firstYear, Kid } from '../data/firstYear';
 import { findCity } from '../data/cities';
 import { findPlace } from '../lib/places';
+import { dueLabel } from '../lib/when';
 
 export type CalView = 'tag' | 'woche' | 'monat' | 'jahr';
 
@@ -212,8 +213,10 @@ export const actions = {
   toggleBring(eid: string, bid: string) {
     set((s) => ({ events: s.events.map((e) => (e.id === eid ? { ...e, bring: e.bring?.map((b) => (b.id === bid ? { ...b, done: !b.done } : b)) } : e)) }));
   },
-  addBring(eid: string, t: string) {
-    set((s) => ({ events: s.events.map((e) => (e.id === eid ? { ...e, bring: [...(e.bring ?? []), { id: S.newId('b'), t, done: false }] } : e)) }));
+  addBring(eid: string, t: string): string {
+    const id = S.newId('b');
+    set((s) => ({ events: s.events.map((e) => (e.id === eid ? { ...e, bring: [...(e.bring ?? []), { id, t, done: false }] } : e)) }));
+    return id;
   },
 
   // Tasks
@@ -234,8 +237,10 @@ export const actions = {
     if (!t) return actions.deleteTask(id);
     set((s) => ({ tasks: s.tasks.map((x) => (x.id === id ? { ...x, title: t } : x)) }));
   },
-  addTask(title: string) {
-    set((s) => ({ tasks: [...s.tasks, { id: S.newId('t'), title, icon: 'erledigt', who: null, done: false, text: 'Neu angelegt. Wer übernimmt?' }] }));
+  addTask(title: string, due?: string, who: Who = null): string {
+    const id = S.newId('t');
+    set((s) => ({ tasks: [...s.tasks, { id, title, icon: 'erledigt', who, done: false, due, dueLabel: due ? dueLabel(due) : undefined, text: 'Neu angelegt. Wer übernimmt?' }] }));
+    return id;
   },
   deleteTask(id: string) {
     const idx = state.tasks.findIndex((x) => x.id === id);
@@ -302,16 +307,18 @@ export const actions = {
       })),
     })));
   },
-  addItem(listId: string, text: string, sectionId?: string) {
+  addItem(listId: string, text: string, sectionId?: string): string | undefined {
     const p = S.parseItem(text);
     if (!p.name) return;
+    const id = S.newId('i');
     set((s) => ({
       lists: mapList(s.lists, listId, (l) => {
         const sid = l.kind === 'shopping' ? S.sectionFor(p.name) : sectionId ?? l.sections[l.sections.length - 1]?.id;
-        const item: Item = { id: S.newId('i'), name: p.name, qty: p.qty, note: p.note, who: null, done: false };
+        const item: Item = { id, name: p.name, qty: p.qty, note: p.note, who: null, done: false };
         return { ...l, sections: l.sections.map((sec) => (sec.id === sid ? { ...sec, items: [...sec.items, item] } : sec)) };
       }),
     }));
+    return id;
   },
   /** Add field: tapping again removes it (Canvas "Einkauf · Hinzufügen"). */
   toggleShopping(name: string) {

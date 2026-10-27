@@ -1,6 +1,7 @@
 /**
- * Sprechen oder schreiben (Pivot 26.10.): the field at the bottom of Heute,
- * with photo, text and mic like a chat app. The mic
+ * Sprechen oder schreiben (Pivot 26.10., überall seit 27.10.): one field at
+ * the bottom of every screen, with plus (photo and more), text and mic like a
+ * chat app. The mic
  * uses the browser's speech recognition where it is allowed; in the testlink
  * that is blocked, so it says an example sentence and marks it as one.
  */
@@ -19,16 +20,18 @@ const lift = Platform.select({
   default: { shadowColor: '#16232A', shadowOpacity: 0.1, shadowRadius: 12, shadowOffset: { width: 0, height: 8 }, elevation: 6 },
 });
 
-/** What the mic says in the testlink, one after the other. */
-const SPOKEN = [
-  'Erstelle mir einen Termin für Freitag bei meinem Kinderarzt',
-  'Samstag 10 Uhr Babyschwimmen, Tom geht mit Ben',
-  'Wann haben wir beide frei?',
-];
-/** Short enough to read at a glance above the field. */
-const EXAMPLES = ['Freitag zum Kinderarzt', 'Julia hat Fr 15 Uhr Zahnarzt', 'Wann haben wir frei?', 'Was ist am Wochenende?'];
+type Props = {
+  onSend: (text: string) => void;
+  /** Opens Foto, Termin, Aufgabe, Entwurf. */
+  onPlus?: () => void;
+  /** Short prompts above the field. */
+  suggestions?: string[];
+  /** What the mic says in the testlink, one after the other. */
+  spoken: string[];
+  placeholder?: string;
+};
 
-export default function TalkBar({ onSend, onPhoto, suggestions = EXAMPLES, placeholder = 'Sag oder schreib, was ansteht …' }: { onSend: (text: string) => void; onPhoto?: () => void; suggestions?: string[]; placeholder?: string }) {
+export default function TalkBar({ onSend, onPlus, suggestions = [], spoken, placeholder = 'Sag oder schreib, was ansteht …' }: Props) {
   const [text, setText] = useState('');
   const [listening, setListening] = useState(false);
   const [demo, setDemo] = useState(false);
@@ -61,7 +64,7 @@ export default function TalkBar({ onSend, onPhoto, suggestions = EXAMPLES, place
     if (listening) return;
     haptics.select();
     setListening(true);
-    const sentence = SPOKEN[turn.current++ % SPOKEN.length];
+    const sentence = spoken[turn.current++ % spoken.length];
     const SR = Platform.OS === 'web' ? ((globalThis as any).SpeechRecognition ?? (globalThis as any).webkitSpeechRecognition) : null;
     if (!SR) return say(sentence);
     try {
@@ -85,8 +88,8 @@ export default function TalkBar({ onSend, onPhoto, suggestions = EXAMPLES, place
 
   const input = (
     <View style={[{ flexDirection: 'row', alignItems: 'center', gap: 4, padding: 6, paddingLeft: 6, borderRadius: 30, backgroundColor: tokens.row, borderWidth: 1, borderColor: listening ? tokens.ink : tokens.hair }, lift]}>
-      <PressScale accessibilityLabel="Foto" onPress={onPhoto} style={{ width: 44, height: 44, borderRadius: 999, alignItems: 'center', justifyContent: 'center', backgroundColor: tokens.chipBg }}>
-        <LineIcon name="camera" size={21} color={tokens.ink} />
+      <PressScale accessibilityLabel="Foto, Termin, Aufgabe" onPress={onPlus} style={{ width: 44, height: 44, borderRadius: 999, alignItems: 'center', justifyContent: 'center', backgroundColor: tokens.chipBg }}>
+        <LineIcon name="plus" size={22} color={tokens.ink} stroke={2} />
       </PressScale>
       <TextInput
         value={text}

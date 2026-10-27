@@ -23,10 +23,10 @@ export type Reply =
 const pad = (n: number) => String(n).padStart(2, '0');
 const toHm = (m: number) => `${pad(Math.floor(m / 60))}:${pad(m % 60)}`;
 const cap = (s: string) => (s ? s[0].toUpperCase() + s.slice(1) : s);
-const clean = (w: string) => w.toLowerCase().replace(/[.,!?;:„“"]/g, '');
+export const clean = (w: string) => w.toLowerCase().replace(/[.,!?;:„“"]/g, '');
 
 /** Who a word means. The phone belongs to J in the prototype. */
-function whoOf(words: string[]): Who {
+export function whoOf(words: string[]): Who {
   const ws = words.map(clean);
   const name = (p: PersonId) => {
     const n = persons[p].name.toLowerCase();
@@ -54,7 +54,7 @@ const iconFor = (title: string): ClayName => ICONS.find(([re]) => re.test(title.
  * The longest run of words that reads as a day or time ("Donnerstag 9:30",
  * "am Freitag um 15 Uhr"). A bare number only counts next to "um" or "Uhr".
  */
-function findWhen(words: string[]): { when: When; from: number; to: number } | null {
+export function findWhen(words: string[]): { when: When; from: number; to: number } | null {
   for (let len = Math.min(6, words.length); len >= 1; len--) {
     for (let i = 0; i + len <= words.length; i++) {
       const part = words.slice(i, i + len).map(clean);

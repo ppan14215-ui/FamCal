@@ -19,6 +19,7 @@ import { tokens, springs, swapIn, persons } from '../../src/theme';
 import { useStore, actions } from '../../src/state/store';
 import { itemMeta, itemText } from '../../src/data/sample';
 import { haptics } from '../../src/lib/haptics';
+import Fresh from '../../src/components/Fresh';
 import type { List, Task } from '../../src/state/types';
 import type { ClayName } from '../../src/lib/clayIcons';
 
@@ -134,8 +135,8 @@ function Aufgaben({ tasks }: { tasks: Task[] }) {
       ) : null}
       <Group>
         {[...open, ...done].map((t) => (
+          <Fresh key={t.id} id={t.id}>
           <ItemRow
-            key={t.id}
             icon={t.icon}
             title={t.title}
             meta={t.done ? `erledigt von ${persons[t.doneBy ?? 'J'].name}` : t.dueLabel}
@@ -148,6 +149,7 @@ function Aufgaben({ tasks }: { tasks: Task[] }) {
             onDelete={() => actions.deleteTask(t.id)}
             editHint="Text antippen ändert den Titel"
           />
+          </Fresh>
         ))}
       </Group>
       <AddInline placeholder="Aufgabe hinzufügen …" onAdd={actions.addTask} />
@@ -218,8 +220,8 @@ function Sections({ list, counts }: { list: List; counts?: boolean }) {
             {ordered.length ? (
               <Group>
                 {ordered.map((i) => (
+                  <Fresh key={i.id} id={i.id}>
                   <ItemRow
-                    key={i.id}
                     title={i.name}
                     editText={itemText(i)}
                     meta={itemMeta(i)}
@@ -230,6 +232,7 @@ function Sections({ list, counts }: { list: List; counts?: boolean }) {
                     onCycleWho={() => actions.cycleItemWho(list.id, i.id)}
                     onDelete={() => actions.deleteItem(list.id, i.id)}
                   />
+                  </Fresh>
                 ))}
               </Group>
             ) : (

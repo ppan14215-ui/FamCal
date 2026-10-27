@@ -29,7 +29,7 @@ export default function Karten() {
         </View>
       )}
       <Hint center>{`Links zu ${persons.J.name}, rechts zu ${persons.T.name}. Ihr entscheidet, die App schlägt niemanden vor.`}</Hint>
-      <TextLink label="Fertig, zu Heute" color="#16232A" onPress={() => { actions.cardsToTasks(); router.replace('/heute'); }} />
+      <TextLink label="Fertig, zum Kalender" color="#16232A" onPress={() => { actions.cardsToTasks(); router.replace('/kalender'); }} />
     </Screen>
   );
 }

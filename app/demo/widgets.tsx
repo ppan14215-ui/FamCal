@@ -51,7 +51,7 @@ export default function Widgets() {
               <Small icon={eg.icon} kicker={`Frist · ${until(eg.frist)}`} kickerColor={tokens.frist} title="Elterngeld" sub="Bescheinigung fehlt" onPress={() => router.push('/infozettel')} />
             ) : null}
           </View>
-          <PressScale onPress={() => router.dismissTo('/heute')} style={{ width: SMALL * 2 + 18, height: SMALL, borderRadius: 26, backgroundColor: tokens.row, paddingVertical: 14, paddingHorizontal: 16, gap: 8 }}>
+          <PressScale onPress={() => router.dismissTo('/kalender')} style={{ width: SMALL * 2 + 18, height: SMALL, borderRadius: 26, backgroundColor: tokens.row, paddingVertical: 14, paddingHorizontal: 16, gap: 8 }}>
             <Txt size={13} weight={700}>
               Heute<Dot /> <Txt size={13} weight={500} color={tokens.sub}>{WD_SHORT[weekday(TODAY)]} {dayNum(TODAY)}.</Txt>
             </Txt>

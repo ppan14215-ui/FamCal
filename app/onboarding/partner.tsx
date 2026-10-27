@@ -32,7 +32,7 @@ export default function Partner() {
           onPress={async () => {
             await Share.share({ message: `${names.J} lädt dich in euren Familienkalender ein: https://${LINK}` }).catch(() => {});
             if (kid) router.push('/onboarding/jahr');
-            else router.replace('/heute');
+            else router.replace('/kalender');
           }}
         />
       }
