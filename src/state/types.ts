@@ -51,7 +51,35 @@ export type Task = {
   url?: string;
 };
 
-export type Item = { id: string; name: string; qty?: number; note?: string; who: PersonId | null; done: boolean };
+export type Item = { id: string; name: string; qty?: number; note?: string; who: PersonId | null; done: boolean; data?: ItemData };
+
+/**
+ * Lists that adapt (Julian 27.10.: "generative UI"). Claude never writes code
+ * for a list; it picks building blocks the app already draws, and the server
+ * fills what it can find (cover, year, author) for each new entry.
+ */
+export type Block = 'cover' | 'stars' | 'seen' | 'year' | 'by' | 'link' | 'date' | 'price' | 'place' | 'note';
+export type Blueprint = {
+  blocks: Block[];
+  /** Where covers and facts come from; null means nothing is looked up. */
+  source: 'books' | 'movies' | null;
+  /** Label for the seen block: "Gesehen", "Gelesen", "Gekocht". */
+  seenLabel?: string;
+};
+export type ItemData = {
+  cover?: string;
+  stars?: number;
+  seen?: boolean;
+  year?: string;
+  /** Author, director, shop. */
+  by?: string;
+  link?: string;
+  date?: string;
+  price?: string;
+  place?: string;
+  /** true while the server looks it up, so the row can show a placeholder. */
+  looking?: boolean;
+};
 
 export type Section = { id: string; title: string; items: Item[] };
 
@@ -63,6 +91,8 @@ export type List = {
   /** collection: plain rows without a check, e.g. films to watch (Julian 27.10.). */
   kind: 'shopping' | 'packing' | 'collection';
   sections: Section[];
+  /** Only for lists that adapt: which blocks each row shows. */
+  blueprint?: Blueprint;
 };
 
 export type InboxItem = {

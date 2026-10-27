@@ -5,7 +5,9 @@
  */
 import { useSyncExternalStore } from 'react';
 import * as S from '../data/sample';
-import type { CalEvent, Task, List, InboxItem, Doc, Milestone, Toast, Item, Who } from './types';
+import type { CalEvent, Task, List, InboxItem, Doc, Milestone, Toast, Item, Who, ItemData, Blueprint } from './types';
+import { enrichItem } from '../lib/enrich';
+import { blueprintFor, blueprintOnline } from '../lib/blueprint';
 import type { ClayName } from '../lib/clayIcons';
 import type { PersonId } from '../theme';
 import { TODAY, BEN_BORN } from '../lib/dates';
@@ -319,11 +321,26 @@ export const actions = {
     set((s) => ({
       lists: mapList(s.lists, listId, (l) => {
         const sid = l.kind === 'shopping' ? S.sectionFor(p.name) : sectionId ?? l.sections[l.sections.length - 1]?.id;
-        const item: Item = { id, name: p.name, qty: p.qty, note: p.note, who: null, done: false };
+        const item: Item = { id, name: p.name, qty: p.qty, note: p.note, who: null, done: false, data: l.blueprint?.source ? { looking: true } : undefined };
         return { ...l, sections: l.sections.map((sec) => (sec.id === sid ? { ...sec, items: [...sec.items, item] } : sec)) };
       }),
     }));
+    // A list that adapts looks up cover and facts for the new entry.
+    const bp = state.lists.find((l) => l.id === listId)?.blueprint;
+    if (bp?.source) enrichItem(listId, id, p.name, bp.source);
     return id;
+  },
+  /** Fills or changes the blocks of one entry (cover, stars, seen …). */
+  setItemData(listId: string, itemId: string, patch: Partial<ItemData>) {
+    set((s) => ({ lists: mapList(s.lists, listId, (l) => mapItems(l, (i) => (i.id === itemId ? { ...i, data: { ...i.data, ...patch } } : i))) }));
+  },
+  /** Claude's blueprint for a list; entries already on it get looked up too. */
+  setBlueprint(listId: string, bp: Blueprint) {
+    const before = state.lists.find((l) => l.id === listId);
+    set((s) => ({ lists: mapList(s.lists, listId, (l) => ({ ...l, kind: 'collection', blueprint: bp })) }));
+    if (bp.source && before?.blueprint?.source !== bp.source) {
+      before?.sections.flatMap((sec) => sec.items).forEach((i) => { if (!i.data?.cover) enrichItem(listId, i.id, i.name, bp.source!); });
+    }
   },
   /** Add field: tapping again removes it (Canvas "Einkauf · Hinzufügen"). */
   toggleShopping(name: string) {
@@ -335,7 +352,13 @@ export const actions = {
       actions.addItem('einkauf', name);
     }
   },
-  createList(list: List) { set((s) => ({ lists: [...s.lists, list], activeList: list.id })); },
+  createList(list: List) {
+    // The rules give a known kind its blocks at once; Claude may refine any name a moment later.
+    const bp = list.blueprint ?? (list.kind === 'shopping' ? null : blueprintFor(list.name));
+    const made: List = bp ? { ...list, kind: 'collection', blueprint: bp } : list;
+    set((s) => ({ lists: [...s.lists, made], activeList: list.id }));
+    if (list.kind !== 'shopping' && !list.blueprint) blueprintOnline(list.name).then((b) => { if (b) actions.setBlueprint(list.id, b); }).catch(() => {});
+  },
   /** Removes a whole list; the toast brings it back at the same place. */
   deleteList(id: string) {
     const i = state.lists.findIndex((l) => l.id === id);
