@@ -18,6 +18,9 @@ import { tokens, fonts } from '../theme';
 import { haptics } from '../lib/haptics';
 import { setTyping } from '../lib/keyboard';
 
+// Phones and tablets: Enter on the screen keyboard adds a line.
+const TOUCH = Platform.OS !== 'web' || (typeof window !== 'undefined' && !!window.matchMedia?.('(pointer: coarse)').matches);
+
 const LINE = 22;
 const PAD = 11;
 const MIN_H = LINE + PAD * 2;
@@ -52,10 +55,10 @@ export default function TalkBar({ onSend, onPlus, suggestions = [], spoken, plac
   const [demo, setDemo] = useState(false);
   const [boxH, setBoxH] = useState(MIN_H);
   const field = useRef<TextInput>(null);
-  const shift = useRef(false);
+  const blurT = useRef<ReturnType<typeof setTimeout>>(undefined);
   const turn = useRef(0);
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
-  useEffect(() => () => { timers.current.forEach(clearTimeout); setTyping(false); }, []);
+  useEffect(() => () => { timers.current.forEach(clearTimeout); clearTimeout(blurT.current); setTyping(false); }, []);
 
   // On the web the textarea never shrinks by itself, so measure it fresh.
   useEffect(() => {
@@ -124,29 +127,25 @@ export default function TalkBar({ onSend, onPlus, suggestions = [], spoken, plac
       </PressScale>
       <TextInput
         ref={field}
-        onFocus={() => setTyping(true)}
-        onBlur={() => setTyping(false)}
+        onFocus={() => { clearTimeout(blurT.current); setTyping(true); }}
+        // Tapping send blurs the field first; wait so the button does not move away under the finger.
+        onBlur={() => { blurT.current = setTimeout(() => setTyping(false), 350); }}
         multiline
         value={text}
-        onChangeText={(v) => {
-          // Phone keyboards often send no Enter key event, only a new line in the text. Treat that as send too.
-          if (Platform.OS === 'web' && !shift.current && (v.match(/\n/g)?.length ?? 0) > (text.match(/\n/g)?.length ?? 0)) return send(v.replace(/\n/g, ' '));
-          shift.current = false;
-          setText(v);
-        }}
-        enterKeyHint="send"
+        onChangeText={setText}
+        // On a phone Enter makes a new line and the arrow sends, as in the Claude app.
+        enterKeyHint={TOUCH ? 'enter' : 'send'}
         onContentSizeChange={Platform.OS === 'web' ? undefined : (e) => setBoxH(Math.min(MAX_H, Math.max(MIN_H, e.nativeEvent.contentSize.height + PAD * 2)))}
-        // Enter sends, Shift plus Enter makes a new line, as in a chat app.
+        // With a real keyboard Enter sends and Shift plus Enter makes a new line.
         onKeyPress={(e: any) => {
-          shift.current = e.nativeEvent.key === 'Enter' && !!e.nativeEvent.shiftKey;
-          if (Platform.OS === 'web' && e.nativeEvent.key === 'Enter' && !e.nativeEvent.shiftKey && !e.nativeEvent.isComposing) { e.preventDefault(); send(); }
+          if (Platform.OS === 'web' && !TOUCH && e.nativeEvent.key === 'Enter' && !e.nativeEvent.shiftKey && !e.nativeEvent.isComposing) { e.preventDefault(); send(); }
         }}
         scrollEnabled={boxH >= MAX_H}
         editable={!demo}
         placeholder={listening ? 'Ich höre zu …' : placeholder}
         placeholderTextColor={tokens.mute}
         selectionColor={tokens.ink}
-        returnKeyType="send"
+        returnKeyType={TOUCH ? 'default' : 'send'}
         accessibilityLabel="Was steht an?"
         style={[{ flex: 1, minWidth: 0, height: boxH, marginBottom: 2, fontFamily: fonts[400], fontSize: 16.5, lineHeight: LINE, color: tokens.ink, paddingVertical: PAD, paddingHorizontal: 8, textAlignVertical: 'top' }, Platform.OS === 'web' ? ({ outlineStyle: 'none' } as any) : null]}
       />
