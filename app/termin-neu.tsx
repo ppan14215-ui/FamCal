@@ -27,6 +27,7 @@ import type { Who } from '../src/state/types';
 import PressScale from '../src/components/ui/PressScale';
 import { LIVE } from '../src/lib/live';
 import { TODAY } from '../src/lib/dates';
+import { onToday } from '../src/screens/kalender/TodayView';
 import { tx } from '../src/i18n/lang';
 
 const BASE: { icon: ClayName; label: string }[] = [
@@ -93,7 +94,8 @@ export default function TerminNeu() {
       reminder: REMIND[remind],
     });
     actions.setCalDay(when.date);
-    actions.setCalView('tag');
+    // Heute shows the coming week; anything later opens in the list of days.
+    actions.setCalView(onToday(when.date) ? 'heute' : 'tag');
     haptics.success();
     toast(pass ? tx('Termin gespeichert, Mitbringliste ergänzt', 'Saved, bring list added') : tx('Termin gespeichert', 'Saved'));
     goBack();

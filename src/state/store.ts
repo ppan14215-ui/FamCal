@@ -16,7 +16,7 @@ import { findPlace } from '../lib/places';
 import { dueLabel } from '../lib/when';
 import { tx } from '../i18n/lang';
 
-export type CalView = 'tag' | 'woche' | 'monat' | 'jahr';
+export type CalView = 'heute' | 'tag' | 'woche' | 'monat' | 'jahr';
 
 type State = {
   names: { J: string; T: string };
@@ -70,7 +70,7 @@ const initial = (): State => ({
   milestones: [],
   onboardingCards: [],
   toast: null,
-  calView: 'tag',
+  calView: 'heute',
   calDay: TODAY,
   activeList: 'aufgaben',
   recentSymbols: [],

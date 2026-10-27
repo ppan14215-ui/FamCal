@@ -20,7 +20,7 @@ import PressScale from './ui/PressScale';
 import TalkBar from './TalkBar';
 import { setVeil } from './Veil';
 import { tokens, persons } from '../theme';
-import { useStore, actions } from '../state/store';
+import { useStore, actions, get } from '../state/store';
 import { plan, claudeSays, correction, replyPlan, listFromClaude, thinksOnline, Ctx, Plan, Result, SPOKEN, HINTS, PLACEHOLDER } from '../lib/act';
 import { dayLabel, slotLine } from '../lib/talk';
 import { locate, light } from '../lib/landing';
@@ -30,6 +30,7 @@ import { hm } from '../lib/dates';
 import { haptics } from '../lib/haptics';
 import type { CalEvent, Who } from '../state/types';
 import { tx, quote } from '../i18n/lang';
+import { onToday } from '../screens/kalender/TodayView';
 
 const STEP_MS = 850;
 const TIMES = ['09:00', '10:30', '14:00', '16:00'];
@@ -124,6 +125,7 @@ type Turn = { id: number; said: string; result: Result };
 
 export default function Dock() {
   const where = useWhere();
+  const hasEvents = useStore((s) => s.events.some((e) => !e.work));
   const insets = useSafeAreaInsets();
   const kb = useKeyboardInset();
   const typing = useTyping();
@@ -142,6 +144,7 @@ export default function Dock() {
   useEffect(() => () => timers.current.forEach(clearTimeout), []);
 
   if (!where) return null;
+  // Examples only while the calendar is still empty; after that they are clutter (Julian 27.10.).
   const navTop = Math.max(insets.bottom, 12) + 10 + 58 + 10;
   // Typing hides the tabs, so the field drops into their place right above the keyboard.
   const bottom = kb > 0 ? kb + 8 : where.tab && !typing ? navTop : insets.bottom + 12 + (where.tab ? 0 : where.lift);
@@ -194,6 +197,8 @@ export default function Dock() {
       const out = p.run();
       // A new Termin lands in the calendar; switch there first if we are elsewhere.
       const go = out.go ?? (out.result?.kind === 'event' ? '/kalender' : undefined);
+      // Heute shows one week; a Termin further out lands in the list of days.
+      if (out.result?.kind === 'event' && !onToday(out.result.event.date) && get().calView === 'heute') actions.setCalView('tag');
       if (go && go !== path) router.navigate(go as any);
       const finish = () => {
         if (out.land) light(out.lit?.length ? out.lit : out.land);
@@ -252,7 +257,7 @@ export default function Dock() {
         key={kind}
         onSend={hear}
         onPlus={() => router.push('/neu')}
-        suggestions={turn ? [] : HINTS[kind]}
+        suggestions={turn || (kind === 'kalender' && hasEvents) ? [] : HINTS[kind]}
         spoken={SPOKEN[kind]}
         placeholder={PLACEHOLDER[kind]}
       />

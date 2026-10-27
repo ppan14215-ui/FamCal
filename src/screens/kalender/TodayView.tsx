@@ -1,0 +1,186 @@
+/**
+ * Kalender · Heute (Julian 27.10.: the home page was too full, "man weiß
+ * nicht wo man hinschauen soll"; he picked design A "Heute zuerst"). One
+ * card for what comes next, a quiet line for the rest of today, then the
+ * coming week as short rows. Free days are left out. "Alles zeigen" opens
+ * the endless list of days.
+ */
+import React, { useMemo, useRef } from 'react';
+import { View, ScrollView } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { router } from 'expo-router';
+import Txt from '../../components/ui/Txt';
+import { Tile } from '../../components/ui/Clay';
+import { Owner } from '../../components/ui/Person';
+import { Check, Meta } from '../../components/ui/kit';
+import LineIcon from '../../components/ui/LineIcon';
+import PressScale from '../../components/ui/PressScale';
+import Fresh from '../../components/Fresh';
+import { tokens, persons } from '../../theme';
+import { useStore, actions } from '../../state/store';
+import { useScroller } from '../../lib/landing';
+import { useDockSpace } from '../../lib/dockSpace';
+import { upcomingFristen } from '../../lib/selectors';
+import { TODAY, NOW, minutes, hm, WD_SHORT, weekday, dmShort, daysBetween, until } from '../../lib/dates';
+import { haptics } from '../../lib/haptics';
+import type { CalEvent } from '../../state/types';
+import { tx } from '../../i18n/lang';
+
+/** How many days "Diese Woche" looks ahead. */
+export const WEEK_AHEAD = 7;
+
+const byStart = (a: CalEvent, b: CalEvent) => (a.allDay ? -1 : b.allDay ? 1 : a.start.localeCompare(b.start));
+
+function Label({ children, color = tokens.sub, right }: { children: string; color?: string; right?: React.ReactNode }) {
+  return (
+    <View style={{ flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between' }}>
+      <Txt size={12} weight={600} tracking={0.6} color={color}>{children.toUpperCase()}</Txt>
+      {right}
+    </View>
+  );
+}
+
+/** "in 45 Min", "in 2 Std", "jetzt", "morgen", "Do 30." */
+function when(e: CalEvent): string {
+  if (e.date !== TODAY) return daysBetween(TODAY, e.date) === 1 ? tx('morgen', 'tomorrow') : `${WD_SHORT[weekday(e.date)]} ${dmShort(e.date)}`;
+  if (e.allDay) return tx('heute', 'today');
+  const d = minutes(e.start) - minutes(NOW);
+  if (d <= 0) return tx('jetzt', 'now');
+  if (d < 60) return tx(`in ${d} Min`, `in ${d} min`);
+  return tx(`in ${Math.round(d / 60)} Std`, `in ${Math.round(d / 60)} h`);
+}
+
+const span = (e: CalEvent) => (e.allDay ? tx('ganztägig', 'all day') : e.end ? tx(`${hm(e.start)} bis ${hm(e.end)}`, `${hm(e.start)} to ${hm(e.end)}`) : hm(e.start));
+
+/** The one thing to look at: the next Termin, big. */
+function Next({ e }: { e: CalEvent }) {
+  const open = (e.bring ?? []).filter((b) => !b.done);
+  const who = e.who === 'both' ? tx('Beide', 'Both') : e.who ? persons[e.who].name : null;
+  return (
+    <Fresh id={e.id} radius={24}>
+      <PressScale scale={0.985} onPress={() => router.push(`/termin/${e.id}`)} style={{ backgroundColor: tokens.row, borderRadius: 24, padding: 20, gap: 14 }}>
+        <Label color={tokens.done}>{`${tx('Als Nächstes', 'Up next')} · ${when(e)}`}</Label>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
+          <View style={{ flex: 1, minWidth: 0, gap: 4 }}>
+            <Txt size={24} line={29} weight={600} tracking={-0.4} numberOfLines={2}>{e.title}</Txt>
+            <Meta numberOfLines={1}>{[span(e), e.place ?? e.sub].filter(Boolean).join(' · ')}</Meta>
+          </View>
+          <Tile name={e.icon} size={56} radius={16} />
+        </View>
+        {who || open.length ? (
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            {who ? (
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                <Owner who={e.who} size={22} />
+                <Txt size={13.5} weight={600} color={tokens.sub}>{who}</Txt>
+              </View>
+            ) : null}
+            {open.length ? <Txt size={13.5} color={tokens.sub} numberOfLines={1} style={{ flex: 1 }}>{`${who ? '· ' : ''}${tx('Mitbringen', 'Bring')}: ${open.map((b) => b.t).join(', ')}`}</Txt> : null}
+          </View>
+        ) : null}
+      </PressScale>
+    </Fresh>
+  );
+}
+
+/** One short row: time or weekday, title, who. */
+function Row({ e, lead, showTime }: { e: CalEvent; lead: string; showTime?: boolean }) {
+  return (
+    <Fresh id={e.id} radius={14}>
+      <PressScale scale={0.985} onPress={() => router.push(`/termin/${e.id}`)} style={{ flexDirection: 'row', alignItems: 'center', gap: 14, minHeight: 44 }}>
+        <Txt size={14} color={tokens.sub} style={{ width: 56 }}>{lead}</Txt>
+        <Txt size={16} weight={500} numberOfLines={1} style={{ flex: 1 }}>{e.title}</Txt>
+        {showTime && !e.allDay ? <Txt size={13} color={tokens.mute}>{hm(e.start)}</Txt> : null}
+        <Owner who={e.who} size={22} />
+      </PressScale>
+    </Fresh>
+  );
+}
+
+export default function TodayView({ header }: { header: React.ReactNode }) {
+  const events = useStore((s) => s.events);
+  const tasks = useStore((s) => s.tasks);
+  const docs = useStore((s) => s.docs);
+  const insets = useSafeAreaInsets();
+  const dock = useDockSpace();
+  const ref = useRef<ScrollView>(null);
+  const track = useScroller(ref);
+
+  const { next, later, week, todo, fristen } = useMemo(() => {
+    const real = events.filter((e) => !e.work);
+    const today = real.filter((e) => e.date === TODAY).sort(byStart);
+    // Still to come today; a running Termin counts until it ends.
+    const left = today.filter((e) => e.allDay || minutes(e.end ?? e.start) > minutes(NOW));
+    const ahead = real
+      .filter((e) => e.date > TODAY && daysBetween(TODAY, e.date) <= WEEK_AHEAD)
+      .sort((a, b) => a.date.localeCompare(b.date) || byStart(a, b));
+    const timed = left.filter((e) => !e.allDay);
+    const next = timed[0] ?? left[0] ?? ahead[0];
+    return {
+      next,
+      later: left.filter((e) => e !== next),
+      week: ahead.filter((e) => e !== next),
+      todo: tasks.filter((t) => !t.done && t.due && t.due <= TODAY),
+      fristen: upcomingFristen(docs, 14),
+    };
+  }, [events, tasks, docs]);
+
+  const all = () => { haptics.select(); actions.setCalDay(TODAY); actions.setCalView('tag'); };
+
+  return (
+    <ScrollView
+      ref={ref}
+      style={{ flex: 1 }}
+      showsVerticalScrollIndicator={false}
+      scrollEventThrottle={16}
+      onScroll={(e) => track(e.nativeEvent.contentOffset.y)}
+      contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 8, paddingBottom: 110 + insets.bottom + dock, gap: 28 }}
+    >
+      {header}
+      {next ? <Next e={next} /> : (
+        <View style={{ backgroundColor: tokens.row, borderRadius: 24, padding: 20, gap: 6 }}>
+          <Txt size={20} weight={600}>{tx('Nichts geplant', 'Nothing planned')}</Txt>
+          <Meta>{tx('Die nächsten Tage sind frei. Sag unten einfach, was ansteht.', 'The next days are free. Just say below what\'s coming up.')}</Meta>
+        </View>
+      )}
+
+      {later.length || todo.length ? (
+        <View style={{ gap: 6, paddingHorizontal: 4 }}>
+          <Label>{tx('Später heute', 'Later today')}</Label>
+          {later.map((e) => <Row key={e.id} e={e} lead={e.allDay ? tx('Tag', 'Day') : hm(e.start)} />)}
+          {todo.map((t) => (
+            <Fresh key={t.id} id={t.id} radius={14}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14, minHeight: 44 }}>
+                <View style={{ width: 56 }}><Check done={t.done} onPress={() => actions.toggleTask(t.id)} /></View>
+                <Txt size={16} weight={500} numberOfLines={1} style={{ flex: 1 }}>{t.title}</Txt>
+                {t.due! < TODAY ? <Txt size={13} color={tokens.frist}>{tx('überfällig', 'overdue')}</Txt> : null}
+                <Owner who={t.who} size={22} />
+              </View>
+            </Fresh>
+          ))}
+        </View>
+      ) : null}
+
+      <View style={{ gap: 6, paddingHorizontal: 4 }}>
+        <Label right={
+          <PressScale onPress={all} hitSlop={10} scale={0.94} accessibilityLabel={tx('Alle Tage zeigen', 'Show all days')}>
+            <Txt size={14} weight={600} color={tokens.done}>{tx('Alles zeigen', 'Show all')}</Txt>
+          </PressScale>
+        }>{tx('Diese Woche', 'This week')}</Label>
+        {week.length ? week.map((e) => <Row key={e.id} e={e} showTime lead={daysBetween(TODAY, e.date) === 1 ? tx('Morgen', 'Tmrw') : WD_SHORT[weekday(e.date)]} />) : (
+          <Meta>{tx('Sonst ist die Woche frei.', 'The rest of the week is free.')}</Meta>
+        )}
+        {fristen.map((d) => (
+          <PressScale key={d.id} onPress={d.route ? () => router.push(d.route as any) : undefined} style={{ flexDirection: 'row', alignItems: 'center', gap: 14, minHeight: 44 }}>
+            <View style={{ width: 56 }}><LineIcon name="clock" size={16} color={tokens.frist} /></View>
+            <Txt size={16} weight={500} numberOfLines={1} style={{ flex: 1 }}>{d.title}</Txt>
+            <Txt size={13} color={tokens.frist}>{`${tx('Frist', 'Due')} ${until(d.frist!)}`}</Txt>
+          </PressScale>
+        ))}
+      </View>
+    </ScrollView>
+  );
+}
+
+/** Whether a Termin on this day shows on the Heute page, so a spoken one can land there. */
+export const onToday = (date: string) => date >= TODAY && daysBetween(TODAY, date) <= WEEK_AHEAD;
