@@ -40,7 +40,8 @@ const NAMES: Record<Block, () => string> = {
 
 /** "Mit Cover, Bewertung und Gesehen." for the plan and the new list screen. */
 export function blocksLine(bp: Blueprint): string {
-  const parts = bp.blocks.map((b) => (b === 'seen' ? bp.seenLabel ?? tx('Erledigt', 'Done') : NAMES[b]())).filter(Boolean).slice(0, 4);
+  const by = bp.source === 'movies' ? tx('Regie', 'director') : bp.source === 'books' ? tx('Autor', 'author') : NAMES.by();
+  const parts = bp.blocks.map((b) => (b === 'seen' ? bp.seenLabel ?? tx('Erledigt', 'Done') : b === 'by' ? by : NAMES[b]())).filter(Boolean).slice(0, 4);
   const list = parts.length < 2 ? parts.join('') : `${parts.slice(0, -1).join(', ')} ${tx('und', 'and')} ${parts[parts.length - 1]}`;
   return tx(`Mit ${list}.`, `With ${list}.`) + (bp.source ? tx(' Cover suche ich selbst.', ' I find the covers myself.') : '');
 }
