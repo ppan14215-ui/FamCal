@@ -67,6 +67,8 @@ h1 { font-weight: 600; font-size: clamp(40px, 6.4vw, 78px); line-height: 1.02; l
 .ph { position: absolute; left: 0; top: 0; width: 320px; height: 656px; transform-origin: 0 0; will-change: transform; border-radius: 50px; background: var(--frame); padding: 9px; box-shadow: 0 40px 80px -36px rgba(22,35,42,.5) }
 .ph .screen { position: relative; width: 100%; height: 100%; border-radius: 41px; overflow: hidden; background: var(--screen); isolation: isolate }
 .island { position: absolute; z-index: 9; top: 10px; left: 50%; transform: translateX(-50%); width: 92px; height: 26px; border-radius: 999px; background: #000 }
+.scr.shot img { display: block; width: 100%; height: auto }
+.scr.shot .status { padding-bottom: 6px; color: #16232A }
 .scr { position: absolute; inset: 0; background: var(--screen); display: flex; flex-direction: column; will-change: transform; transform-origin: 50% 0 }
 .scr.stacked { border-radius: 30px 30px 0 0; box-shadow: 0 -10px 30px rgba(10,10,10,.12); transform: translateY(100%) }
 .status { display: flex; justify-content: space-between; padding: 14px 26px 0; font: 600 13px/1 var(--f-body); flex-shrink: 0 }
@@ -232,99 +234,16 @@ h1 { font-weight: 600; font-size: clamp(40px, 6.4vw, 78px); line-height: 1.02; l
       <div class="cta-row"><a class="btn btn-primary" href="#liste">Auf die Warteliste</a><a class="btn btn-ghost" href="https://claude.ai/artifact/NfyQBbzthKG9d21rTXfM1F" target="_blank" rel="noopener">Prototyp ansehen</a></div>
     </div>
 
-    <div class="ph side" data-pos="-2" aria-hidden="true"><div class="screen"><span class="island"></span><div class="scr">
-      <div class="status"><span>8:50</span><span>●●●</span></div>
-      <div class="s-head"><div class="s-title">November</div></div>
-      <div class="cal"><span class="h">Mo</span><span class="h">Di</span><span class="h">Mi</span><span class="h">Do</span><span class="h">Fr</span><span class="h">Sa</span><span class="h">So</span>{{month}}</div>
-    </div></div></div>
-    <div class="ph side" data-pos="-1" aria-hidden="true"><div class="screen"><span class="island"></span><div class="scr">
-      <div class="status"><span>8:50</span><span>●●●</span></div>
-      <div class="s-head"><div class="s-title">Einkauf</div><div class="s-sub">Tom geht heute um 17:30</div></div>
-      <div class="pad"><div class="box list">
-        <div class="row"><span class="c"></span><span class="tx"><b>Hafermilch</b><small>ungesüßt</small></span><span class="q">2</span></div>
-        <div class="row"><span class="c"></span><span class="tx"><b>Windeln Größe 2</b><small>Vom Assistenten ergänzt</small></span><span class="q">1</span></div>
-        <div class="row"><span class="c"></span><span class="tx"><b>Bananen</b><small>für Mia</small></span><span class="q">6</span></div>
-        <div class="row"><span class="c ok">{{chk}}</span><span class="tx"><b>Kaffee</b><small>erledigt von Julia</small></span><span class="q">1</span></div>
-      </div></div>
-    </div></div></div>
-    <div class="ph side" data-pos="1" aria-hidden="true"><div class="screen"><span class="island"></span><div class="photo">
-      <div class="paper"><small>Kita Sonnenblume · Elternbrief</small><b>Laternenbasteln</b><i style="width:92%"></i><i style="width:80%"></i><mark>Samstag, 14. November, 10 Uhr</mark><i style="width:88%"></i><i style="width:60%"></i><mark>Bitte Schere und Kleber mitbringen</mark><i style="width:90%"></i><i style="width:72%"></i></div>
-      <span class="seen"><span class="c ok">{{chk}}</span> 1 Termin und 2 Dinge erkannt</span>
-    </div></div></div>
-    <div class="ph side" data-pos="2" aria-hidden="true"><div class="screen"><span class="island"></span><div class="scr">
-      <div class="status"><span>8:50</span><span>●●●</span></div>
-      <div class="s-head"><div class="s-title">Vorlagen</div><div class="s-sub">Womit fangt ihr an?</div></div>
-      <div class="tplv">
-        <div class="first">{{img:fussabdruck}}<span><b>Babyalltag</b><small>U‑Termine, Elterngeld, Hebamme</small></span></div>
-        <div>{{img:hand-nimmt}}<span><b>Kita‑Start</b><small>Eingewöhnung, Kitaportal</small></span></div>
-        <div>{{img:geschenk}}<span><b>Geburtstage</b><small>Einladungen, Geschenke</small></span></div>
-        <div>{{img:einkauf}}<span><b>Wocheneinkauf</b><small>Liste, wer geht</small></span></div>
-      </div>
-    </div></div></div>
+    <div class="ph side" data-pos="-2" aria-hidden="true"><div class="screen"><span class="island"></span><div class="scr shot" data-scr-name="monat" style="background:{{bg:monat}}"><div class="status"><span>8:50</span><span>●●●</span></div><img src="{{shot:monat}}" alt=""></div></div></div>
+    <div class="ph side" data-pos="-1" aria-hidden="true"><div class="screen"><span class="island"></span><div class="scr shot" data-scr-name="listen" style="background:{{bg:listen}}"><div class="status"><span>8:50</span><span>●●●</span></div><img src="{{shot:listen}}" alt=""></div></div></div>
+    <div class="ph side" data-pos="1" aria-hidden="true"><div class="screen"><span class="island"></span><div class="scr shot" data-scr-name="eingang" style="background:{{bg:eingang}}"><div class="status"><span>8:50</span><span>●●●</span></div><img src="{{shot:eingang}}" alt=""></div></div></div>
+    <div class="ph side" data-pos="2" aria-hidden="true"><div class="screen"><span class="island"></span><div class="scr shot" data-scr-name="onb" style="background:{{bg:onb}}"><div class="status"><span>8:50</span><span>●●●</span></div><img src="{{shot:onb}}" alt=""></div></div></div>
 
-    <div class="ph" id="mainPhone" role="img" aria-label="FamCal auf dem Telefon: ein gesprochener Satz wird zum Termin, dann die Termindetails mit ergänzten Quellen, dann die Woche nach Personen."><div class="screen" id="mainScreen"><span class="island"></span>
-      <div class="scr" data-scr="0">
-        <div class="status"><span>8:50</span><span>●●●</span></div>
-        <div class="s-head">
-          <div class="s-title">Diese Woche</div>
-          <div class="week"><span>Mo<b>26</b><i class="has"></i></span><span>Di<b>27</b><i></i></span><span>Mi<b>28</b><i class="has"></i></span><span class="on">Do<b>29</b><i class="has"></i></span><span>Fr<b>30</b><i data-dot="fr"></i></span><span>Sa<b>31</b><i data-dot="sa"></i></span><span>So<b>1</b><i></i></span></div>
-        </div>
-        <div class="days">
-          <div class="day"><h3><b>Heute</b> · Do 29. Okt</h3>
-            <div class="row"><time>10:00</time><span class="tile" style="background:#F8E8E5">{{img:fussabdruck}}</span><span class="tx"><b>Hebamme Anke</b><small>Hausbesuch, Gewicht messen</small></span><span class="who j">J</span></div>
-            <div class="slot" data-slot="do"></div>
-            <div class="row"><time>17:30</time><span class="tile" style="background:#E7EDE4">{{img:einkauf}}</span><span class="tx"><b>Wocheneinkauf</b><small>Rewe Neusser Str.</small></span><span class="who t">T</span></div>
-          </div>
-          <div class="day"><h3><b>Morgen</b> · Fr 30. Okt</h3>
-            <div class="slot" data-slot="fr"></div>
-            <div class="row" data-empty="fr"><time>&nbsp;</time><span class="tx"><small>Noch nichts geplant</small></span></div>
-          </div>
-          <div class="day"><h3><b>Sa 31. Okt</b></h3>
-            <div class="slot" data-slot="sa"></div>
-            <div class="row"><time>15:00</time><span class="tile" style="background:#F2EEE7">{{img:kochtopf}}</span><span class="tx"><b>Oma kommt zum Kaffee</b><small>Bringt Kuchen mit</small></span><span class="who j">J</span></div>
-          </div>
-        </div>
-        <div class="dock"><span class="say phd" data-say>Sag, was ansteht …</span><span class="cam" aria-hidden="true">{{camsvg}}</span><span class="orb" data-orb><span class="bars"><i></i><i></i><i></i><i></i></span></span></div>
-      </div>
-
-      <div class="scr stacked" data-scr="1">
-        <div class="status"><span>8:51</span><span>●●●</span></div>
-        <div class="back"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="m15 5-7 7 7 7"/></svg>Diese Woche</div>
-        <div class="hero-t"><span class="tile" style="background:#E6EEF4">{{img:stethoskop}}</span><span><b>U3 bei Dr. Weber</b><small>Do 29. Okt · 14:30</small></span></div>
-        <div class="pad">
-          <div class="box">
-            <div class="kv"><span class="k">Wo</span><span class="v">Venloer Str. 12, Köln<small>Vom letzten Termin</small></span></div>
-            <div class="kv"><span class="k">Wer</span><span class="v" style="display:flex;gap:8px;align-items:center"><span class="who j">J</span>Julia mit Ben</span></div>
-            <div class="kv"><span class="k">Mitbringen</span><span class="v chips"><span>U‑Heft</span><span>Impfpass</span><span>Windel</span></span></div>
-          </div>
-          <div class="asst">Vom Assistenten ergänzt</div>
-          <div class="box">
-            <div class="src"><span class="c ok">{{chk}}</span><span>U3 ist in der 4. bis 5. Lebenswoche, Ben ist 6 Wochen alt<em>G‑BA Kinder‑Richtlinie</em></span></div>
-            <div class="src"><span class="c ok">{{chk}}</span><span>Nächste Untersuchung: U4 ab 14. Dezember<em>G‑BA Kinder‑Richtlinie</em></span></div>
-          </div>
-        </div>
-        <div class="dock"><span class="say phd">Verschieb auf 15 Uhr …</span><span class="cam" aria-hidden="true">{{camsvg}}</span><span class="orb"><span class="bars"><i></i><i></i><i></i><i></i></span></span></div>
-      </div>
-
-      <div class="scr stacked" data-scr="2">
-        <div class="status"><span>8:52</span><span>●●●</span></div>
-        <div class="s-head"><div class="s-title">Wer macht was</div><div class="s-sub">Do 29. Okt bis So 1. Nov</div></div>
-        <div class="pad">
-          <div class="duo"><span class="t">Tom<i>3</i></span><span class="j">Julia<i>3</i></span></div>
-          <div class="box mini">
-            <h4>Tom</h4>
-            <div class="row"><time>17:30</time><span class="tx"><b>Wocheneinkauf</b></span></div>
-            <div class="row"><time>Fr 16</time><span class="tx"><b>Mia von der Kita abholen</b></span></div>
-            <div class="row"><time>Sa 11</time><span class="tx"><b>Leas Geburtstag, Geschenk</b></span></div>
-            <h4>Julia</h4>
-            <div class="row"><time>10:00</time><span class="tx"><b>Hebamme Anke</b></span></div>
-            <div class="row"><time>14:30</time><span class="tx"><b>U3 bei Dr. Weber</b></span></div>
-            <div class="row"><time>Sa 15</time><span class="tx"><b>Oma kommt zum Kaffee</b></span></div>
-          </div>
-          <div class="join"><span class="who t">T</span>Tom hat „Mia abholen“ übernommen</div>
-        </div>
-        <div class="dock"><span class="say phd">Wer holt Mia nächste Woche ab?</span><span class="cam" aria-hidden="true">{{camsvg}}</span><span class="orb"><span class="bars"><i></i><i></i><i></i><i></i></span></span></div>
-      </div>
+    <div class="ph" id="mainPhone" role="img" aria-label="Echte Screens aus dem FamCal Prototyp: Tagesansicht, ein gesprochener Satz wird eingetragen, Termindetails, Woche nach Personen."><div class="screen" id="mainScreen"><span class="island"></span>
+      <div class="scr shot" data-scr-name="tag" style="background:{{bg:tag}}"><div class="status"><span>8:50</span><span>●●●</span></div><img src="{{shot:tag}}" alt=""></div>
+      <div class="scr shot stacked" data-scr-name="talk3" style="background:{{bg:talk3}}"><div class="status"><span>8:50</span><span>●●●</span></div><img src="{{shot:talk3}}" alt=""></div>
+      <div class="scr shot stacked" data-scr-name="termin" style="background:{{bg:termin}}"><div class="status"><span>8:50</span><span>●●●</span></div><img src="{{shot:termin}}" alt=""></div>
+      <div class="scr shot stacked" data-scr-name="woche" style="background:{{bg:woche}}"><div class="status"><span>8:50</span><span>●●●</span></div><img src="{{shot:woche}}" alt=""></div>
     </div></div>
 
     <div class="card l" id="cardL" aria-hidden="true"><div class="inner" id="innerL"></div></div>
@@ -455,7 +374,7 @@ function frame(s) {
   const t = s - p1;
   innerL.style.transform = `translateY(${cardH / 2 - L * M.k / 2 - t * M.k}px)`;
   innerR.style.transform = `translateY(${cardH / 2 - L / 2 - t * 1.08 + 24}px)`;
-  const pr = i => i < scr.length ? clamp((t - (i * L - .78 * L)) / (.5 * L)) : 0;
+  const pr = i => i < scr.length ? clamp((t - ((i - 1) * L - .6 * L)) / (.5 * L)) : 0;
   scr.forEach((el, i) => {
     const mine = i ? pr(i) : 1, next = pr(i + 1);
     el.style.transform = mine < 1 ? `translateY(${(1 - mine) * 100}%)` : `scale(${1 - .06 * next})`;
@@ -480,7 +399,7 @@ function buildMobile() {
     w.style.width = PW * k + 'px'; w.style.height = PH * k * .82 + 'px';
     const ph = document.createElement('div'); ph.className = 'ph';
     ph.innerHTML = `<div class="screen"><span class="island"></span></div>`;
-    const c = scr[i].cloneNode(true); c.style.transform = 'none'; c.style.filter = ''; c.classList.remove('stacked');
+    const c = scr[i + 1].cloneNode(true); c.style.transform = 'none'; c.style.filter = ''; c.classList.remove('stacked');
     c.querySelectorAll('[data-say],[data-orb],[data-slot],[data-empty],[data-dot]').forEach(n => ['data-say', 'data-orb', 'data-slot', 'data-empty', 'data-dot'].forEach(a => n.removeAttribute(a)));
     ph.querySelector('.screen').appendChild(c);
     ph.style.transform = `scale(${k})`;
@@ -488,60 +407,8 @@ function buildMobile() {
   });
 }
 
-// Live im ersten Screen: Satz wird zu Termin
-const S0 = scr[0];
-const say = S0.querySelector('[data-say]'), orb = S0.querySelector('[data-orb]'), bars = [...orb.querySelectorAll('i')];
-const slotOf = k => S0.querySelector(`[data-slot="${k}"]`), dotOf = k => S0.querySelector(`[data-dot="${k}"]`), emptyFr = S0.querySelector('[data-empty="fr"]');
-const SCENES = [
-  { say: "Tom holt Mia morgen um vier von der Kita ab", slot: "fr", dot: "fr", hideEmpty: true,
-    steps: ["Morgen ist Freitag, 30. Oktober", "Kita Sonnenblume, Abholung bis 16:30", "Das macht sonst Julia, jetzt Tom"],
-    row: { time: "16:00", icon: "hand-nimmt", tint: "#F2EEE7", title: "Mia von der Kita abholen", sub: "Kita Sonnenblume, Lindenstr. 4", who: "t" } },
-  { say: "Ben hat heute um halb drei die U3 bei Dr. Weber", slot: "do",
-    steps: ["Dr. Weber, Venloer Str. 12, kenne ich vom letzten Termin", "Julia hat um halb drei frei, Tom ist im Büro", "U‑Heft und Impfpass mitnehmen"],
-    row: { time: "14:30", icon: "stethoskop", tint: "#E6EEF4", title: "U3 bei Dr. Weber", sub: "Venloer Str. 12", who: "j", nested: ["U‑Heft", "Impfpass", "Windel"], added: true } },
-  { say: "Leas Geburtstag am Samstag um elf, wir brauchen ein Geschenk", slot: "sa", dot: "sa",
-    steps: ["Samstag ist der 31. Oktober", "Lea wird 4, Tom kümmert sich ums Geschenk"],
-    row: { time: "11:00", icon: "geschenk", tint: "#F8E8E5", title: "Leas Geburtstag", sub: "Bei Familie Yilmaz", who: "t", nested: ["Geschenk besorgen"] } }
-];
-const sleep = ms => new Promise(r => setTimeout(r, ms));
-function rowHTML(r, fresh) {
-  return `<div class="row${fresh ? ' fresh flash' : ''}"><time>${r.time}</time><span class="tile" style="background:${r.tint}">${IMG[r.icon]}</span><span class="tx"><b>${r.title}</b><small>${r.sub}</small></span><span class="who ${r.who}">${r.who.toUpperCase()}</span></div>`
-    + (r.nested ? `<div class="nested">${r.nested.map(n => `<span>${n}</span>`).join('')}</div>` : '')
-    + (r.added ? `<div class="added">Vom Assistenten ergänzt</div>` : '');
-}
-let barT;
-function listen(on) { orb.classList.toggle('listen', on); clearInterval(barT); if (on) barT = setInterval(() => bars.forEach(b => b.style.height = (4 + Math.random() * 12) + 'px'), 120); else bars.forEach(b => b.style.height = '6px') }
-function fit(slot) { const cur = slot.offsetHeight; slot.style.height = 'auto'; const h = slot.offsetHeight; slot.style.height = cur + 'px'; void slot.offsetHeight; slot.style.height = h + 'px' }
-async function typeIt(t) { say.classList.remove('phd'); for (let i = 1; i <= t.length; i++) { say.innerHTML = t.slice(0, i) + '<span class="caret"></span>'; await sleep(34 + Math.random() * 30) } }
-async function play(sc) {
-  const slot = slotOf(sc.slot);
-  listen(true); await typeIt(sc.say); await sleep(450); listen(false);
-  const think = document.createElement('div'); think.className = 'think';
-  think.innerHTML = sc.steps.map(s => `<div class="step"><span class="c">${CHK}</span><span>${s}</span></div>`).join('');
-  slot.appendChild(think); fit(slot);
-  for (const s of think.children) { await sleep(260); s.classList.add('in'); await sleep(560); s.classList.add('ok') }
-  await sleep(500);
-  say.classList.add('phd'); say.textContent = 'Sag, was ansteht …';
-  think.remove();
-  if (sc.hideEmpty) emptyFr.hidden = true;
-  slot.insertAdjacentHTML('beforeend', rowHTML(sc.row, true)); fit(slot);
-  if (sc.dot) dotOf(sc.dot).classList.add('has');
-  await sleep(2600);
-}
-function reset() { ['do', 'fr', 'sa'].forEach(k => { const s = slotOf(k); s.innerHTML = ''; s.style.height = '0px' }); emptyFr.hidden = false; dotOf('fr').classList.remove('has'); dotOf('sa').classList.remove('has') }
-function staticEnd() { SCENES.forEach(sc => { const s = slotOf(sc.slot); s.insertAdjacentHTML('beforeend', rowHTML(sc.row, false)); s.style.height = 'auto'; if (sc.dot) dotOf(sc.dot).classList.add('has') }); emptyFr.hidden = true }
-async function loop() {
-  await sleep(900);
-  while (true) {
-    for (const sc of SCENES) await play(sc);
-    await sleep(1200);
-    ['do', 'fr', 'sa'].forEach(k => { slotOf(k).style.height = '0px' });
-    await sleep(500); reset(); await sleep(600);
-  }
-}
 lastW = document.documentElement.clientWidth; lastH = innerHeight;
 measure();
-if (reduce) staticEnd(); else loop();
 
 $('wl').addEventListener('submit', e => { e.preventDefault(); $('wlnote').textContent = 'Danke! In dieser Vorschau wird noch nichts gespeichert.' });
 </script>
