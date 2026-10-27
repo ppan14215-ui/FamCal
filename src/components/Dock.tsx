@@ -21,7 +21,7 @@ import TalkBar from './TalkBar';
 import { setVeil } from './Veil';
 import { tokens, persons } from '../theme';
 import { useStore, actions } from '../state/store';
-import { plan, claudeSays, correction, replyPlan, thinksOnline, Ctx, Plan, Result, SPOKEN, HINTS, PLACEHOLDER } from '../lib/act';
+import { plan, claudeSays, correction, replyPlan, listFromClaude, thinksOnline, Ctx, Plan, Result, SPOKEN, HINTS, PLACEHOLDER } from '../lib/act';
 import { dayLabel, slotLine } from '../lib/talk';
 import { locate, light } from '../lib/landing';
 import { setDockSpace } from '../lib/dockSpace';
@@ -169,7 +169,13 @@ export default function Dock() {
   };
 
   const correct = (local: Result | undefined, r: Awaited<ReturnType<typeof claudeSays>>, said: string) => {
-    if (!r || r.kind !== 'added') return;
+    if (!r) return;
+    if (r.kind === 'liste') {
+      // "Nudeln auf die Einkaufsliste" said in the calendar: no Termin, the list gets it.
+      if (local?.kind === 'event') { actions.removeEvent(local.event.id); setTurn(null); light(null); }
+      return play(listFromClaude(r), said, true);
+    }
+    if (r.kind !== 'added') return;
     if (local?.kind !== 'event') return play(replyPlan(r), said, true);
     const made = local.event;
     const patch = correction(made, r);

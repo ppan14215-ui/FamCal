@@ -4,7 +4,7 @@
  * Prototype: rules, no model. Everything is relative to the fixed TODAY.
  */
 import type { CalEvent, Who } from '../state/types';
-import type { ClayName } from './clayIcons';
+import { clayIcons, type ClayName } from './clayIcons';
 import type { PersonId } from '../theme/tokens';
 import { persons } from '../theme/tokens';
 import { parseWhen, When } from './when';
@@ -285,10 +285,18 @@ export function understand(input: string, events: CalEvent[], pending?: { title:
 
 /** What the "verstehen" function sends back (supabase/functions/verstehen). */
 export type Understood = {
-  kind: 'termin' | 'frage' | 'unklar'; title: string; sub: string | null; date: string | null; end_date: string | null;
+  kind: 'termin' | 'frage' | 'liste' | 'unklar'; title: string; sub: string | null; date: string | null; end_date: string | null;
   start: string | null; end: string | null; who: Who; place: string | null; repeat: string | null;
   bring: string[]; steps: string[]; question: string | null;
+  /** Claude picks the icon from the names the app sends (Julian 27.10.: "Fußball" gets the ball). */
+  icon?: string | null;
+  /** kind "liste": the sentence belongs on a list, from any screen (Julian 27.10.). */
+  list?: 'einkauf' | 'aufgaben' | null; items?: string[];
 };
+
+/** Icons a Termin can carry: the whole ones, not their animated parts. */
+export const TERMIN_ICON_NAMES = (Object.keys(clayIcons) as ClayName[]).filter((k) => !k.includes('__'));
+const isIcon = (v: unknown): v is ClayName => typeof v === 'string' && !v.includes('__') && v in clayIcons;
 
 const NO_TIME = () => tx('Keine Uhrzeit genannt, ich trage den Tag ein und frage nach.', "No time given, I'll add the day and ask.");
 const ISO = /^\d{4}-\d{2}-\d{2}$/;
@@ -306,7 +314,7 @@ export function fromModel(m: Understood, said: string, events: CalEvent[], newId
   if (!m.date || !ISO.test(m.date)) return { kind: 'ask', text: m.question || askWhen(m.title), title: m.title, who };
   const start = m.start && HHMM.test(m.start) ? m.start : undefined;
   const known = recall(`${m.title} ${m.sub ?? ''}`, events);
-  const guess = iconFor(`${m.title} ${m.sub ?? ''}`);
+  const guess = isIcon(m.icon) && m.icon !== 'kalender' ? m.icon : iconFor(`${m.title} ${m.sub ?? ''}`);
   const icon = guess === 'kalender' && known ? known.icon : guess;
   const len = icon === 'stethoskop' || icon === 'zahnarzt' ? 45 : 60;
   const event: CalEvent = {

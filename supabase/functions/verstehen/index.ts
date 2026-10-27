@@ -20,8 +20,8 @@ import { zodOutputFormat } from 'npm:@anthropic-ai/sdk@0.137.0/helpers/zod';
 import { createClient } from 'npm:@supabase/supabase-js@2';
 
 const Termin = z.object({
-  // termin: something to put in the calendar. frage: the sentence asks about the calendar. unklar: neither.
-  kind: z.enum(['termin', 'frage', 'unklar']),
+  // termin: something to put in the calendar. frage: the sentence asks about the calendar. liste: items for a list. unklar: none of these.
+  kind: z.enum(['termin', 'frage', 'liste', 'unklar']),
   title: z.string(),
   sub: z.string().nullable(),
   date: z.string().nullable(),
@@ -34,6 +34,9 @@ const Termin = z.object({
   bring: z.array(z.string()),
   steps: z.array(z.string()),
   question: z.string().nullable(),
+  icon: z.string().nullable(),
+  list: z.enum(['einkauf', 'aufgaben']).nullable(),
+  items: z.array(z.string()),
 });
 
 const WD = ['Sonntag (Sunday)', 'Montag (Monday)', 'Dienstag (Tuesday)', 'Mittwoch (Wednesday)', 'Donnerstag (Thursday)', 'Freitag (Friday)', 'Samstag (Saturday)'];
@@ -51,7 +54,9 @@ Regeln:
 - steps: ein bis zwei sehr kurze Sätze in der Sprache der App (steht unten), was du verstanden hast, für eine Liste unter dem Eingabefeld. Zum Beispiel "Zahnarzt am Freitag, 30. Oktober um 15 Uhr." und "Für Julian.". Keine Gedankenstriche.
 - Fehlt etwas Wichtiges (kein Datum), setze kind auf termin, date auf null und stelle in question eine kurze Rückfrage in der Sprache der App.
 - Ist der Satz eine Frage an den Kalender ("Was steht morgen an?", "What's on tomorrow?"), setze kind auf frage und lasse die Felder leer.
-- Ist es weder Termin noch Frage, setze kind auf unklar.`;
+- Gehört der Satz auf eine Liste statt in den Kalender ("Nudeln auf die Einkaufsliste", "wir brauchen Windeln", "put pasta on the shopping list", "ich muss noch die Steuer machen"), setze kind auf liste, list auf einkauf (Dinge zum Kaufen) oder aufgaben (Dinge zu erledigen) und items auf die einzelnen Dinge, kurz und groß geschrieben ("Nudeln", "2 Hafermilch"). Ein Satz mit Uhrzeit oder festem Tag ist ein Termin, auch wenn "kaufen" vorkommt.
+- icon: wähle für einen Termin den passendsten Namen aus der Liste unten ("Fußball mit Freunden" ergibt fussball, "Friseur" passt zu keinem, dann kalender). Nur Namen aus der Liste.
+- Ist es nichts davon, setze kind auf unklar.`;
 
 const cors = {
   'Access-Control-Allow-Origin': '*',
@@ -64,7 +69,7 @@ Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors });
   const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { ...cors, 'Content-Type': 'application/json' } });
 
-  let input: { text?: string; today?: string; now?: string; names?: { J?: string; T?: string }; lang?: string };
+  let input: { text?: string; today?: string; now?: string; names?: { J?: string; T?: string }; lang?: string; icons?: string[] };
   try { input = await req.json(); } catch { return json({ error: 'bad_json' }, 400); }
   const text = (input.text ?? '').trim().slice(0, 500);
   const today = /^\d{4}-\d{2}-\d{2}$/.test(input.today ?? '') ? input.today! : new Date().toISOString().slice(0, 10);
@@ -80,6 +85,8 @@ Deno.serve(async (req) => {
 
   const wd = WD[new Date(`${today}T12:00:00Z`).getUTCDay()];
   const names = `J = ${input.names?.J || 'Elternteil 1'}, T = ${input.names?.T || 'Elternteil 2'}`;
+  // The app sends the icon names it has, so new icons need no change here.
+  const icons = (Array.isArray(input.icons) ? input.icons : []).filter((x) => typeof x === 'string' && /^[a-z0-9-]{2,30}$/.test(x)).slice(0, 300).join(', ') || 'kalender';
 
   try {
     const res = await client.messages.parse({
@@ -88,7 +95,7 @@ Deno.serve(async (req) => {
       system: SYSTEM,
       // Short answers matter more than depth here: the family waits with the orb spinning.
       output_config: { effort: 'low', format: zodOutputFormat(Termin) },
-      messages: [{ role: 'user', content: `Heute ist ${wd}, ${today}, ${input.now ?? ''} Uhr. Eltern: ${names}. Sprache der App: ${input.lang === 'en' ? 'Englisch' : 'Deutsch'}.\n\nSatz: ${text}` }],
+      messages: [{ role: 'user', content: `Heute ist ${wd}, ${today}, ${input.now ?? ''} Uhr. Eltern: ${names}. Sprache der App: ${input.lang === 'en' ? 'Englisch' : 'Deutsch'}.\nIcons: ${icons}\n\nSatz: ${text}` }],
     });
     if (res.stop_reason === 'refusal' || !res.parsed_output) return json({ error: 'not_understood' }, 422);
     return json({ ...res.parsed_output, left: allowed.left ?? null });

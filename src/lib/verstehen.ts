@@ -7,7 +7,7 @@ import { supabase } from './cloud';
 import { getAuth } from './auth';
 import { TODAY, NOW } from './dates';
 import { persons } from '../theme/tokens';
-import type { Understood } from './talk';
+import { TERMIN_ICON_NAMES, type Understood } from './talk';
 import { LANG, tx } from '../i18n/lang';
 import { toast } from '../state/store';
 
@@ -31,7 +31,7 @@ async function limitHint(error: unknown) {
 export async function understandOnline(text: string): Promise<Understood | null> {
   if (!supabase || !getAuth().session) return null;
   const call = supabase.functions
-    .invoke<Understood & { left: number | null }>('verstehen', { body: { text, today: TODAY, now: NOW, names: { J: persons.J.name, T: persons.T.name }, lang: LANG } })
+    .invoke<Understood & { left: number | null }>('verstehen', { body: { text, today: TODAY, now: NOW, names: { J: persons.J.name, T: persons.T.name }, lang: LANG, icons: TERMIN_ICON_NAMES } })
     .then(async ({ data, error }) => {
       if (error || !data) { await limitHint(error); return null; }
       if (data.left === 5) toast(tx('Noch 5 Sätze gratis in diesem Monat', '5 free sentences left this month'));

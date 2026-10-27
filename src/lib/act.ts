@@ -241,10 +241,16 @@ function listeNeu(said: string): Plan {
  * quietly corrects what the rules got wrong. Lists, follow-ups ("um 15 Uhr")
  * and everything offline stay with the rules alone.
  */
-export async function claudeSays(said: string): Promise<Reply | null> {
+export type ListSaid = { kind: 'liste'; list: 'einkauf' | 'aufgaben'; items: string[] };
+
+export async function claudeSays(said: string): Promise<Reply | ListSaid | null> {
   const m = await understandOnline(said);
+  if (m?.kind === 'liste' && m.items?.length) return { kind: 'liste', list: m.list === 'aufgaben' ? 'aufgaben' : 'einkauf', items: m.items };
   return m && fromModel(m, said, get().events, () => newId('e'));
 }
+
+/** Claude heard a list where the rules heard a Termin: the items go on the list. */
+export const listFromClaude = (r: ListSaid): Plan => liste(r.items.join(', '), r.list);
 
 /** What Claude changes on a Termin the rules just made; null when they agree. */
 export function correction(made: CalEvent, r: Extract<Reply, { kind: 'added' }>): Partial<CalEvent> | null {
