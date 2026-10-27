@@ -8,6 +8,7 @@ Alle sichtbaren Änderungen an FamCal. Neueste oben. Agenten und Menschen: Ände
 
 - Wer im Kalender „Pack Nudeln auf die Einkaufsliste“ sagt, bekommt keinen Termin mehr, sondern Nudeln auf der Einkaufsliste. Claude erkennt Einkäufe und Aufgaben von jedem Bildschirm aus. Haben die Regeln schon einen Termin angelegt, nimmt Claude ihn wieder heraus.
 - Claude wählt das Icon für einen Termin aus allen vorhandenen Icons, „Fußball am Montag mit Freunden“ bekommt den Fußball. Neue Icons kennt Claude automatisch, die App schickt die Liste mit.
+- Was der Assistent auf eine Liste setzt, leuchtet auf und wippt kurz, alle neuen Zeilen auf einmal, nicht nur die letzte. Das Leuchten bleibt etwas länger stehen.
 
 ### Neue Versionen ohne neue Installation (27.10.)
 

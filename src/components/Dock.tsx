@@ -196,7 +196,7 @@ export default function Dock() {
       const go = out.go ?? (out.result?.kind === 'event' ? '/kalender' : undefined);
       if (go && go !== path) router.navigate(go as any);
       const finish = () => {
-        if (out.land) light(out.land);
+        if (out.land) light(out.lit?.length ? out.lit : out.land);
         haptics.success();
         if (out.result && out.result.kind !== 'done') setTurn({ id: Date.now(), said, result: out.result });
         after?.(out);

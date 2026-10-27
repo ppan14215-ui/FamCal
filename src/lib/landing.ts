@@ -55,12 +55,12 @@ export function locate(id: string, band: { top: number; floor: number; height: n
   });
 }
 
-// What just landed, so its row can glow once.
-let lit: string | null = null;
+// What just landed, so its rows can glow once. Several at a time when one sentence adds several items (Julian 27.10.).
+let lit = new Set<string>();
 const subs = new Set<() => void>();
-export function light(id: string | null) { lit = id; subs.forEach((l) => l()); }
+export function light(id: string | string[] | null) { lit = new Set(id == null ? [] : Array.isArray(id) ? id : [id]); subs.forEach((l) => l()); }
 export function useLit(id: string | undefined) {
-  return useSyncExternalStore((l) => { subs.add(l); return () => { subs.delete(l); }; }, () => !!id && lit === id, () => false);
+  return useSyncExternalStore((l) => { subs.add(l); return () => { subs.delete(l); }; }, () => !!id && lit.has(id), () => false);
 }
 export function useClearLitOnUnmount() {
   useEffect(() => () => light(null), []);

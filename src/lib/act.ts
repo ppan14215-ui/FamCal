@@ -31,7 +31,8 @@ export type Result =
 export type Plan = {
   steps: string[];
   /** Does it, returns where it landed and what to show then. */
-  run: () => { land?: string; result?: Result; go?: string };
+  /** `land` is where the drop flies; `lit` are all rows that glow (default: just `land`). */
+  run: () => { land?: string; lit?: string[]; result?: Result; go?: string };
 };
 
 const NUM: Record<string, number> = { ein: 1, eine: 1, einen: 1, zwei: 2, drei: 3, vier: 4, fünf: 5, sechs: 6, sieben: 7, acht: 8, neun: 9, zehn: 10, a: 1, an: 1, one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8, nine: 9, ten: 10 };
@@ -201,16 +202,17 @@ function liste(said: string, id: string): Plan {
       actions.setActiveList(list.id);
       let last: string | undefined;
       const added: string[] = [];
+      const changed: string[] = [];
       const open = list.sections.flatMap((sec) => sec.items).filter((i) => !i.done);
       for (const t of items) {
         // Already on the list: the new amount replaces the old one instead of a second line.
         const same = open.find((i) => i.name.toLowerCase() === parseItem(t).name.toLowerCase());
-        if (same) { actions.editItem(list.id, same.id, t); last = same.id; continue; }
+        if (same) { actions.editItem(list.id, same.id, t); last = same.id; changed.push(same.id); continue; }
         const nid = actions.addItem(list.id, t);
-        if (nid) { last = nid; added.push(nid); }
+        if (nid) { last = nid; added.push(nid); changed.push(nid); }
       }
       toast(tx(`${items.length === 1 ? items[0] : items.length + ' Dinge'} auf „${list.name}“`, `${items.length === 1 ? items[0] : items.length + ' things'} on “${list.name}”`), () => added.forEach((x) => actions.deleteItem(list.id, x)));
-      return { land: last, go: '/listen' };
+      return { land: last, lit: changed, go: '/listen' };
     },
   };
 }
@@ -229,8 +231,9 @@ function listeNeu(said: string): Plan {
       const l: List = urlaub && !items.length ? listFromTemplate(name, 'reise', templates.urlaub) : listFromTemplate(name, urlaub ? 'reise' : 'karten', null);
       actions.createList(l);
       let last: string | undefined;
-      for (const t of items) last = actions.addItem(l.id, t) ?? last;
-      return { land: last ?? `tab:${l.id}`, go: '/listen' };
+      const lit: string[] = [];
+      for (const t of items) { const nid = actions.addItem(l.id, t); if (nid) { last = nid; lit.push(nid); } }
+      return { land: last ?? `tab:${l.id}`, lit, go: '/listen' };
     },
   };
 }
