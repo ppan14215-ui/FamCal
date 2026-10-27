@@ -2,390 +2,479 @@
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&family=Instrument+Serif:ital@0;1&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap">
 <style>
-/* Layout: links die These, rechts ein Telefon, in dem ein gesprochener Satz zum Termin wird; darunter zwei Laufbänder mit echten Sätzen. Danach ruhige Abschnitte. */
+/* Layout: zentrierte Headline über einem Bogen aus fünf Telefonen. Beim Scrollen fliegen die äußeren weg, das mittlere bleibt stehen, links und rechts kommen graue Textkarten, und im Telefon schieben sich die Screens übereinander. Danach eine dunkle Warteliste. */
 :root {
-  --bg: #F5F5F4;
+  --bg: #FFFFFF;
+  --card: #F2F2F0;
   --surface: #FFFFFF;
+  --screen: #F5F5F4;
   --ink: #16232A;
   --sub: #5B666B;
   --mute: #8A9397;
   --hair: #E7E7E4;
   --teal: #075056;
   --teal-soft: #E2EEEC;
-  --frist: #C2410C;
   --jul: #F6DDE2; --jul-ink: #9D2B48;
   --tom: #DCE7F4; --tom-ink: #1F4E89;
-  --phone: #FFFFFF;
-  --phone-bg: #F5F5F4;
   --frame: #16232A;
   --chip: #EFEFEC;
+  --glass: rgba(242, 242, 240, .72);
+  --dark: #0E1518; --on-dark: #F1F3F3; --on-dark-sub: #9BA6AA;
   --orb-a: #0B6B6B; --orb-b: #16232A;
-  --f-display: "Instrument Serif", "Iowan Old Style", Georgia, serif;
   --f-body: "Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
   --f-mono: "Geist Mono", ui-monospace, "SF Mono", Menlo, monospace;
   --ease-enter: cubic-bezier(0.23, 1, 0.32, 1);
   --ease-move: cubic-bezier(0.77, 0, 0.175, 1);
 }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
-  --bg: #0F1619; --surface: #172126; --ink: #EEF1F1; --sub: #A3ADB0; --mute: #6F7B80; --hair: #26323A;
-  --teal: #5FB8B0; --teal-soft: #173533; --frist: #F08A5D;
-  --jul: #4A2A33; --jul-ink: #F4B8C6; --tom: #22344A; --tom-ink: #B5CDF0;
-  --phone: #172126; --phone-bg: #0F1619; --frame: #2B373D; --chip: #222E34;
+  --bg: #0F1619; --card: #172126; --surface: #1C272D; --screen: #121B1F; --ink: #EEF1F1; --sub: #A3ADB0; --mute: #6F7B80; --hair: #26323A;
+  --teal: #5FB8B0; --teal-soft: #173533; --jul: #4A2A33; --jul-ink: #F4B8C6; --tom: #22344A; --tom-ink: #B5CDF0;
+  --frame: #2B373D; --chip: #25323A; --glass: rgba(28, 39, 45, .72); --dark: #070B0D; --on-dark: #EEF1F1; --on-dark-sub: #8E999D;
   --orb-a: #3E9C95; --orb-b: #EEF1F1; color-scheme: dark } }
 :root[data-theme="dark"] {
-  --bg: #0F1619; --surface: #172126; --ink: #EEF1F1; --sub: #A3ADB0; --mute: #6F7B80; --hair: #26323A;
-  --teal: #5FB8B0; --teal-soft: #173533; --frist: #F08A5D;
-  --jul: #4A2A33; --jul-ink: #F4B8C6; --tom: #22344A; --tom-ink: #B5CDF0;
-  --phone: #172126; --phone-bg: #0F1619; --frame: #2B373D; --chip: #222E34;
+  --bg: #0F1619; --card: #172126; --surface: #1C272D; --screen: #121B1F; --ink: #EEF1F1; --sub: #A3ADB0; --mute: #6F7B80; --hair: #26323A;
+  --teal: #5FB8B0; --teal-soft: #173533; --jul: #4A2A33; --jul-ink: #F4B8C6; --tom: #22344A; --tom-ink: #B5CDF0;
+  --frame: #2B373D; --chip: #25323A; --glass: rgba(28, 39, 45, .72); --dark: #070B0D; --on-dark: #EEF1F1; --on-dark-sub: #8E999D;
   --orb-a: #3E9C95; --orb-b: #EEF1F1; color-scheme: dark }
 
 * { box-sizing: border-box }
 [hidden] { display: none !important }
 body { background: var(--bg); color: var(--ink); font-family: var(--f-body); font-size: 16px; line-height: 1.5; -webkit-font-smoothing: antialiased; overflow-x: hidden }
 a { color: inherit }
-.wrap { max-width: 1160px; margin: 0 auto; padding-left: max(20px, env(safe-area-inset-left, 0px)); padding-right: max(20px, env(safe-area-inset-right, 0px)) }
-:focus-visible { outline: 2px solid var(--teal); outline-offset: 3px; border-radius: 6px }
+:focus-visible { outline: 2px solid var(--teal); outline-offset: 3px; border-radius: 8px }
 
-/* Kopf */
-.top { display: flex; align-items: center; justify-content: space-between; padding-block: 20px }
-.brand { display: flex; align-items: center; gap: 10px; font-weight: 600; font-size: 17px; text-decoration: none }
-.brand img { width: 30px; height: 30px }
-.top nav { display: flex; gap: 22px; font-size: 14.5px; color: var(--sub) }
-.top nav a { text-decoration: none }
-.top nav a:hover { color: var(--ink) }
-@media (max-width: 640px) { .top nav .hide-s { display: none } }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 30; background: var(--bg) }
+.nav { position: fixed; z-index: 20; top: calc(env(safe-area-inset-top, 0px) + 14px); left: 50%; transform: translateX(-50%); width: min(380px, calc(100% - 32px)); display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 6px 6px 6px 16px; border-radius: 999px; background: var(--glass); -webkit-backdrop-filter: blur(16px) saturate(1.4); backdrop-filter: blur(16px) saturate(1.4); box-shadow: inset 0 0 0 1px var(--hair) }
+.brand { display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 15.5px; text-decoration: none }
+.brand img { width: 24px; height: 24px }
+.nav .acts { display: flex; gap: 6px }
+.nb { height: 34px; padding: 0 14px; border-radius: 999px; display: inline-flex; align-items: center; gap: 6px; font-size: 13.5px; font-weight: 600; text-decoration: none; background: var(--surface); box-shadow: inset 0 0 0 1px var(--hair) }
+.nb.dark { background: var(--ink); color: var(--bg); box-shadow: none }
 
-/* Hero */
-.hero { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, .95fr); gap: 48px; align-items: center; padding-block: 36px 28px }
-@media (max-width: 900px) { .hero { grid-template-columns: minmax(0, 1fr); gap: 36px; padding-block: 16px 12px } }
-.kicker { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; color: var(--sub); background: var(--surface); border-radius: 999px; padding: 6px 14px 6px 8px; box-shadow: inset 0 0 0 1px var(--hair) }
-.kicker .dot { width: 18px; height: 18px; border-radius: 999px; background: radial-gradient(circle at 35% 30%, var(--orb-a), var(--orb-b)) }
-h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(46px, 7.2vw, 88px); line-height: .98; letter-spacing: -0.02em; margin: 22px 0 0; text-wrap: balance }
-h1 em { font-style: italic; color: var(--teal) }
-.lede { font-size: clamp(17px, 1.6vw, 19px); color: var(--sub); max-width: 32em; margin: 22px 0 0; text-wrap: pretty }
-.cta-row { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 30px }
-.btn { display: inline-flex; align-items: center; gap: 10px; height: 52px; padding: 0 22px; border-radius: 999px; font: 600 15.5px/1 var(--f-body); text-decoration: none; border: 0; cursor: pointer; transition: transform .16s var(--ease-enter) }
+.scrolly { position: relative }
+.sticky { position: sticky; top: 0; height: 100vh; height: 100svh; overflow: hidden }
+.hero-text { position: absolute; left: 0; right: 0; top: 0; text-align: center; padding-top: calc(env(safe-area-inset-top, 0px) + 112px); padding-left: max(20px, env(safe-area-inset-left, 0px)); padding-right: max(20px, env(safe-area-inset-right, 0px)); will-change: transform, opacity; z-index: 2 }
+h1 { font-weight: 600; font-size: clamp(40px, 6.4vw, 78px); line-height: 1.02; letter-spacing: -0.045em; margin: 0 auto; max-width: 13em; text-wrap: balance }
+.lede { font-size: clamp(16px, 1.5vw, 18px); color: var(--sub); max-width: 30em; margin: 18px auto 0; text-wrap: balance }
+.cta-row { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-top: 26px }
+.btn { display: inline-flex; align-items: center; gap: 8px; height: 48px; padding: 0 20px; border-radius: 999px; font: 600 15px/1 var(--f-body); text-decoration: none; border: 0; cursor: pointer; transition: transform .16s var(--ease-enter) }
 .btn:active { transform: scale(.97) }
 .btn-primary { background: var(--ink); color: var(--bg) }
-.btn-ghost { background: transparent; color: var(--ink); box-shadow: inset 0 0 0 1.5px var(--hair) }
-.proof { display: flex; flex-wrap: wrap; gap: 8px 18px; margin-top: 26px; font-size: 14px; color: var(--sub) }
-.proof span { display: inline-flex; align-items: center; gap: 7px }
-.proof svg { flex-shrink: 0 }
+.btn-ghost { background: var(--card); color: var(--ink) }
 
-/* Telefon */
-.stage { position: relative; display: flex; justify-content: center }
-.phone { width: min(360px, 100%); aspect-ratio: 360 / 720; max-width: 100%; border-radius: 48px; background: var(--frame); padding: 10px; box-shadow: 0 30px 80px -30px rgba(22,35,42,.45) }
-.screen { position: relative; width: 100%; height: 100%; border-radius: 39px; background: var(--phone-bg); overflow: hidden; display: flex; flex-direction: column }
-.status { display: flex; justify-content: space-between; padding: 14px 26px 0; font: 600 13px/1 var(--f-body) }
-.island { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); width: 96px; height: 26px; border-radius: 999px; background: #000 }
-.s-head { padding: 26px 18px 10px; display: flex; flex-direction: column; gap: 12px }
-.s-title { font-size: 26px; font-weight: 600; letter-spacing: -.5px; line-height: 1.1 }
+.ph { position: absolute; left: 0; top: 0; width: 320px; height: 656px; transform-origin: 0 0; will-change: transform; border-radius: 50px; background: var(--frame); padding: 9px; box-shadow: 0 40px 80px -36px rgba(22,35,42,.5) }
+.ph .screen { position: relative; width: 100%; height: 100%; border-radius: 41px; overflow: hidden; background: var(--screen); isolation: isolate }
+.island { position: absolute; z-index: 9; top: 10px; left: 50%; transform: translateX(-50%); width: 92px; height: 26px; border-radius: 999px; background: #000 }
+.scr { position: absolute; inset: 0; background: var(--screen); display: flex; flex-direction: column; will-change: transform; transform-origin: 50% 0 }
+.scr.stacked { border-radius: 30px 30px 0 0; box-shadow: 0 -10px 30px rgba(10,10,10,.12); transform: translateY(100%) }
+.status { display: flex; justify-content: space-between; padding: 14px 26px 0; font: 600 13px/1 var(--f-body); flex-shrink: 0 }
+.s-head { padding: 24px 16px 8px; display: flex; flex-direction: column; gap: 12px }
+.s-title { font-size: 25px; font-weight: 600; letter-spacing: -.5px; line-height: 1.1 }
+.s-sub { font-size: 13px; color: var(--sub); margin-top: -8px }
 .week { display: flex; justify-content: space-between }
-.week span { display: flex; flex-direction: column; align-items: center; gap: 3px; font-size: 11px; color: var(--sub); width: 13%; }
-.week b { width: 28px; height: 28px; border-radius: 999px; display: flex; align-items: center; justify-content: center; font: 600 13.5px/1 var(--f-body); color: var(--ink) }
-.week .on b { background: var(--ink); color: var(--phone-bg) }
-.week i { width: 4px; height: 4px; border-radius: 999px; background: transparent }
+.week span { display: flex; flex-direction: column; align-items: center; gap: 3px; font-size: 11px; color: var(--sub); width: 13% }
+.week b { width: 27px; height: 27px; border-radius: 999px; display: flex; align-items: center; justify-content: center; font: 600 13px/1 var(--f-body); color: var(--ink) }
+.week .on b { background: var(--ink); color: var(--screen) }
+.week i { width: 4px; height: 4px; border-radius: 999px }
 .week i.has { background: var(--mute) }
-.days { flex: 1; overflow: hidden; padding: 4px 12px 0; display: flex; flex-direction: column; gap: 10px; -webkit-mask-image: linear-gradient(#000 82%, transparent); mask-image: linear-gradient(#000 82%, transparent) }
-.day { background: var(--phone); border-radius: 24px; padding: 12px 12px 6px; display: flex; flex-direction: column }
-.day h3 { margin: 0 0 4px 4px; font-size: 13.5px; font-weight: 600; color: var(--sub) }
+.days { flex: 1; overflow: hidden; padding: 4px 10px 0; display: flex; flex-direction: column; gap: 9px; -webkit-mask-image: linear-gradient(#000 80%, transparent); mask-image: linear-gradient(#000 80%, transparent) }
+.day { background: var(--surface); border-radius: 22px; padding: 11px 11px 5px; display: flex; flex-direction: column }
+.day h3 { margin: 0 0 3px 4px; font-size: 13px; font-weight: 600; color: var(--sub) }
 .day h3 b { color: var(--ink) }
-.row { display: flex; align-items: center; gap: 10px; padding: 6px 2px; overflow: hidden }
-.tile { width: 40px; height: 40px; border-radius: 14px; display: flex; align-items: center; justify-content: center; flex-shrink: 0 }
-.tile img { width: 32px; height: 32px }
-.row .tx { flex: 1; min-width: 0; display: flex; flex-direction: column }
-.row .tx b { font-size: 14.5px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis }
-.row .tx small { font-size: 12.5px; color: var(--sub); white-space: nowrap; overflow: hidden; text-overflow: ellipsis }
-.row time { font: 500 12.5px/1 var(--f-mono); color: var(--sub); width: 38px; flex-shrink: 0 }
-.who { width: 26px; height: 26px; border-radius: 999px; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0 }
+.row { display: flex; align-items: center; gap: 9px; padding: 5px 2px; overflow: hidden }
+.tile { width: 38px; height: 38px; border-radius: 13px; display: flex; align-items: center; justify-content: center; flex-shrink: 0 }
+.tile img { width: 30px; height: 30px }
+.tx { flex: 1; min-width: 0; display: flex; flex-direction: column }
+.tx b { font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis }
+.tx small { font-size: 12px; color: var(--sub); white-space: nowrap; overflow: hidden; text-overflow: ellipsis }
+.row time { font: 500 12px/1 var(--f-mono); color: var(--sub); width: 40px; flex-shrink: 0 }
+.who { width: 25px; height: 25px; border-radius: 999px; display: flex; align-items: center; justify-content: center; font-size: 10.5px; font-weight: 700; flex-shrink: 0 }
 .who.j { background: var(--jul); color: var(--jul-ink) }
 .who.t { background: var(--tom); color: var(--tom-ink) }
-.nested { margin: -2px 0 4px 88px; font-size: 12.5px; color: var(--sub); display: flex; gap: 6px; flex-wrap: wrap }
-.nested span { background: var(--chip); border-radius: 999px; padding: 2px 9px }
-.added { font-size: 11.5px; color: var(--teal); margin: -2px 0 4px 88px }
-
-/* Denkschritte am Ort */
-.think { display: flex; flex-direction: column; gap: 6px; padding: 6px 4px 8px; overflow: hidden }
-.step { display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--sub); opacity: 0; transform: translateY(6px); transition: opacity .28s var(--ease-enter), transform .28s var(--ease-enter) }
+.nested { margin: -2px 0 4px 85px; font-size: 12px; color: var(--sub); display: flex; gap: 5px; flex-wrap: wrap }
+.nested span { background: var(--chip); border-radius: 999px; padding: 2px 8px }
+.added { font-size: 11px; color: var(--teal); margin: -2px 0 4px 85px }
+.think { display: flex; flex-direction: column; gap: 6px; padding: 6px 4px 8px }
+.step { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--sub); opacity: 0; transform: translateY(6px); transition: opacity .28s var(--ease-enter), transform .28s var(--ease-enter) }
 .step.in { opacity: 1; transform: none }
-.step .c { width: 16px; height: 16px; border-radius: 999px; box-shadow: inset 0 0 0 1.5px var(--mute); flex-shrink: 0; display: flex; align-items: center; justify-content: center; transition: background .2s, box-shadow .2s }
-.step.ok .c { background: var(--teal); box-shadow: none }
-.step.ok .c svg { opacity: 1 }
-.step .c svg { opacity: 0; transition: opacity .2s }
-.slot { height: 0; transition: height .42s var(--ease-move); overflow: hidden }
+.c { width: 16px; height: 16px; border-radius: 999px; box-shadow: inset 0 0 0 1.5px var(--mute); flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; transition: background .2s, box-shadow .2s }
+.c svg { opacity: 0; transition: opacity .2s }
+.step.ok .c, .c.ok { background: var(--teal); box-shadow: none }
+.step.ok .c svg, .c.ok svg { opacity: 1 }
+.slot { height: 0; overflow: hidden; transition: height .42s var(--ease-move) }
 .row.fresh { animation: land .55s var(--ease-enter) both }
 .row.fresh .tile { animation: pop .7s var(--ease-enter) .1s both }
 @keyframes land { from { opacity: 0; transform: translateY(-14px) scale(.98) } to { opacity: 1; transform: none } }
 @keyframes pop { 0% { transform: scale(.6) } 60% { transform: scale(1.08) } 100% { transform: scale(1) } }
-.row.flash { border-radius: 14px; animation: flash 1.6s ease-out .2s both }
+.row.flash { border-radius: 13px; animation: flash 1.6s ease-out .2s both }
 @keyframes flash { 0% { background: var(--teal-soft) } 100% { background: transparent } }
-
-/* Dock */
-.dock { position: absolute; left: 12px; right: 12px; bottom: 16px; display: flex; align-items: center; gap: 8px; padding: 7px 7px 7px 16px; border-radius: 999px; background: var(--phone); box-shadow: 0 0 0 1px rgba(10,10,10,.06), 0 8px 24px rgba(10,10,10,.08) }
-.dock .say { flex: 1; min-width: 0; font-size: 14px; line-height: 1.3; color: var(--ink); min-height: 1.3em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis }
-.dock .say.ph { color: var(--mute) }
-.dock .caret { display: inline-block; width: 1.5px; height: 1em; background: var(--teal); vertical-align: -2px; margin-left: 1px; animation: blink 1s steps(1) infinite }
+.dock { position: absolute; left: 11px; right: 11px; bottom: 14px; display: flex; align-items: center; gap: 6px; padding: 6px 6px 6px 15px; border-radius: 999px; background: var(--surface); box-shadow: 0 0 0 1px rgba(10,10,10,.06), 0 8px 24px rgba(10,10,10,.08) }
+.say { flex: 1; min-width: 0; font-size: 13.5px; line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis }
+.say.phd { color: var(--mute) }
+.caret { display: inline-block; width: 1.5px; height: 1em; background: var(--teal); vertical-align: -2px; margin-left: 1px; animation: blink 1s steps(1) infinite }
 @keyframes blink { 50% { opacity: 0 } }
-.dock .cam { width: 34px; height: 34px; border-radius: 999px; display: flex; align-items: center; justify-content: center; color: var(--sub) }
-.orb { width: 42px; height: 42px; border-radius: 999px; background: radial-gradient(circle at 35% 30%, var(--orb-a), var(--orb-b)); flex-shrink: 0; display: flex; align-items: center; justify-content: center; position: relative }
-.orb::after { content: ""; position: absolute; inset: -5px; border-radius: 999px; box-shadow: 0 0 0 2px var(--teal); opacity: 0; transform: scale(.9) }
+.cam { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; color: var(--sub) }
+.orb { width: 40px; height: 40px; border-radius: 999px; background: radial-gradient(circle at 35% 30%, var(--orb-a), var(--orb-b)); flex-shrink: 0; display: flex; align-items: center; justify-content: center; position: relative }
+.orb::after { content: ""; position: absolute; inset: -5px; border-radius: 999px; box-shadow: 0 0 0 2px var(--teal); opacity: 0 }
 .orb.listen::after { animation: ring 1.2s var(--ease-enter) infinite }
 @keyframes ring { 0% { opacity: .6; transform: scale(.9) } 100% { opacity: 0; transform: scale(1.25) } }
 .bars { display: flex; gap: 2.5px; align-items: center; height: 16px }
 .bars i { width: 2.5px; height: 6px; border-radius: 2px; background: #FFFFFF; transition: height .12s }
-.fly { position: absolute; width: 14px; height: 14px; border-radius: 999px; background: radial-gradient(circle at 35% 30%, var(--orb-a), var(--orb-b)); pointer-events: none; z-index: 5; opacity: 0 }
 
-/* Drei Phasen unter dem Telefon */
-.stage { flex-direction: column; align-items: center; gap: 18px }
-.caption { display: flex; gap: 6px; font-size: 13.5px }
-.caption .ci { display: contents }
-.caption .ci div { display: flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 999px; color: var(--mute); transition: color .3s, background .3s }
-.caption .ci div.on { color: var(--ink); background: var(--surface); box-shadow: inset 0 0 0 1px var(--hair) }
-.caption .ci div span { display: none }
+.pad { padding: 0 14px; display: flex; flex-direction: column; gap: 10px }
+.back { display: flex; align-items: center; gap: 4px; font-size: 14px; color: var(--sub); padding: 18px 14px 0 }
+.hero-t { display: flex; gap: 12px; align-items: center; padding: 14px 14px 4px }
+.hero-t .tile { width: 54px; height: 54px; border-radius: 17px }
+.hero-t .tile img { width: 44px; height: 44px }
+.hero-t b { display: block; font-size: 20px; letter-spacing: -.3px; line-height: 1.15 }
+.hero-t small { color: var(--sub); font: 500 12.5px/1.4 var(--f-mono) }
+.box { background: var(--surface); border-radius: 20px; padding: 4px 12px }
+.kv { display: flex; gap: 10px; align-items: center; padding: 9px 0; border-bottom: 1px solid var(--hair); font-size: 13.5px }
+.kv:last-child { border-bottom: 0 }
+.kv .k { width: 72px; color: var(--sub); flex-shrink: 0; font-size: 12.5px }
+.kv .v { flex: 1; min-width: 0 }
+.kv .v small { display: block; color: var(--sub); font-size: 11.5px }
+.chips { display: flex; gap: 5px; flex-wrap: wrap }
+.chips span { background: var(--chip); border-radius: 999px; padding: 2px 9px; font-size: 12px }
+.asst { font-size: 11.5px; color: var(--teal); font-weight: 600; padding: 2px 4px 0 }
+.src { display: flex; gap: 8px; padding: 8px 0; border-bottom: 1px solid var(--hair); font-size: 12.5px; align-items: flex-start }
+.src:last-child { border-bottom: 0 }
+.src em { font-style: normal; color: var(--teal); font-size: 11px; display: block }
+.duo { display: flex; gap: 8px }
+.duo > span { flex: 1; display: flex; align-items: center; gap: 8px; border-radius: 16px; padding: 8px 10px; font-size: 13px; font-weight: 600 }
+.duo .j { background: var(--jul); color: var(--jul-ink) }
+.duo .t { background: var(--tom); color: var(--tom-ink) }
+.duo i { font-style: normal; margin-left: auto; font: 500 13px/1 var(--f-mono) }
+.mini h4 { margin: 6px 4px 0; font-size: 12px; color: var(--sub); font-weight: 600 }
+.join { display: flex; gap: 8px; align-items: center; font-size: 12.5px; color: var(--sub); padding: 4px 4px }
+.list .row { padding: 7px 2px }
+.list .q { font: 500 12px/1 var(--f-mono); color: var(--sub) }
+.cal { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; padding: 0 12px; text-align: center; font-size: 12px }
+.cal .h { color: var(--mute); font-size: 10.5px; padding-bottom: 4px }
+.cal span { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 4px 0 }
+.cal span.o { color: var(--mute) }
+.cal span b { font-weight: 500; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center }
+.cal .d { display: flex; gap: 2px; height: 5px }
+.cal .d i { width: 5px; height: 5px; border-radius: 999px }
+.cal .d i.j { background: var(--jul-ink) } .cal .d i.t { background: var(--tom-ink) }
+.photo { position: absolute; inset: 0; background: #1E2427; display: flex; flex-direction: column; align-items: center }
+.paper { margin-top: 90px; width: 230px; height: 300px; border-radius: 6px; background: #F4F1EA; transform: rotate(-2.5deg); padding: 20px 18px; display: flex; flex-direction: column; gap: 8px; box-shadow: 0 20px 40px rgba(0,0,0,.4) }
+.paper small { font-size: 10px; color: #6B6B6B } .paper b { font-size: 13px; color: #222 }
+.paper i { height: 6px; border-radius: 3px; background: #D8D4CB }
+.paper mark { background: rgba(95,184,176,.35); color: #222; font-size: 11.5px; border-radius: 3px; padding: 1px 3px; align-self: flex-start }
+.seen { margin-top: 22px; color: #FFFFFF; font-size: 13px; display: flex; gap: 8px; align-items: center; background: rgba(255,255,255,.14); border-radius: 999px; padding: 8px 14px }
+.tplv { display: flex; flex-direction: column; gap: 8px; padding: 0 12px }
+.tplv > div { display: flex; gap: 10px; align-items: center; background: var(--surface); border-radius: 18px; padding: 8px 12px 8px 8px }
+.tplv > div.first { box-shadow: inset 0 0 0 1.5px var(--ink) }
+.tplv img { width: 36px; height: 36px }
+.tplv b { font-size: 14px; display: block } .tplv small { font-size: 11.5px; color: var(--sub) }
 
-/* Laufbänder */
-.lanes { padding-block: 40px 20px; display: flex; flex-direction: column; gap: 12px; overflow: hidden; -webkit-mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent); mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent) }
-.lane { display: flex; gap: 12px; width: max-content; animation: slide 60s linear infinite }
-.lane.rev { animation-direction: reverse; animation-duration: 72s }
-.lanes:hover .lane { animation-play-state: paused }
-@keyframes slide { to { transform: translateX(-50%) } }
-.pill { display: inline-flex; align-items: center; gap: 10px; padding: 10px 18px 10px 10px; border-radius: 999px; background: var(--surface); box-shadow: inset 0 0 0 1px var(--hair); font-size: 15px; white-space: nowrap }
-.pill img { width: 30px; height: 30px }
-.pill q { quotes: "„" "“" }
+.card { position: absolute; left: 0; top: 0; border-radius: 26px; background: var(--card); overflow: hidden; will-change: transform }
+.card .inner { position: absolute; left: 0; right: 0; top: 0; will-change: transform }
+.blk { display: flex; flex-direction: column; justify-content: center; padding: 30px }
+.card.r .blk { gap: 22px }
+.blk h2 { font-size: clamp(26px, 2.5vw, 34px); line-height: 1.08; letter-spacing: -0.03em; font-weight: 600; margin: 0; text-wrap: balance }
+.blk p { color: var(--sub); font-size: 15.5px; margin: 14px 0 0; text-wrap: pretty }
+.blk .num { font: 500 13px/1 var(--f-mono); color: var(--mute); margin-bottom: 18px }
+.feat b { display: block; font-size: 15px; font-weight: 600 }
+.feat span { color: var(--sub); font-size: 14px; display: block; margin-top: 2px; text-wrap: pretty }
 
-/* Abschnitte */
-section { padding-block: 72px }
-.eyebrow { font-size: 14px; color: var(--teal); font-weight: 600 }
-h2 { font-family: var(--f-display); font-weight: 400; font-size: clamp(36px, 4.6vw, 56px); line-height: 1.02; letter-spacing: -0.015em; margin: 10px 0 0; text-wrap: balance; max-width: 16em }
-.sec-lede { color: var(--sub); font-size: 17.5px; max-width: 36em; margin: 16px 0 0 }
-.flow { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; margin-top: 40px }
-@media (max-width: 820px) { .flow { grid-template-columns: minmax(0, 1fr) } }
-.flow article { background: var(--surface); border-radius: 24px; padding: 22px; display: flex; flex-direction: column; gap: 14px }
-.flow .n { font: 500 13px/1 var(--f-mono); color: var(--mute) }
-.flow h3 { margin: 0; font-size: 19px; font-weight: 600 }
-.flow p { margin: 0; color: var(--sub); font-size: 15.5px }
-.flow .ex { margin-top: auto; background: var(--bg); border-radius: 16px; padding: 12px 14px; font-size: 14px; display: flex; flex-direction: column; gap: 6px }
-.okc { width: 16px; height: 16px; border-radius: 999px; background: var(--teal); flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center }
-.flow .ex .s { display: flex; gap: 8px; align-items: center; color: var(--sub); font-size: 13.5px }
+.mfeat { display: none }
+.static .scrolly { height: auto !important }
+.static .sticky { position: relative; height: var(--static-h, 760px) }
+.static .card { display: none }
+.static .mfeat { display: flex; flex-direction: column; gap: 56px; padding-block: 24px 72px; padding-left: max(20px, env(safe-area-inset-left, 0px)); padding-right: max(20px, env(safe-area-inset-right, 0px)); max-width: 640px; margin: 0 auto }
+.mfeat article { display: flex; flex-direction: column; gap: 18px }
+.mfeat h2 { font-size: 30px; line-height: 1.08; letter-spacing: -0.03em; font-weight: 600; margin: 0; text-wrap: balance }
+.mfeat p { color: var(--sub); margin: 0 }
+.mfeat .feats { display: flex; flex-direction: column; gap: 12px; background: var(--card); border-radius: 22px; padding: 18px }
+.mfeat .phw { align-self: center; position: relative; overflow: hidden; max-width: 100% }
+.mfeat .phw .ph { position: absolute }
 
-.know { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 48px; align-items: center }
-@media (max-width: 820px) { .know { grid-template-columns: minmax(0, 1fr); gap: 28px } }
-.facts { background: var(--surface); border-radius: 24px; padding: 8px 18px }
-.fact { display: flex; gap: 12px; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--hair) }
-.fact:last-child { border-bottom: 0 }
-.fact .tx { flex: 1; min-width: 0 }
-.fact .tx b { display: block; font-weight: 600; font-size: 15px }
-.fact .tx small { color: var(--sub); font-size: 13.5px }
-.fact .src { font-size: 12px; color: var(--teal); white-space: nowrap }
-
-.two { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; margin-top: 40px }
-@media (max-width: 820px) { .two { grid-template-columns: minmax(0, 1fr) } }
-.two article { background: var(--surface); border-radius: 24px; padding: 24px; display: flex; flex-direction: column; gap: 10px }
-.two h3 { margin: 0; font-size: 19px; font-weight: 600 }
-.two p { margin: 0; color: var(--sub); font-size: 15.5px }
-.split { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap }
-.split span { display: inline-flex; align-items: center; gap: 8px; border-radius: 999px; padding: 6px 12px 6px 6px; font-size: 14px }
-.split .j { background: var(--jul); color: var(--jul-ink) }
-.split .t { background: var(--tom); color: var(--tom-ink) }
-.split i { font-style: normal; width: 22px; height: 22px; border-radius: 999px; background: var(--surface); display: inline-flex; align-items: center; justify-content: center; font-size: 10.5px; font-weight: 700 }
-
-.tpl { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 32px }
-.tpl span { display: inline-flex; align-items: center; gap: 10px; padding: 8px 16px 8px 8px; border-radius: 18px; background: var(--surface); font-size: 15px }
-.tpl span.first { box-shadow: inset 0 0 0 1.5px var(--ink) }
-.tpl img { width: 34px; height: 34px }
-.tpl small { color: var(--sub); font-size: 13px }
-
-.end { text-align: left; background: var(--ink); color: var(--bg); border-radius: 32px; padding: clamp(28px, 5vw, 56px); display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 32px; align-items: end }
-@media (max-width: 820px) { .end { grid-template-columns: minmax(0, 1fr) } }
-.end h2 { color: var(--bg); margin: 0 }
-.end p { color: color-mix(in srgb, var(--bg) 70%, transparent); margin: 14px 0 0; font-size: 16.5px }
-.end form { display: flex; gap: 8px; flex-wrap: wrap }
-.end input { flex: 1 1 200px; min-width: 0; height: 52px; border-radius: 999px; border: 0; padding: 0 20px; font: 16px var(--f-body); background: var(--bg); color: var(--ink) }
-.end .btn-primary { background: var(--teal); color: #FFFFFF }
-.end .note { font-size: 13px; color: color-mix(in srgb, var(--bg) 60%, transparent); margin-top: 10px; min-height: 1.4em }
-footer { padding-block: 36px 48px; font-size: 13.5px; color: var(--mute); display: flex; justify-content: space-between; flex-wrap: wrap; gap: 12px }
+.darkband { background: var(--dark); color: var(--on-dark) }
+.darkband .in { max-width: 1160px; margin: 0 auto; padding-block: 96px 48px; padding-left: max(20px, env(safe-area-inset-left, 0px)); padding-right: max(20px, env(safe-area-inset-right, 0px)); display: flex; flex-direction: column; gap: 56px }
+.darkband h2 { font-size: clamp(36px, 5vw, 64px); line-height: 1.02; letter-spacing: -0.045em; font-weight: 600; margin: 0; max-width: 12em; text-wrap: balance }
+.darkband p { color: var(--on-dark-sub); font-size: 17px; max-width: 32em; margin: 18px 0 0 }
+.wl { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 28px; max-width: 520px }
+.wl input { flex: 1 1 220px; min-width: 0; height: 50px; border-radius: 999px; border: 0; padding: 0 20px; font: 16px var(--f-body); background: rgba(255,255,255,.08); color: var(--on-dark); box-shadow: inset 0 0 0 1px rgba(255,255,255,.14) }
+.wl input::placeholder { color: var(--on-dark-sub) }
+.wl button { height: 50px; padding: 0 22px; border-radius: 999px; border: 0; background: var(--on-dark); color: var(--dark); font: 600 15px/1 var(--f-body); cursor: pointer }
+.note { font-size: 13px; color: var(--on-dark-sub); margin-top: 10px; min-height: 1.4em }
+.trio { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 28px; border-top: 1px solid rgba(255,255,255,.1); padding-top: 28px }
+@media (max-width: 760px) { .trio { grid-template-columns: minmax(0, 1fr) } }
+.trio b { display: block; font-weight: 600 }
+.trio span { color: var(--on-dark-sub); font-size: 14.5px }
+.foot { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 12px; font-size: 13px; color: var(--on-dark-sub) }
+.sr { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden }
 
 @media (prefers-reduced-motion: reduce) {
-  .lane { animation: none }
-  .row.fresh, .row.fresh .tile, .row.flash, .orb.listen::after, .dock .caret { animation: none }
+  .row.fresh, .row.fresh .tile, .row.flash, .orb.listen::after, .caret { animation: none }
 }
 </style>
 
-<div class="wrap">
-  <header class="top">
-    <a class="brand" href="#" aria-label="FamCal Start">{{img:kalender}}FamCal</a>
-    <nav><a class="hide-s" href="#so">So geht’s</a><a class="hide-s" href="#wissen">Familienwissen</a><a href="#liste">Warteliste</a></nav>
-  </header>
+<nav class="nav" aria-label="Hauptnavigation">
+  <a class="brand" href="#">{{img:kalender}}FamCal</a>
+  <span class="acts"><a class="nb" href="https://claude.ai/artifact/NfyQBbzthKG9d21rTXfM1F" target="_blank" rel="noopener">Prototyp</a><a class="nb dark" href="#liste">Warteliste</a></span>
+</nav>
 
-  <div class="hero">
-    <div>
-      <span class="kicker"><span class="dot" aria-hidden="true"></span>Für zwei Eltern, ein Kalender</span>
-      <h1>Sag es einfach. <em>Der Kalender</em> räumt sich selbst ein.</h1>
-      <p class="lede">FamCal ist der gemeinsame Familienkalender, mit dem ihr redet. Ein Satz, ein Foto vom Kita‑Zettel, und der Termin steht an der richtigen Stelle, mit Adresse, Mitbringliste und wer hingeht.</p>
-      <div class="cta-row">
-        <a class="btn btn-primary" href="#liste">Auf die Warteliste</a>
-        <a class="btn btn-ghost" href="https://claude.ai/artifact/NfyQBbzthKG9d21rTXfM1F" target="_blank" rel="noopener">Prototyp ansehen
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M7 17 17 7M8 7h9v9"/></svg></a>
-      </div>
-      <div class="proof">
-        <span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--teal)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 5 5 9-10"/></svg>Auf Deutsch gedacht</span>
-        <span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--teal)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 5 5 9-10"/></svg>Keine Werbung</span>
-        <span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--teal)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 5 5 9-10"/></svg>Beide Eltern gleichberechtigt</span>
-      </div>
+<div class="scrolly" id="scrolly">
+  <div class="sticky" id="sticky">
+    <div class="hero-text" id="heroText">
+      <h1>Ein Kalender, mit dem ihr redet</h1>
+      <p class="lede">FamCal ist der gemeinsame Familienkalender für zwei Eltern. Sagt einen Termin, und er steht an der richtigen Stelle.</p>
+      <div class="cta-row"><a class="btn btn-primary" href="#liste">Auf die Warteliste</a><a class="btn btn-ghost" href="https://claude.ai/artifact/NfyQBbzthKG9d21rTXfM1F" target="_blank" rel="noopener">Prototyp ansehen</a></div>
     </div>
 
-    <div class="stage">
-      <div class="phone" role="img" aria-label="Ein Satz wird gesprochen, der Kalender zeigt kurz, was er nachschlägt, und der Termin gleitet an seinen Platz.">
-        <div class="screen" id="screen">
-          <span class="island" aria-hidden="true"></span>
-          <div class="status" aria-hidden="true"><span>8:50</span><span>●●●</span></div>
-          <div class="s-head">
-            <div class="s-title">Diese Woche</div>
-            <div class="week" aria-hidden="true">
-              <span>Mo<b>26</b><i class="has"></i></span><span>Di<b>27</b><i></i></span><span>Mi<b>28</b><i class="has"></i></span><span class="on">Do<b>29</b><i class="has"></i></span><span>Fr<b>30</b><i id="dotFr"></i></span><span>Sa<b>31</b><i id="dotSa"></i></span><span>So<b>1</b><i></i></span>
-            </div>
+    <div class="ph side" data-pos="-2" aria-hidden="true"><div class="screen"><span class="island"></span><div class="scr">
+      <div class="status"><span>8:50</span><span>●●●</span></div>
+      <div class="s-head"><div class="s-title">November</div></div>
+      <div class="cal"><span class="h">Mo</span><span class="h">Di</span><span class="h">Mi</span><span class="h">Do</span><span class="h">Fr</span><span class="h">Sa</span><span class="h">So</span>{{month}}</div>
+    </div></div></div>
+    <div class="ph side" data-pos="-1" aria-hidden="true"><div class="screen"><span class="island"></span><div class="scr">
+      <div class="status"><span>8:50</span><span>●●●</span></div>
+      <div class="s-head"><div class="s-title">Einkauf</div><div class="s-sub">Tom geht heute um 17:30</div></div>
+      <div class="pad"><div class="box list">
+        <div class="row"><span class="c"></span><span class="tx"><b>Hafermilch</b><small>ungesüßt</small></span><span class="q">2</span></div>
+        <div class="row"><span class="c"></span><span class="tx"><b>Windeln Größe 2</b><small>Vom Assistenten ergänzt</small></span><span class="q">1</span></div>
+        <div class="row"><span class="c"></span><span class="tx"><b>Bananen</b><small>für Mia</small></span><span class="q">6</span></div>
+        <div class="row"><span class="c ok">{{chk}}</span><span class="tx"><b>Kaffee</b><small>erledigt von Julia</small></span><span class="q">1</span></div>
+      </div></div>
+    </div></div></div>
+    <div class="ph side" data-pos="1" aria-hidden="true"><div class="screen"><span class="island"></span><div class="photo">
+      <div class="paper"><small>Kita Sonnenblume · Elternbrief</small><b>Laternenbasteln</b><i style="width:92%"></i><i style="width:80%"></i><mark>Samstag, 14. November, 10 Uhr</mark><i style="width:88%"></i><i style="width:60%"></i><mark>Bitte Schere und Kleber mitbringen</mark><i style="width:90%"></i><i style="width:72%"></i></div>
+      <span class="seen"><span class="c ok">{{chk}}</span> 1 Termin und 2 Dinge erkannt</span>
+    </div></div></div>
+    <div class="ph side" data-pos="2" aria-hidden="true"><div class="screen"><span class="island"></span><div class="scr">
+      <div class="status"><span>8:50</span><span>●●●</span></div>
+      <div class="s-head"><div class="s-title">Vorlagen</div><div class="s-sub">Womit fangt ihr an?</div></div>
+      <div class="tplv">
+        <div class="first">{{img:fussabdruck}}<span><b>Babyalltag</b><small>U‑Termine, Elterngeld, Hebamme</small></span></div>
+        <div>{{img:hand-nimmt}}<span><b>Kita‑Start</b><small>Eingewöhnung, Kitaportal</small></span></div>
+        <div>{{img:geschenk}}<span><b>Geburtstage</b><small>Einladungen, Geschenke</small></span></div>
+        <div>{{img:einkauf}}<span><b>Wocheneinkauf</b><small>Liste, wer geht</small></span></div>
+      </div>
+    </div></div></div>
+
+    <div class="ph" id="mainPhone" role="img" aria-label="FamCal auf dem Telefon: ein gesprochener Satz wird zum Termin, dann die Termindetails mit ergänzten Quellen, dann die Woche nach Personen."><div class="screen" id="mainScreen"><span class="island"></span>
+      <div class="scr" data-scr="0">
+        <div class="status"><span>8:50</span><span>●●●</span></div>
+        <div class="s-head">
+          <div class="s-title">Diese Woche</div>
+          <div class="week"><span>Mo<b>26</b><i class="has"></i></span><span>Di<b>27</b><i></i></span><span>Mi<b>28</b><i class="has"></i></span><span class="on">Do<b>29</b><i class="has"></i></span><span>Fr<b>30</b><i data-dot="fr"></i></span><span>Sa<b>31</b><i data-dot="sa"></i></span><span>So<b>1</b><i></i></span></div>
+        </div>
+        <div class="days">
+          <div class="day"><h3><b>Heute</b> · Do 29. Okt</h3>
+            <div class="row"><time>10:00</time><span class="tile" style="background:#F8E8E5">{{img:fussabdruck}}</span><span class="tx"><b>Hebamme Anke</b><small>Hausbesuch, Gewicht messen</small></span><span class="who j">J</span></div>
+            <div class="slot" data-slot="do"></div>
+            <div class="row"><time>17:30</time><span class="tile" style="background:#E7EDE4">{{img:einkauf}}</span><span class="tx"><b>Wocheneinkauf</b><small>Rewe Neusser Str.</small></span><span class="who t">T</span></div>
           </div>
-          <div class="days" id="days">
-            <div class="day" data-day="do">
-              <h3><b>Heute</b> · Do 29. Okt</h3>
-              <div class="row"><time>10:00</time><span class="tile" style="background:#F8E8E5">{{img:fussabdruck}}</span><span class="tx"><b>Hebamme Anke</b><small>Hausbesuch, Gewicht messen</small></span><span class="who j">J</span></div>
-              <div class="slot" data-slot="do"></div>
-              <div class="row"><time>17:30</time><span class="tile" style="background:#E7EDE4">{{img:einkauf}}</span><span class="tx"><b>Wocheneinkauf</b><small>Rewe Neusser Str.</small></span><span class="who t">T</span></div>
-            </div>
-            <div class="day" data-day="fr">
-              <h3><b>Morgen</b> · Fr 30. Okt</h3>
-              <div class="slot" data-slot="fr"></div>
-              <div class="row" id="frEmpty"><time>&nbsp;</time><span class="tx"><small>Noch nichts geplant</small></span></div>
-            </div>
-            <div class="day" data-day="sa">
-              <h3><b>Sa 31. Okt</b></h3>
-              <div class="slot" data-slot="sa"></div>
-              <div class="row"><time>15:00</time><span class="tile" style="background:#F2EEE7">{{img:kochtopf}}</span><span class="tx"><b>Oma kommt zum Kaffee</b><small>Bringt Kuchen mit</small></span><span class="who j">J</span></div>
-            </div>
+          <div class="day"><h3><b>Morgen</b> · Fr 30. Okt</h3>
+            <div class="slot" data-slot="fr"></div>
+            <div class="row" data-empty="fr"><time>&nbsp;</time><span class="tx"><small>Noch nichts geplant</small></span></div>
           </div>
-          <div class="dock">
-            <span class="say ph" id="say">Sag, was ansteht …</span>
-            <span class="cam" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M4 8h3l2-2.5h6L17 8h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg></span>
-            <span class="orb" id="orb" aria-hidden="true"><span class="bars" id="bars"><i></i><i></i><i></i><i></i></span></span>
+          <div class="day"><h3><b>Sa 31. Okt</b></h3>
+            <div class="slot" data-slot="sa"></div>
+            <div class="row"><time>15:00</time><span class="tile" style="background:#F2EEE7">{{img:kochtopf}}</span><span class="tx"><b>Oma kommt zum Kaffee</b><small>Bringt Kuchen mit</small></span><span class="who j">J</span></div>
           </div>
         </div>
+        <div class="dock"><span class="say phd" data-say>Sag, was ansteht …</span><span class="cam" aria-hidden="true">{{camsvg}}</span><span class="orb" data-orb><span class="bars"><i></i><i></i><i></i><i></i></span></span></div>
       </div>
-      <div class="caption" aria-hidden="true"><div class="ci" id="ci">
-        <div data-k="say"><b>Sagen</b></div>
-        <div data-k="think"><b>Mitdenken</b></div>
-        <div data-k="land"><b>Einsortieren</b></div>
-      </div></div>
-    </div>
+
+      <div class="scr stacked" data-scr="1">
+        <div class="status"><span>8:51</span><span>●●●</span></div>
+        <div class="back"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="m15 5-7 7 7 7"/></svg>Diese Woche</div>
+        <div class="hero-t"><span class="tile" style="background:#E6EEF4">{{img:stethoskop}}</span><span><b>U3 bei Dr. Weber</b><small>Do 29. Okt · 14:30</small></span></div>
+        <div class="pad">
+          <div class="box">
+            <div class="kv"><span class="k">Wo</span><span class="v">Venloer Str. 12, Köln<small>Vom letzten Termin</small></span></div>
+            <div class="kv"><span class="k">Wer</span><span class="v" style="display:flex;gap:8px;align-items:center"><span class="who j">J</span>Julia mit Ben</span></div>
+            <div class="kv"><span class="k">Mitbringen</span><span class="v chips"><span>U‑Heft</span><span>Impfpass</span><span>Windel</span></span></div>
+          </div>
+          <div class="asst">Vom Assistenten ergänzt</div>
+          <div class="box">
+            <div class="src"><span class="c ok">{{chk}}</span><span>U3 ist in der 4. bis 5. Lebenswoche, Ben ist 6 Wochen alt<em>G‑BA Kinder‑Richtlinie</em></span></div>
+            <div class="src"><span class="c ok">{{chk}}</span><span>Nächste Untersuchung: U4 ab 14. Dezember<em>G‑BA Kinder‑Richtlinie</em></span></div>
+          </div>
+        </div>
+        <div class="dock"><span class="say phd">Verschieb auf 15 Uhr …</span><span class="cam" aria-hidden="true">{{camsvg}}</span><span class="orb"><span class="bars"><i></i><i></i><i></i><i></i></span></span></div>
+      </div>
+
+      <div class="scr stacked" data-scr="2">
+        <div class="status"><span>8:52</span><span>●●●</span></div>
+        <div class="s-head"><div class="s-title">Wer macht was</div><div class="s-sub">Do 29. Okt bis So 1. Nov</div></div>
+        <div class="pad">
+          <div class="duo"><span class="t">Tom<i>3</i></span><span class="j">Julia<i>3</i></span></div>
+          <div class="box mini">
+            <h4>Tom</h4>
+            <div class="row"><time>17:30</time><span class="tx"><b>Wocheneinkauf</b></span></div>
+            <div class="row"><time>Fr 16</time><span class="tx"><b>Mia von der Kita abholen</b></span></div>
+            <div class="row"><time>Sa 11</time><span class="tx"><b>Leas Geburtstag, Geschenk</b></span></div>
+            <h4>Julia</h4>
+            <div class="row"><time>10:00</time><span class="tx"><b>Hebamme Anke</b></span></div>
+            <div class="row"><time>14:30</time><span class="tx"><b>U3 bei Dr. Weber</b></span></div>
+            <div class="row"><time>Sa 15</time><span class="tx"><b>Oma kommt zum Kaffee</b></span></div>
+          </div>
+          <div class="join"><span class="who t">T</span>Tom hat „Mia abholen“ übernommen</div>
+        </div>
+        <div class="dock"><span class="say phd">Wer holt Mia nächste Woche ab?</span><span class="cam" aria-hidden="true">{{camsvg}}</span><span class="orb"><span class="bars"><i></i><i></i><i></i><i></i></span></span></div>
+      </div>
+    </div></div>
+
+    <div class="card l" id="cardL" aria-hidden="true"><div class="inner" id="innerL"></div></div>
+    <div class="card r" id="cardR" aria-hidden="true"><div class="inner" id="innerR"></div></div>
   </div>
 </div>
 
-<div class="lanes" aria-label="Beispielsätze">
-  <div class="lane" id="lane1"></div>
-  <div class="lane rev" id="lane2"></div>
-</div>
+<div class="mfeat" id="mfeat" aria-hidden="true"></div>
+<div class="sr" id="srFeat"></div>
 
-<div class="wrap">
-  <section id="so">
-    <div class="eyebrow">So geht’s</div>
-    <h2>Keine Formulare. Keine Chatverläufe. Nur euer Kalender.</h2>
-    <p class="sec-lede">Andere Assistenten antworten mit einer Sprechblase. Bei FamCal antwortet der Kalender selbst: Ihr seht, wie er sich umbaut, und könnt jeden Schritt antippen und ändern.</p>
-    <div class="flow">
-      <article><span class="n">1</span><h3>Sagen, tippen oder fotografieren</h3><p>Unten liegt eine Zeile wie in einer Chat‑App, auf jedem Screen. Sprache, Text oder ein Foto vom Elternbrief.</p>
-        <div class="ex"><span>„Ben hat heute um halb drei die U3 bei Dr. Weber.“</span></div></article>
-      <article><span class="n">2</span><h3>Mitdenken am Ort</h3><p>Kein Spinner. Die Schritte erscheinen dort, wo der Termin entsteht, und haken sich ab.</p>
-        <div class="ex"><span class="s">{{chk}}Dr. Weber, Venloer Str. 12, kenne ich vom letzten Termin</span><span class="s">{{chk}}Julia hat um halb drei frei</span><span class="s">{{chk}}U‑Heft und Impfpass mitnehmen</span></div></article>
-      <article><span class="n">3</span><h3>An seinen Platz</h3><p>Der Termin gleitet in den Tag, die Mitbringliste hängt direkt darunter. Tippen auf den Text bearbeitet ihn.</p>
-        <div class="ex"><span><b>14:30 · U3 bei Dr. Weber</b></span><span class="s">Mitbringen: U‑Heft, Impfpass, Windel</span></div></article>
+<div class="darkband" id="liste">
+  <div class="in">
+    <div>
+      <h2>Bald zu zweit zum Ausprobieren.</h2>
+      <p>Tragt euch ein, dann melden wir uns, sobald ihr FamCal gemeinsam testen könnt. Zuerst mit der Vorlage Babyalltag.</p>
+      <form class="wl" id="wl"><label for="mail" class="sr">E‑Mail</label><input id="mail" type="email" required placeholder="eure@mail.de" autocomplete="email"><button type="submit">Eintragen</button></form>
+      <div class="note" id="wlnote">Vorschau: Das Formular speichert noch nichts.</div>
     </div>
-  </section>
-
-  <section id="wissen">
-    <div class="know">
-      <div>
-        <div class="eyebrow">Familienwissen</div>
-        <h2>Er kennt euren Kinderarzt, eure Kita und euer Bundesland.</h2>
-        <p class="sec-lede">FamCal merkt sich, was ihr einmal gesagt habt, und ergänzt, was für eure Stadt gilt. Alles, was er selbst ergänzt, ist markiert und hat eine Quelle.</p>
-      </div>
-      <div class="facts">
-        <div class="fact"><span class="tile" style="background:#E6EEF4">{{img:stethoskop}}</span><span class="tx"><b>Dr. Weber, Kinderarzt</b><small>Venloer Str. 12, aus dem letzten Termin</small></span><span class="src">Von euch</span></div>
-        <div class="fact"><span class="tile" style="background:#F6F0DD">{{img:u-heft}}</span><span class="tx"><b>U4 mit 3 bis 4 Monaten</b><small>Ben ist 6 Wochen, also ab Mitte Dezember</small></span><span class="src">G‑BA Kinder‑Richtlinie</span></div>
-        <div class="fact"><span class="tile" style="background:#E2EEEC">{{img:reisepass}}</span><span class="tx"><b>Personalausweis für Ben</b><small>Kundenzentrum Köln, Termin online buchen</small></span><span class="src">stadt-koeln.de</span></div>
-        <div class="fact"><span class="tile" style="background:#F7EDE1">{{img:umschlag-euro}}</span><span class="tx"><b>Elterngeld beantragen</b><small>Bis 13. Januar eingehen lassen, sonst fehlt der erste Monat</small></span><span class="src">BEEG § 7</span></div>
-      </div>
+    <div class="trio">
+      <div><b>Auf Deutsch gedacht</b><span>Versteht „übermorgen“, „halb drei“ und Elternbriefe.</span></div>
+      <div><b>Keine Werbung</b><span>Eure Termine gehören euch und werden nicht vermarktet.</span></div>
+      <div><b>Beide Eltern gleich</b><span>Niemand ist Admin, beide sehen und ändern alles.</span></div>
     </div>
-  </section>
-
-  <section>
-    <div class="eyebrow">Zu zweit</div>
-    <h2>Ein Kalender für beide, ohne dass einer der Sekretär ist.</h2>
-    <div class="two">
-      <article><h3>Wer macht was, auf einen Blick</h3><p>Jeder Termin hat einen Besitzer in seiner Farbe. „Tom holt Mia ab“ landet bei Tom, ohne dass jemand etwas zuweist.</p>
-        <div class="split"><span class="t"><i>T</i>Kita abholen</span><span class="j"><i>J</i>Hebamme</span><span class="t"><i>T</i>Einkauf</span></div></article>
-      <article><h3>Ruhig statt laut</h3><p>Keine Werbung, keine Badges, keine Streaks. FamCal meldet sich, wenn eine Frist näher rückt, und sonst nicht.</p></article>
-    </div>
-  </section>
-
-  <section>
-    <div class="eyebrow">Vorlagen</div>
-    <h2>Fangt mit dem an, was gerade dran ist.</h2>
-    <p class="sec-lede">Eine Vorlage füllt den Kalender mit dem, was in eurer Lebensphase ansteht. Der Babyalltag ist die erste.</p>
-    <div class="tpl">
-      <span class="first">{{img:fussabdruck}}<span>Babyalltag<br><small>U‑Termine, Elterngeld, Hebamme</small></span></span>
-      <span>{{img:hand-nimmt}}<span>Kita‑Start<br><small>Eingewöhnung, Kitaportal</small></span></span>
-      <span>{{img:geschenk}}<span>Geburtstage<br><small>Einladungen, Geschenke</small></span></span>
-      <span>{{img:einkauf}}<span>Wocheneinkauf<br><small>Liste, wer geht</small></span></span>
-    </div>
-  </section>
-
-  <section id="liste">
-    <div class="end">
-      <div>
-        <h2>Bald zum Ausprobieren.</h2>
-        <p>Tragt euch ein, dann melden wir uns, sobald ihr FamCal zu zweit testen könnt.</p>
-      </div>
-      <div>
-        <form id="wl">
-          <label for="mail" class="sr" style="position:absolute;left:-9999px">E‑Mail</label>
-          <input id="mail" type="email" required placeholder="eure@mail.de" autocomplete="email">
-          <button class="btn btn-primary" type="submit">Eintragen</button>
-        </form>
-        <div class="note" id="wlnote">Vorschau: Das Formular speichert noch nichts.</div>
-      </div>
-    </div>
-  </section>
-
-  <footer><span>FamCal · Arbeitsname · Köln</span><span>Ein Familienkalender, mit dem ihr redet.</span></footer>
+    <div class="foot"><span>FamCal · Arbeitsname · Köln</span><span>Ein Familienkalender, mit dem ihr redet.</span></div>
+  </div>
 </div>
 
 <script>
 const IMG = {{imgmap}};
-const CHK = '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5 9-10"/></svg>';
+const CHK = '{{chkraw}}';
+const $ = id => document.getElementById(id);
+const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v));
+const lerp = (a, b, t) => a + (b - a) * t;
+const ease = t => t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
 const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-// Laufbänder
-const L1 = [["stethoskop","Ben hat heute um halb drei die U3 bei Dr. Weber"],["hand-nimmt","Tom holt Mia am Freitag von der Kita ab"],["geschenk","Leas Geburtstag am Samstag, wir brauchen ein Geschenk"],["einkauf","Hafermilch und Windeln Größe 2 auf die Liste"],["reisepass","Erinner mich an den Ausweis für Ben"]];
-const L2 = [["kalender","Verschieb die Hebamme auf 11 Uhr"],["umschlag-euro","Bis wann müssen wir Elterngeld beantragen?"],["kochtopf","Oma kommt Sonntag zum Mittagessen"],["chat","Was steht morgen an?"],["u-heft","Foto vom Elternbrief: Laternenbasteln am 14. November"]];
-function lane(el, items) { const h = items.map(([i, t]) => `<span class="pill">${IMG[i]}<q>${t}</q></span>`).join(''); el.innerHTML = h + h; el.querySelectorAll('.pill').forEach((p, k) => { if (k >= items.length) p.setAttribute('aria-hidden', 'true') }) }
-lane(document.getElementById('lane1'), L1); lane(document.getElementById('lane2'), L2);
+const FEATS = [
+  { h: "Ein Satz, und der Termin steht.", p: "Sagt es so, wie ihr es dem Partner sagen würdet. FamCal schreibt den Termin in den richtigen Tag, mit Uhrzeit, Ort und wer hingeht. Kein Formular und kein Chatverlauf.",
+    f: [["Sprechen, tippen, fotografieren", "Eine Zeile unten auf jedem Screen, auch für den Elternbrief."], ["Mitdenken am Ort", "Die Schritte erscheinen dort, wo der Termin entsteht, und haken sich ab."], ["Alles bleibt bearbeitbar", "Antippen, und die Zeile wird zum Textfeld."]] },
+  { h: "Er kennt euren Kinderarzt.", p: "FamCal merkt sich, was ihr einmal gesagt habt, und ergänzt, was in eurer Stadt gilt. Alles, was er selbst ergänzt, ist markiert und hat eine Quelle.",
+    f: [["Adressen vom letzten Mal", "Praxis, Kita und Oma müsst ihr nur einmal nennen."], ["Was in eurer Stadt gilt", "Feiertage, Schulferien, Bürgeramt und Kitaportal."], ["Immer mit Quelle", "Jede Ergänzung zeigt, woher sie kommt."]] },
+  { h: "Ein Kalender für zwei.", p: "Jeder Termin hat einen Besitzer in seiner Farbe. Wer was macht, seht ihr auf einen Blick, ohne dass einer den Sekretär spielt.",
+    f: [["Wer, ohne zuzuweisen", "„Tom holt Mia ab“ landet bei Tom."], ["Leise statt laut", "Keine Werbung, keine Streaks. Nur Fristen melden sich."], ["Vorlagen für jede Phase", "Babyalltag zuerst, Kita‑Start und Geburtstage folgen."]] }
+];
+const featsHTML = f => f.map(([b, s]) => `<div class="feat"><b>${b}</b><span>${s}</span></div>`).join('');
+$('innerL').innerHTML = FEATS.map((x, i) => `<div class="blk"><span class="num">${i + 1} / 3</span><h2>${x.h}</h2><p>${x.p}</p></div>`).join('');
+$('innerR').innerHTML = FEATS.map(x => `<div class="blk">${featsHTML(x.f)}</div>`).join('');
+$('srFeat').innerHTML = FEATS.map(x => `<h2>${x.h}</h2><p>${x.p}</p><ul>${x.f.map(([b, s]) => `<li>${b}: ${s}</li>`).join('')}</ul>`).join('');
 
-// Hero: Satz wird zu Termin
+// Choreografie am Scroll: Telefon steht, Screens schieben sich übereinander
+const PW = 320, PH = 656;
+const main = $('mainPhone'), sides = [...document.querySelectorAll('.ph.side')], scr = [...document.querySelectorAll('#mainScreen .scr')];
+const heroText = $('heroText'), cardL = $('cardL'), cardR = $('cardR'), innerL = $('innerL'), innerR = $('innerR');
+let M = {}, isStatic = false;
+const place = (el, x, y, s) => { el.style.transform = `translate(${x}px, ${y}px) scale(${s})` };
+
+function measure() {
+  const W = document.documentElement.clientWidth, H = innerHeight;
+  isStatic = W < 1024 || H < 620 || reduce;
+  document.body.classList.toggle('static', isStatic);
+  const heroBottom = heroText.offsetTop + heroText.offsetHeight;
+  if (isStatic) {
+    const sH = Math.min(.9, (W * .64) / PW);
+    M = { W, H, sH, heroTop: heroBottom + 36 };
+    document.body.style.setProperty('--static-h', Math.round(M.heroTop + PH * sH * .72) + 'px');
+    $('scrolly').style.height = '';
+    buildMobile(); frame(0); return;
+  }
+  const sF = Math.min(1, (H - 150) / PH), sH = sF * 1.08;
+  const cardW = Math.min(380, (W - PW * sF) / 2 - 60), cardH = PH * sF;
+  const L = H * .9, p1 = H * .85;
+  M = { W, H, sF, sH, cardW, cardH, L, p1, heroTop: heroBottom + 44, cy: (H - PH * sF) / 2 + 28 };
+  [innerL, innerR].forEach(inn => [...inn.children].forEach(b => { b.style.height = L + 'px' }));
+  [cardL, cardR].forEach(c => { c.style.width = cardW + 'px'; c.style.height = cardH + 'px' });
+  $('scrolly').style.height = (H + p1 + 2.35 * L) + 'px';
+  frame(scrollProgress());
+}
+function scrollProgress() { return isStatic ? 0 : Math.max(0, -$('scrolly').getBoundingClientRect().top) }
+
+function sidePos(el, sH, gap) {
+  const k = +el.dataset.pos, a = Math.abs(k), sc = sH * (a === 1 ? .86 : .74);
+  const dx = a === 1 ? PW * sH * .5 + PW * sc * .5 + gap : PW * sH * .5 + PW * sH * .86 + PW * sc * .5 + gap * 2;
+  return { k, a, sc, x: M.W / 2 + Math.sign(k) * dx - PW * sc / 2 };
+}
+function frame(s) {
+  const { W, H } = M, cx = W / 2;
+  if (isStatic) {
+    const sH = M.sH;
+    place(main, cx - PW * sH / 2, M.heroTop, sH);
+    sides.forEach(el => { const p = sidePos(el, sH, 14); place(el, p.x, M.heroTop + (p.a === 1 ? 40 : 100) * sH, p.sc) });
+    scr.forEach((e, i) => { e.style.transform = i ? 'translateY(100%)' : ''; e.style.filter = '' });
+    heroText.style.transform = ''; heroText.style.opacity = '';
+    return;
+  }
+  const { sF, sH, p1, L, cardW, cardH, cy } = M;
+  const e = ease(clamp(s / p1));
+  heroText.style.transform = `translateY(${-s * .9}px)`;
+  heroText.style.opacity = clamp(1 - s / (H * .42));
+  const sc = lerp(sH, sF, e), y = lerp(M.heroTop, cy, e);
+  place(main, cx - PW * sc / 2, y, sc);
+  sides.forEach(el => { const p = sidePos(el, sH, 22); place(el, p.x, M.heroTop + (p.a === 1 ? 46 : 120) * sH - s * (p.a === 1 ? 1.9 : 1.5), p.sc) });
+  const ec = ease(clamp((s - p1 * .3) / (p1 * .7)));
+  const off = (1 - ec) * (H - cy + 40);
+  place(cardL, cx - PW * sF / 2 - 24 - cardW, cy + off, 1);
+  place(cardR, cx + PW * sF / 2 + 24, cy + off * 1.15, 1);
+  const t = s - p1;
+  innerL.style.transform = `translateY(${cardH / 2 - L / 2 - t}px)`;
+  innerR.style.transform = `translateY(${cardH / 2 - L / 2 - t * 1.08 + 24}px)`;
+  const pr = i => i < scr.length ? clamp((t - (i * L - .78 * L)) / (.5 * L)) : 0;
+  scr.forEach((el, i) => {
+    const mine = i ? pr(i) : 1, next = pr(i + 1);
+    el.style.transform = mine < 1 ? `translateY(${(1 - mine) * 100}%)` : `scale(${1 - .06 * next})`;
+    el.style.filter = next ? `brightness(${1 - .14 * next})` : '';
+  });
+}
+let raf = 0;
+addEventListener('scroll', () => { if (!raf) raf = requestAnimationFrame(() => { raf = 0; if (!isStatic) frame(scrollProgress()) }) }, { passive: true });
+addEventListener('resize', measure);
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(measure);
+
+// Schmale Bildschirme: jeder Abschnitt mit eigenem Telefon
+let built = false;
+function buildMobile() {
+  if (built) return; built = true;
+  $('mfeat').innerHTML = FEATS.map((x, i) => `<article><h2>${x.h}</h2><p>${x.p}</p><div class="phw" data-i="${i}"></div><div class="feats">${featsHTML(x.f)}</div></article>`).join('');
+  const k = Math.min(.82, (document.documentElement.clientWidth - 40) / PW);
+  document.querySelectorAll('.mfeat .phw').forEach(w => {
+    const i = +w.dataset.i;
+    w.style.width = PW * k + 'px'; w.style.height = PH * k * .82 + 'px';
+    const ph = document.createElement('div'); ph.className = 'ph';
+    ph.innerHTML = `<div class="screen"><span class="island"></span></div>`;
+    const c = scr[i].cloneNode(true); c.style.transform = 'none'; c.style.filter = ''; c.classList.remove('stacked');
+    c.querySelectorAll('[data-say],[data-orb],[data-slot],[data-empty],[data-dot]').forEach(n => ['data-say', 'data-orb', 'data-slot', 'data-empty', 'data-dot'].forEach(a => n.removeAttribute(a)));
+    ph.querySelector('.screen').appendChild(c);
+    ph.style.transform = `scale(${k})`;
+    w.appendChild(ph);
+  });
+}
+
+// Live im ersten Screen: Satz wird zu Termin
+const S0 = scr[0];
+const say = S0.querySelector('[data-say]'), orb = S0.querySelector('[data-orb]'), bars = [...orb.querySelectorAll('i')];
+const slotOf = k => S0.querySelector(`[data-slot="${k}"]`), dotOf = k => S0.querySelector(`[data-dot="${k}"]`), emptyFr = S0.querySelector('[data-empty="fr"]');
 const SCENES = [
-  { say: "Tom holt Mia morgen um vier von der Kita ab", slot: "fr", dot: "dotFr", hideEmpty: true,
+  { say: "Tom holt Mia morgen um vier von der Kita ab", slot: "fr", dot: "fr", hideEmpty: true,
     steps: ["Morgen ist Freitag, 30. Oktober", "Kita Sonnenblume, Abholung bis 16:30", "Das macht sonst Julia, jetzt Tom"],
     row: { time: "16:00", icon: "hand-nimmt", tint: "#F2EEE7", title: "Mia von der Kita abholen", sub: "Kita Sonnenblume, Lindenstr. 4", who: "t" } },
   { say: "Ben hat heute um halb drei die U3 bei Dr. Weber", slot: "do",
     steps: ["Dr. Weber, Venloer Str. 12, kenne ich vom letzten Termin", "Julia hat um halb drei frei, Tom ist im Büro", "U‑Heft und Impfpass mitnehmen"],
     row: { time: "14:30", icon: "stethoskop", tint: "#E6EEF4", title: "U3 bei Dr. Weber", sub: "Venloer Str. 12", who: "j", nested: ["U‑Heft", "Impfpass", "Windel"], added: true } },
-  { say: "Leas Geburtstag am Samstag um elf, wir brauchen ein Geschenk", slot: "sa", dot: "dotSa",
-    steps: ["Samstag ist der 31. Oktober", "Lea wird 4, Geschenk unter 20 € kam letztes Mal gut an"],
-    row: { time: "11:00", icon: "geschenk", tint: "#F8E8E5", title: "Leas Geburtstag", sub: "Bei Familie Yilmaz", who: "j", nested: ["Geschenk besorgen"] } }
+  { say: "Leas Geburtstag am Samstag um elf, wir brauchen ein Geschenk", slot: "sa", dot: "sa",
+    steps: ["Samstag ist der 31. Oktober", "Lea wird 4, Tom kümmert sich ums Geschenk"],
+    row: { time: "11:00", icon: "geschenk", tint: "#F8E8E5", title: "Leas Geburtstag", sub: "Bei Familie Yilmaz", who: "t", nested: ["Geschenk besorgen"] } }
 ];
-const $ = id => document.getElementById(id);
-const say = $('say'), orb = $('orb'), bars = [...$('bars').children], ci = [...$('ci').children];
 const sleep = ms => new Promise(r => setTimeout(r, ms));
-function cap(k) { ci.forEach(d => d.classList.toggle('on', d.dataset.k === k)) }
 function rowHTML(r, fresh) {
   return `<div class="row${fresh ? ' fresh flash' : ''}"><time>${r.time}</time><span class="tile" style="background:${r.tint}">${IMG[r.icon]}</span><span class="tx"><b>${r.title}</b><small>${r.sub}</small></span><span class="who ${r.who}">${r.who.toUpperCase()}</span></div>`
     + (r.nested ? `<div class="nested">${r.nested.map(n => `<span>${n}</span>`).join('')}</div>` : '')
@@ -393,45 +482,36 @@ function rowHTML(r, fresh) {
 }
 let barT;
 function listen(on) { orb.classList.toggle('listen', on); clearInterval(barT); if (on) barT = setInterval(() => bars.forEach(b => b.style.height = (4 + Math.random() * 12) + 'px'), 120); else bars.forEach(b => b.style.height = '6px') }
-function setH(el, h) { el.style.height = h + 'px' }
-async function typeIt(t) { say.classList.remove('ph'); for (let i = 1; i <= t.length; i++) { say.innerHTML = t.slice(0, i) + '<span class="caret"></span>'; await sleep(34 + Math.random() * 30) } }
 function fit(slot) { const cur = slot.offsetHeight; slot.style.height = 'auto'; const h = slot.offsetHeight; slot.style.height = cur + 'px'; void slot.offsetHeight; slot.style.height = h + 'px' }
+async function typeIt(t) { say.classList.remove('phd'); for (let i = 1; i <= t.length; i++) { say.innerHTML = t.slice(0, i) + '<span class="caret"></span>'; await sleep(34 + Math.random() * 30) } }
 async function play(sc) {
-  const slot = document.querySelector(`[data-slot="${sc.slot}"]`);
-  cap('say'); listen(true); await typeIt(sc.say); await sleep(450); listen(false);
-  cap('think');
+  const slot = slotOf(sc.slot);
+  listen(true); await typeIt(sc.say); await sleep(450); listen(false);
   const think = document.createElement('div'); think.className = 'think';
   think.innerHTML = sc.steps.map(s => `<div class="step"><span class="c">${CHK}</span><span>${s}</span></div>`).join('');
   slot.appendChild(think); fit(slot);
   for (const s of think.children) { await sleep(260); s.classList.add('in'); await sleep(560); s.classList.add('ok') }
   await sleep(500);
-  cap('land');
-  say.classList.add('ph'); say.textContent = 'Sag, was ansteht …';
+  say.classList.add('phd'); say.textContent = 'Sag, was ansteht …';
   think.remove();
-  if (sc.hideEmpty) $('frEmpty').hidden = true;
+  if (sc.hideEmpty) emptyFr.hidden = true;
   slot.insertAdjacentHTML('beforeend', rowHTML(sc.row, true)); fit(slot);
-  if (sc.dot) $(sc.dot).classList.add('has');
+  if (sc.dot) dotOf(sc.dot).classList.add('has');
   await sleep(2600);
 }
-function reset() {
-  document.querySelectorAll('[data-slot]').forEach(s => { s.innerHTML = ''; s.style.height = '0px' });
-  $('frEmpty').hidden = false; $('dotFr').classList.remove('has'); $('dotSa').classList.remove('has');
-}
-function staticEnd() {
-  SCENES.forEach(sc => { const s = document.querySelector(`[data-slot="${sc.slot}"]`); s.insertAdjacentHTML('beforeend', rowHTML(sc.row, false)); s.style.height = 'auto'; if (sc.dot) $(sc.dot).classList.add('has') });
-  $('frEmpty').hidden = true; ci.forEach(d => d.classList.add('on'));
-}
+function reset() { ['do', 'fr', 'sa'].forEach(k => { const s = slotOf(k); s.innerHTML = ''; s.style.height = '0px' }); emptyFr.hidden = false; dotOf('fr').classList.remove('has'); dotOf('sa').classList.remove('has') }
+function staticEnd() { SCENES.forEach(sc => { const s = slotOf(sc.slot); s.insertAdjacentHTML('beforeend', rowHTML(sc.row, false)); s.style.height = 'auto'; if (sc.dot) dotOf(sc.dot).classList.add('has') }); emptyFr.hidden = true }
 async function loop() {
-  reset(); await sleep(900);
+  await sleep(900);
   while (true) {
     for (const sc of SCENES) await play(sc);
     await sleep(1200);
-    document.querySelectorAll('[data-slot]').forEach(s => { s.style.height = '0px' });
+    ['do', 'fr', 'sa'].forEach(k => { slotOf(k).style.height = '0px' });
     await sleep(500); reset(); await sleep(600);
   }
 }
+measure();
 if (reduce) staticEnd(); else loop();
 
-// Warteliste (nur Vorschau)
 $('wl').addEventListener('submit', e => { e.preventDefault(); $('wlnote').textContent = 'Danke! In dieser Vorschau wird noch nichts gespeichert.' });
 </script>
