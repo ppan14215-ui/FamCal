@@ -7,6 +7,7 @@ Alle sichtbaren Änderungen an FamCal. Neueste oben. Agenten und Menschen: Ände
 ### Mikro versteht Deutsch auch auf englischen Handys (27.10.)
 
 - Das Mikro hörte bisher in der Sprache der App. Auf einem Handy mit Englisch als erster Sprache war das Englisch, Deutsch kam gar nicht an. Jetzt hört es Deutsch, sobald Deutsch irgendwo in den Sprachen des Handys steht.
+- Außerdem wählt man in den Einstellungen unter „Ich spreche“ Deutsch oder Englisch, das Handy merkt es sich.
 
 ### Kein Warten mehr auf Claude (27.10.)
 

@@ -15,6 +15,7 @@ import { LIVE } from '../src/lib/live';
 import { getFamily, stopSync } from '../src/lib/sync';
 import { signOut } from '../src/lib/auth';
 import { tx } from '../src/i18n/lang';
+import { speechLang, setSpeechLang } from '../src/lib/speechLang';
 
 function SRow({ icon, t, s, right, onPress }: { icon: ClayName; t: string; s: string; right?: React.ReactNode; onPress?: () => void }) {
   return (
@@ -38,6 +39,7 @@ const CAL_NAME: Record<string, { t: string; icon: ClayName }> = {
 };
 
 export default function Einstellungen() {
+  const [sl, setSl] = React.useState(speechLang());
   const cals = useStore((s) => s.calendars);
   const demo = useStore((s) => s.demo);
   const names = useStore((s) => s.names);
@@ -60,6 +62,7 @@ export default function Einstellungen() {
       </Group>
       <Group>
         <SRow icon="glocke" t={tx('Hinweise', 'Notifications')} s={tx('Nur Wichtiges · Ruhe 21–7 Uhr', 'Only what matters · quiet 9pm to 7am')} onPress={() => router.push('/demo/sperrbildschirm')} />
+        <SRow icon="chat" t={tx('Ich spreche', 'I speak')} s={sl === 'de' ? tx('Deutsch · tippen für Englisch', 'German · tap for English') : tx('Englisch · tippen für Deutsch', 'English · tap for German')} onPress={() => { const v = sl === 'de' ? 'en' : 'de'; setSpeechLang(v); setSl(v); toast(v === 'de' ? tx('Ich höre jetzt auf Deutsch', 'Listening in German now') : tx('Ich höre jetzt auf Englisch', 'Listening in English now')); }} />
         <SRow icon="chat" t={tx('Sprache', 'Language')} s={tx('Deutsch · folgt der Sprache des Handys', 'English · follows the phone language')} onPress={() => toast(tx('Ändern in den Einstellungen des Handys', 'Change it in the phone settings'))} />
         <SRow icon="paket" t="Export" s={tx('Kalender (ICS) und alle Daten (JSON)', 'Calendar (ICS) and all data (JSON)')} onPress={() => toast(tx('Export kommt bald', 'Export is coming soon'))} />
       </Group>
