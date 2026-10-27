@@ -4,6 +4,12 @@ Alle sichtbaren Änderungen an FamCal. Neueste oben. Agenten und Menschen: Ände
 
 ## Unreleased
 
+### Sprechen zuerst: neues Intro und kürzeres Onboarding (27.10.)
+
+- Das Intro zeigt jetzt nur noch, was den Kalender ausmacht: ein gesprochener Satz wird zum Termin, er landet sofort auf beiden Handys, „Eine Stunde später“ verschiebt ihn, „Wann haben wir beide frei?“ findet die Lücke, und Google, iCloud und Outlook ziehen in einem Schritt mit um. Kein Behördenbrief mehr.
+- Onboarding in drei Schritten: eure Namen, Kalender umziehen, Partner einladen (oder später). Die Schritte zu Stadt, Kind, erstem Jahr und Aufgabenkarten sind weg.
+- Datenbank: zwei Sicherheitshinweise von Supabase behoben.
+
 ### Echte App: Anmelden, gemeinsamer Kalender, Sprechen mit Claude (27.10.)
 
 - Anmelden mit Apple oder Google, ohne Passwort. Danach startest du eure Familie oder gibst den Code deines Partners ein und teilt denselben Kalender.

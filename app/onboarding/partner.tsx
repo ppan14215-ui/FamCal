@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { View, Share } from 'react-native';
 import { router } from 'expo-router';
 import * as Clipboard from 'expo-clipboard';
-import { Screen, BackBar, StepDots, H1, Lead, Btn, Card, Chip, Meta } from '../../src/components/ui/kit';
+import { Screen, BackBar, StepDots, H1, Lead, Btn, Card, Chip, Meta, TextLink } from '../../src/components/ui/kit';
 import Txt from '../../src/components/ui/Txt';
 import LineIcon from '../../src/components/ui/LineIcon';
 import { Avatar, Pair } from '../../src/components/ui/Person';
@@ -27,26 +27,24 @@ const invite = () => {
 export default function Partner() {
   const names = useStore((s) => s.names);
   const sel = useStore((s) => s.colors);
-  // Without a child there is no first year to plan: straight to the calendar (Pivot 26.10.).
-  const kid = useStore((s) => s.kid);
   // The screen takes on the partner's colour as soon as it is picked (Julian 26.10.).
   const partner = personPalette[sel.T];
   return (
     <Screen
       bg={partner.bg}
-      footer={
+      footer={<>
         <Btn
           label={tx('Einladung senden', 'Send invite')}
           icon="send"
           onPress={async () => {
             await Share.share({ message: invite().message(names.J) }).catch(() => {});
-            if (kid) router.push('/onboarding/jahr');
-            else router.replace('/kalender');
+            router.replace('/kalender');
           }}
         />
-      }
+        <TextLink label={tx('Später einladen', 'Invite later')} weight={400} onPress={() => router.replace('/kalender')} />
+      </>}
     >
-      <BackBar center={<StepDots i={5} />} />
+      <BackBar center={<StepDots i={2} n={3} />} />
       <H1 dot={partner.fg}>{tx('Zu zweit', 'The two of you')}</H1>
       <Lead>{tx(`${names.T || 'Dein Partner'} bekommt einen Link. Ein iPhone ist nicht nötig, die App läuft auch auf Android.`, `${names.T || 'Your partner'} gets a link. No iPhone needed, the app runs on Android too.`)}</Lead>
       <Card>

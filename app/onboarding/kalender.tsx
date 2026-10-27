@@ -32,7 +32,7 @@ export default function Kalender() {
   const next = () => (zurueck ? goBack() : router.push('/onboarding/partner'));
   return (
     <Screen footer={<><Btn label={tx('Weiter', 'Next')} onPress={next} />{zurueck ? null : <TextLink label={tx('Später', 'Later')} weight={400} onPress={next} />}</>}>
-      <BackBar center={zurueck ? undefined : <StepDots i={4} />} />
+      <BackBar center={zurueck ? undefined : <StepDots i={1} n={3} />} />
       <H1>{tx('Eure Kalender', 'Your calendars')}</H1>
       <Lead>{tx('Damit nichts doppelt ist. Ihr wählt, welche Kalender hier erscheinen, der Rest bleibt privat.', 'So nothing is double booked. You choose which calendars show up here, the rest stays private.')}</Lead>
       <View style={{ gap: 8 }}>
