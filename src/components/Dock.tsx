@@ -21,7 +21,7 @@ import TalkBar from './TalkBar';
 import { setVeil } from './Veil';
 import { tokens, persons } from '../theme';
 import { useStore, actions } from '../state/store';
-import { plan, planOnline, thinksOnline, Ctx, Plan, Result, SPOKEN, HINTS, PLACEHOLDER } from '../lib/act';
+import { plan, claudeSays, correction, replyPlan, thinksOnline, Ctx, Plan, Result, SPOKEN, HINTS, PLACEHOLDER } from '../lib/act';
 import { dayLabel, slotLine } from '../lib/talk';
 import { locate, light } from '../lib/landing';
 import { setDockSpace } from '../lib/dockSpace';
@@ -160,15 +160,28 @@ export default function Dock() {
     const ctx = where.ctx;
     const n = ++heard.current;
     if (thinksOnline(ctx, said, pending)) {
-      // Claude reads it (real app); the card says so until the answer is back, then the steps play as usual.
-      setVeil({ phase: 'think', origin, target: null, lines: [tx('Lese deinen Satz', 'Reading your sentence')], shown: 0, said });
-      planOnline(ctx, said, pending).then((p) => { if (heard.current === n) play(p, said, false); });
+      // The rules show it at once; Claude's reading arrives a few seconds later and corrects it.
+      const second = claudeSays(said);
+      play(plan(ctx, said, pending), said, true, (out) => second.then((r) => { if (heard.current === n) correct(out.result, r, said); }));
       return;
     }
     play(plan(ctx, said, pending), said, true);
   };
 
-  const play = (p: Plan, said: string, fresh: boolean) => {
+  const correct = (local: Result | undefined, r: Awaited<ReturnType<typeof claudeSays>>, said: string) => {
+    if (!r || r.kind !== 'added') return;
+    if (local?.kind !== 'event') return play(replyPlan(r), said, true);
+    const made = local.event;
+    const patch = correction(made, r);
+    if (!patch) return;
+    actions.updateEvent(made.id, patch);
+    const event = { ...made, ...patch };
+    setTurn((t) => (t && t.result.kind === 'event' && t.result.event.id === made.id ? { ...t, result: { kind: 'event', event, needsTime: r.needsTime } } : t));
+    light(made.id);
+    haptics.select();
+  };
+
+  const play = (p: Plan, said: string, fresh: boolean, after?: (out: ReturnType<Plan['run']>) => void) => {
     setVeil(fresh ? { phase: 'think', origin, target: null, lines: p.steps, shown: 0, said } : { lines: p.steps, shown: 0 });
     p.steps.forEach((_, i) => later(450 + STEP_MS * i, () => { setVeil({ shown: i + 1 }); haptics.select(); }));
     later(450 + STEP_MS * p.steps.length + 150, () => {
@@ -180,6 +193,7 @@ export default function Dock() {
         if (out.land) light(out.land);
         haptics.success();
         if (out.result && out.result.kind !== 'done') setTurn({ id: Date.now(), said, result: out.result });
+        after?.(out);
       };
       const band = { top: insets.top + 70, floor: H * 0.55, height: H };
       later(go && go !== path ? 380 : 90, () => {

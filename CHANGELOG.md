@@ -4,6 +4,12 @@ Alle sichtbaren Änderungen an FamCal. Neueste oben. Agenten und Menschen: Ände
 
 ## Unreleased
 
+### Kein Warten mehr auf Claude (27.10.)
+
+- Gemessen braucht Claude 2 bis 4 Sekunden pro Satz. Deshalb zeigt die App den Termin jetzt sofort mit ihren eigenen Regeln. Claude liest den Satz gleichzeitig und korrigiert danach still, was die Regeln falsch verstanden haben. Der Termin leuchtet dabei kurz auf.
+- Hat die App einen Satz gar nicht verstanden, Claude aber schon, trägt Claude den Termin nach.
+- Claude antwortet kürzer, das spart Zeit.
+
 ### 14 Tage Plus, danach 30 Sätze im Monat gratis (27.10.)
 
 - Jede Familie startet mit 14 Tagen Plus. Danach versteht Claude 30 Sätze im Monat gratis, mit Plus unbegrenzt. Eingeladene nutzen den Plan ihrer Familie mit.

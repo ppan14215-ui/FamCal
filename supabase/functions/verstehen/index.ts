@@ -48,7 +48,7 @@ Regeln:
 - who: J oder T, wenn der Satz einen der beiden Eltern nennt (Namen stehen unten), both für "wir", "beide", "zusammen", sonst null. Kinder sind keine Eltern.
 - place nur, wenn ein Ort genannt ist. repeat als kurzer Text in der Sprache der App ("Jeden Dienstag", "Every Tuesday"), sonst null.
 - bring: Dinge, die mitgenommen werden sollen ("Impfpass mitnehmen" ergibt ["Impfpass"]).
-- steps: zwei bis vier sehr kurze Sätze in der Sprache der App (steht unten), was du verstanden hast, für eine Liste unter dem Eingabefeld. Zum Beispiel "Zahnarzt am Freitag, 30. Oktober um 15 Uhr." und "Für Julian.". Keine Gedankenstriche.
+- steps: ein bis zwei sehr kurze Sätze in der Sprache der App (steht unten), was du verstanden hast, für eine Liste unter dem Eingabefeld. Zum Beispiel "Zahnarzt am Freitag, 30. Oktober um 15 Uhr." und "Für Julian.". Keine Gedankenstriche.
 - Fehlt etwas Wichtiges (kein Datum), setze kind auf termin, date auf null und stelle in question eine kurze Rückfrage in der Sprache der App.
 - Ist der Satz eine Frage an den Kalender ("Was steht morgen an?", "What's on tomorrow?"), setze kind auf frage und lasse die Felder leer.
 - Ist es weder Termin noch Frage, setze kind auf unklar.`;

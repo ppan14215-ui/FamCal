@@ -68,7 +68,7 @@ function kalender(said: string, pending: { title: string; who: Who } | null): Pl
   return listPlan(said) ?? replyPlan(understand(said, get().events, pending, () => newId('e')));
 }
 
-function replyPlan(reply: Reply): Plan {
+export function replyPlan(reply: Reply): Plan {
   if (reply.kind !== 'added') {
     return { steps: [tx('Schaue in euren Kalender', 'Looking at your calendar')], run: () => ({ result: { kind: 'answer', reply } }) };
   }
@@ -236,15 +236,24 @@ function listeNeu(said: string): Plan {
 }
 
 /**
- * The real app (Julian 27.10.): in the calendar Claude reads the sentence
- * through the "verstehen" function. Lists, follow-ups ("um 15 Uhr") and
- * everything offline stay with the rules below.
+ * The real app (Julian 27.10.: never wait on Claude). The rules answer at once;
+ * Claude reads the same sentence meanwhile (2 to 4 seconds) and the Dock
+ * quietly corrects what the rules got wrong. Lists, follow-ups ("um 15 Uhr")
+ * and everything offline stay with the rules alone.
  */
-export async function planOnline(ctx: Ctx, said: string, pending: { title: string; who: Who } | null): Promise<Plan> {
-  if (ctx.kind !== 'kalender' || pending || !canUnderstand() || listPlan(said)) return plan(ctx, said, pending);
+export async function claudeSays(said: string): Promise<Reply | null> {
   const m = await understandOnline(said);
-  const reply = m && fromModel(m, said, get().events, () => newId('e'));
-  return reply ? replyPlan(reply) : plan(ctx, said, pending);
+  return m && fromModel(m, said, get().events, () => newId('e'));
+}
+
+/** What Claude changes on a Termin the rules just made; null when they agree. */
+export function correction(made: CalEvent, r: Extract<Reply, { kind: 'added' }>): Partial<CalEvent> | null {
+  const e = r.event;
+  const patch: Partial<CalEvent> = {};
+  const keys = ['title', 'sub', 'icon', 'date', 'endDate', 'start', 'end', 'allDay', 'who', 'place', 'repeat'] as const;
+  for (const k of keys) if ((e[k] ?? null) !== (made[k] ?? null)) (patch as Record<string, unknown>)[k] = e[k];
+  if (!made.bring?.length && e.bring?.length) patch.bring = e.bring;
+  return Object.keys(patch).length ? patch : null;
 }
 
 export const thinksOnline = (ctx: Ctx, said: string, pending: unknown) => ctx.kind === 'kalender' && !pending && canUnderstand() && !listPlan(said);
