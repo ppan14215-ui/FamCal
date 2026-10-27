@@ -168,7 +168,8 @@ export default function TalkBar({ onSend, onPlus, suggestions = [], spoken, plac
         onChangeText={setText}
         // On a phone Enter makes a new line and the arrow sends, as in the Claude app.
         enterKeyHint={TOUCH ? 'enter' : 'send'}
-        onContentSizeChange={Platform.OS === 'web' ? undefined : (e) => setBoxH(Math.min(MAX_H, Math.max(MIN_H, e.nativeEvent.contentSize.height + PAD * 2)))}
+        // On the phone contentSize already holds the padding; adding it again made the empty field two lines tall on Android (Julian 27.10.).
+        onContentSizeChange={Platform.OS === 'web' ? undefined : (e) => setBoxH(text ? Math.min(MAX_H, Math.max(MIN_H, Math.ceil(e.nativeEvent.contentSize.height))) : MIN_H)}
         // With a real keyboard Enter sends and Shift plus Enter makes a new line.
         onKeyPress={(e: any) => {
           if (Platform.OS === 'web' && !TOUCH && e.nativeEvent.key === 'Enter' && !e.nativeEvent.shiftKey && !e.nativeEvent.isComposing) { e.preventDefault(); send(); }
@@ -180,7 +181,7 @@ export default function TalkBar({ onSend, onPlus, suggestions = [], spoken, plac
         selectionColor={tokens.ink}
         returnKeyType={TOUCH ? 'default' : 'send'}
         accessibilityLabel={tx('Was steht an?', 'What\'s on?')}
-        style={[{ flex: 1, minWidth: 0, height: boxH, marginBottom: 2, fontFamily: fonts[400], fontSize: 16.5, lineHeight: LINE, color: tokens.ink, paddingVertical: PAD, paddingHorizontal: 8, textAlignVertical: 'top' }, Platform.OS === 'web' ? ({ outlineStyle: 'none' } as any) : null]}
+        style={[{ flex: 1, minWidth: 0, height: boxH, marginBottom: 2, fontFamily: fonts[400], fontSize: 16.5, lineHeight: LINE, color: tokens.ink, paddingVertical: PAD, paddingHorizontal: 8, textAlignVertical: 'top', includeFontPadding: false }, Platform.OS === 'web' ? ({ outlineStyle: 'none' } as any) : null]}
       />
       <PressScale
         accessibilityLabel={text && !listening ? tx('Senden', 'Send') : tx('Sprechen', 'Speak')}
