@@ -4,6 +4,11 @@ Alle sichtbaren Änderungen an FamCal. Neueste oben. Agenten und Menschen: Ände
 
 ## Unreleased
 
+### Eingabe und Ablauf wie in einer Chat App (27.10.)
+
+- Das Textfeld wächst mit dem Text nach oben, bis vier Zeilen, danach scrollt es. Enter schickt ab, Shift und Enter macht eine neue Zeile.
+- Während der Assistent arbeitet, steht der ganze Plan als Aufgabenliste unter der Kugel: oben der Satz, darunter jeder Schritt, der laufende dreht sich, fertige bekommen einen Haken.
+
 ### Sprechen überall, Kalender als Startansicht (27.10.)
 
 - Ein Sprechfeld für die ganze App. Es weiß, wo ihr seid: im Kalender wird ein Satz zum Termin oder zur Antwort, auf einem Termin ändert er diesen Termin, auf einer Liste füllt er diese Liste, beim Anlegen baut er die neue Liste.

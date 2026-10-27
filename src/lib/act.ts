@@ -255,7 +255,7 @@ export const HINTS: Record<Ctx['kind'], string[]> = {
 };
 
 export const PLACEHOLDER: Record<Ctx['kind'], string> = {
-  kalender: 'Sag oder schreib, was ansteht …',
+  kalender: 'Sag oder schreib, was ansteht',
   termin: 'Ändern: Zeit, wer geht, Mitbringen …',
   liste: 'Was kommt auf die Liste?',
   'liste-neu': 'Name und was draufkommt …',

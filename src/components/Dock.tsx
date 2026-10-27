@@ -153,7 +153,7 @@ export default function Dock() {
     light(null);
     setTurn(null);
     const p = plan(where.ctx, said, pending);
-    setVeil({ phase: 'think', origin, target: null, lines: p.steps, shown: 0 });
+    setVeil({ phase: 'think', origin, target: null, lines: p.steps, shown: 0, said });
     p.steps.forEach((_, i) => later(450 + STEP_MS * i, () => { setVeil({ shown: i + 1 }); haptics.select(); }));
     later(450 + STEP_MS * p.steps.length + 150, () => {
       const out = p.run();

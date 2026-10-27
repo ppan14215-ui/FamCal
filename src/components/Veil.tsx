@@ -1,14 +1,18 @@
 /**
  * Der Schleier (Julian 26.10.): what you said is now being done. Three beats.
  * Think: the orb leaves the mic, a circular wave fills the screen with the
- * parents' colours, the thinking steps appear one by one under the orb.
+ * parents' colours, and under the orb a task list shows the plan: every
+ * step is there from the start, the current one spins, done ones get a
+ * tick (Julian 27.10.: like the task list in the Claude app).
  * Land: the wave pulls back, the orb shrinks to a drop and flies to the day
  * where the Termin lands. Off: nothing, the calendar is the result.
  */
 import React, { useEffect } from 'react';
 import { View, useWindowDimensions } from 'react-native';
-import Animated, { useSharedValue, useAnimatedStyle, withTiming, withSequence, withRepeat, withDelay, Easing, runOnJS, FadeInDown, cancelAnimation, useReducedMotion } from 'react-native-reanimated';
+import Animated, { useSharedValue, useAnimatedStyle, withTiming, withSequence, withRepeat, withDelay, Easing, runOnJS, FadeIn, cancelAnimation, useReducedMotion } from 'react-native-reanimated';
+import Svg, { Circle } from 'react-native-svg';
 import Txt from './ui/Txt';
+import LineIcon from './ui/LineIcon';
 import Orb, { Clouds } from './Orb';
 import { tokens } from '../theme';
 
@@ -19,7 +23,39 @@ const ORB = 132;
 const out = Easing.bezier(0.22, 1, 0.36, 1);
 const inOut = Easing.bezier(0.65, 0, 0.35, 1);
 
-export default function Veil({ phase, origin, target, lines, shown, onLanded }: { phase: VeilPhase; origin: Pt; target: Pt | null; lines: string[]; shown: number; onLanded: () => void }) {
+/** A small ring that turns while its step is being worked on. */
+function Spin() {
+  const r = useSharedValue(0);
+  useEffect(() => { r.value = withRepeat(withTiming(360, { duration: 900, easing: Easing.linear }), -1, false); }, []);
+  const st = useAnimatedStyle(() => ({ transform: [{ rotate: `${r.value}deg` }] }));
+  return (
+    <Animated.View style={[{ width: 18, height: 18 }, st]}>
+      <Svg width={18} height={18}>
+        <Circle cx={9} cy={9} r={7} stroke={tokens.hair} strokeWidth={2} fill="none" />
+        <Circle cx={9} cy={9} r={7} stroke={tokens.ink} strokeWidth={2} fill="none" strokeDasharray="12 32" strokeLinecap="round" />
+      </Svg>
+    </Animated.View>
+  );
+}
+
+function Step({ label, state }: { label: string; state: 'done' | 'now' | 'next' }) {
+  return (
+    <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 12 }}>
+      <View style={{ width: 22, height: 22, alignItems: 'center', justifyContent: 'center' }}>
+        {state === 'done' ? (
+          <Animated.View entering={FadeIn.duration(180)} style={{ width: 20, height: 20, borderRadius: 999, backgroundColor: tokens.done, alignItems: 'center', justifyContent: 'center' }}>
+            <LineIcon name="check" size={13} color="#FFFFFF" stroke={2.6} />
+          </Animated.View>
+        ) : state === 'now' ? <Spin /> : (
+          <View style={{ width: 16, height: 16, borderRadius: 999, borderWidth: 1.5, borderColor: tokens.hair }} />
+        )}
+      </View>
+      <Txt size={15.5} line={22} weight={state === 'now' ? 600 : 400} color={state === 'next' ? tokens.mute : tokens.ink} style={{ flex: 1 }}>{label}</Txt>
+    </View>
+  );
+}
+
+export default function Veil({ phase, origin, target, lines, shown, said, onLanded }: { phase: VeilPhase; origin: Pt; target: Pt | null; lines: string[]; shown: number; said?: string; onLanded: () => void }) {
   const { width: W, height: H } = useWindowDimensions();
   const still = useReducedMotion();
   const R = Math.max(Math.hypot(origin.x, origin.y), Math.hypot(W - origin.x, origin.y), Math.hypot(origin.x, H - origin.y), Math.hypot(W - origin.x, H - origin.y));
@@ -67,8 +103,6 @@ export default function Veil({ phase, origin, target, lines, shown, onLanded }: 
   const words = useAnimatedStyle(() => ({ opacity: text.value, transform: [{ translateY: (1 - text.value) * 10 }] }));
 
   if (phase === 'off') return null;
-  const recent = lines.slice(0, shown).slice(-3);
-  const offset = Math.max(0, Math.min(shown, lines.length) - 3);
 
   return (
     <View pointerEvents={phase === 'think' ? 'auto' : 'none'} style={{ position: 'absolute', left: 0, top: 0, width: W, height: H }}>
@@ -84,16 +118,13 @@ export default function Veil({ phase, origin, target, lines, shown, onLanded }: 
         <Orb size={ORB} speed={1.6} />
       </Animated.View>
 
-      <Animated.View style={[{ position: 'absolute', left: 32, right: 32, top: centre.y + ORB / 2 + 36, gap: 10, alignItems: 'center' }, words]}>
-        {recent.map((l, i) => {
-          const last = i === recent.length - 1;
-          return (
-            <Animated.View key={offset + i} entering={FadeInDown.duration(260)}>
-              <Txt size={last ? 21 : 16} line={last ? 28 : 22} weight={last ? 600 : 400} tracking={last ? -0.3 : 0} center color={last ? tokens.ink : tokens.sub}>{l}</Txt>
-            </Animated.View>
-          );
-        })}
-        {shown < lines.length || !lines.length ? <Txt size={15} color={tokens.mute} center>denkt nach …</Txt> : null}
+      <Animated.View style={[{ position: 'absolute', left: 20, right: 20, top: centre.y + ORB / 2 + 28, alignItems: 'center' }, words]}>
+        <View style={[{ width: '100%', maxWidth: 420, borderRadius: 22, backgroundColor: tokens.row, padding: 16, gap: 12, borderWidth: 1, borderColor: tokens.hair }]}>
+          {said ? <Txt size={13.5} line={19} color={tokens.sub} numberOfLines={2}>{`„${said}“`}</Txt> : null}
+          {lines.length ? lines.map((l, i) => (
+            <Step key={i} label={l} state={i < shown ? 'done' : i === shown ? 'now' : 'next'} />
+          )) : <Step label="Denke nach …" state="now" />}
+        </View>
       </Animated.View>
     </View>
   );
@@ -103,7 +134,7 @@ export default function Veil({ phase, origin, target, lines, shown, onLanded }: 
 // The veil covers the tab bar too, so it is drawn once at the root (next to
 // the toasts) and driven from the screen that talks.
 
-type VeilState = { phase: VeilPhase; origin: Pt; target: Pt | null; lines: string[]; shown: number; onLanded?: () => void };
+type VeilState = { phase: VeilPhase; origin: Pt; target: Pt | null; lines: string[]; shown: number; said?: string; onLanded?: () => void };
 let veil: VeilState = { phase: 'off', origin: { x: 0, y: 0 }, target: null, lines: [], shown: 0 };
 const subs = new Set<() => void>();
 export function setVeil(patch: Partial<VeilState>) {
@@ -112,5 +143,5 @@ export function setVeil(patch: Partial<VeilState>) {
 }
 export function VeilHost() {
   const v = React.useSyncExternalStore((l) => { subs.add(l); return () => { subs.delete(l); }; }, () => veil, () => veil);
-  return <Veil phase={v.phase} origin={v.origin} target={v.target} lines={v.lines} shown={v.shown} onLanded={() => { setVeil({ phase: 'off' }); v.onLanded?.(); }} />;
+  return <Veil phase={v.phase} origin={v.origin} target={v.target} lines={v.lines} shown={v.shown} said={v.said} onLanded={() => { setVeil({ phase: 'off' }); v.onLanded?.(); }} />;
 }

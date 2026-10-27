@@ -4,6 +4,8 @@
  * chat app. The mic
  * uses the browser's speech recognition where it is allowed; in the testlink
  * that is blocked, so it says an example sentence and marks it as one.
+ * Like the Claude app the field grows upwards with the text, up to four
+ * lines, then scrolls inside (Julian 27.10.).
  */
 import React, { useEffect, useRef, useState } from 'react';
 import { View, TextInput, Platform, ScrollView } from 'react-native';
@@ -14,6 +16,18 @@ import { Chip } from './ui/kit';
 import Orb from './Orb';
 import { tokens, fonts } from '../theme';
 import { haptics } from '../lib/haptics';
+
+const LINE = 22;
+const PAD = 11;
+const MIN_H = LINE + PAD * 2;
+const MAX_H = LINE * 4 + PAD * 2;
+
+// A long hint stays on one line and ends in dots instead of growing the field.
+if (Platform.OS === 'web' && typeof document !== 'undefined') {
+  const css = document.createElement('style');
+  css.textContent = 'textarea[aria-label="Was steht an?"]::placeholder{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}';
+  document.head.appendChild(css);
+}
 
 const lift = Platform.select({
   web: { boxShadow: '0 8px 24px rgba(22,35,42,.10)' } as any,
@@ -35,9 +49,24 @@ export default function TalkBar({ onSend, onPlus, suggestions = [], spoken, plac
   const [text, setText] = useState('');
   const [listening, setListening] = useState(false);
   const [demo, setDemo] = useState(false);
+  const [boxH, setBoxH] = useState(MIN_H);
+  const field = useRef<TextInput>(null);
   const turn = useRef(0);
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
   useEffect(() => () => timers.current.forEach(clearTimeout), []);
+
+  // On the web the textarea never shrinks by itself, so measure it fresh.
+  useEffect(() => {
+    if (Platform.OS !== 'web') return;
+    const n = field.current as any;
+    if (!n?.style) return;
+    if (!text) return setBoxH(MIN_H);
+    const was = n.style.height;
+    n.style.height = '0px';
+    const sh = n.scrollHeight;
+    n.style.height = was;
+    setBoxH(Math.min(MAX_H, Math.max(MIN_H, sh)));
+  }, [text]);
 
   const send = (t = text) => {
     const q = t.trim();
@@ -87,21 +116,28 @@ export default function TalkBar({ onSend, onPlus, suggestions = [], spoken, plac
   };
 
   const input = (
-    <View style={[{ flexDirection: 'row', alignItems: 'center', gap: 4, padding: 6, paddingLeft: 6, borderRadius: 30, backgroundColor: tokens.row, borderWidth: 1, borderColor: listening ? tokens.ink : tokens.hair }, lift]}>
-      <PressScale accessibilityLabel="Foto, Termin, Aufgabe" onPress={onPlus} style={{ width: 44, height: 44, borderRadius: 999, alignItems: 'center', justifyContent: 'center', backgroundColor: tokens.chipBg }}>
+    <View style={[{ flexDirection: 'row', alignItems: 'flex-end', gap: 4, padding: 6, paddingLeft: 6, borderRadius: boxH > MIN_H ? 26 : 30, backgroundColor: tokens.row, borderWidth: 1, borderColor: listening ? tokens.ink : tokens.hair }, lift]}>
+      <PressScale accessibilityLabel="Foto, Termin, Aufgabe" onPress={onPlus} style={{ width: 44, height: 44, marginBottom: 2, borderRadius: 999, alignItems: 'center', justifyContent: 'center', backgroundColor: tokens.chipBg }}>
         <LineIcon name="plus" size={22} color={tokens.ink} stroke={2} />
       </PressScale>
       <TextInput
+        ref={field}
+        multiline
         value={text}
         onChangeText={setText}
-        onSubmitEditing={() => send()}
+        onContentSizeChange={Platform.OS === 'web' ? undefined : (e) => setBoxH(Math.min(MAX_H, Math.max(MIN_H, e.nativeEvent.contentSize.height + PAD * 2)))}
+        // Enter sends, Shift plus Enter makes a new line, as in a chat app.
+        onKeyPress={(e: any) => {
+          if (Platform.OS === 'web' && e.nativeEvent.key === 'Enter' && !e.nativeEvent.shiftKey && !e.nativeEvent.isComposing) { e.preventDefault(); send(); }
+        }}
+        scrollEnabled={boxH >= MAX_H}
         editable={!demo}
         placeholder={listening ? 'Ich höre zu …' : placeholder}
         placeholderTextColor={tokens.mute}
         selectionColor={tokens.ink}
         returnKeyType="send"
         accessibilityLabel="Was steht an?"
-        style={[{ flex: 1, minWidth: 0, fontFamily: fonts[400], fontSize: 16.5, color: tokens.ink, paddingVertical: 11, paddingHorizontal: 8 }, Platform.OS === 'web' ? ({ outlineStyle: 'none' } as any) : null]}
+        style={[{ flex: 1, minWidth: 0, height: boxH, marginBottom: 2, fontFamily: fonts[400], fontSize: 16.5, lineHeight: LINE, color: tokens.ink, paddingVertical: PAD, paddingHorizontal: 8, textAlignVertical: 'top' }, Platform.OS === 'web' ? ({ outlineStyle: 'none' } as any) : null]}
       />
       <PressScale
         accessibilityLabel={text && !listening ? 'Senden' : 'Sprechen'}
