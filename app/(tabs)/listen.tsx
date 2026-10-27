@@ -20,7 +20,8 @@ import { useStore, actions } from '../../src/state/store';
 import { itemMeta, itemText } from '../../src/data/sample';
 import { haptics } from '../../src/lib/haptics';
 import Fresh from '../../src/components/Fresh';
-import type { List, Task } from '../../src/state/types';
+import { Cover, Stars, SeenPill, FactChips, factLine, hasBlock } from '../../src/components/Blocks';
+import type { List, Task, Item, Blueprint } from '../../src/state/types';
 import type { ClayName } from '../../src/lib/clayIcons';
 import { tx } from '../../src/i18n/lang';
 
@@ -37,7 +38,8 @@ export default function Listen() {
     }
     if (!list) return '';
     const items = list.sections.flatMap((s) => s.items);
-    if (list.kind === 'collection') return tx(`${list.name} · ${items.length} ${items.length === 1 ? 'Eintrag' : 'Einträge'}`, `${list.name} · ${items.length} ${items.length === 1 ? 'entry' : 'entries'}`);
+    if (list.blueprint && list.blueprint.blocks.includes('seen')) { const n = items.filter((i) => i.data?.seen).length; return tx(`${list.name} · ${items.length} ${items.length === 1 ? 'Eintrag' : 'Einträge'}, ${n} ${(list.blueprint.seenLabel ?? 'erledigt').toLowerCase()}`, `${list.name} · ${items.length} ${items.length === 1 ? 'entry' : 'entries'}, ${n} ${(list.blueprint.seenLabel ?? 'done').toLowerCase()}`); }
+    if (list.kind === 'collection' || list.blueprint) return tx(`${list.name} · ${items.length} ${items.length === 1 ? 'Eintrag' : 'Einträge'}`, `${list.name} · ${items.length} ${items.length === 1 ? 'entry' : 'entries'}`);
     if (list.kind === 'shopping') return tx(`${list.name} · ${items.filter((i) => !i.done).length} Dinge`, `${list.name} · ${items.filter((i) => !i.done).length} items`);
     return tx(`${list.name} · ${items.filter((i) => i.done).length} von ${items.length} gepackt`, `${list.name} · ${items.filter((i) => i.done).length} of ${items.length} packed`);
   }, [active, tasks, list]);
@@ -190,7 +192,7 @@ function Einkauf({ list }: { list: List }) {
 function Packliste({ list }: { list: List }) {
   const items = list.sections.flatMap((s) => s.items);
   const pct = items.length ? items.filter((i) => i.done).length / items.length : 0;
-  const plain = list.kind === 'collection';
+  const plain = list.kind === 'collection' || !!list.blueprint;
   return (
     <>
       {items.length && !plain ? (
@@ -219,7 +221,8 @@ function Sections({ list, counts }: { list: List; counts?: boolean }) {
         const open = sec.items.filter((i) => !i.done);
         const done = sec.items.filter((i) => i.done);
         if (!sec.items.length && list.kind === 'shopping') return null;
-        const plain = list.kind === 'collection';
+        const plain = list.kind === 'collection' || !!list.blueprint;
+        const bp = list.blueprint;
         const right = plain ? String(sec.items.length) : counts ? tx(`${done.length} von ${sec.items.length}`, `${done.length} of ${sec.items.length}`) : String(open.length);
         const ordered = list.kind === 'shopping' ? [...open, ...done] : sec.items;
         return (
@@ -232,9 +235,13 @@ function Sections({ list, counts }: { list: List; counts?: boolean }) {
                   <ItemRow
                     title={i.name}
                     editText={itemText(i)}
-                    meta={itemMeta(i)}
+                    meta={bp ? factLine(bp, i.data) : itemMeta(i)}
                     done={plain ? false : i.done}
                     noCheck={plain}
+                    dim={bp ? !!i.data?.seen : false}
+                    lead={bp && hasBlock(bp, 'cover') ? <Cover title={i.name} data={i.data} /> : undefined}
+                    below={bp ? <BlockBelow listId={list.id} bp={bp} item={i} /> : undefined}
+                    trailing={bp && hasBlock(bp, 'seen') ? <SeenPill label={bp.seenLabel ?? tx('Erledigt', 'Done')} seen={i.data?.seen} onToggle={() => actions.setItemData(list.id, i.id, { seen: !i.data?.seen })} /> : undefined}
                     who={i.who}
                     onToggle={() => actions.toggleItem(list.id, i.id)}
                     onEdit={(t) => actions.editItem(list.id, i.id, t)}
@@ -252,4 +259,12 @@ function Sections({ list, counts }: { list: List; counts?: boolean }) {
       })}
     </>
   );
+}
+
+/** Stars and short facts under the title of a row in a list that adapts. */
+function BlockBelow({ listId, bp, item }: { listId: string; bp: Blueprint; item: Item }) {
+  const stars = hasBlock(bp, 'stars') ? <Stars value={item.data?.stars} onChange={(n) => actions.setItemData(listId, item.id, { stars: n })} /> : null;
+  const chips = <FactChips bp={bp} data={item.data} note={item.note} />;
+  if (!stars && !chips) return null;
+  return <View style={{ gap: 6 }}>{stars}{chips}</View>;
 }

@@ -18,9 +18,10 @@ import { tokens, tint } from '../src/theme';
 import { actions, useStore } from '../src/state/store';
 import { templates, kliniktasche, listFromTemplate } from '../src/data/sample';
 import { iconFor } from '../src/lib/iconWords';
+import { blueprintFor } from '../src/lib/blueprint';
 import { haptics } from '../src/lib/haptics';
 import type { ClayName } from '../src/lib/clayIcons';
-import type { List } from '../src/state/types';
+import type { List, Blueprint, Block } from '../src/state/types';
 import { tx } from '../src/i18n/lang';
 
 type Key = 'leer' | 'sammlung' | 'klinik' | 'urlaub' | 'erst';
@@ -43,6 +44,19 @@ function build(key: Key, name: string, icon: ClayName): List {
   return listFromTemplate(name, icon, null);
 }
 
+const BLOCK_NAME: Partial<Record<Block, string>> = {
+  cover: tx('Cover', 'cover'), stars: tx('Bewertung', 'rating'), year: tx('Jahr', 'year'), by: tx('Autor oder Regie', 'author or director'),
+  link: 'Link', price: tx('Preis', 'price'), place: tx('Ort', 'place'), date: tx('Datum', 'date'), note: tx('Notiz', 'note'),
+};
+
+/** "Mit Cover, Bewertung und Gesehen": what the list will grow, said before it exists. */
+function preview(bp: Blueprint): string {
+  // Year and author come with the cover, so the line names only what you see and touch.
+  const names = bp.blocks.filter((b) => b !== 'year' && b !== 'by').map((b) => (b === 'seen' ? bp.seenLabel ?? tx('Erledigt', 'Done') : BLOCK_NAME[b])).filter((x): x is string => !!x);
+  const last = names.pop();
+  return tx('Mit ', 'With ') + (names.length ? `${names.join(', ')} ${tx('und', 'and')} ${last}` : last ?? '');
+}
+
 /** The icon a list gets when nobody picked one: from its name, else from its template. */
 const autoIcon = (name: string, key: Key): ClayName => {
   const t = TPL.find((x) => x.key === key)!;
@@ -59,6 +73,8 @@ export default function ListeNeu() {
   const [picked, setPicked] = useState<ClayName | null>(null);
   const order = fromHint ? (['urlaub', 'leer', 'sammlung', 'klinik', 'erst'] as Key[]) : (['leer', 'sammlung', 'klinik', 'urlaub', 'erst'] as Key[]);
   const icon = picked ?? autoIcon(name, sel);
+  // The store gives the same blueprint when the list is made (createList).
+  const bp = blueprintFor(name);
 
   // The picker writes draftSymbol; taken over once, and cleared when leaving.
   useEffect(() => () => actions.clearDraftSymbol(), []);
@@ -98,7 +114,7 @@ export default function ListeNeu() {
         >
           <ClayIcon name={icon} size={52} />
         </PressScale>
-        <TitleInput value={name} onChangeText={setName} placeholder={tx('Name der Liste', 'List name')} sub={fromHint ? tx('Fällig vor Abreise am Sa 20. März', 'Due before leaving on Sat March 20') : tx('Symbol antippen zum Ändern', 'Tap the icon to change it')} />
+        <TitleInput value={name} onChangeText={setName} placeholder={tx('Name der Liste', 'List name')} sub={fromHint ? tx('Fällig vor Abreise am Sa 20. März', 'Due before leaving on Sat March 20') : bp ? `✦ ${preview(bp)}` : tx('Symbol antippen zum Ändern', 'Tap the icon to change it')} />
       </View>
       <Txt size={15} weight={600} style={{ marginTop: 4 }}>{tx('Womit anfangen?', 'Start with what?')}</Txt>
       <View style={{ gap: 8 }}>

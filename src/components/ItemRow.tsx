@@ -37,9 +37,17 @@ type Props = {
   editHint?: string;
   /** Collections have no check: a film to watch is never done. */
   noCheck?: boolean;
+  /** Left of the title, e.g. a cover. */
+  lead?: React.ReactNode;
+  /** Under the title, e.g. stars and fact chips. */
+  below?: React.ReactNode;
+  /** In place of the person, e.g. the seen pill. */
+  trailing?: React.ReactNode;
+  /** Seen in a collection: dimmed, but stays in place. */
+  dim?: boolean;
 };
 
-export default function ItemRow({ title, editText, meta, metaColor, done, who, icon, onToggle, onEdit, onCycleWho, onDelete, onPressTitle, noCheck, editHint = tx('Menge und Notiz einfach mitschreiben', 'Just add amount and note') }: Props) {
+export default function ItemRow({ title, editText, meta, metaColor, done, who, icon, onToggle, onEdit, onCycleWho, onDelete, onPressTitle, noCheck, lead, below, trailing, dim, editHint = tx('Menge und Notiz einfach mitschreiben', 'Just add amount and note') }: Props) {
   const [editing, setEditing] = useState(false);
   const [text, setText] = useState(editText ?? title);
 
@@ -57,8 +65,9 @@ export default function ItemRow({ title, editText, meta, metaColor, done, who, i
 
   const body = (
     <View style={{ paddingVertical: editing ? 12 : 10, paddingHorizontal: 14, backgroundColor: tokens.row, gap: 6 }}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+      <View style={{ flexDirection: 'row', alignItems: lead ? 'flex-start' : 'center', gap: 12 }}>
         {noCheck ? null : <Check done={done} onPress={onToggle} />}
+        {lead}
         {icon ? <ClayIcon name={icon} size={42} celebrate={done} /> : null}
         {editing ? (
           <TextInput
@@ -72,8 +81,9 @@ export default function ItemRow({ title, editText, meta, metaColor, done, who, i
             style={[{ flex: 1, minWidth: 0, fontFamily: fonts[500], fontSize: 17, color: tokens.ink, paddingVertical: 2 }, Platform.OS === 'web' ? ({ outlineStyle: 'none' } as any) : null]}
           />
         ) : (
+          <View style={{ flex: 1, minWidth: 0, gap: 6 }}>
           <PressScale
-            style={{ flex: 1, minWidth: 0 }}
+            style={{ minWidth: 0 }}
             onPress={() => {
               if (onPressTitle) return onPressTitle();
               if (!onEdit) return;
@@ -82,10 +92,13 @@ export default function ItemRow({ title, editText, meta, metaColor, done, who, i
               setEditing(true);
             }}
           >
-            <Txt size={16} weight={500} strike={done} color={done ? tokens.mute : tokens.ink}>{title}</Txt>
+            <Txt size={16} weight={500} strike={done} color={done || dim ? tokens.mute : tokens.ink}>{title}</Txt>
             {meta ? <Meta color={metaColor}>{meta}</Meta> : null}
           </PressScale>
+          {below}
+          </View>
         )}
+        {trailing}
         <PressScale
           hitSlop={10}
           disabled={!onCycleWho}

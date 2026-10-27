@@ -4,6 +4,12 @@ Alle sichtbaren Änderungen an FamCal. Neueste oben. Agenten und Menschen: Ände
 
 ## Unreleased
 
+### Listen zeigen, was sie brauchen (27.10.)
+
+- Filme und Bücher bekommen Cover, Jahr und Autor oder Regie, fünf Sterne zum Bewerten und „Gesehen“ oder „Gelesen“. Gesehenes wird blasser, bleibt aber an seinem Platz.
+- Ohne Cover steht der erste Buchstabe auf einer ruhigen Farbe, während die App sucht, atmet die Fläche.
+- Schon beim Anlegen steht unter dem Namen, was die Liste bekommt, zum Beispiel „Mit Cover, Bewertung und Gesehen“.
+
 ### Listen mit eigenem Symbol und Sammlungen ohne Haken (27.10.)
 
 - Beim Anlegen einer Liste tippst du auf das Symbol und suchst dir eins aus, wie in Notion. Ohne Auswahl passt es sich dem Namen an.
