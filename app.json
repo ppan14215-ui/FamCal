@@ -50,7 +50,7 @@
       "typedRoutes": false
     },
     "runtimeVersion": {
-      "policy": "appVersion"
+      "policy": "fingerprint"
     },
     "extra": {
       "router": {},
@@ -58,6 +58,9 @@
         "projectId": "8e6b21e8-8233-4246-b477-94244b55771f"
       }
     },
-    "owner": "123dermensch"
+    "owner": "123dermensch",
+    "updates": {
+      "url": "https://u.expo.dev/8e6b21e8-8233-4246-b477-94244b55771f"
+    }
   }
 }

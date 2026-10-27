@@ -4,6 +4,10 @@ Alle sichtbaren Änderungen an FamCal. Neueste oben. Agenten und Menschen: Ände
 
 ## Unreleased
 
+### Neue Versionen ohne neue Installation (27.10.)
+
+- Die Test App holt sich Änderungen beim Start selbst (EAS Update). Neu installieren muss man nur noch, wenn sich etwas am Handy Teil ändert, etwa eine neue Berechtigung.
+
 ### Mikro versteht Deutsch auch auf englischen Handys (27.10.)
 
 - Das Mikro hörte bisher in der Sprache der App. Auf einem Handy mit Englisch als erster Sprache war das Englisch, Deutsch kam gar nicht an. Jetzt hört es Deutsch, sobald Deutsch irgendwo in den Sprachen des Handys steht.
