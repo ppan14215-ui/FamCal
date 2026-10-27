@@ -9,6 +9,7 @@ Alle sichtbaren Änderungen an FamCal. Neueste oben. Agenten und Menschen: Ände
 - Das Intro zeigt jetzt nur noch, was den Kalender ausmacht: ein gesprochener Satz wird zum Termin, er landet sofort auf beiden Handys, „Eine Stunde später“ verschiebt ihn, „Wann haben wir beide frei?“ findet die Lücke, und Google, iCloud und Outlook ziehen in einem Schritt mit um. Kein Behördenbrief mehr.
 - Onboarding in drei Schritten: eure Namen, Kalender umziehen, Partner einladen (oder später). Die Schritte zu Stadt, Kind, erstem Jahr und Aufgabenkarten sind weg.
 - Datenbank: zwei Sicherheitshinweise von Supabase behoben.
+- Kostenbremse für Claude: jede Person kann Claude höchstens 60 Sätze am Tag lesen lassen, danach übernehmen die eingebauten Regeln. Ein Satz kostet etwa 0,03 Cent.
 
 ### Echte App: Anmelden, gemeinsamer Kalender, Sprechen mit Claude (27.10.)
 

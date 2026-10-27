@@ -7,10 +7,19 @@
  * Request (signed in, JWT checked by Supabase):
  *   { text, today: "2026-10-27", now: "14:10", names: { J: "Julian", T: "Anna" }, lang: "de" | "en" }
  * Response: the shape of `Termin` below, or { error }.
+ *
+ * Cost guard (Julian 27.10.): every call is counted per person and day
+ * (count_ai_call). Above DAILY_LIMIT the function answers 429 without asking
+ * Claude, and the app falls back to its own rules. One call costs about
+ * 0.03 cent, so the limit caps one account at roughly 2 cent a day.
  */
 import Anthropic from 'npm:@anthropic-ai/sdk@0.137.0';
 import { z } from 'npm:zod@4.1.12';
 import { zodOutputFormat } from 'npm:@anthropic-ai/sdk@0.137.0/helpers/zod';
+import { createClient } from 'npm:@supabase/supabase-js@2';
+
+/** A busy family says about 20 sentences a day; 60 leaves room and stops scripts. */
+const DAILY_LIMIT = 60;
 
 const Termin = z.object({
   // termin: something to put in the calendar. frage: the sentence asks about the calendar. unklar: neither.
@@ -63,13 +72,21 @@ Deno.serve(async (req) => {
   const today = /^\d{4}-\d{2}-\d{2}$/.test(input.today ?? '') ? input.today! : new Date().toISOString().slice(0, 10);
   if (!text) return json({ error: 'empty' }, 400);
 
+  // Counted as the signed-in person, so nobody can spend someone else's quota.
+  const db = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_ANON_KEY') ?? req.headers.get('apikey') ?? '', {
+    global: { headers: { Authorization: req.headers.get('Authorization') ?? '' } },
+  });
+  const { data: calls, error: countError } = await db.rpc('count_ai_call');
+  if (countError) return json({ error: 'not_signed_in' }, 401);
+  if (calls > DAILY_LIMIT) return json({ error: 'limit' }, 429);
+
   const wd = WD[new Date(`${today}T12:00:00Z`).getUTCDay()];
   const names = `J = ${input.names?.J || 'Elternteil 1'}, T = ${input.names?.T || 'Elternteil 2'}`;
 
   try {
     const res = await client.messages.parse({
       model: 'claude-haiku-5-5',
-      max_tokens: 2000,
+      max_tokens: 1200,
       system: SYSTEM,
       // Short answers matter more than depth here: the family waits with the orb spinning.
       output_config: { effort: 'low', format: zodOutputFormat(Termin) },
