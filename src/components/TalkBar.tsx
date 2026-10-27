@@ -2,8 +2,9 @@
  * Sprechen oder schreiben (Pivot 26.10., überall seit 27.10.): one field at
  * the bottom of every screen, with plus (photo and more), text and mic like a
  * chat app. The mic
- * uses the browser's speech recognition where it is allowed; in the testlink
- * that is blocked, so it says an example sentence and marks it as one.
+ * uses the phone's own speech recognition in the app and the browser's on
+ * the web; in the testlink that is blocked, so it says an example sentence
+ * and marks it as one.
  * Like the Claude app the field grows upwards with the text, up to four
  * lines, then scrolls inside (Julian 27.10.).
  */
@@ -17,6 +18,7 @@ import Orb from './Orb';
 import { tokens, fonts } from '../theme';
 import { haptics } from '../lib/haptics';
 import { setTyping } from '../lib/keyboard';
+import { LIVE } from '../lib/live';
 
 // Phones and tablets: Enter on the screen keyboard adds a line.
 const TOUCH = Platform.OS !== 'web' || (typeof window !== 'undefined' && !!window.matchMedia?.('(pointer: coarse)').matches);
@@ -58,6 +60,8 @@ export default function TalkBar({ onSend, onPlus, suggestions = [], spoken, plac
   const blurT = useRef<ReturnType<typeof setTimeout>>(undefined);
   const turn = useRef(0);
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
+  /** Ends listening on the phone early: a second tap on the orb sends what was heard. */
+  const stopNative = useRef<(() => void) | null>(null);
   useEffect(() => () => { timers.current.forEach(clearTimeout); clearTimeout(blurT.current); setTyping(false); }, []);
 
   // On the web the textarea never shrinks by itself, so measure it fresh.
@@ -95,11 +99,12 @@ export default function TalkBar({ onSend, onPlus, suggestions = [], spoken, plac
   };
 
   const listen = () => {
-    if (listening) return;
+    if (listening) { stopNative.current?.(); return; }
     haptics.select();
     setListening(true);
     const sentence = spoken[turn.current++ % spoken.length];
-    const SR = Platform.OS === 'web' ? ((globalThis as any).SpeechRecognition ?? (globalThis as any).webkitSpeechRecognition) : null;
+    if (Platform.OS !== 'web') return listenNative(sentence);
+    const SR = (globalThis as any).SpeechRecognition ?? (globalThis as any).webkitSpeechRecognition;
     if (!SR) return say(sentence);
     try {
       const r = new SR();
@@ -117,6 +122,32 @@ export default function TalkBar({ onSend, onPlus, suggestions = [], spoken, plac
       r.start();
     } catch {
       say(sentence);
+    }
+  };
+
+  /**
+   * The real app hears on the phone itself (Julian 27.10.: "Handy hört").
+   * Apple and Google recognise German on the device; the text then goes to
+   * "verstehen". Without the native module (Expo Go) or without permission it
+   * falls back: the test link plays an example, the real app opens the
+   * keyboard, whose own mic still works.
+   */
+  const listenNative = async (sentence: string) => {
+    const fail = () => { setListening(false); if (LIVE) field.current?.focus(); else say(sentence); };
+    try {
+      const { ExpoSpeechRecognitionModule: SR } = await import('expo-speech-recognition');
+      const ok = await SR.requestPermissionsAsync();
+      if (!ok.granted || !SR.isRecognitionAvailable()) return fail();
+      let heard = '';
+      const subs = [
+        SR.addListener('result', (e) => { heard = e.results[0]?.transcript ?? heard; setText(heard); }),
+        SR.addListener('error', () => { subs.forEach((x) => x.remove()); if (!heard) fail(); }),
+        SR.addListener('end', () => { subs.forEach((x) => x.remove()); setListening(false); if (heard) send(heard); }),
+      ];
+      stopNative.current = () => SR.stop();
+      SR.start({ lang: 'de-DE', interimResults: true, continuous: false, addsPunctuation: true });
+    } catch {
+      fail();
     }
   };
 

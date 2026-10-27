@@ -12,6 +12,7 @@ import { CITIES } from '../../src/data/cities';
 import { findPlace, suggestPlaces, namesakes, Place } from '../../src/lib/places';
 import { tokens } from '../../src/theme';
 import { haptics } from '../../src/lib/haptics';
+import { setMyName } from '../../src/lib/sync';
 
 export default function Eltern() {
   const [j, setJ] = useState('');
@@ -26,6 +27,7 @@ export default function Eltern() {
   const pick = (p: Place) => { haptics.select(); setPicked(p); setCity(p.name); };
   const next = () => {
     actions.setNames({ J: j.trim(), T: t.trim() });
+    setMyName(j.trim());
     actions.setCity(typed, place?.land);
     router.push('/onboarding/stadt');
   };

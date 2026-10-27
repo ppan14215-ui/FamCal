@@ -110,7 +110,7 @@ export function set(fn: (s: State) => Partial<State>) {
   state = { ...state, ...fn(state) };
   subs.forEach((l) => l());
 }
-function subscribe(l: () => void) { subs.add(l); return () => { subs.delete(l); }; }
+export function subscribe(l: () => void) { subs.add(l); return () => { subs.delete(l); }; }
 
 export function useStore<T>(sel: (s: State) => T): T {
   return useSyncExternalStore(subscribe, () => sel(state), () => sel(state));

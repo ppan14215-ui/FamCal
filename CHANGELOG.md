@@ -4,6 +4,13 @@ Alle sichtbaren Änderungen an FamCal. Neueste oben. Agenten und Menschen: Ände
 
 ## Unreleased
 
+### Echte App: Anmelden, gemeinsamer Kalender, Sprechen mit Claude (27.10.)
+
+- Anmelden mit Apple oder Google, ohne Passwort. Danach startest du eure Familie oder gibst den Code deines Partners ein und teilt denselben Kalender.
+- Termine liegen in Supabase und erscheinen sofort auf beiden Handys. Jede Familie sieht nur ihre eigenen Daten.
+- Das Mikro hört in der App direkt auf dem Handy zu, der Ton verlässt das Gerät nicht. Den Satz liest Claude und macht daraus den Termin mit Datum, Uhrzeit, wer und wo. Ohne Netz übernehmen die bisherigen Regeln.
+- In der echten App gilt das echte Datum. Der Testlink bleibt beim Beispieltag 29. Oktober und braucht kein Konto.
+
 ### Kalender scrollt endlos, Tabs weichen der Tastatur (27.10.)
 
 - Monat: das Raster nutzt die Höhe des Bildschirms, die Icons sitzen frei in ihrer Kachel, weitere Termine stehen als „+3“ darunter statt daneben. Heute ist grün, der gewählte Tag hat den Rahmen.

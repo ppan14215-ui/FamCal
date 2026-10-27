@@ -274,6 +274,46 @@ export function understand(input: string, events: CalEvent[], pending?: { title:
   return { kind: 'added', event, clash, steps, needsTime: !w.start };
 }
 
+/** What the "verstehen" function sends back (supabase/functions/verstehen). */
+export type Understood = {
+  kind: 'termin' | 'frage' | 'unklar'; title: string; sub: string | null; date: string | null; end_date: string | null;
+  start: string | null; end: string | null; who: Who; place: string | null; repeat: string | null;
+  bring: string[]; steps: string[]; question: string | null;
+};
+
+const ISO = /^\d{4}-\d{2}-\d{2}$/;
+const HHMM = /^\d{2}:\d{2}$/;
+
+/**
+ * Turns the model's reading into the same Reply the rules give, so the
+ * screens need no second path. Questions still go to the rules, they know
+ * the calendar. Returns null when the answer is unusable; the rules then try.
+ */
+export function fromModel(m: Understood, said: string, events: CalEvent[], newId = () => `e-${Date.now()}`): Reply | null {
+  if (m.kind === 'frage') return answer(said, events);
+  if (m.kind !== 'termin' || !m.title) return null;
+  const who: Who = m.who === 'J' || m.who === 'T' || m.who === 'both' ? m.who : null;
+  if (!m.date || !ISO.test(m.date)) return { kind: 'ask', text: m.question || `Wann ist „${m.title}“? Zum Beispiel „Freitag 15 Uhr“.`, title: m.title, who };
+  const start = m.start && HHMM.test(m.start) ? m.start : undefined;
+  const known = recall(`${m.title} ${m.sub ?? ''}`, events);
+  const guess = iconFor(`${m.title} ${m.sub ?? ''}`);
+  const icon = guess === 'kalender' && known ? known.icon : guess;
+  const len = icon === 'stethoskop' || icon === 'zahnarzt' ? 45 : 60;
+  const event: CalEvent = {
+    id: newId(), title: cap(m.title), sub: m.sub || undefined, icon, who,
+    date: m.date, endDate: m.end_date && ISO.test(m.end_date) && m.end_date > m.date ? m.end_date : undefined,
+    start: start ?? '00:00', allDay: !start,
+    end: start ? (m.end && HHMM.test(m.end) && m.end > start ? m.end : toHm(Math.min(minutes(start) + len, 23 * 60 + 59))) : undefined,
+    place: m.place || known?.place, repeat: m.repeat || undefined, source: `Gesagt: „${said.trim()}“`,
+    bring: m.bring.length ? m.bring.map((t, i) => ({ id: `${newId()}-b${i}`, t, done: false })) : undefined,
+  };
+  const clash = clashOf(events, event);
+  const steps = m.steps.length ? m.steps.slice(0, 4) : [`${event.title}, ${long(event.date)}${start ? ` um ${hm(start)}` : ''}.`];
+  if (clash) steps.push(clash);
+  if (!start) steps.push('Keine Uhrzeit genannt, ich trage den Tag ein und frage nach.');
+  return { kind: 'added', event, clash, steps, needsTime: !start };
+}
+
 /** Day by day for the home screen: today plus the next six days. */
 export function week(events: CalEvent[]): { date: string; events: CalEvent[] }[] {
   return Array.from({ length: 7 }, (_, i) => addDays(TODAY, i)).map((date) => ({

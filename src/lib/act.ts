@@ -4,12 +4,13 @@
  * mitnehmen" changes that Termin, on a list "Milch und zwei Brot" fills that
  * list, in the calendar it becomes a Termin or an answer. Every plan says
  * what it understood (shown under the orb) and where the result lands.
- * Prototype: rules, no model.
+ * Rules everywhere; in the real app Claude reads calendar sentences first (planOnline).
  */
 import type { CalEvent, Who, List } from '../state/types';
 import { get, actions, toast } from '../state/store';
 import { persons } from '../theme/tokens';
-import { understand, findWhen, whoOf, clean, Reply } from './talk';
+import { understand, findWhen, whoOf, clean, Reply, fromModel } from './talk';
+import { canUnderstand, understandOnline } from './verstehen';
 import { whenLine, splitDue, When } from './when';
 import { long, hm, minutes, short } from './dates';
 import { newId, listFromTemplate, templates, parseItem } from '../data/sample';
@@ -52,14 +53,21 @@ export function splitItems(text: string): string[] {
 
 // ─── Kalender ──────────────────────────────────────────────────────────────
 
-function kalender(said: string, pending: { title: string; who: Who } | null): Plan {
+/** Sentences for a list, not the calendar. */
+function listPlan(said: string): Plan | null {
   const l = said.toLowerCase();
   // Shopping from anywhere: "Auf die Einkaufsliste: Milch und Brot", "Wir brauchen Windeln".
   if (/einkauf|\bkaufen\b|\bbesorgen\b|wir brauchen/.test(l) && !findWhen(said.split(/\s+/))) return liste(said, 'einkauf');
   if (/^\s*(neue|eine neue|leg(e)? (eine )?neue)\s+liste|^\s*liste\b/.test(l)) return listeNeu(said);
   if (/^\s*(aufgabe|todo|to do|erinnere? (mich|uns) an)\b/.test(l)) return liste(said.replace(/^\s*(aufgabe|todo|to do|erinnere? (mich|uns) an)\s*:?\s*/i, ''), 'aufgaben');
+  return null;
+}
 
-  const reply = understand(said, get().events, pending, () => newId('e'));
+function kalender(said: string, pending: { title: string; who: Who } | null): Plan {
+  return listPlan(said) ?? replyPlan(understand(said, get().events, pending, () => newId('e')));
+}
+
+function replyPlan(reply: Reply): Plan {
   if (reply.kind !== 'added') {
     return { steps: ['Schaue in euren Kalender'], run: () => ({ result: { kind: 'answer', reply } }) };
   }
@@ -225,6 +233,20 @@ function listeNeu(said: string): Plan {
     },
   };
 }
+
+/**
+ * The real app (Julian 27.10.): in the calendar Claude reads the sentence
+ * through the "verstehen" function. Lists, follow-ups ("um 15 Uhr") and
+ * everything offline stay with the rules below.
+ */
+export async function planOnline(ctx: Ctx, said: string, pending: { title: string; who: Who } | null): Promise<Plan> {
+  if (ctx.kind !== 'kalender' || pending || !canUnderstand() || listPlan(said)) return plan(ctx, said, pending);
+  const m = await understandOnline(said);
+  const reply = m && fromModel(m, said, get().events, () => newId('e'));
+  return reply ? replyPlan(reply) : plan(ctx, said, pending);
+}
+
+export const thinksOnline = (ctx: Ctx, said: string, pending: unknown) => ctx.kind === 'kalender' && !pending && canUnderstand() && !listPlan(said);
 
 export function plan(ctx: Ctx, said: string, pending: { title: string; who: Who } | null): Plan {
   if (ctx.kind === 'termin') return termin(said, ctx.id);

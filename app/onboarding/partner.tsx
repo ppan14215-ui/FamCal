@@ -12,8 +12,16 @@ import { toast, useStore, actions } from '../../src/state/store';
 import { haptics } from '../../src/lib/haptics';
 import type { PersonId } from '../../src/theme';
 import PressScale from '../../src/components/ui/PressScale';
+import { getFamily } from '../../src/lib/sync';
 
 const LINK = 'familie.app/j/huber-7Q2';
+/** The real app invites with the family's six letter code (Julian 27.10.); the test link keeps the sample link. */
+const invite = () => {
+  const code = getFamily()?.invite_code;
+  return code
+    ? { shown: `Code ${code}`, copy: code, message: (from: string) => `${from} lädt dich in euren Familienkalender ein. Lade FamCal, melde dich an und gib den Code ${code} ein.` }
+    : { shown: LINK, copy: `https://${LINK}`, message: (from: string) => `${from} lädt dich in euren Familienkalender ein: https://${LINK}` };
+};
 
 export default function Partner() {
   const names = useStore((s) => s.names);
@@ -30,7 +38,7 @@ export default function Partner() {
           label="Einladung senden"
           icon="send"
           onPress={async () => {
-            await Share.share({ message: `${names.J} lädt dich in euren Familienkalender ein: https://${LINK}` }).catch(() => {});
+            await Share.share({ message: invite().message(names.J) }).catch(() => {});
             if (kid) router.push('/onboarding/jahr');
             else router.replace('/kalender');
           }}
@@ -50,8 +58,8 @@ export default function Partner() {
         </View>
         <View style={{ height: 1, backgroundColor: tokens.hair }} />
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-          <Txt size={15} color={tokens.sub} style={{ flex: 1 }}>{LINK}</Txt>
-          <Chip icon={<LineIcon name="copy" size={16} />} onPress={async () => { await Clipboard.setStringAsync(`https://${LINK}`).catch(() => {}); toast('Link kopiert'); }}>Kopieren</Chip>
+          <Txt size={15} color={tokens.sub} style={{ flex: 1 }}>{invite().shown}</Txt>
+          <Chip icon={<LineIcon name="copy" size={16} />} onPress={async () => { await Clipboard.setStringAsync(invite().copy).catch(() => {}); toast(getFamily() ? 'Code kopiert' : 'Link kopiert'); }}>Kopieren</Chip>
         </View>
       </Card>
       <Card pad={14}>

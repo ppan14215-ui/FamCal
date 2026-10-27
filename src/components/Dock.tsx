@@ -21,7 +21,7 @@ import TalkBar from './TalkBar';
 import { setVeil } from './Veil';
 import { tokens, persons } from '../theme';
 import { useStore, actions } from '../state/store';
-import { plan, Ctx, Result, SPOKEN, HINTS, PLACEHOLDER } from '../lib/act';
+import { plan, planOnline, thinksOnline, Ctx, Plan, Result, SPOKEN, HINTS, PLACEHOLDER } from '../lib/act';
 import { dayLabel, slotLine } from '../lib/talk';
 import { locate, light } from '../lib/landing';
 import { setDockSpace } from '../lib/dockSpace';
@@ -130,6 +130,8 @@ export default function Dock() {
   const [turn, setTurn] = useState<Turn | null>(null);
   const [h, setH] = useState(0);
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
+  /** Counts sentences, so a slow answer for an older one never lands. */
+  const heard = useRef(0);
   const later = (ms: number, f: () => void) => timers.current.push(setTimeout(f, ms));
   const path = usePathname();
 
@@ -154,8 +156,19 @@ export default function Dock() {
     timers.current = [];
     light(null);
     setTurn(null);
-    const p = plan(where.ctx, said, pending);
-    setVeil({ phase: 'think', origin, target: null, lines: p.steps, shown: 0, said });
+    const ctx = where.ctx;
+    const n = ++heard.current;
+    if (thinksOnline(ctx, said, pending)) {
+      // Claude reads it (real app); the card says so until the answer is back, then the steps play as usual.
+      setVeil({ phase: 'think', origin, target: null, lines: ['Lese deinen Satz'], shown: 0, said });
+      planOnline(ctx, said, pending).then((p) => { if (heard.current === n) play(p, said, false); });
+      return;
+    }
+    play(plan(ctx, said, pending), said, true);
+  };
+
+  const play = (p: Plan, said: string, fresh: boolean) => {
+    setVeil(fresh ? { phase: 'think', origin, target: null, lines: p.steps, shown: 0, said } : { lines: p.steps, shown: 0 });
     p.steps.forEach((_, i) => later(450 + STEP_MS * i, () => { setVeil({ shown: i + 1 }); haptics.select(); }));
     later(450 + STEP_MS * p.steps.length + 150, () => {
       const out = p.run();

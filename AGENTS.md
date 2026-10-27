@@ -26,5 +26,5 @@ Arbeitsweise für KI-Agenten und Menschen in diesem Repo. Vorlage ist Namore (`p
 - Expo SDK 55, expo-router, React Native 0.83, React 19.2, Reanimated 4 mit react-native-worklets (Babel-Plugin zuletzt), gesture-handler, react-native-svg, expo-haptics, i18next, react-native-web, EAS.
 - State: kleiner Store mit `useSyncExternalStore` (`src/state/store.ts`). Selektoren geben stabile Teile zurück, Abgeleitetes entsteht in `useMemo`.
 - Design-Quelle: `design/gen.py` und der Canvas aus HANDOFF.md. Neue Bausteine zuerst in `src/components/ui/kit.tsx` suchen.
-- Supabase, RevenueCat, PostHog und Sentry kommen später, nicht in den Prototyp.
+- Supabase ist seit 27.10. drin (Anmelden, Familie, Termine, Function `verstehen` mit Claude), Einrichtung in [docs/LIVE.md](docs/LIVE.md). Ohne `.env` läuft alles lokal wie im Testlink. RevenueCat, PostHog und Sentry kommen später.
 - Handy-Link: `npm run artifact` (Web-Export plus `scripts/web-single-file.js`). Die Datei ist nur der Body, der Host ergänzt `<html>` und `<head>`.

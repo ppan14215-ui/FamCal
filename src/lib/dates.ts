@@ -3,7 +3,12 @@
  * data always lines up: Donnerstag, 29. Oktober 2026 (the canvas mixed Do 29.
  * and Do 30.; 29.10.2026 is the real Thursday).
  */
-export const TODAY = '2026-10-29';
+import { LIVE } from './live';
+
+const pad2 = (n: number) => String(n).padStart(2, '0');
+const local = new Date();
+/** The real app runs on the phone's clock, the test link on the fixed day of the sample family. */
+export const TODAY = LIVE ? `${local.getFullYear()}-${pad2(local.getMonth() + 1)}-${pad2(local.getDate())}` : '2026-10-29';
 export const BEN_BORN = '2026-09-14';
 
 export const WD_SHORT = ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'];
@@ -77,8 +82,8 @@ export function minutes(hhmm: string): number {
   return h * 60 + m;
 }
 
-/** Fixed clock for the prototype: 8:50, forty minutes before the U6. */
-export const NOW = '08:50';
+/** Fixed clock for the prototype: 8:50, forty minutes before the U6. The real app reads the phone's clock at start. */
+export const NOW = LIVE ? `${pad2(local.getHours())}:${pad2(local.getMinutes())}` : '08:50';
 
 const NUM = ['keine', 'eine', 'zwei', 'drei', 'vier', 'fünf', 'sechs', 'sieben', 'acht', 'neun', 'zehn'];
 /** "Drei Termine", "eine Aufgabe" */
