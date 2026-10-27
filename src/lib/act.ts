@@ -26,9 +26,11 @@ export type Ctx =
 export type Result =
   | { kind: 'event'; event: CalEvent; needsTime?: boolean }
   | { kind: 'answer'; reply: Extract<Reply, { kind: 'answer' | 'ask' }> }
-  | { kind: 'done'; text: string; undo?: () => void; open?: string };
+  | { kind: 'done'; text: string; sub?: string; undo?: () => void; open?: string };
 
 export type Plan = {
+  /** What the machine is about to do, in one line above the steps ("Ich setze auf die Einkaufsliste"). Only for changes, not for questions. */
+  head?: string;
   steps: string[];
   /** Does it, returns where it landed and what to show then. */
   /** `land` is where the drop flies; `lit` are all rows that glow (default: just `land`). */
@@ -38,6 +40,10 @@ export type Plan = {
 const NUM: Record<string, number> = { ein: 1, eine: 1, einen: 1, zwei: 2, drei: 3, vier: 4, fünf: 5, sechs: 6, sieben: 7, acht: 8, neun: 9, zehn: 10, a: 1, an: 1, one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8, nine: 9, ten: 10 };
 const pad = (n: number) => String(n).padStart(2, '0');
 const addMin = (t: string, m: number) => { const v = Math.min(1439, minutes(t) + m); return `${pad(Math.floor(v / 60))}:${pad(v % 60)}`; };
+/** "Nudeln", "Nudeln und 2 Milch", "Nudeln, Brot und 2 Milch". */
+const joinAnd = (xs: string[]) => (xs.length < 2 ? xs.join('') : `${xs.slice(0, -1).join(', ')} ${tx('und', 'and')} ${xs[xs.length - 1]}`);
+/** Whoever else sees the change, for the receipt. */
+const otherSees = () => tx('Ihr seht es beide.', 'You both see it.');
 const nameOf = (w: Who) => (w === 'both' ? tx('euch beide', 'both of you') : w ? persons[w].name : tx('niemanden', 'nobody'));
 
 /** "Milch, zwei Brot und Eier" → ["Milch", "2 Brot", "Eier"]. */
@@ -74,6 +80,7 @@ export function replyPlan(reply: Reply): Plan {
     return { steps: [tx('Schaue in euren Kalender', 'Looking at your calendar')], run: () => ({ result: { kind: 'answer', reply } }) };
   }
   return {
+    head: tx('Ich trage in den Kalender ein', 'Adding to the calendar'),
     steps: reply.steps,
     run: () => { actions.addEvent(reply.event); return { land: reply.event.id, result: { kind: 'event', event: reply.event, needsTime: reply.needsTime } }; },
   };
@@ -167,8 +174,9 @@ function termin(said: string, id: string): Plan {
     steps.push(tx(`Als Notiz an „${e.title}“: ${said}`, `As a note on “${e.title}”: ${said}`));
     todo.push(() => { actions.updateEvent(e.id, { sub: said }); return `${e.id}:title`; });
   }
-  steps.unshift(tx(`Ändere „${e.title}“, ${long(e.date)}${e.allDay ? '' : ' um ' + hm(e.start)}.`, `Changing “${e.title}”, ${long(e.date)}${e.allDay ? '' : ' at ' + hm(e.start)}.`));
+  const head = tx(`Ich ändere „${e.title}“`, `Changing “${e.title}”`);
   return {
+    head,
     steps,
     run: () => {
       for (const f of todo) land = f() ?? land;
@@ -185,19 +193,28 @@ function liste(said: string, id: string): Plan {
     const ts = parts.map((p) => splitDue(p));
     const who = whoOf(said.split(/\s+/));
     return {
+      head: ts.length === 1 ? tx('Ich lege eine Aufgabe an', 'Adding a task') : tx(`Ich lege ${ts.length} Aufgaben an`, `Adding ${ts.length} tasks`),
       steps: [...ts.map((t) => `${tx('Aufgabe', 'Task')}: ${t.title.replace(/^(tom|julia|ich|wir)\s+(muss|müssen|soll)\s+/i, '')}${t.due ? tx(', bis ', ', by ') + short(t.due) : ''}.`), who ? tx(`Für ${nameOf(who)}.`, `For ${nameOf(who)}.`) : tx('Wer es macht, ist noch offen.', 'Who does it is still open.')],
       run: () => {
         actions.setActiveList('aufgaben');
-        let last: string | undefined;
-        for (const t of ts) last = actions.addTask(t.title.replace(/^(tom|julia|ich|wir)\s+(muss|müssen|soll)\s+/i, '').replace(/^./, (c) => c.toUpperCase()), t.due, who === 'both' ? null : who);
-        return { land: last, go: '/listen' };
+        const made: string[] = [];
+        const titles: string[] = [];
+        for (const t of ts) {
+          const title = t.title.replace(/^(tom|julia|ich|wir)\s+(muss|müssen|soll)\s+/i, '').replace(/^./, (c) => c.toUpperCase());
+          titles.push(title);
+          made.push(actions.addTask(title, t.due, who === 'both' ? null : who));
+        }
+        const text = tx(`${joinAnd(titles.map((x) => `„${x}“`))} ${titles.length === 1 ? 'steht' : 'stehen'} bei den Aufgaben.`, `${joinAnd(titles.map((x) => `“${x}”`))} ${titles.length === 1 ? 'is' : 'are'} on your tasks.`);
+        return { land: made[made.length - 1], lit: made, go: '/listen', result: { kind: 'done', text, sub: otherSees(), undo: () => made.forEach((x) => actions.deleteTask(x)) } };
       },
     };
   }
   const list = get().lists.find((x) => x.id === id) ?? get().lists[0];
   const items = splitItems(said);
   return {
-    steps: [`${list.name}: ${items.join(', ')}.`, list.kind === 'shopping' ? tx('Sortiert nach Laden, Drogerie oder Supermarkt.', 'Sorted by store.') : tx(`In „${list.name}“ eingetragen.`, `Added to “${list.name}”.`)],
+    // Every item is its own step, so each one visibly ticks off (Julian 27.10.: "kein Zweifel, was die Maschine ausführt").
+    head: tx(`Ich setze auf „${list.name}“`, `Adding to “${list.name}”`),
+    steps: items,
     run: () => {
       actions.setActiveList(list.id);
       let last: string | undefined;
@@ -211,8 +228,8 @@ function liste(said: string, id: string): Plan {
         const nid = actions.addItem(list.id, t);
         if (nid) { last = nid; added.push(nid); changed.push(nid); }
       }
-      toast(tx(`${items.length === 1 ? items[0] : items.length + ' Dinge'} auf „${list.name}“`, `${items.length === 1 ? items[0] : items.length + ' things'} on “${list.name}”`), () => added.forEach((x) => actions.deleteItem(list.id, x)));
-      return { land: last, lit: changed, go: '/listen' };
+      const text = tx(`${joinAnd(items)} ${items.length === 1 ? 'steht' : 'stehen'} auf „${list.name}“.`, `${joinAnd(items)} ${items.length === 1 ? 'is' : 'are'} on “${list.name}”.`);
+      return { land: last, lit: changed, go: '/listen', result: { kind: 'done', text, sub: otherSees(), undo: () => added.forEach((x) => actions.deleteItem(list.id, x)) } };
     },
   };
 }
@@ -226,6 +243,7 @@ function listeNeu(said: string): Plan {
   const urlaub = /urlaub|reise|ostsee|pack|holiday|vacation|trip/i.test(name);
   const steps = [tx(`Neue Liste „${name}“.`, `New list “${name}”.`), items.length ? tx(`Mit ${items.join(', ')}.`, `With ${items.join(', ')}.`) : urlaub ? tx('Vorlage Urlaub mit Baby, 24 Dinge.', 'Template holiday with baby, 24 things.') : tx('Noch leer, sagt einfach, was drauf soll.', 'Still empty, just say what goes on it.')];
   return {
+    head: tx('Ich lege eine neue Liste an', 'Creating a new list'),
     steps,
     run: () => {
       const l: List = urlaub && !items.length ? listFromTemplate(name, 'reise', templates.urlaub) : listFromTemplate(name, urlaub ? 'reise' : 'karten', null);
@@ -233,7 +251,8 @@ function listeNeu(said: string): Plan {
       let last: string | undefined;
       const lit: string[] = [];
       for (const t of items) { const nid = actions.addItem(l.id, t); if (nid) { last = nid; lit.push(nid); } }
-      return { land: last ?? `tab:${l.id}`, lit, go: '/listen' };
+      const text = items.length ? tx(`Neue Liste „${name}“ mit ${joinAnd(items)}.`, `New list “${name}” with ${joinAnd(items)}.`) : tx(`Neue Liste „${name}“ ist angelegt.`, `New list “${name}” is ready.`);
+      return { land: last ?? `tab:${l.id}`, lit, go: '/listen', result: { kind: 'done', text, sub: otherSees(), undo: () => actions.deleteList(l.id) } };
     },
   };
 }

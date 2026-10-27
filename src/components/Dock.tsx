@@ -9,10 +9,10 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { View, ScrollView, Platform, useWindowDimensions } from 'react-native';
 import { router, usePathname } from 'expo-router';
-import Animated, { FadeIn, FadeInDown, FadeOut } from 'react-native-reanimated';
+import Animated, { FadeIn, FadeInDown, FadeOut, ZoomIn } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Defs, LinearGradient, Stop, Rect } from 'react-native-svg';
-import { Chip, TextLink } from './ui/kit';
+import { Chip } from './ui/kit';
 import Txt from './ui/Txt';
 import LineIcon from './ui/LineIcon';
 import { Avatar, Pair, Owner } from './ui/Person';
@@ -23,10 +23,11 @@ import { tokens, persons } from '../theme';
 import { useStore, actions, get } from '../state/store';
 import { plan, claudeSays, correction, replyPlan, listFromClaude, thinksOnline, Ctx, Plan, Result, SPOKEN, HINTS, PLACEHOLDER } from '../lib/act';
 import { dayLabel, slotLine } from '../lib/talk';
-import { locate, light } from '../lib/landing';
+import { locate, light, lightOneByOne } from '../lib/landing';
 import { setDockSpace } from '../lib/dockSpace';
 import { useKeyboardInset, useTyping } from '../lib/keyboard';
 import { hm } from '../lib/dates';
+import { Tile } from './ui/Clay';
 import { haptics } from '../lib/haptics';
 import type { CalEvent, Who } from '../state/types';
 import { tx, quote } from '../i18n/lang';
@@ -52,7 +53,53 @@ function useWhere(): { ctx: Ctx; tab: boolean; lift: number } | null {
   return null;
 }
 
-function EventCard({ e, needsTime, onUndo }: { e: CalEvent; needsTime?: boolean; onUndo: () => void }) {
+/** The two answers to a receipt: take it back, or it is fine. */
+function Decide({ onUndo, onOk }: { onUndo: () => void; onOk: () => void }) {
+  return (
+    <View style={{ flexDirection: 'row', gap: 8 }}>
+      <PressScale onPress={onUndo} style={{ flex: 1, height: 44, borderRadius: 999, backgroundColor: tokens.chipBg, alignItems: 'center', justifyContent: 'center' }}>
+        <Txt size={15} weight={600}>{tx('Rückgängig', 'Undo')}</Txt>
+      </PressScale>
+      <PressScale onPress={onOk} style={{ flex: 1, height: 44, borderRadius: 999, backgroundColor: tokens.ink, alignItems: 'center', justifyContent: 'center' }}>
+        <Txt size={15} weight={600} color="#FFFFFF">{tx('Passt', 'Done')}</Txt>
+      </PressScale>
+    </View>
+  );
+}
+
+/** The tick that opens every receipt. */
+function Tick() {
+  return (
+    <Animated.View entering={ZoomIn.springify().damping(12)} style={{ width: 34, height: 34, borderRadius: 999, backgroundColor: tokens.done, alignItems: 'center', justifyContent: 'center' }}>
+      <LineIcon name="check" size={18} color="#FFFFFF" stroke={2.8} />
+    </Animated.View>
+  );
+}
+
+/**
+ * Receipt for lists and tasks (Julian 27.10.: "es darf kein Zweifel bleiben,
+ * was von der Maschine ausgeführt wird"): one sentence with exactly what was
+ * done, who else sees it, and undo.
+ */
+function DoneCard({ text, sub, said, onUndo, onOk }: { text: string; sub?: string; said: string; onUndo?: () => void; onOk: () => void }) {
+  return (
+    <View style={{ gap: 14 }}>
+      <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 12 }}>
+        <Tick />
+        <View style={{ flex: 1, gap: 3 }}>
+          <Txt size={17} line={22} weight={600}>{text}</Txt>
+          <Txt size={13} line={18} color={tokens.sub} numberOfLines={2}>{[sub, quote(said)].filter(Boolean).join(' ')}</Txt>
+        </View>
+      </View>
+      <Decide onUndo={onUndo ?? onOk} onOk={onOk} />
+    </View>
+  );
+}
+
+const nextWho = (w: Who): Who => (w === 'J' ? 'T' : w === 'T' ? 'both' : 'J');
+
+/** Receipt for a new Termin: what landed, every part tappable to fix it right here. */
+function EventCard({ e, needsTime, onUndo, onOk }: { e: CalEvent; needsTime?: boolean; onUndo: () => void; onOk: () => void }) {
   const live = useStore((s) => s.events.find((x) => x.id === e.id));
   if (!live) return null;
   const pick = (w: Who) => { haptics.select(); actions.setEventWho(e.id, w); };
@@ -61,8 +108,29 @@ function EventCard({ e, needsTime, onUndo }: { e: CalEvent; needsTime?: boolean;
     const [h, m] = t.split(':').map(Number);
     actions.updateEvent(e.id, { start: t, end: `${String(h + 1).padStart(2, '0')}:${String(m).padStart(2, '0')}`, allDay: false });
   };
+  const open = () => router.push(`/termin/${e.id}`);
+  const time = live.allDay ? tx('ganztägig', 'all day') : live.end ? tx(`${hm(live.start)} bis ${hm(live.end)}`, `${hm(live.start)} to ${hm(live.end)}`) : hm(live.start);
+  const who = live.who === 'both' ? tx('Beide', 'Both') : live.who ? persons[live.who].name : null;
   return (
-    <Animated.View entering={FadeIn.duration(220)} style={{ gap: 10 }}>
+    <Animated.View entering={FadeIn.duration(220)} style={{ gap: 14 }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+        <Animated.View entering={ZoomIn.springify().damping(12)}><Tile name={live.icon} size={52} radius={16} /></Animated.View>
+        <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+            <LineIcon name="check" size={13} color={tokens.done} stroke={2.8} />
+            <Txt size={12} weight={600} tracking={0.6} color={tokens.done}>{tx('IM KALENDER EINGETRAGEN', 'ADDED TO THE CALENDAR')}</Txt>
+          </View>
+          <Txt size={19} line={24} weight={600} numberOfLines={2}>{live.title}</Txt>
+        </View>
+      </View>
+      <View style={{ flexDirection: 'row', gap: 6, flexWrap: 'wrap' }}>
+        <Chip height={36} onPress={open}>{dayLabel(live.date)}</Chip>
+        {needsTime ? null : <Chip height={36} onPress={open}>{time}</Chip>}
+        {who ? (
+          <Chip height={36} bg={live.who === 'both' ? tokens.doneSoft : persons[live.who as 'J' | 'T'].tint} color={live.who === 'both' ? tokens.done : persons[live.who as 'J' | 'T'].ink} onPress={() => pick(nextWho(live.who))}>{who}</Chip>
+        ) : null}
+        {live.place ? <Chip height={36} onPress={open}>{live.place}</Chip> : null}
+      </View>
       {needsTime ? (
         <View style={{ gap: 6 }}>
           <Txt size={15} weight={600}>{tx('Um wie viel Uhr?', 'What time?')}</Txt>
@@ -81,12 +149,7 @@ function EventCard({ e, needsTime, onUndo }: { e: CalEvent; needsTime?: boolean;
           </View>
         </View>
       ) : null}
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-        <LineIcon name="check" size={15} color={tokens.done} stroke={2.4} />
-        <Txt size={14} weight={600} color={tokens.done} style={{ flex: 1 }}>{tx('Eingetragen, ihr seht es beide', 'Added, you both see it')}</Txt>
-        <TextLink label={tx('Rückgängig', 'Undo')} onPress={onUndo} />
-        <TextLink label={tx('Öffnen', 'Open')} color={tokens.ink} onPress={() => router.push(`/termin/${e.id}`)} />
-      </View>
+      <Decide onUndo={onUndo} onOk={onOk} />
     </Animated.View>
   );
 }
@@ -191,9 +254,19 @@ export default function Dock() {
   };
 
   const play = (p: Plan, said: string, fresh: boolean, after?: (out: ReturnType<Plan['run']>) => void) => {
-    setVeil(fresh ? { phase: 'think', origin, target: null, lines: p.steps, shown: 0, said } : { lines: p.steps, shown: 0 });
+    const n = heard.current;
+    // "Halt, anders": nothing has happened yet, so stopping leaves everything as it was.
+    const stop = () => {
+      timers.current.forEach(clearTimeout);
+      timers.current = [];
+      if (heard.current === n) heard.current++;
+      setVeil({ phase: 'off', onCancel: undefined });
+      haptics.select();
+    };
+    setVeil(fresh ? { phase: 'think', origin, target: null, lines: p.steps, shown: 0, said, head: p.head, onCancel: p.head ? stop : undefined } : { lines: p.steps, shown: 0, head: p.head, onCancel: p.head ? stop : undefined });
     p.steps.forEach((_, i) => later(450 + STEP_MS * i, () => { setVeil({ shown: i + 1 }); haptics.select(); }));
     later(450 + STEP_MS * p.steps.length + 150, () => {
+      setVeil({ onCancel: undefined });
       const out = p.run();
       // A new Termin lands in the calendar; switch there first if we are elsewhere.
       const go = out.go ?? (out.result?.kind === 'event' ? '/kalender' : undefined);
@@ -201,12 +274,15 @@ export default function Dock() {
       if (out.result?.kind === 'event' && !onToday(out.result.event.date) && get().calView === 'heute') actions.setCalView('tag');
       if (go && go !== path) router.navigate(go as any);
       const finish = () => {
-        if (out.land) light(out.lit?.length ? out.lit : out.land);
-        haptics.success();
-        if (out.result && out.result.kind !== 'done') setTurn({ id: Date.now(), said, result: out.result });
+        // Each new row arrives on its own with a tick, then the receipt says what happened.
+        const rows = out.lit?.length ? out.lit : out.land ? [out.land] : [];
+        if (rows.length > 1) lightOneByOne(rows, (i) => (i === rows.length - 1 ? haptics.success() : haptics.select()));
+        else { light(rows.length ? rows : null); haptics.success(); }
+        if (out.result) later(rows.length > 1 ? 260 * rows.length : 120, () => setTurn({ id: Date.now(), said, result: out.result! }));
         after?.(out);
       };
-      const band = { top: insets.top + 70, floor: H * 0.55, height: H };
+      // The receipt covers the lower half, so whatever landed must sit above it.
+      const band = { top: insets.top + 70, floor: H * 0.45, height: H };
       later(go && go !== path ? 380 : 90, () => {
         if (!out.land) return setVeil({ phase: 'land', target: { x: W / 2, y: H - bottom - 110 }, onLanded: finish });
         locate(out.land, band, (target) => setVeil({ phase: 'land', target, onLanded: finish }));
@@ -216,9 +292,12 @@ export default function Dock() {
 
   const undo = () => {
     if (turn?.result.kind === 'event') actions.removeEvent(turn.result.event.id);
+    if (turn?.result.kind === 'done') turn.result.undo?.();
+    haptics.select();
     setTurn(null);
     light(null);
   };
+  const ok = () => { haptics.select(); setTurn(null); light(null); };
 
   return (
     <>
@@ -237,19 +316,23 @@ export default function Dock() {
     </View>
     <View pointerEvents="box-none" onLayout={(e) => setH(e.nativeEvent.layout.height)} style={{ position: 'absolute', left: 14, right: 14, bottom, gap: 10 }}>
       {turn ? (
-        <Animated.View key={turn.id} entering={FadeInDown.duration(220)} exiting={FadeOut.duration(150)} style={[{ maxHeight: 320, borderRadius: 26, backgroundColor: tokens.row }, shadow]}>
-          <ScrollView contentContainerStyle={{ padding: 16, gap: 12 }} showsVerticalScrollIndicator={false}>
-            <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 10 }}>
-              <Txt size={14} line={20} color={tokens.sub} style={{ flex: 1 }}>{quote(turn.said)}</Txt>
-              <PressScale accessibilityLabel={tx('Schließen', 'Close')} hitSlop={10} onPress={() => { setTurn(null); light(null); }}>
-                <LineIcon name="x" size={18} color={tokens.mute} />
-              </PressScale>
-            </View>
-            {turn.result.kind === 'event' ? (
-              <EventCard e={turn.result.event} needsTime={turn.result.needsTime} onUndo={undo} />
-            ) : turn.result.kind === 'answer' ? (
-              <AnswerCard r={turn.result.reply} />
-            ) : null}
+        <Animated.View key={turn.id} entering={FadeInDown.duration(220)} exiting={FadeOut.duration(150)} style={[{ maxHeight: 360, borderRadius: 26, backgroundColor: tokens.row }, shadow]}>
+          <ScrollView contentContainerStyle={{ padding: 18, gap: 12 }} showsVerticalScrollIndicator={false}>
+            {turn.result.kind === 'answer' ? (
+              <>
+                <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 10 }}>
+                  <Txt size={14} line={20} color={tokens.sub} style={{ flex: 1 }}>{quote(turn.said)}</Txt>
+                  <PressScale accessibilityLabel={tx('Schließen', 'Close')} hitSlop={10} onPress={ok}>
+                    <LineIcon name="x" size={18} color={tokens.mute} />
+                  </PressScale>
+                </View>
+                <AnswerCard r={turn.result.reply} />
+              </>
+            ) : turn.result.kind === 'event' ? (
+              <EventCard e={turn.result.event} needsTime={turn.result.needsTime} onUndo={undo} onOk={ok} />
+            ) : (
+              <DoneCard text={turn.result.text} sub={turn.result.sub} said={turn.said} onUndo={turn.result.undo ? undo : undefined} onOk={ok} />
+            )}
           </ScrollView>
         </Animated.View>
       ) : null}

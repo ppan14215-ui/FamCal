@@ -14,6 +14,7 @@ import Svg, { Circle } from 'react-native-svg';
 import Txt from './ui/Txt';
 import LineIcon from './ui/LineIcon';
 import Orb, { Clouds } from './Orb';
+import PressScale from './ui/PressScale';
 import { tokens } from '../theme';
 import { tx, quote } from '../i18n/lang';
 
@@ -39,7 +40,7 @@ function Spin() {
   );
 }
 
-function Step({ label, state }: { label: string; state: 'done' | 'now' | 'next' }) {
+function Step({ label, state, big }: { label: string; state: 'done' | 'now' | 'next'; big?: boolean }) {
   return (
     <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 12 }}>
       <View style={{ width: 22, height: 22, alignItems: 'center', justifyContent: 'center' }}>
@@ -51,12 +52,12 @@ function Step({ label, state }: { label: string; state: 'done' | 'now' | 'next' 
           <View style={{ width: 16, height: 16, borderRadius: 999, borderWidth: 1.5, borderColor: tokens.hair }} />
         )}
       </View>
-      <Txt size={15.5} line={22} weight={state === 'now' ? 600 : 400} color={state === 'next' ? tokens.mute : tokens.ink} style={{ flex: 1 }}>{label}</Txt>
+      <Txt size={big ? 20 : 15.5} line={big ? 24 : 22} weight={big || state === 'now' ? 600 : 400} color={state === 'next' ? tokens.mute : tokens.ink} style={{ flex: 1 }}>{label}</Txt>
     </View>
   );
 }
 
-export default function Veil({ phase, origin, target, lines, shown, said, onLanded }: { phase: VeilPhase; origin: Pt; target: Pt | null; lines: string[]; shown: number; said?: string; onLanded: () => void }) {
+export default function Veil({ phase, origin, target, lines, shown, said, head, onLanded, onCancel }: { phase: VeilPhase; origin: Pt; target: Pt | null; lines: string[]; shown: number; said?: string; head?: string; onLanded: () => void; onCancel?: () => void }) {
   const { width: W, height: H } = useWindowDimensions();
   const still = useReducedMotion();
   const R = Math.max(Math.hypot(origin.x, origin.y), Math.hypot(W - origin.x, origin.y), Math.hypot(origin.x, H - origin.y), Math.hypot(W - origin.x, H - origin.y));
@@ -122,9 +123,19 @@ export default function Veil({ phase, origin, target, lines, shown, said, onLand
       <Animated.View style={[{ position: 'absolute', left: 20, right: 20, top: centre.y + ORB / 2 + 28, alignItems: 'center' }, words]}>
         <View style={[{ width: '100%', maxWidth: 420, borderRadius: 22, backgroundColor: tokens.row, padding: 16, gap: 12, borderWidth: 1, borderColor: tokens.hair }]}>
           {said ? <Txt size={13.5} line={19} color={tokens.sub} numberOfLines={2}>{quote(said)}</Txt> : null}
+          {/* Before anything changes, one line says what is about to happen (Julian 27.10.). */}
+          {head ? <Txt size={12} weight={600} tracking={0.6} color={tokens.done}>{head.toUpperCase()}</Txt> : null}
           {lines.length ? lines.map((l, i) => (
-            <Step key={i} label={l} state={i < shown ? 'done' : i === shown ? 'now' : 'next'} />
+            <Step key={i} big={!!head && l.length < 40} label={l} state={i < shown ? 'done' : i === shown ? 'now' : 'next'} />
           )) : <Step label={tx('Denke nach …', 'Thinking …')} state="now" />}
+          {head && onCancel && phase === 'think' ? (
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 2 }}>
+              <Txt size={13} color={tokens.sub}>{tx('Passiert gleich von selbst', 'Happens in a moment')}</Txt>
+              <PressScale onPress={onCancel} hitSlop={8} accessibilityLabel={tx('Halt, nicht ausführen', 'Stop, don\'t do it')} style={{ height: 40, paddingHorizontal: 14, borderRadius: 999, backgroundColor: tokens.chipBg, alignItems: 'center', justifyContent: 'center' }}>
+                <Txt size={15} weight={600}>{tx('Halt, anders', 'Stop')}</Txt>
+              </PressScale>
+            </View>
+          ) : null}
         </View>
       </Animated.View>
     </View>
@@ -135,7 +146,7 @@ export default function Veil({ phase, origin, target, lines, shown, said, onLand
 // The veil covers the tab bar too, so it is drawn once at the root (next to
 // the toasts) and driven from the screen that talks.
 
-type VeilState = { phase: VeilPhase; origin: Pt; target: Pt | null; lines: string[]; shown: number; said?: string; onLanded?: () => void };
+type VeilState = { phase: VeilPhase; origin: Pt; target: Pt | null; lines: string[]; shown: number; said?: string; head?: string; onLanded?: () => void; onCancel?: () => void };
 let veil: VeilState = { phase: 'off', origin: { x: 0, y: 0 }, target: null, lines: [], shown: 0 };
 const subs = new Set<() => void>();
 export function setVeil(patch: Partial<VeilState>) {
@@ -144,5 +155,5 @@ export function setVeil(patch: Partial<VeilState>) {
 }
 export function VeilHost() {
   const v = React.useSyncExternalStore((l) => { subs.add(l); return () => { subs.delete(l); }; }, () => veil, () => veil);
-  return <Veil phase={v.phase} origin={v.origin} target={v.target} lines={v.lines} shown={v.shown} said={v.said} onLanded={() => { setVeil({ phase: 'off' }); v.onLanded?.(); }} />;
+  return <Veil phase={v.phase} origin={v.origin} target={v.target} lines={v.lines} shown={v.shown} said={v.said} head={v.head} onCancel={v.onCancel} onLanded={() => { setVeil({ phase: 'off' }); v.onLanded?.(); }} />;
 }

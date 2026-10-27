@@ -58,7 +58,25 @@ export function locate(id: string, band: { top: number; floor: number; height: n
 // What just landed, so its rows can glow once. Several at a time when one sentence adds several items (Julian 27.10.).
 let lit = new Set<string>();
 const subs = new Set<() => void>();
-export function light(id: string | string[] | null) { lit = new Set(id == null ? [] : Array.isArray(id) ? id : [id]); subs.forEach((l) => l()); }
+let seq: ReturnType<typeof setTimeout>[] = [];
+export function light(id: string | string[] | null) {
+  seq.forEach(clearTimeout); seq = [];
+  lit = new Set(id == null ? [] : Array.isArray(id) ? id : [id]);
+  subs.forEach((l) => l());
+}
+/**
+ * Lights the rows one after another, so each new entry arrives on its own
+ * with a tick on the phone (Julian 27.10.: "es darf kein Zweifel bleiben").
+ * They stay marked until the receipt is closed or something new is said.
+ */
+export function lightOneByOne(ids: string[], each?: (i: number) => void, gap = 260) {
+  light(null);
+  ids.forEach((id, i) => seq.push(setTimeout(() => {
+    lit = new Set([...lit, id]);
+    subs.forEach((l) => l());
+    each?.(i);
+  }, i * gap)));
+}
 export function useLit(id: string | undefined) {
   return useSyncExternalStore((l) => { subs.add(l); return () => { subs.delete(l); }; }, () => !!id && lit.has(id), () => false);
 }
