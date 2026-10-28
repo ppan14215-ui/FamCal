@@ -22,7 +22,8 @@ import { Tile } from '../../components/ui/Clay';
 import { Avatar, Owner } from '../../components/ui/Person';
 import Stripes from '../../components/Stripes';
 import { tokens, persons, PersonId } from '../../theme';
-import { useStore, actions } from '../../state/store';
+import { useStore, actions, get, toast } from '../../state/store';
+import SwipeRow, { justSwiped } from '../../components/SwipeRow';
 import Fresh from '../../components/Fresh';
 import LineIcon from '../../components/ui/LineIcon';
 import type { CalEvent, Task, Doc } from '../../state/types';
@@ -92,6 +93,19 @@ export function WeekStrip({ day, onSelect }: { day: string; onSelect: (d: string
 const byStart = (a: CalEvent, b: CalEvent) => (a.allDay ? -1 : b.allDay ? 1 : a.start.localeCompare(b.start));
 
 /** One Termin with what belongs to it underneath. */
+/** Swipe left deletes (Julian 28.10.); a day of a series goes alone, the toast brings it back. */
+function dropEvent(e: CalEvent) {
+  if (e.id.includes('~')) {
+    const before = actions.skipOccurrence(e.id);
+    if (before) toast(tx(`„${e.title}“ an diesem Tag gelöscht`, `“${e.title}” deleted on this day`), () => actions.restoreEvent(before));
+    return;
+  }
+  const gone = get().events.find((x) => x.id === e.id);
+  if (!gone) return;
+  actions.removeEvent(gone.id);
+  toast(tx(`„${gone.title}“ gelöscht`, `“${gone.title}” deleted`), () => actions.addEvent(gone));
+}
+
 function Item({ e, last, date }: { e: CalEvent; last: boolean; date: string }) {
   const later = date > e.date;
   const span = !!e.endDate && e.endDate > e.date;
@@ -99,7 +113,8 @@ function Item({ e, last, date }: { e: CalEvent; last: boolean; date: string }) {
   const open = bring.filter((b) => !b.done);
   return (
     <Fresh id={e.id}>
-      <PressScale scale={0.985} onPress={() => router.push(`/termin/${e.id}`)} style={{ paddingVertical: 12, paddingHorizontal: 14, gap: 6, borderBottomWidth: last ? 0 : 1, borderBottomColor: tokens.hair }}>
+      <SwipeRow onDelete={() => dropEvent(e)}>
+      <PressScale scale={0.985} onPress={() => { if (!justSwiped()) router.push(`/termin/${e.id}`); }} style={{ paddingVertical: 12, paddingHorizontal: 14, gap: 6, borderBottomWidth: last ? 0 : 1, borderBottomColor: tokens.hair }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
           <Txt size={13.5} weight={600} style={{ width: 42 }}>{later ? tx(`Tag ${daysBetween(e.date, date) + 1}`, `Day ${daysBetween(e.date, date) + 1}`) : e.allDay ? tx('Tag', 'All day') : hm(e.start)}</Txt>
           <Tile name={e.icon} size={46} radius={14} />
@@ -118,6 +133,7 @@ function Item({ e, last, date }: { e: CalEvent; last: boolean; date: string }) {
           </View>
         ) : null}
       </PressScale>
+      </SwipeRow>
     </Fresh>
   );
 }

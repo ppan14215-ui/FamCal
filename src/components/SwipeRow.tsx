@@ -17,6 +17,10 @@ import { tx } from '../i18n/lang';
 
 const OPEN = 96;
 
+/** A drag must not also count as a tap on the row: on web the press still fires after the swipe. */
+let swipedAt = 0;
+export const justSwiped = () => Date.now() - swipedAt < 400;
+
 export default function SwipeRow({ children, onDelete, bg = tokens.row }: { children: React.ReactNode; onDelete: () => void; bg?: string }) {
   const x = useSharedValue(0);
   const start = useSharedValue(0);
@@ -25,11 +29,13 @@ export default function SwipeRow({ children, onDelete, bg = tokens.row }: { chil
 
   const fire = useCallback(() => { haptics.commit(); onDelete(); }, [onDelete]);
   const tick = useCallback(() => haptics.select(), []);
+  const mark = useCallback(() => { swipedAt = Date.now(); }, []);
 
   const pan = Gesture.Pan()
     .activeOffsetX([-12, 12])
     .failOffsetY([-10, 10])
     .onBegin(() => { start.value = x.value; })
+    .onStart(() => { scheduleOnRN(mark); })
     .onUpdate((e) => {
       const raw = start.value + e.translationX;
       // Rightward: rubber band, never reveals anything.
@@ -38,6 +44,7 @@ export default function SwipeRow({ children, onDelete, bg = tokens.row }: { chil
       if (nowArmed !== armed.value) { armed.value = nowArmed; scheduleOnRN(tick); }
     })
     .onEnd((e) => {
+      scheduleOnRN(mark);
       const far = -x.value > w.value * 0.5 || (e.velocityX < -900 && -x.value > 40);
       if (far) {
         x.value = withTiming(-w.value, { duration: motion.micro }, (done) => { if (done) scheduleOnRN(fire); });
