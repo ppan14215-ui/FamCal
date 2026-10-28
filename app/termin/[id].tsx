@@ -159,6 +159,21 @@ export default function Termin() {
           </View>
         </Card>
         {e.source ? <SourceLink prefix={tx('Aus', 'From')} s={{ label: e.source }} /> : null}
+        <PressScale
+          accessibilityRole="button"
+          accessibilityLabel={tx('Termin löschen', 'Delete event')}
+          onPress={() => {
+            haptics.commit();
+            const gone = e;
+            router.back();
+            actions.removeEvent(gone.id);
+            toast(tx(`„${gone.title}“ gelöscht`, `“${gone.title}” deleted`), () => actions.addEvent(gone));
+          }}
+          style={{ alignSelf: 'center', flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 12, paddingHorizontal: 18, marginTop: 8 }}
+        >
+          <LineIcon name="trash" size={18} color={tokens.danger} />
+          <Txt size={15} weight={600} color={tokens.danger}>{tx('Termin löschen', 'Delete event')}</Txt>
+        </PressScale>
       </View>
     </ScrollView>
   );

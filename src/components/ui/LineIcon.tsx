@@ -10,7 +10,7 @@ import { tokens } from '../../theme';
 export type LineName =
   | 'home' | 'cal' | 'list' | 'inbox' | 'plus' | 'mic' | 'sync' | 'camera' | 'back' | 'chev'
   | 'check' | 'x' | 'lock' | 'clock' | 'copy' | 'send' | 'flash' | 'pin' | 'sparkle' | 'settings'
-  | 'papier' | 'users' | 'undo';
+  | 'papier' | 'users' | 'undo' | 'trash';
 
 type Props = { name: LineName; size?: number; color?: string; stroke?: number };
 
@@ -36,6 +36,7 @@ function shape(n: LineName, p: any) {
     case 'back': return <Path {...p} d="M15 5l-7 7 7 7" />;
     case 'chev': return <Path {...p} d="M9 5l7 7-7 7" />;
     case 'check': return <Path {...p} d="M5 12.5l4.5 4.5L19 7.5" />;
+    case 'trash': return <><Path {...p} d="M4 7h16M10 4h4M6 7l1 13h10l1-13" /><Path {...p} d="M10 11v6M14 11v6" /></>;
     case 'x': return <Path {...p} d="M6 6l12 12M18 6L6 18" />;
     case 'lock': return <><Rect {...p} x={5} y={11} width={14} height={9} rx={2} /><Path {...p} d="M8 11V8a4 4 0 0 1 8 0v3" /></>;
     case 'clock': return <><Circle {...p} cx={12} cy={12} r={8} /><Path {...p} d="M12 8v4l3 2" /></>;

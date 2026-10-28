@@ -19,8 +19,16 @@ export const canUnderstand = () => !!supabase && !!getAuth().session;
 /** The free month is used up (Julian 27.10.: 14 Tage Plus, dann 30 Sätze im Monat). Said once, then the rules answer quietly. */
 let toldLimit = false;
 
+/** Claude did not answer (server error, no key): said once, so nobody wonders why the rules guessed. */
+let toldDown = false;
+
 async function limitHint(error: unknown) {
   const res = (error as { context?: Response } | null)?.context;
+  if (res && res.status >= 500 && !toldDown) {
+    toldDown = true;
+    toast(tx('Claude ist gerade nicht erreichbar. Ich verstehe dich solange mit einfachen Regeln, bitte prüf die Einträge.', "Claude can't be reached right now. I'll use simple rules meanwhile, please check what I add."));
+    return;
+  }
   if (!res || res.status !== 429 || toldLimit) return;
   const body = await res.json().catch(() => null);
   if (body?.reason !== 'month') return;
