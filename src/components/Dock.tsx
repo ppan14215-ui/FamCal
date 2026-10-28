@@ -36,7 +36,7 @@ import { onToday } from '../screens/kalender/TodayView';
 
 const STEP_MS = 850;
 /** How long the family waits for Claude before the rules answer instead. */
-const FIRST_MS = 6000;
+const FIRST_MS = 12000;
 /**
  * Long or tricky sentences wait for Claude instead of showing the rules' guess (Julian 28.10.: "nur bei langen Sätzen").
  * Tricky: spans and sequences ("seit", "bis", "danach"), changes, several clauses, or no day the rules can read.

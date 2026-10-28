@@ -1,0 +1,33 @@
+{
+  "today": "2026-10-28",
+  "now": "17:50",
+  "names": { "J": "Julia", "T": "Tom" },
+  "cases": [
+    { "id": "abgebrochen-seit", "text": "Wir sind seit Sonntag", "expect": { "kind": "abgebrochen" } },
+    { "id": "abgebrochen-haben", "text": "Am Freitag haben wir", "expect": { "kind": "abgebrochen" } },
+    { "id": "friseur-deutsch-en-app", "lang": "en", "text": "Ich habe am Freitag um 13 Uhr einen Friseurtermin", "expect": { "kind": "termin", "title": "friseur", "notTitle": "hair", "date": "2026-10-30", "start": "13:00" } },
+    { "id": "fussball-begleitung-uhrzeit", "lang": "en", "text": "Ich gehe am Sonntag mit Annie und Irene zu einem Fußballspiel beim FCN", "expect": { "kind": "termin", "title": "fußball|fussball", "notTitle": "football|match", "date": "2026-11-01", "start": null, "question": true, "sub": "annie", "who": null } },
+    { "id": "fussball-dauer", "text": "Sonntag 15 Uhr Fußballspiel", "expect": { "kind": "termin", "date": "2026-11-01", "start": "15:00", "end": "17:00" } },
+    { "id": "kein-datum", "text": "Zahnarzt mit Ben", "expect": { "kind": "termin", "date": null, "question": true } },
+    { "id": "urlaub-und-arbeit", "text": "Ich bin ab heute im Urlaub bis Sonntag, danach wieder Arbeit von 8 bis 17 Uhr ab Dienstag", "expect": { "kind": "termin", "date": "2026-10-28", "end_date": "2026-11-01", "moreMin": 3, "moreWork": true } },
+    { "id": "karottenkuchen", "text": "Zucker, Mehl und Milch auf die Einkaufsliste, alles was man für einen Karottenkuchen braucht", "expect": { "kind": "liste", "list": "einkauf", "dish": "karotten", "items": ["zucker", "mehl", "milch"], "extra": ["karotte", "ei"], "variants": 0 } },
+    { "id": "bolognese-fragt", "text": "Ich will heute Abend Bolognese kochen", "expect": { "kind": "liste", "dish": "bolognese", "variantsMin": 2, "question": true } },
+    { "id": "bolognese-antwort", "text": "Klassisch für vier", "history": [{ "said": "Ich will heute Abend Bolognese kochen", "app": "Welches Rezept, und für wie viele?" }], "expect": { "kind": "liste", "dish": "bolognese", "extra": ["hack"] } },
+    { "id": "windeln", "text": "Wir brauchen Windeln", "expect": { "kind": "liste", "list": "einkauf", "items": ["windel"] } },
+    { "id": "steuer", "text": "Ich muss noch die Steuer machen", "expect": { "kind": "liste", "list": "aufgaben" } },
+    { "id": "frage", "text": "Was steht morgen an?", "expect": { "kind": "frage" } },
+    { "id": "zwei-termine", "text": "Montag Zahnarzt und Mittwoch Elternabend", "expect": { "kind": "termin", "date": "2026-11-02", "moreMin": 1 } },
+    { "id": "julia-zahnarzt", "text": "Julia hat Freitag 15 Uhr Zahnarzt", "expect": { "kind": "termin", "who": "J", "date": "2026-10-30", "start": "15:00", "end": "15:45" } },
+    { "id": "kino-beide", "text": "Wir gehen Samstag zusammen ins Kino um 20 Uhr", "expect": { "kind": "termin", "who": "both", "date": "2026-10-31", "start": "20:00", "end": "22:30" } },
+    { "id": "geburtstag-ganztags", "text": "Omas Geburtstag am 12. November", "expect": { "kind": "termin", "date": "2026-11-12", "start": null, "question": false } },
+    { "id": "korrektur-uhrzeit", "text": "nein, um 16 Uhr", "history": [{ "said": "Julia hat Freitag 15 Uhr Zahnarzt" }], "draft": "{\"title\":\"Zahnarzt\",\"date\":\"2026-10-30\",\"start\":\"15:00\",\"end\":\"15:45\",\"who\":\"J\"}", "expect": { "kind": "termin", "title": "zahnarzt", "date": "2026-10-30", "start": "16:00" } },
+    { "id": "ergaenzung-mitbringen", "text": "und Trikot mitnehmen", "history": [{ "said": "Sonntag 15 Uhr Fußballspiel" }], "draft": "{\"title\":\"Fußballspiel\",\"date\":\"2026-11-01\",\"start\":\"15:00\",\"end\":\"17:00\"}", "expect": { "kind": "termin", "date": "2026-11-01", "start": "15:00", "bring": ["trikot"] } },
+    { "id": "antwort-uhrzeit", "text": "um halb vier", "history": [{ "said": "Fußball beim FCN am Sonntag", "app": "Um wie viel Uhr ist das Spiel? Oder ganztägig?" }], "draft": "{\"title\":\"Fußball\",\"date\":\"2026-11-01\",\"start\":\"\",\"place\":\"FCN\"}", "expect": { "kind": "termin", "date": "2026-11-01", "start": "15:30" } },
+    { "id": "englisch-bleibt-englisch", "text": "Dentist on Friday at 3pm", "expect": { "kind": "termin", "title": "dentist", "notTitle": "zahnarzt", "date": "2026-10-30", "start": "15:00" } },
+    { "id": "unklar", "text": "Blumen für Oma irgendwie", "expect": { "kindIn": ["unklar", "liste"] } },
+    { "id": "next-friday-en", "lang": "en", "text": "Next Friday parents evening at 7pm", "expect": { "kind": "termin", "date": "2026-10-30", "start": "19:00" } },
+    { "id": "wiederholung", "text": "Jeden Dienstag 17 Uhr Schwimmen mit Ben", "expect": { "kind": "termin", "start": "17:00", "repeat": true, "sub": "ben" } },
+    { "id": "krank-spanne", "text": "Ben ist ab Montag bis Mittwoch krank", "expect": { "kind": "termin", "date": "2026-11-02", "end_date": "2026-11-04" } },
+    { "id": "tom-buergeramt", "text": "Tom geht am Donnerstag um 9 zum Bürgeramt", "expect": { "kind": "termin", "who": "T", "date": "2026-10-29", "start": "09:00" } }
+  ]
+}
