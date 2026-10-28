@@ -23,11 +23,11 @@ import { tokens, persons } from '../theme';
 import { useStore, actions, get } from '../state/store';
 import { plan, claudeSays, correction, replyPlan, listFromClaude, thinksOnline, revisePlan, reviseOffline, draftOf, cutOff, Ctx, Plan, Result, Said, SPOKEN, PLACEHOLDER } from '../lib/act';
 import { canUnderstand, type Convo } from '../lib/verstehen';
-import { dayLabel, slotLine, findWhen } from '../lib/talk';
+import { dayLabel, slotLine, findWhen, type Suggest } from '../lib/talk';
 import { locate, light, lightOneByOne } from '../lib/landing';
 import { setDockTop, setDockSpace } from '../lib/dockSpace';
 import { useKeyboardInset, useTyping } from '../lib/keyboard';
-import { hm } from '../lib/dates';
+import { hm, short } from '../lib/dates';
 import { Tile } from './ui/Clay';
 import { haptics } from '../lib/haptics';
 import type { CalEvent, Who } from '../state/types';
@@ -48,6 +48,11 @@ const needsClaude = (said: string) => {
 /** Appears calmly, no spring or overshoot (Julian 28.10.: the bounce was too playful). */
 const CALM = FadeIn.duration(200);
 const TIMES = ['09:00', '10:30', '14:00', '16:00'];
+/** "Wieder bei Salon Schnitt wie am 12. Okt?" (Julian 28.10.: the app builds on what you entered before). */
+const againAt = (s: Suggest) => tx(`Wieder bei ${s.place} wie am ${short(s.date)}?`, `At ${s.place} again, like on ${short(s.date)}?`);
+const newThought = (said: string) => said.trim().split(/\s+/).length > 6 || (/^\s*(wir|ich|du|ihr|er|sie|es|man|we|i|you|they|he|she)\b/i.test(said) && !/\b(geh\w*|übernehm\w*|mach\w*|fahr\w*|go|goes|take|takes|drive)\b/i.test(said));
+const YES = /^\s*(ja|jo|genau|richtig|gerne|passt|yes|yeah|yep|sure|right)\b/i;
+const NO = /^\s*(nein|nee|ne|nö|woanders|no|nope|somewhere else)\b/i;
 /** Answers to "Wann?" to tap; speaking works just as well. */
 const DAYS = () => [tx('Heute', 'Today'), tx('Morgen', 'Tomorrow'), tx('Übermorgen', 'Day after tomorrow'), tx('Nächste Woche', 'Next week')];
 
@@ -122,7 +127,7 @@ function DoneCard({ text, sub, said, onUndo, onOk }: { text: string; sub?: strin
 const nextWho = (w: Who): Who => (w === 'J' ? 'T' : w === 'T' ? 'both' : 'J');
 
 /** Receipt for a new Termin: what landed, every part tappable to fix it right here. */
-function EventCard({ e, needsTime, onUndo, onOk }: { e: CalEvent; needsTime?: boolean; onUndo: () => void; onOk: () => void }) {
+function EventCard({ e, needsTime, ask, suggest, onSuggest, onAllDay, onUndo, onOk }: { e: CalEvent; needsTime?: boolean; ask?: string; suggest?: Suggest; onSuggest: (yes: boolean) => void; onAllDay: () => void; onUndo: () => void; onOk: () => void }) {
   const live = useStore((s) => s.events.find((x) => x.id === e.id));
   if (!live) return null;
   const pick = (w: Who) => { haptics.select(); actions.setEventWho(e.id, w); };
@@ -154,11 +159,22 @@ function EventCard({ e, needsTime, onUndo, onOk }: { e: CalEvent; needsTime?: bo
         ) : null}
         {live.place ? <Chip height={36} onPress={open}>{live.place}</Chip> : null}
       </View>
-      {needsTime ? (
-        <View style={{ gap: 6 }}>
-          <Txt size={15} weight={600}>{tx('Um wie viel Uhr?', 'What time?')}</Txt>
-          <View style={{ flexDirection: 'row', gap: 6, flexWrap: 'wrap' }}>
-            {TIMES.map((t) => <Chip key={t} bg={!live.allDay && live.start === t ? tokens.doneSoft : tokens.chipBg} onPress={() => at(t)}>{hm(t)}</Chip>)}
+      {suggest && !live.place ? (
+        <View style={{ gap: 8 }}>
+          <AppLine text={againAt(suggest)} sub={tx(`Das war bei „${suggest.title}“.`, `That was for “${suggest.title}”.`)} />
+          <View style={{ flexDirection: 'row', gap: 6, paddingLeft: 36 }}>
+            <Chip height={36} bg={tokens.doneSoft} color={tokens.done} onPress={() => onSuggest(true)}>{tx('Ja', 'Yes')}</Chip>
+            <Chip height={36} onPress={() => onSuggest(false)}>{tx('Nein', 'No')}</Chip>
+          </View>
+        </View>
+      ) : null}
+      {needsTime && live.allDay ? (
+        <View style={{ gap: 8 }}>
+          {/* Asked, not assumed (Julian 28.10.: "um wie viel Uhr ist das Spiel, oder ganztägig?"). Saying the time works too. */}
+          <AppLine text={ask || tx('Um wie viel Uhr? Oder ganztägig?', 'What time? Or all day?')} />
+          <View style={{ flexDirection: 'row', gap: 6, flexWrap: 'wrap', paddingLeft: 36 }}>
+            {TIMES.map((t) => <Chip key={t} height={36} onPress={() => at(t)}>{hm(t)}</Chip>)}
+            <Chip height={36} onPress={onAllDay}>{tx('Ganztägig', 'All day')}</Chip>
           </View>
         </View>
       ) : null}
@@ -315,8 +331,13 @@ export default function Dock() {
     // A Termin deleted meanwhile has nothing left to change: the sentence starts fresh.
     const gone = open?.result.kind === 'event' && !get().events.some((e) => e.id === (open.result as { event: CalEvent }).event.id);
     const before = open && open.result.kind !== 'cut' && ctx.kind === 'kalender' && !gone ? open.lines : [];
-    const lines: Line[] = [...before, { said }];
+    let lines: Line[] = [...before, { said }];
     if (cutOff(said)) return hold(said, { kind: 'cut' }, [{ said }]);
+    // "Ja" or "Nein" to "Wieder bei …?" needs no Claude.
+    if (open?.result.kind === 'event' && open.result.suggest && raw.split(/\s+/).length <= 3 && (YES.test(raw) || NO.test(raw))) {
+      setTurn(open);
+      return answerSuggest(YES.test(raw), raw);
+    }
 
     // A card is still open: the sentence answers or changes it (Julian 28.10.).
     const r0 = open?.result;
@@ -343,7 +364,9 @@ export default function Dock() {
       }, convo);
       return;
     }
-    if (follow && single) return play(reviseOffline(single.id, said), said, true, undefined, lines);
+    // Without Claude only short changes count as follow-ups; a new thought ("Wir sind seit Sonntag") starts fresh.
+    if (follow && single && !newThought(said)) return play(reviseOffline(single.id, said), said, true, undefined, lines);
+    if (follow && single) lines = [{ said }];
 
     const pending = r0?.kind === 'answer' && r0.reply.kind === 'ask' ? { title: r0.reply.title, who: r0.reply.who } : null;
     if (thinksOnline(ctx, said, pending) && !needsClaude(said)) {
@@ -396,7 +419,7 @@ export default function Dock() {
     if (!patch) return;
     actions.updateEvent(made.id, patch);
     const event = { ...made, ...patch };
-    setTurn((t) => (t && t.result.kind === 'event' && t.result.event.id === made.id ? { ...t, result: { kind: 'event', event, needsTime: r.needsTime } } : t));
+    setTurn((t) => (t && t.result.kind === 'event' && t.result.event.id === made.id ? { ...t, result: { ...t.result, event, needsTime: r.needsTime } } : t));
     light(made.id);
     haptics.select();
   };
@@ -430,9 +453,11 @@ export default function Dock() {
           const res = out.result!;
           // A question goes under the sentence it answers, and the mic listens again for the answer.
           const asks = res.kind === 'answer' && res.reply.kind === 'ask';
-          const all = asks ? [...lines.slice(0, -1), { ...lines[lines.length - 1], app: res.reply.text }] : lines;
+          const offer = res.kind === 'event' ? [res.needsTime && res.event.allDay ? res.ask || tx('Um wie viel Uhr? Oder ganztägig?', 'What time? Or all day?') : '', res.suggest && !res.event.place ? againAt(res.suggest) : ''].filter(Boolean).join(' ') : '';
+          const q = asks ? (res as { reply: { text: string } }).reply.text : offer || undefined;
+          const all = q ? [...lines.slice(0, -1), { ...lines[lines.length - 1], app: q }] : lines;
           setTurn({ id: Date.now(), said, result: res, lines: all });
-          if (asks) ask();
+          if (q) ask();
         });
         after?.(out);
       };
@@ -453,6 +478,23 @@ export default function Dock() {
     light(null);
   };
   const ok = () => { haptics.select(); setTurn(null); light(null); };
+  /** Ja takes the earlier place, Nein just drops the question; either way the card stays for more. */
+  const answerSuggest = (yes: boolean, said?: string) => {
+    if (turn?.result.kind !== 'event' || !turn.result.suggest) return;
+    const { event, suggest } = turn.result;
+    haptics.select();
+    if (yes) { actions.updateEvent(event.id, { place: suggest.place }); light(event.id); }
+    const lines = said ? [...turn.lines, { said, app: yes ? tx(`Ort: ${suggest.place}.`, `Place: ${suggest.place}.`) : tx('Gut, ohne Ort.', 'Okay, no place.') }] : turn.lines;
+    setTurn({ ...turn, id: said ? Date.now() : turn.id, lines, result: { ...turn.result, suggest: undefined } });
+  };
+
+  /** "Ganztägig" answers the time question; the Termin already is all day. */
+  const allDay = () => {
+    if (turn?.result.kind !== 'event') return;
+    haptics.select();
+    setTurn({ ...turn, result: { ...turn.result, needsTime: false } });
+  };
+
   /** "Kalender oder Liste?" answered by a tap: the same sentence, now where it belongs. */
   const pickKind = (said: string, k: 'termin' | 'einkauf' | 'aufgaben') => {
     haptics.select();
@@ -519,7 +561,7 @@ export default function Dock() {
                 {/* After a follow-up the card shows the conversation that led here. */}
                 {turn.lines.length > 1 ? <Thread lines={turn.lines} /> : null}
                 {turn.result.kind === 'event' ? (
-                  <EventCard e={turn.result.event} needsTime={turn.result.needsTime} onUndo={undo} onOk={ok} />
+                  <EventCard e={turn.result.event} needsTime={turn.result.needsTime} ask={turn.result.ask} suggest={turn.result.suggest} onSuggest={answerSuggest} onAllDay={allDay} onUndo={undo} onOk={ok} />
                 ) : (
                   <DoneCard text={turn.result.text} sub={turn.result.sub} said={turn.lines.length > 1 ? '' : turn.said} onUndo={turn.result.undo ? undo : undefined} onOk={ok} />
                 )}

@@ -14,10 +14,12 @@ import { byTime } from './selectors';
 import { tx, EN } from '../i18n/lang';
 
 export type Slot = { date: string; from: string; to: string };
+/** A place from an earlier, similar Termin, asked about instead of copied (Julian 28.10.: "Immer noch bei Salon XY?"). */
+export type Suggest = { place: string; title: string; date: string };
 
 export type Reply =
   /** `steps` is what it thought on the way, shown before the Termin lands. */
-  | { kind: 'added'; event: CalEvent; clash?: string; steps: string[]; needsTime?: boolean; more?: CalEvent[] }
+  | { kind: 'added'; event: CalEvent; clash?: string; steps: string[]; needsTime?: boolean; more?: CalEvent[]; suggest?: Suggest; ask?: string }
   | { kind: 'answer'; text: string; events?: CalEvent[]; slots?: Slot[] }
   /** Understood what, not when. The next sentence can be just the time. */
   | { kind: 'ask'; text: string; title: string; who: Who };
@@ -108,6 +110,10 @@ function titleOf(rest: string): { title: string; sub?: string } {
  * What the family calendar already knows about a place: "Kinderarzt" finds
  * the last Termin at the pediatrician with its address.
  */
+/** Words that never make a Termin on their own (Julian 28.10.: "Seit" made no sense as a title). */
+const FILLER = /^(seit|bis|ab|und|oder|dann|danach|noch|schon|wieder|auch|mal|jetzt|so|da|hier|wir|ich|du|ihr|sind|bin|ist|haben|hat|since|until|from|and|or|then|still|again|also|now|we|i|you|are|am|is|have|has)$/;
+const meaningless = (t: string | undefined) => !t || t.split(/\s+/).every((w) => FILLER.test(clean(w)));
+
 const KNOWN: [RegExp, RegExp][] = [
   [/kinderarzt|kinderärzt|\bu\d\b|impf|arzt|pediatric/, /weber|kinderarzt|pediatric/],
   [/hebamme|nachsorge/, /hebamme/],
@@ -118,9 +124,15 @@ function recall(title: string, events: CalEvent[]): CalEvent | undefined {
   const l = title.toLowerCase();
   if (/zahn|tierarzt/.test(l)) return;
   const rule = KNOWN.find(([want]) => want.test(l));
-  if (!rule) return;
-  // Only what really happened: past Termine, not ones just said.
-  return [...events].filter((e) => e.place && e.date <= TODAY && !/^(Gesagt|Said)/.test(e.source ?? '') && rule[1].test(`${e.title} ${e.sub ?? ''} ${e.place}`.toLowerCase()))
+  // Only what really happened: past Termine with a place, not ones just said.
+  const past = events.filter((e) => e.place && e.date <= TODAY && !/^(Gesagt|Said)/.test(e.source ?? ''));
+  // Any earlier Termin with the same main word ("Friseur" and "Friseurtermin"), not only the known kinds.
+  if (!rule) {
+    const stems = l.split(/[^a-zäöüß]+/).map((w) => w.replace(/(termin|besuch|appointment)$/, '')).filter((w) => w.length >= 4 && !FILLER.test(w));
+    if (!stems.length) return;
+    return past.filter((e) => stems.some((st) => e.title.toLowerCase().includes(st))).sort((a, b) => b.date.localeCompare(a.date))[0];
+  }
+  return past.filter((e) => rule[1].test(`${e.title} ${e.sub ?? ''} ${e.place}`.toLowerCase()))
     .sort((a, b) => b.date.localeCompare(a.date))[0];
 }
 
@@ -235,9 +247,6 @@ const isQuestion = (q: string) => /\?\s*$/.test(q) || /^\s*(wann|was|wer|wie|wo|
   // "Do" is Thursday in German, so the English openers count on English phones only.
   || (EN && /^\s*(when|what|who|how|where|is|are|do|does|any|which|what's|when's|who's)\b/i.test(q));
 
-/** Words that never make a Termin on their own (Julian 28.10.: "Seit" made no sense as a title). */
-const FILLER = /^(seit|bis|ab|und|oder|dann|danach|noch|schon|wieder|auch|mal|jetzt|so|da|hier|wir|ich|du|ihr|sind|bin|ist|haben|hat|since|until|from|and|or|then|still|again|also|now|we|i|you|are|am|is|have|has)$/;
-const meaningless = (t: string | undefined) => !t || t.split(/\s+/).every((w) => FILLER.test(clean(w)));
 
 /** Reads one sentence. `pending` is a title still waiting for its time. */
 export function understand(input: string, events: CalEvent[], pending?: { title: string; who: Who } | null, newId = () => `e-${Date.now()}`): Reply {
@@ -268,17 +277,19 @@ export function understand(input: string, events: CalEvent[], pending?: { title:
     id: newId(), title, sub: sub || undefined, icon, who,
     date: w.date, endDate: w.endDate, start, allDay: !w.start,
     end: w.start ? w.end ?? toHm(Math.min(minutes(start) + len, 23 * 60 + 59)) : undefined,
-    place: known?.place, repeat: w.repeat, source: tx(`Gesagt: „${q}“`, `Said: “${q}”`),
+    repeat: w.repeat, source: tx(`Gesagt: „${q}“`, `Said: “${q}”`),
   };
   const clash = clashOf(events, event);
   const steps = [`${title}, ${long(w.date)}${w.start ? ` ${tx('um', 'at')} ${hm(w.start)}` : ''}${w.repeat ? `, ${tx(w.repeat.toLowerCase(), w.repeat)}` : ''}.`];
-  if (known) steps.push(tx(`${known.place} kenne ich vom Termin „${known.title}“ am ${short(known.date)}.`, `I know ${known.place} from “${known.title}” on ${short(known.date)}.`));
+  if (known) steps.push(tx(`Letztes Mal bei ${known.place}, ich frage gleich nach.`, `Last time at ${known.place}, I'll ask.`));
   steps.push(who === 'both' ? tx('Für euch beide.', 'For both of you.') : who ? tx(`Für ${persons[who].name}.`, `For ${persons[who].name}.`) : tx('Wer geht, ist noch offen.', 'Nobody is set to go yet.'));
   if (clash) steps.push(clash);
   else if (who && w.start) steps.push(tx('Da ist sonst nichts, passt.', 'Nothing else then, fits.'));
   if (!w.start) steps.push(NO_TIME());
-  return { kind: 'added', event, clash, steps, needsTime: !w.start };
+  return { kind: 'added', event, clash, steps, needsTime: !w.start, suggest: suggestOf(known) };
 }
+
+const suggestOf = (e: CalEvent | undefined): Suggest | undefined => (e?.place ? { place: e.place, title: e.title, date: e.date } : undefined);
 
 /** What the "verstehen" function sends back (supabase/functions/verstehen). */
 export type Understood = {
@@ -304,6 +315,22 @@ const ISO = /^\d{4}-\d{2}-\d{2}$/;
 const HHMM = /^\d{2}:\d{2}$/;
 
 /**
+ * What was said stays in the words it was said in (Julian 28.10.: "Friseurtermin"
+ * must not come back as "Hairdresser"). A title sharing no word with the sentence
+ * was translated: the rules' title from the sentence itself is used instead.
+ */
+function kept(title: string, said: string): string {
+  const l = said.toLowerCase();
+  const ours = title.toLowerCase().split(/[^a-zäöüß0-9]+/).filter((w) => w.length >= 3);
+  if (!ours.length || ours.some((w) => l.includes(w.slice(0, 4)))) return title;
+  const words = said.trim().split(/\s+/);
+  const f = findWhen(words);
+  const rest = f ? words.filter((_, i) => !(i >= f.from && i < f.to) && !(f.also && i >= f.also.from && i < f.also.to)) : words;
+  const own = titleOf(rest.join(' ')).title;
+  return own && !meaningless(own) ? own : title;
+}
+
+/**
  * Turns the model's reading into the same Reply the rules give, so the
  * screens need no second path. Questions still go to the rules, they know
  * the calendar. Returns null when the answer is unusable; the rules then try.
@@ -319,11 +346,11 @@ export function fromModel(m: Understood, said: string, events: CalEvent[], newId
   const icon = guess === 'kalender' && known ? known.icon : guess;
   const len = icon === 'stethoskop' || icon === 'zahnarzt' ? 45 : 60;
   const event: CalEvent = {
-    id: newId(), title: cap(m.title), sub: m.sub || undefined, icon, who,
+    id: newId(), title: cap(kept(m.title, said)), sub: m.sub || undefined, icon, who,
     date: m.date, endDate: m.end_date && ISO.test(m.end_date) && m.end_date > m.date ? m.end_date : undefined,
     start: start ?? '00:00', allDay: !start,
     end: start ? (m.end && HHMM.test(m.end) && m.end > start ? m.end : toHm(Math.min(minutes(start) + len, 23 * 60 + 59))) : undefined,
-    place: m.place || known?.place, repeat: m.repeat || undefined, source: tx(`Gesagt: „${said.trim()}“`, `Said: “${said.trim()}”`),
+    place: m.place || undefined, repeat: m.repeat || undefined, source: tx(`Gesagt: „${said.trim()}“`, `Said: “${said.trim()}”`),
     bring: m.bring.length ? m.bring.map((t, i) => ({ id: `${newId()}-b${i}`, t, done: false })) : undefined,
   };
   if (m.work) event.work = true;
@@ -340,8 +367,10 @@ export function fromModel(m: Understood, said: string, events: CalEvent[], newId
   const clash = more.length ? undefined : clashOf(events, event);
   const steps = m.steps.length ? m.steps.slice(0, 4) : [`${event.title}, ${long(event.date)}${start ? ` ${tx('um', 'at')} ${hm(start)}` : ''}.`];
   if (clash) steps.push(clash);
-  if (!start && !more.length && !event.endDate) steps.push(NO_TIME());
-  return { kind: 'added', event, clash, steps, needsTime: !start && !more.length && !event.endDate, more: more.length ? more : undefined };
+  // Claude asks about the time only where one is usual; "Geburtstag" or "Urlaub" stay all day without a question.
+  const open = !start && !more.length && !event.endDate && !!m.question;
+  if (open) steps.push(NO_TIME());
+  return { kind: 'added', event, clash, steps, needsTime: open, ask: open ? m.question ?? undefined : undefined, more: more.length ? more : undefined, suggest: m.place || more.length ? undefined : suggestOf(known) };
 }
 
 /** Day by day for the home screen: today plus the next six days. */

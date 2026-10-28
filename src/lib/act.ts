@@ -10,7 +10,7 @@ import type { CalEvent, Who, List } from '../state/types';
 import { get, actions, toast } from '../state/store';
 import { persons } from '../theme/tokens';
 import { blueprintFor, blocksLine } from './blueprint';
-import { understand, findWhen, whoOf, clean, Reply, fromModel } from './talk';
+import { understand, findWhen, whoOf, clean, Reply, fromModel, type Suggest } from './talk';
 import { canUnderstand, understandOnline, type Convo } from './verstehen';
 import { tx, EN } from '../i18n/lang';
 import { whenLine, splitDue, When } from './when';
@@ -25,7 +25,7 @@ export type Ctx =
 
 /** What is left on screen after landing: a card with follow-ups, or nothing. */
 export type Result =
-  | { kind: 'event'; event: CalEvent; needsTime?: boolean }
+  | { kind: 'event'; event: CalEvent; needsTime?: boolean; suggest?: Suggest; ask?: string }
   | { kind: 'answer'; reply: Extract<Reply, { kind: 'answer' | 'ask' }> }
   | { kind: 'done'; text: string; sub?: string; undo?: () => void; open?: string; events?: string[] }
   /** The sentence stopped mid-thought: the card shows the start and the next sentence is appended. */
@@ -88,7 +88,7 @@ export function replyPlan(reply: Reply): Plan {
   return {
     head: tx('Ich trage in den Kalender ein', 'Adding to the calendar'),
     steps: reply.steps,
-    run: () => { actions.addEvent(reply.event); return { land: reply.event.id, result: { kind: 'event', event: reply.event, needsTime: reply.needsTime } }; },
+    run: () => { actions.addEvent(reply.event); return { land: reply.event.id, result: { kind: 'event', event: reply.event, needsTime: reply.needsTime, suggest: reply.suggest, ask: reply.ask } }; },
   };
 }
 
