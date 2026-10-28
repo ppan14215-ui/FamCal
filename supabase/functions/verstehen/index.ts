@@ -5,7 +5,10 @@
  * ANTHROPIC_API_KEY, never in the app.
  *
  * Request (signed in, JWT checked by Supabase):
- *   { text, today: "2026-10-27", now: "14:10", names: { J: "Julian", T: "Anna" }, lang: "de" | "en" }
+ *   { text, today: "2026-10-27", now: "14:10", names: { J: "Julian", T: "Anna" }, lang: "de" | "en",
+ *     history?: [{ said, app? }], draft?: "<what is on the card, JSON>" }
+ * With history the sentence answers or corrects the card that is still open
+ * (Julian 28.10.: "die Konversation müsste weitergehen").
  * Response: the shape of `Termin` below, or { error }.
  *
  * Plan and cost guard (Julian 27.10.): use_ai_call checks the family's plan
@@ -20,8 +23,9 @@ import { zodOutputFormat } from 'npm:@anthropic-ai/sdk@0.137.0/helpers/zod';
 import { createClient } from 'npm:@supabase/supabase-js@2';
 
 const Termin = z.object({
-  // termin: something to put in the calendar. frage: the sentence asks about the calendar. liste: items for a list. unklar: none of these.
-  kind: z.enum(['termin', 'frage', 'liste', 'unklar']),
+  // termin: something to put in the calendar. frage: the sentence asks about the calendar. liste: items for a list.
+  // abgebrochen: the sentence stops mid-thought, the app keeps listening. unklar: none of these.
+  kind: z.enum(['termin', 'frage', 'liste', 'abgebrochen', 'unklar']),
   title: z.string(),
   sub: z.string().nullable(),
   date: z.string().nullable(),
@@ -75,7 +79,9 @@ Regeln:
 - Mehrere Termine in einem Satz ("ab heute Urlaub bis Sonntag, danach wieder Arbeit von 8 bis 17 Uhr ab Dienstag", "Montag Zahnarzt und Mittwoch Elternabend"): der erste steht in den Hauptfeldern, alle weiteren in more, in zeitlicher Reihenfolge. In more steht "" für leer und who "none" für niemanden. steps beschreibt alle zusammen in höchstens vier kurzen Sätzen. Sonst bleibt more leer.
 - Urlaub, Reise oder Krankheit über mehrere Tage ist ein ganztägiger Termin mit date und end_date.
 - work ist true für Arbeitszeiten ("Arbeit", "Schicht", "im Büro", "work"). Regelmäßige Arbeitszeiten ohne genannte Tage gelten Montag bis Freitag: lege dann für jeden Arbeitstag ab dem genannten Start bis einschließlich Freitag der Woche danach einen eigenen Eintrag an (höchstens 12), mit repeat "Montag bis Freitag" ("Mondays to Fridays"). Feiertage und Urlaubstage aus demselben Satz lässt du aus.
-- Ist es nichts davon, setze kind auf unklar.`;
+- Bricht der Satz mitten im Gedanken ab ("Wir sind seit Sonntag", "Am Freitag haben wir", "Ben hat morgen und"), setze kind auf abgebrochen. Die App hört dann weiter und schickt den ganzen Satz noch einmal.
+- Steht ein bisheriges Gespräch dabei, ist der neue Satz eine Antwort auf die Rückfrage oder eine Korrektur oder Ergänzung des Entwurfs ("Freitag um drei", "nein, um 16 Uhr", "Tom kommt auch mit", "und Impfpass mitnehmen"). Gib dann den vollständigen neuen Stand zurück, mit allen Terminen aus dem Entwurf, auch den unveränderten, und ändere nur, was der neue Satz sagt. steps beschreibt nur die Änderung. Will der neue Satz offensichtlich etwas ganz anderes, behandle ihn wie einen neuen Satz.
+- Ist es nichts davon, setze kind auf unklar und stelle in question eine kurze Rückfrage, ob es in den Kalender oder auf eine Liste gehört.`;
 
 const cors = {
   'Access-Control-Allow-Origin': '*',
@@ -88,7 +94,7 @@ Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors });
   const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { ...cors, 'Content-Type': 'application/json' } });
 
-  let input: { text?: string; today?: string; now?: string; names?: { J?: string; T?: string }; lang?: string; icons?: string[] };
+  let input: { text?: string; today?: string; now?: string; names?: { J?: string; T?: string }; lang?: string; icons?: string[]; history?: { said?: string; app?: string }[]; draft?: string };
   try { input = await req.json(); } catch { return json({ error: 'bad_json' }, 400); }
   const text = (input.text ?? '').trim().slice(0, 500);
   const today = /^\d{4}-\d{2}-\d{2}$/.test(input.today ?? '') ? input.today! : new Date().toISOString().slice(0, 10);
@@ -104,6 +110,12 @@ Deno.serve(async (req) => {
 
   const wd = WD[new Date(`${today}T12:00:00Z`).getUTCDay()];
   const names = `J = ${input.names?.J || 'Elternteil 1'}, T = ${input.names?.T || 'Elternteil 2'}`;
+  // Bounded, so a follow-up never costs much more than a first sentence.
+  const history = (Array.isArray(input.history) ? input.history : []).slice(-4)
+    .map((h) => [h?.said ? `Gesagt: ${String(h.said).slice(0, 300)}` : '', h?.app ? `App: ${String(h.app).slice(0, 200)}` : ''].filter(Boolean).join('\n'))
+    .filter(Boolean).join('\n');
+  const draft = typeof input.draft === 'string' ? input.draft.slice(0, 3000) : '';
+  const talk = history ? `\n\nBisheriges Gespräch:\n${history}${draft ? `\nEntwurf auf der Karte: ${draft}` : ''}\n\nNeuer Satz dazu: ${text}` : `\n\nSatz: ${text}`;
   // The app sends the icon names it has, so new icons need no change here.
   const icons = (Array.isArray(input.icons) ? input.icons : []).filter((x) => typeof x === 'string' && /^[a-z0-9-]{2,30}$/.test(x)).slice(0, 300).join(', ') || 'kalender';
 
@@ -114,7 +126,7 @@ Deno.serve(async (req) => {
       system: SYSTEM,
       // Short answers matter more than depth here: the family waits with the orb spinning.
       output_config: { effort: 'low', format: zodOutputFormat(Termin) },
-      messages: [{ role: 'user', content: `Heute ist ${wd}, ${today}, ${input.now ?? ''} Uhr. Eltern: ${names}. Sprache der App: ${input.lang === 'en' ? 'Englisch' : 'Deutsch'}.\nIcons: ${icons}\n\nSatz: ${text}` }],
+      messages: [{ role: 'user', content: `Heute ist ${wd}, ${today}, ${input.now ?? ''} Uhr. Eltern: ${names}. Sprache der App: ${input.lang === 'en' ? 'Englisch' : 'Deutsch'}.\nIcons: ${icons}${talk}` }],
     });
     if (res.stop_reason === 'refusal' || !res.parsed_output) return json({ error: 'not_understood' }, 422);
     return json({ ...res.parsed_output, left: allowed.left ?? null });

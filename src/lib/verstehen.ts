@@ -36,10 +36,13 @@ async function limitHint(error: unknown) {
   toast(tx('Die 30 Sätze für diesen Monat sind verbraucht', 'Your 30 sentences for this month are used up'), undefined, { kind: 'warn', sub: tx('Ich verstehe dich weiter mit einfachen Regeln, mit Plus wieder unbegrenzt.', 'I keep understanding you with simple rules; Plus makes it unlimited again.') });
 }
 
-export async function understandOnline(text: string): Promise<Understood | null> {
+/** The open card's conversation (Julian 28.10.: weitersprechen statt Sackgasse): what was said, what the app asked, and the card as JSON. */
+export type Convo = { history: { said: string; app?: string }[]; draft?: string };
+
+export async function understandOnline(text: string, convo?: Convo): Promise<Understood | null> {
   if (!supabase || !getAuth().session) return null;
   const call = supabase.functions
-    .invoke<Understood & { left: number | null }>('verstehen', { body: { text, today: TODAY, now: NOW, names: { J: persons.J.name, T: persons.T.name }, lang: LANG, icons: TERMIN_ICON_NAMES } })
+    .invoke<Understood & { left: number | null }>('verstehen', { body: { text, today: TODAY, now: NOW, names: { J: persons.J.name, T: persons.T.name }, lang: LANG, icons: TERMIN_ICON_NAMES, ...convo } })
     .then(async ({ data, error }) => {
       if (error || !data) { await limitHint(error); return null; }
       if (data.left === 5) toast(tx('Noch 5 Sätze gratis in diesem Monat', '5 free sentences left this month'), undefined, { kind: 'info' });

@@ -11,7 +11,7 @@ import { get, actions, toast } from '../state/store';
 import { persons } from '../theme/tokens';
 import { blueprintFor, blocksLine } from './blueprint';
 import { understand, findWhen, whoOf, clean, Reply, fromModel } from './talk';
-import { canUnderstand, understandOnline } from './verstehen';
+import { canUnderstand, understandOnline, type Convo } from './verstehen';
 import { tx, EN } from '../i18n/lang';
 import { whenLine, splitDue, When } from './when';
 import { long, hm, minutes, short } from './dates';
@@ -27,7 +27,11 @@ export type Ctx =
 export type Result =
   | { kind: 'event'; event: CalEvent; needsTime?: boolean }
   | { kind: 'answer'; reply: Extract<Reply, { kind: 'answer' | 'ask' }> }
-  | { kind: 'done'; text: string; sub?: string; undo?: () => void; open?: string };
+  | { kind: 'done'; text: string; sub?: string; undo?: () => void; open?: string; events?: string[] }
+  /** The sentence stopped mid-thought: the card shows the start and the next sentence is appended. */
+  | { kind: 'cut' }
+  /** Not sure what it is: the card asks, calendar or a list. */
+  | { kind: 'unclear'; text: string };
 
 export type Plan = {
   /** What the machine is about to do, in one line above the steps ("Ich setze auf die Einkaufsliste"). Only for changes, not for questions. */
@@ -98,7 +102,7 @@ function manyPlan(first: CalEvent, more: CalEvent[], steps: string[]): Plan {
     run: () => {
       all.forEach((e) => actions.addEvent(e));
       const text = tx(`${joinAnd(names.map((x) => `„${x}“`))} ${names.length === 1 ? 'steht' : 'stehen'} im Kalender.`, `${joinAnd(names.map((x) => `“${x}”`))} ${names.length === 1 ? 'is' : 'are'} in the calendar.`);
-      return { land: first.id, lit: all.map((e) => e.id), result: { kind: 'done', text, sub: `${tx(`${all.length} Einträge.`, `${all.length} entries.`)} ${otherSees()}`, undo: () => all.forEach((e) => actions.removeEvent(e.id)) } };
+      return { land: first.id, lit: all.map((e) => e.id), result: { kind: 'done', text, sub: `${tx(`${all.length} Einträge.`, `${all.length} entries.`)} ${otherSees()}`, undo: () => all.forEach((e) => actions.removeEvent(e.id)), events: all.map((e) => e.id) } };
     },
   };
 }
@@ -283,10 +287,70 @@ function listeNeu(said: string): Plan {
  */
 export type ListSaid = { kind: 'liste'; list: 'einkauf' | 'aufgaben'; items: string[] };
 
-export async function claudeSays(said: string): Promise<Reply | ListSaid | null> {
-  const m = await understandOnline(said);
+export type Said = Reply | ListSaid | { kind: 'cut' } | { kind: 'unclear'; text: string };
+
+export async function claudeSays(said: string, convo?: Convo): Promise<Said | null> {
+  const m = await understandOnline(said, convo);
+  if (m?.kind === 'abgebrochen') return { kind: 'cut' };
+  if (m?.kind === 'unklar') return { kind: 'unclear', text: m.question || UNCLEAR() };
   if (m?.kind === 'liste' && m.items?.length) return { kind: 'liste', list: m.list === 'aufgaben' ? 'aufgaben' : 'einkauf', items: m.items };
   return m && fromModel(m, said, get().events, () => newId('e'));
+}
+
+const UNCLEAR = () => tx('Soll das in den Kalender oder auf eine Liste?', 'Should this go in the calendar or on a list?');
+
+/** Stops on a word that needs more ("Wir sind seit Sonntag und", "Am Freitag um"): wait for the rest instead of guessing. */
+export const cutOff = (said: string) => /(\b(und|oder|bis|ab|um|mit|dann|seit|für|am|im|zum|zur|nach|von|weil|and|or|until|at|with|then|for|on|to|from|because)|…|\.\.\.)\s*$/i.test(said.trim());
+
+/** Cut off or unclear: a card, nothing changes yet. */
+export const holdPlan = (result: Extract<Result, { kind: 'cut' | 'unclear' }>): Plan => ({ steps: [], run: () => ({ result }) });
+export const unclearPlan = (text = UNCLEAR()) => holdPlan({ kind: 'unclear', text });
+
+/** What is on the card, for Claude to change: only the parts a person can say something about. */
+export function draftOf(ids: string[]): string | undefined {
+  const es = ids.map((id) => get().events.find((e) => e.id === id)).filter(Boolean) as CalEvent[];
+  if (!es.length) return undefined;
+  const one = (e: CalEvent) => ({ title: e.title, sub: e.sub ?? '', date: e.date, end_date: e.endDate ?? '', start: e.allDay ? '' : e.start, end: e.allDay ? '' : e.end ?? '', who: e.who ?? 'none', place: e.place ?? '', repeat: e.repeat ?? '', work: !!e.work, bring: (e.bring ?? []).map((b) => b.t) });
+  return JSON.stringify(es.length === 1 ? one(es[0]) : es.map(one));
+}
+
+/**
+ * A follow-up changed the one Termin on the card ("Freitag um drei", "Tom kommt mit"):
+ * it changes in place and the card stays open for the next sentence.
+ */
+export function revisePlan(made: CalEvent, r: Extract<Reply, { kind: 'added' }>): Plan | null {
+  const patch = correction(made, r);
+  if (!patch) return null;
+  // Claude sends the whole new state; new things to bring are added, nothing is dropped silently.
+  if (r.event.bring?.length) {
+    const have = new Set((made.bring ?? []).map((b) => b.t.toLowerCase()));
+    const add = r.event.bring.filter((b) => !have.has(b.t.toLowerCase()));
+    patch.bring = add.length ? [...(made.bring ?? []), ...add] : undefined;
+    if (!add.length) delete patch.bring;
+  }
+  if (!Object.keys(patch).length) return null;
+  return {
+    head: tx(`Ich ändere „${made.title}“`, `Changing “${made.title}”`),
+    steps: r.steps.slice(0, 3),
+    run: () => {
+      actions.updateEvent(made.id, patch);
+      const event = get().events.find((e) => e.id === made.id) ?? { ...made, ...patch };
+      return { land: made.id, result: { kind: 'event', event, needsTime: event.allDay && !event.endDate && r.needsTime } };
+    },
+  };
+}
+
+/** The rules' version of a follow-up on the card's Termin, when Claude is not there. */
+export function reviseOffline(id: string, said: string): Plan {
+  const p = termin(said, id);
+  return {
+    ...p,
+    run: () => {
+      const out = p.run();
+      const event = get().events.find((e) => e.id === id);
+      return event ? { ...out, result: { kind: 'event', event } } : out;
+    },
+  };
 }
 
 /** Claude heard a list where the rules heard a Termin: the items go on the list. */

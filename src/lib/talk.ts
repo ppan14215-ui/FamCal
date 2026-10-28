@@ -277,7 +277,7 @@ export function understand(input: string, events: CalEvent[], pending?: { title:
 
 /** What the "verstehen" function sends back (supabase/functions/verstehen). */
 export type Understood = {
-  kind: 'termin' | 'frage' | 'liste' | 'unklar'; title: string; sub: string | null; date: string | null; end_date: string | null;
+  kind: 'termin' | 'frage' | 'liste' | 'abgebrochen' | 'unklar'; title: string; sub: string | null; date: string | null; end_date: string | null;
   start: string | null; end: string | null; who: Who; place: string | null; repeat: string | null;
   bring: string[]; steps: string[]; question: string | null;
   /** Claude picks the icon from the names the app sends (Julian 27.10.: "Fußball" gets the ball). */

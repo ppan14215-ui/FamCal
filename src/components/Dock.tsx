@@ -21,7 +21,8 @@ import TalkBar from './TalkBar';
 import { setVeil } from './Veil';
 import { tokens, persons } from '../theme';
 import { useStore, actions, get } from '../state/store';
-import { plan, claudeSays, correction, replyPlan, listFromClaude, thinksOnline, Ctx, Plan, Result, SPOKEN, PLACEHOLDER } from '../lib/act';
+import { plan, claudeSays, correction, replyPlan, listFromClaude, thinksOnline, revisePlan, reviseOffline, draftOf, cutOff, Ctx, Plan, Result, Said, SPOKEN, PLACEHOLDER } from '../lib/act';
+import { canUnderstand, type Convo } from '../lib/verstehen';
 import { dayLabel, slotLine, findWhen } from '../lib/talk';
 import { locate, light, lightOneByOne } from '../lib/landing';
 import { setDockTop, setDockSpace } from '../lib/dockSpace';
@@ -47,6 +48,16 @@ const needsClaude = (said: string) => {
 /** Appears calmly, no spring or overshoot (Julian 28.10.: the bounce was too playful). */
 const CALM = FadeIn.duration(200);
 const TIMES = ['09:00', '10:30', '14:00', '16:00'];
+/** Answers to "Wann?" to tap; speaking works just as well. */
+const DAYS = () => [tx('Heute', 'Today'), tx('Morgen', 'Tomorrow'), tx('Übermorgen', 'Day after tomorrow'), tx('Nächste Woche', 'Next week')];
+
+function Picks({ options }: { options: [string, () => void][] }) {
+  return (
+    <View style={{ flexDirection: 'row', gap: 6, flexWrap: 'wrap', paddingLeft: 36 }}>
+      {options.map(([label, f]) => <Chip key={label} height={36} onPress={f}>{label}</Chip>)}
+    </View>
+  );
+}
 const shadow = Platform.select({
   web: { boxShadow: `0 0 0 1px ${tokens.hair}, 0 12px 32px rgba(22,35,42,.12)` } as any,
   default: { shadowColor: '#16232A', shadowOpacity: 0.12, shadowRadius: 16, shadowOffset: { width: 0, height: 10 }, elevation: 8, borderWidth: 1, borderColor: tokens.hair },
@@ -196,7 +207,54 @@ function AnswerCard({ r }: { r: Extract<Result, { kind: 'answer' }>['reply'] }) 
   );
 }
 
-type Turn = { id: number; said: string; result: Result };
+/** One exchange on the card: what was said, and what the app answered or asked. */
+type Line = { said: string; app?: string };
+
+/**
+ * The card as a short conversation (Julian 28.10.: "die Konversation müsste
+ * weitergehen"). Your sentences on the right, the app's question under them.
+ */
+function Thread({ lines, cut }: { lines: Line[]; cut?: boolean }) {
+  return (
+    <View style={{ gap: 10 }}>
+      {lines.map((l, i) => {
+        const open = cut && i === lines.length - 1;
+        return (
+          <View key={i} style={{ gap: 10 }}>
+            <View style={{ alignSelf: 'flex-end', maxWidth: '86%', backgroundColor: open ? tokens.chipBg : tokens.ink, borderRadius: 18, borderBottomRightRadius: 6, paddingHorizontal: 13, paddingVertical: 9 }}>
+              <Txt size={15} line={20} color={open ? tokens.sub : '#FFFFFF'}>{open ? `${l.said.replace(/[.…\s]+$/, '')} …` : l.said}</Txt>
+            </View>
+            {l.app ? <AppLine text={l.app} /> : null}
+          </View>
+        );
+      })}
+    </View>
+  );
+}
+
+function AppLine({ text, sub }: { text: string; sub?: string }) {
+  return (
+    <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 10 }}>
+      <View style={{ width: 26, height: 26, borderRadius: 999, backgroundColor: tokens.doneSoft, alignItems: 'center', justifyContent: 'center' }}>
+        <View style={{ width: 8, height: 8, borderRadius: 999, backgroundColor: tokens.done }} />
+      </View>
+      <View style={{ flex: 1, gap: 2, paddingTop: 2 }}>
+        <Txt size={16} line={21} weight={600}>{text}</Txt>
+        {sub ? <Txt size={13} line={18} color={tokens.sub}>{sub}</Txt> : null}
+      </View>
+    </View>
+  );
+}
+
+function Quiet({ label, onPress }: { label: string; onPress: () => void }) {
+  return (
+    <PressScale onPress={onPress} style={{ height: 42, borderRadius: 999, backgroundColor: tokens.chipBg, alignItems: 'center', justifyContent: 'center' }}>
+      <Txt size={15} weight={600}>{label}</Txt>
+    </PressScale>
+  );
+}
+
+type Turn = { id: number; said: string; result: Result; lines: Line[] };
 
 export default function Dock() {
   const where = useWhere();
@@ -206,6 +264,10 @@ export default function Dock() {
   const { width: W, height: H } = useWindowDimensions();
   const [turn, setTurn] = useState<Turn | null>(null);
   const [h, setH] = useState(0);
+  const scroller = useRef<ScrollView>(null);
+  /** Bumped to open the mic again after the card asks something, only if the last sentence was spoken. */
+  const [listenKey, setListenKey] = useState(0);
+  const spoke = useRef(false);
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
   /** Counts sentences, so a slow answer for an older one never lands. */
   const heard = useRef(0);
@@ -229,36 +291,93 @@ export default function Dock() {
   // Above a footer button (liste-neu) the fade starts at the field, so the button stays clear.
   const fadeFrom = kb || (where.tab && typing) ? 0 : where.tab ? navTop - 6 : where.lift ? bottom - 8 : 0;
   const kind = where.ctx.kind;
-  const pending = turn?.result.kind === 'answer' && turn.result.reply.kind === 'ask' ? { title: turn.result.reply.title, who: turn.result.reply.who } : null;
 
-  const hear = (said: string) => {
+  const ask = () => { if (spoke.current) setListenKey((k) => k + 1); };
+  /** Shows a card that waits for the next sentence; nothing changes in the calendar. */
+  const hold = (said: string, result: Result, lines: Line[]) => {
+    setVeil({ phase: 'off', onCancel: undefined });
+    haptics.select();
+    setTurn({ id: Date.now(), said, result, lines });
+    ask();
+  };
+
+  const hear = (raw: string, how?: { voice?: boolean }) => {
+    const open = turn;
     timers.current.forEach(clearTimeout);
     timers.current = [];
     light(null);
     setTurn(null);
+    spoke.current = !!how?.voice;
     const ctx = where.ctx;
     const n = ++heard.current;
+    // After a cut-off sentence the new words carry on the old one.
+    const said = open?.result.kind === 'cut' ? `${open.said.replace(/[.…\s]+$/, '')} ${raw}` : raw;
+    // A Termin deleted meanwhile has nothing left to change: the sentence starts fresh.
+    const gone = open?.result.kind === 'event' && !get().events.some((e) => e.id === (open.result as { event: CalEvent }).event.id);
+    const before = open && open.result.kind !== 'cut' && ctx.kind === 'kalender' && !gone ? open.lines : [];
+    const lines: Line[] = [...before, { said }];
+    if (cutOff(said)) return hold(said, { kind: 'cut' }, [{ said }]);
+
+    // A card is still open: the sentence answers or changes it (Julian 28.10.).
+    const r0 = open?.result;
+    const single = r0?.kind === 'event' ? r0.event : null;
+    const many = r0?.kind === 'done' && r0.events?.length ? r0 : null;
+    const follow = before.length > 0;
+    if (follow && canUnderstand()) {
+      const convo = { history: before, draft: single ? draftOf([single.id]) : many ? draftOf(many.events!) : undefined };
+      think(said, n, (r) => {
+        if (r?.kind === 'cut') return hold(said, { kind: 'cut' }, [{ said }]);
+        if (single && r?.kind === 'added' && !r.more?.length) {
+          const made = get().events.find((e) => e.id === single.id) ?? single;
+          const p = revisePlan(made, r);
+          if (p) return play(p, said, false, undefined, lines);
+          return hold(said, { kind: 'event', event: made }, [...before, { said, app: tx('Das steht schon so drin.', "That's already how it is.") }]);
+        }
+        if (single && (!r || r.kind === 'unclear')) return play(reviseOffline(single.id, said), said, false, undefined, lines);
+        // The new reading replaces what the card had made.
+        if (r?.kind === 'added' || r?.kind === 'liste') {
+          if (single) actions.removeEvent(single.id);
+          if (many) many.undo?.();
+        }
+        land(r, said, lines);
+      }, convo);
+      return;
+    }
+    if (follow && single) return play(reviseOffline(single.id, said), said, true, undefined, lines);
+
+    const pending = r0?.kind === 'answer' && r0.reply.kind === 'ask' ? { title: r0.reply.title, who: r0.reply.who } : null;
     if (thinksOnline(ctx, said, pending) && !needsClaude(said)) {
       // Short and plain ("Freitag 15 Uhr Friseur"): the rules land it at once, Claude corrects a few seconds later.
       const second = claudeSays(said);
-      play(plan(ctx, said, pending), said, true, (out) => second.then((r) => { if (heard.current === n) correct(out.result, r, said); }));
+      play(plan(ctx, said, pending), said, true, (out) => second.then((r) => { if (heard.current === n) correct(out.result, r, said); }), lines);
       return;
     }
     if (thinksOnline(ctx, said, pending)) {
-      // Claude first (Julian 28.10.: the rules' half guess must never land). The family sees
-      // "Ich verstehe …" for a second or two; only offline or after FIRST_MS do the rules answer.
-      const stop = () => { if (heard.current === n) heard.current++; setVeil({ phase: 'off', onCancel: undefined }); haptics.select(); };
-      setVeil({ phase: 'think', origin, target: null, lines: [tx('Ich verstehe …', 'Understanding …')], shown: 1, said, head: undefined, onCancel: stop });
-      const late = new Promise<null>((r) => setTimeout(() => r(null), FIRST_MS));
-      Promise.race([claudeSays(said), late]).then((r) => {
-        if (heard.current !== n) return;
-        if (r?.kind === 'liste') return play(listFromClaude(r), said, false);
-        if (r) return play(replyPlan(r), said, false);
-        play(plan(ctx, said, pending), said, false);
-      });
+      // Claude first (Julian 28.10.: the rules' half guess must never land).
+      think(said, n, (r) => land(r, said, lines, () => play(plan(ctx, said, pending), said, false, undefined, lines)));
       return;
     }
-    play(plan(ctx, said, pending), said, true);
+    play(plan(ctx, said, pending), said, true, undefined, lines);
+  };
+
+  /**
+   * "Ich verstehe …" while Claude reads, with Halt. Only offline or after
+   * FIRST_MS does the fallback answer (null).
+   */
+  const think = (said: string, n: number, then: (r: Said | null) => void, convo?: Convo) => {
+    const stop = () => { if (heard.current === n) heard.current++; setVeil({ phase: 'off', onCancel: undefined }); haptics.select(); };
+    setVeil({ phase: 'think', origin, target: null, lines: [tx('Ich verstehe …', 'Understanding …')], shown: 1, said, head: undefined, onCancel: stop });
+    const late = new Promise<null>((r) => setTimeout(() => r(null), FIRST_MS));
+    Promise.race([claudeSays(said, convo), late]).then((r) => { if (heard.current === n) then(r); });
+  };
+
+  /** Whatever Claude made of it lands; cut off and unclear only open the card. */
+  const land = (r: Said | null, said: string, lines: Line[], fallback?: () => void) => {
+    if (!r) return fallback ? fallback() : hold(said, { kind: 'unclear', text: tx('Das habe ich nicht verstanden.', "I didn't get that.") }, lines);
+    if (r.kind === 'cut') return hold(said, { kind: 'cut' }, [{ said }]);
+    if (r.kind === 'unclear') return hold(said, { kind: 'unclear', text: r.text }, lines);
+    if (r.kind === 'liste') return play(listFromClaude(r), said, false, undefined, lines);
+    play(replyPlan(r), said, false, undefined, lines);
   };
 
   const correct = (local: Result | undefined, r: Awaited<ReturnType<typeof claudeSays>>, said: string) => {
@@ -282,7 +401,7 @@ export default function Dock() {
     haptics.select();
   };
 
-  const play = (p: Plan, said: string, fresh: boolean, after?: (out: ReturnType<Plan['run']>) => void) => {
+  const play = (p: Plan, said: string, fresh: boolean, after?: (out: ReturnType<Plan['run']>) => void, lines: Line[] = [{ said }]) => {
     const n = heard.current;
     // "Halt, anders": nothing has happened yet, so stopping leaves everything as it was.
     const stop = () => {
@@ -307,7 +426,14 @@ export default function Dock() {
         const rows = out.lit?.length ? out.lit : out.land ? [out.land] : [];
         if (rows.length > 1) lightOneByOne(rows, (i) => (i === rows.length - 1 ? haptics.success() : haptics.select()));
         else { light(rows.length ? rows : null); haptics.success(); }
-        if (out.result) later(rows.length > 1 ? 260 * rows.length : 120, () => setTurn({ id: Date.now(), said, result: out.result! }));
+        if (out.result) later(rows.length > 1 ? 260 * rows.length : 120, () => {
+          const res = out.result!;
+          // A question goes under the sentence it answers, and the mic listens again for the answer.
+          const asks = res.kind === 'answer' && res.reply.kind === 'ask';
+          const all = asks ? [...lines.slice(0, -1), { ...lines[lines.length - 1], app: res.reply.text }] : lines;
+          setTurn({ id: Date.now(), said, result: res, lines: all });
+          if (asks) ask();
+        });
         after?.(out);
       };
       // The receipt covers the lower half, so whatever landed must sit above it.
@@ -327,6 +453,14 @@ export default function Dock() {
     light(null);
   };
   const ok = () => { haptics.select(); setTurn(null); light(null); };
+  /** "Kalender oder Liste?" answered by a tap: the same sentence, now where it belongs. */
+  const pickKind = (said: string, k: 'termin' | 'einkauf' | 'aufgaben') => {
+    haptics.select();
+    setTurn(null);
+    ++heard.current;
+    if (k === 'termin') return play(plan({ kind: 'kalender' }, said, null), said, true);
+    play(listFromClaude({ kind: 'liste', list: k, items: [said] }), said, true);
+  };
 
   return (
     <>
@@ -345,9 +479,32 @@ export default function Dock() {
     </View>
     <View pointerEvents="box-none" onLayout={(e) => setH(e.nativeEvent.layout.height)} style={{ position: 'absolute', left: 14, right: 14, bottom, gap: 10 }}>
       {turn ? (
-        <Animated.View key={turn.id} entering={FadeInDown.duration(220)} exiting={FadeOut.duration(150)} style={[{ maxHeight: 360, borderRadius: 26, backgroundColor: tokens.row }, shadow]}>
-          <ScrollView contentContainerStyle={{ padding: 18, gap: 12 }} showsVerticalScrollIndicator={false}>
-            {turn.result.kind === 'answer' ? (
+        <Animated.View key={turn.id} entering={FadeInDown.duration(220)} exiting={FadeOut.duration(150)} style={[{ maxHeight: 420, borderRadius: 26, backgroundColor: tokens.row }, shadow]}>
+          <ScrollView ref={scroller} onContentSizeChange={() => scroller.current?.scrollToEnd({ animated: false })} contentContainerStyle={{ padding: 18, gap: 12 }} showsVerticalScrollIndicator={false}>
+            {turn.result.kind === 'cut' ? (
+              <>
+                <Thread lines={turn.lines} cut />
+                <AppLine text={tx('Ich höre weiter zu.', "I'm still listening.")} sub={tx('Was du jetzt sagst, hänge ich an.', "What you say next, I'll add on.")} />
+                <Quiet label={tx('Abbrechen', 'Cancel')} onPress={ok} />
+              </>
+            ) : turn.result.kind === 'unclear' ? (
+              <>
+                <Thread lines={turn.lines} />
+                <AppLine text={turn.result.text} sub={tx('Tipp an, wohin es gehört, oder sag es nochmal anders.', 'Tap where it belongs, or say it another way.')} />
+                <Picks options={[
+                  [tx('Termin', 'Event'), () => pickKind(turn.said, 'termin')],
+                  [tx('Einkaufsliste', 'Shopping list'), () => pickKind(turn.said, 'einkauf')],
+                  [tx('Aufgabe', 'Task'), () => pickKind(turn.said, 'aufgaben')],
+                ]} />
+                <Quiet label={tx('Abbrechen', 'Cancel')} onPress={ok} />
+              </>
+            ) : turn.result.kind === 'answer' && turn.result.reply.kind === 'ask' ? (
+              <>
+                <Thread lines={turn.lines} />
+                <Picks options={DAYS().map((d) => [d, () => hear(d)] as [string, () => void])} />
+                <Quiet label={tx('Abbrechen', 'Cancel')} onPress={ok} />
+              </>
+            ) : turn.result.kind === 'answer' ? (
               <>
                 <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 10 }}>
                   <Txt size={14} line={20} color={tokens.sub} style={{ flex: 1 }}>{quote(turn.said)}</Txt>
@@ -357,10 +514,16 @@ export default function Dock() {
                 </View>
                 <AnswerCard r={turn.result.reply} />
               </>
-            ) : turn.result.kind === 'event' ? (
-              <EventCard e={turn.result.event} needsTime={turn.result.needsTime} onUndo={undo} onOk={ok} />
             ) : (
-              <DoneCard text={turn.result.text} sub={turn.result.sub} said={turn.said} onUndo={turn.result.undo ? undo : undefined} onOk={ok} />
+              <>
+                {/* After a follow-up the card shows the conversation that led here. */}
+                {turn.lines.length > 1 ? <Thread lines={turn.lines} /> : null}
+                {turn.result.kind === 'event' ? (
+                  <EventCard e={turn.result.event} needsTime={turn.result.needsTime} onUndo={undo} onOk={ok} />
+                ) : (
+                  <DoneCard text={turn.result.text} sub={turn.result.sub} said={turn.lines.length > 1 ? '' : turn.said} onUndo={turn.result.undo ? undo : undefined} onOk={ok} />
+                )}
+              </>
             )}
           </ScrollView>
         </Animated.View>
@@ -370,7 +533,8 @@ export default function Dock() {
         onSend={hear}
         onPlus={() => router.push('/neu')}
         spoken={SPOKEN[kind]}
-        placeholder={PLACEHOLDER[kind]}
+        listenKey={listenKey}
+        placeholder={turn?.result.kind === 'cut' ? tx('Sprich einfach weiter …', 'Just keep talking …') : turn && kind === 'kalender' ? tx('Antworten oder ergänzen …', 'Reply or add …') : PLACEHOLDER[kind]}
       />
     </View>
     </>
