@@ -374,6 +374,8 @@ export function plan(ctx: Ctx, said: string, pending: { title: string; who: Who 
     // A date in it on the task list still means a task, elsewhere a Termin.
     if (ctx.id !== 'aufgaben' && findWhen(said.split(/\s+/)) && !/einkauf|liste|shopping|list/i.test(said)) return kalender(said, pending);
     if (/^\s*(neue|eine neue)\s+liste|^\s*(a\s+)?new\s+list/i.test(said)) return listeNeu(said);
+    // Naming the shopping list wins over the list on screen (Julian 28.10.: "auf die Einkaufsliste" became a task).
+    if (ctx.id !== 'einkauf' && /einkauf|shopping|grocer/i.test(said)) return liste(said, 'einkauf');
     return liste(said, ctx.id);
   }
   if (ctx.kind === 'liste-neu') return listeNeu(/liste|list/i.test(said) ? said : `${tx('Neue Liste', 'New list')} ${said}`);
