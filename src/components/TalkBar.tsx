@@ -52,9 +52,11 @@ type Props = {
   /** What the mic says in the testlink, one after the other. */
   spoken: string[];
   placeholder?: string;
+  /** A new value above 0 starts listening as if the mic was tapped, e.g. after the card asks a follow-up. */
+  listenKey?: number;
 };
 
-export default function TalkBar({ onSend, onPlus, spoken, placeholder = tx('Sag oder schreib, was ansteht …', 'Say or type what\'s coming up …') }: Props) {
+export default function TalkBar({ onSend, onPlus, spoken, listenKey, placeholder = tx('Sag oder schreib, was ansteht …', 'Say or type what\'s coming up …') }: Props) {
   const [text, setText] = useState('');
   const [listening, setListening] = useState(false);
   const [demo, setDemo] = useState(false);
@@ -169,6 +171,12 @@ export default function TalkBar({ onSend, onPlus, spoken, placeholder = tx('Sag 
       fail();
     }
   };
+
+  // Keep the conversation going: the card asked something, so listen again.
+  useEffect(() => {
+    if (!listenKey || listening || text.trim()) return;
+    listen();
+  }, [listenKey]);
 
   const input = (
     <View style={[{ flexDirection: 'row', alignItems: 'flex-end', gap: 4, padding: 6, paddingLeft: 6, borderRadius: boxH > MIN_H ? 26 : 30, backgroundColor: tokens.row, borderWidth: 1, borderColor: listening ? tokens.ink : tokens.hair }, lift]}>
