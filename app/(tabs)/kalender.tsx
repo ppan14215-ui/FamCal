@@ -20,7 +20,7 @@ import WeekView from '../../src/screens/kalender/WeekView';
 import MonthView, { monthTitle, MonthArrows } from '../../src/screens/kalender/MonthView';
 import YearView from '../../src/screens/kalender/YearView';
 import PressScale from '../../src/components/ui/PressScale';
-import { TODAY, WD_LONG, weekday, dayNum, MONTHS, monthIdx } from '../../src/lib/dates';
+import { TODAY, WD_LONG, weekday, dayNum, MONTHS, monthIdx, addDays, monday } from '../../src/lib/dates';
 import { haptics } from '../../src/lib/haptics';
 import { tx, EN } from '../../src/i18n/lang';
 
@@ -53,7 +53,8 @@ export default function Kalender() {
   const day = useStore((s) => s.calDay);
   const kid = useStore((s) => s.kid);
   const [open, setOpen] = useState(false);
-  const { month, year } = monthTitle(day);
+  // A week across two months is named after its Thursday, like calendar weeks (Julian 28.10.: Oct 26 to Nov 1 said November).
+  const { month, year } = monthTitle(view === 'woche' ? addDays(monday(day), 3) : day);
   const insets = useSafeAreaInsets();
   const toggle = () => { haptics.select(); setOpen((o) => !o); };
   const choose = (v: CalView) => { actions.setCalView(v); if (v === 'heute') actions.setCalDay(TODAY); setOpen(false); };
