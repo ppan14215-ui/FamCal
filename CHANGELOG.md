@@ -4,6 +4,10 @@ Alle sichtbaren Änderungen an FamCal. Neueste oben. Agenten und Menschen: Ände
 
 ## Unreleased
 
+### Das Mikro lässt dich ausreden (28.10.)
+
+- Kurze Pausen beenden die Aufnahme nicht mehr. Das Mikro hört zu, bis du etwa zweieinhalb Sekunden still bist oder nochmal auf den Kreis tippst. Den Text siehst du live mitlaufen.
+
 ### Neue Liste: klare Wahl statt Vorlagen Wirrwarr (28.10.)
 
 - Oben ein Schalter: Zum Abhaken oder Sammlung. Er stellt sich nach dem Namen selbst ein, „Filme“ wird Sammlung.

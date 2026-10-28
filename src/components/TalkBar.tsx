@@ -25,6 +25,10 @@ import { speechLocale } from '../lib/speechLang';
 // Phones and tablets: Enter on the screen keyboard adds a line.
 const TOUCH = Platform.OS !== 'web' || (typeof window !== 'undefined' && !!window.matchMedia?.('(pointer: coarse)').matches);
 
+/** Quiet this long after the last word ends listening; a second tap ends it at once. */
+const SILENCE_MS = 2500;
+const FIRST_WORD_MS = 8000;
+
 const LINE = 22;
 const PAD = 11;
 const MIN_H = LINE + PAD * 2;
@@ -140,14 +144,30 @@ export default function TalkBar({ onSend, onPlus, suggestions = [], spoken, plac
       const { ExpoSpeechRecognitionModule: SR } = await import('expo-speech-recognition');
       const ok = await SR.requestPermissionsAsync();
       if (!ok.granted || !SR.isRecognitionAvailable()) return fail();
-      let heard = '';
+      // Let the person finish (Julian 28.10.: "wartet nicht lange genug"): listen
+      // on through short pauses and stop only after a longer silence or a second tap.
+      let done = '';
+      let part = '';
+      let quiet: ReturnType<typeof setTimeout> | undefined;
+      const heard = () => `${done} ${part}`.replace(/\s+/g, ' ').trim();
+      const hush = (ms: number) => { clearTimeout(quiet); quiet = setTimeout(() => SR.stop(), ms); };
       const subs = [
-        SR.addListener('result', (e) => { heard = e.results[0]?.transcript ?? heard; setText(heard); }),
-        SR.addListener('error', () => { subs.forEach((x) => x.remove()); if (!heard) fail(); }),
-        SR.addListener('end', () => { subs.forEach((x) => x.remove()); setListening(false); if (heard) send(heard); }),
+        SR.addListener('result', (e) => {
+          const t = e.results[0]?.transcript ?? '';
+          if (e.isFinal) { done = `${done} ${t}`; part = ''; } else part = t;
+          setText(heard());
+          hush(SILENCE_MS);
+        }),
+        SR.addListener('error', () => { clearTimeout(quiet); subs.forEach((x) => x.remove()); if (!heard()) fail(); }),
+        SR.addListener('end', () => { clearTimeout(quiet); subs.forEach((x) => x.remove()); setListening(false); const h = heard(); if (h) send(h); }),
       ];
       stopNative.current = () => SR.stop();
-      SR.start({ lang: speechLocale(), interimResults: true, continuous: false, addsPunctuation: true });
+      // Nothing at all after a while: stop instead of listening forever.
+      hush(FIRST_WORD_MS);
+      SR.start({
+        lang: speechLocale(), interimResults: true, continuous: true, addsPunctuation: true,
+        androidIntentOptions: { EXTRA_SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS: SILENCE_MS, EXTRA_SPEECH_INPUT_POSSIBLY_COMPLETE_SILENCE_LENGTH_MILLIS: SILENCE_MS },
+      });
     } catch {
       fail();
     }
