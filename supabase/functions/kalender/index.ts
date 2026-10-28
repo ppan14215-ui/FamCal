@@ -34,7 +34,7 @@ function rrule(text: string | null, until: string | null): string | null {
   return null;
 }
 
-const esc = (s: string) => s.replace(/\\/g, '\\\\').replace(/;/g, '\;').replace(/,/g, '\\,').replace(/\r?\n/g, '\\n');
+const esc = (s: string) => s.replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\r?\n/g, '\\n');
 /** Lines longer than 75 octets are folded, as RFC 5545 asks. */
 function fold(line: string): string {
   const out: string[] = [];
