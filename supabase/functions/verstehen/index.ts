@@ -39,17 +39,18 @@ const Termin = z.object({
   items: z.array(z.string()),
   // Julian 28.10.: one sentence can hold several Termine ("ab heute Urlaub bis Sonntag, danach Arbeit 8 bis 17 Uhr ab Dienstag").
   work: z.boolean(),
+  // Plain strings, "" for none: the API allows only a few nullable fields per schema (it refused 19 on 28.10.).
   more: z.array(z.object({
     title: z.string(),
-    sub: z.string().nullable(),
+    sub: z.string(),
     date: z.string(),
-    end_date: z.string().nullable(),
-    start: z.string().nullable(),
-    end: z.string().nullable(),
-    who: z.enum(['J', 'T', 'both']).nullable(),
-    place: z.string().nullable(),
-    repeat: z.string().nullable(),
-    icon: z.string().nullable(),
+    end_date: z.string(),
+    start: z.string(),
+    end: z.string(),
+    who: z.enum(['J', 'T', 'both', 'none']),
+    place: z.string(),
+    repeat: z.string(),
+    icon: z.string(),
     work: z.boolean(),
   })),
 });
@@ -71,7 +72,7 @@ Regeln:
 - Ist der Satz eine Frage an den Kalender ("Was steht morgen an?", "What's on tomorrow?"), setze kind auf frage und lasse die Felder leer.
 - Gehört der Satz auf eine Liste statt in den Kalender ("Nudeln auf die Einkaufsliste", "wir brauchen Windeln", "put pasta on the shopping list", "ich muss noch die Steuer machen"), setze kind auf liste, list auf einkauf (Dinge zum Kaufen) oder aufgaben (Dinge zu erledigen) und items auf die einzelnen Dinge, kurz und groß geschrieben ("Nudeln", "2 Hafermilch"). Ein Satz mit Uhrzeit oder festem Tag ist ein Termin, auch wenn "kaufen" vorkommt.
 - icon: wähle für einen Termin den passendsten Namen aus der Liste unten ("Fußball mit Freunden" ergibt fussball, "Friseur" passt zu keinem, dann kalender). Nur Namen aus der Liste.
-- Mehrere Termine in einem Satz ("ab heute Urlaub bis Sonntag, danach wieder Arbeit von 8 bis 17 Uhr ab Dienstag", "Montag Zahnarzt und Mittwoch Elternabend"): der erste steht in den Hauptfeldern, alle weiteren in more, in zeitlicher Reihenfolge. steps beschreibt alle zusammen in höchstens vier kurzen Sätzen. Sonst bleibt more leer.
+- Mehrere Termine in einem Satz ("ab heute Urlaub bis Sonntag, danach wieder Arbeit von 8 bis 17 Uhr ab Dienstag", "Montag Zahnarzt und Mittwoch Elternabend"): der erste steht in den Hauptfeldern, alle weiteren in more, in zeitlicher Reihenfolge. In more steht "" für leer und who "none" für niemanden. steps beschreibt alle zusammen in höchstens vier kurzen Sätzen. Sonst bleibt more leer.
 - Urlaub, Reise oder Krankheit über mehrere Tage ist ein ganztägiger Termin mit date und end_date.
 - work ist true für Arbeitszeiten ("Arbeit", "Schicht", "im Büro", "work"). Regelmäßige Arbeitszeiten ohne genannte Tage gelten Montag bis Freitag: lege dann für jeden Arbeitstag ab dem genannten Start bis einschließlich Freitag der Woche danach einen eigenen Eintrag an (höchstens 12), mit repeat "Montag bis Freitag" ("Mondays to Fridays"). Feiertage und Urlaubstage aus demselben Satz lässt du aus.
 - Ist es nichts davon, setze kind auf unklar.`;

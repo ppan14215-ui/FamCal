@@ -287,7 +287,7 @@ export type Understood = {
   /** Working hours: shown as a striped block, not in the lists (Julian 28.10.). */
   work?: boolean;
   /** Further Termine from the same sentence ("Urlaub bis Sonntag, danach Arbeit ab Dienstag"). */
-  more?: { title: string; sub: string | null; date: string; end_date: string | null; start: string | null; end: string | null; who: Who; place: string | null; repeat: string | null; icon?: string | null; work?: boolean }[];
+  more?: { title: string; sub: string | null; date: string; end_date: string | null; start: string | null; end: string | null; who: Who | 'none'; place: string | null; repeat: string | null; icon?: string | null; work?: boolean }[];
 };
 
 /** Icons a Termin can carry: the whole ones, not their animated parts. */
