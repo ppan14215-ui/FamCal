@@ -1,5 +1,5 @@
 /** Einstellungen: family code or address, calendar sync, hints, language, export, Plus, sign out. */
-import React, { useState } from 'react';
+import React from 'react';
 import { View } from 'react-native';
 import { router } from 'expo-router';
 import * as Clipboard from 'expo-clipboard';
@@ -13,8 +13,7 @@ import { actions, toast, useStore } from '../src/state/store';
 import type { ClayName } from '../src/lib/clayIcons';
 import { LIVE } from '../src/lib/live';
 import { getFamily, stopSync } from '../src/lib/sync';
-import { signOut, canTestSignIn, useAuth } from '../src/lib/auth';
-import { runQualityTest } from '../src/lib/qualitaet';
+import { signOut } from '../src/lib/auth';
 import { tx } from '../src/i18n/lang';
 import { speechLang, setSpeechLang } from '../src/lib/speechLang';
 import * as Updates from 'expo-updates';
@@ -92,7 +91,6 @@ export default function Einstellungen() {
       </Group>
       <Txt size={12.5} line={17} color={tokens.mute} center>Prototyp ohne Login und ohne echte KI. Alles bleibt auf diesem Gerät und ist nach dem Neuladen wieder wie am Anfang.</Txt>
       </>}
-      <QualityTest />
       <Txt size={12} line={16} color={tokens.mute} center selectable>{versionLine()}</Txt>
     </Screen>
   );
@@ -108,31 +106,4 @@ function versionLine(): string {
   const when = Updates.createdAt ? Updates.createdAt.toLocaleString(tx('de-DE', 'en-US'), { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '';
   const update = Updates.isEmbeddedLaunch ? tx('ohne Update', 'no update yet') : `Update ${Updates.updateId.slice(0, 8)}`;
   return `Build ${Updates.runtimeVersion.slice(0, 8)} · ${update}${when ? ` · ${when}` : ''}${Updates.channel ? ` · ${Updates.channel}` : ''}`;
-}
-
-/**
- * Qualitätstest, nur in Testbuilds mit Testkonto (Julian 28.10.): 30 feste
- * Sätze gehen an Claude, die Zeile zeigt, wie viele richtig herauskommen.
- */
-function QualityTest() {
-  const { session } = useAuth();
-  const [state, setState] = useState<{ busy: boolean; done: number; ok: number | null; total: number }>({ busy: false, done: 0, ok: null, total: 0 });
-  if (!canTestSignIn || !session) return null;
-  const s = state.busy
-    ? `Läuft … ${state.done} von ${state.total}`
-    : state.ok !== null ? `${state.ok} von ${state.total} richtig · nochmal antippen` : '30 Sätze an Claude, etwa 3 Cent';
-  return (
-    <Group>
-      <SRow
-        icon="checkliste"
-        t="Qualitätstest"
-        s={s}
-        onPress={state.busy ? undefined : async () => {
-          setState({ busy: true, done: 0, ok: null, total: 30 });
-          const { results } = await runQualityTest((done, total) => setState((x) => ({ ...x, done, total })));
-          setState({ busy: false, done: results.length, ok: results.filter((r) => r.ok).length, total: results.length });
-        }}
-      />
-    </Group>
-  );
 }
