@@ -92,6 +92,24 @@ export default function WeekView() {
   const gestures = Gesture.Simultaneous(pan, pinch);
   const slide = useAnimatedStyle(() => ({ opacity: op.value, transform: [{ translateX: x.value }] }));
   const end = addDays(start, n - 1);
+  // All-day and multi-day Termine run as one bar across their days, like
+  // Outlook (Julian 28.10.), clipped to the shown days and stacked in rows.
+  const isSpan = (e: (typeof events)[number]) => !e.work && (e.allDay || (!!e.endDate && e.endDate > e.date));
+  const spans = useMemo(() => {
+    const rows: string[][] = [];
+    return events
+      .filter((e) => isSpan(e) && e.date <= end && (e.endDate ?? e.date) >= start)
+      .sort((a, b) => a.date.localeCompare(b.date) || (b.endDate ?? b.date).localeCompare(a.endDate ?? a.date))
+      .map((e) => {
+        const from = days.indexOf(e.date < start ? start : e.date);
+        const to = days.indexOf((e.endDate ?? e.date) > end ? end : (e.endDate ?? e.date));
+        let row = rows.findIndex((r) => !r.slice(from, to + 1).some(Boolean));
+        if (row < 0) { row = rows.length; rows.push(Array(n).fill('')); }
+        for (let i = from; i <= to; i++) rows[row][i] = e.id;
+        return { e, from, to, row, cutL: e.date < start, cutR: (e.endDate ?? e.date) > end };
+      });
+  }, [events, start, end, n]);
+  const laneRows = spans.reduce((m, x) => Math.max(m, x.row + 1), 0);
   const label = `${dmShort(start)} ${tx('bis', 'to')} ${dmShort(end)}`;
   // Times outside the grid sit at its edge instead of disappearing.
   const top = (t: string) => ((Math.max(FROM * 60, Math.min(TO * 60 - 30, minutes(t))) - FROM * 60) / 60) * HP;
@@ -125,6 +143,24 @@ export default function WeekView() {
             );
           })}
         </View>
+        {laneRows ? (
+          <View style={{ marginLeft: 22, height: laneRows * 24 - 2 }}>
+            {spans.map(({ e, from, to, row, cutL, cutR }) => (
+              <PressScale
+                key={e.id}
+                onPress={() => router.push(`/termin/${e.id}`)}
+                style={{
+                  position: 'absolute', top: row * 24, height: 22, left: `${(from / n) * 100}%`, width: `${((to - from + 1) / n) * 100}%`,
+                  paddingHorizontal: 2,
+                }}
+              >
+                <View style={{ flex: 1, justifyContent: 'center', paddingHorizontal: 6, backgroundColor: tint(e.icon), borderTopLeftRadius: cutL ? 0 : 7, borderBottomLeftRadius: cutL ? 0 : 7, borderTopRightRadius: cutR ? 0 : 7, borderBottomRightRadius: cutR ? 0 : 7 }}>
+                  <Txt size={11} line={14} weight={700} numberOfLines={1}>{e.title}</Txt>
+                </View>
+              </PressScale>
+            ))}
+          </View>
+        ) : null}
         <View style={{ paddingLeft: 22, height: hours.length * HP }}>
           {hours.map((h, i) => (
             <View key={h} style={{ position: 'absolute', left: 0, right: 0, top: i * HP }}>
@@ -134,7 +170,7 @@ export default function WeekView() {
           ))}
           <View style={{ flex: 1, flexDirection: 'row', gap: 3 }}>
             {days.map((d) => {
-              const list = events.filter((e) => e.date === d);
+              const list = events.filter((e) => e.date === d && !isSpan(e));
               return (
                 <View key={d} style={{ flex: 1, position: 'relative' }}>
                   {list.filter((e) => e.work).map((e) => (
