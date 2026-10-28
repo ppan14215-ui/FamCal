@@ -57,7 +57,7 @@ const ICONS: [RegExp, ClayName][] = [
   [/spielenachmittag|spieleabend|brettspiel|board ?game|game night/, 'gesellschaftsspiel'],
   [/krabbel|pekip|playgroup|babygruppe|baby ?group/, 'fussabdruck'],
   [/bibliothek|bücherei|library/, 'bibliothek'],
-  [/vorlesen|lesen|buch|book|reading/, 'buch'],
+  [/vorlesen|lesen|buch|bücher|book|reading/, 'buch'],
   [/musik|konzert|klavier|gitarre|geige|flöte|chor|music|concert|piano|guitar|violin|choir/, 'musik'],
   [/einladung|party|feier|fest\b|invitation|celebration/, 'einladung'],
   [/geschenk|present|gift/, 'geschenk'],

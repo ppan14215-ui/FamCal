@@ -4,6 +4,13 @@ Alle sichtbaren Änderungen an FamCal. Neueste oben. Agenten und Menschen: Ände
 
 ## Unreleased
 
+### Neue Liste: klare Wahl statt Vorlagen Wirrwarr (28.10.)
+
+- Oben ein Schalter: Zum Abhaken oder Sammlung. Er stellt sich nach dem Namen selbst ein, „Filme“ wird Sammlung.
+- Bei einer Sammlung siehst du sofort, wie ein Eintrag aussieht, und schaltest Bausteine wie Cover, Bewertung oder Preis an und aus.
+- Passt eine Vorlage zum Namen, etwa „Packliste Ostsee“, fragt die App, ob sie sie übernehmen soll. Die übrigen Vorlagen stehen klein darunter.
+- Das Symbol bleibt leer, bis ein Name da ist. Ein altes Symbol aus einem Termin rutscht nicht mehr hinein.
+
 ### Listen zeigen, was sie brauchen (27.10.)
 
 - Filme und Bücher bekommen Cover, Jahr und Autor oder Regie, fünf Sterne zum Bewerten und „Gesehen“ oder „Gelesen“. Gesehenes wird blasser, bleibt aber an seinem Platz.
