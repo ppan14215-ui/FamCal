@@ -77,7 +77,7 @@ const SUBJECTS = () => [persons.J.name, persons.T.name, 'ich', 'wir', 'du', 'bei
 /** "Tom bringt Ben zur U6" → U6, sub "Tom bringt Ben". "Julia hat Zahnarzt" → Zahnarzt. */
 function titleOf(rest: string): { title: string; sub?: string } {
   // "Erstelle mir einen Termin für …", "Trag ein: …" say only that something should be entered.
-  rest = rest.replace(/^\s*(bitte\s+)?(erstell\w*|mach\w*|trag\w*|leg\w*|notier\w*)\s+(mir|uns)?\s*(bitte\s+)?(einen|ein|eine)?\s*(termin|eintrag)?\s*(ein|an)?\s*(für)?\s*:?\s*/i, '')
+  rest = rest.replace(/^\s*(bitte\s+)?(erstell\w*|stell\w*|mach\w*|trag\w*|leg\w*|notier\w*|plan\w*|setz\w*|merk\w*)\s+(mir|uns|dir)?\s*(bitte\s+)?(einen|ein|eine)?\s*(termin|eintrag)?\s*(ein|an)?\s*(für)?\s*:?\s*/i, '')
     .replace(/^\s*(please\s+)?(create|make|add|put( in)?|schedule|book|set up|note)\s+(me\s+|us\s+)?(an?\s+)?(event|appointment|entry)?\s*(for)?\s*:?\s*/i, '');
   const text = rest.replace(/\s+/g, ' ').replace(/\s+([,.])/g, '$1').replace(/^[,.\s]+|[,.\s]+$/g, '');
   const to = text.match(/^(.*?)\s*\b(zur|zum|beim|in die|ins|in den|bei (?:meinem|meiner|unserem|unserer|dem|der)|to the|to|at the|for (?:the|a|an))\s+([^,]+)(.*)$/i);
