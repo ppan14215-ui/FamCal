@@ -20,7 +20,7 @@ import { tokens, motion, easing } from '../theme';
 import { useStore, dismissToast } from '../state/store';
 import type { ToastKind } from '../state/types';
 import { haptics } from '../lib/haptics';
-import { useDockSpace } from '../lib/dockSpace';
+import { useDockTop } from '../lib/dockSpace';
 
 const LOOK: Record<ToastKind, { icon: LineName; tile: string; ink: string }> = {
   done: { icon: 'check', tile: tokens.doneSoft, ink: tokens.done },
@@ -38,7 +38,7 @@ export default function ToastHost() {
   const toast = useStore((s) => s.toast);
   const insets = useSafeAreaInsets();
   // Just above the talk dock, never over the field.
-  const dock = useDockSpace();
+  const dock = useDockTop();
   const { t } = useTranslation();
   const left = useSharedValue(1);
   const drag = useSharedValue(0);

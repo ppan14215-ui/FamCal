@@ -24,7 +24,7 @@ import { useStore, actions, get } from '../state/store';
 import { plan, claudeSays, correction, replyPlan, listFromClaude, thinksOnline, Ctx, Plan, Result, SPOKEN, HINTS, PLACEHOLDER } from '../lib/act';
 import { dayLabel, slotLine } from '../lib/talk';
 import { locate, light, lightOneByOne } from '../lib/landing';
-import { setDockSpace } from '../lib/dockSpace';
+import { setDockTop, setDockSpace } from '../lib/dockSpace';
 import { useKeyboardInset, useTyping } from '../lib/keyboard';
 import { hm } from '../lib/dates';
 import { Tile } from './ui/Clay';
@@ -206,11 +206,13 @@ export default function Dock() {
   useEffect(() => { setDockSpace(where ? h + (where.tab ? 0 : 8) : 0); }, [h, !!where]);
   useEffect(() => () => timers.current.forEach(clearTimeout), []);
 
-  if (!where) return null;
   // Examples only while the calendar is still empty; after that they are clutter (Julian 27.10.).
   const navTop = Math.max(insets.bottom, 12) + 10 + 58 + 10;
   // Typing hides the tabs, so the field drops into their place right above the keyboard.
-  const bottom = kb > 0 ? kb + 8 : where.tab && !typing ? navTop : insets.bottom + 12 + (where.tab ? 0 : where.lift);
+  const bottom = !where ? 0 : kb > 0 ? kb + 8 : where.tab && !typing ? navTop : insets.bottom + 12 + (where.tab ? 0 : where.lift);
+  useEffect(() => { setDockTop(where ? bottom + h : 0); }, [bottom, h, !!where]);
+
+  if (!where) return null;
   const origin = { x: W - 14 - 6 - 24, y: H - bottom - 6 - 24 };
   // On tabs the nav stays on top of the fade, it starts just above it.
   // Above a footer button (liste-neu) the fade starts at the field, so the button stays clear.
