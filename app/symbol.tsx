@@ -42,7 +42,7 @@ export default function Symbol() {
           onChangeText={setQ}
           placeholder={tx('Suchen, z. B. Fußball', 'Search, e.g. soccer')}
           placeholderTextColor={tokens.mute}
-          selectionColor={tokens.ink}
+          selectionColor={tokens.select} cursorColor={tokens.ink}
           style={[{ flex: 1, fontFamily: fonts[400], fontSize: 16, color: tokens.ink }, Platform.OS === 'web' ? ({ outlineStyle: 'none' } as any) : null]}
         />
       </View>

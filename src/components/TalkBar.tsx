@@ -178,7 +178,7 @@ export default function TalkBar({ onSend, onPlus, suggestions = [], spoken, plac
         editable={!demo}
         placeholder={listening ? tx('Ich höre zu …', 'Listening …') : placeholder}
         placeholderTextColor={tokens.mute}
-        selectionColor={tokens.ink}
+        selectionColor={tokens.select} cursorColor={tokens.ink}
         returnKeyType={TOUCH ? 'default' : 'send'}
         accessibilityLabel={tx('Was steht an?', 'What\'s on?')}
         style={[{ flex: 1, minWidth: 0, height: boxH, marginBottom: 2, fontFamily: fonts[400], fontSize: 16.5, lineHeight: LINE, color: tokens.ink, paddingVertical: PAD, paddingHorizontal: 8, textAlignVertical: 'top', includeFontPadding: false }, Platform.OS === 'web' ? ({ outlineStyle: 'none' } as any) : null]}

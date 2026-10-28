@@ -77,7 +77,7 @@ export default function ItemRow({ title, editText, meta, metaColor, done, who, i
             onBlur={commit}
             onSubmitEditing={commit}
             returnKeyType="done"
-            selectionColor={tokens.ink}
+            selectionColor={tokens.select} cursorColor={tokens.ink}
             style={[{ flex: 1, minWidth: 0, fontFamily: fonts[500], fontSize: 17, color: tokens.ink, paddingVertical: 2 }, Platform.OS === 'web' ? ({ outlineStyle: 'none' } as any) : null]}
           />
         ) : (

@@ -30,7 +30,7 @@ export default function AddInline({ placeholder, onAdd, mic, onPress }: { placeh
           returnKeyType="done"
           placeholder={placeholder}
           placeholderTextColor={tokens.mute}
-          selectionColor={tokens.ink}
+          selectionColor={tokens.select} cursorColor={tokens.ink}
           style={[{ flex: 1, fontFamily: fonts[500], fontSize: 16, color: tokens.ink, paddingVertical: 12 }, Platform.OS === 'web' ? ({ outlineStyle: 'none' } as any) : null]}
         />
       ) : (

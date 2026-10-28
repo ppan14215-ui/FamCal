@@ -9,7 +9,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { View, ScrollView, Platform, useWindowDimensions } from 'react-native';
 import { router, usePathname } from 'expo-router';
-import Animated, { FadeIn, FadeInDown, FadeOut, ZoomIn } from 'react-native-reanimated';
+import Animated, { FadeIn, FadeInDown, FadeOut } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Defs, LinearGradient, Stop, Rect } from 'react-native-svg';
 import { Chip } from './ui/kit';
@@ -34,6 +34,8 @@ import { tx, quote } from '../i18n/lang';
 import { onToday } from '../screens/kalender/TodayView';
 
 const STEP_MS = 850;
+/** Appears calmly, no spring or overshoot (Julian 28.10.: the bounce was too playful). */
+const CALM = FadeIn.duration(200);
 const TIMES = ['09:00', '10:30', '14:00', '16:00'];
 const shadow = Platform.select({
   web: { boxShadow: `0 0 0 1px ${tokens.hair}, 0 12px 32px rgba(22,35,42,.12)` } as any,
@@ -70,7 +72,7 @@ function Decide({ onUndo, onOk }: { onUndo: () => void; onOk: () => void }) {
 /** The tick that opens every receipt. */
 function Tick() {
   return (
-    <Animated.View entering={ZoomIn.springify().damping(12)} style={{ width: 34, height: 34, borderRadius: 999, backgroundColor: tokens.done, alignItems: 'center', justifyContent: 'center' }}>
+    <Animated.View entering={CALM} style={{ width: 34, height: 34, borderRadius: 999, backgroundColor: tokens.done, alignItems: 'center', justifyContent: 'center' }}>
       <LineIcon name="check" size={18} color="#FFFFFF" stroke={2.8} />
     </Animated.View>
   );
@@ -114,7 +116,7 @@ function EventCard({ e, needsTime, onUndo, onOk }: { e: CalEvent; needsTime?: bo
   return (
     <Animated.View entering={FadeIn.duration(220)} style={{ gap: 14 }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-        <Animated.View entering={ZoomIn.springify().damping(12)}><Tile name={live.icon} size={52} radius={16} /></Animated.View>
+        <Animated.View entering={CALM}><Tile name={live.icon} size={52} radius={16} /></Animated.View>
         <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
             <LineIcon name="check" size={13} color={tokens.done} stroke={2.8} />

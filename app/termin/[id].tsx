@@ -195,7 +195,7 @@ function EditText({ value, size, weight, color = tokens.ink, placeholder, autoFo
       blurOnSubmit
       placeholder={placeholder}
       placeholderTextColor={tokens.mute}
-      selectionColor={tokens.ink}
+      selectionColor={tokens.select} cursorColor={tokens.ink}
       style={[{ fontFamily: fonts[weight], fontSize: size, lineHeight: Math.round(size * 1.2), letterSpacing: size > 20 ? -0.8 : 0, color, padding: 0 }, noOutline]}
     />
   );

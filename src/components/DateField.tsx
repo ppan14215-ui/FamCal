@@ -104,7 +104,7 @@ export default function DateField({ label, value, onChange, past, right, extra }
               keyboardType={Platform.OS === 'ios' ? 'numbers-and-punctuation' : 'default'}
               placeholder={tx('TT.MM.JJJJ', 'DD.MM.YYYY')}
               placeholderTextColor={tokens.mute}
-              selectionColor={tokens.ink}
+              selectionColor={tokens.select} cursorColor={tokens.ink}
               returnKeyType="done"
               onSubmitEditing={() => { if (parsed && !wrongSide) haptics.commit(); close(); }}
               style={[{ fontFamily: fonts[600], fontSize: 18, color: tokens.ink, padding: 0 }, noOutline]}

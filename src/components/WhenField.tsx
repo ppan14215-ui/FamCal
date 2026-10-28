@@ -163,7 +163,7 @@ export default function WhenField({ value, onChange, kind = 'termin', past, icon
             selectTextOnFocus
             placeholder={kind === 'tag' ? tx('Zum Beispiel 14.9.2026', 'For example Sep 14 2026') : placeholder}
             placeholderTextColor={tokens.mute}
-            selectionColor={tokens.ink}
+            selectionColor={tokens.select} cursorColor={tokens.ink}
             returnKeyType="done"
             onSubmitEditing={() => { if (parsed && !tooLate) haptics.commit(); close(); }}
             style={[{ fontFamily: fonts[600], fontSize: label ? 18 : 16, color: tokens.ink, padding: 0 }, noOutline]}

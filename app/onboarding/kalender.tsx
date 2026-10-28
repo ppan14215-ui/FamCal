@@ -91,7 +91,7 @@ function ProviderCard({ p, conn }: { p: (typeof PROVIDERS)[number]; conn?: { acc
               keyboardType="email-address"
               placeholder={p.hint}
               placeholderTextColor={tokens.mute}
-              selectionColor={tokens.ink}
+              selectionColor={tokens.select} cursorColor={tokens.ink}
               onSubmitEditing={login}
               style={[{ fontFamily: fonts[600], fontSize: 17, color: tokens.ink, padding: 0 }, Platform.OS === 'web' ? ({ outlineStyle: 'none' } as any) : null]}
             />

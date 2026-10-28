@@ -147,7 +147,7 @@ export default function ListeNeu() {
             onChangeText={setName}
             placeholder={tx('Wofür ist die Liste?', 'What is the list for?')}
             placeholderTextColor={tokens.mute}
-            selectionColor={tokens.ink}
+            selectionColor={tokens.select} cursorColor={tokens.ink}
             style={[{ fontFamily: fonts[700], fontSize: 24, letterSpacing: -0.5, color: tokens.ink, padding: 0 }, Platform.OS === 'web' ? ({ outlineStyle: 'none' } as any) : null]}
           />
         </View>

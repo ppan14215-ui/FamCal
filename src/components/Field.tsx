@@ -16,7 +16,7 @@ export function Field({ label, value, onChangeText, right, placeholder }: { labe
           onChangeText={onChangeText}
           placeholder={placeholder}
           placeholderTextColor={tokens.mute}
-          selectionColor={tokens.ink}
+          selectionColor={tokens.select} cursorColor={tokens.ink}
           style={[{ fontFamily: fonts[600], fontSize: 18, color: tokens.ink, padding: 0 }, noOutline]}
         />
       </View>
@@ -34,7 +34,7 @@ export function TitleInput({ value, onChangeText, sub, placeholder }: { value: s
         onChangeText={onChangeText}
         placeholder={placeholder}
         placeholderTextColor={tokens.mute}
-        selectionColor={tokens.ink}
+        selectionColor={tokens.select} cursorColor={tokens.ink}
         style={[{ fontFamily: fonts[700], fontSize: 30, letterSpacing: -0.9, color: tokens.ink, padding: 0 }, noOutline]}
       />
       {sub ? <Txt size={14} color={tokens.sub}>{sub}</Txt> : null}
@@ -50,7 +50,7 @@ export function TextArea({ label, value, onChangeText }: { label: string; value:
         multiline
         value={value}
         onChangeText={onChangeText}
-        selectionColor={tokens.ink}
+        selectionColor={tokens.select} cursorColor={tokens.ink}
         style={[{ fontFamily: fonts[400], fontSize: 16, lineHeight: 23, color: tokens.ink, padding: 0, minHeight: 69, textAlignVertical: 'top' }, noOutline]}
       />
     </View>

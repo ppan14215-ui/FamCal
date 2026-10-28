@@ -110,7 +110,7 @@ export default function Chat() {
             onSubmitEditing={send}
             placeholder="Frag oder sag, was ansteht …"
             placeholderTextColor={tokens.mute}
-            selectionColor={tokens.ink}
+            selectionColor={tokens.select} cursorColor={tokens.ink}
             returnKeyType="send"
             style={[{ flex: 1, fontFamily: fonts[400], fontSize: 15.5, color: tokens.ink, paddingVertical: 8 }, Platform.OS === 'web' ? ({ outlineStyle: 'none' } as any) : null]}
           />

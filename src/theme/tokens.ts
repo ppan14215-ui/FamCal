@@ -25,6 +25,8 @@ export const tokens = {
   circleLine: '#C9CDCF',
   dotOff: '#D5D8D9',
   danger: '#C7372F',
+  /** Marked text: light teal, so the selected words stay readable (a dark highlight hid them on Android, Julian 28.10.). */
+  select: 'rgba(7,80,86,0.22)',
   ok: '#2F9E6E',
   scrim: 'rgba(22,35,42,0.28)',
   noteBg: '#ECEBE7',

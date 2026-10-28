@@ -92,7 +92,7 @@ export default function EinkaufNeu() {
               blurOnSubmit={false}
               placeholder={tx('Was fehlt?', 'What\'s missing?')}
               placeholderTextColor={tokens.mute}
-              selectionColor={tokens.ink}
+              selectionColor={tokens.select} cursorColor={tokens.ink}
               returnKeyType="done"
               style={[{ flex: 1, fontFamily: fonts[500], fontSize: 17, color: tokens.ink }, Platform.OS === 'web' ? ({ outlineStyle: 'none' } as any) : null]}
             />
