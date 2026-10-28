@@ -20,6 +20,7 @@ import { tokens, motion, easing } from '../theme';
 import { useStore, dismissToast } from '../state/store';
 import type { ToastKind } from '../state/types';
 import { haptics } from '../lib/haptics';
+import { useDockSpace } from '../lib/dockSpace';
 
 const LOOK: Record<ToastKind, { icon: LineName; tile: string; ink: string }> = {
   done: { icon: 'check', tile: tokens.doneSoft, ink: tokens.done },
@@ -36,6 +37,8 @@ const shadow = Platform.select({
 export default function ToastHost() {
   const toast = useStore((s) => s.toast);
   const insets = useSafeAreaInsets();
+  // Just above the talk dock, never over the field.
+  const dock = useDockSpace();
   const { t } = useTranslation();
   const left = useSharedValue(1);
   const drag = useSharedValue(0);
@@ -66,7 +69,7 @@ export default function ToastHost() {
       pointerEvents="box-none"
       entering={FadeInDown.duration(motion.base).easing(easing.out)}
       exiting={FadeOutDown.duration(motion.micro).easing(easing.out)}
-      style={{ position: 'absolute', left: 16, right: 16, bottom: Math.max(insets.bottom, 12) + 86 }}
+      style={{ position: 'absolute', left: 16, right: 16, bottom: Math.max(Math.max(insets.bottom, 12) + 86, dock + 10) }}
     >
       <GestureDetector gesture={swipe}>
         <Animated.View
