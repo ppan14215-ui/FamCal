@@ -13,6 +13,8 @@ const url = process.env.EXPO_PUBLIC_SUPABASE_URL ?? '';
 const key = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? '';
 
 export { LIVE };
+/** Base for edge functions that are opened as links (Kalender Abo). */
+export const FUNCTIONS_URL = url ? `${url.replace(/\/$/, '')}/functions/v1` : '';
 
 // Android's network stack waits forever on a stalled connection (learned in
 // Namore, 09.08.), so every request gives up after 15 seconds.

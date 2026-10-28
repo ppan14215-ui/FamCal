@@ -11,7 +11,7 @@ import type { CalEvent, Bring, Person } from '../state/types';
 import { watchComments, stopComments } from './comments';
 import type { ClayName } from './clayIcons';
 
-export type Family = { id: string; name: string; invite_code: string; partner_name?: string | null };
+export type Family = { id: string; name: string; invite_code: string; partner_name?: string | null; ics_token?: string | null };
 type Row = {
   id: string; family_id: string; title: string; sub: string | null; icon: string; date: string; end_date: string | null;
   start_time: string; end_time: string | null; all_day: boolean; who: 'J' | 'T' | 'both' | null; place: string | null;
@@ -196,6 +196,15 @@ export async function setPartnerName(name: string) {
   const { error } = await supabase.from('families').update({ partner_name: name.trim().slice(0, 40) || null }).eq('id', family.id);
   if (error) console.warn('[sync] partner name', error.message);
   else family = { ...family, partner_name: name.trim() || null };
+}
+
+/** Abo Link (Julian 28.10.): a new token makes the old link stop working. */
+export async function renewIcsToken(): Promise<string | null> {
+  if (!supabase || !family) return null;
+  const { data, error } = await supabase.rpc('renew_ics_token');
+  if (error || !data) return null;
+  family = { ...family, ics_token: data as string };
+  return data as string;
 }
 
 /** Partner joins the other's family with the six letter code. */

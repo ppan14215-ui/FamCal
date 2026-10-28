@@ -21,7 +21,8 @@ import { useStore, actions } from '../../state/store';
 import { useScroller } from '../../lib/landing';
 import { useDockSpace } from '../../lib/dockSpace';
 import { upcomingFristen } from '../../lib/selectors';
-import { TODAY, NOW, minutes, hm, WD_SHORT, weekday, dmShort, daysBetween, until } from '../../lib/dates';
+import { TODAY, NOW, minutes, hm, WD_SHORT, weekday, dmShort, daysBetween, until, addDays } from '../../lib/dates';
+import { daysTo } from '../../components/TerminDetails';
 import { haptics } from '../../lib/haptics';
 import type { CalEvent } from '../../state/types';
 import { tx } from '../../i18n/lang';
@@ -107,7 +108,7 @@ export default function TodayView({ header }: { header: React.ReactNode }) {
   const ref = useRef<ScrollView>(null);
   const track = useScroller(ref);
 
-  const { next, later, week, todo, fristen } = useMemo(() => {
+  const { next, later, week, todo, fristen, soon, preview } = useMemo(() => {
     const real = events.filter((e) => !e.work);
     const today = real.filter((e) => e.date === TODAY).sort(byStart);
     // Still to come today; a running Termin counts until it ends.
@@ -123,6 +124,17 @@ export default function TodayView({ header }: { header: React.ReactNode }) {
       week: ahead.filter((e) => e !== next),
       todo: tasks.filter((t) => !t.done && t.due && t.due <= TODAY),
       fristen: upcomingFristen(docs, 14),
+      // Countdown (Julian 28.10.): the next three Termine that asked for "Tage bis".
+      // A series counts once, with its next date.
+      soon: real.filter((e) => e.countdown && e.date > TODAY && daysBetween(TODAY, e.date) <= 365)
+        .sort((a, b) => a.date.localeCompare(b.date))
+        .filter((e, i, l) => l.findIndex((x) => x.id.split('~')[0] === e.id.split('~')[0]) === i)
+        .slice(0, 3),
+      // Sonntags Vorschau (Spec 5): on Sunday the coming week at a glance, and what nobody has taken yet.
+      preview: weekday(TODAY) === 0 ? (() => {
+        const days = real.filter((e) => e.date > TODAY && e.date <= addDays(TODAY, 7));
+        return { count: days.length, open: days.filter((e) => !e.who).sort((a, b) => a.date.localeCompare(b.date) || byStart(a, b)) };
+      })() : null,
     };
   }, [events, tasks, docs]);
 
@@ -144,6 +156,36 @@ export default function TodayView({ header }: { header: React.ReactNode }) {
           <Meta>{tx('Die nächsten Tage sind frei. Sag unten einfach, was ansteht.', 'The next days are free. Just say below what\'s coming up.')}</Meta>
         </View>
       )}
+
+      {preview && preview.count ? (
+        <View style={{ backgroundColor: tokens.doneSoft, borderRadius: 24, padding: 18, gap: 8 }}>
+          <Txt size={13} weight={600} color={tokens.done}>{tx('Eure Woche', 'Your week')}</Txt>
+          <Txt size={18} weight={600}>
+            {tx(`${preview.count} ${preview.count === 1 ? 'Termin' : 'Termine'}`, `${preview.count} ${preview.count === 1 ? 'event' : 'events'}`)}
+            {preview.open.length ? tx(`, ${preview.open.length} noch ohne Zuständigen`, `, ${preview.open.length} nobody has taken yet`) : tx(', alles verteilt', ', all taken')}
+          </Txt>
+          {preview.open.slice(0, 4).map((e) => (
+            <PressScale key={e.id} onPress={() => { haptics.select(); router.push(`/termin/${e.id}`); }} style={{ flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 36 }}>
+              <Txt size={14} weight={600} color={tokens.done} style={{ width: 30 }}>{WD_SHORT[weekday(e.date)]}</Txt>
+              <Txt size={15} numberOfLines={1} style={{ flex: 1 }}>{e.title}</Txt>
+              <Txt size={13} weight={600} color={tokens.done}>{tx('Wer geht?', "Who's going?")}</Txt>
+            </PressScale>
+          ))}
+        </View>
+      ) : null}
+
+      {soon.length ? (
+        <View style={{ gap: 6, paddingHorizontal: 4 }}>
+          <Label>{tx('Bald', 'Coming up')}</Label>
+          {soon.map((e) => (
+            <PressScale key={e.id} onPress={() => { haptics.select(); router.push(`/termin/${e.id}`); }} style={{ flexDirection: 'row', alignItems: 'center', gap: 14, minHeight: 44 }}>
+              <View style={{ width: 56 }}><Tile name={e.icon} size={36} /></View>
+              <Txt size={16} weight={500} numberOfLines={1} style={{ flex: 1 }}>{e.title}</Txt>
+              <Txt size={14} weight={600} color={tokens.done}>{daysTo(e.date)}</Txt>
+            </PressScale>
+          ))}
+        </View>
+      ) : null}
 
       {later.length || todo.length ? (
         <View style={{ gap: 6, paddingHorizontal: 4 }}>
