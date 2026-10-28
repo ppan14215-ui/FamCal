@@ -80,12 +80,12 @@ Regeln:
 - who: J oder T, wenn der Satz einen der beiden Eltern nennt (Namen stehen unten), both für "wir", "beide", "zusammen", sonst null. Kinder sind keine Eltern.
 - place nur, wenn ein Ort genannt ist. repeat als kurzer Text in der Sprache der App ("Jeden Dienstag", "Every Tuesday"), sonst null.
 - bring: Dinge, die mitgenommen werden sollen ("Impfpass mitnehmen" ergibt ["Impfpass"]).
-- steps: ein bis zwei sehr kurze Sätze in der Sprache der App (steht unten), was du verstanden hast, für eine Liste unter dem Eingabefeld. Zum Beispiel "Zahnarzt am Freitag, 30. Oktober um 15 Uhr." und "Für Julian.". Keine Gedankenstriche.
+- steps: ein sehr kurzer Satz in der Sprache der App (steht unten), was du verstanden hast, zum Beispiel "Zahnarzt am Freitag, 30. Oktober um 15 Uhr, für Julian.". Keine Gedankenstriche.
 - Fehlt etwas Wichtiges (kein Datum), setze kind auf termin, date auf null und stelle in question eine kurze Rückfrage in der Sprache der App.
 - Ist der Satz eine Frage an den Kalender ("Was steht morgen an?", "What's on tomorrow?"), setze kind auf frage und lasse die Felder leer.
 - Gehört der Satz auf eine Liste statt in den Kalender ("Nudeln auf die Einkaufsliste", "wir brauchen Windeln", "put pasta on the shopping list", "ich muss noch die Steuer machen"), setze kind auf liste, list auf einkauf (Dinge zum Kaufen) oder aufgaben (Dinge zu erledigen) und items auf die einzelnen Dinge, kurz und groß geschrieben ("Nudeln", "2 Hafermilch"). Ein Satz mit Uhrzeit oder festem Tag ist ein Termin, auch wenn "kaufen" vorkommt.
 - Gerichte und Rezepte: Nennt der Satz etwas zum Kochen oder Backen ("Ich will heute Abend Bolognese kochen", "Zucker, Mehl und Milch, alles was man für einen Karottenkuchen braucht"), ist es eine liste mit list einkauf, auch mit "heute Abend". dish ist der Name des Gerichts, items sind nur die Dinge, die der Satz selbst nennt, extra sind alle übrigen üblichen Zutaten für vier Personen mit kurzer Menge ("500 g Hackfleisch", "2 Karotten"), ohne Salz, Pfeffer, Öl und Wasser, und ohne was schon in items steht. Gibt es sehr verschiedene Rezepte und hat der Satz keins gewählt (Bolognese, Curry, Kuchen ohne Sorte), setze variants auf zwei bis vier kurze Varianten in der Sprache der App ("Klassisch", "Schnell", "Vegetarisch"), extra leer und question auf "Welches Rezept, und für wie viele?". Beim Karottenkuchen oder anderen klaren Rezepten bleiben variants leer und extra wird gefüllt. Antwortet der neue Satz im Gespräch mit einer Variante oder Personenzahl, füllst du extra passend dazu. Was der Satz als schon da nennt ("habe Nudeln und Parmesan daheim", "Tomaten haben wir", "nur ein paar Tomaten daheim"), kommt in have und steht weder in items noch in extra; "alles andere" heißt dann: der Rest des Rezepts kommt in extra. Ohne so etwas ist have leer. Ohne Gericht sind dish "", extra und variants leer.
-- icon: wähle für einen Termin den passendsten Namen aus der Liste unten ("Fußball mit Freunden" ergibt fussball, "Friseur" passt zu keinem, dann kalender). Nur Namen aus der Liste.
+- icon: wähle für einen Termin den passendsten Namen aus der Icon-Liste ("Fußball mit Freunden" ergibt fussball, "Friseur" passt zu keinem, dann kalender). Nur Namen aus der Liste.
 - Mehrere Termine in einem Satz ("ab heute Urlaub bis Sonntag, danach wieder Arbeit von 8 bis 17 Uhr ab Dienstag", "Montag Zahnarzt und Mittwoch Elternabend"): der erste steht in den Hauptfeldern, alle weiteren in more, in zeitlicher Reihenfolge. In more steht "" für leer und who "none" für niemanden. steps beschreibt alle zusammen in höchstens vier kurzen Sätzen. Sonst bleibt more leer.
 - Urlaub, Reise oder Krankheit über mehrere Tage ist ein ganztägiger Termin mit date und end_date.
 - work ist true für Arbeitszeiten ("Arbeit", "Schicht", "im Büro", "work"). Regelmäßige Arbeitszeiten ohne genannte Tage gelten Montag bis Freitag: lege dann für jeden Arbeitstag ab dem genannten Start bis einschließlich Freitag der Woche danach einen eigenen Eintrag an (höchstens 12), mit repeat "Montag bis Freitag" ("Mondays to Fridays"). Feiertage und Urlaubstage aus demselben Satz lässt du aus.
@@ -134,13 +134,15 @@ Deno.serve(async (req) => {
     const res = await client.messages.parse({
       model: 'claude-haiku-5-5',
       max_tokens: 3000,
-      system: SYSTEM,
-      // Short answers matter more than depth here: the family waits with the orb spinning.
+      // The fixed part (rules and the app's icon names) is cached, so only the sentence is read fresh.
+      system: [{ type: 'text', text: SYSTEM }, { type: 'text', text: `Icons: ${icons}`, cache_control: { type: 'ephemeral' } }],
+      // Julian 28.10.: it must be quick. No thinking, short answers; the family waits with the orb spinning.
+      thinking: { type: 'disabled' },
       output_config: { effort: 'low', format: zodOutputFormat(Termin) },
-      messages: [{ role: 'user', content: `Heute ist ${wd}, ${today}, ${input.now ?? ''} Uhr. Eltern: ${names}. Sprache der App: ${input.lang === 'en' ? 'Englisch' : 'Deutsch'}.\nIcons: ${icons}${talk}` }],
+      messages: [{ role: 'user', content: `Heute ist ${wd}, ${today}, ${input.now ?? ''} Uhr. Eltern: ${names}. Sprache der App: ${input.lang === 'en' ? 'Englisch' : 'Deutsch'}.${talk}` }],
     });
     // Only timing and kind, never what was said (Julian 28.10.: why was Claude too slow?).
-    console.log(JSON.stringify({ ms: Date.now() - t0, kind: res.parsed_output?.kind ?? null, dish: !!res.parsed_output?.dish, follow: !!history, stop: res.stop_reason, out: res.usage?.output_tokens }));
+    console.log(JSON.stringify({ ms: Date.now() - t0, kind: res.parsed_output?.kind ?? null, dish: !!res.parsed_output?.dish, follow: !!history, stop: res.stop_reason, out: res.usage?.output_tokens, cached: res.usage?.cache_read_input_tokens ?? 0 }));
     if (res.stop_reason === 'refusal' || !res.parsed_output) return json({ error: 'not_understood' }, 422);
     return json({ ...res.parsed_output, left: allowed.left ?? null });
   } catch (e) {
