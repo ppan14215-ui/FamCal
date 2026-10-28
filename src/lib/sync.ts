@@ -14,23 +14,23 @@ export type Family = { id: string; name: string; invite_code: string };
 type Row = {
   id: string; family_id: string; title: string; sub: string | null; icon: string; date: string; end_date: string | null;
   start_time: string; end_time: string | null; all_day: boolean; who: 'J' | 'T' | 'both' | null; place: string | null;
-  bring: Bring[]; repeat: string | null; reminder: string | null; source: string | null; origin?: string | null; origin_id?: string | null;
+  bring: Bring[]; repeat: string | null; reminder: string | null; source: string | null; origin?: string | null; origin_id?: string | null; work?: boolean | null;
 };
 
 const toRow = (e: CalEvent, family_id: string): Row => ({
   id: e.id, family_id, title: e.title, sub: e.sub ?? null, icon: e.icon, date: e.date, end_date: e.endDate ?? null,
   start_time: e.start, end_time: e.end ?? null, all_day: !!e.allDay, who: e.who, place: e.place ?? null,
-  bring: e.bring ?? [], repeat: e.repeat ?? null, reminder: e.reminder ?? null, source: e.source ?? null,
+  bring: e.bring ?? [], repeat: e.repeat ?? null, reminder: e.reminder ?? null, source: e.source ?? null, work: !!e.work,
 });
 
 const fromRow = (r: Row): CalEvent => ({
   id: r.id, title: r.title, sub: r.sub ?? undefined, icon: r.icon as ClayName, date: r.date, endDate: r.end_date ?? undefined,
   start: r.start_time, end: r.end_time ?? undefined, allDay: r.all_day || undefined, who: r.who, place: r.place ?? undefined,
-  bring: r.bring?.length ? r.bring : undefined, repeat: r.repeat ?? undefined, reminder: r.reminder ?? undefined, source: r.source ?? undefined,
+  bring: r.bring?.length ? r.bring : undefined, repeat: r.repeat ?? undefined, reminder: r.reminder ?? undefined, source: r.source ?? undefined, work: r.work || undefined,
 });
 
-/** Termine read live from the phone's calendars (and work blocks) stay on the phone. */
-const shared = (e: CalEvent) => !e.work && !e.cal;
+/** Termine read live from the phone's calendars (and their work blocks) stay on the phone; spoken working hours are shared (Julian 28.10.). */
+const shared = (e: CalEvent) => !e.cal && (!e.work || /^(Gesagt|Said)/.test(e.source ?? ''));
 const key = (e: CalEvent) => JSON.stringify(e);
 
 let family: Family | null = null;
