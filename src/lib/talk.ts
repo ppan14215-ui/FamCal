@@ -72,7 +72,8 @@ function windowIn(words: string[], ok: (i: number, len: number) => boolean): { w
   return null;
 }
 
-const VERBS = ['hat', 'haben', 'muss', 'müssen', 'geht', 'gehen', 'macht', 'machen', 'ist', 'sind', 'fährt', 'fahren', 'will', 'wollen', 'kann', 'soll', 'holt', 'bringt', 'bringen',
+// First person too (Julian 28.10.: "Ich habe einen Friseurtermin" kept "Habe einen" in the title).
+const VERBS = ['hat', 'haben', 'habe', 'hab', 'hatte', 'muss', 'müssen', 'geht', 'gehen', 'gehe', 'macht', 'machen', 'mache', 'ist', 'sind', 'bin', 'fährt', 'fahren', 'fahre', 'will', 'wollen', 'möchte', 'möchten', 'werde', 'kann', 'soll', 'holt', 'hole', 'bringt', 'bringen', 'bringe',
   'has', 'have', 'got', 'must', 'needs', 'need', 'goes', 'go', 'is', 'are', 'takes', 'take', 'brings', 'picks', 'drives', 'wants', 'will', "'ll", 'should', 'can'];
 const SUBJECTS = () => [persons.J.name, persons.T.name, 'ich', 'wir', 'du', 'beide', 'i', 'we', 'you', "we're", "i'm", "i've", "we've", "i'll", "we'll"].map((x) => x.toLowerCase());
 
