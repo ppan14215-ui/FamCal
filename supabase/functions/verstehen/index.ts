@@ -41,6 +41,10 @@ const Termin = z.object({
   icon: z.string().nullable(),
   list: z.enum(['einkauf', 'aufgaben']).nullable(),
   items: z.array(z.string()),
+  // Julian 28.10.: a dish brings its ingredients. dish "" when none, extra = what the recipe needs beyond what was said, variants = recipes to choose from.
+  dish: z.string(),
+  extra: z.array(z.string()),
+  variants: z.array(z.string()),
   // Julian 28.10.: one sentence can hold several Termine ("ab heute Urlaub bis Sonntag, danach Arbeit 8 bis 17 Uhr ab Dienstag").
   work: z.boolean(),
   // Plain strings, "" for none: the API allows only a few nullable fields per schema (it refused 19 on 28.10.).
@@ -78,6 +82,7 @@ Regeln:
 - Fehlt etwas Wichtiges (kein Datum), setze kind auf termin, date auf null und stelle in question eine kurze Rückfrage in der Sprache der App.
 - Ist der Satz eine Frage an den Kalender ("Was steht morgen an?", "What's on tomorrow?"), setze kind auf frage und lasse die Felder leer.
 - Gehört der Satz auf eine Liste statt in den Kalender ("Nudeln auf die Einkaufsliste", "wir brauchen Windeln", "put pasta on the shopping list", "ich muss noch die Steuer machen"), setze kind auf liste, list auf einkauf (Dinge zum Kaufen) oder aufgaben (Dinge zu erledigen) und items auf die einzelnen Dinge, kurz und groß geschrieben ("Nudeln", "2 Hafermilch"). Ein Satz mit Uhrzeit oder festem Tag ist ein Termin, auch wenn "kaufen" vorkommt.
+- Gerichte und Rezepte: Nennt der Satz etwas zum Kochen oder Backen ("Ich will heute Abend Bolognese kochen", "Zucker, Mehl und Milch, alles was man für einen Karottenkuchen braucht"), ist es eine liste mit list einkauf, auch mit "heute Abend". dish ist der Name des Gerichts, items sind nur die Dinge, die der Satz selbst nennt, extra sind alle übrigen üblichen Zutaten für vier Personen mit kurzer Menge ("500 g Hackfleisch", "2 Karotten"), ohne Salz, Pfeffer, Öl und Wasser, und ohne was schon in items steht. Gibt es sehr verschiedene Rezepte und hat der Satz keins gewählt (Bolognese, Curry, Kuchen ohne Sorte), setze variants auf zwei bis vier kurze Varianten in der Sprache der App ("Klassisch", "Schnell", "Vegetarisch"), extra leer und question auf "Welches Rezept, und für wie viele?". Beim Karottenkuchen oder anderen klaren Rezepten bleiben variants leer und extra wird gefüllt. Antwortet der neue Satz im Gespräch mit einer Variante oder Personenzahl, füllst du extra passend dazu. Ohne Gericht sind dish "", extra und variants leer.
 - icon: wähle für einen Termin den passendsten Namen aus der Liste unten ("Fußball mit Freunden" ergibt fussball, "Friseur" passt zu keinem, dann kalender). Nur Namen aus der Liste.
 - Mehrere Termine in einem Satz ("ab heute Urlaub bis Sonntag, danach wieder Arbeit von 8 bis 17 Uhr ab Dienstag", "Montag Zahnarzt und Mittwoch Elternabend"): der erste steht in den Hauptfeldern, alle weiteren in more, in zeitlicher Reihenfolge. In more steht "" für leer und who "none" für niemanden. steps beschreibt alle zusammen in höchstens vier kurzen Sätzen. Sonst bleibt more leer.
 - Urlaub, Reise oder Krankheit über mehrere Tage ist ein ganztägiger Termin mit date und end_date.

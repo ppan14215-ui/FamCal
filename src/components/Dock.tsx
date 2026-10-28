@@ -21,7 +21,7 @@ import TalkBar from './TalkBar';
 import { setVeil } from './Veil';
 import { tokens, persons } from '../theme';
 import { useStore, actions, get } from '../state/store';
-import { plan, claudeSays, correction, replyPlan, listFromClaude, thinksOnline, revisePlan, reviseOffline, draftOf, cutOff, Ctx, Plan, Result, Said, SPOKEN, PLACEHOLDER } from '../lib/act';
+import { plan, claudeSays, correction, replyPlan, listFromClaude, thinksOnline, revisePlan, reviseOffline, draftOf, cutOff, addPicks, dishy, Ctx, Plan, Result, Said, SPOKEN, PLACEHOLDER } from '../lib/act';
 import { canUnderstand, type Convo } from '../lib/verstehen';
 import { dayLabel, slotLine, findWhen, type Suggest } from '../lib/talk';
 import { locate, light, lightOneByOne } from '../lib/landing';
@@ -270,6 +270,50 @@ function Quiet({ label, onPress }: { label: string; onPress: () => void }) {
   );
 }
 
+/**
+ * A dish on the card (Julian 28.10.: "Bolognese kochen"): which recipe first,
+ * then every ingredient ticked, tap what you already have, add the rest.
+ */
+function RecipeCard({ r, onVariant, onAdd, onSkip }: { r: Extract<Result, { kind: 'recipe' }>; onVariant: (v: string) => void; onAdd: (items: string[]) => void; onSkip: () => void }) {
+  const [off, setOff] = useState<Set<string>>(new Set());
+  const flip = (x: string) => { haptics.select(); setOff((o) => { const n = new Set(o); if (n.has(x)) n.delete(x); else n.add(x); return n; }); };
+  const take = r.picks.filter((x) => !off.has(x));
+  if (r.variants?.length) {
+    return (
+      <View style={{ gap: 10 }}>
+        <AppLine text={r.question ?? ''} sub={tx('Tipp eins an oder sag es, zum Beispiel „klassisch für vier“.', 'Tap one or say it, for example “classic for four”.')} />
+        <Picks options={r.variants.map((v) => [v, () => onVariant(v)] as [string, () => void])} />
+        <Quiet label={tx('Abbrechen', 'Cancel')} onPress={onSkip} />
+      </View>
+    );
+  }
+  return (
+    <View style={{ gap: 12 }}>
+      <AppLine text={r.picks.length ? tx(`Für ${r.dish} noch dazu?`, `Also for ${r.dish}?`) : tx(`Für ${r.dish} steht schon alles auf der Liste.`, `Everything for ${r.dish} is already on the list.`)} sub={r.picks.length ? tx('Tipp weg, was ihr schon habt.', 'Tap away what you already have.') : undefined} />
+      {r.picks.length ? (
+        <View style={{ flexDirection: 'row', gap: 6, flexWrap: 'wrap', paddingLeft: 36 }}>
+          {r.picks.map((x) => {
+            const on = !off.has(x);
+            return (
+              <Chip key={x} height={36} bg={on ? tokens.doneSoft : tokens.chipBg} color={on ? tokens.done : tokens.mute} icon={on ? <LineIcon name="check" size={13} color={tokens.done} stroke={2.6} /> : undefined} onPress={() => flip(x)}>{x}</Chip>
+            );
+          })}
+        </View>
+      ) : null}
+      <View style={{ flexDirection: 'row', gap: 8 }}>
+        <PressScale onPress={onSkip} style={{ flex: 1, height: 44, borderRadius: 999, backgroundColor: tokens.chipBg, alignItems: 'center', justifyContent: 'center' }}>
+          <Txt size={15} weight={600}>{r.picks.length ? tx('Weglassen', 'Skip') : tx('Passt', 'Done')}</Txt>
+        </PressScale>
+        {r.picks.length ? (
+          <PressScale onPress={() => onAdd(take)} style={{ flex: 1, height: 44, borderRadius: 999, backgroundColor: take.length ? tokens.ink : tokens.chipBg, alignItems: 'center', justifyContent: 'center' }}>
+            <Txt size={15} weight={600} color={take.length ? '#FFFFFF' : tokens.mute}>{tx(`${take.length} hinzufügen`, `Add ${take.length}`)}</Txt>
+          </PressScale>
+        ) : null}
+      </View>
+    </View>
+  );
+}
+
 type Turn = { id: number; said: string; result: Result; lines: Line[] };
 
 export default function Dock() {
@@ -330,7 +374,7 @@ export default function Dock() {
     const said = open?.result.kind === 'cut' ? `${open.said.replace(/[.…\s]+$/, '')} ${raw}` : raw;
     // A Termin deleted meanwhile has nothing left to change: the sentence starts fresh.
     const gone = open?.result.kind === 'event' && !get().events.some((e) => e.id === (open.result as { event: CalEvent }).event.id);
-    const before = open && open.result.kind !== 'cut' && ctx.kind === 'kalender' && !gone ? open.lines : [];
+    const before = open && open.result.kind !== 'cut' && (ctx.kind === 'kalender' || open.result.kind === 'recipe') && !gone ? open.lines : [];
     let lines: Line[] = [...before, { said }];
     if (cutOff(said)) return hold(said, { kind: 'cut' }, [{ said }]);
     // "Ja" or "Nein" to "Wieder bei …?" needs no Claude.
@@ -369,7 +413,7 @@ export default function Dock() {
     if (follow && single) lines = [{ said }];
 
     const pending = r0?.kind === 'answer' && r0.reply.kind === 'ask' ? { title: r0.reply.title, who: r0.reply.who } : null;
-    if (thinksOnline(ctx, said, pending) && !needsClaude(said)) {
+    if (thinksOnline(ctx, said, pending) && !needsClaude(said) && !dishy(said)) {
       // Short and plain ("Freitag 15 Uhr Friseur"): the rules land it at once, Claude corrects a few seconds later.
       const second = claudeSays(said);
       play(plan(ctx, said, pending), said, true, (out) => second.then((r) => { if (heard.current === n) correct(out.result, r, said); }), lines);
@@ -454,7 +498,7 @@ export default function Dock() {
           // A question goes under the sentence it answers, and the mic listens again for the answer.
           const asks = res.kind === 'answer' && res.reply.kind === 'ask';
           const offer = res.kind === 'event' ? [res.needsTime && res.event.allDay ? res.ask || tx('Um wie viel Uhr? Oder ganztägig?', 'What time? Or all day?') : '', res.suggest && !res.event.place ? againAt(res.suggest) : ''].filter(Boolean).join(' ') : '';
-          const q = asks ? (res as { reply: { text: string } }).reply.text : offer || undefined;
+          const q = asks ? (res as { reply: { text: string } }).reply.text : res.kind === 'recipe' ? res.question : offer || undefined;
           const all = q ? [...lines.slice(0, -1), { ...lines[lines.length - 1], app: q }] : lines;
           setTurn({ id: Date.now(), said, result: res, lines: all });
           if (q) ask();
@@ -486,6 +530,15 @@ export default function Dock() {
     if (yes) { actions.updateEvent(event.id, { place: suggest.place }); light(event.id); }
     const lines = said ? [...turn.lines, { said, app: yes ? tx(`Ort: ${suggest.place}.`, `Place: ${suggest.place}.`) : tx('Gut, ohne Ort.', 'Okay, no place.') }] : turn.lines;
     setTurn({ ...turn, id: said ? Date.now() : turn.id, lines, result: { ...turn.result, suggest: undefined } });
+  };
+
+  /** The ticked ingredients land on the shopping list, one receipt with undo for all. */
+  const addRecipe = (r: Extract<Result, { kind: 'recipe' }>, items: string[]) => {
+    if (!items.length) return ok();
+    const done = addPicks(r.dish, items);
+    const before = r.undo;
+    lightOneByOne(done.lit, (i) => (i === done.lit.length - 1 ? haptics.success() : haptics.select()));
+    setTurn({ id: Date.now(), said: turn?.said ?? '', lines: [], result: { kind: 'done', text: done.text, sub: done.sub, undo: () => { done.undo?.(); before?.(); } } });
   };
 
   /** "Ganztägig" answers the time question; the Termin already is all day. */
@@ -540,6 +593,12 @@ export default function Dock() {
                 ]} />
                 <Quiet label={tx('Abbrechen', 'Cancel')} onPress={ok} />
               </>
+            ) : turn.result.kind === 'recipe' ? (
+              <>
+                <Thread lines={turn.lines} />
+                {turn.result.added ? <AppLine text={turn.result.added} /> : null}
+                <RecipeCard r={turn.result} onVariant={(v) => hear(v)} onAdd={(items) => addRecipe(turn.result as Extract<Result, { kind: 'recipe' }>, items)} onSkip={ok} />
+              </>
             ) : turn.result.kind === 'answer' && turn.result.reply.kind === 'ask' ? (
               <>
                 <Thread lines={turn.lines} />
@@ -562,9 +621,9 @@ export default function Dock() {
                 {turn.lines.length > 1 ? <Thread lines={turn.lines} /> : null}
                 {turn.result.kind === 'event' ? (
                   <EventCard e={turn.result.event} needsTime={turn.result.needsTime} ask={turn.result.ask} suggest={turn.result.suggest} onSuggest={answerSuggest} onAllDay={allDay} onUndo={undo} onOk={ok} />
-                ) : (
+                ) : turn.result.kind === 'done' ? (
                   <DoneCard text={turn.result.text} sub={turn.result.sub} said={turn.lines.length > 1 ? '' : turn.said} onUndo={turn.result.undo ? undo : undefined} onOk={ok} />
-                )}
+                ) : null}
               </>
             )}
           </ScrollView>

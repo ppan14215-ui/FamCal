@@ -31,7 +31,9 @@ export type Result =
   /** The sentence stopped mid-thought: the card shows the start and the next sentence is appended. */
   | { kind: 'cut' }
   /** Not sure what it is: the card asks, calendar or a list. */
-  | { kind: 'unclear'; text: string };
+  | { kind: 'unclear'; text: string }
+  /** A dish: ingredients to tick off, or first which recipe. `added` is what the sentence itself put on the list. */
+  | { kind: 'recipe'; dish: string; picks: string[]; variants?: string[]; question?: string; added?: string; undo?: () => void };
 
 export type Plan = {
   /** What the machine is about to do, in one line above the steps ("Ich setze auf die Einkaufsliste"). Only for changes, not for questions. */
@@ -285,7 +287,7 @@ function listeNeu(said: string): Plan {
  * quietly corrects what the rules got wrong. Lists, follow-ups ("um 15 Uhr")
  * and everything offline stay with the rules alone.
  */
-export type ListSaid = { kind: 'liste'; list: 'einkauf' | 'aufgaben'; items: string[] };
+export type ListSaid = { kind: 'liste'; list: 'einkauf' | 'aufgaben'; items: string[]; dish?: string; extra?: string[]; variants?: string[]; question?: string };
 
 export type Said = Reply | ListSaid | { kind: 'cut' } | { kind: 'unclear'; text: string };
 
@@ -293,7 +295,9 @@ export async function claudeSays(said: string, convo?: Convo): Promise<Said | nu
   const m = await understandOnline(said, convo);
   if (m?.kind === 'abgebrochen') return { kind: 'cut' };
   if (m?.kind === 'unklar') return { kind: 'unclear', text: m.question || UNCLEAR() };
-  if (m?.kind === 'liste' && m.items?.length) return { kind: 'liste', list: m.list === 'aufgaben' ? 'aufgaben' : 'einkauf', items: m.items };
+  if (m?.kind === 'liste' && (m.items?.length || m.dish)) {
+    return { kind: 'liste', list: m.list === 'aufgaben' ? 'aufgaben' : 'einkauf', items: m.items ?? [], dish: m.dish || undefined, extra: (m.extra ?? []).slice(0, 30), variants: (m.variants ?? []).slice(0, 4), question: m.question ?? undefined };
+  }
   return m && fromModel(m, said, get().events, () => newId('e'));
 }
 
@@ -354,7 +358,43 @@ export function reviseOffline(id: string, said: string): Plan {
 }
 
 /** Claude heard a list where the rules heard a Termin: the items go on the list. */
-export const listFromClaude = (r: ListSaid): Plan => liste(r.items.join(', '), r.list);
+export const listFromClaude = (r: ListSaid): Plan => (r.dish ? recipePlan(r) : liste(r.items.join(', '), r.list));
+
+/** Cooking or baking said out loud ("Bolognese kochen", "für einen Karottenkuchen"): Claude knows the recipe, the rules do not. */
+export const dishy = (said: string) => /\b(koch\w*|back\w*|rezept\w*|zutaten|kuchen\w*|torte|cook\w*|bak\w*|recipe|ingredients|cake)\b/i.test(said);
+
+/**
+ * A dish (Julian 28.10.): what was said goes on the list at once, the rest of
+ * the recipe is offered to tick off, or the card first asks which recipe.
+ */
+function recipePlan(r: ListSaid): Plan {
+  const dish = r.dish!;
+  const said = r.items.length ? liste(r.items.join(', '), 'einkauf') : null;
+  const open = new Set((get().lists.find((l) => l.id === 'einkauf')?.sections ?? []).flatMap((s) => s.items).filter((i) => !i.done).map((i) => parseItem(i.name).name.toLowerCase()));
+  const picks = (r.extra ?? []).filter((x) => !open.has(parseItem(x).name.toLowerCase()) && !r.items.some((i) => parseItem(i).name.toLowerCase() === parseItem(x).name.toLowerCase()));
+  const asks = !!r.variants?.length && !picks.length;
+  const note = asks ? tx(`Für ${dish} frage ich kurz nach dem Rezept.`, `For ${dish} I'll ask which recipe.`) : tx(`Für ${dish} fehlen noch ${picks.length} Dinge, du wählst gleich.`, `${dish} needs ${picks.length} more things, you pick next.`);
+  return {
+    head: said?.head ?? tx(`Ich schaue, was ${dish} braucht`, `Checking what ${dish} needs`),
+    steps: [...(said?.steps ?? []), note],
+    run: () => {
+      const out = said?.run();
+      const first = out?.result?.kind === 'done' ? out.result : undefined;
+      return {
+        ...(out ?? { go: '/listen' }),
+        result: { kind: 'recipe', dish, picks, variants: asks ? r.variants : undefined, question: asks ? r.question || tx('Welches Rezept, und für wie viele?', 'Which recipe, and for how many?') : undefined, added: first?.text, undo: first?.undo },
+      };
+    },
+  };
+}
+
+/** The ticked ingredients go on the shopping list; returns the receipt. */
+export function addPicks(dish: string, items: string[]): Extract<Result, { kind: 'done' }> & { lit: string[] } {
+  actions.setActiveList('einkauf');
+  const made = items.map((t) => actions.addItem('einkauf', t)).filter(Boolean) as string[];
+  const text = tx(`${made.length} Zutaten für ${dish} stehen auf „Einkauf“.`, `${made.length} ingredients for ${dish} are on “Shopping”.`);
+  return { kind: 'done', text, sub: otherSees(), undo: () => made.forEach((x) => actions.deleteItem('einkauf', x)), lit: made };
+}
 
 /** What Claude changes on a Termin the rules just made; null when they agree. */
 export function correction(made: CalEvent, r: Extract<Reply, { kind: 'added' }>): Partial<CalEvent> | null {
@@ -366,7 +406,7 @@ export function correction(made: CalEvent, r: Extract<Reply, { kind: 'added' }>)
   return Object.keys(patch).length ? patch : null;
 }
 
-export const thinksOnline = (ctx: Ctx, said: string, pending: unknown) => ctx.kind === 'kalender' && !pending && canUnderstand() && !listPlan(said);
+export const thinksOnline = (ctx: Ctx, said: string, pending: unknown) => !pending && canUnderstand() && ((ctx.kind === 'kalender' && !listPlan(said)) || (ctx.kind !== 'termin' && dishy(said)));
 
 export function plan(ctx: Ctx, said: string, pending: { title: string; who: Who } | null): Plan {
   if (ctx.kind === 'termin') return termin(said, ctx.id);

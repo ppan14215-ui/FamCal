@@ -300,6 +300,8 @@ export type Understood = {
   icon?: string | null;
   /** kind "liste": the sentence belongs on a list, from any screen (Julian 27.10.). */
   list?: 'einkauf' | 'aufgaben' | null; items?: string[];
+  /** A dish: what else it needs, or which recipe first (Julian 28.10.: "Bolognese kochen"). */
+  dish?: string; extra?: string[]; variants?: string[];
   /** Working hours: shown as a striped block, not in the lists (Julian 28.10.). */
   work?: boolean;
   /** Further Termine from the same sentence ("Urlaub bis Sonntag, danach Arbeit ab Dienstag"). */
