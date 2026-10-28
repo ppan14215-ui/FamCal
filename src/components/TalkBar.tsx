@@ -13,7 +13,8 @@ import { View, TextInput, Platform } from 'react-native';
 import Txt from './ui/Txt';
 import LineIcon from './ui/LineIcon';
 import PressScale from './ui/PressScale';
-import Orb from './Orb';
+import VoiceBars from './VoiceBars';
+import { useSharedValue, withTiming } from 'react-native-reanimated';
 import { tokens, fonts } from '../theme';
 import { haptics } from '../lib/haptics';
 import { setTyping } from '../lib/keyboard';
@@ -62,6 +63,8 @@ type Props = {
 export default function TalkBar({ onSend, onPlus, spoken, listenKey, onClose, placeholder = tx('Sag oder schreib, was ansteht …', 'Say or type what\'s coming up …') }: Props) {
   const [text, setText] = useState('');
   const [listening, setListening] = useState(false);
+  /** How loud the voice is right now, 0 to 1; drives the bars in the mic. */
+  const level = useSharedValue(0);
   const [demo, setDemo] = useState(false);
   const [boxH, setBoxH] = useState(MIN_H);
   const field = useRef<TextInput>(null);
@@ -165,6 +168,8 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, onClose, pl
           setText(heard());
           hush(SILENCE_MS);
         }),
+        // -2 to 10 from the phone; below 0 is inaudible.
+        SR.addListener('volumechange', (e) => { level.value = withTiming(Math.min(1, Math.max(0, e.value / 10)), { duration: 100 }); }),
         SR.addListener('error', () => { clearTimeout(quiet); subs.forEach((x) => x.remove()); if (!heard()) fail(); }),
         SR.addListener('end', () => { clearTimeout(quiet); subs.forEach((x) => x.remove()); setListening(false); const h = heard(); if (h && !typed.current) send(h, true); }),
       ];
@@ -174,12 +179,26 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, onClose, pl
       hush(FIRST_WORD_MS);
       SR.start({
         lang: speechLocale(), interimResults: true, continuous: true, addsPunctuation: true,
+        volumeChangeEventOptions: { enabled: true, intervalMillis: 100 },
         androidIntentOptions: { EXTRA_SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS: SILENCE_MS, EXTRA_SPEECH_INPUT_POSSIBLY_COMPLETE_SILENCE_LENGTH_MILLIS: SILENCE_MS },
       });
     } catch {
       fail();
     }
   };
+
+  // The browser reports no volume, so the test link moves the bars like speech with short pauses.
+  useEffect(() => {
+    if (!listening) { level.value = withTiming(0, { duration: 200 }); return; }
+    if (Platform.OS !== 'web') return;
+    let pause = 0;
+    const id = setInterval(() => {
+      if (pause > 0) { pause--; level.value = withTiming(0.05, { duration: 120 }); return; }
+      if (Math.random() < 0.06) pause = 4 + Math.floor(Math.random() * 5);
+      level.value = withTiming(0.35 + Math.random() * 0.65, { duration: 110 });
+    }, 120);
+    return () => clearInterval(id);
+  }, [listening]);
 
   // Keep the conversation going: the card asked something, so listen again.
   useEffect(() => {
@@ -230,11 +249,11 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, onClose, pl
       />
       {onClose && !text && !listening ? plus : null}
       <PressScale
-        accessibilityLabel={text && !listening ? tx('Senden', 'Send') : tx('Sprechen', 'Speak')}
+        accessibilityLabel={listening ? tx('Fertig gesprochen', 'Done speaking') : text ? tx('Senden', 'Send') : tx('Sprechen', 'Speak')}
         onPress={text && !listening ? () => send() : listen}
-        style={{ width: 48, height: 48, borderRadius: 999, backgroundColor: listening ? 'transparent' : tokens.ink, alignItems: 'center', justifyContent: 'center' }}
+        style={{ width: 48, height: 48, borderRadius: 999, backgroundColor: tokens.ink, alignItems: 'center', justifyContent: 'center' }}
       >
-        {listening ? <Orb size={48} speed={2} /> : <LineIcon name={text ? 'send' : 'mic'} size={22} color="#FFFFFF" />}
+        {listening ? <VoiceBars level={level} /> : <LineIcon name={text ? 'send' : 'mic'} size={22} color="#FFFFFF" />}
       </PressScale>
     </View>
   );
