@@ -16,6 +16,7 @@ import { getFamily, stopSync } from '../src/lib/sync';
 import { signOut } from '../src/lib/auth';
 import { tx } from '../src/i18n/lang';
 import { speechLang, setSpeechLang } from '../src/lib/speechLang';
+import * as Updates from 'expo-updates';
 
 function SRow({ icon, t, s, right, onPress }: { icon: ClayName; t: string; s: string; right?: React.ReactNode; onPress?: () => void }) {
   return (
@@ -90,6 +91,19 @@ export default function Einstellungen() {
       </Group>
       <Txt size={12.5} line={17} color={tokens.mute} center>Prototyp ohne Login und ohne echte KI. Alles bleibt auf diesem Gerät und ist nach dem Neuladen wieder wie am Anfang.</Txt>
       </>}
+      <Txt size={12} line={16} color={tokens.mute} center selectable>{versionLine()}</Txt>
     </Screen>
   );
+}
+
+/**
+ * Which app and which update this phone runs (Julian 28.10.: an old APK
+ * looked like missing updates). The build is named by its runtime
+ * fingerprint, which changes with every new native build.
+ */
+function versionLine(): string {
+  if (!Updates.updateId || !Updates.runtimeVersion) return tx('Vorschau', 'Preview');
+  const when = Updates.createdAt ? Updates.createdAt.toLocaleString(tx('de-DE', 'en-US'), { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '';
+  const update = Updates.isEmbeddedLaunch ? tx('ohne Update', 'no update yet') : `Update ${Updates.updateId.slice(0, 8)}`;
+  return `Build ${Updates.runtimeVersion.slice(0, 8)} · ${update}${when ? ` · ${when}` : ''}${Updates.channel ? ` · ${Updates.channel}` : ''}`;
 }
