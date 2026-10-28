@@ -249,7 +249,7 @@ function listeNeu(said: string): Plan {
     steps,
     run: () => {
       const l: List = urlaub && !items.length ? listFromTemplate(name, 'reise', templates.urlaub) : listFromTemplate(name, urlaub ? 'reise' : 'karten', null);
-      actions.createList(l);
+      actions.createList(l, { auto: true });
       let last: string | undefined;
       const lit: string[] = [];
       for (const t of items) { const nid = actions.addItem(l.id, t); if (nid) { last = nid; lit.push(nid); } }

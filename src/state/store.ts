@@ -352,12 +352,16 @@ export const actions = {
       actions.addItem('einkauf', name);
     }
   },
-  createList(list: List) {
-    // The rules give a known kind its blocks at once; Claude may refine any name a moment later.
-    const bp = list.blueprint ?? (list.kind === 'shopping' ? null : blueprintFor(list.name));
+  /**
+   * auto: spoken lists ("Neue Liste Filme") get their blocks from the name. A list made on
+   * the screen keeps what the person chose; only a Sammlung without blocks asks Claude.
+   */
+  createList(list: List, opts: { auto?: boolean } = {}) {
+    const ask = opts.auto ? list.kind !== 'shopping' && !list.blueprint : list.kind === 'collection' && !list.blueprint;
+    const bp = list.blueprint ?? (ask ? blueprintFor(list.name) : null);
     const made: List = bp ? { ...list, kind: 'collection', blueprint: bp } : list;
     set((s) => ({ lists: [...s.lists, made], activeList: list.id }));
-    if (list.kind !== 'shopping' && !list.blueprint) blueprintOnline(list.name).then((b) => { if (b) actions.setBlueprint(list.id, b); }).catch(() => {});
+    if (ask) blueprintOnline(list.name).then((b) => { if (b) actions.setBlueprint(list.id, b); }).catch(() => {});
   },
   /** Removes a whole list; the toast brings it back at the same place. */
   deleteList(id: string) {
