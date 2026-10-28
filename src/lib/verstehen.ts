@@ -26,14 +26,14 @@ async function limitHint(error: unknown) {
   const res = (error as { context?: Response } | null)?.context;
   if (res && res.status >= 500 && !toldDown) {
     toldDown = true;
-    toast(tx('Claude ist gerade nicht erreichbar. Ich verstehe dich solange mit einfachen Regeln, bitte prüf die Einträge.', "Claude can't be reached right now. I'll use simple rules meanwhile, please check what I add."));
+    toast(tx('Claude ist gerade nicht erreichbar', "Claude can't be reached right now"), undefined, { kind: 'warn', sub: tx('Ich nehme solange einfache Regeln. Bitte prüf die Einträge.', "I'll use simple rules meanwhile. Please check what I add.") });
     return;
   }
   if (!res || res.status !== 429 || toldLimit) return;
   const body = await res.json().catch(() => null);
   if (body?.reason !== 'month') return;
   toldLimit = true;
-  toast(tx('Die 30 Sätze für diesen Monat sind verbraucht. Ich verstehe dich weiter mit einfachen Regeln, mit Plus wieder unbegrenzt.', 'Your 30 sentences for this month are used up. I keep understanding you with simple rules; Plus makes it unlimited again.'));
+  toast(tx('Die 30 Sätze für diesen Monat sind verbraucht', 'Your 30 sentences for this month are used up'), undefined, { kind: 'warn', sub: tx('Ich verstehe dich weiter mit einfachen Regeln, mit Plus wieder unbegrenzt.', 'I keep understanding you with simple rules; Plus makes it unlimited again.') });
 }
 
 export async function understandOnline(text: string): Promise<Understood | null> {
@@ -42,7 +42,7 @@ export async function understandOnline(text: string): Promise<Understood | null>
     .invoke<Understood & { left: number | null }>('verstehen', { body: { text, today: TODAY, now: NOW, names: { J: persons.J.name, T: persons.T.name }, lang: LANG, icons: TERMIN_ICON_NAMES } })
     .then(async ({ data, error }) => {
       if (error || !data) { await limitHint(error); return null; }
-      if (data.left === 5) toast(tx('Noch 5 Sätze gratis in diesem Monat', '5 free sentences left this month'));
+      if (data.left === 5) toast(tx('Noch 5 Sätze gratis in diesem Monat', '5 free sentences left this month'), undefined, { kind: 'info' });
       return data;
     })
     .catch(() => null);

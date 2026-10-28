@@ -130,4 +130,6 @@ export type Milestone = {
   text?: string;
 };
 
-export type Toast = { id: number; text: string; undo?: () => void };
+/** done: something happened; undo: something went away and can come back; warn: something needs a look; info: just so you know. */
+export type ToastKind = 'done' | 'undo' | 'warn' | 'info';
+export type Toast = { id: number; text: string; sub?: string; kind: ToastKind; undo?: () => void; ms: number };

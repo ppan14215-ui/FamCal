@@ -5,7 +5,7 @@
  */
 import { useSyncExternalStore } from 'react';
 import * as S from '../data/sample';
-import type { CalEvent, Task, List, InboxItem, Doc, Milestone, Toast, Item, Who, ItemData, Blueprint } from './types';
+import type { CalEvent, Task, List, InboxItem, Doc, Milestone, Toast, ToastKind, Item, Who, ItemData, Blueprint } from './types';
 import { enrichItem } from '../lib/enrich';
 import { blueprintFor, blueprintOnline } from '../lib/blueprint';
 import type { ClayName } from '../lib/clayIcons';
@@ -123,11 +123,13 @@ export function useStore<T>(sel: (s: State) => T): T {
 
 let toastSeq = 0;
 let toastTimer: ReturnType<typeof setTimeout> | null = null;
-export function toast(text: string, undo?: () => void) {
-  const t = { id: ++toastSeq, text, undo };
+export function toast(text: string, undo?: () => void, opts: { kind?: ToastKind; sub?: string } = {}) {
+  const kind: ToastKind = opts.kind ?? (undo ? 'undo' : 'done');
+  const ms = undo ? 5000 : kind === 'warn' ? 6000 : opts.sub ? 3500 : 2400;
+  const t: Toast = { id: ++toastSeq, text, sub: opts.sub, kind, undo, ms };
   set(() => ({ toast: t }));
   if (toastTimer) clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => { if (state.toast?.id === t.id) set(() => ({ toast: null })); }, undo ? 4500 : 2200);
+  toastTimer = setTimeout(() => { if (state.toast?.id === t.id) set(() => ({ toast: null })); }, ms);
 }
 export function dismissToast() { set(() => ({ toast: null })); }
 

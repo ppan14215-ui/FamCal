@@ -86,7 +86,7 @@ function Next({ e }: { e: CalEvent }) {
 /** One short row: time or weekday, title, who. */
 function Row({ e, lead, showTime }: { e: CalEvent; lead: string; showTime?: boolean }) {
   return (
-    <Fresh id={e.id} radius={14}>
+    <Fresh id={e.id} radius={14} bleed={12}>
       <PressScale scale={0.985} onPress={() => router.push(`/termin/${e.id}`)} style={{ flexDirection: 'row', alignItems: 'center', gap: 14, minHeight: 44 }}>
         <Txt size={14} color={tokens.sub} style={{ width: 56 }}>{lead}</Txt>
         <Txt size={16} weight={500} numberOfLines={1} style={{ flex: 1 }}>{e.title}</Txt>
@@ -149,7 +149,7 @@ export default function TodayView({ header }: { header: React.ReactNode }) {
           <Label>{tx('Später heute', 'Later today')}</Label>
           {later.map((e) => <Row key={e.id} e={e} lead={e.allDay ? tx('Tag', 'Day') : hm(e.start)} />)}
           {todo.map((t) => (
-            <Fresh key={t.id} id={t.id} radius={14}>
+            <Fresh key={t.id} id={t.id} radius={14} bleed={12}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14, minHeight: 44 }}>
                 <View style={{ width: 56 }}><Check done={t.done} onPress={() => actions.toggleTask(t.id)} /></View>
                 <Txt size={16} weight={500} numberOfLines={1} style={{ flex: 1 }}>{t.title}</Txt>
