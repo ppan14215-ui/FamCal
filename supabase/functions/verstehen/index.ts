@@ -6,7 +6,8 @@
  *
  * Request (signed in, JWT checked by Supabase):
  *   { text, today: "2026-10-27", now: "14:10", names: { J: "Julian", T: "Anna" }, lang: "de" | "en",
- *     history?: [{ said, app? }], draft?: "<what is on the card, JSON>" }
+ *     history?: [{ said, app? }], draft?: "<what is on the card, JSON>", stream?: true }
+ * With stream the answer comes as server-sent events: { t } pieces of the JSON, then { done } or { error }.
  * With history the sentence answers or corrects the card that is still open
  * (Julian 28.10.: "die Konversation müsste weitergehen").
  * Response: the shape of `Termin` below, or { error }.
@@ -104,7 +105,7 @@ Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors });
   const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { ...cors, 'Content-Type': 'application/json' } });
 
-  let input: { text?: string; today?: string; now?: string; names?: { J?: string; T?: string }; lang?: string; icons?: string[]; history?: { said?: string; app?: string }[]; draft?: string };
+  let input: { text?: string; today?: string; now?: string; names?: { J?: string; T?: string }; lang?: string; icons?: string[]; history?: { said?: string; app?: string }[]; draft?: string; stream?: boolean };
   try { input = await req.json(); } catch { return json({ error: 'bad_json' }, 400); }
   const text = (input.text ?? '').trim().slice(0, 500);
   const today = /^\d{4}-\d{2}-\d{2}$/.test(input.today ?? '') ? input.today! : new Date().toISOString().slice(0, 10);
@@ -129,20 +130,50 @@ Deno.serve(async (req) => {
   // The app sends the icon names it has, so new icons need no change here.
   const icons = (Array.isArray(input.icons) ? input.icons : []).filter((x) => typeof x === 'string' && /^[a-z0-9-]{2,30}$/.test(x)).slice(0, 300).join(', ') || 'kalender';
 
+  const params = {
+    model: 'claude-haiku-5-5',
+    max_tokens: 3000,
+    // The fixed part (rules and the app's icon names) is cached, so only the sentence is read fresh.
+    system: [{ type: 'text' as const, text: SYSTEM }, { type: 'text' as const, text: `Icons: ${icons}`, cache_control: { type: 'ephemeral' as const } }],
+    // Julian 28.10.: it must be quick. No thinking, short answers; the family waits with the orb spinning.
+    thinking: { type: 'disabled' as const },
+    output_config: { effort: 'low' as const, format: zodOutputFormat(Termin) },
+    messages: [{ role: 'user' as const, content: `Heute ist ${wd}, ${today}, ${input.now ?? ''} Uhr. Eltern: ${names}. Sprache der App: ${input.lang === 'en' ? 'Englisch' : 'Deutsch'}.${talk}` }],
+  };
   const t0 = Date.now();
-  try {
-    const res = await client.messages.parse({
-      model: 'claude-haiku-5-5',
-      max_tokens: 3000,
-      // The fixed part (rules and the app's icon names) is cached, so only the sentence is read fresh.
-      system: [{ type: 'text', text: SYSTEM }, { type: 'text', text: `Icons: ${icons}`, cache_control: { type: 'ephemeral' } }],
-      // Julian 28.10.: it must be quick. No thinking, short answers; the family waits with the orb spinning.
-      thinking: { type: 'disabled' },
-      output_config: { effort: 'low', format: zodOutputFormat(Termin) },
-      messages: [{ role: 'user', content: `Heute ist ${wd}, ${today}, ${input.now ?? ''} Uhr. Eltern: ${names}. Sprache der App: ${input.lang === 'en' ? 'Englisch' : 'Deutsch'}.${talk}` }],
+  // Only timing and kind, never what was said (Julian 28.10.: why was Claude too slow?).
+  const log = (out: z.infer<typeof Termin> | null | undefined, stop: string | null, usage?: { output_tokens?: number; cache_read_input_tokens?: number | null }, first?: number) =>
+    console.log(JSON.stringify({ ms: Date.now() - t0, first: first ?? null, kind: out?.kind ?? null, dish: !!out?.dish, follow: !!history, stop, out: usage?.output_tokens, cached: usage?.cache_read_input_tokens ?? 0 }));
+
+  // Julian 28.10.: show live what Claude is reading. The answer arrives piece by piece as server-sent events.
+  if (input.stream) {
+    const enc = new TextEncoder();
+    const body = new ReadableStream({
+      async start(ctrl) {
+        const send = (o: unknown) => ctrl.enqueue(enc.encode(`data: ${JSON.stringify(o)}\n\n`));
+        let first: number | undefined;
+        try {
+          const stream = client.messages.stream(params);
+          stream.on('text', (t) => { first ??= Date.now() - t0; send({ t }); });
+          const msg = await stream.finalMessage();
+          const raw = msg.content.map((b) => (b.type === 'text' ? b.text : '')).join('');
+          let out: z.infer<typeof Termin> | null = null;
+          try { out = Termin.parse(JSON.parse(raw)); } catch { out = null; }
+          log(out, msg.stop_reason, msg.usage, first);
+          send(msg.stop_reason === 'refusal' || !out ? { error: 'not_understood' } : { done: { ...out, left: allowed.left ?? null } });
+        } catch (e) {
+          console.error('verstehen', Date.now() - t0, e);
+          send({ error: 'model_failed' });
+        }
+        ctrl.close();
+      },
     });
-    // Only timing and kind, never what was said (Julian 28.10.: why was Claude too slow?).
-    console.log(JSON.stringify({ ms: Date.now() - t0, kind: res.parsed_output?.kind ?? null, dish: !!res.parsed_output?.dish, follow: !!history, stop: res.stop_reason, out: res.usage?.output_tokens, cached: res.usage?.cache_read_input_tokens ?? 0 }));
+    return new Response(body, { headers: { ...cors, 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache' } });
+  }
+
+  try {
+    const res = await client.messages.parse(params);
+    log(res.parsed_output, res.stop_reason, res.usage);
     if (res.stop_reason === 'refusal' || !res.parsed_output) return json({ error: 'not_understood' }, 422);
     return json({ ...res.parsed_output, left: allowed.left ?? null });
   } catch (e) {

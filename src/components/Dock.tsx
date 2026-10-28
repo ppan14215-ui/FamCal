@@ -22,7 +22,7 @@ import { setVeil } from './Veil';
 import { tokens, persons } from '../theme';
 import { useStore, actions, get } from '../state/store';
 import { plan, claudeSays, replyPlan, listFromClaude, thinksOnline, revisePlan, reviseOffline, draftOf, cutOff, addPicks, dishy, linkPlan, Ctx, Plan, Result, Said, SPOKEN, PLACEHOLDER } from '../lib/act';
-import { canUnderstand, type Convo } from '../lib/verstehen';
+import { canUnderstand, type Convo, type Glimpse } from '../lib/verstehen';
 import { linkIn, recipeFromLink, keepRecipe, loadRecipes, type Recipe } from '../lib/rezepte';
 import { onShared } from '../lib/shared';
 import { dayLabel, slotLine, type Suggest } from '../lib/talk';
@@ -39,6 +39,12 @@ import { onToday } from '../screens/kalender/TodayView';
 const STEP_MS = 850;
 /** How long the family waits for Claude before the rules answer instead. */
 const FIRST_MS = 12000;
+/** "Termin · Friseur · Fr 30. Okt · 15:00", built while Claude is still writing. */
+const glimpseLine = (g: Glimpse) => {
+  const what = g.kind === 'termin' ? tx('Termin', 'Event') : g.kind === 'liste' ? (g.dish ? tx('Rezept', 'Recipe') : tx('Liste', 'List')) : g.kind === 'frage' ? tx('Frage', 'Question') : undefined;
+  const parts = [what, g.kind === 'liste' ? g.dish : g.title, g.kind === 'termin' && g.date && /^\d{4}-\d{2}-\d{2}$/.test(g.date) ? short(g.date) : undefined, g.kind === 'termin' && g.start ? hm(g.start) : undefined];
+  return parts.filter(Boolean).join(' · ');
+};
 /** Appears calmly, no spring or overshoot (Julian 28.10.: the bounce was too playful). */
 const CALM = FadeIn.duration(200);
 const TIMES = ['09:00', '10:30', '14:00', '16:00'];
@@ -456,8 +462,10 @@ export default function Dock() {
   const think = (said: string, n: number, then: (r: Said | null) => void, convo?: Convo) => {
     const stop = () => { if (heard.current === n) heard.current++; setVeil({ phase: 'off', onCancel: undefined }); haptics.select(); };
     setVeil({ phase: 'think', origin, target: null, lines: [tx('Ich verstehe …', 'Understanding …')], shown: 1, said, head: undefined, onCancel: stop });
+    // Julian 28.10.: waiting is fine when you see what is happening. Each piece Claude has read shows up at once.
+    const glimpse = (g: Glimpse) => { if (heard.current !== n) return; const l = glimpseLine(g); if (l) setVeil({ lines: [tx('Ich verstehe …', 'Understanding …'), l], shown: 2 }); };
     const late = new Promise<null>((r) => setTimeout(() => r(null), FIRST_MS));
-    Promise.race([claudeSays(said, convo), late]).then((r) => { if (heard.current === n) then(r); });
+    Promise.race([claudeSays(said, convo, glimpse), late]).then((r) => { if (heard.current === n) then(r); });
   };
 
   /** Whatever Claude made of it lands; cut off and unclear only open the card. */

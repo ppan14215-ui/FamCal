@@ -11,7 +11,7 @@ import { get, actions, toast } from '../state/store';
 import { persons } from '../theme/tokens';
 import { blueprintFor, blocksLine } from './blueprint';
 import { understand, findWhen, whoOf, clean, Reply, fromModel, type Suggest } from './talk';
-import { canUnderstand, understandOnline, type Convo } from './verstehen';
+import { canUnderstand, understandOnline, understandLive, type Convo, type Glimpse } from './verstehen';
 import { tx, EN } from '../i18n/lang';
 import { whenLine, splitDue, parseWhen, When } from './when';
 import { long, hm, minutes, short } from './dates';
@@ -325,8 +325,8 @@ export type ListSaid = { kind: 'liste'; list: 'einkauf' | 'aufgaben'; items: str
 
 export type Said = Reply | ListSaid | { kind: 'cut' } | { kind: 'unclear'; text: string };
 
-export async function claudeSays(said: string, convo?: Convo): Promise<Said | null> {
-  const m = await understandOnline(said, convo);
+export async function claudeSays(said: string, convo?: Convo, onGlimpse?: (g: Glimpse) => void): Promise<Said | null> {
+  const m = onGlimpse ? await understandLive(said, convo, onGlimpse) : await understandOnline(said, convo);
   if (m?.kind === 'abgebrochen') return { kind: 'cut' };
   if (m?.kind === 'unklar') return { kind: 'unclear', text: m.question || UNCLEAR() };
   if (m?.kind === 'liste' && (m.items?.length || m.dish)) {

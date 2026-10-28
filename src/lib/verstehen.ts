@@ -3,6 +3,7 @@
  * "Handy hört, Claude versteht"). Only in the real app and only when signed
  * in; null means "ask the rules instead" (offline, slow, not understood).
  */
+import { fetch as streamFetch } from 'expo/fetch';
 import { supabase } from './cloud';
 import { getAuth } from './auth';
 import { TODAY, NOW } from './dates';
@@ -51,4 +52,64 @@ export async function understandOnline(text: string, convo?: Convo): Promise<Und
     .catch(() => null);
   const late = new Promise<null>((r) => setTimeout(() => r(null), WAIT_MS));
   return Promise.race([call, late]);
+}
+
+/** What Claude has said so far, read from the half-written JSON (Julian 28.10.: show what is happening). */
+export type Glimpse = { kind?: string; title?: string; date?: string; start?: string; dish?: string };
+
+const field = (raw: string, k: string) => raw.match(new RegExp(`"${k}"\\s*:\\s*"((?:[^"\\\\]|\\\\.)*)"`))?.[1];
+
+/**
+ * Like understandOnline, but the answer streams in and `onPartial` hears each
+ * new piece (kind, title, date, start) as soon as Claude has written it.
+ * Falls back to the plain call if streaming does not work on this phone.
+ */
+export async function understandLive(text: string, convo: Convo | undefined, onPartial: (p: Glimpse) => void): Promise<Understood | null> {
+  const session = getAuth().session;
+  const url = process.env.EXPO_PUBLIC_SUPABASE_URL;
+  if (!supabase || !session || !url) return null;
+  const ctrl = new AbortController();
+  const late = setTimeout(() => ctrl.abort(), WAIT_MS);
+  try {
+    const res = await streamFetch(`${url}/functions/v1/verstehen`, {
+      method: 'POST',
+      signal: ctrl.signal,
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}`, apikey: process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? '' },
+      body: JSON.stringify({ text, today: TODAY, now: NOW, names: { J: persons.J.name, T: persons.T.name }, lang: LANG, icons: TERMIN_ICON_NAMES, ...convo, stream: true }),
+    });
+    if (!res.ok || !res.body) { await limitHint({ context: res as unknown as Response }); return null; }
+    const reader = res.body.getReader();
+    const dec = new TextDecoder();
+    let buf = '';
+    let raw = '';
+    let seen = '';
+    let done: (Understood & { left: number | null }) | null = null;
+    for (;;) {
+      const { value, done: end } = await reader.read();
+      if (end) break;
+      buf += dec.decode(value, { stream: true });
+      let cut: number;
+      while ((cut = buf.indexOf('\n\n')) >= 0) {
+        const line = buf.slice(0, cut).replace(/^data:\s*/, '');
+        buf = buf.slice(cut + 2);
+        let ev: { t?: string; done?: Understood & { left: number | null }; error?: string };
+        try { ev = JSON.parse(line); } catch { continue; }
+        if (ev.t) {
+          raw += ev.t;
+          const p: Glimpse = { kind: field(raw, 'kind'), title: field(raw, 'title'), date: field(raw, 'date'), start: field(raw, 'start'), dish: field(raw, 'dish') };
+          const key = JSON.stringify(p);
+          if (key !== seen) { seen = key; onPartial(p); }
+        }
+        if (ev.done) done = ev.done;
+        if (ev.error) return null;
+      }
+    }
+    if (done?.left === 5) toast(tx('Noch 5 Sätze gratis in diesem Monat', '5 free sentences left this month'), undefined, { kind: 'info' });
+    return done;
+  } catch {
+    // Aborted after WAIT_MS, or no streaming here: one plain try is not worth the wait, the rules answer.
+    return null;
+  } finally {
+    clearTimeout(late);
+  }
 }
