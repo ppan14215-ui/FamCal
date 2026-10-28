@@ -20,3 +20,5 @@ Julian 27.10.: Vor der Veröffentlichung muss sicher sein, dass niemand über di
 - [ ] Warnung bei ungewöhnlichem Verbrauch (z. B. Mail an Julian, wenn ein Tag mehr als das Dreifache des Schnitts kostet).
 - [ ] App Integrität: Play Integrity (Android) und App Attest (iOS) prüfen, damit nur die echte App die Funktion aufruft.
 - [ ] Sicherheitshinweise in Supabase (Advisors) ohne offene Warnungen außer den bewusst erlaubten.
+
+- Vor Release: Tabelle `ai_testers` leeren (Testkonto hat 1000 Sätze am Tag statt 60, seit 28.10.2026).
