@@ -5,6 +5,8 @@
  *   '1h', '1d', 'vorabend'; empty means none). Older German labels still map.
  * - Vorabend 19:00 for the person who goes or brings ("Morgen 9:30 Kinderarzt.
  *   Du bringst ihn."), only on that person's phone.
+ * - Sunday 18:00 "Eure Woche" on both phones when the coming week has Termine.
+ * '1w' rings 7 days before at 09:00 (birthdays use it).
  * Nothing rings between 21 and 7 o'clock: such a time moves to 20:45 the
  * evening before or to 7:00, whichever still lies before the Termin.
  * The schedule follows the store: every change of the events re-plans the
@@ -17,6 +19,7 @@ import { get, subscribe } from '../state/store';
 import type { CalEvent } from '../state/types';
 import { myRole } from './sync';
 import { tx } from '../i18n/lang';
+import { expand, seriesId } from './repeat';
 
 const CHANNEL = 'termine';
 const PREFIX = 'ev:';
@@ -24,8 +27,8 @@ const AHEAD_DAYS = 30;
 const QUIET_FROM = 21;
 const QUIET_TO = 7;
 
-const OFFSETS: Record<string, number | 'vorabend' | null> = {
-  '0m': 0, '10m': 10, '30m': 30, '1h': 60, '1d': 24 * 60, vorabend: 'vorabend', '': null,
+const OFFSETS: Record<string, number | 'vorabend' | 'woche' | null> = {
+  '1w': 'woche', '0m': 0, '10m': 10, '30m': 30, '1h': 60, '1d': 24 * 60, vorabend: 'vorabend', '': null,
   // Older labels from before 28.10.
   'Keine': null, 'Zur Startzeit': 0, '10 Minuten vorher': 10, '30 Minuten vorher': 30, '1 Stunde vorher': 60, '1 Tag vorher': 24 * 60, 'Am Vorabend': 'vorabend',
   'None': null, 'At start': 0, '10 minutes before': 10, '30 minutes before': 30, '1 hour before': 60, '1 day before': 24 * 60,
@@ -35,6 +38,7 @@ const OFFSETS: Record<string, number | 'vorabend' | null> = {
 const hash = (s: string) => { let h = 5381; for (let i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) | 0; return (h >>> 0).toString(36); };
 const at = (date: string, hm: string) => { const [y, m, d] = date.split('-').map(Number); const [h, mi] = hm.split(':').map(Number); return new Date(y, m - 1, d, h, mi, 0, 0); };
 const startOf = (e: CalEvent) => at(e.date, e.allDay ? '08:00' : e.start);
+const ymd = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 const evening = (e: CalEvent) => { const d = at(e.date, '19:00'); d.setDate(d.getDate() - 1); return d; };
 
 /** Moves a time out of the quiet hours, but never past the Termin itself. */
@@ -47,7 +51,7 @@ function outsideQuiet(t: Date, limit: Date): Date | null {
   return night < limit ? night : null;
 }
 
-type Plan = { id: string; when: Date; title: string; body: string; event: string };
+type Plan = { id: string; when: Date; title: string; body: string; event?: string; open?: string };
 
 /** "In 10 Minuten", "In einer Stunde", "Morgen": how far ahead the reminder rings. */
 function lead(off: number, e: CalEvent) {
@@ -65,7 +69,8 @@ function plan(events: CalEvent[], now: Date): Plan[] {
   const until = new Date(now.getTime() + AHEAD_DAYS * 864e5);
   const me = myRole();
   const out: Plan[] = [];
-  for (const e of events) {
+  const all = expand(events, ymd(now), ymd(until)).filter((e) => !e.work);
+  for (const e of all) {
     if (e.work) continue;
     const start = startOf(e);
     if (start <= now || start > until) continue;
@@ -74,6 +79,10 @@ function plan(events: CalEvent[], now: Date): Plan[] {
     if (typeof off === 'number') {
       const t = outsideQuiet(new Date(start.getTime() - off * 60e3), new Date(start.getTime() + 1));
       if (t && t > now) out.push({ id: `${PREFIX}r:${key}`, when: t, event: e.id, title: e.title, body: `${lead(off, e)} ${whenText(e)}${e.place ? ` · ${e.place}` : ''}` });
+    }
+    if (off === 'woche') {
+      const t = at(e.date, '09:00'); t.setDate(t.getDate() - 7);
+      if (t > now) out.push({ id: `${PREFIX}w:${key}`, when: t, event: e.id, title: e.title, body: `${tx('In einer Woche', 'In a week')} · ${e.allDay ? tx('ganztägig', 'all day') : e.start}${e.place ? ` · ${e.place}` : ''}` });
     }
     // The evening before goes to whoever takes it (Spec: "Am Vorabend wird genau diese Person erinnert").
     const mine = e.who === me || e.who === 'both';
@@ -85,6 +94,18 @@ function plan(events: CalEvent[], now: Date): Plan[] {
         out.push({ id: `${PREFIX}v:${key}`, when: t, event: e.id, title: tx(`Morgen: ${e.title}`, `Tomorrow: ${e.title}`), body: [tx(`Morgen ${whenText(e)}.`, `Tomorrow ${whenText(e)}.`), who, bring.length ? tx(`Mitnehmen: ${bring.join(', ')}.`, `Bring: ${bring.join(', ')}.`) : ''].filter(Boolean).join(' ') });
       }
     }
+  }
+  // Sunday 18:00: what the coming Monday to Sunday holds, on both phones.
+  for (let d = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 18); d <= until; d.setDate(d.getDate() + 1)) {
+    if (d.getDay() !== 0 || d <= now) continue;
+    const from = new Date(d); from.setDate(from.getDate() + 1);
+    const to = new Date(d); to.setDate(to.getDate() + 7);
+    const week = all.filter((e) => e.date >= ymd(from) && e.date <= ymd(to));
+    if (!week.length) continue;
+    const open = week.filter((e) => !e.who).length;
+    const n = week.length;
+    out.push({ id: `${PREFIX}s:${ymd(d)}:${n}:${open}`, when: new Date(d), open: '/kalender', title: tx('Eure Woche', 'Your week'),
+      body: tx(`Eure Woche: ${n} ${n === 1 ? 'Termin' : 'Termine'}, ${open} noch ohne Zuständigen`, `Your week: ${n} ${n === 1 ? 'event' : 'events'}, ${open} still unassigned`) });
   }
   return out;
 }
@@ -108,7 +129,7 @@ async function reconcile() {
       if (haveIds.has(p.id)) continue;
       await Notifications.scheduleNotificationAsync({
         identifier: p.id,
-        content: { title: p.title, body: p.body, data: { event: p.event }, sound: 'default' },
+        content: { title: p.title, body: p.body, data: { event: p.event, open: p.open }, sound: 'default' },
         trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: p.when, channelId: CHANNEL },
       });
     }
@@ -137,8 +158,9 @@ export async function startNotifications() {
     const ok = perm.granted || (await Notifications.requestPermissionsAsync()).granted;
     if (!ok) return;
     Notifications.addNotificationResponseReceivedListener((r) => {
-      const id = r.notification.request.content.data?.event;
-      if (typeof id === 'string' && get().events.some((e) => e.id === id)) router.push(`/termin/${id}`);
+      const { event: id, open } = r.notification.request.content.data ?? {};
+      if (typeof open === 'string') router.push(open as never);
+      else if (typeof id === 'string' && get().events.some((e) => e.id === seriesId(id))) router.push(`/termin/${id}`);
     });
     let timer: ReturnType<typeof setTimeout> | undefined;
     subscribe(() => {
