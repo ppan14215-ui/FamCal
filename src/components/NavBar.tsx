@@ -63,7 +63,7 @@ export default function NavBar({ state, navigation }: BottomTabBarProps) {
   return (
     <Animated.View pointerEvents={gone ? 'none' : 'box-none'} style={[{ position: 'absolute', left: 14, right: 14, bottom: Math.max(insets.bottom, 12) + 10, flexDirection: 'row', alignItems: 'center', gap: 10 }, hide]}>
       <View accessibilityRole="tablist" onLayout={onLayout} style={[{ flex: 1, flexDirection: 'row', gap: 2, padding: 4, borderRadius: 999, backgroundColor: tokens.row }, floatShadow]}>
-        {w ? <Animated.View pointerEvents="none" style={[{ position: 'absolute', left: 4, top: 4, bottom: 4, width: w, borderRadius: 999, backgroundColor: tokens.chipBg }, pill]} /> : null}
+        {w ? <Animated.View pointerEvents="none" style={[{ position: 'absolute', left: 4, top: 4, bottom: 4, width: w, borderRadius: 999, backgroundColor: tokens.pillOn }, pill]} /> : null}
         {TABS.map((tab) => {
           const on = current === tab.name;
           return (
@@ -75,7 +75,7 @@ export default function NavBar({ state, navigation }: BottomTabBarProps) {
               onPress={() => {
                 if (!on) { haptics.select(); navigation.navigate(tab.name); }
               }}
-              style={{ flex: 1, alignItems: 'center', gap: 2, paddingVertical: 7, borderRadius: 999, backgroundColor: !w && on ? tokens.chipBg : 'transparent' }}
+              style={{ flex: 1, alignItems: 'center', gap: 2, paddingVertical: 7, borderRadius: 999, backgroundColor: !w && on ? tokens.pillOn : 'transparent' }}
             >
               <LineIcon name={tab.icon} size={22} color={on ? tokens.ink : tokens.mute} />
               <Txt size={10.5} line={13} weight={600} color={on ? tokens.ink : tokens.mute}>{t(tab.key)}</Txt>

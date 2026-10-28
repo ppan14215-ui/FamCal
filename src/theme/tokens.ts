@@ -21,6 +21,10 @@ const LIGHT = {
   doneSoft: '#E2EEEC',
   frist: '#C2410C',
   segBg: '#EAEAE7',
+  /** The chosen pill in a segmented control: it must stand out from segBg in both modes. */
+  segOn: '#FFFFFF',
+  /** The chosen tab in the bottom bar, on a white pill. */
+  pillOn: '#EFEFEC',
   chipBg: '#EFEFEC',
   circleLine: '#C9CDCF',
   dotOff: '#D5D8D9',
@@ -46,8 +50,8 @@ export type Tokens = Record<keyof typeof LIGHT, string>;
  * "dark" element becomes the one bright element; onInk follows.
  */
 const DARK: Tokens = {
-  bg: '#0F1518', row: '#1A2328', ink: '#F2F4F4', sub: '#A9B2B6', mute: '#7C878C', hair: '#26313A',
-  done: '#5FB7AE', doneSoft: '#173431', frist: '#F08A4B', segBg: '#1F282D', chipBg: '#222C31',
+  bg: '#0F1518', row: '#1A2328', ink: '#F2F4F4', sub: '#A9B2B6', mute: '#7C878C', hair: '#2C3840',
+  done: '#5FB7AE', doneSoft: '#1E4F49', frist: '#F08A4B', segBg: '#151C20', segOn: '#3B4B53', pillOn: '#3B4B53', chipBg: '#2A363C',
   circleLine: '#3A464C', dotOff: '#3A464C', danger: '#F0766C', select: 'rgba(95,183,174,0.32)', ok: '#4CC28E',
   scrim: 'rgba(0,0,0,0.55)', noteBg: '#1F272B', paper: '#1C2326', onInk: '#16232A', glass: 'rgba(26,35,40,0.72)', veil: 'rgba(15,21,24,0.95)',
 };
@@ -62,11 +66,12 @@ const toHex = (v: number[]) => `#${v.map((x) => Math.round(Math.max(0, Math.min(
 /** a toward b by t (0 keeps a). */
 export const blend = (a: string, b: string, t: number) => { const x = hex(a), y = hex(b); return toHex(x.map((v, i) => v + (y[i] - v) * t)); };
 /** A pastel for the night: the colour stays, deep and quiet. */
-export const nightBg = (c: string) => (dark ? blend(c, '#0F1518', 0.8) : c);
+export const nightBg = (c: string) => (dark ? blend(c, '#0F1518', 0.66) : c);
 /** Its text colour, lifted so it reads on the deep tint. */
 export const nightFg = (c: string) => (dark ? blend(c, '#FFFFFF', 0.45) : c);
 /** A palette entry as it shows right now. */
-export const shade = (c: { name: string; bg: string; fg: string }) => ({ name: c.name, bg: nightBg(c.bg), fg: nightFg(c.fg) });
+/** At night a person's tint comes from their strong colour, so pink stays pink (a pale pastel turned grey, Julian 28.10.). */
+export const shade = (c: { name: string; bg: string; fg: string }) => ({ name: c.name, bg: dark ? blend(c.fg, '#0F1518', 0.45) : c.bg, fg: nightFg(c.fg) });
 
 export function applyPalette(isDark: boolean) {
   dark = isDark;

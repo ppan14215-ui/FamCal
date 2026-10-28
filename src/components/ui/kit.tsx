@@ -233,7 +233,7 @@ export function Seg<T extends string>({ items, value, onChange, height = 34 }: {
   const onLayout = (e: LayoutChangeEvent) => setW((e.nativeEvent.layout.width - 8) / items.length);
   return (
     <View onLayout={onLayout} style={{ flexDirection: 'row', padding: 4, borderRadius: 999, backgroundColor: tokens.segBg }}>
-      {w ? <Animated.View pointerEvents="none" style={[{ position: 'absolute', left: 4, top: 4, width: w, height, borderRadius: 999, backgroundColor: tokens.row }, shadowSm, pill]} /> : null}
+      {w ? <Animated.View pointerEvents="none" style={[{ position: 'absolute', left: 4, top: 4, width: w, height, borderRadius: 999, backgroundColor: tokens.segOn }, shadowSm, pill]} /> : null}
       {items.map((it) => {
         const on = it.key === value;
         return (
@@ -245,7 +245,7 @@ export function Seg<T extends string>({ items, value, onChange, height = 34 }: {
             onPress={() => { if (!on) { haptics.select(); onChange(it.key); } }}
             style={{
               flex: 1, height, borderRadius: 999, alignItems: 'center', justifyContent: 'center',
-              backgroundColor: !w && on ? tokens.row : 'transparent',
+              backgroundColor: !w && on ? tokens.segOn : 'transparent',
             }}
           >
             <Txt size={14.5} weight={on ? 600 : 400} color={on ? tokens.ink : tokens.sub}>{it.label}</Txt>
@@ -282,7 +282,9 @@ export function Chip({ children, bg = tokens.chipBg, color = tokens.ink, onPress
       {typeof children === 'string' ? <Txt size={13} weight={600} color={color}>{children}</Txt> : children}
     </>
   );
-  const st: ViewStyle = { height, paddingHorizontal: 12, borderRadius: 999, backgroundColor: bg, flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'flex-start' };
+  // A chosen chip (doneSoft) also gets a teal ring, so it reads as chosen in the dark too (Julian 28.10.).
+  const chosen = bg === tokens.doneSoft;
+  const st: ViewStyle = { height, paddingHorizontal: chosen ? 10.5 : 12, borderRadius: 999, backgroundColor: bg, borderWidth: chosen ? 1.5 : 0, borderColor: tokens.done, flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'flex-start' };
   return onPress ? <PressScale onPress={onPress} style={st}>{body}</PressScale> : <View style={st}>{body}</View>;
 }
 
