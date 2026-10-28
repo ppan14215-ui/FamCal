@@ -71,7 +71,8 @@ export async function importDeviceEvents(cals: DeviceCal[], who: PersonId, ahead
       place: work ? undefined : e.location || undefined,
       who,
       work,
-      source: tx(`Aus ${cal?.account ?? 'dem Gerätekalender'} · ${cal?.title ?? ''}`, `From ${cal?.account ?? 'the device calendar'} · ${cal?.title ?? ''}`).trim(),
+      // Account once, calendar name only when it says more (Google names the main calendar after the address).
+      source: [cal?.account ?? tx('Gerätekalender', 'Device calendar'), cal?.title && cal.title !== cal.account ? cal.title : ''].filter(Boolean).join(' · '),
     };
   });
 }

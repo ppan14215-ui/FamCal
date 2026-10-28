@@ -11,7 +11,7 @@ export default function SourceLink({ s, prefix = tx('Quelle', 'Source') }: { s: 
   return (
     <PressScale scale={0.96} onPress={s.url ? () => Linking.openURL(s.url!) : undefined} style={{ flexDirection: 'row', alignItems: 'center', gap: 4, alignSelf: 'flex-start', paddingTop: 2 }}>
       <LineIcon name="sparkle" size={12} color={tokens.done} />
-      <Meta color={tokens.done}>{/^aus\b/i.test(s.label) ? s.label : `${prefix}: ${s.label}`}</Meta>
+      <Meta color={tokens.done}>{/^(aus|from)\b/i.test(s.label) ? s.label : `${prefix}: ${s.label}`}</Meta>
     </PressScale>
   );
 }
