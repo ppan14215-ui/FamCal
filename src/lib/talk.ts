@@ -235,6 +235,10 @@ const isQuestion = (q: string) => /\?\s*$/.test(q) || /^\s*(wann|was|wer|wie|wo|
   // "Do" is Thursday in German, so the English openers count on English phones only.
   || (EN && /^\s*(when|what|who|how|where|is|are|do|does|any|which|what's|when's|who's)\b/i.test(q));
 
+/** Words that never make a Termin on their own (Julian 28.10.: "Seit" made no sense as a title). */
+const FILLER = /^(seit|bis|ab|und|oder|dann|danach|noch|schon|wieder|auch|mal|jetzt|so|da|hier|wir|ich|du|ihr|sind|bin|ist|haben|hat|since|until|from|and|or|then|still|again|also|now|we|i|you|are|am|is|have|has)$/;
+const meaningless = (t: string | undefined) => !t || t.split(/\s+/).every((w) => FILLER.test(clean(w)));
+
 /** Reads one sentence. `pending` is a title still waiting for its time. */
 export function understand(input: string, events: CalEvent[], pending?: { title: string; who: Who } | null, newId = () => `e-${Date.now()}`): Reply {
   const q = input.trim();
@@ -245,6 +249,7 @@ export function understand(input: string, events: CalEvent[], pending?: { title:
   const rest = found ? words.filter((_, i) => !(i >= found.from && i < found.to) && !(found.also && i >= found.also.from && i < found.also.to)) : words;
   let who = whoOf(rest);
   let { title, sub } = titleOf(rest.join(' '));
+  if (meaningless(title)) title = '';
   if (pending && (!title || found)) {
     title = title && !found ? title : pending.title;
     who = who ?? pending.who;
