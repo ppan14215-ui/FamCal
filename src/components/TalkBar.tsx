@@ -105,6 +105,7 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, onClose, pl
   // Types the sentence letter by letter, as if it were heard, then sends it.
   const say = (sentence: string) => {
     setDemo(true);
+    stopNative.current = () => { timers.current.forEach(clearTimeout); setDemo(false); setListening(false); setText(''); };
     let i = 0;
     const step = () => {
       i += 2;
@@ -116,7 +117,7 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, onClose, pl
   };
 
   const listen = () => {
-    if (listening) { stopNative.current?.(); return; }
+    if (listening) { haptics.tap(); stopNative.current?.(); return; }
     typed.current = false;
     haptics.select();
     setListening(true);
@@ -138,6 +139,7 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, onClose, pl
       r.onerror = () => { clearTimeout(guard); fallback(); };
       r.onend = () => { clearTimeout(guard); if (failed) return; setListening(false); if (typed.current) return; if (heard) send(heard, true); else fallback(); };
       toKeys.current = () => { failed = true; clearTimeout(guard); try { r.abort(); } catch {} setListening(false); };
+      stopNative.current = () => { const h = heard; toKeys.current?.(); if (h) send(h, true); };
       r.start();
     } catch {
       say(sentence);
@@ -176,7 +178,11 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, onClose, pl
         SR.addListener('error', () => { clearTimeout(quiet); subs.forEach((x) => x.remove()); if (!heard()) fail(); }),
         SR.addListener('end', () => { clearTimeout(quiet); subs.forEach((x) => x.remove()); setListening(false); const h = heard(); if (h && !typed.current) send(h, true); }),
       ];
-      stopNative.current = () => SR.stop();
+      // A tap on the mic ends at once (Julian 28.10.): keep what was heard, send it, no waiting for the phone to finish.
+      stopNative.current = () => {
+        clearTimeout(quiet); subs.forEach((x) => x.remove()); SR.abort(); setListening(false);
+        const h = heard(); if (h && !typed.current) send(h, true);
+      };
       toKeys.current = () => { clearTimeout(quiet); SR.abort(); setListening(false); };
       // Nothing at all after a while: stop instead of listening forever.
       hush(FIRST_WORD_MS);
