@@ -52,12 +52,13 @@ export default function Kalender() {
   const view = useStore((s) => s.calView);
   const day = useStore((s) => s.calDay);
   const kid = useStore((s) => s.kid);
-  const [open, setOpen] = useState(false);
+  // The view switch starts open and stays open after a pick (Julian 28.10.); the chevron folds it away.
+  const [open, setOpen] = useState(true);
   // A week across two months is named after its Thursday, like calendar weeks (Julian 28.10.: Oct 26 to Nov 1 said November).
   const { month, year } = monthTitle(view === 'woche' ? addDays(monday(day), 3) : day);
   const insets = useSafeAreaInsets();
   const toggle = () => { haptics.select(); setOpen((o) => !o); };
-  const choose = (v: CalView) => { actions.setCalView(v); if (v === 'heute') actions.setCalDay(TODAY); setOpen(false); };
+  const choose = (v: CalView) => { actions.setCalView(v); if (v === 'heute') actions.setCalDay(TODAY); };
   const pair = <PressScale accessibilityLabel={tx('Familie und Einstellungen', 'Family and settings')} onPress={() => router.push('/einstellungen')}><Pair /></PressScale>;
   const seg = open ? (
     <Animated.View entering={FadeInDown.duration(200)} exiting={FadeOut.duration(120)}>
