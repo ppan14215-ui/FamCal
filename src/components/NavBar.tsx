@@ -3,9 +3,9 @@
  * labels. Clay icons never appear here. Since 27.10. the "+" lives in the
  * talk field above it, which is on every screen.
  */
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { View, Platform, LayoutChangeEvent } from 'react-native';
-import Animated, { useAnimatedStyle, useSharedValue, withSpring, withTiming, Easing } from 'react-native-reanimated';
+import Animated, { useAnimatedStyle, useSharedValue, withSpring, withTiming, withDelay, Easing } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { router } from 'expo-router';
@@ -50,8 +50,15 @@ export default function NavBar({ state, navigation }: BottomTabBarProps) {
   const talking = useTalkOpen();
   const gone = typing || talking;
   const away = useSharedValue(0);
-  useEffect(() => { away.value = withTiming(gone ? 1 : 0, { duration: gone ? 180 : 260, easing: Easing.bezier(0.22, 1, 0.36, 1) }); }, [gone]);
-  const hide = useAnimatedStyle(() => ({ opacity: 1 - away.value, transform: [{ translateY: away.value * 40 }] }));
+  // Coming back after talking, the tabs wait until the field has nearly shrunk into the bubble.
+  const was = useRef(false);
+  useEffect(() => {
+    const back = withTiming(gone ? 1 : 0, { duration: gone ? (talking ? 140 : 180) : 260, easing: Easing.bezier(0.22, 1, 0.36, 1) });
+    away.value = !gone && was.current ? withDelay(140, back) : back;
+    was.current = talking;
+  }, [gone]);
+  // Talking: the tabs fade and sink a little while the bubble grows over them; typing: the whole bar slides away.
+  const hide = useAnimatedStyle(() => ({ opacity: 1 - away.value, transform: [{ translateY: away.value * (talking ? 8 : 40) }, { scale: 1 - away.value * (talking ? 0.04 : 0) }] as const }));
   const onLayout = (e: LayoutChangeEvent) => setW((e.nativeEvent.layout.width - 8 - 2 * (TABS.length - 1)) / TABS.length);
   return (
     <Animated.View pointerEvents={gone ? 'none' : 'box-none'} style={[{ position: 'absolute', left: 14, right: 14, bottom: Math.max(insets.bottom, 12) + 10, flexDirection: 'row', alignItems: 'center', gap: 10 }, hide]}>

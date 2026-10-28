@@ -9,7 +9,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { View, ScrollView, Platform, Pressable, BackHandler, useWindowDimensions } from 'react-native';
 import { router, usePathname } from 'expo-router';
-import Animated, { FadeIn, FadeInDown, FadeOut } from 'react-native-reanimated';
+import Animated, { FadeIn, FadeInDown, FadeOut, useSharedValue, useAnimatedStyle, withSpring, withTiming, interpolate, interpolateColor, Easing } from 'react-native-reanimated';
+import { scheduleOnRN } from 'react-native-worklets';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Defs, LinearGradient, Stop, Rect } from 'react-native-svg';
 import { Chip } from './ui/kit';
@@ -19,7 +20,7 @@ import { Avatar, Pair, Owner } from './ui/Person';
 import PressScale from './ui/PressScale';
 import TalkBar from './TalkBar';
 import { setVeil } from './Veil';
-import { tokens, persons } from '../theme';
+import { tokens, persons, springs } from '../theme';
 import { useStore, actions, get } from '../state/store';
 import { plan, claudeSays, replyPlan, listFromClaude, thinksOnline, revisePlan, reviseOffline, draftOf, cutOff, addPicks, dishy, linkPlan, Ctx, Plan, Result, Said, SPOKEN, PLACEHOLDER } from '../lib/act';
 import { canUnderstand, type Convo, type Glimpse } from '../lib/verstehen';
@@ -365,6 +366,20 @@ export default function Dock() {
     const sub = BackHandler.addEventListener('hardwareBackPress', () => { setTalkOpen(false); setTurn(null); light(null); return true; });
     return () => sub.remove();
   }, [talking]);
+  // Julian 28.10.: the black bubble grows to the left into the field, and shrinks back into it.
+  const grow = useSharedValue(shown ? 1 : 0);
+  const [mounted, setMounted] = useState(shown);
+  useEffect(() => {
+    if (!where?.tab) { grow.value = 1; setMounted(true); return; }
+    if (shown) { setMounted(true); grow.value = withSpring(1, springs.smooth); }
+    else grow.value = withTiming(0, { duration: 280, easing: Easing.bezier(0.4, 0, 0.6, 1) }, (f) => { if (f) scheduleOnRN(setMounted, false); });
+  }, [shown, where?.tab]);
+  const full = W - 28;
+  const morph = useAnimatedStyle(() => ({
+    width: interpolate(grow.value, [0, 1], [58, full]),
+    backgroundColor: interpolateColor(grow.value, [0, 0.35], [tokens.ink, tokens.row]),
+  }));
+  const settle = useAnimatedStyle(() => ({ opacity: interpolate(grow.value, [0, 0.4, 1], [0.6, 1, 1]) }));
 
   // A card belongs to the screen it was made on.
   useEffect(() => { setTurn(null); }, [path]);
@@ -377,7 +392,7 @@ export default function Dock() {
   // Examples only while the calendar is still empty; after that they are clutter (Julian 27.10.).
   const navTop = Math.max(insets.bottom, 12) + 10 + 58 + 10;
   // Typing hides the tabs, so the field drops into their place right above the keyboard.
-  const bottom = !where ? 0 : kb > 0 ? kb + 8 : where.tab && !typing && !shown ? navTop : where.tab ? Math.max(insets.bottom, 12) + 10 : insets.bottom + 12 + where.lift;
+  const bottom = !where ? 0 : kb > 0 ? kb + 8 : where.tab && !typing && !(shown || mounted) ? navTop : where.tab ? Math.max(insets.bottom, 12) + 10 : insets.bottom + 12 + where.lift;
   useEffect(() => { setDockTop(where ? bottom + (shown ? h : 0) : 0); }, [bottom, h, !!where, shown]);
 
   if (!where) return null;
@@ -614,7 +629,7 @@ export default function Dock() {
     play(listFromClaude({ kind: 'liste', list: k, items: [said] }), said, true);
   };
 
-  if (!shown) return null;
+  if (!shown && !mounted) return null;
   return (
     <>
     {/* A tap beside the field brings the tabs back, as long as no card waits for an answer. */}
@@ -694,14 +709,19 @@ export default function Dock() {
           </ScrollView>
         </Animated.View>
       ) : null}
+      <Animated.View style={[{ alignSelf: 'flex-end', alignItems: 'flex-end', overflow: 'hidden', borderRadius: 30 }, where.tab ? morph : { width: full }]}>
+      <Animated.View style={[{ width: full }, where.tab ? settle : null]}>
       <TalkBar
         key={kind}
+        onClose={where.tab ? () => { setTalkOpen(false); setTurn(null); light(null); } : undefined}
         onSend={hear}
         onPlus={() => router.push('/neu')}
         spoken={SPOKEN[kind]}
         listenKey={listenKey}
         placeholder={turn?.result.kind === 'cut' ? tx('Sprich einfach weiter …', 'Just keep talking …') : turn && kind === 'kalender' ? tx('Antworten oder ergänzen …', 'Reply or add …') : PLACEHOLDER[kind]}
       />
+      </Animated.View>
+      </Animated.View>
     </View>
     </>
   );
