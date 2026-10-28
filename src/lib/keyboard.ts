@@ -5,7 +5,7 @@
  * Chrome shrink the visual viewport instead.
  */
 import { useEffect, useState, useSyncExternalStore } from 'react';
-import { Keyboard, Platform } from 'react-native';
+import { Dimensions, Keyboard, Platform } from 'react-native';
 
 export function useKeyboardInset(): number {
   const [inset, setInset] = useState(0);
@@ -18,7 +18,14 @@ export function useKeyboardInset(): number {
       vv.addEventListener('scroll', on);
       return () => { vv.removeEventListener('resize', on); vv.removeEventListener('scroll', on); };
     }
-    const show = Keyboard.addListener(Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow', (e) => setInset(e.endCoordinates.height));
+    // Android draws edge to edge: the keyboard's height leaves out the
+    // navigation bar under it, so the field sat partly behind the keys
+    // (Julian 28.10.). The distance from the keyboard's top to the bottom of
+    // the screen includes it.
+    const show = Keyboard.addListener(Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow', (e) => {
+      const fromTop = Dimensions.get('screen').height - e.endCoordinates.screenY;
+      setInset(Platform.OS === 'android' && e.endCoordinates.screenY > 0 ? Math.max(e.endCoordinates.height, fromTop) : e.endCoordinates.height);
+    });
     const hide = Keyboard.addListener(Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide', () => setInset(0));
     return () => { show.remove(); hide.remove(); };
   }, []);
