@@ -13,7 +13,7 @@ import Txt from '../src/components/ui/Txt';
 import PressScale from '../src/components/ui/PressScale';
 import LineIcon from '../src/components/ui/LineIcon';
 import { Avatar, PersonDot } from '../src/components/ui/Person';
-import { tokens, personPalette, persons } from '../src/theme';
+import { tokens, personPalette, persons, shade } from '../src/theme';
 import { useStore, actions, toast, get } from '../src/state/store';
 import type { Person, CalEvent } from '../src/state/types';
 import { dayMonth, year, TODAY } from '../src/lib/dates';
@@ -94,7 +94,7 @@ export default function Personen() {
       <Field label={tx('Name', 'Name')} value={name} onChangeText={setName} placeholder={tx('Zum Beispiel Mia oder Oma Gisela', 'For example Mia or Grandma')} />
       <Seg items={KINDS} value={kind} onChange={(k) => setKind(k as Person['kind'])} />
       <View style={{ flexDirection: 'row', gap: 10, flexWrap: 'wrap' }}>
-        {personPalette.map((c) => (
+        {personPalette.map(shade).map((c) => (
           <PressScale key={c.name} accessibilityLabel={c.name} accessibilityState={{ selected: color === c.name }} onPress={() => { haptics.select(); setColor(c.name); }}
             style={{ width: 40, height: 40, borderRadius: 999, backgroundColor: c.bg, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: color === c.name ? c.fg : 'transparent' }}>
             <Txt size={15} weight={600} color={c.fg}>{name.trim()[0]?.toUpperCase() ?? ''}</Txt>

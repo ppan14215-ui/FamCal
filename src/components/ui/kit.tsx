@@ -166,8 +166,8 @@ export function Btn({ label, onPress, primary = true, icon, style, height = 54, 
         style,
       ]}
     >
-      {icon ? <LineIcon name={icon} size={20} color={primary ? '#FFFFFF' : tokens.ink} /> : null}
-      <Txt size={16} weight={600} color={primary ? '#FFFFFF' : tokens.ink}>{label}</Txt>
+      {icon ? <LineIcon name={icon} size={20} color={primary ? tokens.onInk : tokens.ink} /> : null}
+      <Txt size={16} weight={600} color={primary ? tokens.onInk : tokens.ink}>{label}</Txt>
     </PressScale>
   );
 }
@@ -301,7 +301,7 @@ export function Check({ done, onPress, size = 26 }: { done: boolean; onPress?: (
   const inner = (
     <Animated.View style={[{ width: size, height: size, borderRadius: 999, borderWidth: 1.5, borderColor: tokens.circleLine, alignItems: 'center', justifyContent: 'center' }]}>
       <Animated.View style={[{ position: 'absolute', top: -1.5, left: -1.5, width: size, height: size, borderRadius: 999, backgroundColor: tokens.done, alignItems: 'center', justifyContent: 'center' }, fill]}>
-        <LineIcon name="check" size={size * 0.62} color="#FFFFFF" stroke={2.4} />
+        <LineIcon name="check" size={size * 0.62} color={tokens.onInk} stroke={2.4} />
       </Animated.View>
     </Animated.View>
   );

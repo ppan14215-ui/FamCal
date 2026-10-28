@@ -55,7 +55,7 @@ export default function TerminComments({ eventId }: { eventId: string }) {
         />
         {text.trim() ? (
           <PressScale accessibilityLabel={tx('Senden', 'Send')} onPress={send} style={{ width: 32, height: 32, borderRadius: 999, backgroundColor: tokens.done, alignItems: 'center', justifyContent: 'center' }}>
-            <LineIcon name="send" size={16} color="#FFFFFF" />
+            <LineIcon name="send" size={16} color={tokens.onInk} />
           </PressScale>
         ) : null}
       </View>

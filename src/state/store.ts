@@ -11,7 +11,7 @@ import { blueprintFor, blueprintOnline } from '../lib/blueprint';
 import type { ClayName } from '../lib/clayIcons';
 import type { PersonId } from '../theme';
 import { TODAY, BEN_BORN } from '../lib/dates';
-import { persons, personPalette } from '../theme';
+import { persons, personPalette, shade } from '../theme';
 import { firstYear, Kid } from '../data/firstYear';
 import { findCity } from '../data/cities';
 import { findPlace } from '../lib/places';
@@ -165,7 +165,7 @@ export const actions = {
   setCity(city: string, land?: string) { set(() => ({ city, land: land ?? findCity(city)?.land ?? findPlace(city)?.land ?? '' })); },
   /** A person's colour shows everywhere they appear, so `persons` changes with it. */
   setColor(p: PersonId, i: number) {
-    const c = personPalette[i];
+    const c = shade(personPalette[i]);
     Object.assign(persons[p], { tint: c.bg, ink: c.fg, stripe: mix(c.bg, c.fg, 0.14), colorName: c.name });
     set((s) => ({ colors: { ...s.colors, [p]: i } }));
   },

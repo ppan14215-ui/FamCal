@@ -235,8 +235,8 @@ function TodayChip({ away, above, onPress }: { away: boolean; above: boolean; on
   return (
     <Animated.View pointerEvents={away ? 'auto' : 'none'} style={st}>
       <PressScale accessibilityLabel={tx('Zu heute springen', 'Jump to today')} onPress={onPress} style={{ flexDirection: 'row', alignItems: 'center', gap: 4, height: 34, paddingLeft: 12, paddingRight: 10, borderRadius: 999, backgroundColor: tokens.ink }}>
-        <Txt size={14} weight={600} color="#FFFFFF">{tx('Heute', 'Today')}</Txt>
-        <View style={{ transform: [{ rotate: above ? '-90deg' : '90deg' }] }}><LineIcon name="chev" size={14} color="#FFFFFF" stroke={2.2} /></View>
+        <Txt size={14} weight={600} color={tokens.onInk}>{tx('Heute', 'Today')}</Txt>
+        <View style={{ transform: [{ rotate: above ? '-90deg' : '90deg' }] }}><LineIcon name="chev" size={14} color={tokens.onInk} stroke={2.2} /></View>
       </PressScale>
     </Animated.View>
   );

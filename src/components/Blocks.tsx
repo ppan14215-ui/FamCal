@@ -11,7 +11,7 @@ import Svg, { Path } from 'react-native-svg';
 import Txt from './ui/Txt';
 import PressScale from './ui/PressScale';
 import { Chip } from './ui/kit';
-import { tokens, personPalette } from '../theme';
+import { tokens, personPalette, shade } from '../theme';
 import { haptics } from '../lib/haptics';
 import type { Block, Blueprint, ItemData } from '../state/types';
 import { tx } from '../i18n/lang';
@@ -20,7 +20,7 @@ const W = 48;
 const H = 68;
 
 /** A soft colour per title, so placeholders differ but stay calm. */
-const paletteOf = (title: string) => personPalette[[...title].reduce((a, c) => a + c.charCodeAt(0), 0) % personPalette.length];
+const paletteOf = (title: string) => shade(personPalette[[...title].reduce((a, c) => a + c.charCodeAt(0), 0) % personPalette.length]);
 
 /** Poster or book cover. While the server looks, it breathes; without one, the first letter on a tinted card. */
 export function Cover({ title, data }: { title: string; data?: ItemData }) {

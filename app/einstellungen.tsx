@@ -19,6 +19,8 @@ import { tx } from '../src/i18n/lang';
 import { speechLang, setSpeechLang } from '../src/lib/speechLang';
 import * as Updates from 'expo-updates';
 import { useMicStyle, setMicStyle } from '../src/lib/micStyle';
+import { useThemeChoice, setTheme, type ThemeChoice } from '../src/theme/mode';
+import { Seg } from '../src/components/ui/kit';
 import { haptics } from '../src/lib/haptics';
 
 function SRow({ icon, t, s, right, onPress }: { icon: ClayName; t: string; s: string; right?: React.ReactNode; onPress?: () => void }) {
@@ -45,6 +47,7 @@ const CAL_NAME: Record<string, { t: string; icon: ClayName }> = {
 export default function Einstellungen() {
   const [sl, setSl] = React.useState(speechLang());
   const mic = useMicStyle();
+  const theme = useThemeChoice();
   const cals = useStore((s) => s.calendars);
   const demo = useStore((s) => s.demo);
   const names = useStore((s) => s.names);
@@ -65,6 +68,10 @@ export default function Einstellungen() {
         ))}
         <SRow icon="sync" t={cals.length ? tx('Weitere Kalender', 'More calendars') : tx('Kalender verbinden', 'Connect calendars')} s={cals.length ? tx('Auswahl ändern oder hinzufügen', 'Change or add') : tx('Damit nichts doppelt ist', 'So nothing is in two places')} onPress={openCals} />
       </Group>
+      <View style={{ gap: 8 }}>
+        <Txt size={13} weight={600} color={tokens.sub} style={{ paddingHorizontal: 4 }}>{tx('Darstellung', 'Appearance')}</Txt>
+        <Seg items={[{ key: 'hell', label: tx('Hell', 'Light') }, { key: 'dunkel', label: tx('Dunkel', 'Dark') }, { key: 'system', label: tx('Wie das Handy', 'Like the phone') }]} value={theme} onChange={(k) => setTheme(k as ThemeChoice)} />
+      </View>
       <Group>
         <SRow icon="zuhause" t={tx('Eure Familie', 'Your family')} s={tx('Kinder, Großeltern, Geburtstage', 'Kids, grandparents, birthdays')} onPress={() => router.push('/personen')} />
         <SRow icon="glocke" t={tx('Hinweise', 'Notifications')} s={tx('Nur Wichtiges · Ruhe 21–7 Uhr', 'Only what matters · quiet 9pm to 7am')} onPress={() => router.push('/demo/sperrbildschirm')} />

@@ -6,6 +6,7 @@
  */
 import React, { useEffect } from 'react';
 import { View } from 'react-native';
+import { tokens } from '../theme';
 import Animated, { useSharedValue, useAnimatedStyle, withRepeat, withTiming, Easing, cancelAnimation, type SharedValue } from 'react-native-reanimated';
 
 const SHAPE = [0.55, 1, 0.8, 0.5];
@@ -25,10 +26,10 @@ function Bar({ level, i, color }: { level: SharedValue<number>; i: number; color
   return <Animated.View style={[{ width: 3.5, borderRadius: 2, backgroundColor: color }, st]} />;
 }
 
-export default function VoiceBars({ level, color = '#FFFFFF' }: { level: SharedValue<number>; color?: string }) {
+export default function VoiceBars({ level, color }: { level: SharedValue<number>; color?: string }) {
   return (
     <View pointerEvents="none" style={{ flexDirection: 'row', alignItems: 'center', gap: 3.5, height: TALL }}>
-      {SHAPE.map((_, i) => <Bar key={i} level={level} i={i} color={color} />)}
+      {SHAPE.map((_, i) => <Bar key={i} level={level} i={i} color={color ?? tokens.onInk} />)}
     </View>
   );
 }

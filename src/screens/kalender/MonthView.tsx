@@ -76,7 +76,7 @@ export default function MonthView() {
                   borderWidth: 1.5, borderColor: sel ? tokens.ink : 'transparent',
                 }}
               >
-                <Txt size={14} line={18} weight={isToday ? 700 : 500} color={isToday ? tokens.done : inMonth ? tokens.ink : '#C4C9CB'}>{String(dayNum(d))}</Txt>
+                <Txt size={14} line={18} weight={isToday ? 700 : 500} color={isToday ? tokens.done : inMonth ? tokens.ink : tokens.circleLine}>{String(dayNum(d))}</Txt>
                 <DayIcons evs={evs} size={icon} />
               </PressScale>
             </View>

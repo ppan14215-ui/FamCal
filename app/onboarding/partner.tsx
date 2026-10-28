@@ -7,7 +7,7 @@ import { Screen, BackBar, StepDots, H1, Lead, Btn, Card, Chip, Meta, TextLink } 
 import Txt from '../../src/components/ui/Txt';
 import LineIcon from '../../src/components/ui/LineIcon';
 import { Avatar, Pair } from '../../src/components/ui/Person';
-import { tokens, personPalette } from '../../src/theme';
+import { tokens, personPalette, shade } from '../../src/theme';
 import { toast, useStore, actions } from '../../src/state/store';
 import { haptics } from '../../src/lib/haptics';
 import type { PersonId } from '../../src/theme';
@@ -28,7 +28,7 @@ export default function Partner() {
   const names = useStore((s) => s.names);
   const sel = useStore((s) => s.colors);
   // The screen takes on the partner's colour as soon as it is picked (Julian 26.10.).
-  const partner = personPalette[sel.T];
+  const partner = shade(personPalette[sel.T]);
   return (
     <Screen
       bg={partner.bg}
@@ -84,7 +84,7 @@ function Picker({ p, name, sel, taken, onSel }: { p: PersonId; name: string; sel
         <PressScale onPress={() => toast(tx('Fotoauswahl kommt später', 'Photo picker comes later'))} style={{ width: 30, height: 30, borderRadius: 999, borderWidth: 1.5, borderColor: tokens.circleLine, alignItems: 'center', justifyContent: 'center' }}>
           <LineIcon name="camera" size={16} color={tokens.sub} />
         </PressScale>
-        {personPalette.map((c, i) => (
+        {personPalette.map(shade).map((c, i) => (
           <PressScale
             key={c.name}
             accessibilityLabel={c.name}

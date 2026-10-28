@@ -10,7 +10,7 @@
  *   plus button. Selection shows a ring or a person colour, never dark.
  * - `done` (teal) is for "erledigt" and the period after headlines.
  */
-export const tokens = {
+const LIGHT = {
   bg: '#F5F5F4',
   row: '#FFFFFF',
   ink: '#16232A',
@@ -31,7 +31,47 @@ export const tokens = {
   scrim: 'rgba(22,35,42,0.28)',
   noteBg: '#ECEBE7',
   paper: '#F4F1EA',
-} as const;
+  /** Text and icons on an ink surface (the mic bubble, primary buttons, today's day). */
+  onInk: '#FFFFFF',
+  /** Frosted surface over a picture (the Symbol chip on a Termin). */
+  glass: 'rgba(255,255,255,0.7)',
+  /** The calm cover while the assistant works. */
+  veil: 'rgba(250,249,246,0.95)',
+};
+export type Tokens = Record<keyof typeof LIGHT, string>;
+
+/**
+ * Darkmode (Julian 28.10.). Same roles, night values: a deep blue-grey
+ * ground with the teal kept as the one accent. Ink turns light, so the one
+ * "dark" element becomes the one bright element; onInk follows.
+ */
+const DARK: Tokens = {
+  bg: '#0F1518', row: '#1A2328', ink: '#F2F4F4', sub: '#A9B2B6', mute: '#7C878C', hair: '#26313A',
+  done: '#5FB7AE', doneSoft: '#173431', frist: '#F08A4B', segBg: '#1F282D', chipBg: '#222C31',
+  circleLine: '#3A464C', dotOff: '#3A464C', danger: '#F0766C', select: 'rgba(95,183,174,0.32)', ok: '#4CC28E',
+  scrim: 'rgba(0,0,0,0.55)', noteBg: '#1F272B', paper: '#1C2326', onInk: '#16232A', glass: 'rgba(26,35,40,0.72)', veil: 'rgba(15,21,24,0.95)',
+};
+
+/** The live palette. Values swap in place with `applyPalette`, so every style reads the current one. */
+export const tokens: Tokens = { ...LIGHT };
+let dark = false;
+export const isDark = () => dark;
+
+const hex = (c: string) => [1, 3, 5].map((i) => parseInt(c.slice(i, i + 2), 16));
+const toHex = (v: number[]) => `#${v.map((x) => Math.round(Math.max(0, Math.min(255, x))).toString(16).padStart(2, '0')).join('')}`;
+/** a toward b by t (0 keeps a). */
+export const blend = (a: string, b: string, t: number) => { const x = hex(a), y = hex(b); return toHex(x.map((v, i) => v + (y[i] - v) * t)); };
+/** A pastel for the night: the colour stays, deep and quiet. */
+export const nightBg = (c: string) => (dark ? blend(c, '#0F1518', 0.8) : c);
+/** Its text colour, lifted so it reads on the deep tint. */
+export const nightFg = (c: string) => (dark ? blend(c, '#FFFFFF', 0.45) : c);
+/** A palette entry as it shows right now. */
+export const shade = (c: { name: string; bg: string; fg: string }) => ({ name: c.name, bg: nightBg(c.bg), fg: nightFg(c.fg) });
+
+export function applyPalette(isDark: boolean) {
+  dark = isDark;
+  Object.assign(tokens, isDark ? DARK : LIGHT);
+}
 
 export type PersonId = 'J' | 'T';
 
@@ -52,7 +92,7 @@ const TINT: Record<string, string> = {
   'hand-nimmt': '#F2EEE7', spaeter: '#E2EEEC', karten: '#F2EEE7', einkauf: '#E7EDE4',
   fussball: '#E7EDE4', hebamme: '#F8E8E5', urkunde: '#F6F0DD', schnuller: '#E6EEF4', paket: '#F2EEE7',
 };
-export const tint = (n: string) => TINT[n] ?? '#EEF0F2';
+export const tint = (n: string) => nightBg(TINT[n] ?? '#EEF0F2');
 
 /** The six colours a parent can pick in onboarding (Canvas "Zu zweit"). */
 export const personPalette = [

@@ -46,7 +46,7 @@ function Step({ label, state, big }: { label: string; state: 'done' | 'now' | 'n
       <View style={{ width: 22, height: 22, alignItems: 'center', justifyContent: 'center' }}>
         {state === 'done' ? (
           <Animated.View entering={FadeIn.duration(180)} style={{ width: 20, height: 20, borderRadius: 999, backgroundColor: tokens.done, alignItems: 'center', justifyContent: 'center' }}>
-            <LineIcon name="check" size={13} color="#FFFFFF" stroke={2.6} />
+            <LineIcon name="check" size={13} color={tokens.onInk} stroke={2.6} />
           </Animated.View>
         ) : state === 'now' ? <Spin /> : (
           <View style={{ width: 16, height: 16, borderRadius: 999, borderWidth: 1.5, borderColor: tokens.hair }} />
@@ -109,7 +109,7 @@ export default function Veil({ phase, origin, target, lines, shown, said, head, 
   return (
     <View pointerEvents={phase === 'think' ? 'auto' : 'none'} style={{ position: 'absolute', left: 0, top: 0, width: W, height: H }}>
       <Animated.View style={[{ position: 'absolute', left: origin.x - R, top: origin.y - R, width: R * 2, height: R * 2, borderRadius: R, overflow: 'hidden' }, wave]}>
-        <View style={{ position: 'absolute', left: R - origin.x, top: R - origin.y, width: W, height: H, backgroundColor: 'rgba(250,249,246,0.95)' }}>
+        <View style={{ position: 'absolute', left: R - origin.x, top: R - origin.y, width: W, height: H, backgroundColor: tokens.veil }}>
           <View style={{ position: 'absolute', left: (W - H * 1.2) / 2, top: -H * 0.1, width: H * 1.2, height: H * 1.2 }}>
             <Clouds size={H * 1.2} speed={0.45} soft tag="veil" />
           </View>

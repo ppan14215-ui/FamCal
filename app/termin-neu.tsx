@@ -162,8 +162,8 @@ export default function TerminNeu() {
       </Group>
 
       <View style={{ flexDirection: 'row', gap: 2, padding: 4, borderRadius: 999, backgroundColor: tokens.row }}>
-        {whoBtn('J', persons.J.name, <Avatar p="J" size={22} ring={who === 'J' ? '#FFFFFF' : undefined} />)}
-        {whoBtn('T', persons.T.name, <Avatar p="T" size={22} ring={who === 'T' ? '#FFFFFF' : undefined} />)}
+        {whoBtn('J', persons.J.name, <Avatar p="J" size={22} ring={who === 'J' ? tokens.onInk : undefined} />)}
+        {whoBtn('T', persons.T.name, <Avatar p="T" size={22} ring={who === 'T' ? tokens.onInk : undefined} />)}
         {whoBtn('both', tx('Beide', 'Both'), <Pair size={20} ring={tokens.row} />)}
       </View>
 

@@ -138,7 +138,7 @@ export default function WeekView() {
                 <Txt size={11.5} color={tokens.sub}>{WD_SHORT[weekday(d)]}</Txt>
                 {/* Only today is the dark bubble (Julian 28.10.); a picked other day gets a ring. */}
                 <View style={{ width: 28, height: 28, borderRadius: 999, backgroundColor: d === TODAY ? tokens.ink : 'transparent', borderWidth: sel && d !== TODAY ? 1.5 : 0, borderColor: tokens.ink, alignItems: 'center', justifyContent: 'center' }}>
-                  <Txt size={15} weight={600} color={d === TODAY ? '#FFFFFF' : tokens.ink}>{String(dayNum(d))}</Txt>
+                  <Txt size={15} weight={600} color={d === TODAY ? tokens.onInk : tokens.ink}>{String(dayNum(d))}</Txt>
                 </View>
               </PressScale>
             );
@@ -183,7 +183,7 @@ export default function WeekView() {
                       <PressScale
                         key={e.id}
                         onPress={() => router.push(`/termin/${e.id}`)}
-                        style={{ position: 'absolute', left: 3, right: 3, top: top(e.start) + 2, height: h, borderRadius: 8, backgroundColor: tint(e.icon), borderWidth: 1.5, borderColor: '#FFFFFF', paddingVertical: 3, paddingHorizontal: 4, overflow: 'hidden' }}
+                        style={{ position: 'absolute', left: 3, right: 3, top: top(e.start) + 2, height: h, borderRadius: 8, backgroundColor: tint(e.icon), borderWidth: 1.5, borderColor: tokens.onInk, paddingVertical: 3, paddingHorizontal: 4, overflow: 'hidden' }}
                       >
                         <Txt size={wide ? 12.5 : 10.5} line={wide ? 16 : 13} weight={700} numberOfLines={wide ? Math.max(1, Math.floor(h / 17) - 1) : 2}>{wide ? e.title : SHORT[e.title] ?? e.title.split(' ')[0]}</Txt>
                         {big && h >= 44 && !e.allDay ? <Txt size={wide ? 12 : 10} line={wide ? 15 : 12} color={tokens.sub} numberOfLines={1}>{wide && e.end ? `${hm(e.start)} ${tx('bis', 'to')} ${hm(e.end)}` : hm(e.start)}</Txt> : null}

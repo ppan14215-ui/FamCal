@@ -87,7 +87,7 @@ function SayBar({ text, done }: { text: string; done: boolean }) {
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, padding: 6, paddingLeft: 16, borderRadius: 26, backgroundColor: tokens.row, borderWidth: 1, borderColor: done ? tokens.hair : tokens.ink }}>
       <Txt size={16} line={22} style={{ flex: 1 }}>{text || ' '}</Txt>
       <View style={{ width: 44, height: 44, borderRadius: 999, backgroundColor: tokens.ink, alignItems: 'center', justifyContent: 'center' }}>
-        <LineIcon name="mic" size={21} color="#FFFFFF" />
+        <LineIcon name="mic" size={21} color={tokens.onInk} />
       </View>
     </View>
   );
@@ -259,7 +259,7 @@ function Calm() {
       <Row flat icon="kita" title={tx('Elternabend Kita', 'Daycare parents’ evening')} meta={tx('Di 3. Nov · 19:00 · ihr beide', 'Tue Nov 3 · 7pm · both of you')} />
       <Row flat icon="einkauf" title={tx('Windeln Gr. 2', 'Diapers size 2')} meta={done ? tx('erledigt von Julia', 'done by Julia') : tx('Einkauf', 'Shopping')} strike={done} right={
         <View style={{ width: 26, height: 26, borderRadius: 999, borderWidth: done ? 0 : 1.5, borderColor: tokens.circleLine, backgroundColor: done ? tokens.done : 'transparent', alignItems: 'center', justifyContent: 'center' }}>
-          {done ? <Animated.View entering={ZoomIn.duration(260)}><LineIcon name="check" size={16} color="#FFFFFF" stroke={2.4} /></Animated.View> : null}
+          {done ? <Animated.View entering={ZoomIn.duration(260)}><LineIcon name="check" size={16} color={tokens.onInk} stroke={2.4} /></Animated.View> : null}
         </View>
       } />
     </Animated.View>

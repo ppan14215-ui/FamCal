@@ -211,7 +211,7 @@ function WChip({ label, icon, on, onPress }: { label: string; icon?: LineName; o
     <PressScale
       onPress={onPress}
       scale={0.94}
-      style={{ height: 32, paddingHorizontal: 12, borderRadius: 999, flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: on ? tokens.row : '#EFEFEC', borderWidth: on ? 1.5 : 0, borderColor: tokens.ink }}
+      style={{ height: 32, paddingHorizontal: 12, borderRadius: 999, flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: on ? tokens.row : tokens.chipBg, borderWidth: on ? 1.5 : 0, borderColor: tokens.ink }}
     >
       {icon ? <LineIcon name={icon} size={14} color={tokens.ink} /> : null}
       <Txt size={13.5} weight={600}>{label}</Txt>

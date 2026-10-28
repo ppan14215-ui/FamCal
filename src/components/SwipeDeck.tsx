@@ -242,7 +242,7 @@ function TopCard({ card, live, fling, onRelease, onGone }: {
 
 function Tag({ p, style }: { p: PersonId; style: any }) {
   return (
-    <Animated.View style={[{ position: 'absolute', top: 14, flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 4, paddingLeft: 4, paddingRight: 10, borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.75)' }, style]}>
+    <Animated.View style={[{ position: 'absolute', top: 14, flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 4, paddingLeft: 4, paddingRight: 10, borderRadius: 999, backgroundColor: tokens.glass }, style]}>
       <Avatar p={p} size={22} />
       <Txt size={13.5} weight={600} color={persons[p].ink}>{persons[p].name}</Txt>
     </Animated.View>

@@ -265,7 +265,7 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, onClose, pl
         onPress={text && !listening ? () => send() : listen}
         style={{ width: 48, height: 48, borderRadius: 999, backgroundColor: tokens.ink, alignItems: 'center', justifyContent: 'center' }}
       >
-        {listening ? (micStyle === 'ring' ? <View style={{ width: 15, height: 15, borderRadius: 4, backgroundColor: '#FFFFFF' }} /> : <VoiceBars level={level} />) : <LineIcon name={text ? 'send' : 'mic'} size={22} color="#FFFFFF" />}
+        {listening ? (micStyle === 'ring' ? <View style={{ width: 15, height: 15, borderRadius: 4, backgroundColor: tokens.onInk }} /> : <VoiceBars level={level} />) : <LineIcon name={text ? 'send' : 'mic'} size={22} color={tokens.onInk} />}
       </PressScale>
       </View>
     </View>

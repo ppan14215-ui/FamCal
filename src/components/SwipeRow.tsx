@@ -65,8 +65,8 @@ export default function SwipeRow({ children, onDelete, bg = tokens.row }: { chil
           onPress={() => { x.value = withTiming(-w.value, { duration: motion.micro }, (d) => { if (d) scheduleOnRN(fire); }); }}
           style={{ flex: 1, alignItems: 'center', justifyContent: 'center', gap: 2 }}
         >
-          <LineIcon name="x" size={18} color="#FFFFFF" stroke={2.2} />
-          <Txt size={13} weight={600} color="#FFFFFF">{tx('Löschen', 'Delete')}</Txt>
+          <LineIcon name="x" size={18} color={tokens.onInk} stroke={2.2} />
+          <Txt size={13} weight={600} color={tokens.onInk}>{tx('Löschen', 'Delete')}</Txt>
         </Pressable>
       </Animated.View>
       {/* pan-y keeps vertical scrolling alive on mobile web */}

@@ -159,7 +159,7 @@ export default function ListeNeu() {
           const on = kind === k;
           return (
             <PressScale key={k} accessibilityRole="radio" accessibilityState={{ selected: on }} onPress={() => { haptics.select(); setKindSet(k); }} style={{ flex: 1, height: 42, borderRadius: 999, alignItems: 'center', justifyContent: 'center', backgroundColor: on ? tokens.ink : 'transparent' }}>
-              <Txt size={15} weight={600} color={on ? '#FFFFFF' : tokens.sub}>{k === 'abhaken' ? tx('Zum Abhaken', 'To check off') : tx('Sammlung', 'Collection')}</Txt>
+              <Txt size={15} weight={600} color={on ? tokens.onInk : tokens.sub}>{k === 'abhaken' ? tx('Zum Abhaken', 'To check off') : tx('Sammlung', 'Collection')}</Txt>
             </PressScale>
           );
         })}
@@ -192,7 +192,7 @@ export default function ListeNeu() {
               const on = has(b);
               return (
                 <PressScale key={b} accessibilityRole="checkbox" accessibilityState={{ checked: on }} onPress={() => toggleBlock(b)} style={{ height: 32, paddingHorizontal: 12, borderRadius: 999, flexDirection: 'row', alignItems: 'center', backgroundColor: on ? tokens.ink : 'transparent', borderWidth: 1, borderColor: on ? tokens.ink : tokens.circleLine }}>
-                  <Txt size={13} weight={600} color={on ? '#FFFFFF' : tokens.sub}>{`${on ? '✓' : '+'} ${b === 'seen' ? bp.seenLabel ?? label : label}`}</Txt>
+                  <Txt size={13} weight={600} color={on ? tokens.onInk : tokens.sub}>{`${on ? '✓' : '+'} ${b === 'seen' ? bp.seenLabel ?? label : label}`}</Txt>
                 </PressScale>
               );
             })}
@@ -219,7 +219,7 @@ export default function ListeNeu() {
                 <Chip
                   key={t.key}
                   bg={on ? tokens.ink : tokens.row}
-                  color={on ? '#FFFFFF' : tokens.ink}
+                  color={on ? tokens.onInk : tokens.ink}
                   height={36}
                   icon={<ClayIcon name={t.icon} size={22} />}
                   onPress={() => {

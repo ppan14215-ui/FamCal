@@ -76,7 +76,7 @@ function ProviderCard({ p, conn }: { p: (typeof PROVIDERS)[number]; conn?: { acc
           <Txt size={16} line={21} weight={600}>{p.title}</Txt>
           <Meta color={conn ? tokens.done : tokens.sub}>{sub}</Meta>
         </View>
-        {step ? <Txt size={15} color={tokens.sub}>{tx('Schließen', 'Close')}</Txt> : <View style={{ paddingHorizontal: 12, height: 32, borderRadius: 999, backgroundColor: conn ? tokens.chipBg : tokens.ink, alignItems: 'center', justifyContent: 'center' }}><Txt size={13.5} weight={600} color={conn ? tokens.ink : '#FFFFFF'}>{conn ? tx('Ändern', 'Change') : 'Verbinden'}</Txt></View>}
+        {step ? <Txt size={15} color={tokens.sub}>{tx('Schließen', 'Close')}</Txt> : <View style={{ paddingHorizontal: 12, height: 32, borderRadius: 999, backgroundColor: conn ? tokens.chipBg : tokens.ink, alignItems: 'center', justifyContent: 'center' }}><Txt size={13.5} weight={600} color={conn ? tokens.ink : tokens.onInk}>{conn ? tx('Ändern', 'Change') : 'Verbinden'}</Txt></View>}
       </PressScale>
 
       {step === 'login' ? (
@@ -117,7 +117,7 @@ function ProviderCard({ p, conn }: { p: (typeof PROVIDERS)[number]; conn?: { acc
             <Txt size={14} color={tokens.sub} style={{ flex: 1 }}>{tx('Wem gehört der Kalender?', 'Whose calendar is it?')}</Txt>
             {(['J', 'T'] as PersonId[]).map((w) => (
               <PressScale key={w} scale={0.92} onPress={() => { haptics.select(); setOwner(w); }} style={{ flexDirection: 'row', alignItems: 'center', gap: 6, height: 34, paddingLeft: 4, paddingRight: 12, borderRadius: 999, backgroundColor: owner === w ? persons[w].tint : tokens.chipBg }}>
-                <Avatar p={w} size={26} ring={owner === w ? '#FFFFFF' : undefined} />
+                <Avatar p={w} size={26} ring={owner === w ? tokens.onInk : undefined} />
                 <Txt size={14} weight={600} color={owner === w ? persons[w].ink : tokens.sub}>{persons[w].name}</Txt>
               </PressScale>
             ))}
@@ -180,7 +180,7 @@ function DeviceCard({ conn }: { conn?: { account: string; ids: string[] } }) {
           <Txt size={16} line={21} weight={600}>{tx('Kalender auf diesem Handy', 'Calendars on this phone')}</Txt>
           <Meta color={conn ? tokens.done : tokens.sub}>{sub}</Meta>
         </View>
-        {state !== 'idle' ? <Txt size={15} color={tokens.sub}>{tx('Schließen', 'Close')}</Txt> : <View style={{ paddingHorizontal: 12, height: 32, borderRadius: 999, backgroundColor: conn ? tokens.chipBg : tokens.ink, alignItems: 'center', justifyContent: 'center' }}><Txt size={13.5} weight={600} color={conn ? tokens.ink : '#FFFFFF'}>{conn ? tx('Ändern', 'Change') : 'Verbinden'}</Txt></View>}
+        {state !== 'idle' ? <Txt size={15} color={tokens.sub}>{tx('Schließen', 'Close')}</Txt> : <View style={{ paddingHorizontal: 12, height: 32, borderRadius: 999, backgroundColor: conn ? tokens.chipBg : tokens.ink, alignItems: 'center', justifyContent: 'center' }}><Txt size={13.5} weight={600} color={conn ? tokens.ink : tokens.onInk}>{conn ? tx('Ändern', 'Change') : 'Verbinden'}</Txt></View>}
       </PressScale>
 
       {state === 'denied' ? (
@@ -211,7 +211,7 @@ function DeviceCard({ conn }: { conn?: { account: string; ids: string[] } }) {
             <Txt size={14} color={tokens.sub} style={{ flex: 1 }}>{tx('Wem gehören die Kalender?', 'Whose calendars are these?')}</Txt>
             {(['J', 'T'] as PersonId[]).map((w) => (
               <PressScale key={w} scale={0.92} onPress={() => { haptics.select(); setOwner(w); }} style={{ flexDirection: 'row', alignItems: 'center', gap: 6, height: 34, paddingLeft: 4, paddingRight: 12, borderRadius: 999, backgroundColor: owner === w ? persons[w].tint : tokens.chipBg }}>
-                <Avatar p={w} size={26} ring={owner === w ? '#FFFFFF' : undefined} />
+                <Avatar p={w} size={26} ring={owner === w ? tokens.onInk : undefined} />
                 <Txt size={14} weight={600} color={owner === w ? persons[w].ink : tokens.sub}>{persons[w].name}</Txt>
               </PressScale>
             ))}

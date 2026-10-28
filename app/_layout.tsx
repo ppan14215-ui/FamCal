@@ -16,6 +16,8 @@ import { startNotifications } from '../src/lib/notify';
 import { VeilHost } from '../src/components/Veil';
 import Dock from '../src/components/Dock';
 import { tokens } from '../src/theme';
+import { useThemeGen, Keyed } from '../src/theme/mode';
+import { isDark } from '../src/theme/tokens';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
@@ -28,6 +30,9 @@ const sheet = { presentation: 'transparentModal', animation: 'fade', contentStyl
 
 export default function RootLayout() {
   const [loaded, error] = useFonts({ Geist_400Regular, Geist_500Medium, Geist_600SemiBold, Geist_700Bold });
+  // Darkmode: a new palette remounts the tree once; the page that switched opens again.
+  // Darkmode: a new palette redraws every screen; where you are stays as it is.
+  const gen = useThemeGen();
 
   useEffect(() => {
     if (loaded || error) SplashScreen.hideAsync().catch(() => {});
@@ -42,8 +47,8 @@ export default function RootLayout() {
     <GestureHandlerRootView style={{ flex: 1, backgroundColor: tokens.bg }}>
       <SafeAreaProvider>
         <WebInsets>
-          <StatusBar style="dark" />
-          <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: tokens.bg }, animation: 'default' }}>
+          <StatusBar style={isDark() ? 'light' : 'dark'} />
+          <Stack screenLayout={({ children }) => <Keyed>{children}</Keyed>} screenOptions={{ headerShown: false, contentStyle: { backgroundColor: tokens.bg }, animation: 'default' }}>
             <Stack.Screen name="index" />
             <Stack.Screen name="onboarding" options={{ animation: 'fade' }} />
             <Stack.Screen name="(tabs)" options={{ animation: 'fade' }} />
@@ -56,9 +61,11 @@ export default function RootLayout() {
             <Stack.Screen name="demo/teilen" options={{ animation: 'fade' }} />
             <Stack.Screen name="demo/widgets" />
           </Stack>
-          <Dock />
-          <VeilHost />
-          <ToastHost />
+          <Keyed>
+            <Dock />
+            <VeilHost />
+            <ToastHost />
+          </Keyed>
         </WebInsets>
       </SafeAreaProvider>
     </GestureHandlerRootView>

@@ -159,7 +159,7 @@ function Chip({ label, icon, on, disabled, onPress, style }: { label: string; ic
       onPress={disabled ? undefined : onPress}
       scale={0.94}
       accessibilityLabel={label === String(Number(label)) ? tx(`Jahr ${label}`, `Year ${label}`) : MONTHS[MONTHS_SHORT.indexOf(label)] ?? label}
-      style={[{ height: 34, paddingHorizontal: 12, borderRadius: 999, flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: on ? tokens.row : '#EFEFEC', borderWidth: on ? 1.5 : 0, borderColor: tokens.ink, opacity: disabled ? 0.35 : 1 }, style]}
+      style={[{ height: 34, paddingHorizontal: 12, borderRadius: 999, flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: on ? tokens.row : tokens.chipBg, borderWidth: on ? 1.5 : 0, borderColor: tokens.ink, opacity: disabled ? 0.35 : 1 }, style]}
     >
       {icon ? <LineIcon name={icon} size={14} color={tokens.ink} /> : null}
       <Txt size={13.5} weight={600}>{label}</Txt>

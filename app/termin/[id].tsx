@@ -130,7 +130,7 @@ export default function Termin() {
         <View style={{ paddingHorizontal: 18 }}><BackBar /></View>
         <PressScale scale={0.97} accessibilityLabel={tx('Symbol ändern', 'Change icon')} onPress={pickIcon} style={{ height: 200, alignItems: 'center', justifyContent: 'center' }}>
           <ClayIcon key={e.icon} name={e.icon} size={160} />
-          <View style={{ position: 'absolute', right: 18, bottom: 14, flexDirection: 'row', alignItems: 'center', gap: 5, height: 30, paddingHorizontal: 11, borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.7)' }}>
+          <View style={{ position: 'absolute', right: 18, bottom: 14, flexDirection: 'row', alignItems: 'center', gap: 5, height: 30, paddingHorizontal: 11, borderRadius: 999, backgroundColor: tokens.glass }}>
             <LineIcon name="sparkle" size={13} color={tokens.ink} />
             <Txt size={13} weight={600}>{tx('Symbol', 'Icon')}</Txt>
           </View>

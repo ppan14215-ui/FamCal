@@ -91,7 +91,7 @@ function Decide({ onUndo, onOk }: { onUndo: () => void; onOk: () => void }) {
         <Txt size={15} weight={600}>{tx('Rückgängig', 'Undo')}</Txt>
       </PressScale>
       <PressScale onPress={onOk} style={{ flex: 1, height: 44, borderRadius: 999, backgroundColor: tokens.ink, alignItems: 'center', justifyContent: 'center' }}>
-        <Txt size={15} weight={600} color="#FFFFFF">{tx('Passt', 'Done')}</Txt>
+        <Txt size={15} weight={600} color={tokens.onInk}>{tx('Passt', 'Done')}</Txt>
       </PressScale>
     </View>
   );
@@ -101,7 +101,7 @@ function Decide({ onUndo, onOk }: { onUndo: () => void; onOk: () => void }) {
 function Tick() {
   return (
     <Animated.View entering={CALM} style={{ width: 34, height: 34, borderRadius: 999, backgroundColor: tokens.done, alignItems: 'center', justifyContent: 'center' }}>
-      <LineIcon name="check" size={18} color="#FFFFFF" stroke={2.8} />
+      <LineIcon name="check" size={18} color={tokens.onInk} stroke={2.8} />
     </Animated.View>
   );
 }
@@ -240,7 +240,7 @@ function Thread({ lines, cut }: { lines: Line[]; cut?: boolean }) {
         return (
           <View key={i} style={{ gap: 10 }}>
             <View style={{ alignSelf: 'flex-end', maxWidth: '86%', backgroundColor: open ? tokens.chipBg : tokens.ink, borderRadius: 18, borderBottomRightRadius: 6, paddingHorizontal: 13, paddingVertical: 9 }}>
-              <Txt size={15} line={20} color={open ? tokens.sub : '#FFFFFF'}>{open ? `${l.said.replace(/[.…\s]+$/, '')} …` : l.said}</Txt>
+              <Txt size={15} line={20} color={open ? tokens.sub : tokens.onInk}>{open ? `${l.said.replace(/[.…\s]+$/, '')} …` : l.said}</Txt>
             </View>
             {l.app ? <AppLine text={l.app} /> : null}
           </View>
@@ -329,7 +329,7 @@ function RecipeCard({ r, onVariant, onAdd, onSkip, onKept }: { r: Extract<Result
         </PressScale>
         {r.picks.length ? (
           <PressScale onPress={() => onAdd(take)} style={{ flex: 1, height: 44, borderRadius: 999, backgroundColor: take.length ? tokens.ink : tokens.chipBg, alignItems: 'center', justifyContent: 'center' }}>
-            <Txt size={15} weight={600} color={take.length ? '#FFFFFF' : tokens.mute}>{tx(`${take.length} hinzufügen`, `Add ${take.length}`)}</Txt>
+            <Txt size={15} weight={600} color={take.length ? tokens.onInk : tokens.mute}>{tx(`${take.length} hinzufügen`, `Add ${take.length}`)}</Txt>
           </PressScale>
         ) : null}
       </View>

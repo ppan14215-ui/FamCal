@@ -15,7 +15,7 @@ import { haptics } from '../lib/haptics';
 import { tx, EN } from '../i18n/lang';
 
 const WD = tx('Mo Di Mi Do Fr Sa So', 'Mo Tu We Th Fr Sa Su').split(' ');
-const BAND = '#EFEFEC';
+const BAND = tokens.chipBg;
 
 /** First day of the month containing the date. */
 export const firstOf = (d: string) => `${d.slice(0, 8)}01`;

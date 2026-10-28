@@ -2,7 +2,7 @@
 import React from 'react';
 import { View } from 'react-native';
 import Txt from './Txt';
-import { persons, PersonId, tokens, personPalette } from '../../theme';
+import { persons, PersonId, tokens, personPalette, shade } from '../../theme';
 
 export function Avatar({ p, size = 28, ring, letter }: { p: PersonId; size?: number; ring?: string; letter?: string }) {
   const c = persons[p];
@@ -40,7 +40,7 @@ export function Owner({ who, size = 24 }: { who: PersonId | 'both' | null; size?
 
 /** A family member besides the parents: initial in their palette colour (Kinder, Großeltern). */
 export function PersonDot({ name, color, size = 24 }: { name: string; color: string; size?: number }) {
-  const c = personPalette.find((x) => x.name === color) ?? personPalette[2];
+  const c = shade(personPalette.find((x) => x.name === color) ?? personPalette[2]);
   return (
     <View style={{ width: size, height: size, borderRadius: 999, backgroundColor: c.bg, alignItems: 'center', justifyContent: 'center' }}>
       <Txt size={Math.round(size * 0.42)} line={Math.round(size * 0.5)} weight={600} color={c.fg}>{name.trim()[0]?.toUpperCase() ?? '?'}</Txt>

@@ -35,7 +35,7 @@ export default function Symbol() {
         <Txt size={20} weight={700} tracking={-0.4}>{tx('Symbol', 'Icon')}</Txt>
         <PressScale hitSlop={10} onPress={() => goBack()}><Txt size={15} weight={600}>{tx('Fertig', 'Done')}</Txt></PressScale>
       </View>
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, height: 44, paddingHorizontal: 14, borderRadius: 14, backgroundColor: '#F1F1EF' }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, height: 44, paddingHorizontal: 14, borderRadius: 14, backgroundColor: tokens.chipBg }}>
         <LineIcon name="sparkle" size={16} color={tokens.sub} />
         <TextInput
           value={q}

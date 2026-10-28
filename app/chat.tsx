@@ -95,7 +95,7 @@ export default function Chat() {
                 <Chevron />
               </PressScale>
             ) : (
-              <View style={{ paddingVertical: 11, paddingHorizontal: 14, borderRadius: 20, backgroundColor: m.me ? '#E9ECEB' : tokens.row, borderBottomRightRadius: m.me ? 6 : 20, borderBottomLeftRadius: m.me ? 20 : 6 }}>
+              <View style={{ paddingVertical: 11, paddingHorizontal: 14, borderRadius: 20, backgroundColor: m.me ? tokens.chipBg : tokens.row, borderBottomRightRadius: m.me ? 6 : 20, borderBottomLeftRadius: m.me ? 20 : 6 }}>
                 <Txt size={15.5} line={22}>{m.text}</Txt>
               </View>
             )}
@@ -122,7 +122,7 @@ export default function Chat() {
             onPress={text ? send : () => toast('Sprachnotiz kommt später')}
             style={{ width: 40, height: 40, borderRadius: 999, backgroundColor: tokens.ink, alignItems: 'center', justifyContent: 'center' }}
           >
-            <LineIcon name={text ? 'send' : 'mic'} size={20} color="#FFFFFF" />
+            <LineIcon name={text ? 'send' : 'mic'} size={20} color={tokens.onInk} />
           </PressScale>
         </View>
       </View>

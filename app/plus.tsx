@@ -46,7 +46,7 @@ export default function Plus() {
             <PressScale key={p.key} onPress={() => actions.setPlan(p.key)} style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 14, paddingHorizontal: 16, borderRadius: 20, backgroundColor: tokens.row, borderWidth: 2, borderColor: on ? tokens.ink : 'transparent', marginTop: 'badge' in p ? 8 : 0 }}>
               {'badge' in p ? (
                 <View style={{ position: 'absolute', top: -11, left: 14, height: 22, paddingHorizontal: 10, borderRadius: 999, backgroundColor: tokens.done, justifyContent: 'center' }}>
-                  <Txt size={11.5} weight={700} color="#FFFFFF">{p.badge}</Txt>
+                  <Txt size={11.5} weight={700} color={tokens.onInk}>{p.badge}</Txt>
                 </View>
               ) : null}
               <View style={{ flex: 1 }}>

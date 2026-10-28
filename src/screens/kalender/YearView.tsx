@@ -166,14 +166,14 @@ export default function YearView() {
                 const p = pt(fracOf(m.date));
                 const past = m.done || m.date < TODAY;
                 const col = past ? tokens.done : m.frist ? tokens.frist : tokens.mute;
-                return <Circle key={m.id} cx={p.x} cy={p.y} r={7} fill={past ? col : '#FFFFFF'} stroke={col} strokeWidth={2.5} />;
+                return <Circle key={m.id} cx={p.x} cy={p.y} r={7} fill={past ? col : tokens.row} stroke={col} strokeWidth={2.5} />;
               })}
             </Svg>
             <View pointerEvents="none" style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, alignItems: 'center', justifyContent: 'center' }}>
               <Txt size={40} line={46} weight={700} tracking={-1.5} style={{ fontVariant: ['tabular-nums'] }}>{String(week ?? Math.max(0, Math.floor(daysBetween(BORN, TODAY) / 7)))}</Txt>
               <Meta>{week !== null ? weekLabel(week) : BORN > TODAY ? tx(`noch ${Math.ceil(daysBetween(TODAY, BORN) / 7)} Wochen`, `${Math.ceil(daysBetween(TODAY, BORN) / 7)} weeks to go`) : tx('Wochen alt', 'weeks old')}</Meta>
             </View>
-            <Animated.View pointerEvents="none" style={[{ position: 'absolute', top: 0, left: 0, width: 30, height: 30, borderRadius: 999, backgroundColor: '#FFFFFF', borderWidth: 3, borderColor: tokens.ink }, knob]} />
+            <Animated.View pointerEvents="none" style={[{ position: 'absolute', top: 0, left: 0, width: 30, height: 30, borderRadius: 999, backgroundColor: tokens.row, borderWidth: 3, borderColor: tokens.ink }, knob]} />
           </Animated.View>
         </GestureDetector>
         {nearM && tipPos ? (
@@ -185,7 +185,7 @@ export default function YearView() {
           >
             <Tile name={nearM.icon} size={60} radius={18} />
             <View style={{ paddingVertical: 3, paddingHorizontal: 9, borderRadius: 999, backgroundColor: tokens.ink }}>
-              <Text style={{ color: '#FFFFFF', fontFamily: 'Geist_600SemiBold', fontSize: 12.5 }} numberOfLines={1}>{`${nearM.title} · ${dmShort(nearM.date)}`}</Text>
+              <Text style={{ color: tokens.onInk, fontFamily: 'Geist_600SemiBold', fontSize: 12.5 }} numberOfLines={1}>{`${nearM.title} · ${dmShort(nearM.date)}`}</Text>
             </View>
           </Animated.View>
         ) : null}
