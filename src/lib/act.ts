@@ -73,13 +73,27 @@ export function splitItems(text: string): string[] {
 
 // ─── Kalender ──────────────────────────────────────────────────────────────
 
+/** "Erinnere mich (daran), …", "Aufgabe: …", "Remind me to …": a task, not a Termin (Julian 28.10.). */
+const REMIND = /^\s*(bitte\s+)?(aufgabe|todo|to do|erinnere? (mich|uns)|task|remind (me|us))\b/i;
+
+/** "Erinnere mich Freitag meinen Wabi Account zu löschen" → "Freitag Wabi Account löschen"; the day stays for the due date. */
+function remindText(said: string) {
+  return said
+    .replace(/^\s*(bitte\s+)?(aufgabe|todo|to do|task)\s*:?\s*/i, '')
+    .replace(/^\s*(bitte\s+)?(erinnere? (mich|uns)|remind (me|us))(\s+bitte)?(\s+(daran|dran|an|to|about))?\s*,?\s*/i, '')
+    .replace(/^(dass|that)\s+(ich|wir|i|we)\s+/i, '')
+    .replace(/\b(meine[nms]?|mein|unsere[nms]?|unser|my|our)\s+/gi, '')
+    .replace(/\bzu\s+(\S+?)[.!]?\s*$/i, '$1')
+    .trim();
+}
+
 /** Sentences for a list, not the calendar. */
 function listPlan(said: string): Plan | null {
   const l = said.toLowerCase();
   // Shopping from anywhere: "Auf die Einkaufsliste: Milch und Brot", "Wir brauchen Windeln".
   if (/einkauf|\bkaufen\b|\bbesorgen\b|wir brauchen|shopping|\bbuy\b|we need|grocer/.test(l) && !findWhen(said.split(/\s+/))) return liste(said, 'einkauf');
   if (/^\s*(neue|eine neue|leg(e)? (eine )?neue)\s+liste|^\s*liste\b|^\s*(a\s+)?new\s+list\b|^\s*list\b/.test(l)) return listeNeu(said);
-  if (/^\s*(aufgabe|todo|to do|erinnere? (mich|uns) an|task|remind (me|us) to)\b/.test(l)) return liste(said.replace(/^\s*(aufgabe|todo|to do|erinnere? (mich|uns) an|task|remind (me|us) to)\s*:?\s*/i, ''), 'aufgaben');
+  if (REMIND.test(l)) return liste(remindText(said), 'aufgaben');
   return null;
 }
 

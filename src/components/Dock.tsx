@@ -444,7 +444,9 @@ export default function Dock() {
     }
     if (thinksOnline(ctx, said, pending)) {
       // Claude first (Julian 28.10.: the rules' half guess must never land).
-      think(said, n, (r) => land(r, said, lines, () => play(plan(ctx, said, pending), said, false, undefined, lines)));
+      // A dish without Claude would become a strange Termin ("Wann ist Bolognese kochen?"): say so instead.
+      const slow = () => hold(said, { kind: 'done', note: true, text: tx('Das Rezept konnte ich gerade nicht nachsehen. Sag es bitte gleich noch einmal.', "I couldn't look up the recipe just now. Please say it again in a moment.") }, lines);
+      think(said, n, (r) => land(r, said, lines, dishy(said) ? slow : () => play(plan(ctx, said, pending), said, false, undefined, lines)));
       return;
     }
     play(plan(ctx, said, pending), said, true, undefined, lines);

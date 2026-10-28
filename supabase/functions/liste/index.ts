@@ -140,7 +140,7 @@ async function fetchPage(start: URL): Promise<{ html: string; url: URL } | null>
   let url = start;
   for (let hop = 0; hop < 4; hop++) {
     if (!(await resolvesPublic(url.hostname))) return null;
-    const r = await fetch(url, { redirect: 'manual', headers: { ...UA, Accept: 'text/html' }, signal: AbortSignal.timeout(8000) });
+    const r = await fetch(url, { redirect: 'manual', headers: { 'User-Agent': 'Mozilla/5.0 (compatible; FamCal/0.1; +https://famcal.app)', Accept: 'text/html', 'Accept-Language': 'de,en;q=0.8' }, signal: AbortSignal.timeout(8000) });
     if (r.status >= 300 && r.status < 400) {
       const next = r.headers.get('location');
       await r.body?.cancel();
