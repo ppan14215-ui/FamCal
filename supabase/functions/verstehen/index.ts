@@ -81,7 +81,7 @@ const cors = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const client = new Anthropic({ apiKey: Deno.env.get('ANTHROPIC_API_KEY') ?? Deno.env.get('ANTROPHIC_API_KEY') });
+const client = new Anthropic({ apiKey: Deno.env.get('ANTHROPIC_API_KEY') });
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors });

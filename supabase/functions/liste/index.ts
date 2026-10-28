@@ -53,7 +53,7 @@ Regeln:
 - seen_label: ein Wort in der Sprache der App für den seen Baustein, sonst null.
 - Ist eine normale Checkliste richtig (Packliste, Aufgaben, Einkauf), setze plain auf true und blocks leer.`;
 
-const client = new Anthropic({ apiKey: Deno.env.get('ANTHROPIC_API_KEY') ?? Deno.env.get('ANTROPHIC_API_KEY') });
+const client = new Anthropic({ apiKey: Deno.env.get('ANTHROPIC_API_KEY') });
 
 type Found = { cover?: string; year?: string; by?: string; link?: string };
 
