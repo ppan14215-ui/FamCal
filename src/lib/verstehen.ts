@@ -11,8 +11,8 @@ import { TERMIN_ICON_NAMES, type Understood } from './talk';
 import { LANG, tx } from '../i18n/lang';
 import { toast } from '../state/store';
 
-/** The family waits with the orb spinning; past this the rules answer. */
-const WAIT_MS = 8000;
+/** The rules have answered already; Claude may take longer for a sentence with many Termine (Julian 28.10.). */
+const WAIT_MS = 15000;
 
 export const canUnderstand = () => !!supabase && !!getAuth().session;
 
