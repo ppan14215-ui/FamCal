@@ -21,7 +21,7 @@ import TalkBar from './TalkBar';
 import { setVeil } from './Veil';
 import { tokens, persons } from '../theme';
 import { useStore, actions, get } from '../state/store';
-import { plan, claudeSays, correction, replyPlan, listFromClaude, thinksOnline, Ctx, Plan, Result, SPOKEN, HINTS, PLACEHOLDER } from '../lib/act';
+import { plan, claudeSays, correction, replyPlan, listFromClaude, thinksOnline, Ctx, Plan, Result, SPOKEN, PLACEHOLDER } from '../lib/act';
 import { dayLabel, slotLine, findWhen } from '../lib/talk';
 import { locate, light, lightOneByOne } from '../lib/landing';
 import { setDockTop, setDockSpace } from '../lib/dockSpace';
@@ -200,7 +200,6 @@ type Turn = { id: number; said: string; result: Result };
 
 export default function Dock() {
   const where = useWhere();
-  const hasEvents = useStore((s) => s.events.some((e) => !e.work));
   const insets = useSafeAreaInsets();
   const kb = useKeyboardInset();
   const typing = useTyping();
@@ -370,7 +369,6 @@ export default function Dock() {
         key={kind}
         onSend={hear}
         onPlus={() => router.push('/neu')}
-        suggestions={turn || (kind === 'kalender' && hasEvents) ? [] : HINTS[kind]}
         spoken={SPOKEN[kind]}
         placeholder={PLACEHOLDER[kind]}
       />

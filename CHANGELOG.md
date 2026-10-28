@@ -4,6 +4,10 @@ Alle sichtbaren Änderungen an FamCal. Neueste oben. Agenten und Menschen: Ände
 
 ## Unreleased
 
+### Ruhiger unten (28.10.)
+
+- Die Vorschläge über dem Sprechfeld sind weg. Unten steht nur noch das Feld mit Mikro.
+
 ### Das Mikro lässt dich ausreden (28.10.)
 
 - Kurze Pausen beenden die Aufnahme nicht mehr. Das Mikro hört zu, bis du etwa zweieinhalb Sekunden still bist oder nochmal auf den Kreis tippst. Den Text siehst du live mitlaufen.

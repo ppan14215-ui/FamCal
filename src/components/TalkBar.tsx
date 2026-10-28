@@ -9,11 +9,10 @@
  * lines, then scrolls inside (Julian 27.10.).
  */
 import React, { useEffect, useRef, useState } from 'react';
-import { View, TextInput, Platform, ScrollView } from 'react-native';
+import { View, TextInput, Platform } from 'react-native';
 import Txt from './ui/Txt';
 import LineIcon from './ui/LineIcon';
 import PressScale from './ui/PressScale';
-import { Chip } from './ui/kit';
 import Orb from './Orb';
 import { tokens, fonts } from '../theme';
 import { haptics } from '../lib/haptics';
@@ -50,14 +49,12 @@ type Props = {
   onSend: (text: string) => void;
   /** Opens Foto, Termin, Aufgabe, Entwurf. */
   onPlus?: () => void;
-  /** Short prompts above the field. */
-  suggestions?: string[];
   /** What the mic says in the testlink, one after the other. */
   spoken: string[];
   placeholder?: string;
 };
 
-export default function TalkBar({ onSend, onPlus, suggestions = [], spoken, placeholder = tx('Sag oder schreib, was ansteht …', 'Say or type what\'s coming up …') }: Props) {
+export default function TalkBar({ onSend, onPlus, spoken, placeholder = tx('Sag oder schreib, was ansteht …', 'Say or type what\'s coming up …') }: Props) {
   const [text, setText] = useState('');
   const [listening, setListening] = useState(false);
   const [demo, setDemo] = useState(false);
@@ -217,12 +214,6 @@ export default function TalkBar({ onSend, onPlus, suggestions = [], spoken, plac
     <View style={{ gap: 8 }}>
       {demo ? (
         <Txt size={12.5} line={17} color={tokens.sub} style={{ paddingHorizontal: 10 }}>{tx('Im Testlink ist das Mikro gesperrt, darum spreche ich einen Beispielsatz. In der App hört es euch zu.', 'The test link can\'t use the microphone, so I say a sample sentence. The app listens to you.')}</Txt>
-      ) : suggestions.length ? (
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="handled" contentContainerStyle={{ gap: 6, paddingHorizontal: 2 }}>
-          {suggestions.map((s) => (
-            <Chip key={s} onPress={() => send(s)}>{`„${s}“`}</Chip>
-          ))}
-        </ScrollView>
       ) : null}
       {input}
     </View>

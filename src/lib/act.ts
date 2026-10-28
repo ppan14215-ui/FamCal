@@ -329,19 +329,6 @@ export const SPOKEN: Record<Ctx['kind'], string[]> = EN ? {
   'liste-neu': ['Neue Liste Ostsee: Sonnencreme, Strandmuschel und Sonnenhut'],
 };
 
-/** Short prompts above the field, per place. */
-export const HINTS: Record<Ctx['kind'], string[]> = EN ? {
-  kalender: ['Pediatrician on Friday', 'Julia has the dentist Fri 3pm', 'When are we free?', 'We need diapers'],
-  termin: ['Tom goes', 'An hour later', 'Bring the vaccination card', 'Move to Friday 10am'],
-  liste: ['Milk and bread', 'Two oat milk', 'New list Mia’s birthday'],
-  'liste-neu': ['Packing list beach', 'Mia’s birthday: present, card'],
-} : {
-  kalender: ['Freitag zum Kinderarzt', 'Julia hat Fr 15 Uhr Zahnarzt', 'Wann haben wir frei?', 'Wir brauchen Windeln'],
-  termin: ['Tom geht', 'Eine Stunde später', 'Impfpass mitnehmen', 'Auf Freitag 10 Uhr'],
-  liste: ['Milch und Brot', 'Zwei Hafermilch', 'Neue Liste Geburtstag Mia'],
-  'liste-neu': ['Packliste Ostsee', 'Geburtstag Mia: Geschenk, Karte'],
-};
-
 export const PLACEHOLDER: Record<Ctx['kind'], string> = EN ? {
   kalender: 'Say or type what’s coming up',
   termin: 'Change: time, who goes, what to bring …',
