@@ -17,7 +17,7 @@ import Txt from '../../components/ui/Txt';
 import Stripes from '../../components/Stripes';
 import { tokens, tint, PersonId, persons } from '../../theme';
 import { useStore, actions } from '../../state/store';
-import { addDays, monday, dayNum, WD_SHORT, weekday, minutes, TODAY, MONTHS_SHORT, monthIdx, hm, dmShort } from '../../lib/dates';
+import { addDays, monday, dayNum, WD_SHORT, weekday, minutes, TODAY, NOW, MONTHS_SHORT, monthIdx, hm, dmShort } from '../../lib/dates';
 import PressScale from '../../components/ui/PressScale';
 import { tx } from '../../i18n/lang';
 
@@ -117,8 +117,9 @@ export default function WeekView() {
             return (
               <PressScale key={d} onPress={() => { actions.setCalDay(d); actions.setCalView('tag'); }} style={{ flex: 1, alignItems: 'center', gap: 2 }}>
                 <Txt size={11.5} color={tokens.sub}>{WD_SHORT[weekday(d)]}</Txt>
-                <View style={{ width: 28, height: 28, borderRadius: 999, backgroundColor: sel ? tokens.ink : 'transparent', alignItems: 'center', justifyContent: 'center' }}>
-                  <Txt size={15} weight={600} color={sel ? '#FFFFFF' : d === TODAY ? tokens.done : tokens.ink}>{String(dayNum(d))}</Txt>
+                {/* Only today is the dark bubble (Julian 28.10.); a picked other day gets a ring. */}
+                <View style={{ width: 28, height: 28, borderRadius: 999, backgroundColor: d === TODAY ? tokens.ink : 'transparent', borderWidth: sel && d !== TODAY ? 1.5 : 0, borderColor: tokens.ink, alignItems: 'center', justifyContent: 'center' }}>
+                  <Txt size={15} weight={600} color={d === TODAY ? '#FFFFFF' : tokens.ink}>{String(dayNum(d))}</Txt>
                 </View>
               </PressScale>
             );
@@ -152,7 +153,7 @@ export default function WeekView() {
                       </PressScale>
                     );
                   })}
-                  {d === TODAY ? <View style={{ position: 'absolute', left: -2, right: -2, top: top('08:50'), height: 2, backgroundColor: tokens.done }} /> : null}
+                  {d === TODAY ? <View style={{ position: 'absolute', left: -2, right: -2, top: top(NOW), height: 2, backgroundColor: tokens.done }} /> : null}
                 </View>
               );
             })}
