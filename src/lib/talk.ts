@@ -99,6 +99,8 @@ function titleOf(rest: string): { title: string; sub?: string } {
     return ws.join(' ');
   }).filter((c) => c && !/^(mit|auch|hin|mit hin|too|also|with)$/i.test(c));
   const [first, ...more] = clauses;
+  // "Sonntag 17 Uhr mit Anja und Erik" names only who; the Termin is meeting them (Julian 28.10.).
+  if (first && /^(mit|with)\s+\S/i.test(first)) return { title: tx('Treffen', 'Meet-up'), sub: [first, ...more].join(', ') };
   return { title: cap(first ?? ''), sub: more.length ? cap(more.join(', ')) : undefined };
 }
 
