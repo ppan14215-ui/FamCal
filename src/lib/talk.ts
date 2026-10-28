@@ -303,6 +303,8 @@ export type Understood = {
   list?: 'einkauf' | 'aufgaben' | null; items?: string[];
   /** A dish: what else it needs, or which recipe first (Julian 28.10.: "Bolognese kochen"). */
   dish?: string; extra?: string[]; variants?: string[];
+  /** Said as already at home ("habe nur Tomaten daheim"), kept off the list. */
+  have?: string[];
   /** Working hours: shown as a striped block, not in the lists (Julian 28.10.). */
   work?: boolean;
   /** Further Termine from the same sentence ("Urlaub bis Sonntag, danach Arbeit ab Dienstag"). */

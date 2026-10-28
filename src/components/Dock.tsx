@@ -21,11 +21,11 @@ import TalkBar from './TalkBar';
 import { setVeil } from './Veil';
 import { tokens, persons } from '../theme';
 import { useStore, actions, get } from '../state/store';
-import { plan, claudeSays, correction, replyPlan, listFromClaude, thinksOnline, revisePlan, reviseOffline, draftOf, cutOff, addPicks, dishy, linkPlan, Ctx, Plan, Result, Said, SPOKEN, PLACEHOLDER } from '../lib/act';
+import { plan, claudeSays, replyPlan, listFromClaude, thinksOnline, revisePlan, reviseOffline, draftOf, cutOff, addPicks, dishy, linkPlan, Ctx, Plan, Result, Said, SPOKEN, PLACEHOLDER } from '../lib/act';
 import { canUnderstand, type Convo } from '../lib/verstehen';
 import { linkIn, recipeFromLink, keepRecipe, loadRecipes, type Recipe } from '../lib/rezepte';
 import { onShared } from '../lib/shared';
-import { dayLabel, slotLine, findWhen, type Suggest } from '../lib/talk';
+import { dayLabel, slotLine, type Suggest } from '../lib/talk';
 import { locate, light, lightOneByOne } from '../lib/landing';
 import { setDockTop, setDockSpace } from '../lib/dockSpace';
 import { useKeyboardInset, useTyping } from '../lib/keyboard';
@@ -39,14 +39,6 @@ import { onToday } from '../screens/kalender/TodayView';
 const STEP_MS = 850;
 /** How long the family waits for Claude before the rules answer instead. */
 const FIRST_MS = 12000;
-/**
- * Long or tricky sentences wait for Claude instead of showing the rules' guess (Julian 28.10.: "nur bei langen Sätzen").
- * Tricky: spans and sequences ("seit", "bis", "danach"), changes, several clauses, or no day the rules can read.
- */
-const needsClaude = (said: string) => {
-  const words = said.trim().split(/\s+/);
-  return words.length >= 7 || /,|\b(seit|bis|danach|dann|ab|und|verschieb\w*|urlaub|krank|jede[nr]?|außer|since|until|after|then|and|every|vacation|holiday|move)\b/i.test(said) || !findWhen(words);
-};
 /** Appears calmly, no spring or overshoot (Julian 28.10.: the bounce was too playful). */
 const CALM = FadeIn.duration(200);
 const TIMES = ['09:00', '10:30', '14:00', '16:00'];
@@ -313,6 +305,16 @@ function RecipeCard({ r, onVariant, onAdd, onSkip, onKept }: { r: Extract<Result
           })}
         </View>
       ) : null}
+      {r.have?.length ? (
+        <View style={{ flexDirection: 'row', gap: 6, flexWrap: 'wrap', alignItems: 'center', paddingLeft: 36 }}>
+          <Txt size={13} color={tokens.sub}>{tx('Habt ihr schon:', 'Already at home:')}</Txt>
+          {r.have.map((x) => (
+            <View key={x} style={{ height: 30, paddingHorizontal: 12, borderRadius: 999, backgroundColor: tokens.chipBg, justifyContent: 'center' }}>
+              <Txt size={13} color={tokens.mute} strike>{x}</Txt>
+            </View>
+          ))}
+        </View>
+      ) : null}
       <View style={{ flexDirection: 'row', gap: 8 }}>
         <PressScale onPress={onSkip} style={{ flex: 1, height: 44, borderRadius: 999, backgroundColor: tokens.chipBg, alignItems: 'center', justifyContent: 'center' }}>
           <Txt size={15} weight={600}>{r.picks.length ? tx('Weglassen', 'Skip') : tx('Passt', 'Done')}</Txt>
@@ -436,12 +438,6 @@ export default function Dock() {
     if (follow && single) lines = [{ said }];
 
     const pending = r0?.kind === 'answer' && r0.reply.kind === 'ask' ? { title: r0.reply.title, who: r0.reply.who } : null;
-    if (thinksOnline(ctx, said, pending) && !needsClaude(said) && !dishy(said)) {
-      // Short and plain ("Freitag 15 Uhr Friseur"): the rules land it at once, Claude corrects a few seconds later.
-      const second = claudeSays(said);
-      play(plan(ctx, said, pending), said, true, (out) => second.then((r) => { if (heard.current === n) correct(out.result, r, said); }), lines);
-      return;
-    }
     if (thinksOnline(ctx, said, pending)) {
       // Claude first (Julian 28.10.: the rules' half guess must never land).
       // A dish without Claude would become a strange Termin ("Wann ist Bolognese kochen?"): say so instead.
@@ -471,27 +467,6 @@ export default function Dock() {
     if (r.kind === 'unclear') return hold(said, { kind: 'unclear', text: r.text }, lines);
     if (r.kind === 'liste') return play(listFromClaude(r), said, false, undefined, lines);
     play(replyPlan(r), said, false, undefined, lines);
-  };
-
-  const correct = (local: Result | undefined, r: Awaited<ReturnType<typeof claudeSays>>, said: string) => {
-    if (!r) return;
-    if (r.kind === 'liste') {
-      // "Nudeln auf die Einkaufsliste" said in the calendar: no Termin, the list gets it.
-      if (local?.kind === 'event') { actions.removeEvent(local.event.id); setTurn(null); light(null); }
-      return play(listFromClaude(r), said, true);
-    }
-    if (r.kind !== 'added') return;
-    // Claude heard several Termine where the rules made one: the rules' guess goes, all of them land.
-    if (r.more?.length && local?.kind === 'event') { actions.removeEvent(local.event.id); setTurn(null); light(null); return play(replyPlan(r), said, true); }
-    if (local?.kind !== 'event') return play(replyPlan(r), said, true);
-    const made = local.event;
-    const patch = correction(made, r);
-    if (!patch) return;
-    actions.updateEvent(made.id, patch);
-    const event = { ...made, ...patch };
-    setTurn((t) => (t && t.result.kind === 'event' && t.result.event.id === made.id ? { ...t, result: { ...t.result, event, needsTime: r.needsTime } } : t));
-    light(made.id);
-    haptics.select();
   };
 
   const play = (p: Plan, said: string, fresh: boolean, after?: (out: ReturnType<Plan['run']>) => void, lines: Line[] = [{ said }]) => {

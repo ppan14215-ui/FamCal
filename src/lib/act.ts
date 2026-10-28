@@ -13,7 +13,7 @@ import { blueprintFor, blocksLine } from './blueprint';
 import { understand, findWhen, whoOf, clean, Reply, fromModel, type Suggest } from './talk';
 import { canUnderstand, understandOnline, type Convo } from './verstehen';
 import { tx, EN } from '../i18n/lang';
-import { whenLine, splitDue, When } from './when';
+import { whenLine, splitDue, parseWhen, When } from './when';
 import { long, hm, minutes, short } from './dates';
 import { newId, listFromTemplate, templates, parseItem } from '../data/sample';
 import { savedFor, type Recipe } from './rezepte';
@@ -38,7 +38,9 @@ export type Result =
       /** Read from a link: kept for the family once something lands. */
       from?: Recipe;
       /** The family made this dish before: "Wieder dein Rezept von chefkoch.de?" first, with its own picks. */
-      kept?: { recipe: Recipe; picks: string[] } };
+      kept?: { recipe: Recipe; picks: string[] };
+      /** Already at home, shown struck through so it is clear what was left off. */
+      have?: string[] };
 
 export type Plan = {
   /** What the machine is about to do, in one line above the steps ("Ich setze auf die Einkaufsliste"). Only for changes, not for questions. */
@@ -78,13 +80,26 @@ const REMIND = /^\s*(bitte\s+)?(aufgabe|todo|to do|erinnere? (mich|uns)|task|rem
 
 /** "Erinnere mich Freitag meinen Wabi Account zu löschen" → "Freitag Wabi Account löschen"; the day stays for the due date. */
 function remindText(said: string) {
-  return said
+  const t = said
     .replace(/^\s*(bitte\s+)?(aufgabe|todo|to do|task)\s*:?\s*/i, '')
     .replace(/^\s*(bitte\s+)?(erinnere? (mich|uns)|remind (me|us))(\s+bitte)?(\s+(daran|dran|an|to|about))?\s*,?\s*/i, '')
     .replace(/^(dass|that)\s+(ich|wir|i|we)\s+/i, '')
     .replace(/\b(meine[nms]?|mein|unsere[nms]?|unser|my|our)\s+/gi, '')
     .replace(/\bzu\s+(\S+?)[.!]?\s*$/i, '$1')
     .trim();
+  return dueLast(t);
+}
+
+/** "Freitag Wabi Account löschen" → "Wabi Account löschen bis Freitag", so the task gets its day. */
+function dueLast(t: string) {
+  const w = t.split(/\s+/);
+  for (let n = Math.min(4, w.length - 1); n >= 1; n--) {
+    const head = w.slice(0, n).join(' ').replace(/^(am|on)\s+/i, '');
+    if (parseWhen(head)) return `${w.slice(n).join(' ')} ${tx('bis', 'by')} ${head}`;
+    const tail = w.slice(-n).join(' ').replace(/^(am|on)\s+/i, '');
+    if (parseWhen(tail)) return `${w.slice(0, -n).join(' ')} ${tx('bis', 'by')} ${tail}`;
+  }
+  return t;
 }
 
 /** Sentences for a list, not the calendar. */
@@ -306,7 +321,7 @@ function listeNeu(said: string): Plan {
  * quietly corrects what the rules got wrong. Lists, follow-ups ("um 15 Uhr")
  * and everything offline stay with the rules alone.
  */
-export type ListSaid = { kind: 'liste'; list: 'einkauf' | 'aufgaben'; items: string[]; dish?: string; extra?: string[]; variants?: string[]; question?: string };
+export type ListSaid = { kind: 'liste'; list: 'einkauf' | 'aufgaben'; items: string[]; dish?: string; extra?: string[]; variants?: string[]; question?: string; have?: string[] };
 
 export type Said = Reply | ListSaid | { kind: 'cut' } | { kind: 'unclear'; text: string };
 
@@ -315,7 +330,7 @@ export async function claudeSays(said: string, convo?: Convo): Promise<Said | nu
   if (m?.kind === 'abgebrochen') return { kind: 'cut' };
   if (m?.kind === 'unklar') return { kind: 'unclear', text: m.question || UNCLEAR() };
   if (m?.kind === 'liste' && (m.items?.length || m.dish)) {
-    return { kind: 'liste', list: m.list === 'aufgaben' ? 'aufgaben' : 'einkauf', items: m.items ?? [], dish: m.dish || undefined, extra: (m.extra ?? []).slice(0, 30), variants: (m.variants ?? []).slice(0, 4), question: m.question ?? undefined };
+    return { kind: 'liste', list: m.list === 'aufgaben' ? 'aufgaben' : 'einkauf', items: m.items ?? [], dish: m.dish || undefined, extra: (m.extra ?? []).slice(0, 30), variants: (m.variants ?? []).slice(0, 4), question: m.question ?? undefined, have: (m.have ?? []).slice(0, 20) };
   }
   return m && fromModel(m, said, get().events, () => newId('e'));
 }
@@ -389,10 +404,11 @@ export const dishy = (said: string) => /\b(koch\w*|back\w*|rezept\w*|zutaten|kuc
 function recipePlan(r: ListSaid): Plan {
   const dish = r.dish!;
   const said = r.items.length ? liste(r.items.join(', '), 'einkauf') : null;
-  const picks = missing(r.extra ?? [], r.items);
+  const have = r.have ?? [];
+  const picks = missing(r.extra ?? [], [...r.items, ...have]);
   const asks = !!r.variants?.length && !picks.length;
   const saved = savedFor(dish);
-  const kept = saved ? { recipe: saved, picks: missing(saved.ingredients, r.items) } : undefined;
+  const kept = saved ? { recipe: saved, picks: missing(saved.ingredients, [...r.items, ...have]) } : undefined;
   const note = kept ? tx(`${dish} hattet ihr schon, ich frage nach eurem Rezept.`, `You've made ${dish} before, I'll ask about your recipe.`) : asks ? tx(`Für ${dish} frage ich kurz nach dem Rezept.`, `For ${dish} I'll ask which recipe.`) : tx(`Für ${dish} fehlen noch ${picks.length} Dinge, du wählst gleich.`, `${dish} needs ${picks.length} more things, you pick next.`);
   return {
     head: said?.head ?? tx(`Ich schaue, was ${dish} braucht`, `Checking what ${dish} needs`),
@@ -402,7 +418,7 @@ function recipePlan(r: ListSaid): Plan {
       const first = out?.result?.kind === 'done' ? out.result : undefined;
       return {
         ...(out ?? { go: '/listen' }),
-        result: { kind: 'recipe', dish, picks, kept, variants: asks ? r.variants : undefined, question: asks ? r.question || tx('Welches Rezept, und für wie viele?', 'Which recipe, and for how many?') : undefined, added: first?.text, undo: first?.undo },
+        result: { kind: 'recipe', dish, picks, kept, have: have.length ? have : undefined, variants: asks ? r.variants : undefined, question: asks ? r.question || tx('Welches Rezept, und für wie viele?', 'Which recipe, and for how many?') : undefined, added: first?.text, undo: first?.undo },
       };
     },
   };
@@ -452,6 +468,8 @@ export const thinksOnline = (ctx: Ctx, said: string, pending: unknown) => !pendi
 export function plan(ctx: Ctx, said: string, pending: { title: string; who: Who } | null): Plan {
   if (ctx.kind === 'termin') return termin(said, ctx.id);
   if (ctx.kind === 'liste') {
+    // "Erinnere mich …" is a task from any list.
+    if (REMIND.test(said)) return liste(remindText(said), 'aufgaben');
     // A date in it on the task list still means a task, elsewhere a Termin.
     if (ctx.id !== 'aufgaben' && findWhen(said.split(/\s+/)) && !/einkauf|liste|shopping|list/i.test(said)) return kalender(said, pending);
     if (/^\s*(neue|eine neue)\s+liste|^\s*(a\s+)?new\s+list/i.test(said)) return listeNeu(said);

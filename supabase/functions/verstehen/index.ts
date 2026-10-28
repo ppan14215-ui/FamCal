@@ -45,6 +45,8 @@ const Termin = z.object({
   dish: z.string(),
   extra: z.array(z.string()),
   variants: z.array(z.string()),
+  // Julian 28.10.: "habe nur ein paar Tomaten daheim" — said as already at home, kept off the list.
+  have: z.array(z.string()),
   // Julian 28.10.: one sentence can hold several Termine ("ab heute Urlaub bis Sonntag, danach Arbeit 8 bis 17 Uhr ab Dienstag").
   work: z.boolean(),
   // Plain strings, "" for none: the API allows only a few nullable fields per schema (it refused 19 on 28.10.).
@@ -82,7 +84,7 @@ Regeln:
 - Fehlt etwas Wichtiges (kein Datum), setze kind auf termin, date auf null und stelle in question eine kurze Rückfrage in der Sprache der App.
 - Ist der Satz eine Frage an den Kalender ("Was steht morgen an?", "What's on tomorrow?"), setze kind auf frage und lasse die Felder leer.
 - Gehört der Satz auf eine Liste statt in den Kalender ("Nudeln auf die Einkaufsliste", "wir brauchen Windeln", "put pasta on the shopping list", "ich muss noch die Steuer machen"), setze kind auf liste, list auf einkauf (Dinge zum Kaufen) oder aufgaben (Dinge zu erledigen) und items auf die einzelnen Dinge, kurz und groß geschrieben ("Nudeln", "2 Hafermilch"). Ein Satz mit Uhrzeit oder festem Tag ist ein Termin, auch wenn "kaufen" vorkommt.
-- Gerichte und Rezepte: Nennt der Satz etwas zum Kochen oder Backen ("Ich will heute Abend Bolognese kochen", "Zucker, Mehl und Milch, alles was man für einen Karottenkuchen braucht"), ist es eine liste mit list einkauf, auch mit "heute Abend". dish ist der Name des Gerichts, items sind nur die Dinge, die der Satz selbst nennt, extra sind alle übrigen üblichen Zutaten für vier Personen mit kurzer Menge ("500 g Hackfleisch", "2 Karotten"), ohne Salz, Pfeffer, Öl und Wasser, und ohne was schon in items steht. Gibt es sehr verschiedene Rezepte und hat der Satz keins gewählt (Bolognese, Curry, Kuchen ohne Sorte), setze variants auf zwei bis vier kurze Varianten in der Sprache der App ("Klassisch", "Schnell", "Vegetarisch"), extra leer und question auf "Welches Rezept, und für wie viele?". Beim Karottenkuchen oder anderen klaren Rezepten bleiben variants leer und extra wird gefüllt. Antwortet der neue Satz im Gespräch mit einer Variante oder Personenzahl, füllst du extra passend dazu. Was der Satz als schon da nennt ("habe Nudeln und Parmesan daheim", "Tomaten haben wir"), steht weder in items noch in extra; "alles andere" heißt dann: der Rest des Rezepts kommt in extra. Ohne Gericht sind dish "", extra und variants leer.
+- Gerichte und Rezepte: Nennt der Satz etwas zum Kochen oder Backen ("Ich will heute Abend Bolognese kochen", "Zucker, Mehl und Milch, alles was man für einen Karottenkuchen braucht"), ist es eine liste mit list einkauf, auch mit "heute Abend". dish ist der Name des Gerichts, items sind nur die Dinge, die der Satz selbst nennt, extra sind alle übrigen üblichen Zutaten für vier Personen mit kurzer Menge ("500 g Hackfleisch", "2 Karotten"), ohne Salz, Pfeffer, Öl und Wasser, und ohne was schon in items steht. Gibt es sehr verschiedene Rezepte und hat der Satz keins gewählt (Bolognese, Curry, Kuchen ohne Sorte), setze variants auf zwei bis vier kurze Varianten in der Sprache der App ("Klassisch", "Schnell", "Vegetarisch"), extra leer und question auf "Welches Rezept, und für wie viele?". Beim Karottenkuchen oder anderen klaren Rezepten bleiben variants leer und extra wird gefüllt. Antwortet der neue Satz im Gespräch mit einer Variante oder Personenzahl, füllst du extra passend dazu. Was der Satz als schon da nennt ("habe Nudeln und Parmesan daheim", "Tomaten haben wir", "nur ein paar Tomaten daheim"), kommt in have und steht weder in items noch in extra; "alles andere" heißt dann: der Rest des Rezepts kommt in extra. Ohne so etwas ist have leer. Ohne Gericht sind dish "", extra und variants leer.
 - icon: wähle für einen Termin den passendsten Namen aus der Liste unten ("Fußball mit Freunden" ergibt fussball, "Friseur" passt zu keinem, dann kalender). Nur Namen aus der Liste.
 - Mehrere Termine in einem Satz ("ab heute Urlaub bis Sonntag, danach wieder Arbeit von 8 bis 17 Uhr ab Dienstag", "Montag Zahnarzt und Mittwoch Elternabend"): der erste steht in den Hauptfeldern, alle weiteren in more, in zeitlicher Reihenfolge. In more steht "" für leer und who "none" für niemanden. steps beschreibt alle zusammen in höchstens vier kurzen Sätzen. Sonst bleibt more leer.
 - Urlaub, Reise oder Krankheit über mehrere Tage ist ein ganztägiger Termin mit date und end_date.
@@ -127,6 +129,7 @@ Deno.serve(async (req) => {
   // The app sends the icon names it has, so new icons need no change here.
   const icons = (Array.isArray(input.icons) ? input.icons : []).filter((x) => typeof x === 'string' && /^[a-z0-9-]{2,30}$/.test(x)).slice(0, 300).join(', ') || 'kalender';
 
+  const t0 = Date.now();
   try {
     const res = await client.messages.parse({
       model: 'claude-haiku-5-5',
@@ -136,11 +139,13 @@ Deno.serve(async (req) => {
       output_config: { effort: 'low', format: zodOutputFormat(Termin) },
       messages: [{ role: 'user', content: `Heute ist ${wd}, ${today}, ${input.now ?? ''} Uhr. Eltern: ${names}. Sprache der App: ${input.lang === 'en' ? 'Englisch' : 'Deutsch'}.\nIcons: ${icons}${talk}` }],
     });
+    // Only timing and kind, never what was said (Julian 28.10.: why was Claude too slow?).
+    console.log(JSON.stringify({ ms: Date.now() - t0, kind: res.parsed_output?.kind ?? null, dish: !!res.parsed_output?.dish, follow: !!history, stop: res.stop_reason, out: res.usage?.output_tokens }));
     if (res.stop_reason === 'refusal' || !res.parsed_output) return json({ error: 'not_understood' }, 422);
     return json({ ...res.parsed_output, left: allowed.left ?? null });
   } catch (e) {
     const status = e instanceof Anthropic.RateLimitError ? 429 : e instanceof Anthropic.APIError ? 502 : 500;
-    console.error('verstehen', e);
+    console.error('verstehen', Date.now() - t0, e);
     return json({ error: 'model_failed' }, status);
   }
 });
