@@ -6,8 +6,10 @@
  */
 import type { CalEvent, Task, List, InboxItem, Doc, Milestone, Item } from '../state/types';
 
+// Ids must be unique across phones and app starts: a counter restarted at e1 on every launch, and a new
+// Termin then overwrote an old one with the same id in the shared calendar (found 28.10.).
 let n = 0;
-const id = (p: string) => `${p}${++n}`;
+const id = (p: string) => `${p}${Date.now().toString(36)}${(++n).toString(36)}${Math.random().toString(36).slice(2, 6)}`;
 const it = (name: string, who: Item['who'] = null, done = false, extra: Partial<Item> = {}): Item => ({ id: id('i'), name, who, done, ...extra });
 
 export const events: CalEvent[] = [
