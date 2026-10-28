@@ -35,6 +35,9 @@ import { haptics } from '../../lib/haptics';
 import { tx } from '../../i18n/lang';
 import { useCalEvents } from '../../lib/useEvents';
 
+/** A multi-day Termin (Urlaub) shows on every day it covers, not only its first (Julian 28.10.). */
+const covers = (e: CalEvent, d: string) => e.date === d || (!!e.endDate && e.date < d && d <= e.endDate);
+
 const GAP = 5;
 
 export function WeekStrip({ day, onSelect }: { day: string; onSelect: (d: string) => void }) {
@@ -65,7 +68,7 @@ export function WeekStrip({ day, onSelect }: { day: string; onSelect: (d: string
     <View onLayout={(e) => setW(e.nativeEvent.layout.width)}>
       <Animated.View style={[{ flexDirection: 'row', gap: GAP }, row]}>
         {days.map((d) => {
-          const has = events.some((e) => e.date === d && !e.work);
+          const has = events.some((e) => covers(e, d) && !e.work);
           return (
             <PressScale
               key={d}
@@ -266,7 +269,7 @@ export default function DayView({ header }: { header: (today: React.ReactNode) =
     const date = addDays(FIRST, i);
     return {
       date,
-      events: events.filter((e) => e.date === date),
+      events: events.filter((e) => covers(e, date)),
       tasks: tasks.filter((t) => t.who !== undefined && t.due && (t.due === date || (date === TODAY && t.due < TODAY && !t.done))),
       docs: docs.filter((d) => d.frist === date),
     };
