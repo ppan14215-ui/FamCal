@@ -5,7 +5,7 @@
  */
 import { useSyncExternalStore } from 'react';
 import * as S from '../data/sample';
-import type { CalEvent, Task, List, InboxItem, Doc, Milestone, Toast, ToastKind, Item, Who, ItemData, Blueprint } from './types';
+import type { CalEvent, Task, List, InboxItem, Doc, Milestone, Toast, ToastKind, Item, Who, ItemData, Blueprint, Person, Comment } from './types';
 import { enrichItem } from '../lib/enrich';
 import { blueprintFor, blueprintOnline } from '../lib/blueprint';
 import type { ClayName } from '../lib/clayIcons';
@@ -24,6 +24,10 @@ type State = {
   names: { J: string; T: string };
   /** The child from onboarding; null until then. */
   kid: Kid | null;
+  /** Everyone besides the two parents: children, grandparents (Julian 28.10.). */
+  people: Person[];
+  /** Comments per Termin (series id), newest last. */
+  comments: Record<string, Comment[]>;
   /** Where the family lives (first onboarding step) and its Bundesland. */
   city: string;
   land: string;
@@ -59,6 +63,8 @@ type State = {
 const initial = (): State => ({
   names: { J: '', T: '' },
   kid: null,
+  people: [],
+  comments: {},
   city: '',
   land: '',
   calendars: [],
@@ -86,6 +92,8 @@ const initial = (): State => ({
 const demo = (): Partial<State> => ({
   names: { J: 'Julia', T: 'Tom' },
   kid: { name: 'Ben', born: BEN_BORN, land: 'Bayern' },
+  people: [{ id: 'p_ben', name: 'Ben', kind: 'kind', color: 'Mint', birthday: BEN_BORN }, { id: 'p_oma', name: 'Oma Gisela', kind: 'grosseltern', color: 'Sand' }],
+  comments: {},
   calendars: [{ provider: 'google', account: 'tom.huber@gmail.com', ids: ['familie', 'arbeit'] }],
   demo: true,
   events: S.events,
@@ -164,8 +172,29 @@ export const actions = {
   /** From "Eure Kinder": the first year is planned from the date alone. */
   setKid(kid: Kid) {
     const { milestones, cards } = firstYear(kid, findCity(state.city));
-    set(() => ({ kid, milestones, onboardingCards: cards }));
+    // The child is also one of the family's people, so Termine can say who is there.
+    const has = state.people.some((p) => p.kind === 'kind' && p.name === kid.name);
+    const person: Person = { id: S.newId('p_'), name: kid.name, kind: 'kind', color: 'Mint', birthday: kid.born };
+    set((s) => ({ kid, milestones, onboardingCards: cards, people: has ? s.people : [...s.people, person] }));
   },
+  addPerson(p: Omit<Person, 'id'>): string {
+    const id = S.newId('p_');
+    set((s) => ({ people: [...s.people, { ...p, name: p.name.trim().slice(0, 40), id }] }));
+    return id;
+  },
+  updatePerson(id: string, patch: Partial<Person>) { set((s) => ({ people: s.people.map((p) => (p.id === id ? { ...p, ...patch } : p)) })); },
+  removePerson(id: string) {
+    const gone = state.people.find((p) => p.id === id);
+    if (!gone) return;
+    set((s) => ({ people: s.people.filter((p) => p.id !== id), events: s.events.map((e) => (e.people?.includes(id) ? { ...e, people: e.people.filter((x) => x !== id) } : e)) }));
+    return gone;
+  },
+  setPeople(people: Person[]) { set(() => ({ people })); },
+  /** Who else is there: toggles one person on a Termin. */
+  toggleEventPerson(eid: string, pid: string) {
+    set((s) => ({ events: s.events.map((e) => (e.id !== eid ? e : { ...e, people: e.people?.includes(pid) ? e.people.filter((x) => x !== pid) : [...(e.people ?? []), pid] })) }));
+  },
+  setComments(eid: string, list: Comment[]) { set((s) => ({ comments: { ...s.comments, [eid]: list } })); },
   connectCalendar(provider: string, account: string, ids: string[], events: CalEvent[]) {
     set((s) => ({
       calendars: [...s.calendars.filter((c) => c.provider !== provider), ...(ids.length ? [{ provider, account, ids }] : [])],
@@ -197,6 +226,30 @@ export const actions = {
   /** Many at once (a calendar moving in); an id that is already there is kept as it is. */
   addEvents(list: CalEvent[]) {
     set((s) => { const have = new Set(s.events.map((e) => e.id)); return { events: [...s.events, ...list.filter((e) => !have.has(e.id))] }; });
+  },
+  /**
+   * "Nur dieser Termin" in a series: the day leaves the series and becomes its
+   * own Termin, which then takes the change. Returns the new id.
+   */
+  detachOccurrence(instanceId: string): string | undefined {
+    const [sid, date] = instanceId.split('~');
+    const base = state.events.find((e) => e.id === sid);
+    if (!base) return;
+    const day = date ?? base.date;
+    const id = S.newId('e');
+    const len = base.endDate ? Math.round((Date.parse(base.endDate) - Date.parse(base.date)) / 86400000) : 0;
+    const one: CalEvent = { ...base, id, date: day, endDate: len ? new Date(Date.parse(day) + len * 86400000).toISOString().slice(0, 10) : undefined, repeat: undefined, repeatUntil: undefined, skipDates: undefined };
+    set((s) => ({ events: [...s.events.map((e) => (e.id === sid ? { ...e, skipDates: [...new Set([...(e.skipDates ?? []), day])] } : e)), one] }));
+    return id;
+  },
+  /** Deletes one day of a series; Rückgängig puts it back. */
+  skipOccurrence(instanceId: string) {
+    const [sid, date] = instanceId.split('~');
+    const base = state.events.find((e) => e.id === sid);
+    if (!base) return;
+    const day = date ?? base.date;
+    set((s) => ({ events: s.events.map((e) => (e.id === sid ? { ...e, skipDates: [...new Set([...(e.skipDates ?? []), day])] } : e)) }));
+    return base;
   },
   removeEvent(id: string) { set((s) => ({ events: s.events.filter((e) => e.id !== id) })); },
   restoreEvent(e: CalEvent) { set((s) => ({ events: s.events.map((x) => (x.id === e.id ? e : x)) })); },

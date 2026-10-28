@@ -31,8 +31,21 @@ export type CalEvent = {
   repeat?: string;
   /** Work blocks come from synced calendars and only show as a striped block. */
   work?: boolean;
+  /** '0m' | '10m' | '30m' | '1h' | '1d' | '1w' | 'vorabend'; empty means none. */
   reminder?: string;
+  /** Who else is there besides the parents in `who`: ids of family people (children, grandparents). */
+  people?: string[];
+  note?: string;
+  /** Shows "in 12 Tagen" on the Termin and in Heute. */
+  countdown?: boolean;
+  /** Last day of a series. */
+  repeatUntil?: string;
+  /** Days left out of a series ("nur dieser Termin" deleted or moved). */
+  skipDates?: string[];
 };
+
+/** Someone in the family besides the two parents (Julian 28.10.: Kinder, Großeltern). */
+export type Person = { id: string; name: string; kind: 'kind' | 'grosseltern' | 'andere'; color: string; birthday?: string };
 
 export type Task = {
   id: string;
@@ -133,3 +146,6 @@ export type Milestone = {
 /** done: something happened; undo: something went away and can come back; warn: something needs a look; info: just so you know. */
 export type ToastKind = 'done' | 'undo' | 'warn' | 'info';
 export type Toast = { id: number; text: string; sub?: string; kind: ToastKind; undo?: () => void; ms: number };
+
+/** A comment on a Termin ("Ich hol ihn ab"). */
+export type Comment = { id: string; role: PersonId; body: string; at: string };

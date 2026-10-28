@@ -25,6 +25,7 @@ import { TODAY, NOW, minutes, hm, WD_SHORT, weekday, dmShort, daysBetween, until
 import { haptics } from '../../lib/haptics';
 import type { CalEvent } from '../../state/types';
 import { tx } from '../../i18n/lang';
+import { useCalEvents } from '../../lib/useEvents';
 
 /** How many days "Diese Woche" looks ahead. */
 export const WEEK_AHEAD = 7;
@@ -98,7 +99,7 @@ function Row({ e, lead, showTime }: { e: CalEvent; lead: string; showTime?: bool
 }
 
 export default function TodayView({ header }: { header: React.ReactNode }) {
-  const events = useStore((s) => s.events);
+  const events = useCalEvents();
   const tasks = useStore((s) => s.tasks);
   const docs = useStore((s) => s.docs);
   const insets = useSafeAreaInsets();

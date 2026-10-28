@@ -33,11 +33,12 @@ import { dayLabel } from '../../lib/talk';
 import PressScale from '../../components/ui/PressScale';
 import { haptics } from '../../lib/haptics';
 import { tx } from '../../i18n/lang';
+import { useCalEvents } from '../../lib/useEvents';
 
 const GAP = 5;
 
 export function WeekStrip({ day, onSelect }: { day: string; onSelect: (d: string) => void }) {
-  const events = useStore((s) => s.events);
+  const events = useCalEvents();
   const start = monday(day);
   const days = Array.from({ length: 7 }, (_, i) => addDays(start, i));
   const [w, setW] = useState(0);
@@ -247,7 +248,7 @@ const MORE = 28;
 /** The week strip and the endless list of days under it, as one piece. */
 export default function DayView({ header }: { header: (today: React.ReactNode) => React.ReactNode }) {
   const day = useStore((s) => s.calDay);
-  const events = useStore((s) => s.events);
+  const events = useCalEvents();
   const tasks = useStore((s) => s.tasks);
   const docs = useStore((s) => s.docs);
   const insets = useSafeAreaInsets();

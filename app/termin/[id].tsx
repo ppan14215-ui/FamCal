@@ -29,6 +29,13 @@ import { useScroller } from '../../src/lib/landing';
 import { useDockSpace } from '../../src/lib/dockSpace';
 import type { Who } from '../../src/state/types';
 import { tx } from '../../src/i18n/lang';
+import { Seg } from '../../src/components/ui/kit';
+import TerminDetails, { daysTo } from '../../src/components/TerminDetails';
+import TerminPeople from '../../src/components/TerminPeople';
+import TerminComments from '../../src/components/TerminComments';
+import { eventById } from '../../src/lib/useEvents';
+import { seriesId, ruleOf } from '../../src/lib/repeat';
+import { addDays, daysBetween } from '../../src/lib/dates';
 
 const NEXT: Record<string, Who> = { T: 'J', J: 'both', both: null, null: 'T' };
 
@@ -48,9 +55,11 @@ const addMin = (t: string, m: number) => { const v = Math.min(1439, minutes(t) +
 
 export default function Termin() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const e = useStore((s) => s.events.find((x) => x.id === id));
-  const insets = useSafeAreaInsets();
   const all = useStore((s) => s.events);
+  const e = eventById(all, id);
+  const insets = useSafeAreaInsets();
+  // A series asks once what a change is for: this day or every day (TimeTree asks on save).
+  const [scope, setScope] = useState<'one' | 'all'>('all');
   const [draft, setDraft] = useState<When | null>(null);
   const [addPlace, setAddPlace] = useState(false);
   // Spoken changes land on the fields below (Julian 27.10.).
@@ -64,11 +73,27 @@ export default function Termin() {
     // The picker opens with the current symbol as draft; only a different one counts.
     if (!picking.current || !e || !picked || picked === e.icon) return;
     picking.current = false;
-    actions.updateEvent(e.id, { icon: picked });
+    actions.updateEvent(target(), { icon: picked });
     haptics.commit();
     actions.clearDraftSymbol();
   }, [picked]);
   if (!e) return null;
+  const series = !!ruleOf(e.repeat) && !e.work;
+  const sid = seriesId(e.id);
+  /** Where a change goes: the series, or this day split off as its own Termin. */
+  const target = (): string => {
+    if (!series || scope === 'all') return sid;
+    const nid = actions.detachOccurrence(e.id);
+    if (!nid) return sid;
+    router.setParams({ id: nid });
+    return nid;
+  };
+  const patch = (p: Partial<CalEvent>) => {
+    haptics.commit();
+    // Repeat and its end always belong to the whole series.
+    const seriesOnly = 'repeat' in p || 'repeatUntil' in p;
+    actions.updateEvent(seriesOnly ? sid : target(), p);
+  };
   const pickIcon = () => { haptics.select(); picking.current = true; actions.pickSymbol(e.icon); router.push('/symbol'); };
   const now: When = { date: e.date, endDate: e.endDate, start: e.allDay ? undefined : e.start, end: e.end, repeat: e.repeat };
   // Moving keeps the duration when only the start changes.
@@ -79,7 +104,13 @@ export default function Termin() {
   };
   const done = () => {
     if (!draft || whenLine(draft) === whenLine(now)) return setDraft(null);
-    const before = actions.moveEvent(e.id, draft);
+    const t = target();
+    const base = get().events.find((x) => x.id === t);
+    // Moving the whole series shifts its first day by as much as this day moved.
+    const shift = t === sid && base && base.date !== e.date ? daysBetween(e.date, draft.date) : 0;
+    const w = shift ? { ...draft, date: addDays(base!.date, shift), endDate: draft.endDate ? addDays(base!.endDate ?? base!.date, shift) : undefined } : draft;
+    const before = actions.moveEvent(t, w);
+    if ((draft.repeat ?? '') !== (e.repeat ?? '')) actions.updateEvent(sid, { repeat: draft.repeat || undefined });
     setDraft(null);
     toast(`${tx('Verschoben auf', 'Moved to')} ${WD_SHORT[weekday(draft.date)]}${draft.start ? ' ' + hm(draft.start) : ''}`, before ? () => actions.restoreEvent(before) : undefined);
   };
@@ -107,10 +138,10 @@ export default function Termin() {
       </View>
       <View style={{ paddingHorizontal: 18, paddingTop: 16, gap: 14 }}>
         <Fresh id={`${e.id}:title`} radius={12} style={{ gap: 4 }}>
-          <EditText key={`t-${e.title}`} value={e.title} size={30} weight={700} placeholder={tx('Titel', 'Title')} onCommit={(t) => t && actions.updateEvent(e.id, { title: t })} />
+          <EditText key={`t-${e.title}`} value={e.title} size={30} weight={700} placeholder={tx('Titel', 'Title')} onCommit={(t) => t && actions.updateEvent(target(), { title: t })} />
           {/* An empty place shows no field, only a quiet link that opens one (Julian 26.10.). */}
           {e.place || e.sub || addPlace ? (
-            <EditText key={`p-${e.place ?? e.sub ?? ''}`} value={e.place ?? e.sub ?? ''} size={15} weight={400} color={tokens.sub} placeholder={tx('Ort oder Notiz', 'Place or note')} autoFocus={addPlace} onDone={() => setAddPlace(false)} onCommit={(t) => { actions.updateEvent(e.id, e.place !== undefined || !e.sub ? { place: t || undefined } : { sub: t || undefined }); }} />
+            <EditText key={`p-${e.place ?? e.sub ?? ''}`} value={e.place ?? e.sub ?? ''} size={15} weight={400} color={tokens.sub} placeholder={tx('Ort oder Notiz', 'Place or note')} autoFocus={addPlace} onDone={() => setAddPlace(false)} onCommit={(t) => { actions.updateEvent(target(), e.place !== undefined || !e.sub ? { place: t || undefined } : { sub: t || undefined }); }} />
           ) : (
             <PressScale hitSlop={8} onPress={() => { haptics.select(); setAddPlace(true); }} style={{ flexDirection: 'row', alignItems: 'center', gap: 5, alignSelf: 'flex-start' }}>
               <LineIcon name="plus" size={14} color={tokens.sub} />
@@ -118,6 +149,13 @@ export default function Termin() {
             </PressScale>
           )}
         </Fresh>
+        {e.countdown ? <Txt size={15} weight={600} color={tokens.done}>{daysTo(e.date)}</Txt> : null}
+        {series ? (
+          <View style={{ gap: 6 }}>
+            <Seg items={[{ key: 'one', label: tx('Nur dieser Termin', 'Only this one') }, { key: 'all', label: tx('Ganze Serie', 'Whole series') }]} value={scope} onChange={(k) => setScope(k as 'one' | 'all')} />
+            <Meta>{scope === 'one' ? tx('Änderungen gelten nur für diesen Tag.', 'Changes apply to this day only.') : tx('Änderungen gelten für jeden Termin der Serie.', 'Changes apply to every date in the series.')}</Meta>
+          </View>
+        ) : null}
         <Fresh id={`${e.id}:when`} radius={22}>
           <WhenField card value={draft ?? now} onChange={change} onDone={done} extra={overlap} />
         </Fresh>
@@ -129,10 +167,13 @@ export default function Termin() {
               <Txt size={15} weight={600}>{w.t}</Txt>
               <Meta>{w.s}</Meta>
             </View>
-            <Chip onPress={() => { haptics.select(); actions.setEventWho(e.id, NEXT[String(e.who)]); }}>{tx('Ändern', 'Change')}</Chip>
+            <Chip onPress={() => { haptics.select(); actions.setEventWho(target(), NEXT[String(e.who)]); }}>{tx('Ändern', 'Change')}</Chip>
           </View>
+          <View style={{ height: 1, backgroundColor: tokens.hair, marginVertical: 12 }} />
+          <TerminPeople ids={e.people ?? []} onToggle={(pid) => actions.toggleEventPerson(target(), pid)} />
         </Card>
         </Fresh>
+        <TerminDetails key={e.id} e={e} onPatch={patch} />
         <Card pad={14} gap={10}>
           <Txt size={13} weight={600} color={tokens.sub}>{tx('Mitnehmen', 'Bring')}</Txt>
           <View style={{ marginHorizontal: -14 }}>
@@ -144,10 +185,10 @@ export default function Termin() {
                 metaColor={tokens.done}
                 done={b.done}
                 who={b.who ?? null}
-                onToggle={() => actions.toggleBring(e.id, b.id)}
-                onEdit={(t) => actions.editBring(e.id, b.id, t)}
-                onCycleWho={() => actions.cycleBringWho(e.id, b.id)}
-                onDelete={() => actions.deleteBring(e.id, b.id)}
+                onToggle={() => actions.toggleBring(target(), b.id)}
+                onEdit={(t) => actions.editBring(target(), b.id, t)}
+                onCycleWho={() => actions.cycleBringWho(target(), b.id)}
+                onDelete={() => actions.deleteBring(target(), b.id)}
                 editHint={tx('Leer lassen löscht die Zeile', 'Leave empty to delete the line')}
               />
               </Fresh>
@@ -155,16 +196,32 @@ export default function Termin() {
           </View>
           {added.length ? <SourceLink prefix={tx(`${added.length} Dinge ergänzt nach`, `${added.length} things added from`)} s={{ label: added[0].src!, url: added[0].url }} /> : null}
           <View style={{ marginHorizontal: -14, marginBottom: -14 }}>
-            <AddInline placeholder={tx('Hinzufügen', 'Add')} onAdd={(t) => actions.addBring(e.id, t)} />
+            <AddInline placeholder={tx('Hinzufügen', 'Add')} onAdd={(t) => actions.addBring(target(), t)} />
           </View>
         </Card>
+        <TerminComments eventId={e.id} />
         {e.source ? <SourceLink prefix={tx('Aus', 'From')} s={{ label: e.source }} /> : null}
+        {series ? (
+          <PressScale
+            accessibilityRole="button"
+            onPress={() => {
+              haptics.commit();
+              router.back();
+              const before = actions.skipOccurrence(e.id);
+              toast(tx(`„${e.title}“ am ${WD_SHORT[weekday(e.date)]} gelöscht`, `“${e.title}” on ${WD_SHORT[weekday(e.date)]} deleted`), before ? () => actions.restoreEvent(before) : undefined);
+            }}
+            style={{ alignSelf: 'center', flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 12, paddingHorizontal: 18, marginTop: 8 }}
+          >
+            <LineIcon name="trash" size={18} color={tokens.danger} />
+            <Txt size={15} weight={600} color={tokens.danger}>{tx('Nur diesen Termin löschen', 'Delete only this one')}</Txt>
+          </PressScale>
+        ) : null}
         <PressScale
           accessibilityRole="button"
-          accessibilityLabel={tx('Termin löschen', 'Delete event')}
+          accessibilityLabel={series ? tx('Ganze Serie löschen', 'Delete whole series') : tx('Termin löschen', 'Delete event')}
           onPress={() => {
             haptics.commit();
-            const gone = e;
+            const gone = get().events.find((x) => x.id === sid) ?? e;
             router.back();
             actions.removeEvent(gone.id);
             toast(tx(`„${gone.title}“ gelöscht`, `“${gone.title}” deleted`), () => actions.addEvent(gone));
@@ -172,7 +229,7 @@ export default function Termin() {
           style={{ alignSelf: 'center', flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 12, paddingHorizontal: 18, marginTop: 8 }}
         >
           <LineIcon name="trash" size={18} color={tokens.danger} />
-          <Txt size={15} weight={600} color={tokens.danger}>{tx('Termin löschen', 'Delete event')}</Txt>
+          <Txt size={15} weight={600} color={tokens.danger}>{series ? tx('Ganze Serie löschen', 'Delete whole series') : tx('Termin löschen', 'Delete event')}</Txt>
         </PressScale>
       </View>
     </ScrollView>

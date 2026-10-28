@@ -18,6 +18,7 @@ import { addDays, monday, dayNum, monthIdx, year, parse, iso, WD_SHORT, weekday,
 import PressScale from '../../components/ui/PressScale';
 import { tx } from '../../i18n/lang';
 import type { CalEvent } from '../../state/types';
+import { useCalEvents } from '../../lib/useEvents';
 
 const HEAD = tx('Mo Di Mi Do Fr Sa So', 'Mo Tu We Th Fr Sa Su').split(' ');
 
@@ -32,7 +33,7 @@ export function shiftMonth(day: string, n: number): string {
 
 export default function MonthView() {
   const day = useStore((s) => s.calDay);
-  const events = useStore((s) => s.events);
+  const events = useCalEvents();
   const m = monthIdx(day);
   const first = iso(new Date(Date.UTC(year(day), m, 1)));
   const start = monday(first);

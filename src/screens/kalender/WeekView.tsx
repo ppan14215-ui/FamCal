@@ -20,6 +20,7 @@ import { useStore, actions } from '../../state/store';
 import { addDays, monday, dayNum, WD_SHORT, weekday, minutes, TODAY, NOW, MONTHS_SHORT, monthIdx, hm, dmShort } from '../../lib/dates';
 import PressScale from '../../components/ui/PressScale';
 import { tx } from '../../i18n/lang';
+import { useCalEvents } from '../../lib/useEvents';
 
 const FROM = 8;
 const TO = 19;
@@ -31,7 +32,7 @@ const SHORT: Record<string, string> = { 'U6 bei Dr. Weber': 'U6', 'Bürgeramt: P
 
 export default function WeekView() {
   const day = useStore((s) => s.calDay);
-  const events = useStore((s) => s.events);
+  const events = useCalEvents();
   const [HP, setHP] = useState(40);
   // Zoomed all the way in, three days fill the width so whole titles fit.
   const n = HP >= 80 ? 3 : 7;
