@@ -57,7 +57,7 @@ const Termin = z.object({
 const WD = ['Sonntag (Sunday)', 'Montag (Monday)', 'Dienstag (Tuesday)', 'Mittwoch (Wednesday)', 'Donnerstag (Thursday)', 'Freitag (Friday)', 'Samstag (Saturday)'];
 
 const SYSTEM = `Du trägst Termine für eine Familie mit zwei Eltern in einen geteilten Kalender ein.
-Du bekommst einen gesprochenen oder getippten Satz auf Deutsch oder Englisch und gibst genau einen Termin als JSON zurück.
+Du bekommst einen gesprochenen oder getippten Satz auf Deutsch oder Englisch und gibst den Termin als JSON zurück, bei mehreren Terminen im Satz alle (siehe more).
 
 Regeln:
 - Datum als YYYY-MM-DD, Uhrzeiten als HH:MM (24 Stunden). Relative Angaben ("morgen", "nächsten Freitag", "in zwei Wochen", "am 12.", "tomorrow", "next Friday", "on the 12th") rechnest du vom heutigen Datum aus. "Nächsten Freitag" und "next Friday" sind der kommende Freitag, außer heute ist Freitag, dann eine Woche später. "3pm" ist 15:00.
