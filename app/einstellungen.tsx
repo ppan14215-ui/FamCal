@@ -116,10 +116,11 @@ function versionLine(): string {
  */
 function QualityTest() {
   const { session } = useAuth();
-  const [state, setState] = useState<{ busy: boolean; done: number; ok: number | null; total: number }>({ busy: false, done: 0, ok: null, total: 0 });
+  const [state, setState] = useState<{ busy: boolean; done: number; ok: number | null; total: number; limit?: boolean }>({ busy: false, done: 0, ok: null, total: 0 });
   if (!canTestSignIn || !session) return null;
   const s = state.busy
     ? `Läuft … ${state.done} von ${state.total}`
+    : state.limit ? `Tageslimit erreicht nach ${state.done} Sätzen · morgen wieder`
     : state.ok !== null ? `${state.ok} von ${state.total} richtig · nochmal antippen` : '30 Sätze an Claude, etwa 3 Cent';
   return (
     <Group>
@@ -129,8 +130,8 @@ function QualityTest() {
         s={s}
         onPress={state.busy ? undefined : async () => {
           setState({ busy: true, done: 0, ok: null, total: 30 });
-          const { results } = await runQualityTest((done, total) => setState((x) => ({ ...x, done, total })));
-          setState({ busy: false, done: results.length, ok: results.filter((r) => r.ok).length, total: results.length });
+          const { results, limit } = await runQualityTest((done, total) => setState((x) => ({ ...x, done, total })));
+          setState({ busy: false, done: results.length, ok: results.filter((r) => r.ok).length, total: results.length, limit });
         }}
       />
     </Group>

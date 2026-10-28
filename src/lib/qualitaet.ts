@@ -64,7 +64,7 @@ export const CASES: Case[] = [
 export type Outcome = { id: string; said: string; ok: boolean; failed: string[]; got: R | null };
 
 /** Runs every case one after the other; `onStep` reports progress for the screen. */
-export async function runQualityTest(onStep?: (done: number, total: number) => void): Promise<{ runId: string; results: Outcome[] }> {
+export async function runQualityTest(onStep?: (done: number, total: number) => void): Promise<{ runId: string; results: Outcome[]; limit?: boolean }> {
   const runId = `q-${Date.now()}`;
   const results: Outcome[] = [];
   for (const c of CASES) {
@@ -75,6 +75,8 @@ export async function runQualityTest(onStep?: (done: number, total: number) => v
       const { data, error } = await supabase.functions.invoke<R>('verstehen', {
         body: { text: c.said, today: TODAY, now: NOW, names: { J: 'Julia', T: 'Tom' }, lang: 'de', icons: TERMIN_ICON_NAMES },
       });
+      // Tageslimit: the rest would be refused too, so the run stops instead of showing 0 von 30.
+      if ((error as { context?: { status?: number } } | null)?.context?.status === 429) return { runId, results, limit: true };
       got = error ? null : data;
       failed = got ? c.checks.filter(([, f]) => { try { return !f(got!); } catch { return true; } }).map(([l]) => l) : [`Fehler ${(error as { context?: { status?: number } } | null)?.context?.status ?? ''}`.trim()];
     }
