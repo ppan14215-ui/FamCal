@@ -46,7 +46,8 @@ const lift = Platform.select({
 });
 
 type Props = {
-  onSend: (text: string) => void;
+  /** voice: the text came from the mic, so a follow-up may listen again. */
+  onSend: (text: string, how?: { voice?: boolean }) => void;
   /** Opens Foto, Termin, Aufgabe, Entwurf. */
   onPlus?: () => void;
   /** What the mic says in the testlink, one after the other. */
@@ -82,12 +83,12 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, placeholder
     setBoxH(Math.min(MAX_H, Math.max(MIN_H, sh)));
   }, [text]);
 
-  const send = (t = text) => {
+  const send = (t = text, voice = false) => {
     const q = t.trim();
     if (!q) return;
     setText('');
     haptics.tap();
-    onSend(q);
+    if (voice) onSend(q, { voice: true }); else onSend(q);
   };
 
   // Types the sentence letter by letter, as if it were heard, then sends it.
@@ -123,7 +124,7 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, placeholder
       timers.current.push(guard);
       r.onresult = (e: any) => { heard = Array.from(e.results).map((x: any) => x[0].transcript).join(' '); setText(heard); };
       r.onerror = () => { clearTimeout(guard); fallback(); };
-      r.onend = () => { clearTimeout(guard); if (failed) return; setListening(false); if (heard) send(heard); else fallback(); };
+      r.onend = () => { clearTimeout(guard); if (failed) return; setListening(false); if (heard) send(heard, true); else fallback(); };
       r.start();
     } catch {
       say(sentence);
@@ -158,7 +159,7 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, placeholder
           hush(SILENCE_MS);
         }),
         SR.addListener('error', () => { clearTimeout(quiet); subs.forEach((x) => x.remove()); if (!heard()) fail(); }),
-        SR.addListener('end', () => { clearTimeout(quiet); subs.forEach((x) => x.remove()); setListening(false); const h = heard(); if (h) send(h); }),
+        SR.addListener('end', () => { clearTimeout(quiet); subs.forEach((x) => x.remove()); setListening(false); const h = heard(); if (h) send(h, true); }),
       ];
       stopNative.current = () => SR.stop();
       // Nothing at all after a while: stop instead of listening forever.
