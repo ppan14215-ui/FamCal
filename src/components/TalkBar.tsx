@@ -68,6 +68,9 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, placeholder
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
   /** Ends listening on the phone early: a second tap on the orb sends what was heard. */
   const stopNative = useRef<(() => void) | null>(null);
+  /** Tapping into the field while the mic listens switches to typing (Julian 28.10.): what was heard stays, nothing is sent. */
+  const toKeys = useRef<(() => void) | null>(null);
+  const typed = useRef(false);
   useEffect(() => () => { timers.current.forEach(clearTimeout); clearTimeout(blurT.current); setTyping(false); }, []);
 
   // On the web the textarea never shrinks by itself, so measure it fresh.
@@ -106,6 +109,7 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, placeholder
 
   const listen = () => {
     if (listening) { stopNative.current?.(); return; }
+    typed.current = false;
     haptics.select();
     setListening(true);
     const sentence = spoken[turn.current++ % spoken.length];
@@ -124,7 +128,8 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, placeholder
       timers.current.push(guard);
       r.onresult = (e: any) => { heard = Array.from(e.results).map((x: any) => x[0].transcript).join(' '); setText(heard); };
       r.onerror = () => { clearTimeout(guard); fallback(); };
-      r.onend = () => { clearTimeout(guard); if (failed) return; setListening(false); if (heard) send(heard, true); else fallback(); };
+      r.onend = () => { clearTimeout(guard); if (failed) return; setListening(false); if (typed.current) return; if (heard) send(heard, true); else fallback(); };
+      toKeys.current = () => { failed = true; clearTimeout(guard); try { r.abort(); } catch {} setListening(false); };
       r.start();
     } catch {
       say(sentence);
@@ -159,9 +164,10 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, placeholder
           hush(SILENCE_MS);
         }),
         SR.addListener('error', () => { clearTimeout(quiet); subs.forEach((x) => x.remove()); if (!heard()) fail(); }),
-        SR.addListener('end', () => { clearTimeout(quiet); subs.forEach((x) => x.remove()); setListening(false); const h = heard(); if (h) send(h, true); }),
+        SR.addListener('end', () => { clearTimeout(quiet); subs.forEach((x) => x.remove()); setListening(false); const h = heard(); if (h && !typed.current) send(h, true); }),
       ];
       stopNative.current = () => SR.stop();
+      toKeys.current = () => { clearTimeout(quiet); SR.abort(); setListening(false); };
       // Nothing at all after a while: stop instead of listening forever.
       hush(FIRST_WORD_MS);
       SR.start({
@@ -186,7 +192,10 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, placeholder
       </PressScale>
       <TextInput
         ref={field}
-        onFocus={() => { clearTimeout(blurT.current); setTyping(true); }}
+        onFocus={() => {
+          clearTimeout(blurT.current); setTyping(true);
+          if (listening) { typed.current = true; timers.current.forEach(clearTimeout); setDemo(false); toKeys.current?.(); }
+        }}
         // Tapping send blurs the field first; wait so the button does not move away under the finger.
         onBlur={() => { blurT.current = setTimeout(() => setTyping(false), 350); }}
         multiline
