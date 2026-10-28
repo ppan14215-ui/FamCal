@@ -44,6 +44,20 @@
             "com.google.android.googlequicksearchbox"
           ]
         }
+      ],
+      [
+        "expo-notifications",
+        {
+          "defaultChannel": "termine"
+        }
+      ],
+      [
+        "expo-share-intent",
+        {
+          "androidIntentFilters": [
+            "text/*"
+          ]
+        }
       ]
     ],
     "experiments": {

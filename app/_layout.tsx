@@ -12,6 +12,7 @@ import { Geist_500Medium } from '@expo-google-fonts/geist/500Medium';
 import { Geist_600SemiBold } from '@expo-google-fonts/geist/600SemiBold';
 import { Geist_700Bold } from '@expo-google-fonts/geist/700Bold';
 import ToastHost from '../src/components/ToastHost';
+import { startNotifications } from '../src/lib/notify';
 import { VeilHost } from '../src/components/Veil';
 import Dock from '../src/components/Dock';
 import { tokens } from '../src/theme';
@@ -31,6 +32,9 @@ export default function RootLayout() {
   useEffect(() => {
     if (loaded || error) SplashScreen.hideAsync().catch(() => {});
   }, [loaded, error]);
+
+  // Reminders on the phone (Spec §5): plans them and keeps them in step with the Termine.
+  useEffect(() => { startNotifications(); }, []);
 
   if (!loaded && !error) return <View style={{ flex: 1, backgroundColor: tokens.bg }} />;
 
