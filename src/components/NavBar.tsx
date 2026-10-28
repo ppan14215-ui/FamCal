@@ -16,6 +16,8 @@ import PressScale from './ui/PressScale';
 import { tokens, springs } from '../theme';
 import { haptics } from '../lib/haptics';
 import { useTyping } from '../lib/keyboard';
+import { setTalkOpen, useTalkOpen } from '../lib/talkOpen';
+import { tx } from '../i18n/lang';
 
 const TABS: { name: string; key: string; icon: LineName }[] = [
   { name: 'kalender', key: 'nav.kalender', icon: 'cal' },
@@ -43,13 +45,16 @@ export default function NavBar({ state, navigation }: BottomTabBarProps) {
   useEffect(() => { x.value = withSpring(idx, springs.smooth); }, [idx]);
   const pill = useAnimatedStyle(() => ({ transform: [{ translateX: x.value * (w + 2) }] }));
   // While typing the keyboard takes this place, so the bar slides away.
+  // The talk field takes this place (Julian 28.10.: tabs or field, never both).
   const typing = useTyping();
+  const talking = useTalkOpen();
+  const gone = typing || talking;
   const away = useSharedValue(0);
-  useEffect(() => { away.value = withTiming(typing ? 1 : 0, { duration: typing ? 180 : 260, easing: Easing.bezier(0.22, 1, 0.36, 1) }); }, [typing]);
+  useEffect(() => { away.value = withTiming(gone ? 1 : 0, { duration: gone ? 180 : 260, easing: Easing.bezier(0.22, 1, 0.36, 1) }); }, [gone]);
   const hide = useAnimatedStyle(() => ({ opacity: 1 - away.value, transform: [{ translateY: away.value * 40 }] }));
   const onLayout = (e: LayoutChangeEvent) => setW((e.nativeEvent.layout.width - 8 - 2 * (TABS.length - 1)) / TABS.length);
   return (
-    <Animated.View pointerEvents={typing ? 'none' : 'box-none'} style={[{ position: 'absolute', left: 14, right: 14, bottom: Math.max(insets.bottom, 12) + 10, flexDirection: 'row', alignItems: 'center', gap: 10 }, hide]}>
+    <Animated.View pointerEvents={gone ? 'none' : 'box-none'} style={[{ position: 'absolute', left: 14, right: 14, bottom: Math.max(insets.bottom, 12) + 10, flexDirection: 'row', alignItems: 'center', gap: 10 }, hide]}>
       <View accessibilityRole="tablist" onLayout={onLayout} style={[{ flex: 1, flexDirection: 'row', gap: 2, padding: 4, borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.96)' }, floatShadow]}>
         {w ? <Animated.View pointerEvents="none" style={[{ position: 'absolute', left: 4, top: 4, bottom: 4, width: w, borderRadius: 999, backgroundColor: '#EFEFEC' }, pill]} /> : null}
         {TABS.map((tab) => {
@@ -71,6 +76,13 @@ export default function NavBar({ state, navigation }: BottomTabBarProps) {
           );
         })}
       </View>
+      <PressScale
+        accessibilityLabel={tx('Sprechen oder schreiben', 'Talk or type')}
+        onPress={() => { haptics.tap(); setTalkOpen(true); }}
+        style={[{ width: 58, height: 58, borderRadius: 999, alignItems: 'center', justifyContent: 'center', backgroundColor: tokens.ink }, plusShadow]}
+      >
+        <LineIcon name="mic" size={24} color="#FFFFFF" />
+      </PressScale>
     </Animated.View>
   );
 }

@@ -7,7 +7,7 @@
  * that changed. Questions and new Termine leave a small card above the field.
  */
 import React, { useEffect, useRef, useState } from 'react';
-import { View, ScrollView, Platform, useWindowDimensions } from 'react-native';
+import { View, ScrollView, Platform, Pressable, BackHandler, useWindowDimensions } from 'react-native';
 import { router, usePathname } from 'expo-router';
 import Animated, { FadeIn, FadeInDown, FadeOut } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -29,6 +29,7 @@ import { dayLabel, slotLine, type Suggest } from '../lib/talk';
 import { locate, light, lightOneByOne } from '../lib/landing';
 import { setDockTop, setDockSpace } from '../lib/dockSpace';
 import { useKeyboardInset, useTyping } from '../lib/keyboard';
+import { setTalkOpen, useTalkOpen } from '../lib/talkOpen';
 import { hm, short } from '../lib/dates';
 import { Tile } from './ui/Clay';
 import { haptics } from '../lib/haptics';
@@ -354,10 +355,20 @@ export default function Dock() {
   const heard = useRef(0);
   const later = (ms: number, f: () => void) => timers.current.push(setTimeout(f, ms));
   const path = usePathname();
+  const talking = useTalkOpen();
+  // On the tabs the field only shows after the bubble was tapped, or while a card is open (Julian 28.10.).
+  const shown = !where?.tab || talking || !!turn;
+  // The bubble opened the field: the mic starts right away.
+  useEffect(() => { if (talking) setListenKey((k) => k + 1); }, [talking]);
+  useEffect(() => {
+    if (!talking) return;
+    const sub = BackHandler.addEventListener('hardwareBackPress', () => { setTalkOpen(false); setTurn(null); light(null); return true; });
+    return () => sub.remove();
+  }, [talking]);
 
   // A card belongs to the screen it was made on.
   useEffect(() => { setTurn(null); }, [path]);
-  useEffect(() => { setDockSpace(where ? h + (where.tab ? 0 : 8) : 0); }, [h, !!where]);
+  useEffect(() => { setDockSpace(where && shown ? h + (where.tab ? 0 : 8) : 0); }, [h, !!where, shown]);
   useEffect(() => () => timers.current.forEach(clearTimeout), []);
   // Shared to FamCal from the browser or another app (Julian 28.10.): as if typed into the field.
   const hearRef = useRef<(raw: string) => void>(() => {});
@@ -366,14 +377,14 @@ export default function Dock() {
   // Examples only while the calendar is still empty; after that they are clutter (Julian 27.10.).
   const navTop = Math.max(insets.bottom, 12) + 10 + 58 + 10;
   // Typing hides the tabs, so the field drops into their place right above the keyboard.
-  const bottom = !where ? 0 : kb > 0 ? kb + 8 : where.tab && !typing ? navTop : insets.bottom + 12 + (where.tab ? 0 : where.lift);
-  useEffect(() => { setDockTop(where ? bottom + h : 0); }, [bottom, h, !!where]);
+  const bottom = !where ? 0 : kb > 0 ? kb + 8 : where.tab && !typing && !shown ? navTop : where.tab ? Math.max(insets.bottom, 12) + 10 : insets.bottom + 12 + where.lift;
+  useEffect(() => { setDockTop(where ? bottom + (shown ? h : 0) : 0); }, [bottom, h, !!where, shown]);
 
   if (!where) return null;
   const origin = { x: W - 14 - 6 - 24, y: H - bottom - 6 - 24 };
   // On tabs the nav stays on top of the fade, it starts just above it.
   // Above a footer button (liste-neu) the fade starts at the field, so the button stays clear.
-  const fadeFrom = kb || (where.tab && typing) ? 0 : where.tab ? navTop - 6 : where.lift ? bottom - 8 : 0;
+  const fadeFrom = kb || (where.tab && (typing || shown)) ? 0 : where.tab ? navTop - 6 : where.lift ? bottom - 8 : 0;
   const kind = where.ctx.kind;
 
   const ask = () => { if (spoke.current) setListenKey((k) => k + 1); };
@@ -530,7 +541,7 @@ export default function Dock() {
     setTurn(null);
     light(null);
   };
-  const ok = () => { haptics.select(); setTurn(null); light(null); };
+  const ok = () => { haptics.select(); setTurn(null); light(null); setTalkOpen(false); };
   /** Ja takes the earlier place, Nein just drops the question; either way the card stays for more. */
   const answerSuggest = (yes: boolean, said?: string) => {
     if (turn?.result.kind !== 'event' || !turn.result.suggest) return;
@@ -603,8 +614,11 @@ export default function Dock() {
     play(listFromClaude({ kind: 'liste', list: k, items: [said] }), said, true);
   };
 
+  if (!shown) return null;
   return (
     <>
+    {/* A tap beside the field brings the tabs back, as long as no card waits for an answer. */}
+    {where.tab && !turn ? <Pressable accessibilityLabel={tx('Schließen', 'Close')} onPress={() => setTalkOpen(false)} style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0 }} /> : null}
     {/* The screen fades out under the field, so prompts never sit on text. */}
     <View pointerEvents="none" style={{ position: 'absolute', left: 0, right: 0, bottom: fadeFrom, height: bottom - fadeFrom + h + 28 }}>
       <Svg width="100%" height="100%" preserveAspectRatio="none">
