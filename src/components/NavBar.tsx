@@ -86,6 +86,9 @@ export default function NavBar({ state, navigation }: BottomTabBarProps) {
       <PressScale
         accessibilityLabel={tx('Sprechen oder schreiben', 'Talk or type')}
         onPress={() => { haptics.tap(); setTalkOpen(true); }}
+        // Long press goes straight to the plus menu (photo, event, task).
+        onLongPress={() => { haptics.select(); router.push('/neu'); }}
+        accessibilityHint={tx('Lang drücken für Foto, Termin, Aufgabe', 'Long press for photo, event, task')}
         style={[{ width: 58, height: 58, borderRadius: 999, alignItems: 'center', justifyContent: 'center', backgroundColor: tokens.ink }, plusShadow]}
       >
         <LineIcon name="mic" size={24} color="#FFFFFF" />

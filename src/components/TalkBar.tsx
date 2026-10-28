@@ -210,7 +210,7 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, onClose, pl
   }, [listenKey]);
 
   const plus = (
-    <PressScale accessibilityLabel={tx('Foto, Termin, Aufgabe', 'Photo, event, task')} onPress={onPlus} style={{ width: 44, height: 44, marginBottom: 2, borderRadius: 999, alignItems: 'center', justifyContent: 'center', backgroundColor: tokens.chipBg }}>
+    <PressScale accessibilityLabel={tx('Foto, Termin, Aufgabe', 'Photo, event, task')} onPress={() => { if (listening) { typed.current = true; timers.current.forEach(clearTimeout); setDemo(false); toKeys.current?.(); setText(''); } onPlus?.(); }} style={{ width: 44, height: 44, marginBottom: 2, borderRadius: 999, alignItems: 'center', justifyContent: 'center', backgroundColor: tokens.chipBg }}>
       <LineIcon name="plus" size={22} color={tokens.ink} stroke={2} />
     </PressScale>
   );
@@ -250,7 +250,8 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, onClose, pl
         accessibilityLabel={tx('Was steht an?', 'What\'s on?')}
         style={[{ flex: 1, minWidth: 0, height: boxH, marginBottom: 2, fontFamily: fonts[400], fontSize: 16.5, lineHeight: LINE, color: tokens.ink, paddingVertical: PAD, paddingHorizontal: 8, textAlignVertical: 'top', includeFontPadding: false }, Platform.OS === 'web' ? ({ outlineStyle: 'none' } as any) : null]}
       />
-      {onClose && !text && !listening ? plus : null}
+      {/* Plus stays reachable while the mic listens (Julian 28.10.: "wie komme ich an das + Menü?"). */}
+      {onClose && (!text || listening) ? plus : null}
       <View style={{ width: 48, height: 48 }}>
       {listening && micStyle === 'ring' ? <VoiceRing level={level} /> : null}
       <PressScale
