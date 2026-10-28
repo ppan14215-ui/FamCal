@@ -12,6 +12,7 @@ import Txt from '../../components/ui/Txt';
 import { ClayIcon } from '../../components/ui/Clay';
 import { Owner } from '../../components/ui/Person';
 import { tokens, tint } from '../../theme';
+import { evTint } from '../../lib/evColor';
 import { useStore, actions } from '../../state/store';
 import { eventsOn } from '../../lib/selectors';
 import { addDays, monday, dayNum, monthIdx, year, parse, iso, WD_SHORT, weekday, MONTHS_SHORT, hm, TODAY, MONTHS, short } from '../../lib/dates';
@@ -72,7 +73,7 @@ export default function MonthView() {
                 onPress={() => inMonth && actions.setCalDay(d)}
                 style={{
                   height: cellH, borderRadius: 14, alignItems: 'center', paddingTop: 6,
-                  backgroundColor: isToday ? tokens.doneSoft : evs.length ? tint(evs[0].icon) : inMonth ? tokens.row : 'transparent',
+                  backgroundColor: isToday ? tokens.doneSoft : evs.length ? evTint(evs[0]) : inMonth ? tokens.row : 'transparent',
                   borderWidth: 1.5, borderColor: sel ? tokens.ink : 'transparent',
                 }}
               >

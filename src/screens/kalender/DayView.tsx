@@ -92,18 +92,20 @@ export function WeekStrip({ day, onSelect }: { day: string; onSelect: (d: string
 const byStart = (a: CalEvent, b: CalEvent) => (a.allDay ? -1 : b.allDay ? 1 : a.start.localeCompare(b.start));
 
 /** One Termin with what belongs to it underneath. */
-function Item({ e, last }: { e: CalEvent; last: boolean }) {
+function Item({ e, last, date }: { e: CalEvent; last: boolean; date: string }) {
+  const later = date > e.date;
+  const span = !!e.endDate && e.endDate > e.date;
   const bring = e.bring ?? [];
   const open = bring.filter((b) => !b.done);
   return (
     <Fresh id={e.id}>
       <PressScale scale={0.985} onPress={() => router.push(`/termin/${e.id}`)} style={{ paddingVertical: 12, paddingHorizontal: 14, gap: 6, borderBottomWidth: last ? 0 : 1, borderBottomColor: tokens.hair }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-          <Txt size={13.5} weight={600} style={{ width: 42 }}>{e.allDay ? tx('Tag', 'All day') : hm(e.start)}</Txt>
+          <Txt size={13.5} weight={600} style={{ width: 42 }}>{later ? tx(`Tag ${daysBetween(e.date, date) + 1}`, `Day ${daysBetween(e.date, date) + 1}`) : e.allDay ? tx('Tag', 'All day') : hm(e.start)}</Txt>
           <Tile name={e.icon} size={46} radius={14} />
           <View style={{ flex: 1, minWidth: 0 }}>
             <Txt size={16} line={21} weight={600} numberOfLines={1}>{e.title}</Txt>
-            {e.place || e.sub ? <Meta numberOfLines={1}>{e.place ?? e.sub}</Meta> : null}
+            {span ? <Meta numberOfLines={1}>{tx(`bis ${short(e.endDate!)}`, `until ${short(e.endDate!)}`)}{e.place || e.sub ? ` · ${e.place ?? e.sub}` : ''}</Meta> : e.place || e.sub ? <Meta numberOfLines={1}>{e.place ?? e.sub}</Meta> : null}
           </View>
           <Owner who={e.who} />
         </View>
@@ -167,7 +169,7 @@ function Day({ date, events, tasks, docs, onY }: { date: string; events: CalEven
         <Meta>{date === TODAY ? tx('Heute steht nichts an. Sag unten einfach, was ansteht.', 'Nothing today. Just say below what\'s coming up.') : tx('Sonst frei.', 'Otherwise free.')}</Meta>
       ) : (
         <View style={{ borderRadius: 20, overflow: 'hidden', backgroundColor: tokens.row }}>
-          {real.map((e, i) => <Item key={e.id} e={e} last={i === real.length - 1 && !tasks.length && !docs.length} />)}
+          {real.map((e, i) => <Item key={e.id} e={e} date={date} last={i === real.length - 1 && !tasks.length && !docs.length} />)}
           {tasks.length ? (
             <View style={{ borderTopWidth: real.length ? 1 : 0, borderTopColor: tokens.hair }}>
               <Sub>{tx('Aufgaben', 'Tasks')}</Sub>

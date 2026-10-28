@@ -12,6 +12,7 @@ import { scheduleOnRN } from 'react-native-worklets';
 import LineIcon from '../../components/ui/LineIcon';
 import { haptics } from '../../lib/haptics';
 import { springs } from '../../theme';
+import { evTint } from '../../lib/evColor';
 import { router } from 'expo-router';
 import Txt from '../../components/ui/Txt';
 import Stripes from '../../components/Stripes';
@@ -155,7 +156,7 @@ export default function WeekView() {
                   paddingHorizontal: 2,
                 }}
               >
-                <View style={{ flex: 1, justifyContent: 'center', paddingHorizontal: 6, backgroundColor: tint(e.icon), borderTopLeftRadius: cutL ? 0 : 7, borderBottomLeftRadius: cutL ? 0 : 7, borderTopRightRadius: cutR ? 0 : 7, borderBottomRightRadius: cutR ? 0 : 7 }}>
+                <View style={{ flex: 1, justifyContent: 'center', paddingHorizontal: 6, backgroundColor: evTint(e), borderTopLeftRadius: cutL ? 0 : 7, borderBottomLeftRadius: cutL ? 0 : 7, borderTopRightRadius: cutR ? 0 : 7, borderBottomRightRadius: cutR ? 0 : 7 }}>
                   <Txt size={11} line={14} weight={700} numberOfLines={1}>{e.title}</Txt>
                 </View>
               </PressScale>
@@ -183,7 +184,7 @@ export default function WeekView() {
                       <PressScale
                         key={e.id}
                         onPress={() => router.push(`/termin/${e.id}`)}
-                        style={{ position: 'absolute', left: 3, right: 3, top: top(e.start) + 2, height: h, borderRadius: 8, backgroundColor: tint(e.icon), borderWidth: 1.5, borderColor: tokens.onInk, paddingVertical: 3, paddingHorizontal: 4, overflow: 'hidden' }}
+                        style={{ position: 'absolute', left: 3, right: 3, top: top(e.start) + 2, height: h, borderRadius: 8, backgroundColor: evTint(e), borderWidth: 1.5, borderColor: tokens.onInk, paddingVertical: 3, paddingHorizontal: 4, overflow: 'hidden' }}
                       >
                         <Txt size={wide ? 12.5 : 10.5} line={wide ? 16 : 13} weight={700} numberOfLines={wide ? Math.max(1, Math.floor(h / 17) - 1) : 2}>{wide ? e.title : SHORT[e.title] ?? e.title.split(' ')[0]}</Txt>
                         {big && h >= 44 && !e.allDay ? <Txt size={wide ? 12 : 10} line={wide ? 15 : 12} color={tokens.sub} numberOfLines={1}>{wide && e.end ? `${hm(e.start)} ${tx('bis', 'to')} ${hm(e.end)}` : hm(e.start)}</Txt> : null}

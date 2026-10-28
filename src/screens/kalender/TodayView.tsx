@@ -110,7 +110,7 @@ export default function TodayView({ header }: { header: React.ReactNode }) {
 
   const { next, later, week, todo, fristen, soon, preview } = useMemo(() => {
     const real = events.filter((e) => !e.work);
-    const today = real.filter((e) => e.date === TODAY).sort(byStart);
+    const today = real.filter((e) => e.date === TODAY || (!!e.endDate && e.date < TODAY && TODAY <= e.endDate)).sort(byStart);
     // Still to come today; a running Termin counts until it ends.
     const left = today.filter((e) => e.allDay || minutes(e.end ?? e.start) > minutes(NOW));
     const ahead = real

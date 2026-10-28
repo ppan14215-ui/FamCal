@@ -18,6 +18,7 @@ import { ClayIcon } from '../../src/components/ui/Clay';
 import { Owner } from '../../src/components/ui/Person';
 import AddInline from '../../src/components/AddInline';
 import { tokens, tint, persons, fonts } from '../../src/theme';
+import { evTint } from '../../src/lib/evColor';
 import { useStore, actions, toast, get } from '../../src/state/store';
 import WhenField from '../../src/components/WhenField';
 import { whenLine, When } from '../../src/lib/when';
@@ -126,7 +127,7 @@ export default function Termin() {
   const added = (e.bring ?? []).filter((b) => b.by === 'assistent' && b.src);
   return (
     <ScrollView ref={scroll} onScroll={(ev) => track(ev.nativeEvent.contentOffset.y)} scrollEventThrottle={16} style={{ flex: 1, backgroundColor: tokens.bg }} contentContainerStyle={{ paddingBottom: insets.bottom + 34 + dock }} keyboardShouldPersistTaps="handled">
-      <View style={{ backgroundColor: tint(e.icon), paddingTop: insets.top + 8 }}>
+      <View style={{ backgroundColor: evTint(e), paddingTop: insets.top + 8 }}>
         <View style={{ paddingHorizontal: 18 }}><BackBar /></View>
         <PressScale scale={0.97} accessibilityLabel={tx('Symbol ändern', 'Change icon')} onPress={pickIcon} style={{ height: 200, alignItems: 'center', justifyContent: 'center' }}>
           <ClayIcon key={e.icon} name={e.icon} size={160} />
