@@ -13,7 +13,7 @@ import LineIcon, { LineName } from './LineIcon';
 import PressScale from './PressScale';
 import { Tile, ClayIcon } from './Clay';
 import { ClayName } from '../../lib/clayIcons';
-import { tokens, springs, rise, rowIn, rowOut, rowLayout } from '../../theme';
+import { tokens, springs, rise, rowIn, rowOut, rowLayout, motion, easing } from '../../theme';
 import { goBack } from '../../lib/nav';
 import { haptics } from '../../lib/haptics';
 import { tx } from '../../i18n/lang';
@@ -292,16 +292,14 @@ export function Chip({ children, bg = tokens.chipBg, color = tokens.ink, onPress
  * fill gets one short spring.
  */
 export function Check({ done, onPress, size = 26 }: { done: boolean; onPress?: () => void; size?: number }) {
-  const s = useSharedValue(1);
   const v = useSharedValue(done ? 1 : 0);
   useEffect(() => {
-    // Completing is the person's own action, so the fill may overshoot once.
-    v.value = done ? withSpring(1, springs.reveal) : withTiming(0, { duration: 120 });
+    // Calm, not playful (Julian 28.10.): the fill settles in once, no bounce.
+    v.value = withTiming(done ? 1 : 0, { duration: done ? motion.micro : 120, easing: easing.out });
   }, [done]);
-  const fill = useAnimatedStyle(() => ({ opacity: Math.min(1, v.value), transform: [{ scale: 0.4 + 0.6 * v.value }] }));
-  const outer = useAnimatedStyle(() => ({ transform: [{ scale: s.value }] }));
+  const fill = useAnimatedStyle(() => ({ opacity: v.value, transform: [{ scale: 0.8 + 0.2 * v.value }] }));
   const inner = (
-    <Animated.View style={[{ width: size, height: size, borderRadius: 999, borderWidth: 1.5, borderColor: tokens.circleLine, alignItems: 'center', justifyContent: 'center' }, outer]}>
+    <Animated.View style={[{ width: size, height: size, borderRadius: 999, borderWidth: 1.5, borderColor: tokens.circleLine, alignItems: 'center', justifyContent: 'center' }]}>
       <Animated.View style={[{ position: 'absolute', top: -1.5, left: -1.5, width: size, height: size, borderRadius: 999, backgroundColor: tokens.done, alignItems: 'center', justifyContent: 'center' }, fill]}>
         <LineIcon name="check" size={size * 0.62} color="#FFFFFF" stroke={2.4} />
       </Animated.View>
@@ -313,10 +311,9 @@ export function Check({ done, onPress, size = 26 }: { done: boolean; onPress?: (
       accessibilityRole="checkbox"
       accessibilityState={{ checked: done }}
       hitSlop={10}
-      scale={0.85}
+      scale={0.92}
       onPress={() => {
         if (!done) haptics.success(); else haptics.tap();
-        s.value = withSpring(1.12, springs.snappy, () => { s.value = withSpring(1, springs.reveal); });
         onPress();
       }}
     >
