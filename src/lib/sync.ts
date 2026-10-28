@@ -10,7 +10,7 @@ import { get, set, subscribe, actions } from '../state/store';
 import type { CalEvent, Bring } from '../state/types';
 import type { ClayName } from './clayIcons';
 
-export type Family = { id: string; name: string; invite_code: string };
+export type Family = { id: string; name: string; invite_code: string; partner_name?: string | null };
 type Row = {
   id: string; family_id: string; title: string; sub: string | null; icon: string; date: string; end_date: string | null;
   start_time: string; end_time: string | null; all_day: boolean; who: 'J' | 'T' | 'both' | null; place: string | null;
@@ -67,6 +67,13 @@ export async function startSync(name?: string): Promise<{ family?: Family; error
     if (m.user_id === uid) me = m.role as 'J' | 'T';
   }
   if (name && !names[me]) names[me] = name;
+  // Partner not joined yet: the name typed in onboarding is kept on the family, so it survives every sync.
+  const other = me === 'J' ? 'T' : 'J';
+  if (!names[other]) {
+    const typed = get().names[other];
+    if (family.partner_name) names[other] = family.partner_name;
+    else if (typed && !get().demo) { names[other] = typed; void setPartnerName(typed); }
+  }
   actions.setNames(names);
 
   const remote = (events.data as Row[]).map(fromRow);
@@ -122,6 +129,14 @@ export async function setMyName(name: string) {
   if (!supabase || !family) return;
   const uid = (await supabase.auth.getUser()).data.user?.id;
   if (uid) await supabase.from('family_members').update({ display_name: name }).eq('family_id', family.id).eq('user_id', uid);
+}
+
+/** The partner's name before they join (Julian 28.10.). */
+export async function setPartnerName(name: string) {
+  if (!supabase || !family) return;
+  const { error } = await supabase.from('families').update({ partner_name: name.trim().slice(0, 40) || null }).eq('id', family.id);
+  if (error) console.warn('[sync] partner name', error.message);
+  else family = { ...family, partner_name: name.trim() || null };
 }
 
 /** Partner joins the other's family with the six letter code. */
