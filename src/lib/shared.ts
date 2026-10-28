@@ -1,0 +1,51 @@
+/**
+ * Teilen an FamCal (Julian 28.10.: Rezept Link aus Browser oder Chefkoch).
+ * Android hands shared text and links to the native module of
+ * expo-share-intent; this file passes them on as plain text, as if typed.
+ * The module is looked up by name, so builds without it (web, older APKs)
+ * simply never deliver anything.
+ */
+import { AppState, Platform } from 'react-native';
+import { requireOptionalNativeModule } from 'expo-modules-core';
+
+type Native = {
+  getShareIntent(url: string): string;
+  clearShareIntent(key: string): Promise<void>;
+  addListener(event: 'onChange', fn: (e: { value: unknown }) => void): { remove(): void };
+};
+
+const native = Platform.OS === 'android' ? requireOptionalNativeModule<Native>('ExpoShareIntentModule') : null;
+// The plugin keys stored shares by the app scheme (app.json "scheme").
+const KEY = 'famcalShareKey';
+
+/** Text and link of a share, joined: "Spaghetti Bolognese https://…". */
+function textOf(value: unknown): string | null {
+  const v = (typeof value === 'string' ? JSON.parse(value) : value) as { text?: string; weburls?: { url?: string }[]; meta?: { title?: string } } | null;
+  if (!v) return null;
+  const parts = [v.meta?.title, v.text, ...(v.weburls ?? []).map((w) => w.url)].filter((x): x is string => !!x && !!x.trim());
+  // A link often comes once as text and once as url.
+  const out = [...new Set(parts.map((p) => p.trim()))].join(' ');
+  return out || null;
+}
+
+/**
+ * Calls `fn` with every shared text, including one shared while the app was
+ * closed (delivered once after subscribing). Returns the unsubscribe.
+ */
+export function onShared(fn: (text: string) => void): () => void {
+  if (!native) return () => {};
+  let last = '';
+  const sub = native.addListener('onChange', (e) => {
+    let t: string | null = null;
+    try { t = textOf(e.value); } catch { t = null; }
+    if (!t || t === last) return;
+    last = t;
+    native.clearShareIntent(KEY).catch(() => {});
+    fn(t);
+  });
+  // Asks the module for a pending share: at start (cold start) and whenever the app comes back.
+  const ask = () => { try { native.getShareIntent(''); } catch {} };
+  ask();
+  const app = AppState.addEventListener('change', (s) => { if (s === 'active') ask(); else last = ''; });
+  return () => { sub.remove(); app.remove(); };
+}
