@@ -244,6 +244,8 @@ export default function Dock() {
       return play(listFromClaude(r), said, true);
     }
     if (r.kind !== 'added') return;
+    // Claude heard several Termine where the rules made one: the rules' guess goes, all of them land.
+    if (r.more?.length && local?.kind === 'event') { actions.removeEvent(local.event.id); setTurn(null); light(null); return play(replyPlan(r), said, true); }
     if (local?.kind !== 'event') return play(replyPlan(r), said, true);
     const made = local.event;
     const patch = correction(made, r);

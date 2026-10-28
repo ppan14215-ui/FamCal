@@ -17,7 +17,7 @@ export type Slot = { date: string; from: string; to: string };
 
 export type Reply =
   /** `steps` is what it thought on the way, shown before the Termin lands. */
-  | { kind: 'added'; event: CalEvent; clash?: string; steps: string[]; needsTime?: boolean }
+  | { kind: 'added'; event: CalEvent; clash?: string; steps: string[]; needsTime?: boolean; more?: CalEvent[] }
   | { kind: 'answer'; text: string; events?: CalEvent[]; slots?: Slot[] }
   /** Understood what, not when. The next sentence can be just the time. */
   | { kind: 'ask'; text: string; title: string; who: Who };
@@ -284,6 +284,10 @@ export type Understood = {
   icon?: string | null;
   /** kind "liste": the sentence belongs on a list, from any screen (Julian 27.10.). */
   list?: 'einkauf' | 'aufgaben' | null; items?: string[];
+  /** Working hours: shown as a striped block, not in the lists (Julian 28.10.). */
+  work?: boolean;
+  /** Further Termine from the same sentence ("Urlaub bis Sonntag, danach Arbeit ab Dienstag"). */
+  more?: { title: string; sub: string | null; date: string; end_date: string | null; start: string | null; end: string | null; who: Who; place: string | null; repeat: string | null; icon?: string | null; work?: boolean }[];
 };
 
 /** Icons a Termin can carry: the whole ones, not their animated parts. */
@@ -317,11 +321,22 @@ export function fromModel(m: Understood, said: string, events: CalEvent[], newId
     place: m.place || known?.place, repeat: m.repeat || undefined, source: tx(`Gesagt: „${said.trim()}“`, `Said: “${said.trim()}”`),
     bring: m.bring.length ? m.bring.map((t, i) => ({ id: `${newId()}-b${i}`, t, done: false })) : undefined,
   };
-  const clash = clashOf(events, event);
+  if (m.work) event.work = true;
+  const more = (m.more ?? []).filter((x) => x.title && ISO.test(x.date)).slice(0, 20).map((x): CalEvent => {
+    const s = x.start && HHMM.test(x.start) ? x.start : undefined;
+    const ic = isIcon(x.icon) && x.icon !== 'kalender' ? x.icon : iconFor(`${x.title} ${x.sub ?? ''}`);
+    return {
+      id: newId(), title: cap(x.title), sub: x.sub || undefined, icon: ic, who: x.who === 'J' || x.who === 'T' || x.who === 'both' ? x.who : null,
+      date: x.date, endDate: x.end_date && ISO.test(x.end_date) && x.end_date > x.date ? x.end_date : undefined,
+      start: s ?? '00:00', allDay: !s, end: s ? (x.end && HHMM.test(x.end) && x.end > s ? x.end : toHm(Math.min(minutes(s) + 60, 23 * 60 + 59))) : undefined,
+      place: x.place || undefined, repeat: x.repeat || undefined, work: x.work || undefined, source: event.source,
+    };
+  });
+  const clash = more.length ? undefined : clashOf(events, event);
   const steps = m.steps.length ? m.steps.slice(0, 4) : [`${event.title}, ${long(event.date)}${start ? ` ${tx('um', 'at')} ${hm(start)}` : ''}.`];
   if (clash) steps.push(clash);
-  if (!start) steps.push(NO_TIME());
-  return { kind: 'added', event, clash, steps, needsTime: !start };
+  if (!start && !more.length && !event.endDate) steps.push(NO_TIME());
+  return { kind: 'added', event, clash, steps, needsTime: !start && !more.length && !event.endDate, more: more.length ? more : undefined };
 }
 
 /** Day by day for the home screen: today plus the next six days. */

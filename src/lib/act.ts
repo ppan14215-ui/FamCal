@@ -80,10 +80,26 @@ export function replyPlan(reply: Reply): Plan {
   if (reply.kind !== 'added') {
     return { steps: [tx('Schaue in euren Kalender', 'Looking at your calendar')], run: () => ({ result: { kind: 'answer', reply } }) };
   }
+  if (reply.more?.length) return manyPlan(reply.event, reply.more, reply.steps);
   return {
     head: tx('Ich trage in den Kalender ein', 'Adding to the calendar'),
     steps: reply.steps,
     run: () => { actions.addEvent(reply.event); return { land: reply.event.id, result: { kind: 'event', event: reply.event, needsTime: reply.needsTime } }; },
+  };
+}
+
+/** Several Termine from one sentence (Julian 28.10.): each lands, one receipt, one Rückgängig takes all back. */
+function manyPlan(first: CalEvent, more: CalEvent[], steps: string[]): Plan {
+  const all = [first, ...more];
+  const names = [...new Set(all.map((e) => e.title))];
+  return {
+    head: tx(`Ich trage ${all.length} Einträge ein`, `Adding ${all.length} entries`),
+    steps,
+    run: () => {
+      all.forEach((e) => actions.addEvent(e));
+      const text = tx(`${joinAnd(names.map((x) => `„${x}“`))} ${names.length === 1 ? 'steht' : 'stehen'} im Kalender.`, `${joinAnd(names.map((x) => `“${x}”`))} ${names.length === 1 ? 'is' : 'are'} in the calendar.`);
+      return { land: first.id, lit: all.map((e) => e.id), result: { kind: 'done', text, sub: `${tx(`${all.length} Einträge.`, `${all.length} entries.`)} ${otherSees()}`, undo: () => all.forEach((e) => actions.removeEvent(e.id)) } };
+    },
   };
 }
 
