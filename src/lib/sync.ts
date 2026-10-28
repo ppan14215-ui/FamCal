@@ -26,6 +26,14 @@ const toRow = (e: CalEvent, family_id: string): Row => ({
   people: e.people ?? [], note: e.note ?? null, countdown: !!e.countdown, repeat_until: e.repeatUntil ?? null, skip_dates: e.skipDates ?? [],
 });
 
+const NEW_COLS = ['people', 'note', 'countdown', 'repeat_until', 'skip_dates'] as const;
+let legacy = false;
+const rowFor = (e: CalEvent, family_id: string) => {
+  const r: Partial<Row> = toRow(e, family_id);
+  if (legacy) NEW_COLS.forEach((k) => delete r[k]);
+  return r;
+};
+
 const fromRow = (r: Row): CalEvent => ({
   id: r.id, title: r.title, sub: r.sub ?? undefined, icon: r.icon as ClayName, date: r.date, endDate: r.end_date ?? undefined,
   start: r.start_time, end: r.end_time ?? undefined, allDay: r.all_day || undefined, who: r.who, place: r.place ?? undefined,
@@ -147,7 +155,12 @@ function push() {
     const changed = now.filter((e) => known.get(e.id) !== key(e));
     const gone = [...known.keys()].filter((id) => !ids.has(id));
     if (changed.length) {
-      const { error } = await supabase.from('events').upsert(changed.map((e) => toRow(e, family!.id)));
+      let { error } = await supabase.from('events').upsert(changed.map((e) => rowFor(e, family!.id)));
+      // Before the 28.10. migration the new columns do not exist yet; send the old shape instead of failing.
+      if (error && !legacy && /column|schema cache/i.test(error.message)) {
+        legacy = true;
+        ({ error } = await supabase.from('events').upsert(changed.map((e) => rowFor(e, family!.id))));
+      }
       if (!error) changed.forEach((e) => known.set(e.id, key(e)));
       else console.warn('[sync] upsert', error.message);
     }
