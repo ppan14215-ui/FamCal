@@ -16,6 +16,7 @@ import { tx, EN } from '../i18n/lang';
 import { whenLine, splitDue, When } from './when';
 import { long, hm, minutes, short } from './dates';
 import { newId, listFromTemplate, templates, parseItem } from '../data/sample';
+import { savedFor, type Recipe } from './rezepte';
 
 export type Ctx =
   | { kind: 'kalender' }
@@ -27,13 +28,17 @@ export type Ctx =
 export type Result =
   | { kind: 'event'; event: CalEvent; needsTime?: boolean; suggest?: Suggest; ask?: string }
   | { kind: 'answer'; reply: Extract<Reply, { kind: 'answer' | 'ask' }> }
-  | { kind: 'done'; text: string; sub?: string; undo?: () => void; open?: string; events?: string[] }
+  | { kind: 'done'; text: string; sub?: string; undo?: () => void; open?: string; events?: string[]; note?: boolean }
   /** The sentence stopped mid-thought: the card shows the start and the next sentence is appended. */
   | { kind: 'cut' }
   /** Not sure what it is: the card asks, calendar or a list. */
   | { kind: 'unclear'; text: string }
   /** A dish: ingredients to tick off, or first which recipe. `added` is what the sentence itself put on the list. */
-  | { kind: 'recipe'; dish: string; picks: string[]; variants?: string[]; question?: string; added?: string; undo?: () => void };
+  | { kind: 'recipe'; dish: string; picks: string[]; variants?: string[]; question?: string; added?: string; undo?: () => void;
+      /** Read from a link: kept for the family once something lands. */
+      from?: Recipe;
+      /** The family made this dish before: "Wieder dein Rezept von chefkoch.de?" first, with its own picks. */
+      kept?: { recipe: Recipe; picks: string[] } };
 
 export type Plan = {
   /** What the machine is about to do, in one line above the steps ("Ich setze auf die Einkaufsliste"). Only for changes, not for questions. */
@@ -370,10 +375,11 @@ export const dishy = (said: string) => /\b(koch\w*|back\w*|rezept\w*|zutaten|kuc
 function recipePlan(r: ListSaid): Plan {
   const dish = r.dish!;
   const said = r.items.length ? liste(r.items.join(', '), 'einkauf') : null;
-  const open = new Set((get().lists.find((l) => l.id === 'einkauf')?.sections ?? []).flatMap((s) => s.items).filter((i) => !i.done).map((i) => parseItem(i.name).name.toLowerCase()));
-  const picks = (r.extra ?? []).filter((x) => !open.has(parseItem(x).name.toLowerCase()) && !r.items.some((i) => parseItem(i).name.toLowerCase() === parseItem(x).name.toLowerCase()));
+  const picks = missing(r.extra ?? [], r.items);
   const asks = !!r.variants?.length && !picks.length;
-  const note = asks ? tx(`Für ${dish} frage ich kurz nach dem Rezept.`, `For ${dish} I'll ask which recipe.`) : tx(`Für ${dish} fehlen noch ${picks.length} Dinge, du wählst gleich.`, `${dish} needs ${picks.length} more things, you pick next.`);
+  const saved = savedFor(dish);
+  const kept = saved ? { recipe: saved, picks: missing(saved.ingredients, r.items) } : undefined;
+  const note = kept ? tx(`${dish} hattet ihr schon, ich frage nach eurem Rezept.`, `You've made ${dish} before, I'll ask about your recipe.`) : asks ? tx(`Für ${dish} frage ich kurz nach dem Rezept.`, `For ${dish} I'll ask which recipe.`) : tx(`Für ${dish} fehlen noch ${picks.length} Dinge, du wählst gleich.`, `${dish} needs ${picks.length} more things, you pick next.`);
   return {
     head: said?.head ?? tx(`Ich schaue, was ${dish} braucht`, `Checking what ${dish} needs`),
     steps: [...(said?.steps ?? []), note],
@@ -382,9 +388,30 @@ function recipePlan(r: ListSaid): Plan {
       const first = out?.result?.kind === 'done' ? out.result : undefined;
       return {
         ...(out ?? { go: '/listen' }),
-        result: { kind: 'recipe', dish, picks, variants: asks ? r.variants : undefined, question: asks ? r.question || tx('Welches Rezept, und für wie viele?', 'Which recipe, and for how many?') : undefined, added: first?.text, undo: first?.undo },
+        result: { kind: 'recipe', dish, picks, kept, variants: asks ? r.variants : undefined, question: asks ? r.question || tx('Welches Rezept, und für wie viele?', 'Which recipe, and for how many?') : undefined, added: first?.text, undo: first?.undo },
       };
     },
+  };
+}
+
+/** What a recipe needs that is neither open on the shopping list nor just said. */
+function missing(all: string[], said: string[] = []) {
+  const name = (x: string) => parseItem(x).name.toLowerCase();
+  const open = new Set((get().lists.find((l) => l.id === 'einkauf')?.sections ?? []).flatMap((s) => s.items).filter((i) => !i.done).map((i) => name(i.name)));
+  const now = new Set(said.map(name));
+  return [...new Set(all)].filter((x) => !open.has(name(x)) && !now.has(name(x)));
+}
+
+/** A recipe read from a link (Julian 28.10.): every ingredient to tick off, the family keeps it. */
+export function linkPlan(r: Recipe): Plan {
+  const picks = missing(r.ingredients);
+  return {
+    head: tx(`Ich lese das Rezept ${r.name}`, `Reading the recipe ${r.name}`),
+    steps: [
+      tx(`${r.ingredients.length} Zutaten${r.servings ? ` für ${r.servings}` : ''} von ${r.host ?? 'der Seite'}.`, `${r.ingredients.length} ingredients${r.servings ? ` for ${r.servings}` : ''} from ${r.host ?? 'the page'}.`),
+      tx('Ich merke es mir für das nächste Mal.', "I'll remember it for next time."),
+    ],
+    run: () => { actions.setActiveList('einkauf'); return { go: '/listen', result: { kind: 'recipe', dish: r.name, picks, from: r } }; },
   };
 }
 

@@ -197,7 +197,8 @@ export function parseItem(text: string): { name: string; qty?: number; note?: st
   let qty: number | undefined;
   let unit: string | undefined;
   // "500 g Mehl": number plus unit becomes the note, "2 Hafermilch" a quantity.
-  const u = t.match(/^(\d+(?:[.,]\d+)?\s*(?:g|kg|ml|l|Stk|Pck)\.?)\s+(.+)$/i);
+  // Recipe lines too (Julian 28.10.: Rezept per Link): "2 EL Tomatenmark", "1 ½ Dosen Tomaten", "1 Prise Salz".
+  const u = t.match(/^((?:\d+(?:[.,]\d+)?(?:\s*[½¼¾])?|[½¼¾])\s*(?:g|kg|ml|l|cl|dl|Stk|Stück|Pck|Pkt|Packung(?:en)?|EL|TL|Dose[n]?|Becher|Bund|Prise[n]?|Zehe[n]?|Scheibe[n]?|Tasse[n]?|Glas|Gläser|Msp|Schuss|cups?|tbsp|tsp|oz|lbs?|cans?|cloves?|pinch)\.?)\s+(.+)$/i);
   const m = !u && t.match(/^(\d+)(?:\s*x)?\s+(.+)$/i);
   if (u) { unit = u[1]; t = u[2]; } else if (m) { qty = Number(m[1]); t = m[2]; }
   const [name, ...rest] = t.split(',');

@@ -21,8 +21,10 @@ import TalkBar from './TalkBar';
 import { setVeil } from './Veil';
 import { tokens, persons } from '../theme';
 import { useStore, actions, get } from '../state/store';
-import { plan, claudeSays, correction, replyPlan, listFromClaude, thinksOnline, revisePlan, reviseOffline, draftOf, cutOff, addPicks, dishy, Ctx, Plan, Result, Said, SPOKEN, PLACEHOLDER } from '../lib/act';
+import { plan, claudeSays, correction, replyPlan, listFromClaude, thinksOnline, revisePlan, reviseOffline, draftOf, cutOff, addPicks, dishy, linkPlan, Ctx, Plan, Result, Said, SPOKEN, PLACEHOLDER } from '../lib/act';
 import { canUnderstand, type Convo } from '../lib/verstehen';
+import { linkIn, recipeFromLink, keepRecipe, loadRecipes, type Recipe } from '../lib/rezepte';
+import { onShared } from '../lib/shared';
 import { dayLabel, slotLine, findWhen, type Suggest } from '../lib/talk';
 import { locate, light, lightOneByOne } from '../lib/landing';
 import { setDockTop, setDockSpace } from '../lib/dockSpace';
@@ -274,10 +276,21 @@ function Quiet({ label, onPress }: { label: string; onPress: () => void }) {
  * A dish on the card (Julian 28.10.: "Bolognese kochen"): which recipe first,
  * then every ingredient ticked, tap what you already have, add the rest.
  */
-function RecipeCard({ r, onVariant, onAdd, onSkip }: { r: Extract<Result, { kind: 'recipe' }>; onVariant: (v: string) => void; onAdd: (items: string[]) => void; onSkip: () => void }) {
+/** Asked before a dish the family has a recipe for (Julian 28.10.). */
+const keptLine = (k: Recipe) => (k.host ? tx(`Wieder euer Rezept von ${k.host}?`, `Your recipe from ${k.host} again?`) : tx(`Wieder euer Rezept ${k.name}?`, `Your ${k.name} recipe again?`));
+
+function RecipeCard({ r, onVariant, onAdd, onSkip, onKept }: { r: Extract<Result, { kind: 'recipe' }>; onVariant: (v: string) => void; onAdd: (items: string[]) => void; onSkip: () => void; onKept: (yes: boolean) => void }) {
   const [off, setOff] = useState<Set<string>>(new Set());
   const flip = (x: string) => { haptics.select(); setOff((o) => { const n = new Set(o); if (n.has(x)) n.delete(x); else n.add(x); return n; }); };
   const take = r.picks.filter((x) => !off.has(x));
+  if (r.kept) {
+    return (
+      <View style={{ gap: 10 }}>
+        <AppLine text={keptLine(r.kept.recipe)} sub={tx(`${r.kept.recipe.name}, ${r.kept.recipe.ingredients.length} Zutaten`, `${r.kept.recipe.name}, ${r.kept.recipe.ingredients.length} ingredients`)} />
+        <Picks options={[[tx('Ja', 'Yes'), () => onKept(true)], [tx('Nein, was anderes', 'No, something else'), () => onKept(false)]]} />
+      </View>
+    );
+  }
   if (r.variants?.length) {
     return (
       <View style={{ gap: 10 }}>
@@ -289,7 +302,7 @@ function RecipeCard({ r, onVariant, onAdd, onSkip }: { r: Extract<Result, { kind
   }
   return (
     <View style={{ gap: 12 }}>
-      <AppLine text={r.picks.length ? tx(`Für ${r.dish} noch dazu?`, `Also for ${r.dish}?`) : tx(`Für ${r.dish} steht schon alles auf der Liste.`, `Everything for ${r.dish} is already on the list.`)} sub={r.picks.length ? tx('Tipp weg, was ihr schon habt.', 'Tap away what you already have.') : undefined} />
+      <AppLine text={r.picks.length ? (r.from ? tx(`${r.dish}${r.from.servings ? `, ${r.from.servings}` : ''}: Was fehlt euch?`, `${r.dish}${r.from.servings ? `, ${r.from.servings}` : ''}: what do you need?`) : tx(`Für ${r.dish} noch dazu?`, `Also for ${r.dish}?`)) : tx(`Für ${r.dish} steht schon alles auf der Liste.`, `Everything for ${r.dish} is already on the list.`)} sub={r.picks.length ? tx('Tipp weg, was ihr schon habt.', 'Tap away what you already have.') : undefined} />
       {r.picks.length ? (
         <View style={{ flexDirection: 'row', gap: 6, flexWrap: 'wrap', paddingLeft: 36 }}>
           {r.picks.map((x) => {
@@ -338,6 +351,9 @@ export default function Dock() {
   useEffect(() => { setTurn(null); }, [path]);
   useEffect(() => { setDockSpace(where ? h + (where.tab ? 0 : 8) : 0); }, [h, !!where]);
   useEffect(() => () => timers.current.forEach(clearTimeout), []);
+  // Shared to FamCal from the browser or another app (Julian 28.10.): as if typed into the field.
+  const hearRef = useRef<(raw: string) => void>(() => {});
+  useEffect(() => onShared((text) => hearRef.current(text)), []);
 
   // Examples only while the calendar is still empty; after that they are clutter (Julian 27.10.).
   const navTop = Math.max(insets.bottom, 12) + 10 + 58 + 10;
@@ -376,7 +392,14 @@ export default function Dock() {
     const gone = open?.result.kind === 'event' && !get().events.some((e) => e.id === (open.result as { event: CalEvent }).event.id);
     const before = open && open.result.kind !== 'cut' && (ctx.kind === 'kalender' || open.result.kind === 'recipe') && !gone ? open.lines : [];
     let lines: Line[] = [...before, { said }];
+    loadRecipes();
+    const link = linkIn(raw);
+    if (link) return readLink(raw, link, n);
     if (cutOff(said)) return hold(said, { kind: 'cut' }, [{ said }]);
+    if (open?.result.kind === 'recipe' && open.result.kept && raw.split(/\s+/).length <= 3 && (YES.test(raw) || NO.test(raw))) {
+      setTurn(open);
+      return answerKept(YES.test(raw), raw);
+    }
     // "Ja" or "Nein" to "Wieder bei …?" needs no Claude.
     if (open?.result.kind === 'event' && open.result.suggest && raw.split(/\s+/).length <= 3 && (YES.test(raw) || NO.test(raw))) {
       setTurn(open);
@@ -426,6 +449,7 @@ export default function Dock() {
     }
     play(plan(ctx, said, pending), said, true, undefined, lines);
   };
+  hearRef.current = hear;
 
   /**
    * "Ich verstehe …" while Claude reads, with Halt. Only offline or after
@@ -498,7 +522,7 @@ export default function Dock() {
           // A question goes under the sentence it answers, and the mic listens again for the answer.
           const asks = res.kind === 'answer' && res.reply.kind === 'ask';
           const offer = res.kind === 'event' ? [res.needsTime && res.event.allDay ? res.ask || tx('Um wie viel Uhr? Oder ganztägig?', 'What time? Or all day?') : '', res.suggest && !res.event.place ? againAt(res.suggest) : ''].filter(Boolean).join(' ') : '';
-          const q = asks ? (res as { reply: { text: string } }).reply.text : res.kind === 'recipe' ? res.question : offer || undefined;
+          const q = asks ? (res as { reply: { text: string } }).reply.text : res.kind === 'recipe' ? (res.kept ? keptLine(res.kept.recipe) : res.question) : offer || undefined;
           const all = q ? [...lines.slice(0, -1), { ...lines[lines.length - 1], app: q }] : lines;
           setTurn({ id: Date.now(), said, result: res, lines: all });
           if (q) ask();
@@ -535,10 +559,47 @@ export default function Dock() {
   /** The ticked ingredients land on the shopping list, one receipt with undo for all. */
   const addRecipe = (r: Extract<Result, { kind: 'recipe' }>, items: string[]) => {
     if (!items.length) return ok();
+    const kept = r.from;
+    if (kept) keepRecipe(kept);
     const done = addPicks(r.dish, items);
     const before = r.undo;
     lightOneByOne(done.lit, (i) => (i === done.lit.length - 1 ? haptics.success() : haptics.select()));
     setTurn({ id: Date.now(), said: turn?.said ?? '', lines: [], result: { kind: 'done', text: done.text, sub: done.sub, undo: () => { done.undo?.(); before?.(); } } });
+  };
+
+  /** Ja takes the family's recipe, Nein goes on with what Claude suggested (or which recipe). */
+  const answerKept = (yes: boolean, said?: string) => {
+    if (turn?.result.kind !== 'recipe' || !turn.result.kept) return;
+    haptics.select();
+    const r = turn.result;
+    const k = r.kept!;
+    const next: Result = yes ? { ...r, kept: undefined, variants: undefined, question: undefined, picks: k.picks, from: k.recipe } : { ...r, kept: undefined };
+    const app = yes ? tx(`Gut, ${k.recipe.name}.`, `Okay, ${k.recipe.name}.`) : next.kind === 'recipe' && next.variants?.length ? next.question : undefined;
+    const lines = said ? [...turn.lines, { said, app }] : turn.lines;
+    setTurn({ ...turn, id: Date.now(), lines, result: next });
+    if (app && !yes) ask();
+  };
+
+  /** A pasted or shared link: the server reads the recipe, the card offers its ingredients. */
+  const readLink = (said: string, link: string, n: number) => {
+    let host = link;
+    try { host = new URL(link).hostname.replace(/^www\./, ''); } catch { /* shown as is */ }
+    const stop = () => { if (heard.current === n) heard.current++; setVeil({ phase: 'off', onCancel: undefined }); haptics.select(); };
+    setVeil({ phase: 'think', origin, target: null, lines: [tx(`Ich lese das Rezept auf ${host} …`, `Reading the recipe on ${host} …`)], shown: 1, said: host, head: undefined, onCancel: stop });
+    const late = new Promise<null>((r) => setTimeout(() => r(null), 20000));
+    Promise.race([recipeFromLink(link), late]).then((res) => {
+      if (heard.current !== n) return;
+      if (res && 'recipe' in res) return play(linkPlan(res.recipe), said, false, undefined, [{ said: host }]);
+      const err = res && 'error' in res ? res.error : undefined;
+      const why = !res ? tx('Die Seite hat zu lange gebraucht.', 'The page took too long.')
+        : err === 'offline' ? tx('Rezeptlinks lese ich nur in der App mit Konto.', 'I can only read recipe links in the app with an account.')
+        : err === 'limit' ? tx('Für heute sind die Sätze aufgebraucht, morgen geht es wieder.', "Today's sentences are used up, tomorrow it works again.")
+        : err === 'no_recipe' ? tx('Auf der Seite habe ich kein Rezept gefunden.', "I couldn't find a recipe on that page.")
+        : tx('Die Seite konnte ich nicht öffnen.', "I couldn't open that page.");
+      setVeil({ phase: 'off', onCancel: undefined });
+      haptics.select();
+      setTurn({ id: Date.now(), said: host, result: { kind: 'done', text: why, note: true }, lines: [] });
+    });
   };
 
   /** "Ganztägig" answers the time question; the Termin already is all day. */
@@ -597,7 +658,7 @@ export default function Dock() {
               <>
                 <Thread lines={turn.lines} />
                 {turn.result.added ? <AppLine text={turn.result.added} /> : null}
-                <RecipeCard r={turn.result} onVariant={(v) => hear(v)} onAdd={(items) => addRecipe(turn.result as Extract<Result, { kind: 'recipe' }>, items)} onSkip={ok} />
+                <RecipeCard r={turn.result} onVariant={(v) => hear(v)} onAdd={(items) => addRecipe(turn.result as Extract<Result, { kind: 'recipe' }>, items)} onSkip={ok} onKept={(yes) => answerKept(yes)} />
               </>
             ) : turn.result.kind === 'answer' && turn.result.reply.kind === 'ask' ? (
               <>
@@ -621,6 +682,11 @@ export default function Dock() {
                 {turn.lines.length > 1 ? <Thread lines={turn.lines} /> : null}
                 {turn.result.kind === 'event' ? (
                   <EventCard e={turn.result.event} needsTime={turn.result.needsTime} ask={turn.result.ask} suggest={turn.result.suggest} onSuggest={answerSuggest} onAllDay={allDay} onUndo={undo} onOk={ok} />
+                ) : turn.result.kind === 'done' && turn.result.note ? (
+                  <View style={{ gap: 10 }}>
+                    <AppLine text={turn.result.text} sub={turn.said} />
+                    <Quiet label={tx('Okay', 'Okay')} onPress={ok} />
+                  </View>
                 ) : turn.result.kind === 'done' ? (
                   <DoneCard text={turn.result.text} sub={turn.result.sub} said={turn.lines.length > 1 ? '' : turn.said} onUndo={turn.result.undo ? undo : undefined} onOk={ok} />
                 ) : null}
