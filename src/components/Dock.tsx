@@ -22,7 +22,7 @@ import { setVeil } from './Veil';
 import { tokens, persons } from '../theme';
 import { useStore, actions, get } from '../state/store';
 import { plan, claudeSays, correction, replyPlan, listFromClaude, thinksOnline, Ctx, Plan, Result, SPOKEN, HINTS, PLACEHOLDER } from '../lib/act';
-import { dayLabel, slotLine } from '../lib/talk';
+import { dayLabel, slotLine, findWhen } from '../lib/talk';
 import { locate, light, lightOneByOne } from '../lib/landing';
 import { setDockTop, setDockSpace } from '../lib/dockSpace';
 import { useKeyboardInset, useTyping } from '../lib/keyboard';
@@ -34,6 +34,16 @@ import { tx, quote } from '../i18n/lang';
 import { onToday } from '../screens/kalender/TodayView';
 
 const STEP_MS = 850;
+/** How long the family waits for Claude before the rules answer instead. */
+const FIRST_MS = 6000;
+/**
+ * Long or tricky sentences wait for Claude instead of showing the rules' guess (Julian 28.10.: "nur bei langen Sätzen").
+ * Tricky: spans and sequences ("seit", "bis", "danach"), changes, several clauses, or no day the rules can read.
+ */
+const needsClaude = (said: string) => {
+  const words = said.trim().split(/\s+/);
+  return words.length >= 7 || /,|\b(seit|bis|danach|dann|ab|und|verschieb\w*|urlaub|krank|jede[nr]?|außer|since|until|after|then|and|every|vacation|holiday|move)\b/i.test(said) || !findWhen(words);
+};
 /** Appears calmly, no spring or overshoot (Julian 28.10.: the bounce was too playful). */
 const CALM = FadeIn.duration(200);
 const TIMES = ['09:00', '10:30', '14:00', '16:00'];
@@ -229,10 +239,24 @@ export default function Dock() {
     setTurn(null);
     const ctx = where.ctx;
     const n = ++heard.current;
-    if (thinksOnline(ctx, said, pending)) {
-      // The rules show it at once; Claude's reading arrives a few seconds later and corrects it.
+    if (thinksOnline(ctx, said, pending) && !needsClaude(said)) {
+      // Short and plain ("Freitag 15 Uhr Friseur"): the rules land it at once, Claude corrects a few seconds later.
       const second = claudeSays(said);
       play(plan(ctx, said, pending), said, true, (out) => second.then((r) => { if (heard.current === n) correct(out.result, r, said); }));
+      return;
+    }
+    if (thinksOnline(ctx, said, pending)) {
+      // Claude first (Julian 28.10.: the rules' half guess must never land). The family sees
+      // "Ich verstehe …" for a second or two; only offline or after FIRST_MS do the rules answer.
+      const stop = () => { if (heard.current === n) heard.current++; setVeil({ phase: 'off', onCancel: undefined }); haptics.select(); };
+      setVeil({ phase: 'think', origin, target: null, lines: [tx('Ich verstehe …', 'Understanding …')], shown: 1, said, head: undefined, onCancel: stop });
+      const late = new Promise<null>((r) => setTimeout(() => r(null), FIRST_MS));
+      Promise.race([claudeSays(said), late]).then((r) => {
+        if (heard.current !== n) return;
+        if (r?.kind === 'liste') return play(listFromClaude(r), said, false);
+        if (r) return play(replyPlan(r), said, false);
+        play(plan(ctx, said, pending), said, false);
+      });
       return;
     }
     play(plan(ctx, said, pending), said, true);
