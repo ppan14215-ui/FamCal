@@ -14,7 +14,7 @@ import { supabase } from './cloud';
 import { get, toast } from '../state/store';
 import { getFamily, myRole } from './sync';
 import { tx } from '../i18n/lang';
-import type { PersonId } from '../theme';
+import { persons, type PersonId } from '../theme';
 import type { ClayName } from './clayIcons';
 
 export type EventSnap = { id: string; title: string; date: string; start: string; end?: string; allDay?: boolean; icon: ClayName; place?: string };
@@ -28,6 +28,10 @@ export type Card = {
   why?: { head?: string; steps: string[] };
   /** What the card showed when it was made. */
   snap?: { events?: EventSnap[]; list?: string; items?: string[]; tasks?: string[] };
+  /** Julian 29.10.: "Frag Sophia, ob Samstag passt" becomes a Ja/Nein card for her. */
+  ask?: { to: PersonId; q: string };
+  /** The answer to an ask, shown on the ask itself. */
+  answer?: { ask: string; yes: boolean };
 };
 export type FeedEntry = Card & {
   id: string;
@@ -42,7 +46,7 @@ export type FeedEntry = Card & {
 
 type Row = { id: string; role: PersonId; kind: 'made' | 'msg'; said: string; card: Card | null; undone: boolean; created_at: string };
 const fromRow = (r: Row): FeedEntry => ({ ...(r.card ?? {}), id: r.id, at: r.created_at, by: r.role, said: r.said, kind: r.kind, undone: r.undone || undefined });
-const cardOf = ({ events, tasks, items, text, snap, why }: FeedEntry): Card => ({ events, tasks, items, text, snap, why });
+const cardOf = ({ events, tasks, items, text, snap, why, ask, answer }: FeedEntry): Card => ({ events, tasks, items, text, snap, why, ask, answer });
 
 const KEY = 'famcal.feed';
 let feed: FeedEntry[] = [];
@@ -71,6 +75,32 @@ async function upload(f: FeedEntry) {
 
 export function addMessage(said: string) {
   const f: FeedEntry = { id: newId(), at: new Date().toISOString(), by: me(), said, kind: 'msg' };
+  put(f);
+  void upload(f);
+}
+
+/**
+ * "Frag Sophia, ob Samstag passt", "ask Tom if he can pick up Mia": a question for
+ * the partner with Ja and Nein. No AI needed, so it costs nothing. Returns false
+ * when the sentence is not such a question.
+ */
+export function addAsk(said: string): boolean {
+  const by = me();
+  const to: PersonId = by === 'J' ? 'T' : 'J';
+  const name = persons[to].name.trim();
+  const who = `(?:${name ? name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '|' : ''}ihn|sie|meinen mann|meine frau|meinen partner|meine partnerin|him|her|my partner|my wife|my husband)`;
+  const m = said.trim().match(new RegExp(`^(?:kannst du\\s+)?(?:frag|frage|ask)\\s+${who}\\s*[,:]?\\s*(?:mal\\s+)?(?:,\\s*)?(.{3,})$`, 'i'));
+  if (!m) return false;
+  const q = m[1].trim().replace(/[.?!]*$/, '?').replace(/^./, (c) => c.toUpperCase());
+  const f: FeedEntry = { id: newId(), at: new Date().toISOString(), by, said: said.trim(), kind: 'msg', ask: { to, q } };
+  put(f);
+  void upload(f);
+  return true;
+}
+
+export function answerAsk(askId: string, yes: boolean) {
+  if (feed.some((f) => f.answer?.ask === askId)) return;
+  const f: FeedEntry = { id: newId(), at: new Date().toISOString(), by: me(), said: yes ? tx('Ja', 'Yes') : tx('Nein', 'No'), kind: 'msg', answer: { ask: askId, yes } };
   put(f);
   void upload(f);
 }

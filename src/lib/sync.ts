@@ -6,7 +6,7 @@
  */
 import type { RealtimeChannel } from '@supabase/supabase-js';
 import { supabase } from './cloud';
-import { get, set, subscribe, actions } from '../state/store';
+import { get, set, subscribe, actions, setMeRole } from '../state/store';
 import type { CalEvent, Bring, Person } from '../state/types';
 import { watchComments, stopComments } from './comments';
 import type { ClayName } from './clayIcons';
@@ -78,7 +78,7 @@ export async function startSync(name?: string): Promise<{ family?: Family; error
   const names = { J: '', T: '' };
   for (const m of members.data) {
     names[m.role as 'J' | 'T'] = m.display_name;
-    if (m.user_id === uid) me = m.role as 'J' | 'T';
+    if (m.user_id === uid) { me = m.role as 'J' | 'T'; setMeRole(me); }
   }
   if (name && !names[me]) names[me] = name;
   // Partner not joined yet: the name typed in onboarding is kept on the family, so it survives every sync.

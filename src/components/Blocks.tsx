@@ -4,14 +4,16 @@
  * and short facts. Each block reads one field of Item.data and shows nothing
  * when it is empty, so a blueprint can name blocks a row does not fill yet.
  */
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Image, Linking } from 'react-native';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import { scheduleOnRN } from 'react-native-worklets';
 import Animated, { useAnimatedStyle, useSharedValue, withRepeat, withTiming, Easing } from 'react-native-reanimated';
 import Svg, { Path } from 'react-native-svg';
 import Txt from './ui/Txt';
 import PressScale from './ui/PressScale';
 import { Chip } from './ui/kit';
-import { tokens, personPalette, shade } from '../theme';
+import { tokens, personPalette, shade, persons, type PersonId } from '../theme';
 import { haptics } from '../lib/haptics';
 import type { Block, Blueprint, ItemData } from '../state/types';
 import { tx } from '../i18n/lang';
@@ -94,3 +96,62 @@ export function FactChips({ bp, data, note }: { bp: Blueprint; data?: ItemData; 
 }
 
 export { has as hasBlock };
+
+/** 7,8 the German way, 7.8 the English way. */
+export const scoreText = (n: number) => tx(n.toFixed(1).replace('.', ','), n.toFixed(1));
+
+/**
+ * Score out of 10 for films and series (Julian 29.10.: "mit 7,8/10 bewertbar, wie bei
+ * Rotten Tomatoes"). Each parent rates on their own; the chip shows yours and the
+ * partner's. Tap opens a bar: drag or tap sets the score in steps of 0.1.
+ */
+export function Score({ scores, me, onChange }: { scores?: Partial<Record<PersonId, number>>; me: PersonId; onChange: (n: number | undefined) => void }) {
+  const [open, setOpen] = useState(false);
+  const [w, setW] = useState(0);
+  const mine = scores?.[me];
+  const other: PersonId = me === 'J' ? 'T' : 'J';
+  const theirs = scores?.[other];
+  const [draft, setDraft] = useState<number | undefined>(mine);
+  useEffect(() => { if (!open) setDraft(mine); }, [mine, open]);
+  const at = (x: number) => { if (!w) return; const v = Math.round(Math.min(10, Math.max(0, (x / w) * 10)) * 10) / 10; setDraft(v); };
+  const tick = () => haptics.select();
+  const pan = Gesture.Pan().minDistance(0)
+    .onBegin((e) => { scheduleOnRN(at, e.x); scheduleOnRN(tick); })
+    .onUpdate((e) => { scheduleOnRN(at, e.x); });
+  const chip = (p: PersonId, v: number) => (
+    <View key={p} style={{ flexDirection: 'row', alignItems: 'center', gap: 5, height: 26, paddingHorizontal: 9, borderRadius: 999, backgroundColor: persons[p].tint }}>
+      <Txt size={13} weight={700} color={persons[p].ink}>{scoreText(v)}</Txt>
+      <Txt size={11.5} color={persons[p].ink}>{p === me ? tx('du', 'you') : persons[p].name}</Txt>
+    </View>
+  );
+  if (!open) {
+    return (
+      <PressScale onPress={() => { haptics.select(); setOpen(true); }} accessibilityLabel={tx('Bewerten, von 0 bis 10', 'Rate from 0 to 10')} style={{ flexDirection: 'row', gap: 6, alignSelf: 'flex-start' }}>
+        {mine != null ? chip(me, mine) : <Chip height={26}>{tx('Bewerten · /10', 'Rate · /10')}</Chip>}
+        {theirs != null ? chip(other, theirs) : null}
+      </PressScale>
+    );
+  }
+  const v = draft ?? 5;
+  return (
+    <View style={{ gap: 8 }}>
+      <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 4 }}>
+        <Txt size={22} weight={700} color={persons[me].ink}>{draft == null ? '–' : scoreText(v)}</Txt>
+        <Txt size={13} color={tokens.sub}>/10</Txt>
+      </View>
+      <GestureDetector gesture={pan}>
+        <View onLayout={(e) => setW(e.nativeEvent.layout.width)} style={{ height: 32, justifyContent: 'center' }}>
+          <View style={{ height: 8, borderRadius: 4, backgroundColor: tokens.chipBg, overflow: 'hidden' }}>
+            <View style={{ width: `${v * 10}%`, height: 8, backgroundColor: persons[me].ink }} />
+          </View>
+          <View style={{ position: 'absolute', left: Math.max(0, (v / 10) * w - 11), width: 22, height: 22, borderRadius: 11, backgroundColor: tokens.bg, borderWidth: 2, borderColor: persons[me].ink }} />
+        </View>
+      </GestureDetector>
+      <View style={{ flexDirection: 'row', gap: 8 }}>
+        <Chip height={28} bg={tokens.doneSoft} onPress={() => { haptics.success(); onChange(draft ?? 5); setOpen(false); }}>{tx('Fertig', 'Done')}</Chip>
+        {mine != null ? <Chip height={28} onPress={() => { haptics.select(); onChange(undefined); setOpen(false); }}>{tx('Entfernen', 'Remove')}</Chip> : null}
+        <Chip height={28} onPress={() => { setDraft(mine); setOpen(false); }}>{tx('Abbrechen', 'Cancel')}</Chip>
+      </View>
+    </View>
+  );
+}

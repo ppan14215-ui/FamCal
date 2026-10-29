@@ -31,7 +31,7 @@ import { locate, light, lightOneByOne } from '../lib/landing';
 import { setDockTop, setDockSpace } from '../lib/dockSpace';
 import { useKeyboardInset, useTyping } from '../lib/keyboard';
 import { setTalkOpen, useTalkOpen, setChatTabs, useChatTabs, chatBacks } from '../lib/talkOpen';
-import { addMade, addMessage } from '../lib/feed';
+import { addMade, addMessage, addAsk } from '../lib/feed';
 import { hm, short } from '../lib/dates';
 import { Tile } from './ui/Clay';
 import { haptics } from '../lib/haptics';
@@ -430,6 +430,8 @@ export default function Dock() {
   const hear = (raw: string, how?: { voice?: boolean }) => {
     // One message, then back to Eintragen, so the next sentence is never lost as a plain message (Julian 29.10.).
     if (where.chat && mode === 'msg') { haptics.success(); addMessage(raw.trim()); setMode('card'); return; }
+    // "Frag Sophia, ob Samstag passt": a Ja/Nein card for the partner, no AI needed (Julian 29.10.).
+    if (where.chat && !turn && addAsk(raw)) { haptics.success(); return; }
     talkLang.current = spokenLang(raw);
     return inLang(talkLang.current, () => hearNow(raw, how));
   };

@@ -60,6 +60,8 @@ export type Task = {
   who: Who;
   done: boolean;
   doneBy?: PersonId;
+  /** ISO time it was ticked, for the week's balance (Julian 29.10.: "Wer macht's"). */
+  doneAt?: string;
   /** Where to do it (the city's Kita portal and the like). */
   url?: string;
 };
@@ -82,6 +84,8 @@ export type Blueprint = {
 export type ItemData = {
   cover?: string;
   stars?: number;
+  /** Score out of 10 per parent, films and series (Julian 29.10.). */
+  scores?: Partial<Record<PersonId, number>>;
   seen?: boolean;
   year?: string;
   /** Author, director, shop. */

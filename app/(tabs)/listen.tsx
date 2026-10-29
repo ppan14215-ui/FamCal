@@ -10,7 +10,7 @@ import { Screen, H1, H2, Group, Meta } from '../../src/components/ui/kit';
 import Txt from '../../src/components/ui/Txt';
 import LineIcon from '../../src/components/ui/LineIcon';
 import { ClayIcon } from '../../src/components/ui/Clay';
-import { Pair } from '../../src/components/ui/Person';
+import { Pair, Avatar } from '../../src/components/ui/Person';
 import PressScale from '../../src/components/ui/PressScale';
 import ItemRow from '../../src/components/ItemRow';
 import AddInline from '../../src/components/AddInline';
@@ -20,7 +20,8 @@ import { useStore, actions } from '../../src/state/store';
 import { itemMeta, itemText } from '../../src/data/sample';
 import { haptics } from '../../src/lib/haptics';
 import Fresh from '../../src/components/Fresh';
-import { Cover, Stars, SeenPill, FactChips, factLine, hasBlock } from '../../src/components/Blocks';
+import { Cover, Stars, Score, SeenPill, FactChips, factLine, hasBlock } from '../../src/components/Blocks';
+import { myRole } from '../../src/lib/sync';
 import type { List, Task, Item, Blueprint } from '../../src/state/types';
 import type { ClayName } from '../../src/lib/clayIcons';
 import { tx } from '../../src/i18n/lang';
@@ -141,6 +142,7 @@ function Aufgaben({ tasks }: { tasks: Task[] }) {
           <LineIcon name="chev" size={18} color={tokens.mute} />
         </PressScale>
       ) : null}
+      <Balance tasks={tasks} />
       <Group>
         {[...open, ...done].map((t) => (
           <Fresh key={t.id} id={t.id}>
@@ -163,6 +165,47 @@ function Aufgaben({ tasks }: { tasks: Task[] }) {
       <AddInline placeholder={tx('Aufgabe hinzufügen …', 'Add a task …')} onAdd={actions.addTask} />
       <Txt size={13.5} line={19} color={tokens.sub}>{tx('Neue Aufgaben ohne Person landen im Stapel „ohne Zuständigen“. Ihr entscheidet, wer sie übernimmt.', 'New tasks without a person go to the “nobody on it” pile. You decide who takes them.')}</Txt>
     </>
+  );
+}
+
+/**
+ * Wer macht's (Julian 29.10.): who did how much this week and who has what open,
+ * so the invisible work is seen and split fairly. Shows only once tasks have people.
+ */
+function Balance({ tasks }: { tasks: Task[] }) {
+  const week = Date.now() - 7 * 864e5;
+  const row = (p: 'J' | 'T') => ({
+    p,
+    done: tasks.filter((t) => t.done && t.doneBy === p && (!t.doneAt || Date.parse(t.doneAt) >= week)).length,
+    open: tasks.filter((t) => !t.done && (t.who === p || t.who === 'both')).length,
+  });
+  const rows = [row('J'), row('T')];
+  const total = rows[0].done + rows[1].done;
+  if (!total && !rows[0].open && !rows[1].open) return null;
+  const share = total ? rows[0].done / total : 0.5;
+  return (
+    <View style={{ gap: 12, paddingVertical: 14, paddingHorizontal: 16, borderRadius: 24, backgroundColor: tokens.row }}>
+      <Txt size={15} weight={600}>{tx('Wer macht was, diese Woche', 'Who does what, this week')}</Txt>
+      <View style={{ height: 10, borderRadius: 5, overflow: 'hidden', flexDirection: 'row', backgroundColor: tokens.chipBg }}>
+        {total ? (
+          <>
+            <View style={{ flex: share, backgroundColor: persons.J.ink }} />
+            <View style={{ flex: 1 - share, backgroundColor: persons.T.ink }} />
+          </>
+        ) : null}
+      </View>
+      <View style={{ flexDirection: 'row', gap: 12 }}>
+        {rows.map((r) => (
+          <View key={r.p} style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            <Avatar p={r.p} size={26} />
+            <View style={{ flex: 1, minWidth: 0 }}>
+              <Txt size={14.5} weight={600} numberOfLines={1}>{persons[r.p].name}</Txt>
+              <Meta>{tx(`${r.done} erledigt · ${r.open} offen`, `${r.done} done · ${r.open} open`)}</Meta>
+            </View>
+          </View>
+        ))}
+      </View>
+    </View>
   );
 }
 
@@ -263,7 +306,11 @@ function Sections({ list, counts }: { list: List; counts?: boolean }) {
 
 /** Stars and short facts under the title of a row in a list that adapts. */
 function BlockBelow({ listId, bp, item }: { listId: string; bp: Blueprint; item: Item }) {
-  const stars = hasBlock(bp, 'stars') ? <Stars value={item.data?.stars} onChange={(n) => actions.setItemData(listId, item.id, { stars: n })} /> : null;
+  // Films and series get a score out of 10 instead of stars (Julian 29.10.).
+  const me = myRole();
+  const stars = bp.source === 'movies'
+    ? <Score scores={item.data?.scores} me={me} onChange={(n) => actions.setItemData(listId, item.id, { scores: { ...item.data?.scores, [me]: n } })} />
+    : hasBlock(bp, 'stars') ? <Stars value={item.data?.stars} onChange={(n) => actions.setItemData(listId, item.id, { stars: n })} /> : null;
   const chips = <FactChips bp={bp} data={item.data} note={item.note} />;
   if (!stars && !chips) return null;
   return <View style={{ gap: 6 }}>{stars}{chips}</View>;

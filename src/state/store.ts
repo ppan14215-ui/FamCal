@@ -18,6 +18,10 @@ import { findPlace } from '../lib/places';
 import { dueLabel } from '../lib/when';
 import { tx } from '../i18n/lang';
 
+/** Who uses this phone; the sync sets it once the family is known. */
+let meRole: PersonId = 'J';
+export const setMeRole = (r: PersonId) => { meRole = r; };
+
 export type CalView = 'heute' | 'tag' | 'woche' | 'monat' | 'jahr';
 
 type State = {
@@ -283,7 +287,8 @@ export const actions = {
 
   // Tasks
   toggleTask(id: string) {
-    set((s) => ({ tasks: s.tasks.map((t) => (t.id === id ? { ...t, done: !t.done, doneBy: !t.done ? (t.who === 'J' || t.who === 'T' ? t.who : 'J') : undefined } : t)) }));
+    // Whoever ticks it did it, so the week's balance stays honest.
+    set((s) => ({ tasks: s.tasks.map((t) => (t.id === id ? { ...t, done: !t.done, doneBy: !t.done ? meRole : undefined, doneAt: !t.done ? new Date().toISOString() : undefined } : t)) }));
   },
   assignTask(id: string, who: Who) { set((s) => ({ tasks: s.tasks.map((t) => (t.id === id ? { ...t, who } : t)) })); },
   cycleTaskWho(id: string) {

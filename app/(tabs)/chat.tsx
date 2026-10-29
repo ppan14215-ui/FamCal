@@ -19,7 +19,7 @@ import { tokens, persons } from '../../src/theme';
 import { useStore, actions } from '../../src/state/store';
 import { useDockSpace } from '../../src/lib/dockSpace';
 import { useKeyboardInset } from '../../src/lib/keyboard';
-import { useFeed, canUndo, undoEntry, type FeedEntry, type EventSnap } from '../../src/lib/feed';
+import { useFeed, canUndo, undoEntry, answerAsk, type FeedEntry, type EventSnap } from '../../src/lib/feed';
 import { getFamily, myRole } from '../../src/lib/sync';
 import { hm, short, TODAY } from '../../src/lib/dates';
 import { tx } from '../../src/i18n/lang';
@@ -112,7 +112,33 @@ function Why({ why }: { why: NonNullable<FeedEntry['why']> }) {
   );
 }
 
-function Entry({ f, mine }: { f: FeedEntry; mine: boolean }) {
+/** The Ja/Nein under a question for the partner; the answer shows on the question itself. */
+function Ask({ f, me, answer }: { f: FeedEntry; me: 'J' | 'T'; answer?: FeedEntry }) {
+  const ask = f.ask!;
+  const to = persons[ask.to];
+  if (answer?.answer) {
+    const yes = answer.answer.yes;
+    return (
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 8, paddingHorizontal: 12, borderRadius: 14, backgroundColor: yes ? tokens.doneSoft : tokens.chipBg }}>
+        <Avatar p={answer.by} size={22} />
+        <Txt size={14.5} weight={600} color={yes ? tokens.done : tokens.ink}>{answer.by === me ? tx(`Du: ${yes ? 'Ja' : 'Nein'}`, `You: ${yes ? 'Yes' : 'No'}`) : `${persons[answer.by].name}: ${yes ? tx('Ja', 'Yes') : tx('Nein', 'No')}`}</Txt>
+        <Txt size={12.5} color={tokens.sub}>{at(answer.at)}</Txt>
+      </View>
+    );
+  }
+  if (ask.to !== me) return <Txt size={13} color={tokens.sub}>{tx(`Wartet auf ${to.name}`, `Waiting for ${to.name}`)}</Txt>;
+  return (
+    <View style={{ flexDirection: 'row', gap: 8 }}>
+      {[true, false].map((yes) => (
+        <PressScale key={String(yes)} onPress={() => answerAsk(f.id, yes)} accessibilityLabel={yes ? tx('Ja', 'Yes') : tx('Nein', 'No')} style={{ height: 40, paddingHorizontal: 22, borderRadius: 999, alignItems: 'center', justifyContent: 'center', backgroundColor: yes ? tokens.ink : tokens.chipBg }}>
+          <Txt size={15} weight={600} color={yes ? tokens.bg : tokens.ink}>{yes ? tx('Ja', 'Yes') : tx('Nein', 'No')}</Txt>
+        </PressScale>
+      ))}
+    </View>
+  );
+}
+
+function Entry({ f, mine, me, answer }: { f: FeedEntry; mine: boolean; me: 'J' | 'T'; answer?: FeedEntry }) {
   const [open, setOpen] = useState(false);
   const p = persons[f.by];
   const name = mine ? tx('Du', 'You') : p.name || f.by;
@@ -125,8 +151,10 @@ function Entry({ f, mine }: { f: FeedEntry; mine: boolean }) {
       <View style={{ flex: 1, minWidth: 0, gap: 6, alignItems: mine ? 'flex-end' : 'flex-start' }}>
         <Txt size={12.5} color={tokens.sub}>{[name, f.kind === 'msg' ? tx('Nachricht', 'Message') : null, at(f.at)].filter(Boolean).join(' · ')}</Txt>
         <View style={[{ maxWidth: '86%', borderRadius: 18, paddingVertical: 9, paddingHorizontal: 13 }, mine ? { borderBottomRightRadius: 6 } : { borderBottomLeftRadius: 6 }, bubble]}>
-          <Txt size={15} line={21}>{f.said}</Txt>
+          {f.ask ? <Txt size={12} weight={600} tracking={0.6} color={tokens.done}>{tx(`FRAGE AN ${persons[f.ask.to].name.toUpperCase()}`, `QUESTION FOR ${persons[f.ask.to].name.toUpperCase()}`)}</Txt> : null}
+          <Txt size={15} line={21}>{f.ask ? f.ask.q : f.said}</Txt>
         </View>
+        {f.ask ? <Ask f={f} me={me} answer={answer} /> : null}
         {f.kind === 'made' ? (
           <View style={{ alignSelf: 'stretch', borderRadius: 18, overflow: 'hidden', backgroundColor: tokens.row, opacity: f.undone ? 0.55 : 1 }}>
             {f.undone ? null : f.events ? <Termine ids={f.events} snap={f.snap?.events} /> : null}
@@ -198,12 +226,14 @@ export default function Chat() {
       <ScrollView ref={scroller} onContentSizeChange={() => scroller.current?.scrollToEnd({ animated: false })} contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 18, paddingTop: 8, paddingBottom: dock + (kb > 0 ? kb : insets.bottom) + 40, gap: 12 }} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
         <H1 sub={tx(`Familie · ${2 + people} Personen`, `Family · ${2 + people} people`)} right={<PressScale accessibilityLabel={tx('Familie und Einstellungen', 'Family and settings')} onPress={() => router.push('/einstellungen')}><Pair /></PressScale>}>Chat</H1>
         {feed.length || veil.inline && veil.phase !== 'off' ? feed.map((f) => {
+          // An answer shows on its question, not as a bubble of its own.
+          if (f.answer && feed.some((x) => x.id === f.answer!.ask)) return null;
           const d = dayOf(f.at);
           const head = d !== lastDay ? (lastDay = d, d === TODAY ? tx('Heute', 'Today') : short(d)) : null;
           return (
             <React.Fragment key={f.id}>
               {head ? <View style={{ alignSelf: 'center', backgroundColor: tokens.segBg, borderRadius: 999, paddingVertical: 4, paddingHorizontal: 12 }}><Txt size={12.5} color={tokens.sub}>{head}</Txt></View> : null}
-              <Entry f={f} mine={f.by === me} />
+              <Entry f={f} mine={f.by === me} me={me} answer={f.ask ? feed.find((x) => x.answer?.ask === f.id) : undefined} />
             </React.Fragment>
           );
         }) : (
