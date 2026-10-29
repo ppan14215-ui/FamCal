@@ -55,8 +55,16 @@
         "expo-share-intent",
         {
           "androidIntentFilters": [
-            "text/*"
+            "text/*",
+            "image/*"
           ]
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "FamCal liest Listen aus deinen Screenshots. Das Bild bleibt auf dem Handy.",
+          "cameraPermission": "FamCal liest Listen und Briefe, die du fotografierst."
         }
       ]
     ],

@@ -18,6 +18,7 @@ import { tokens } from '../src/theme';
 import { actions, toast } from '../src/state/store';
 import type { ClayName } from '../src/lib/clayIcons';
 import { tx } from '../src/i18n/lang';
+import { canRead } from '../src/lib/screenshot';
 
 const MAIL = 'huber-7q2@familie.app';
 
@@ -25,8 +26,8 @@ export default function Neu() {
   const go = (fn: () => void) => { goBack(); setTimeout(fn, 30); };
   const soon = () => toast(tx('Kommt mit dem nächsten App Update', 'Coming with the next app update'));
   const attach: { icon: LineName; t: string; onPress: () => void }[] = [
-    { icon: 'camera', t: tx('Kamera', 'Camera'), onPress: () => go(() => router.push('/foto-kamera')) },
-    { icon: 'image', t: tx('Fotos', 'Photos'), onPress: soon },
+    { icon: 'camera', t: tx('Kamera', 'Camera'), onPress: () => go(() => (canRead() ? router.push({ pathname: '/bild-liste', params: { from: 'camera' } }) : router.push('/foto-kamera'))) },
+    { icon: 'image', t: tx('Fotos', 'Photos'), onPress: canRead() ? () => go(() => router.push({ pathname: '/bild-liste', params: { from: 'gallery' } })) : soon },
     { icon: 'file', t: tx('Datei', 'File'), onPress: soon },
   ];
   const opts: { icon: ClayName; t: string; s: string; onPress: () => void }[] = [

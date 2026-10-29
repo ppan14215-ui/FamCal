@@ -19,8 +19,17 @@ const native = Platform.OS === 'android' ? requireOptionalNativeModule<Native>('
 const KEY = 'famcalShareKey';
 
 /** Text and link of a share, joined: "Spaghetti Bolognese https://…". */
+type Value = { text?: string; weburls?: { url?: string }[]; meta?: { title?: string }; files?: { path?: string; mimeType?: string }[] } | null;
+const parse = (value: unknown) => (typeof value === 'string' ? JSON.parse(value) : value) as Value;
+
+/** A shared picture (Julian 29.10.: a screenshot of a list), as a file uri. */
+function imageOf(value: unknown): string | null {
+  const f = parse(value)?.files?.find((x) => x.path && /^image\//.test(x.mimeType ?? 'image/'));
+  return f?.path ? (f.path.startsWith('file:') || f.path.startsWith('content:') ? f.path : `file://${f.path}`) : null;
+}
+
 function textOf(value: unknown): string | null {
-  const v = (typeof value === 'string' ? JSON.parse(value) : value) as { text?: string; weburls?: { url?: string }[]; meta?: { title?: string } } | null;
+  const v = parse(value);
   if (!v) return null;
   const parts = [v.meta?.title, v.text, ...(v.weburls ?? []).map((w) => w.url)].filter((x): x is string => !!x && !!x.trim());
   // A link often comes once as text and once as url.
@@ -32,10 +41,18 @@ function textOf(value: unknown): string | null {
  * Calls `fn` with every shared text, including one shared while the app was
  * closed (delivered once after subscribing). Returns the unsubscribe.
  */
-export function onShared(fn: (text: string) => void): () => void {
+export function onShared(fn: (text: string) => void, onImage?: (uri: string) => void): () => void {
   if (!native) return () => {};
   let last = '';
   const sub = native.addListener('onChange', (e) => {
+    let img: string | null = null;
+    try { img = imageOf(e.value); } catch { img = null; }
+    if (img && onImage) {
+      if (img === last) return;
+      last = img;
+      native.clearShareIntent(KEY).catch(() => {});
+      return onImage(img);
+    }
     let t: string | null = null;
     try { t = textOf(e.value); } catch { t = null; }
     if (!t || t === last) return;

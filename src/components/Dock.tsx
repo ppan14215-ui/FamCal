@@ -403,7 +403,8 @@ export default function Dock() {
   useEffect(() => () => timers.current.forEach(clearTimeout), []);
   // Shared to FamCal from the browser or another app (Julian 28.10.): as if typed into the field.
   const hearRef = useRef<(raw: string) => void>(() => {});
-  useEffect(() => onShared((text) => hearRef.current(text)), []);
+  // A shared screenshot becomes a list offer (Julian 29.10.), never a list by itself.
+  useEffect(() => onShared((text) => hearRef.current(text), (uri) => router.push({ pathname: '/bild-liste', params: { uri } })), []);
 
   // Examples only while the calendar is still empty; after that they are clutter (Julian 27.10.).
   const navTop = Math.max(insets.bottom, 12) + 10 + 58 + 10;
