@@ -20,7 +20,7 @@ type Case = { id: string; said: string; checks: Check[]; lists?: { id: string; n
 const LISTS = [{ id: 'einkauf', name: 'Einkauf' }, { id: 'l_lese', name: 'Leseliste' }];
 const WATCH = [{ id: 'einkauf', name: 'Einkauf' }, { id: 'l_watch', name: 'Watchlist' }];
 /** The version under test: the new one runs beside the live one until it passes. */
-const FN = 'verstehen-neu';
+const FN = 'verstehen';
 
 const kind = (k: R['kind']): Check => [`kind ${k}`, (r) => r.kind === k];
 const date = (d: string): Check => [`date ${d}`, (r) => r.date === d];
