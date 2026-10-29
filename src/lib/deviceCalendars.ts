@@ -81,10 +81,11 @@ export async function importDeviceEvents(cals: DeviceCal[], who: PersonId, ahead
  * Umzug (Julian 27.10.: "einfache Migration von bestehenden Kalendern"). In
  * the real app the family's own Termine are copied into FamCal, so both
  * parents see them and FamCal becomes the calendar they talk to. Work stays a
- * private block on this phone. The ids are stable, so moving twice copies
+ * block "Arbeit" without details. The ids are stable, so moving twice copies
  * nothing twice.
  */
 export function moveIn(events: CalEvent[]): { copy: CalEvent[]; keep: CalEvent[] } {
-  const copy = events.filter((e) => !e.work).map((e) => ({ ...e, id: e.id.replace(/^dev-/, 'imp-'), work: undefined }));
-  return { copy, keep: events.filter((e) => e.work) };
+  // Work goes in too, only as the block "Arbeit" without details (Julian 29.10.: "Privat voll, Arbeit als Block").
+  const copy = events.map((e) => ({ ...e, id: e.id.replace(/^dev-/, 'imp-'), work: e.work || undefined }));
+  return { copy, keep: [] };
 }

@@ -18,6 +18,7 @@ import { tokens, fonts, persons, rise, rowIn, rowOut } from '../../src/theme';
 import { useStore, actions, toast } from '../../src/state/store';
 import { PROVIDERS, Provider, FoundCal, found, importEvents } from '../../src/data/calendars';
 import { hasDeviceCalendars, askAccess, listCalendars, importDeviceEvents, moveIn, DeviceCal } from '../../src/lib/deviceCalendars';
+import { rememberPhoneCalendars } from '../../src/lib/phoneSync';
 import { LIVE } from '../../src/lib/live';
 import { haptics } from '../../src/lib/haptics';
 import type { PersonId } from '../../src/theme';
@@ -156,6 +157,7 @@ function DeviceCard({ conn }: { conn?: { account: string; ids: string[] } }) {
         const { copy, keep } = moveIn(events);
         actions.connectCalendar('device', tx('Dieses Handy', 'This phone'), ids, [...keep, ...holidays]);
         actions.addEvents(copy);
+        rememberPhoneCalendars(ids, copy.map((e) => e.id));
         haptics.success();
         toast(ids.length ? tx(`${copy.length} Termine übernommen, für euch beide sichtbar`, `${copy.length} events moved in, visible to both of you`) : tx('Kalender getrennt', 'Calendars disconnected'));
       } else {

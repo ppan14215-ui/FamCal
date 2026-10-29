@@ -42,8 +42,8 @@ const fromRow = (r: Row): CalEvent => ({
   repeatUntil: r.repeat_until ?? undefined, skipDates: r.skip_dates?.length ? r.skip_dates : undefined,
 });
 
-/** Termine read live from the phone's calendars (and their work blocks) stay on the phone; spoken working hours are shared (Julian 28.10.). */
-const shared = (e: CalEvent) => !e.cal && (!e.work || /^(Gesagt|Said)/.test(e.source ?? ''));
+/** Termine read live from the phone's calendars stay on the phone; spoken working hours and synced work blocks are shared (Julian 28.10., 29.10.). */
+const shared = (e: CalEvent) => !e.cal && (!e.work || /^(Gesagt|Said)/.test(e.source ?? '') || e.id.startsWith('imp-'));
 const key = (e: CalEvent) => JSON.stringify(e);
 
 let family: Family | null = null;
@@ -109,6 +109,8 @@ export async function startSync(name?: string): Promise<{ family?: Family; error
   lastPeople = get().people;
   pushPeople();
   watchComments(family.id);
+  // Laufender Sync from this phone's calendars (Julian 29.10.).
+  void import('./phoneSync').then((m) => m.startPhoneSync()).catch(() => {});
 
   stopStore = subscribe(() => {
     if (get().events !== lastEvents) { lastEvents = get().events; push(); }
