@@ -150,10 +150,12 @@ function WorkLine({ work }: { work: CalEvent[] }) {
       {work.map((w) => {
         const p = (w.who === 'J' ? 'J' : 'T') as PersonId;
         return (
-          <Stripes key={w.id} p={p} style={{ flexDirection: 'row', alignItems: 'center', gap: 6, height: 26, paddingHorizontal: 8, borderRadius: 999 }}>
-            <Avatar p={p} size={16} />
-            <Txt size={12.5} weight={600} color={persons[p].ink}>{tx(`Arbeit ${hm(w.start)} bis ${hm(w.end ?? '')}`, `Work ${hm(w.start)} to ${hm(w.end ?? '')}`)}</Txt>
-          </Stripes>
+          <PressScale key={w.id} scale={0.97} onPress={() => router.push(`/termin/${w.id}`)} accessibilityLabel={tx('Arbeit ansehen', 'View work')}>
+            <Stripes p={p} style={{ flexDirection: 'row', alignItems: 'center', gap: 6, height: 26, paddingHorizontal: 8, borderRadius: 999 }}>
+              <Avatar p={p} size={16} />
+              <Txt size={12.5} weight={600} color={persons[p].ink}>{w.allDay || !w.end ? tx('Arbeit', 'Work') : tx(`Arbeit ${hm(w.start)} bis ${hm(w.end)}`, `Work ${hm(w.start)} to ${hm(w.end)}`)}</Txt>
+            </Stripes>
+          </PressScale>
         );
       })}
     </View>

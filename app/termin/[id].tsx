@@ -8,6 +8,7 @@ import { View, TextInput, Platform } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ScrollView } from 'react-native';
+import { dropPhoneEvents } from '../../src/lib/phoneSync';
 import { BackBar, Card, Chip, Meta } from '../../src/components/ui/kit';
 import ItemRow from '../../src/components/ItemRow';
 import SourceLink from '../../src/components/SourceLink';
@@ -225,13 +226,32 @@ export default function Termin() {
             const gone = get().events.find((x) => x.id === sid) ?? e;
             router.back();
             actions.removeEvent(gone.id);
-            toast(tx(`„${gone.title}“ gelöscht`, `“${gone.title}” deleted`), () => actions.addEvent(gone));
+            void dropPhoneEvents([gone.id]);
+            toast(tx(`„${gone.title}“ gelöscht`, `“${gone.title}” deleted`), () => { actions.addEvent(gone); void dropPhoneEvents([gone.id], true); });
           }}
           style={{ alignSelf: 'center', flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 12, paddingHorizontal: 18, marginTop: 8 }}
         >
           <LineIcon name="trash" size={18} color={tokens.danger} />
           <Txt size={15} weight={600} color={tokens.danger}>{series ? tx('Ganze Serie löschen', 'Delete whole series') : tx('Termin löschen', 'Delete event')}</Txt>
         </PressScale>
+        {e.work ? (
+          // Work comes in many blocks; one tap clears all of that person's from this day on (Julian 29.10.).
+          <PressScale
+            accessibilityRole="button"
+            onPress={() => {
+              haptics.commit();
+              const all = get().events.filter((x) => x.work && x.who === e.who && x.date >= e.date);
+              router.back();
+              all.forEach((x) => actions.removeEvent(x.id));
+              void dropPhoneEvents(all.map((x) => x.id));
+              toast(tx(`${all.length} Arbeitstermine gelöscht`, `${all.length} work blocks deleted`), () => { all.forEach((x) => actions.addEvent(x)); void dropPhoneEvents(all.map((x) => x.id), true); });
+            }}
+            style={{ alignSelf: 'center', flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 12, paddingHorizontal: 18 }}
+          >
+            <LineIcon name="trash" size={18} color={tokens.danger} />
+            <Txt size={15} weight={600} color={tokens.danger}>{tx('Alle Arbeitstermine ab hier löschen', 'Delete all work from here on')}</Txt>
+          </PressScale>
+        ) : null}
       </View>
     </ScrollView>
   );

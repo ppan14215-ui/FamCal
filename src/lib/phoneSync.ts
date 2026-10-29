@@ -20,6 +20,8 @@ import { TODAY, addDays } from './dates';
 
 const CALS = 'famcal.phoneCalendars';
 const SEEN = 'famcal.phoneSynced';
+/** Synced Termine someone deleted in FamCal: the phone calendar never brings them back. */
+const DROPPED = 'famcal.phoneDropped';
 const EVERY_MS = 5 * 60 * 1000;
 const AHEAD = 92;
 
@@ -68,7 +70,8 @@ export async function syncPhoneCalendars(force = false): Promise<void> {
     const inside = (e: CalEvent) => e.date >= from && e.date <= to;
     const kept = s.events.filter((e) => !before.has(e.id) || byId.has(e.id) || !inside(e)).map((e) => (byId.has(e.id) ? merge(e, byId.get(e.id)!) : e));
     const have = new Set(kept.map((e) => e.id));
-    const added = fresh.filter((e) => !have.has(e.id));
+    const dropped = new Set(await read(DROPPED));
+    const added = fresh.filter((e) => !have.has(e.id) && !dropped.has(e.id));
     const changed = added.length || kept.length !== s.events.length || kept.some((e, i) => e !== s.events[i]);
     if (changed) set(() => ({ events: [...kept, ...added] }));
     const outside = s.events.filter((e) => before.has(e.id) && !inside(e)).map((e) => e.id);
@@ -87,4 +90,12 @@ export function startPhoneSync() {
   if (listening || Platform.OS === 'web') return;
   listening = true;
   AppState.addEventListener('change', (st) => { if (st === 'active') void syncPhoneCalendars(); });
+}
+
+/** Deleting a synced Termin in FamCal keeps it out; undo lets it back in. */
+export async function dropPhoneEvents(ids: string[], back = false) {
+  if (Platform.OS === 'web' || !ids.length) return;
+  const now = new Set(await read(DROPPED));
+  ids.forEach((id) => (back ? now.delete(id) : now.add(id)));
+  void write(DROPPED, [...now].slice(-2000));
 }

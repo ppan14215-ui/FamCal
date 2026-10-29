@@ -176,7 +176,10 @@ export default function WeekView() {
               return (
                 <View key={d} style={{ flex: 1, position: 'relative' }}>
                   {list.filter((e) => e.work).map((e) => (
-                    <Stripes key={e.id} p={(e.who === 'J' ? 'J' : 'T') as PersonId} radius={8} style={{ position: 'absolute', left: 1, right: 1, top: top(e.start), height: top(e.end ?? e.start) - top(e.start), opacity: 0.9 }} />
+                    // Work blocks open like any Termin (Julian 29.10.: they could not be seen or deleted).
+                    <PressScale key={e.id} scale={0.98} onPress={() => router.push(`/termin/${e.id}`)} accessibilityLabel={tx('Arbeit ansehen', 'View work')} style={{ position: 'absolute', left: 1, right: 1, top: top(e.start), height: top(e.end ?? e.start) - top(e.start) }}>
+                      <Stripes p={(e.who === 'J' ? 'J' : 'T') as PersonId} radius={8} style={{ flex: 1, opacity: 0.9 }} />
+                    </PressScale>
                   ))}
                   {list.filter((e) => !e.work).map((e) => {
                     const h = Math.max(28, (e.end && top(e.end) > top(e.start) ? top(e.end) - top(e.start) : HP * 0.8) - 4);
