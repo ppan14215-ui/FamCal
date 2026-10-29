@@ -1,6 +1,6 @@
 /**
  * Hell, Dunkel oder wie das Handy (Julian 28.10.). The choice is kept per
- * device; "system" follows the phone. Switching swaps the palette in place
+ * device and starts as Hell; "system" follows the phone. Switching swaps the palette in place
  * and the root remounts once, so every screen draws with the new colours.
  */
 import React, { useEffect, useSyncExternalStore } from 'react';
@@ -10,7 +10,8 @@ import { getPref, setPref } from '../lib/prefs';
 import { get, actions } from '../state/store';
 
 export type ThemeChoice = 'system' | 'hell' | 'dunkel';
-let choice: ThemeChoice = ((): ThemeChoice => { const v = getPref('theme'); return v === 'hell' || v === 'dunkel' ? v : 'system'; })();
+// Hell is the default (Julian 29.10.); dark only when chosen, or "wie das Handy" on a dark phone.
+let choice: ThemeChoice = ((): ThemeChoice => { const v = getPref('theme'); return v === 'dunkel' || v === 'system' ? v : 'hell'; })();
 const subs = new Set<() => void>();
 let gen = 0;
 const sub = (l: () => void) => { subs.add(l); return () => { subs.delete(l); }; };
