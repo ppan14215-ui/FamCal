@@ -14,6 +14,7 @@ import { supabase } from './cloud';
 import { get, toast } from '../state/store';
 import { getFamily, myRole } from './sync';
 import { tx } from '../i18n/lang';
+import { suggestBring } from './talk';
 import { persons, type PersonId } from '../theme';
 import type { ClayName } from './clayIcons';
 
@@ -30,6 +31,8 @@ export type Card = {
   snap?: { events?: EventSnap[]; list?: string; items?: string[]; tasks?: string[] };
   /** Julian 29.10.: "Frag Sophia, ob Samstag passt" becomes a Ja/Nein card for her. */
   ask?: { to: PersonId; q: string };
+  /** What should come along too, per Termin, offered with one tap (Julian 29.10.: U3 brings the U-Heft). */
+  suggest?: Record<string, string[]>;
   /** The answer to an ask, shown on the ask itself. */
   answer?: { ask: string; yes: boolean };
 };
@@ -46,7 +49,7 @@ export type FeedEntry = Card & {
 
 type Row = { id: string; role: PersonId; kind: 'made' | 'msg'; said: string; card: Card | null; undone: boolean; created_at: string };
 const fromRow = (r: Row): FeedEntry => ({ ...(r.card ?? {}), id: r.id, at: r.created_at, by: r.role, said: r.said, kind: r.kind, undone: r.undone || undefined });
-const cardOf = ({ events, tasks, items, text, snap, why, ask, answer }: FeedEntry): Card => ({ events, tasks, items, text, snap, why, ask, answer });
+const cardOf = ({ events, tasks, items, text, snap, why, ask, answer, suggest }: FeedEntry): Card => ({ events, tasks, items, text, snap, why, ask, answer, suggest });
 
 const KEY = 'famcal.feed';
 let feed: FeedEntry[] = [];
@@ -128,7 +131,9 @@ export function addMade(said: string, ids: string[], text?: string, undo?: () =>
     items: items ? items.ids.map((id) => all.find((i) => i.id === id)?.name).filter(Boolean) as string[] : undefined,
     tasks: tasks.length ? tasks.map((id) => s.tasks.find((t) => t.id === id)?.title ?? '') : undefined,
   };
-  const f: FeedEntry = { id: newId(), at: new Date().toISOString(), by: me(), said, kind: 'made', events: ev.size ? [...ev] : undefined, tasks: tasks.length ? tasks : undefined, items, text, snap, why: why?.steps.length ? { head: why.head, steps: why.steps.slice(0, 12) } : undefined };
+  const suggest: Record<string, string[]> = {};
+  for (const e of s.events) if (ev.has(e.id)) { const x = suggestBring(e.title, e.sub, e.suggest, (e.bring ?? []).map((b) => b.t)); if (x.length) suggest[e.id] = x; }
+  const f: FeedEntry = { id: newId(), at: new Date().toISOString(), by: me(), said, kind: 'made', suggest: Object.keys(suggest).length ? suggest : undefined, events: ev.size ? [...ev] : undefined, tasks: tasks.length ? tasks : undefined, items, text, snap, why: why?.steps.length ? { head: why.head, steps: why.steps.slice(0, 12) } : undefined };
   if (undo) undos.set(f.id, undo);
   put(f);
   void upload(f);

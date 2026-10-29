@@ -38,6 +38,8 @@ const Termin = z.object({
   place: z.string().nullable(),
   repeat: z.string().nullable(),
   bring: z.array(z.string()),
+  // Julian 29.10.: think ahead. What usually comes along that the sentence did not name (U3 brings the U-Heft); the app only offers it.
+  suggest_bring: z.array(z.string()),
   steps: z.array(z.string()),
   question: z.string().nullable(),
   icon: z.string().nullable(),
@@ -95,6 +97,7 @@ Regeln für Termine:
 - who: J oder T, wenn der Satz einen der beiden Eltern nennt (Namen stehen unten), both für "wir", "beide", "zusammen", sonst null. Kinder sind keine Eltern.
 - place nur, wenn ein Ort genannt ist. repeat als kurzer Text in der Sprache des Satzes ("Jeden Dienstag", "Every Tuesday"), sonst null.
 - bring: Dinge, die mitgenommen werden sollen ("Impfpass mitnehmen" ergibt ["Impfpass"]).
+- suggest_bring: denk mit wie ein guter Assistent. Höchstens drei Dinge, die man zu so einem Termin üblicherweise braucht und die der Satz nicht nennt, in der Sprache des Satzes (Kinderarzt U3 ergibt ["U-Heft", "Impfpass", "Versichertenkarte"], Impfung ergibt ["Impfpass"], Bürgeramt ergibt ["Personalausweis"], Schwimmkurs ergibt ["Schwimmsachen", "Handtuch"]). Die App bietet sie nur an. Weißt du nichts Sinnvolles, bleibt es leer. Nie bei Listen.
 - steps: ein sehr kurzer Satz in der Sprache des Satzes, was du verstanden hast, zum Beispiel "Zahnarzt am Freitag, 30. Oktober um 15 Uhr, für Julian.". Keine Gedankenstriche.
 - Fehlt etwas Wichtiges (kein Datum), setze kind auf termin, date auf null und stelle in question eine kurze Rückfrage in der Sprache des Satzes.
 - Ist der Satz eine Frage an den Kalender ("Was steht morgen an?", "What's on tomorrow?"), setze kind auf frage und lasse die Felder leer.

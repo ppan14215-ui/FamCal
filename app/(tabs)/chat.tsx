@@ -24,6 +24,7 @@ import { getFamily, myRole } from '../../src/lib/sync';
 import { hm, short, TODAY } from '../../src/lib/dates';
 import { tx } from '../../src/i18n/lang';
 import { useVeil, Step } from '../../src/components/Veil';
+import { isTrip, makePackList, kidsOn, ageText } from '../../src/lib/pack';
 
 const at = (s: string) => { const d = new Date(s); return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`; };
 const dayOf = (s: string) => { const d = new Date(s); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
@@ -112,6 +113,65 @@ function Why({ why }: { why: NonNullable<FeedEntry['why']> }) {
   );
 }
 
+/** "U-Heft mitnehmen?": what should come along, one tap adds it to the Termin (Julian 29.10.: never by itself). */
+function BringOffer({ suggest }: { suggest: Record<string, string[]> }) {
+  const events = useStore((s) => s.events);
+  const rows = Object.entries(suggest).map(([id, items]) => {
+    const e = events.find((x) => x.id === id);
+    const have = new Set((e?.bring ?? []).map((b) => b.t.toLowerCase()));
+    return { e, items: items.filter((t) => !have.has(t.toLowerCase())) };
+  }).filter((r) => r.e && r.items.length);
+  if (!rows.length) return null;
+  return (
+    <View style={{ gap: 8, paddingHorizontal: 14, paddingVertical: 10, borderTopWidth: 1, borderTopColor: tokens.hair }}>
+      <Txt size={13} color={tokens.sub}>{tx('Mitnehmen?', 'Bring along?')}</Txt>
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
+        {rows.flatMap((r) => r.items.map((t) => (
+          <PressScale key={`${r.e!.id}${t}`} onPress={() => actions.addBring(r.e!.id, t)} accessibilityLabel={tx(`${t} mitnehmen`, `Bring ${t}`)} style={{ flexDirection: 'row', alignItems: 'center', gap: 4, height: 32, paddingHorizontal: 12, borderRadius: 999, backgroundColor: tokens.chipBg }}>
+            <Txt size={14} weight={700} color={tokens.done}>+</Txt>
+            <Txt size={14} weight={600}>{t}</Txt>
+          </PressScale>
+        )))}
+      </View>
+    </View>
+  );
+}
+
+/** A trip offers its packing list, made for this family (Julian 29.10.: "mitdenken"). */
+function PackOffer({ ids }: { ids: string[] }) {
+  const trip = useStore((s) => s.events.find((e) => ids.includes(e.id) && isTrip(e)));
+  const list = useStore((s) => (trip ? s.lists.find((l) => l.forEvent === trip.id) : undefined));
+  const [busy, setBusy] = useState(false);
+  if (!trip) return null;
+  if (list) {
+    const n = list.sections.reduce((a, sec) => a + sec.items.length, 0);
+    return (
+      <PressScale scale={0.99} onPress={() => { actions.setActiveList(list.id); router.push('/listen'); }} style={{ flexDirection: 'row', alignItems: 'center', gap: 12, padding: 10, paddingRight: 14, borderTopWidth: 1, borderTopColor: tokens.hair }}>
+        <Tile name="reise" size={40} radius={12} />
+        <View style={{ flex: 1, minWidth: 0 }}>
+          <Txt size={15} weight={600} numberOfLines={1}>{list.name}</Txt>
+          <Txt size={13} color={tokens.sub}>{tx(`${n} Dinge, für euch gedacht`, `${n} things, made for you`)}</Txt>
+        </View>
+        <LineIcon name="chev" size={16} color={tokens.mute} />
+      </PressScale>
+    );
+  }
+  const kids = kidsOn(trip.date);
+  const forWhom = kids.length ? kids.map((k) => `${k.name} (${ageText(k.months)})`).join(', ') : '';
+  return (
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, padding: 10, paddingRight: 12, borderTopWidth: 1, borderTopColor: tokens.hair }}>
+      <Tile name="reise" size={40} radius={12} />
+      <View style={{ flex: 1, minWidth: 0 }}>
+        <Txt size={15} weight={600}>{tx('Packliste dazu?', 'Packing list for it?')}</Txt>
+        <Txt size={13} color={tokens.sub} numberOfLines={2}>{forWhom ? tx(`Passend für ${forWhom}`, `Made for ${forWhom}`) : tx('Passend zu Reise und Dauer', 'Made for the trip and its length')}</Txt>
+      </View>
+      <PressScale disabled={busy} onPress={() => { setBusy(true); makePackList(trip).finally(() => setBusy(false)); }} style={{ height: 36, paddingHorizontal: 14, borderRadius: 999, alignItems: 'center', justifyContent: 'center', backgroundColor: tokens.ink, opacity: busy ? 0.5 : 1 }}>
+        <Txt size={14} weight={600} color={tokens.bg}>{busy ? tx('Denke …', 'Thinking …') : tx('Anlegen', 'Create')}</Txt>
+      </PressScale>
+    </View>
+  );
+}
+
 /** The Ja/Nein under a question for the partner; the answer shows on the question itself. */
 function Ask({ f, me, answer }: { f: FeedEntry; me: 'J' | 'T'; answer?: FeedEntry }) {
   const ask = f.ask!;
@@ -158,6 +218,8 @@ function Entry({ f, mine, me, answer }: { f: FeedEntry; mine: boolean; me: 'J' |
         {f.kind === 'made' ? (
           <View style={{ alignSelf: 'stretch', borderRadius: 18, overflow: 'hidden', backgroundColor: tokens.row, opacity: f.undone ? 0.55 : 1 }}>
             {f.undone ? null : f.events ? <Termine ids={f.events} snap={f.snap?.events} /> : null}
+            {f.undone ? null : f.events ? <PackOffer ids={f.events} /> : null}
+            {f.undone || !f.suggest ? null : <BringOffer suggest={f.suggest} />}
             {f.undone ? null : f.items ? <Items list={f.items.list} ids={f.items.ids} name={f.snap?.list} names={f.snap?.items} /> : null}
             {f.undone ? null : f.tasks ? <Tasks ids={f.tasks} titles={f.snap?.tasks} /> : null}
             {open && f.why ? <Why why={f.why} /> : null}

@@ -25,6 +25,8 @@ export type CalEvent = {
   who: Who;
   place?: string;
   bring?: Bring[];
+  /** Only on this phone: what the assistant thinks should come along too, offered with one tap (Julian 29.10.: U3 brings the U-Heft). */
+  suggest?: string[];
   source?: string;
   /** Connected calendar it came from (google, icloud, outlook). */
   cal?: string;
@@ -112,6 +114,8 @@ export type List = {
   sections: Section[];
   /** Only for lists that adapt: which blocks each row shows. */
   blueprint?: Blueprint;
+  /** A packing list made for one trip in the calendar (Julian 29.10.: "mitdenken"). */
+  forEvent?: string;
 };
 
 export type InboxItem = {

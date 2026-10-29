@@ -297,6 +297,8 @@ export type Understood = {
   kind: 'termin' | 'frage' | 'liste' | 'abgebrochen' | 'unklar'; title: string; sub: string | null; date: string | null; end_date: string | null;
   start: string | null; end: string | null; who: Who; place: string | null; repeat: string | null;
   bring: string[]; steps: string[]; question: string | null;
+  /** Things usually needed that the sentence did not name (U-Heft for a U3). */
+  suggest_bring?: string[];
   /** Claude picks the icon from the names the app sends (Julian 27.10.: "Fußball" gets the ball). */
   icon?: string | null;
   /** kind "liste": the sentence belongs on a list, from any screen (Julian 27.10.). */
@@ -363,6 +365,8 @@ export function fromModel(m: Understood, said: string, events: CalEvent[], newId
     bring: m.bring.length ? m.bring.map((t, i) => ({ id: `${newId()}-b${i}`, t, done: false })) : undefined,
   };
   if (m.work) event.work = true;
+  const sug = suggestBring(event.title, event.sub, m.suggest_bring, m.bring);
+  if (sug.length) event.suggest = sug;
   const more = (m.more ?? []).filter((x) => x.title && ISO.test(x.date)).slice(0, 20).map((x): CalEvent => {
     const s = x.start && HHMM.test(x.start) ? x.start : undefined;
     const ic = isIcon(x.icon) && x.icon !== 'kalender' ? x.icon : iconFor(`${x.title} ${x.sub ?? ''}`);
@@ -391,3 +395,24 @@ export function week(events: CalEvent[]): { date: string; events: CalEvent[] }[]
 }
 
 export const dayLabel = (d: string) => (d === TODAY ? tx('Heute', 'Today') : d === addDays(TODAY, 1) ? tx('Morgen', 'Tomorrow') : short(d));
+
+/**
+ * Mitdenken (Julian 29.10.: "Kinderarzt, es handelt sich um die U3, dann sollte das
+ * U-Heft dabei sein"). What usually comes along, offered and never added by itself.
+ * The rules know the common ones; Claude adds others.
+ */
+const BRING_RULES: { re: RegExp; items: () => string[] }[] = [
+  { re: /\bu ?\d{1,2}\b|u-?untersuchung|vorsorge/i, items: () => [tx('U-Heft', 'Child health record'), tx('Impfpass', 'Vaccination card'), tx('Versichertenkarte', 'Health insurance card')] },
+  { re: /impf|vaccin/i, items: () => [tx('Impfpass', 'Vaccination card'), tx('Versichertenkarte', 'Health insurance card')] },
+  { re: /kinderarzt|arzt|ärztin|praxis|zahnarzt|doctor|dentist|gp\b|paediatric|pediatric/i, items: () => [tx('Versichertenkarte', 'Health insurance card')] },
+  { re: /schwimm|swim/i, items: () => [tx('Schwimmsachen', 'Swimming things'), tx('Handtuch', 'Towel')] },
+  { re: /flug|flight|fliegen/i, items: () => [tx('Ausweise', 'IDs'), tx('Bordkarten', 'Boarding passes')] },
+  { re: /bürgeramt|amt\b|behörde|standesamt/i, items: () => [tx('Personalausweis', 'ID card'), tx('Termin Bestätigung', 'Booking confirmation')] },
+];
+
+export function suggestBring(title: string, sub?: string, fromClaude: string[] = [], said: string[] = []) {
+  const text = `${title} ${sub ?? ''}`;
+  const all = [...BRING_RULES.filter((r) => r.re.test(text)).flatMap((r) => r.items()), ...fromClaude];
+  const seen = new Set(said.map((x) => x.toLowerCase()));
+  return all.filter((x) => { const k = x.toLowerCase(); if (!x.trim() || seen.has(k)) return false; seen.add(k); return true; }).slice(0, 4);
+}
