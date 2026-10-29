@@ -30,7 +30,8 @@ import { dayLabel, slotLine, type Suggest } from '../lib/talk';
 import { locate, light, lightOneByOne } from '../lib/landing';
 import { setDockTop, setDockSpace } from '../lib/dockSpace';
 import { useKeyboardInset, useTyping } from '../lib/keyboard';
-import { setTalkOpen, useTalkOpen } from '../lib/talkOpen';
+import { setTalkOpen, useTalkOpen, setChatTabs, useChatTabs, chatBacks } from '../lib/talkOpen';
+import { addMade, addMessage } from '../lib/feed';
 import { hm, short } from '../lib/dates';
 import { Tile } from './ui/Clay';
 import { haptics } from '../lib/haptics';
@@ -70,10 +71,17 @@ const shadow = Platform.select({
   default: { shadowColor: '#16232A', shadowOpacity: 0.12, shadowRadius: 16, shadowOffset: { width: 0, height: 10 }, elevation: 8, borderWidth: 1, borderColor: tokens.hair },
 });
 
+const gridShadow = Platform.select({
+  web: { boxShadow: '0 8px 20px rgba(22,35,42,.22)' } as any,
+  default: { shadowColor: '#16232A', shadowOpacity: 0.22, shadowRadius: 10, shadowOffset: { width: 0, height: 8 }, elevation: 8 },
+});
+
 /** Where am I, and where does the dock sit there. */
-function useWhere(): { ctx: Ctx; tab: boolean; lift: number } | null {
+function useWhere(): { ctx: Ctx; tab: boolean; lift: number; chat?: boolean } | null {
   const path = usePathname();
   const active = useStore((s) => s.activeList);
+  // The family chat (Julian 29.10.): the field is always there, a sentence becomes a card in the log.
+  if (path === '/chat') return { ctx: { kind: 'kalender' }, tab: false, lift: 0, chat: true };
   if (path === '/kalender' || path === '/eingang') return { ctx: { kind: 'kalender' }, tab: true, lift: 0 };
   if (path === '/listen') return { ctx: { kind: 'liste', id: active }, tab: true, lift: 0 };
   const t = path.match(/^\/termin\/(.+)$/);
@@ -360,7 +368,13 @@ export default function Dock() {
   const path = usePathname();
   const talking = useTalkOpen();
   // On the tabs the field only shows after the bubble was tapped, or while a card is open (Julian 28.10.).
-  const shown = !where?.tab || talking || !!turn;
+  const chatTabs = useChatTabs();
+  const shown = where?.chat ? !chatTabs || !!turn : !where?.tab || talking || !!turn;
+  /** Chat only: Eintragen makes cards, Nachricht just writes to the family. */
+  const [mode, setMode] = useState<'card' | 'msg'>('card');
+  // Back from the tabs with the black mic: listen right away, as on the other tabs.
+  const backs = useRef(chatBacks());
+  useEffect(() => { if (!chatTabs && chatBacks() !== backs.current) { backs.current = chatBacks(); setListenKey((k) => k + 1); } }, [chatTabs]);
   // The bubble opened the field: the mic starts right away.
   useEffect(() => { if (talking) setListenKey((k) => k + 1); }, [talking]);
   useEffect(() => {
@@ -394,7 +408,7 @@ export default function Dock() {
   // Examples only while the calendar is still empty; after that they are clutter (Julian 27.10.).
   const navTop = Math.max(insets.bottom, 12) + 10 + 58 + 10;
   // Typing hides the tabs, so the field drops into their place right above the keyboard.
-  const bottom = !where ? 0 : kb > 0 ? kb + 8 : where.tab && !typing && !(shown || mounted) ? navTop : where.tab ? Math.max(insets.bottom, 12) + 10 : insets.bottom + 12 + where.lift;
+  const bottom = !where ? 0 : kb > 0 ? kb + 8 : where.chat ? Math.max(insets.bottom, 12) + 10 : kb > 0 ? kb + 8 : where.tab && !typing && !(shown || mounted) ? navTop : where.tab ? Math.max(insets.bottom, 12) + 10 : insets.bottom + 12 + where.lift;
   useEffect(() => { setDockTop(where ? bottom + (shown ? h : 0) : 0); }, [bottom, h, !!where, shown]);
 
   if (!where) return null;
@@ -414,6 +428,7 @@ export default function Dock() {
   };
 
   const hear = (raw: string, how?: { voice?: boolean }) => {
+    if (where.chat && mode === 'msg') { haptics.success(); addMessage(raw.trim()); return; }
     talkLang.current = spokenLang(raw);
     return inLang(talkLang.current, () => hearNow(raw, how));
   };
@@ -524,10 +539,14 @@ export default function Dock() {
     later(450 + STEP_MS * p.steps.length + 150, () => {
       setVeil({ onCancel: undefined });
       const out = p.run();
+      // In the chat the card lands in the log and we stay (Julian 29.10.).
+      const r0 = out.result;
+      if (where.chat && r0?.kind === 'event') addMade(said, [r0.event.id], undefined, () => actions.removeEvent(r0.event.id));
+      else if (where.chat && r0?.kind === 'done' && !r0.note) addMade(said, out.lit ?? (out.land ? [out.land] : []), r0.text, r0.undo, r0.events);
       // A new Termin lands in the calendar; switch there first if we are elsewhere.
-      const go = out.go ?? (out.result?.kind === 'event' ? '/kalender' : undefined);
+      const go = where.chat ? undefined : out.go ?? (out.result?.kind === 'event' ? '/kalender' : undefined);
       // Heute shows one week; a Termin further out lands in the list of days.
-      if (out.result?.kind === 'event' && !onToday(out.result.event.date) && get().calView === 'heute') actions.setCalView('tag');
+      if (!where.chat && out.result?.kind === 'event' && !onToday(out.result.event.date) && get().calView === 'heute') actions.setCalView('tag');
       if (go && go !== path) router.navigate(go as any);
       const finish = () => {
         // Each new row arrives on its own with a tick, then the receipt says what happened.
@@ -540,6 +559,8 @@ export default function Dock() {
           const asks = res.kind === 'answer' && res.reply.kind === 'ask';
           const offer = res.kind === 'event' ? [res.needsTime && res.event.allDay ? res.ask || tx('Um wie viel Uhr? Oder ganztägig?', 'What time? Or all day?') : '', res.suggest && !res.event.place ? againAt(res.suggest) : ''].filter(Boolean).join(' ') : '';
           const q = asks ? (res as { reply: { text: string } }).reply.text : res.kind === 'recipe' ? (res.kept ? keptLine(res.kept.recipe) : res.question) : offer || undefined;
+          // The chat already shows the card; only a question stays above the field, for whoever asked.
+          if (where.chat && !q && (res.kind === 'event' || (res.kind === 'done' && !res.note))) return;
           const all = q ? [...lines.slice(0, -1), { ...lines[lines.length - 1], app: q }] : lines;
           setTurn({ id: Date.now(), said, result: res, lines: all });
           if (q) ask();
@@ -549,7 +570,7 @@ export default function Dock() {
       // The receipt covers the lower half, so whatever landed must sit above it.
       const band = { top: insets.top + 70, floor: H * 0.45, height: H };
       later(go && go !== path ? 380 : 90, () => {
-        if (!out.land) return setVeil({ phase: 'land', target: { x: W / 2, y: H - bottom - 110 }, onLanded: finish });
+        if (!out.land || where.chat) return setVeil({ phase: 'land', target: { x: W / 2, y: H - bottom - 110 }, onLanded: finish });
         locate(out.land, band, (target) => setVeil({ phase: 'land', target, onLanded: finish }));
       });
     });
@@ -579,6 +600,7 @@ export default function Dock() {
     const kept = r.from;
     if (kept) keepRecipe(kept);
     const done = addPicks(r.dish, items);
+    if (where.chat) addMade(turn?.said ?? r.dish, done.lit, done.text, () => { done.undo?.(); r.undo?.(); });
     const before = r.undo;
     lightOneByOne(done.lit, (i) => (i === done.lit.length - 1 ? haptics.success() : haptics.select()));
     setTurn({ id: Date.now(), said: turn?.said ?? '', lines: [], result: { kind: 'done', text: done.text, sub: done.sub, undo: () => { done.undo?.(); before?.(); } } });
@@ -636,6 +658,7 @@ export default function Dock() {
   };
 
   if (!shown && !mounted) return null;
+  if (where.chat && !shown) return null;
   return (
     <>
     {/* A tap beside the field brings the tabs back, as long as no card waits for an answer. */}
@@ -653,7 +676,7 @@ export default function Dock() {
         <Rect x="0" y="0" width="100%" height="100%" fill="url(#dockfade)" />
       </Svg>
     </View>
-    <View pointerEvents="box-none" onLayout={(e) => setH(e.nativeEvent.layout.height)} style={{ position: 'absolute', left: 18, right: 18, bottom, gap: 10 }}>
+    <View pointerEvents="box-none" onLayout={(e) => setH(e.nativeEvent.layout.height)} style={{ position: 'absolute', left: where.chat ? 14 : 18, right: where.chat ? 14 : 18, bottom, gap: 10 }}>
       {turn ? (
         <Animated.View key={turn.id} entering={FadeInDown.duration(220)} exiting={FadeOut.duration(150)} style={[{ maxHeight: 420, borderRadius: 26, backgroundColor: tokens.row }, shadow]}>
           <ScrollView ref={scroller} onContentSizeChange={() => scroller.current?.scrollToEnd({ animated: false })} contentContainerStyle={{ padding: 18, gap: 12 }} showsVerticalScrollIndicator={false}>
@@ -715,19 +738,36 @@ export default function Dock() {
           </ScrollView>
         </Animated.View>
       ) : null}
-      <Animated.View style={[{ alignSelf: 'flex-end', alignItems: 'flex-end', overflow: 'hidden', borderRadius: 30 }, where.tab ? morph : { width: full }]}>
-      <Animated.View style={[{ width: full }, where.tab ? settle : null]}>
+      {where.chat ? (
+        <View accessibilityRole="radiogroup" style={{ alignSelf: 'flex-start', flexDirection: 'row', padding: 3, borderRadius: 999, backgroundColor: tokens.segBg }}>
+          {(['card', 'msg'] as const).map((m) => (
+            <PressScale key={m} accessibilityRole="radio" accessibilityState={{ checked: mode === m }} onPress={() => { haptics.select(); setMode(m); }} style={{ height: 32, paddingHorizontal: 14, borderRadius: 999, justifyContent: 'center', backgroundColor: mode === m ? tokens.row : 'transparent' }}>
+              <Txt size={13.5} weight={mode === m ? 600 : 400} color={mode === m ? tokens.ink : tokens.sub}>{m === 'card' ? tx('Eintragen', 'Add') : tx('Nachricht', 'Message')}</Txt>
+            </PressScale>
+          ))}
+        </View>
+      ) : null}
+      <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 8 }}>
+      <Animated.View style={[{ alignSelf: 'flex-end', alignItems: 'flex-end', overflow: 'hidden', borderRadius: 30 }, where.tab ? morph : { width: where.chat ? W - 28 - 56 : full }]}>
+      <Animated.View style={[{ width: where.chat ? W - 28 - 56 : full }, where.tab ? settle : null]}>
       <TalkBar
-        key={kind}
+        key={where.chat ? 'chat' : kind}
+        split={where.chat}
         onClose={where.tab ? () => { setTalkOpen(false); setTurn(null); light(null); } : undefined}
         onSend={hear}
         onPlus={() => router.push('/neu')}
         spoken={SPOKEN[kind]}
         listenKey={listenKey}
-        placeholder={turn?.result.kind === 'cut' ? tx('Sprich einfach weiter …', 'Just keep talking …') : turn && kind === 'kalender' ? tx('Antworten oder ergänzen …', 'Reply or add …') : PLACEHOLDER[kind]}
+        placeholder={where.chat && mode === 'msg' ? tx('Nachricht an die Familie …', 'Message to the family …') : turn?.result.kind === 'cut' ? tx('Sprich einfach weiter …', 'Just keep talking …') : where.chat ? tx('Sprich oder schreib einfach …', 'Just say or type it …') : turn && kind === 'kalender' ? tx('Antworten oder ergänzen …', 'Reply or add …') : PLACEHOLDER[kind]}
       />
       </Animated.View>
       </Animated.View>
+      {where.chat ? (
+        <PressScale accessibilityLabel={tx('Kalender und Listen zeigen', 'Show calendar and lists')} onPress={() => { haptics.select(); setTurn(null); light(null); setChatTabs(true); }} style={[{ width: 48, height: 48, marginBottom: 4, borderRadius: 999, alignItems: 'center', justifyContent: 'center', backgroundColor: tokens.ink }, gridShadow]}>
+          <LineIcon name="grid" size={22} color={tokens.onInk} />
+        </PressScale>
+      ) : null}
+      </View>
     </View>
     </>
   );

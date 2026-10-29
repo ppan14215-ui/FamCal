@@ -20,7 +20,7 @@ export async function afterSignIn(name?: string): Promise<string | null> {
   const res = await startSync(name);
   if (res.error) return tx('Die Verbindung hat nicht geklappt. Bitte noch einmal versuchen.', 'Could not connect. Please try again.');
   const s = get();
-  router.replace(s.events.length || s.names.T ? '/kalender' : '/familie');
+  router.replace(s.events.length || s.names.T ? '/chat' : '/familie');
   return null;
 }
 

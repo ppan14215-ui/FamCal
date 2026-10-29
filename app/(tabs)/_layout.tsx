@@ -4,7 +4,7 @@ import NavBar from '../../src/components/NavBar';
 import { tokens } from '../../src/theme';
 import { Keyed, usePaletteGen } from '../../src/theme/mode';
 
-/** Kalender, Listen, Eingang (Julian 27.10.: the calendar is the key view, Heute lives in it). */
+/** Chat, Kalender, Listen (Julian 29.10.: the family chat is the start; Eingang lives in the chat now). */
 export default function TabsLayout() {
   usePaletteGen();
   return (
@@ -13,9 +13,10 @@ export default function TabsLayout() {
       screenLayout={({ children }) => <Keyed>{children}</Keyed>}
       screenOptions={{ headerShown: false, sceneStyle: { backgroundColor: tokens.bg }, animation: 'none' }}
     >
+      <Tabs.Screen name="chat" />
       <Tabs.Screen name="kalender" />
       <Tabs.Screen name="listen" />
-      <Tabs.Screen name="eingang" />
+      <Tabs.Screen name="eingang" options={{ href: null }} />
     </Tabs>
   );
 }

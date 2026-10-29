@@ -14,7 +14,7 @@ export default function Willkommen() {
       footer={
         <>
           <Btn label={tx('Los geht’s', 'Let’s go')} onPress={() => { actions.reset(); router.push('/onboarding/eltern'); }} />
-          <TextLink label={tx('Ich wurde eingeladen', 'I was invited')} weight={400} onPress={() => { actions.loadDemo(); router.replace('/kalender'); }} />
+          <TextLink label={tx('Ich wurde eingeladen', 'I was invited')} weight={400} onPress={() => { actions.loadDemo(); router.replace('/chat'); }} />
         </>
       }
     >

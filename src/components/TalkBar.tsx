@@ -67,9 +67,14 @@ type Props = {
   listenKey?: number;
   /** On the tabs (Julian 28.10.): a clear way back. The × sits on the left, the + moves next to the mic. */
   onClose?: () => void;
+  /**
+   * Like Claude and ChatGPT (Julian 29.10.: "klare Trennung"): plus on the left,
+   * the text, a grey mic, and a send arrow only once there is text.
+   */
+  split?: boolean;
 };
 
-export default function TalkBar({ onSend, onPlus, spoken, listenKey, onClose, placeholder = tx('Sag oder schreib, was ansteht …', 'Say or type what\'s coming up …') }: Props) {
+export default function TalkBar({ onSend, onPlus, spoken, listenKey, onClose, split, placeholder = tx('Sag oder schreib, was ansteht …', 'Say or type what\'s coming up …') }: Props) {
   const [text, setText] = useState('');
   const [listening, setListening] = useState(false);
   /** How loud the voice is right now, 0 to 1; drives the bars in the mic. */
@@ -223,7 +228,7 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, onClose, pl
   }, [listenKey]);
 
   const plus = (
-    <PressScale accessibilityLabel={tx('Foto, Termin, Aufgabe', 'Photo, event, task')} onPress={() => { if (listening) { typed.current = true; timers.current.forEach(clearTimeout); setDemo(false); toKeys.current?.(); setText(''); } onPlus?.(); }} style={{ width: 44, height: 44, marginBottom: 2, borderRadius: 999, alignItems: 'center', justifyContent: 'center', backgroundColor: tokens.chipBg }}>
+    <PressScale accessibilityLabel={tx('Foto, Termin, Aufgabe', 'Photo, event, task')} onPress={() => { if (listening) { typed.current = true; timers.current.forEach(clearTimeout); setDemo(false); toKeys.current?.(); setText(''); } onPlus?.(); }} style={{ width: split ? 36 : 44, height: split ? 36 : 44, marginBottom: split ? 6 : 2, marginLeft: split ? 4 : 0, borderRadius: 999, alignItems: 'center', justifyContent: 'center', backgroundColor: tokens.chipBg }}>
       <LineIcon name="plus" size={22} color={tokens.ink} stroke={2} />
     </PressScale>
   );
@@ -261,10 +266,26 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, onClose, pl
         selectionColor={tokens.select} cursorColor={tokens.ink}
         returnKeyType={TOUCH ? 'default' : 'send'}
         accessibilityLabel={tx('Was steht an?', 'What\'s on?')}
-        style={[{ flex: 1, minWidth: 0, height: boxH, marginBottom: 2, fontFamily: fonts[400], fontSize: 16.5, lineHeight: LINE, color: tokens.ink, paddingVertical: PAD, paddingHorizontal: 8, textAlignVertical: 'top', includeFontPadding: false }, Platform.OS === 'web' ? ({ outlineStyle: 'none' } as any) : null]}
+        style={[{ flex: 1, minWidth: 0, height: boxH, marginBottom: 2, fontFamily: fonts[400], fontSize: split ? 16 : 16.5, lineHeight: LINE, color: tokens.ink, paddingVertical: PAD, paddingHorizontal: split ? 3 : 8, textAlignVertical: 'top', includeFontPadding: false }, Platform.OS === 'web' ? ({ outlineStyle: 'none' } as any) : null]}
       />
       {/* Plus stays reachable while the mic listens (Julian 28.10.: "wie komme ich an das + Menü?"). */}
       {onClose && (!text || listening) ? plus : null}
+      {split ? (
+        <>
+          <PressScale
+            accessibilityLabel={listening ? tx('Fertig gesprochen', 'Done speaking') : tx('Sprechen', 'Speak')}
+            onPress={listen}
+            style={{ width: 36, height: 44, marginBottom: 2, borderRadius: 999, alignItems: 'center', justifyContent: 'center' }}
+          >
+            {listening ? <VoiceBars level={level} color={tokens.ink} /> : <LineIcon name="mic" size={22} color={tokens.ink} />}
+          </PressScale>
+          {text && !listening ? (
+            <PressScale accessibilityLabel={tx('Senden', 'Send')} onPress={() => send()} style={{ width: 44, height: 44, marginBottom: 2, borderRadius: 999, alignItems: 'center', justifyContent: 'center', backgroundColor: tokens.ink }}>
+              <LineIcon name="send" size={20} color={tokens.onInk} />
+            </PressScale>
+          ) : null}
+        </>
+      ) : (
       <View style={{ width: 48, height: 48 }}>
       {listening && micStyle === 'ring' ? <VoiceRing level={level} /> : null}
       <PressScale
@@ -275,6 +296,7 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, onClose, pl
         {listening ? (micStyle === 'ring' ? <View style={{ width: 15, height: 15, borderRadius: 4, backgroundColor: tokens.onInk }} /> : <VoiceBars level={level} />) : <LineIcon name={text ? 'send' : 'mic'} size={22} color={tokens.onInk} />}
       </PressScale>
       </View>
+      )}
     </View>
   );
 

@@ -38,10 +38,10 @@ export default function Partner() {
           icon="send"
           onPress={async () => {
             await Share.share({ message: invite().message(names.J) }).catch(() => {});
-            router.replace('/kalender');
+            router.replace('/chat');
           }}
         />
-        <TextLink label={tx('Später einladen', 'Invite later')} weight={400} onPress={() => router.replace('/kalender')} />
+        <TextLink label={tx('Später einladen', 'Invite later')} weight={400} onPress={() => router.replace('/chat')} />
       </>}
     >
       <BackBar center={<StepDots i={2} n={3} />} />

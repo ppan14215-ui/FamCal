@@ -19,3 +19,19 @@ export function setTalkOpen(v: boolean) {
 
 export const talkOpens = () => opens;
 export const useTalkOpen = () => useSyncExternalStore((l) => { subs.add(l); return () => { subs.delete(l); }; }, () => open, () => open);
+
+/**
+ * The chat tab turns it around (Julian 29.10.): the field is the default, and
+ * the black button beside it lays the tabs over it. Back from the tabs, the mic listens.
+ */
+let tabs = false;
+let back = 0;
+const tabSubs = new Set<() => void>();
+export function setChatTabs(v: boolean, listen = false) {
+  if (!v && listen) back++;
+  if (tabs === v) return;
+  tabs = v;
+  tabSubs.forEach((l) => l());
+}
+export const chatBacks = () => back;
+export const useChatTabs = () => useSyncExternalStore((l) => { tabSubs.add(l); return () => { tabSubs.delete(l); }; }, () => tabs, () => tabs);

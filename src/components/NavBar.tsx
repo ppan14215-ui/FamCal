@@ -16,13 +16,13 @@ import PressScale from './ui/PressScale';
 import { tokens, springs } from '../theme';
 import { haptics } from '../lib/haptics';
 import { useTyping } from '../lib/keyboard';
-import { setTalkOpen, useTalkOpen } from '../lib/talkOpen';
+import { setTalkOpen, useTalkOpen, setChatTabs, useChatTabs } from '../lib/talkOpen';
 import { tx } from '../i18n/lang';
 
 const TABS: { name: string; key: string; icon: LineName }[] = [
+  { name: 'chat', key: 'nav.chat', icon: 'chat' },
   { name: 'kalender', key: 'nav.kalender', icon: 'cal' },
   { name: 'listen', key: 'nav.listen', icon: 'list' },
-  { name: 'eingang', key: 'nav.eingang', icon: 'inbox' },
 ];
 
 const floatShadow = Platform.select({
@@ -48,7 +48,10 @@ export default function NavBar({ state, navigation }: BottomTabBarProps) {
   // The talk field takes this place (Julian 28.10.: tabs or field, never both).
   const typing = useTyping();
   const talking = useTalkOpen();
-  const gone = typing || talking;
+  // On the chat the field is the default; the tabs only come over it from the black button (Julian 29.10.).
+  const chatTabs = useChatTabs();
+  const onChat = current === 'chat';
+  const gone = typing || talking || (onChat && !chatTabs);
   const away = useSharedValue(0);
   // Coming back after talking, the tabs wait until the field has nearly shrunk into the bubble.
   const was = useRef(false);
@@ -73,7 +76,8 @@ export default function NavBar({ state, navigation }: BottomTabBarProps) {
               accessibilityRole="tab"
               accessibilityState={{ selected: on }}
               onPress={() => {
-                if (!on) { haptics.select(); navigation.navigate(tab.name); }
+                if (!on) { haptics.select(); setChatTabs(false); navigation.navigate(tab.name); }
+                else if (onChat) { haptics.select(); setChatTabs(false); }
               }}
               style={{ flex: 1, alignItems: 'center', gap: 2, paddingVertical: 7, borderRadius: 999, backgroundColor: !w && on ? tokens.pillOn : 'transparent' }}
             >
@@ -85,7 +89,7 @@ export default function NavBar({ state, navigation }: BottomTabBarProps) {
       </View>
       <PressScale
         accessibilityLabel={tx('Sprechen oder schreiben', 'Talk or type')}
-        onPress={() => { haptics.tap(); setTalkOpen(true); }}
+        onPress={() => { haptics.tap(); if (onChat) setChatTabs(false, true); else setTalkOpen(true); }}
         // Long press goes straight to the plus menu (photo, event, task).
         onLongPress={() => { haptics.select(); router.push('/neu'); }}
         accessibilityHint={tx('Lang drücken für Foto, Termin, Aufgabe', 'Long press for photo, event, task')}

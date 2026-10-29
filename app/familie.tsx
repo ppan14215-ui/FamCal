@@ -29,7 +29,7 @@ export default function Familie() {
     setBusy(false);
     if (r.error) return setError(/unbekannt/i.test(r.error) ? tx('Diesen Code kennen wir nicht. Bitte noch einmal prüfen.', 'We do not know this code. Please check it again.') : /vollständig/i.test(r.error) ? tx('In dieser Familie sind schon zwei.', 'This family already has two members.') : tx('Das hat nicht geklappt. Bitte noch einmal.', 'That did not work. Please try again.'));
     haptics.success();
-    router.replace('/kalender');
+    router.replace('/chat');
   };
 
   return (
