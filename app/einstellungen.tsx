@@ -14,7 +14,7 @@ import type { ClayName } from '../src/lib/clayIcons';
 import { LIVE } from '../src/lib/live';
 import { getFamily, stopSync } from '../src/lib/sync';
 import { signOut, canTestSignIn, useAuth } from '../src/lib/auth';
-import { runQualityTest } from '../src/lib/qualitaet';
+import { runQualityTest, CASES } from '../src/lib/qualitaet';
 import { tx } from '../src/i18n/lang';
 import { speechLang, setSpeechLang } from '../src/lib/speechLang';
 import * as Updates from 'expo-updates';
@@ -128,12 +128,12 @@ function versionLine(): string {
  */
 function QualityTest() {
   const { session } = useAuth();
-  const [state, setState] = useState<{ busy: boolean; done: number; ok: number | null; total: number; limit?: boolean }>({ busy: false, done: 0, ok: null, total: 0 });
+  const [state, setState] = useState<{ busy: boolean; done: number; ok: number | null; total: number; limit?: boolean; bad?: string[] }>({ busy: false, done: 0, ok: null, total: 0 });
   if (!canTestSignIn || !session) return null;
   const s = state.busy
     ? `Läuft … ${state.done} von ${state.total}`
     : state.limit ? `Tageslimit erreicht nach ${state.done} Sätzen · morgen wieder`
-    : state.ok !== null ? `${state.ok} von ${state.total} richtig · nochmal antippen` : '30 Sätze an Claude, etwa 3 Cent';
+    : state.ok !== null ? `${state.ok} von ${state.total} richtig · nochmal antippen` : `${CASES.length} Sätze an Claude, etwa 3 Cent`;
   return (
     <Group>
       <SRow
@@ -141,11 +141,13 @@ function QualityTest() {
         t="Qualitätstest"
         s={s}
         onPress={state.busy ? undefined : async () => {
-          setState({ busy: true, done: 0, ok: null, total: 30 });
+          setState({ busy: true, done: 0, ok: null, total: CASES.length });
           const { results, limit } = await runQualityTest((done, total) => setState((x) => ({ ...x, done, total })));
-          setState({ busy: false, done: results.length, ok: results.filter((r) => r.ok).length, total: results.length, limit });
+          setState({ busy: false, done: results.length, ok: results.filter((r) => r.ok).length, total: results.length, limit, bad: results.filter((r) => !r.ok).map((r) => `${r.id}: ${r.failed.join(', ')}`) });
         }}
       />
+      {/* What failed, so a screenshot is enough to fix it. */}
+      {state.bad?.length ? <Txt size={12.5} line={18} color={tokens.sub} style={{ paddingHorizontal: 16, paddingBottom: 12 }} selectable>{state.bad.join('\n')}</Txt> : null}
     </Group>
   );
 }

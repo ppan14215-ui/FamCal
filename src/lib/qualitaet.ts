@@ -1,6 +1,6 @@
 /**
  * Qualitätstest (Julian 28.10.: "Hat das Auswirkungen auf die Qualität?").
- * 30 feste Sätze laufen als angemeldete Person durch "verstehen", immer mit
+ * 37 feste Sätze laufen als angemeldete Person durch "verstehen", immer mit
  * demselben Heute (Mi 28. Oktober 2026, 12 Uhr), damit Ergebnisse vergleichbar
  * sind. Jeder Satz hat Prüfungen; ein Satz zählt nur, wenn alle passen. Die
  * Das Ergebnis steht in den Einstellungen; ein Screenshot reicht zum Auswerten.
@@ -14,7 +14,13 @@ const NOW = '12:00';
 
 type R = Understood;
 type Check = [string, (r: R) => boolean];
-type Case = { id: string; said: string; checks: Check[] };
+type Case = { id: string; said: string; checks: Check[]; lists?: { id: string; name: string }[] };
+
+/** The family's lists as the test pretends them (Julian 29.10.: Watchlist, Leseliste). */
+const LISTS = [{ id: 'einkauf', name: 'Einkauf' }, { id: 'l_lese', name: 'Leseliste' }];
+const WATCH = [{ id: 'einkauf', name: 'Einkauf' }, { id: 'l_watch', name: 'Watchlist' }];
+/** The version under test: the new one runs beside the live one until it passes. */
+const FN = 'verstehen-neu';
 
 const kind = (k: R['kind']): Check => [`kind ${k}`, (r) => r.kind === k];
 const date = (d: string): Check => [`date ${d}`, (r) => r.date === d];
@@ -22,7 +28,7 @@ const start = (t: string | null): Check => [`start ${t ?? 'leer'}`, (r) => (r.st
 const title = (re: RegExp): Check => [`title ${re}`, (r) => re.test(r.title ?? '')];
 const asks: Check = ['fragt nach', (r) => !!r.question];
 const noAsk: Check = ['fragt nicht', (r) => !r.question];
-const list = (l: 'einkauf' | 'aufgaben'): Check => [`liste ${l}`, (r) => r.kind === 'liste' && r.list === l];
+const list = (l: string): Check => [`liste ${l}`, (r) => r.kind === 'liste' && r.list === l];
 const items = (...re: RegExp[]): Check => [`items ${re.join(' ')}`, (r) => re.every((x) => (r.items ?? []).some((i) => x.test(i)))];
 const who = (w: R['who']): Check => [`who ${w}`, (r) => r.who === w];
 const icon = (i: string): Check => [`icon ${i}`, (r) => r.icon === i];
@@ -58,6 +64,13 @@ export const CASES: Case[] = [
   { id: 'milch-brot', said: 'Milch und zwei Brot', checks: [list('einkauf'), items(/milch/i, /brot/i)] },
   { id: 'naechste-woche', said: 'Nächste Woche Mittwoch 16 Uhr Physiotherapie', checks: [kind('termin'), date('2026-11-04'), start('16:00'), title(/physio/i)] },
   { id: 'trag-ein', said: 'Bitte trag für übermorgen um 11 Uhr den Handwerker ein', checks: [kind('termin'), date('2026-10-30'), start('11:00'), title(/handwerker/i), ['kein Befehl im Titel', (r) => !/trag/i.test(r.title)]] },
+  { id: 'watchlist-neu', said: 'Erstelle eine Watchlist für Filme', checks: [list('neu'), ['Name Watchlist', (r) => /watch/i.test(r.list_name ?? '')]] },
+  { id: 'watchlist-film', said: 'Setze Schatte Island auf die Watchlist', lists: WATCH, checks: [list('l_watch'), items(/shutter/i)] },
+  { id: 'watchlist-neu-film', said: 'Erstelle eine Watchlist für Schatte Island', checks: [list('neu'), items(/shutter/i)] },
+  { id: 'film-ohne-liste', said: 'Den Film Inception wollen wir noch schauen', lists: WATCH, checks: [list('l_watch'), items(/inception/i)] },
+  { id: 'packliste-neu', said: 'Leg eine Packliste für die Ostsee an', checks: [list('neu'), ['Name Packliste', (r) => /ostsee|pack/i.test(r.list_name ?? '')]] },
+  { id: 'leseliste', said: 'Harry Potter auf die Leseliste', checks: [list('l_lese'), items(/harry/i)] },
+  { id: 'tippfehler', said: 'morgn 15 uhr zahnartz', checks: [kind('termin'), date('2026-10-29'), start('15:00'), title(/zahnarzt/i)] },
   { id: 'urlaub-ab-heute', said: 'Wir sind ab heute im Urlaub bis Sonntag', checks: [kind('termin'), title(/urlaub/i), date('2026-10-28'), ['bis Sonntag', (r) => r.end_date === '2026-11-01'], start(null)] },
 ];
 
@@ -72,8 +85,8 @@ export async function runQualityTest(onStep?: (done: number, total: number) => v
     let failed: string[];
     if (!supabase) failed = ['kein Server'];
     else {
-      const { data, error } = await supabase.functions.invoke<R>('verstehen', {
-        body: { text: c.said, today: TODAY, now: NOW, names: { J: 'Julia', T: 'Tom' }, lang: 'de', icons: TERMIN_ICON_NAMES },
+      const { data, error } = await supabase.functions.invoke<R>(FN, {
+        body: { text: c.said, today: TODAY, now: NOW, names: { J: 'Julia', T: 'Tom' }, lang: 'de', icons: TERMIN_ICON_NAMES, lists: c.lists ?? LISTS },
       });
       // Tageslimit: the rest would be refused too, so the run stops instead of showing 0 von 30.
       if ((error as { context?: { status?: number } } | null)?.context?.status === 429) return { runId, results, limit: true };
