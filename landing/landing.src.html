@@ -289,43 +289,43 @@ function setMode(m) { document.documentElement.dataset.mode = m; $('mode').setAt
 const T = {
   de: {
     nav: 'Hauptnavigation', navProto: 'Prototyp', navList: 'Warteliste', other: 'English', dark: 'Dunkler Modus', light: 'Heller Modus',
-    h1: 'Ein Kalender, mit dem ihr redet',
-    lede: 'FamCal ist der smarte gemeinsame Kalender für Familien, Paare und alle, die Termine teilen. Sagt einen Termin, und er steht an der richtigen Stelle.',
+    h1: 'Einmal sagen. Beide wissen’s.',
+    lede: 'Sprich, tipp oder fotografier, was ansteht. FamCal erkennt, ob es ein Termin oder etwas für die Einkaufsliste ist, und legt es an die richtige Stelle. Bei euch beiden, sofort.',
     cta1: 'Auf die Warteliste', cta2: 'Prototyp ansehen',
     phone: 'Echte Screens aus dem FamCal Prototyp: Tagesansicht, ein gesprochener Satz wird eingetragen, Termindetails, Woche nach Personen.',
-    wlH: 'Bald gemeinsam zum Ausprobieren.', wlP: 'Tragt euch ein, dann melden wir uns, sobald ihr FamCal gemeinsam testen könnt.',
+    wlH: 'Bald zu zweit ausprobieren.', wlP: 'Tragt euch ein, dann melden wir uns, sobald ihr FamCal gemeinsam testen könnt.',
     mail: 'E‑Mail', ph: 'eure@mail.de', submit: 'Eintragen', note: 'Vorschau: Das Formular speichert noch nichts.', thanks: 'Danke! In dieser Vorschau wird noch nichts gespeichert.',
     t1: 'In eurer Sprache', t1s: 'Deutsch und Englisch ab dem ersten Tag. Versteht „übermorgen“ und „halb drei“.',
     t2: 'Keine Werbung', t2s: 'Eure Termine gehören euch und werden nicht vermarktet.',
     t3: 'Alle gleichberechtigt', t3s: 'Niemand ist Admin, alle sehen und ändern alles.',
-    f1: 'FamCal · Arbeitsname · Köln', f2: 'Ein Kalender, mit dem ihr redet.',
+    f1: 'FamCal · Arbeitsname · Köln', f2: 'Einmal sagen. Beide wissen’s.',
     feats: [
-      { h: "Ein Satz, und der Termin steht.", p: "Sagt es so, wie ihr es einander sagen würdet. FamCal schreibt den Termin in den richtigen Tag, mit Uhrzeit, Ort und wer hingeht. Kein Formular und kein Chatverlauf.",
-        f: [["Sprechen, tippen, fotografieren", "Eine Zeile unten auf jedem Screen, auch für Einladungen und Briefe."], ["Mitdenken am Ort", "Die Schritte erscheinen dort, wo der Termin entsteht, und haken sich ab."], ["Alles bleibt bearbeitbar", "Antippen, und die Zeile wird zum Textfeld."]] },
+      { h: "Ein Satz, alles an seinem Platz.", p: "„Milch und Windeln, und Mia hat Donnerstag um drei Zahnarzt.“ FamCal teilt den Satz auf: zwei Sachen auf die Einkaufsliste, ein Termin in den richtigen Tag. Kein Formular, kein Sortieren.",
+        f: [["Sprechen, tippen, fotografieren", "Eine Zeile unten auf jedem Screen, auch für Kita Zettel und Einladungen."], ["Mitdenken am Ort", "Die Schritte erscheinen dort, wo der Termin entsteht, und haken sich ab."], ["Alles bleibt bearbeitbar", "Antippen, und die Zeile wird zum Textfeld."]] },
       { h: "Er kennt euren Alltag.", p: "FamCal merkt sich, was ihr einmal gesagt habt, und ergänzt, was bei euch vor Ort gilt. Alles, was er selbst ergänzt, ist markiert und hat eine Quelle.",
         f: [["Orte vom letzten Mal", "Praxis, Büro, Verein oder Oma müsst ihr nur einmal nennen."], ["Was bei euch gilt", "Feiertage, Schulferien und Öffnungszeiten."], ["Immer mit Quelle", "Jede Ergänzung zeigt, woher sie kommt."]] },
-      { h: "Ein Kalender für alle.", p: "Jeder Termin hat einen Besitzer in seiner Farbe. Wer was macht, seht ihr auf einen Blick, ohne dass einer den Sekretär spielt.",
+      { h: "Beide wissen es, sofort.", p: "Sie spricht im Büro die Einkaufsliste ein, er steht im Supermarkt und hat sie schon. Niemand muss weiterleiten, erinnern oder den Sekretär spielen.",
         f: [["Wer, ohne zuzuweisen", "„Tom holt Mia ab“ landet bei Tom."], ["Leise statt laut", "Keine Werbung, keine Streaks. Nur Fristen melden sich."], ["Vorlagen für jede Phase", "Baby, Schulstart, Umzug oder Urlaub, fertig zum Loslegen."]] }
     ]
   },
   en: {
     nav: 'Main navigation', navProto: 'Prototype', navList: 'Waitlist', other: 'Deutsch', dark: 'Dark mode', light: 'Light mode',
-    h1: 'A calendar you can talk to',
-    lede: 'FamCal is the smart shared calendar for families, couples and anyone who shares a schedule. Say an appointment and it lands in the right place.',
+    h1: 'Say it once. You both know.',
+    lede: 'Say, type or snap what’s coming up. FamCal knows whether it’s an appointment or something for the shopping list and puts it in the right place. For both of you, instantly.',
     cta1: 'Join the waitlist', cta2: 'See the prototype',
     phone: 'Real screens from the FamCal prototype, in German: day view, a spoken sentence being added, event details, week by person.',
-    wlH: 'Try it together soon.', wlP: 'Sign up and we will let you know as soon as you can test FamCal together.',
+    wlH: 'Try it as a pair soon.', wlP: 'Sign up and we will let you know as soon as you can test FamCal together.',
     mail: 'Email', ph: 'you@email.com', submit: 'Sign up', note: 'Preview: the form does not save anything yet.', thanks: 'Thanks! Nothing is saved in this preview yet.',
     t1: 'In your language', t1s: 'English and German from day one. Gets “day after tomorrow” and “half past two”.',
     t2: 'No ads', t2s: 'Your events belong to you and are never sold.',
     t3: 'Everyone equal', t3s: 'No admins. Everyone sees and edits everything.',
-    f1: 'FamCal · working name · Cologne', f2: 'A calendar you can talk to.',
+    f1: 'FamCal · working name · Cologne', f2: 'Say it once. You both know.',
     feats: [
-      { h: "One sentence, and it's in.", p: "Say it the way you would tell each other. FamCal puts it on the right day, with time, place and who is going. No forms and no chat log.",
-        f: [["Speak, type or snap a photo", "One line at the bottom of every screen, even for invitations and letters."], ["Thinks along in place", "The steps show up right where the event is created and tick themselves off."], ["Everything stays editable", "Tap a line and it turns into a text field."]] },
+      { h: "One sentence, everything in its place.", p: "“Milk and nappies, and Mia has the dentist Thursday at three.” FamCal splits it up: two things on the shopping list, one appointment on the right day. No forms, no sorting.",
+        f: [["Speak, type or snap a photo", "One line at the bottom of every screen, even for school letters and invitations."], ["Thinks along in place", "The steps show up right where the event is created and tick themselves off."], ["Everything stays editable", "Tap a line and it turns into a text field."]] },
       { h: "It knows your routine.", p: "FamCal remembers what you told it once and adds what applies where you live. Everything it adds on its own is marked and has a source.",
         f: [["Places from last time", "Name the doctor, the office, the club or grandma just once."], ["What applies locally", "Public holidays, school breaks and opening hours."], ["Always with a source", "Every addition shows where it came from."]] },
-      { h: "One calendar for everyone.", p: "Every event has an owner in their own color. You see who does what at a glance, without anyone playing secretary.",
+      { h: "You both know, instantly.", p: "She adds the shopping at work, he is in the supermarket and already has it. Nobody forwards, reminds or plays secretary.",
         f: [["Who, without assigning", "“Tom picks up Mia” lands with Tom."], ["Quiet, not loud", "No ads, no streaks. Only deadlines speak up."], ["Templates for every phase", "New baby, first school day, moving or holidays, ready to go."]] }
     ]
   }
