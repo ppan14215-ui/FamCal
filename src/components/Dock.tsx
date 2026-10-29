@@ -508,7 +508,7 @@ export default function Dock() {
    */
   const think = (said: string, n: number, then: (r: Said | null) => void, convo?: Convo) => {
     const stop = () => { if (heard.current === n) heard.current++; setVeil({ phase: 'off', onCancel: undefined }); haptics.select(); };
-    setVeil({ phase: 'think', origin, target: null, lines: [tx('Ich verstehe …', 'Understanding …')], shown: 1, said, head: undefined, onCancel: stop });
+    setVeil({ phase: 'think', inline: !!where.chat, origin, target: null, lines: [tx('Ich verstehe …', 'Understanding …')], shown: 1, said, head: undefined, onCancel: stop });
     // Julian 28.10.: waiting is fine when you see what is happening. Each piece Claude has read shows up at once.
     const glimpse = (g: Glimpse) => { if (heard.current !== n) return; const l = glimpseLine(g); if (l) setVeil({ lines: [tx('Ich verstehe …', 'Understanding …'), l], shown: 2 }); };
     const late = new Promise<null>((r) => setTimeout(() => r(null), FIRST_MS));
@@ -534,7 +534,7 @@ export default function Dock() {
       setVeil({ phase: 'off', onCancel: undefined });
       haptics.select();
     };
-    setVeil(fresh ? { phase: 'think', origin, target: null, lines: p.steps, shown: 0, said, head: p.head, onCancel: p.head ? stop : undefined } : { lines: p.steps, shown: 0, head: p.head, onCancel: p.head ? stop : undefined });
+    setVeil(fresh ? { phase: 'think', inline: !!where.chat, origin, target: null, lines: p.steps, shown: 0, said, head: p.head, onCancel: p.head ? stop : undefined } : { lines: p.steps, shown: 0, head: p.head, onCancel: p.head ? stop : undefined });
     p.steps.forEach((_, i) => later(450 + STEP_MS * i, () => { setVeil({ shown: i + 1 }); haptics.select(); }));
     later(450 + STEP_MS * p.steps.length + 150, () => {
       setVeil({ onCancel: undefined });
@@ -624,7 +624,7 @@ export default function Dock() {
     let host = link;
     try { host = new URL(link).hostname.replace(/^www\./, ''); } catch { /* shown as is */ }
     const stop = () => { if (heard.current === n) heard.current++; setVeil({ phase: 'off', onCancel: undefined }); haptics.select(); };
-    setVeil({ phase: 'think', origin, target: null, lines: [tx(`Ich lese das Rezept auf ${host} …`, `Reading the recipe on ${host} …`)], shown: 1, said: host, head: undefined, onCancel: stop });
+    setVeil({ phase: 'think', inline: !!where.chat, origin, target: null, lines: [tx(`Ich lese das Rezept auf ${host} …`, `Reading the recipe on ${host} …`)], shown: 1, said: host, head: undefined, onCancel: stop });
     const late = new Promise<null>((r) => setTimeout(() => r(null), 20000));
     Promise.race([recipeFromLink(link), late]).then((res) => {
       if (heard.current !== n) return;

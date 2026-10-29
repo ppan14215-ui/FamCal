@@ -21,6 +21,7 @@ import { useFeed, canUndo, undoEntry, type FeedEntry, type EventSnap } from '../
 import { getFamily, myRole } from '../../src/lib/sync';
 import { hm, short, TODAY } from '../../src/lib/dates';
 import { tx } from '../../src/i18n/lang';
+import { useVeil, Step } from '../../src/components/Veil';
 
 const at = (s: string) => { const d = new Date(s); return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`; };
 const dayOf = (s: string) => { const d = new Date(s); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
@@ -131,6 +132,33 @@ function Entry({ f, mine }: { f: FeedEntry; mine: boolean }) {
   );
 }
 
+/** What the full screen shows elsewhere, as a card in the log (Julian 29.10.): the sentence, the plan, each step ticking off, and Halt. */
+function Thinking({ by }: { by: 'J' | 'T' }) {
+  const v = useVeil();
+  if (!v.inline || v.phase === 'off') return null;
+  return (
+    <View style={{ gap: 6, alignItems: 'flex-end' }}>
+      {v.said ? (
+        <View style={{ maxWidth: '86%', borderRadius: 18, borderBottomRightRadius: 6, paddingVertical: 9, paddingHorizontal: 13, backgroundColor: persons[by].tint }}>
+          <Txt size={15} line={21}>{v.said}</Txt>
+        </View>
+      ) : null}
+      <View style={{ alignSelf: 'stretch', borderRadius: 18, padding: 14, gap: 10, backgroundColor: tokens.row }}>
+        {v.head ? <Txt size={12} weight={600} tracking={0.6} color={tokens.done}>{v.head.toUpperCase()}</Txt> : null}
+        {v.lines.length ? v.lines.map((l, i) => <Step key={i} label={l} state={i < v.shown ? 'done' : i === v.shown ? 'now' : 'next'} />) : <Step label={tx('Denke nach …', 'Thinking …')} state="now" />}
+        {v.head && v.onCancel && v.phase === 'think' ? (
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+            <Txt size={13} color={tokens.sub}>{tx('Passiert gleich von selbst', 'Happens in a moment')}</Txt>
+            <PressScale onPress={v.onCancel} hitSlop={8} accessibilityLabel={tx('Halt, nicht ausführen', "Stop, don't do it")} style={{ height: 36, paddingHorizontal: 14, borderRadius: 999, backgroundColor: tokens.chipBg, alignItems: 'center', justifyContent: 'center' }}>
+              <Txt size={14} weight={600}>{tx('Halt, anders', 'Stop')}</Txt>
+            </PressScale>
+          </View>
+        ) : null}
+      </View>
+    </View>
+  );
+}
+
 export default function Chat() {
   const insets = useSafeAreaInsets();
   const dock = useDockSpace();
@@ -138,13 +166,14 @@ export default function Chat() {
   const people = useStore((s) => s.people.length);
   const scroller = useRef<ScrollView>(null);
   const me = getFamily() ? myRole() : 'J';
+  const veil = useVeil();
   useEffect(() => { setTimeout(() => scroller.current?.scrollToEnd({ animated: true }), 60); }, [feed.length]);
   let lastDay = '';
   return (
     <View style={{ flex: 1, backgroundColor: tokens.bg, paddingTop: insets.top }}>
       <ScrollView ref={scroller} onContentSizeChange={() => scroller.current?.scrollToEnd({ animated: false })} contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 18, paddingTop: 8, paddingBottom: dock + insets.bottom + 40, gap: 12 }} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
         <H1 sub={tx(`Familie · ${2 + people} Personen`, `Family · ${2 + people} people`)} right={<PressScale accessibilityLabel={tx('Familie und Einstellungen', 'Family and settings')} onPress={() => router.push('/einstellungen')}><Pair /></PressScale>}>Chat</H1>
-        {feed.length ? feed.map((f) => {
+        {feed.length || veil.inline && veil.phase !== 'off' ? feed.map((f) => {
           const d = dayOf(f.at);
           const head = d !== lastDay ? (lastDay = d, d === TODAY ? tx('Heute', 'Today') : short(d)) : null;
           return (
@@ -159,6 +188,7 @@ export default function Chat() {
             <Txt size={15} line={22} color={tokens.sub}>{tx('Sprich oder schreib, was ansteht: „Montag 17 Uhr Essen mit Mama“ oder „Milch und Mehl“. Hier siehst du dann, was daraus wurde, und die Familie auch.', 'Say or type what’s up: “Dinner with mum Monday 5 pm” or “milk and flour”. Here you see what it became, and so does the family.')}</Txt>
           </View>
         )}
+        <Thinking by={me} />
       </ScrollView>
     </View>
   );

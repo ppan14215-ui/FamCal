@@ -40,7 +40,7 @@ function Spin() {
   );
 }
 
-function Step({ label, state, big }: { label: string; state: 'done' | 'now' | 'next'; big?: boolean }) {
+export function Step({ label, state, big }: { label: string; state: 'done' | 'now' | 'next'; big?: boolean }) {
   return (
     <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 12 }}>
       <View style={{ width: 22, height: 22, alignItems: 'center', justifyContent: 'center' }}>
@@ -146,14 +146,23 @@ export default function Veil({ phase, origin, target, lines, shown, said, head, 
 // The veil covers the tab bar too, so it is drawn once at the root (next to
 // the toasts) and driven from the screen that talks.
 
-type VeilState = { phase: VeilPhase; origin: Pt; target: Pt | null; lines: string[]; shown: number; said?: string; head?: string; onLanded?: () => void; onCancel?: () => void };
+/** inline: in the chat the same steps run as a small card in the log, without the full screen (Julian 29.10.). */
+type VeilState = { phase: VeilPhase; origin: Pt; target: Pt | null; lines: string[]; shown: number; said?: string; head?: string; onLanded?: () => void; onCancel?: () => void; inline?: boolean };
 let veil: VeilState = { phase: 'off', origin: { x: 0, y: 0 }, target: null, lines: [], shown: 0 };
 const subs = new Set<() => void>();
 export function setVeil(patch: Partial<VeilState>) {
   veil = { ...veil, ...patch };
   subs.forEach((l) => l());
 }
+export const useVeil = () => React.useSyncExternalStore((l) => { subs.add(l); return () => { subs.delete(l); }; }, () => veil, () => veil);
 export function VeilHost() {
-  const v = React.useSyncExternalStore((l) => { subs.add(l); return () => { subs.delete(l); }; }, () => veil, () => veil);
+  const v = useVeil();
+  // Inline there is no drop to fly: landing is done once the card has shown its last tick.
+  useEffect(() => {
+    if (!v.inline || v.phase !== 'land') return;
+    const t = setTimeout(() => { setVeil({ phase: 'off' }); v.onLanded?.(); }, 250);
+    return () => clearTimeout(t);
+  }, [v.inline, v.phase]);
+  if (v.inline) return null;
   return <Veil phase={v.phase} origin={v.origin} target={v.target} lines={v.lines} shown={v.shown} said={v.said} head={v.head} onCancel={v.onCancel} onLanded={() => { setVeil({ phase: 'off' }); v.onLanded?.(); }} />;
 }
