@@ -299,7 +299,11 @@ function listeNeu(said: string): Plan {
   const m = said.replace(/^\s*(neue|eine neue|leg(e)? (eine )?neue|a new|new)\s+/i, '').replace(/^\s*(liste|list)\s*(für|mit|namens|for|with|called)?\s*/i, '');
   const [head, tail] = m.split(/:|\bmit\b|\bwith\b/i);
   const name = (head || tx('Neue Liste', 'New list')).trim().replace(/^(die|den|das)\s+/i, '').replace(/^./, (c) => c.toUpperCase());
-  const items = tail ? splitItems(tail) : [];
+  return newList(name, tail ? splitItems(tail) : []);
+}
+
+/** A new list with a name and maybe first items; lists that adapt (films, books) pick their blocks by name. */
+function newList(name: string, items: string[]): Plan {
   const urlaub = /urlaub|reise|ostsee|pack|holiday|vacation|trip/i.test(name);
   const bp = blueprintFor(name);
   const steps = [tx(`Neue Liste „${name}“.`, `New list “${name}”.`), ...(bp ? [blocksLine(bp)] : []), items.length ? tx(`Mit ${items.join(', ')}.`, `With ${items.join(', ')}.`) : urlaub ? tx('Vorlage Urlaub mit Baby, 24 Dinge.', 'Template holiday with baby, 24 things.') : tx('Noch leer, sagt einfach, was drauf soll.', 'Still empty, just say what goes on it.')];
@@ -324,7 +328,7 @@ function listeNeu(said: string): Plan {
  * quietly corrects what the rules got wrong. Lists, follow-ups ("um 15 Uhr")
  * and everything offline stay with the rules alone.
  */
-export type ListSaid = { kind: 'liste'; list: 'einkauf' | 'aufgaben'; items: string[]; dish?: string; extra?: string[]; variants?: string[]; question?: string; have?: string[] };
+export type ListSaid = { kind: 'liste'; list: string; name?: string; items: string[]; dish?: string; extra?: string[]; variants?: string[]; question?: string; have?: string[] };
 
 export type Said = Reply | ListSaid | { kind: 'cut' } | { kind: 'unclear'; text: string };
 
@@ -332,8 +336,9 @@ export async function claudeSays(said: string, convo?: Convo, onGlimpse?: (g: Gl
   const m = onGlimpse ? await understandLive(said, convo, onGlimpse) : await understandOnline(said, convo);
   if (m?.kind === 'abgebrochen') return { kind: 'cut' };
   if (m?.kind === 'unklar') return { kind: 'unclear', text: m.question || UNCLEAR() };
-  if (m?.kind === 'liste' && (m.items?.length || m.dish)) {
-    return { kind: 'liste', list: m.list === 'aufgaben' ? 'aufgaben' : 'einkauf', items: m.items ?? [], dish: m.dish || undefined, extra: (m.extra ?? []).slice(0, 30), variants: (m.variants ?? []).slice(0, 4), question: m.question ?? undefined, have: (m.have ?? []).slice(0, 20) };
+  if (m?.kind === 'liste' && (m.items?.length || m.dish || m.list === 'neu')) {
+    const known = m.list === 'aufgaben' || m.list === 'neu' || get().lists.some((l) => l.id === m.list);
+    return { kind: 'liste', list: known ? m.list! : 'einkauf', name: m.list_name || undefined, items: m.items ?? [], dish: m.dish || undefined, extra: (m.extra ?? []).slice(0, 30), variants: (m.variants ?? []).slice(0, 4), question: m.question ?? undefined, have: (m.have ?? []).slice(0, 20) };
   }
   return m && fromModel(m, said, get().events, () => newId('e'));
 }
@@ -401,6 +406,12 @@ export function reviseOffline(id: string, said: string): Plan {
  */
 export const listFromClaude = (r: ListSaid, said = '', onScreen?: string): Plan => {
   if (r.dish) return recipePlan(r);
+  // Julian 29.10.: "Erstelle eine Watchlist für Filme", "Shutter Island auf die Watchlist".
+  if (r.list === 'neu') return newList((r.name || tx('Neue Liste', 'New list')).replace(/^./, (c) => c.toUpperCase()), r.items);
+  if (r.list !== 'einkauf' && r.list !== 'aufgaben') {
+    const l = get().lists.find((x) => x.id === r.list);
+    return l ? liste(r.items.join(', '), l.id, r.items) : newList(r.name || r.list, r.items);
+  }
   const own = onScreen && onScreen !== 'einkauf' && onScreen !== 'aufgaben' && r.list === 'einkauf' && !/einkauf|shopping|grocer|supermarkt/i.test(said);
   const id = own ? onScreen! : r.list;
   return id === 'aufgaben' ? liste(r.items.join(', '), id) : liste(r.items.join(', '), id, r.items);

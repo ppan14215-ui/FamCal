@@ -1,12 +1,13 @@
 /**
  * Verstehen (Julian 27.10.: "Handy hört, Claude versteht"). The phone turns
  * speech into text on the device; this function turns one sentence, German
- * or English, into a Termin. The API key lives only here, as the secret
+ * or English, into what the app should do: a Termin, list items, a new list. The API key lives only here, as the secret
  * ANTHROPIC_API_KEY, never in the app.
  *
  * Request (signed in, JWT checked by Supabase):
  *   { text, today: "2026-10-27", now: "14:10", names: { J: "Julian", T: "Anna" }, lang: "de" | "en",
- *     history?: [{ said, app? }], draft?: "<what is on the card, JSON>", stream?: true }
+ *     history?: [{ said, app? }], draft?: "<what is on the card, JSON>", stream?: true,
+ *     lists?: [{ id, name }] (the family's lists, Julian 29.10.) }
  * With stream the answer comes as server-sent events: { t } pieces of the JSON, then { done } or { error }.
  * With history the sentence answers or corrects the card that is still open
  * (Julian 28.10.: "die Konversation müsste weitergehen").
@@ -40,7 +41,10 @@ const Termin = z.object({
   steps: z.array(z.string()),
   question: z.string().nullable(),
   icon: z.string().nullable(),
-  list: z.enum(['einkauf', 'aufgaben']).nullable(),
+  // einkauf, aufgaben, the id of one of the family's lists, or neu (Julian 29.10.: "Erstelle eine Watchlist").
+  list: z.string().nullable(),
+  // Only with list neu: the new list's name in the language of the sentence, otherwise "".
+  list_name: z.string(),
   items: z.array(z.string()),
   // Julian 28.10.: a dish brings its ingredients. dish "" when none, extra = what the recipe needs beyond what was said, variants = recipes to choose from.
   dish: z.string(),
@@ -68,10 +72,19 @@ const Termin = z.object({
 
 const WD = ['Sonntag (Sunday)', 'Montag (Monday)', 'Dienstag (Tuesday)', 'Mittwoch (Wednesday)', 'Donnerstag (Thursday)', 'Freitag (Friday)', 'Samstag (Saturday)'];
 
-const SYSTEM = `Du trägst Termine für eine Familie mit zwei Eltern in einen geteilten Kalender ein.
-Du bekommst einen gesprochenen oder getippten Satz in irgendeiner Sprache, oft Deutsch oder Englisch, manchmal gemischt, und gibst den Termin als JSON zurück, bei mehreren Terminen im Satz alle (siehe more).
+const SYSTEM = `Du bist der Assistent einer Familien-App mit einem geteilten Kalender und geteilten Listen (Einkauf, Aufgaben und eigene Listen der Familie wie eine Watchlist oder eine Packliste).
+Du bekommst einen gesprochenen oder getippten Satz in irgendeiner Sprache, oft Deutsch oder Englisch, manchmal gemischt, und gibst als JSON zurück, was die App tun soll.
 
-Regeln:
+So gehst du vor:
+1. Verstehe zuerst, was die Person meint, so wie ein aufmerksamer Mensch im Chat. Sätze kommen oft aus der Spracherkennung des Handys: halbe Sätze, Tippfehler und falsch erkannte Wörter sind normal. Lies sie sinngemäß ("Schatte Island" ist der Film "Shutter Island", "Kakau und Mel" ist "Kakao und Mehl"). Bekannte Namen von Filmen, Serien, Büchern, Orten und Marken schreibst du richtig.
+2. Dann ordne es genau einer Sache zu: ein Termin, eine Frage an den Kalender, Einträge auf eine Liste (auch eine neue Liste anlegen), ein abgebrochener Satz oder unklar. Ein Termin ist es nur, wenn etwas zu einer Zeit oder an einem Tag stattfindet. Wer eine Liste anlegen oder etwas auf eine Liste setzen will, meint nie einen Termin.
+
+Regeln für Listen:
+- Die Listen der Familie stehen unten mit id und Name. Nennt der Satz eine davon oder passt etwas klar dazu (ein Film auf die Watchlist oder Filmliste, ein Buch auf die Leseliste), setze kind auf liste, list auf deren id und items auf die Einträge. Kleine Abweichungen im Namen sind dieselbe Liste ("Watch List", "Filmliste" für "Filme").
+- Will der Satz eine neue Liste ("Erstelle eine Watchlist für Filme", "Leg eine Packliste für die Ostsee an", "make a list of books to read"), oder nennt er eine Liste, die es noch nicht gibt ("Shutter Island auf die Watchlist", wenn es keine gibt), setze kind auf liste, list auf neu, list_name auf einen kurzen Namen in der Sprache des Satzes ("Watchlist", "Packliste Ostsee") und items auf die genannten Einträge, sonst leer. "Erstelle eine Watchlist für Shutter Island" ist eine neue Watchlist mit dem Eintrag "Shutter Island".
+- Sonst ist list_name immer "".
+
+Regeln für Termine:
 - Datum als YYYY-MM-DD, Uhrzeiten als HH:MM (24 Stunden). Relative Angaben ("morgen", "nächsten Freitag", "in zwei Wochen", "am 12.", "tomorrow", "next Friday", "on the 12th") rechnest du vom heutigen Datum aus. "Nächsten Freitag" und "next Friday" sind der kommende Freitag, außer heute ist Freitag, dann eine Woche später. "3pm" ist 15:00.
 - Ohne Uhrzeit bleiben start und end null. Hat so etwas meist eine feste Uhrzeit (Spiel, Arzt, Friseur, Treffen, Kurs, Kino), trägst du es trotzdem ein und stellst in question genau eine kurze Rückfrage in der Sprache des Satzes, zum Beispiel "Um wie viel Uhr ist das Spiel? Oder ganztägig?". Ganztägig ohne Rückfrage, also question null, nur bei Urlaub, Reise, Ferien, Krankheit, Geburtstag, Feiertag und Ähnlichem.
 - Mit Startzeit ohne Ende setzt du end nach der üblichen Dauer (Fußballspiel 2 Stunden, Kino 2,5 Stunden, Arzt 45 Minuten, Friseur 1 Stunde, Elternabend 2 Stunden). Weißt du es nicht, bleibt end null, dann setzt die App eine Stunde.
@@ -105,7 +118,7 @@ Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors });
   const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { ...cors, 'Content-Type': 'application/json' } });
 
-  let input: { text?: string; today?: string; now?: string; names?: { J?: string; T?: string }; lang?: string; icons?: string[]; history?: { said?: string; app?: string }[]; draft?: string; stream?: boolean };
+  let input: { text?: string; today?: string; now?: string; names?: { J?: string; T?: string }; lang?: string; icons?: string[]; history?: { said?: string; app?: string }[]; draft?: string; stream?: boolean; lists?: { id?: string; name?: string }[] };
   try { input = await req.json(); } catch { return json({ error: 'bad_json' }, 400); }
   const text = (input.text ?? '').trim().slice(0, 500);
   const today = /^\d{4}-\d{2}-\d{2}$/.test(input.today ?? '') ? input.today! : new Date().toISOString().slice(0, 10);
@@ -127,6 +140,10 @@ Deno.serve(async (req) => {
     .filter(Boolean).join('\n');
   const draft = typeof input.draft === 'string' ? input.draft.slice(0, 3000) : '';
   const talk = history ? `\n\nBisheriges Gespräch:\n${history}${draft ? `\nEntwurf auf der Karte: ${draft}` : ''}\n\nNeuer Satz dazu: ${text}` : `\n\nSatz: ${text}`;
+  // The family's own lists (Julian 29.10.), so Claude can pick one or make a new one.
+  const lists = (Array.isArray(input.lists) ? input.lists : []).slice(0, 40)
+    .filter((l) => l && typeof l.id === 'string' && typeof l.name === 'string')
+    .map((l) => `${String(l.id).slice(0, 60)}: ${String(l.name).slice(0, 60).replace(/[\n\r]/g, ' ')}`).join('; ') || 'einkauf: Einkauf';
   // The app sends the icon names it has, so new icons need no change here.
   const icons = (Array.isArray(input.icons) ? input.icons : []).filter((x) => typeof x === 'string' && /^[a-z0-9-]{2,30}$/.test(x)).slice(0, 300).join(', ') || 'kalender';
 
@@ -138,7 +155,7 @@ Deno.serve(async (req) => {
     // Julian 28.10.: it must be quick. No thinking, short answers; the family waits with the orb spinning.
     thinking: { type: 'disabled' as const },
     output_config: { effort: 'low' as const, format: zodOutputFormat(Termin) },
-    messages: [{ role: 'user' as const, content: `Heute ist ${wd}, ${today}, ${input.now ?? ''} Uhr. Eltern: ${names}. Sprache der App: ${input.lang === 'en' ? 'Englisch' : 'Deutsch'}.${talk}` }],
+    messages: [{ role: 'user' as const, content: `Heute ist ${wd}, ${today}, ${input.now ?? ''} Uhr. Eltern: ${names}. Sprache der App: ${input.lang === 'en' ? 'Englisch' : 'Deutsch'}. Listen der Familie (id: Name): aufgaben: Aufgaben; ${lists}.${talk}` }],
   };
   const t0 = Date.now();
   // Only timing and kind, never what was said (Julian 28.10.: why was Claude too slow?).

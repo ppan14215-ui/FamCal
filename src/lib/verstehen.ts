@@ -10,7 +10,10 @@ import { TODAY, NOW } from './dates';
 import { persons } from '../theme/tokens';
 import { TERMIN_ICON_NAMES, type Understood } from './talk';
 import { LANG, tx } from '../i18n/lang';
-import { toast } from '../state/store';
+import { toast, get } from '../state/store';
+
+/** The family's own lists, so Claude can put things on the Watchlist or the Ostsee packing list (Julian 29.10.). */
+const myLists = () => get().lists.map((l) => ({ id: l.id, name: l.name })).slice(0, 40);
 
 /** The rules have answered already; Claude may take longer for a sentence with many Termine (Julian 28.10.). */
 const WAIT_MS = 15000;
@@ -43,7 +46,7 @@ export type Convo = { history: { said: string; app?: string }[]; draft?: string 
 export async function understandOnline(text: string, convo?: Convo): Promise<Understood | null> {
   if (!supabase || !getAuth().session) return null;
   const call = supabase.functions
-    .invoke<Understood & { left: number | null }>('verstehen', { body: { text, today: TODAY, now: NOW, names: { J: persons.J.name, T: persons.T.name }, lang: LANG, icons: TERMIN_ICON_NAMES, ...convo } })
+    .invoke<Understood & { left: number | null }>('verstehen', { body: { text, today: TODAY, now: NOW, names: { J: persons.J.name, T: persons.T.name }, lang: LANG, icons: TERMIN_ICON_NAMES, lists: myLists(), ...convo } })
     .then(async ({ data, error }) => {
       if (error || !data) { await limitHint(error); return null; }
       if (data.left === 5) toast(tx('Noch 5 Sätze gratis in diesem Monat', '5 free sentences left this month'), undefined, { kind: 'info' });
@@ -75,7 +78,7 @@ export async function understandLive(text: string, convo: Convo | undefined, onP
       method: 'POST',
       signal: ctrl.signal,
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}`, apikey: process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? '' },
-      body: JSON.stringify({ text, today: TODAY, now: NOW, names: { J: persons.J.name, T: persons.T.name }, lang: LANG, icons: TERMIN_ICON_NAMES, ...convo, stream: true }),
+      body: JSON.stringify({ text, today: TODAY, now: NOW, names: { J: persons.J.name, T: persons.T.name }, lang: LANG, icons: TERMIN_ICON_NAMES, lists: myLists(), ...convo, stream: true }),
     });
     if (!res.ok || !res.body) { await limitHint({ context: res as unknown as Response }); return null; }
     const reader = res.body.getReader();

@@ -6,6 +6,7 @@
  * family's daily limit of 60.
  *
  *   node --env-file=.env scripts/eval-verstehen.js [case-id ...]
+ *   FN=verstehen-neu node --env-file=.env scripts/eval-verstehen.js   (a version before it goes live)
  *
  * Needs EXPO_PUBLIC_SUPABASE_URL, EXPO_PUBLIC_SUPABASE_ANON_KEY,
  * EXPO_PUBLIC_TEST_EMAIL, EXPO_PUBLIC_TEST_PASSWORD. Never prints them.
@@ -37,6 +38,7 @@ function check(e, r) {
   if (e.sub && !low(r.sub).includes(e.sub)) bad.push(`sub: "${r.sub}"`);
   if (e.repeat && empty(r.repeat)) bad.push('keine Wiederholung');
   if (e.dish && !low(r.dish).includes(e.dish)) bad.push(`dish: "${r.dish}"`);
+  if (e.listName && !new RegExp(e.listName, 'i').test(r.list_name)) bad.push(`list_name: "${r.list_name}"`);
   for (const k of ['items', 'extra', 'bring']) for (const w of e[k] || []) if (!(r[k] || []).some((x) => low(x).includes(w))) bad.push(`${k} ohne "${w}"`);
   if ('variants' in e && (r.variants || []).length !== e.variants) bad.push(`variants: ${(r.variants || []).length}`);
   if (e.variantsMin && (r.variants || []).length < e.variantsMin) bad.push(`variants: ${(r.variants || []).length}`);
@@ -58,8 +60,8 @@ function check(e, r) {
   let ok = 0;
   for (const c of cases) {
     const t0 = Date.now();
-    const { data, error: err } = await db.functions.invoke('verstehen', {
-      body: { text: c.text, today: suite.today, now: suite.now, names: suite.names, lang: c.lang || 'de', icons, history: c.history, draft: c.draft },
+    const { data, error: err } = await db.functions.invoke(process.env.FN || 'verstehen', {
+      body: { text: c.text, today: suite.today, now: suite.now, names: suite.names, lang: c.lang || 'de', icons, history: c.history, draft: c.draft, lists: c.lists || suite.lists },
     });
     const ms = Date.now() - t0;
     const bad = err || !data ? [`Fehler: ${err?.message || 'keine Antwort'}`] : check(c.expect, data);

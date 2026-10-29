@@ -300,7 +300,8 @@ export type Understood = {
   /** Claude picks the icon from the names the app sends (Julian 27.10.: "Fußball" gets the ball). */
   icon?: string | null;
   /** kind "liste": the sentence belongs on a list, from any screen (Julian 27.10.). */
-  list?: 'einkauf' | 'aufgaben' | null; items?: string[];
+  /** einkauf, aufgaben, the id of one of the family's lists, or neu with list_name (Julian 29.10.). */
+  list?: string | null; list_name?: string; items?: string[];
   /** A dish: what else it needs, or which recipe first (Julian 28.10.: "Bolognese kochen"). */
   dish?: string; extra?: string[]; variants?: string[];
   /** Said as already at home ("habe nur Tomaten daheim"), kept off the list. */
