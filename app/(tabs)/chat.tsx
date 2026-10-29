@@ -17,7 +17,7 @@ import PressScale from '../../src/components/ui/PressScale';
 import { tokens, persons } from '../../src/theme';
 import { useStore, actions } from '../../src/state/store';
 import { useDockSpace } from '../../src/lib/dockSpace';
-import { useFeed, canUndo, undoEntry, type FeedEntry } from '../../src/lib/feed';
+import { useFeed, canUndo, undoEntry, type FeedEntry, type EventSnap } from '../../src/lib/feed';
 import { getFamily, myRole } from '../../src/lib/sync';
 import { hm, short, TODAY } from '../../src/lib/dates';
 import { tx } from '../../src/i18n/lang';
@@ -25,9 +25,10 @@ import { tx } from '../../src/i18n/lang';
 const at = (s: string) => { const d = new Date(s); return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`; };
 const dayOf = (s: string) => { const d = new Date(s); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
 
-function Termine({ ids }: { ids: string[] }) {
+function Termine({ ids, snap }: { ids: string[]; snap?: EventSnap[] }) {
   const events = useStore((s) => s.events);
-  const live = ids.map((id) => events.find((e) => e.id === id)).filter(Boolean) as typeof events;
+  // Live from the calendar; the snapshot only if the Termin never reached this phone.
+  const live = ids.map((id) => events.find((e) => e.id === id) ?? (events.length ? undefined : snap?.find((x) => x.id === id))).filter(Boolean) as (EventSnap & { who?: typeof events[number]['who'] })[];
   if (!live.length) return <Txt size={13.5} color={tokens.mute} style={{ padding: 14 }}>{tx('Nicht mehr im Kalender.', 'No longer in the calendar.')}</Txt>;
   return (
     <>
@@ -45,9 +46,21 @@ function Termine({ ids }: { ids: string[] }) {
   );
 }
 
-function Items({ list, ids }: { list: string; ids: string[] }) {
+function Items({ list, ids, name, names }: { list: string; ids: string[]; name?: string; names?: string[] }) {
   const l = useStore((s) => s.lists.find((x) => x.id === list));
-  if (!l) return null;
+  // Lists still live on each phone: on the partner's phone the card shows what was added.
+  if (!l || !ids.some((id) => l.sections.some((sec) => sec.items.some((i) => i.id === id)))) return (
+    <>
+      <Txt size={15} weight={600} style={{ paddingHorizontal: 14, paddingTop: 12, paddingBottom: 4 }}>{name ?? l?.name ?? tx('Liste', 'List')}</Txt>
+      {(names ?? []).map((n, k) => (
+        <View key={k} style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 14, paddingVertical: 7 }}>
+          <Check size={22} done={false} />
+          <Txt size={15} style={{ flex: 1 }}>{n}</Txt>
+        </View>
+      ))}
+      <View style={{ height: 6 }} />
+    </>
+  );
   const all = l.sections.flatMap((s) => s.items);
   const live = ids.map((id) => all.find((i) => i.id === id)).filter(Boolean) as typeof all;
   return (
@@ -67,15 +80,16 @@ function Items({ list, ids }: { list: string; ids: string[] }) {
   );
 }
 
-function Tasks({ ids }: { ids: string[] }) {
+function Tasks({ ids, titles }: { ids: string[]; titles?: string[] }) {
   const tasks = useStore((s) => s.tasks);
-  const live = ids.map((id) => tasks.find((t) => t.id === id)).filter(Boolean) as typeof tasks;
+  const found = ids.map((id) => tasks.find((t) => t.id === id)).filter(Boolean) as typeof tasks;
+  const live = found.length ? found : (titles ?? []).map((title, k) => ({ id: `snap${k}`, title, done: false, who: null } as unknown as typeof tasks[number]));
   return (
     <>
       <Txt size={15} weight={600} style={{ paddingHorizontal: 14, paddingTop: 12, paddingBottom: 4 }}>{tx('Aufgaben', 'Tasks')}</Txt>
       {live.map((t) => (
         <View key={t.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 14, paddingVertical: 7 }}>
-          <Check size={22} done={t.done} onPress={() => actions.toggleTask(t.id)} />
+          <Check size={22} done={t.done} onPress={t.id.startsWith('snap') ? undefined : () => actions.toggleTask(t.id)} />
           <Txt size={15} style={{ flex: 1 }} color={t.done ? tokens.mute : tokens.ink}>{t.title}</Txt>
           {t.who === 'J' || t.who === 'T' ? <Avatar p={t.who} size={22} /> : null}
         </View>
@@ -101,9 +115,9 @@ function Entry({ f, mine }: { f: FeedEntry; mine: boolean }) {
         </View>
         {f.kind === 'made' ? (
           <View style={{ alignSelf: 'stretch', borderRadius: 18, overflow: 'hidden', backgroundColor: tokens.row, opacity: f.undone ? 0.55 : 1 }}>
-            {f.undone ? null : f.events ? <Termine ids={f.events} /> : null}
-            {f.undone ? null : f.items ? <Items list={f.items.list} ids={f.items.ids} /> : null}
-            {f.undone ? null : f.tasks ? <Tasks ids={f.tasks} /> : null}
+            {f.undone ? null : f.events ? <Termine ids={f.events} snap={f.snap?.events} /> : null}
+            {f.undone ? null : f.items ? <Items list={f.items.list} ids={f.items.ids} name={f.snap?.list} names={f.snap?.items} /> : null}
+            {f.undone ? null : f.tasks ? <Tasks ids={f.tasks} titles={f.snap?.tasks} /> : null}
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 8, paddingHorizontal: 14, borderTopWidth: f.undone ? 0 : 1, borderTopColor: tokens.hair }}>
               <Txt size={13} weight={600} color={f.undone ? tokens.sub : tokens.done}>{f.undone ? tx('Rückgängig gemacht', 'Undone') : `✓ ${f.events ? tx('Im Kalender', 'In the calendar') : f.tasks ? tx('Bei den Aufgaben', 'On your tasks') : tx('Auf der Liste', 'On the list')}`}</Txt>
               {!f.undone && canUndo(f.id) ? (
