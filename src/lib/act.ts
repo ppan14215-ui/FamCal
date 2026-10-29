@@ -63,6 +63,9 @@ const nameOf = (w: Who) => (w === 'both' ? tx('euch beide', 'both of you') : w ?
 /** "Milch, zwei Brot und Eier" → ["Milch", "2 Brot", "Eier"]. */
 export function splitItems(text: string): string[] {
   const t = text
+    .replace(/\s*\b(auf|in|zu)\s+(die|der|meine|meiner|unsere|unserer|unsre)?\s*\w*liste\b(\s+(setzen|schreiben|packen|tun|drauf))?/gi, ' ')
+    .replace(/\s*\b(to|on|onto)\s+(the|my|our)\s+(\w+\s+)?list\b/gi, ' ')
+    .replace(/\s+/g, ' ')
     .replace(/^\s*(bitte\s+)?(noch\s+)?(auf (die|unsere) (\w+)?liste( setzen| schreiben)?:?|wir brauchen( noch)?|brauchen( noch)?|kauf(e|en)?( noch)?|besorg(e|en)?( noch)?|einpacken:?|pack(e|en)?( ein)?:?|setz(e)?|schreib(e)?|(please\s+)?(add\s+)?(to (the|our) (\w+ )?list:?|we need( some)?|we're out of|buy|get( some)?|pack))\s*/i, '')
     .replace(/\s+(auf die (\w+)?liste|kaufen|besorgen|mitnehmen|einpacken|to (the|our) (\w+ )?list)\s*\.?$/i, '');
   return t.split(/,|\bund\b|\bsowie\b|\band\b/i).map((x) => x.trim().replace(/\.$/, '')).filter(Boolean).map((x) => {
@@ -244,7 +247,7 @@ function termin(said: string, id: string): Plan {
 
 // ─── Listen ────────────────────────────────────────────────────────────────
 
-function liste(said: string, id: string): Plan {
+function liste(said: string, id: string, given?: string[]): Plan {
   if (id === 'aufgaben') {
     const parts = said.split(/,|\bund dann\b|\band then\b/).map((x) => x.trim()).filter(Boolean);
     const ts = parts.map((p) => splitDue(p));
@@ -267,7 +270,7 @@ function liste(said: string, id: string): Plan {
     };
   }
   const list = get().lists.find((x) => x.id === id) ?? get().lists[0];
-  const items = splitItems(said);
+  const items = given?.length ? given.map((x) => x.trim()).filter(Boolean).map((x) => x[0].toUpperCase() + x.slice(1)) : splitItems(said);
   return {
     // Every item is its own step, so each one visibly ticks off (Julian 27.10.: "kein Zweifel, was die Maschine ausführt").
     head: tx(`Ich setze auf „${list.name}“`, `Adding to “${list.name}”`),
@@ -392,7 +395,16 @@ export function reviseOffline(id: string, said: string): Plan {
 }
 
 /** Claude heard a list where the rules heard a Termin: the items go on the list. */
-export const listFromClaude = (r: ListSaid): Plan => (r.dish ? recipePlan(r) : liste(r.items.join(', '), r.list));
+/**
+ * Claude's items are used as they are, already split (Julian 29.10.: "Cornflakes Milchzucker Mehl").
+ * Said on a list of their own ("Urlaub packen") they stay there unless the shopping list was named.
+ */
+export const listFromClaude = (r: ListSaid, said = '', onScreen?: string): Plan => {
+  if (r.dish) return recipePlan(r);
+  const own = onScreen && onScreen !== 'einkauf' && onScreen !== 'aufgaben' && r.list === 'einkauf' && !/einkauf|shopping|grocer|supermarkt/i.test(said);
+  const id = own ? onScreen! : r.list;
+  return id === 'aufgaben' ? liste(r.items.join(', '), id) : liste(r.items.join(', '), id, r.items);
+};
 
 /** Cooking or baking said out loud ("Bolognese kochen", "für einen Karottenkuchen"): Claude knows the recipe, the rules do not. */
 export const dishy = (said: string) => /\b(koch\w*|back\w*|rezept\w*|zutaten|kuchen\w*|torte|cook\w*|bak\w*|recipe|ingredients|cake)\b/i.test(said);
@@ -463,7 +475,8 @@ export function correction(made: CalEvent, r: Extract<Reply, { kind: 'added' }>)
   return Object.keys(patch).length ? patch : null;
 }
 
-export const thinksOnline = (ctx: Ctx, said: string, pending: unknown) => !pending && canUnderstand() && ((ctx.kind === 'kalender' && !listPlan(said)) || (ctx.kind !== 'termin' && dishy(said)));
+/** Claude reads every sentence on the calendar and on the lists (Julian 29.10.: the rules put "Karotten auf meine Einkaufsliste" on the list as it was). */
+export const thinksOnline = (ctx: Ctx, said: string, pending: unknown) => !pending && canUnderstand() && (ctx.kind === 'kalender' || ctx.kind === 'liste' || (ctx.kind !== 'termin' && dishy(said)));
 
 export function plan(ctx: Ctx, said: string, pending: { title: string; who: Who } | null): Plan {
   if (ctx.kind === 'termin') return termin(said, ctx.id);
