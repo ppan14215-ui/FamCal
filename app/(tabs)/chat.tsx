@@ -5,7 +5,7 @@
  * so a tick or a changed time shows here too. Questions never land here;
  * they stay in the card above the field, seen only by whoever asked.
  */
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { View, ScrollView } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
@@ -14,6 +14,7 @@ import Txt from '../../src/components/ui/Txt';
 import { Avatar, Pair } from '../../src/components/ui/Person';
 import { Tile } from '../../src/components/ui/Clay';
 import PressScale from '../../src/components/ui/PressScale';
+import LineIcon from '../../src/components/ui/LineIcon';
 import { tokens, persons } from '../../src/theme';
 import { useStore, actions } from '../../src/state/store';
 import { useDockSpace } from '../../src/lib/dockSpace';
@@ -100,7 +101,18 @@ function Tasks({ ids, titles }: { ids: string[]; titles?: string[] }) {
   );
 }
 
+/** The steps from the moment it was made, folded away until tapped. */
+function Why({ why }: { why: NonNullable<FeedEntry['why']> }) {
+  return (
+    <View style={{ gap: 8, paddingHorizontal: 14, paddingTop: 12, paddingBottom: 4, borderTopWidth: 1, borderTopColor: tokens.hair }}>
+      {why.head ? <Txt size={12} weight={600} tracking={0.6} color={tokens.done}>{why.head.toUpperCase()}</Txt> : null}
+      {why.steps.map((l, i) => <Step key={i} label={l} state="done" />)}
+    </View>
+  );
+}
+
 function Entry({ f, mine }: { f: FeedEntry; mine: boolean }) {
+  const [open, setOpen] = useState(false);
   const p = persons[f.by];
   const name = mine ? tx('Du', 'You') : p.name || f.by;
   const bubble = f.kind === 'msg'
@@ -119,8 +131,16 @@ function Entry({ f, mine }: { f: FeedEntry; mine: boolean }) {
             {f.undone ? null : f.events ? <Termine ids={f.events} snap={f.snap?.events} /> : null}
             {f.undone ? null : f.items ? <Items list={f.items.list} ids={f.items.ids} name={f.snap?.list} names={f.snap?.items} /> : null}
             {f.undone ? null : f.tasks ? <Tasks ids={f.tasks} titles={f.snap?.tasks} /> : null}
+            {open && f.why ? <Why why={f.why} /> : null}
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 8, paddingHorizontal: 14, borderTopWidth: f.undone ? 0 : 1, borderTopColor: tokens.hair }}>
               <Txt size={13} weight={600} color={f.undone ? tokens.sub : tokens.done}>{f.undone ? tx('Rückgängig gemacht', 'Undone') : `✓ ${f.events ? tx('Im Kalender', 'In the calendar') : f.tasks ? tx('Bei den Aufgaben', 'On your tasks') : tx('Auf der Liste', 'On the list')}`}</Txt>
+              <View style={{ flex: 1 }} />
+              {f.why ? (
+                <PressScale hitSlop={8} accessibilityLabel={open ? tx('Schritte zuklappen', 'Hide steps') : tx('Schritte zeigen', 'Show steps')} onPress={() => setOpen((o) => !o)} style={{ flexDirection: 'row', alignItems: 'center', gap: 2, marginRight: canUndo(f.id) && !f.undone ? 14 : 0 }}>
+                  <Txt size={13} color={tokens.sub}>{tx('Details', 'Details')}</Txt>
+                  <View style={{ transform: [{ rotate: open ? '-90deg' : '90deg' }] }}><LineIcon name="chev" size={14} color={tokens.sub} /></View>
+                </PressScale>
+              ) : null}
               {!f.undone && canUndo(f.id) ? (
                 <PressScale hitSlop={8} onPress={() => undoEntry(f.id)}><Txt size={13} color={tokens.sub}>{tx('Rückgängig', 'Undo')}</Txt></PressScale>
               ) : null}

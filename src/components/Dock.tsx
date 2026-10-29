@@ -541,8 +541,8 @@ export default function Dock() {
       const out = p.run();
       // In the chat the card lands in the log and we stay (Julian 29.10.).
       const r0 = out.result;
-      if (where.chat && r0?.kind === 'event') addMade(said, [r0.event.id], undefined, () => actions.removeEvent(r0.event.id));
-      else if (where.chat && r0?.kind === 'done' && !r0.note) addMade(said, out.lit ?? (out.land ? [out.land] : []), r0.text, r0.undo, r0.events);
+      if (where.chat && r0?.kind === 'event') addMade(said, [r0.event.id], undefined, () => actions.removeEvent(r0.event.id), undefined, { head: p.head, steps: p.steps });
+      else if (where.chat && r0?.kind === 'done' && !r0.note) addMade(said, out.lit ?? (out.land ? [out.land] : []), r0.text, r0.undo, r0.events, { head: p.head, steps: p.steps });
       // A new Termin lands in the calendar; switch there first if we are elsewhere.
       const go = where.chat ? undefined : out.go ?? (out.result?.kind === 'event' ? '/kalender' : undefined);
       // Heute shows one week; a Termin further out lands in the list of days.

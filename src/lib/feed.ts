@@ -24,6 +24,8 @@ export type Card = {
   items?: { list: string; ids: string[] };
   /** The receipt line, e.g. "Mehl und Milch stehen auf Einkauf." */
   text?: string;
+  /** What the app thought on the way (Julian 29.10.: fold it away, but let me open it again). */
+  why?: { head?: string; steps: string[] };
   /** What the card showed when it was made. */
   snap?: { events?: EventSnap[]; list?: string; items?: string[]; tasks?: string[] };
 };
@@ -40,7 +42,7 @@ export type FeedEntry = Card & {
 
 type Row = { id: string; role: PersonId; kind: 'made' | 'msg'; said: string; card: Card | null; undone: boolean; created_at: string };
 const fromRow = (r: Row): FeedEntry => ({ ...(r.card ?? {}), id: r.id, at: r.created_at, by: r.role, said: r.said, kind: r.kind, undone: r.undone || undefined });
-const cardOf = ({ events, tasks, items, text, snap }: FeedEntry): Card => ({ events, tasks, items, text, snap });
+const cardOf = ({ events, tasks, items, text, snap, why }: FeedEntry): Card => ({ events, tasks, items, text, snap, why });
 
 const KEY = 'famcal.feed';
 let feed: FeedEntry[] = [];
@@ -74,7 +76,7 @@ export function addMessage(said: string) {
 }
 
 /** Sorts what a sentence changed into Termine, tasks and list items. */
-export function addMade(said: string, ids: string[], text?: string, undo?: () => void, events?: string[]) {
+export function addMade(said: string, ids: string[], text?: string, undo?: () => void, events?: string[], why?: Card['why']) {
   const s = get();
   const ev = new Set(events ?? []);
   const tasks: string[] = [];
@@ -96,7 +98,7 @@ export function addMade(said: string, ids: string[], text?: string, undo?: () =>
     items: items ? items.ids.map((id) => all.find((i) => i.id === id)?.name).filter(Boolean) as string[] : undefined,
     tasks: tasks.length ? tasks.map((id) => s.tasks.find((t) => t.id === id)?.title ?? '') : undefined,
   };
-  const f: FeedEntry = { id: newId(), at: new Date().toISOString(), by: me(), said, kind: 'made', events: ev.size ? [...ev] : undefined, tasks: tasks.length ? tasks : undefined, items, text, snap };
+  const f: FeedEntry = { id: newId(), at: new Date().toISOString(), by: me(), said, kind: 'made', events: ev.size ? [...ev] : undefined, tasks: tasks.length ? tasks : undefined, items, text, snap, why: why?.steps.length ? { head: why.head, steps: why.steps.slice(0, 12) } : undefined };
   if (undo) undos.set(f.id, undo);
   put(f);
   void upload(f);
