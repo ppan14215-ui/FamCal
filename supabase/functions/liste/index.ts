@@ -107,8 +107,8 @@ const close = (a: string, b: string) => { const x = norm(a), y = norm(b); return
  * iTunes Search API, free and without a key, has posters for films and series.
  * A film is tried first; a series ("The Office") when no film title matches.
  */
-async function movieItunes(q: string, lang: string): Promise<Found | null> {
-  const base = `https://itunes.apple.com/search?term=${encodeURIComponent(q)}&country=${lang === 'en' ? 'us' : 'de'}&limit=5`;
+async function movieItunes(q: string, lang: string, country = lang === 'en' ? 'us' : 'de'): Promise<Found | null> {
+  const base = `https://itunes.apple.com/search?term=${encodeURIComponent(q)}&country=${country}&limit=5`;
   const films: { trackName?: string; artistName?: string; releaseDate?: string; artworkUrl100?: string; trackViewUrl?: string }[] = (await getJson(`${base}&media=movie&entity=movie`))?.results ?? [];
   const film = films.find((f) => f.trackName && close(f.trackName, q));
   const big = (u?: string) => u?.replace(/\/\d+x\d+bb\./, '/400x600bb.');
@@ -116,7 +116,8 @@ async function movieItunes(q: string, lang: string): Promise<Found | null> {
   const shows: { collectionName?: string; artistName?: string; releaseDate?: string; artworkUrl100?: string; collectionViewUrl?: string }[] = (await getJson(`${base}&media=tvShow&entity=tvSeason`))?.results ?? [];
   const show = shows.find((t) => t.artistName && close(t.artistName, q)) ?? shows.find((t) => t.collectionName && close(t.collectionName, q));
   if (show) return { cover: big(show.artworkUrl100)?.replace('400x600bb', '600x600bb'), year: show.releaseDate?.slice(0, 4), link: show.collectionViewUrl };
-  return null;
+  // Not every film is in the German store (Shutter Island was missing on 29.10.): the US store has more.
+  return country === 'us' ? null : movieItunes(q, lang, 'us');
 }
 
 /** Last resort: the film's Wikipedia page, its image and short description ("2019 film by Greta Gerwig"). */
