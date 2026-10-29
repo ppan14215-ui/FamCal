@@ -11,7 +11,7 @@ import type { CalEvent, Bring, Person } from '../state/types';
 import { watchComments, stopComments } from './comments';
 import type { ClayName } from './clayIcons';
 
-export type Family = { id: string; name: string; invite_code: string; partner_name?: string | null; ics_token?: string | null; vacation?: Partial<Record<'J' | 'T', number>> | null; land?: string | null };
+export type Family = { id: string; name: string; invite_code: string; partner_name?: string | null; ics_token?: string | null; vacation?: Partial<Record<'J' | 'T', number>> | null; land?: string | null; country?: string | null; ort?: string | null };
 type Row = {
   id: string; family_id: string; title: string; sub: string | null; icon: string; date: string; end_date: string | null;
   start_time: string; end_time: string | null; all_day: boolean; who: 'J' | 'T' | 'both' | null; place: string | null;
@@ -93,8 +93,10 @@ export async function startSync(name?: string): Promise<{ family?: Family; error
   const vac = { ...get().vacation, ...(family.vacation ?? {}) };
   set(() => ({ vacation: vac }));
   if (Object.keys(vac).length > Object.keys(family.vacation ?? {}).length) void saveVacation();
-  if (family.land) actions.setLand(family.land);
-  else if (get().land) void saveLand();
+  if (family.country || family.land) {
+    set(() => ({ country: family!.country ?? 'DE', land: family!.land ?? '', city: family!.ort ?? get().city }));
+    actions.ensureHolidays();
+  } else if (get().land || get().country !== 'DE') void saveLand();
 
   const remote = (events.data as Row[]).map(fromRow);
   known = new Map(remote.map((e) => [e.id, key(e)]));
@@ -233,10 +235,13 @@ export async function saveVacation() {
 
 export async function saveLand() {
   if (!supabase || !family) return;
-  const land = get().land.slice(0, 40) || null;
-  const { error } = await supabase.from('families').update({ land }).eq('id', family.id);
+  const { land, country, city } = get();
+  const row = { land: land.slice(0, 40) || null, country: country || null, ort: city.slice(0, 80) || null };
+  let { error } = await supabase.from('families').update(row).eq('id', family.id);
+  // Before the country column exists only the land goes up.
+  if (error && /country|ort/.test(error.message)) ({ error } = await supabase.from('families').update({ land: row.land }).eq('id', family.id));
   if (error) console.warn('[sync] land', error.message);
-  else family = { ...family, land };
+  else family = { ...family, ...row };
 }
 
 /** Abo Link (Julian 28.10.): a new token makes the old link stop working. */

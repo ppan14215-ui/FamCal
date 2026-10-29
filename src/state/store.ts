@@ -11,7 +11,7 @@ import { blueprintFor, blueprintOnline } from '../lib/blueprint';
 import type { ClayName } from '../lib/clayIcons';
 import type { PersonId } from '../theme';
 import { TODAY, BEN_BORN } from '../lib/dates';
-import { feiertage } from '../lib/feiertage';
+import { holidaysFor, phoneCountry } from '../lib/holidays';
 import { persons, personPalette, shade } from '../theme';
 import { firstYear, Kid } from '../data/firstYear';
 import { findCity } from '../data/cities';
@@ -36,6 +36,8 @@ type State = {
   /** Where the family lives (first onboarding step) and its Bundesland. */
   city: string;
   land: string;
+  /** Country for holidays (ISO code, from the phone at first); land is its Bundesland or region code. */
+  country: string;
   /** Urlaubstage per year for each parent (Julian 29.10.); unset means no budget. */
   vacation: Partial<Record<PersonId, number>>;
   /** Connected calendars (onboarding "Eure Kalender"). */
@@ -74,6 +76,7 @@ const initial = (): State => ({
   comments: {},
   city: '',
   land: '',
+  country: phoneCountry(),
   vacation: {},
   calendars: [],
   demo: false,
@@ -101,6 +104,7 @@ const demo = (): Partial<State> => ({
   names: { J: 'Julia', T: 'Tom' },
   kid: { name: 'Ben', born: BEN_BORN, land: 'Bayern' },
   land: 'Bayern',
+  country: 'DE',
   vacation: { J: 30, T: 28 },
   people: [{ id: 'p_ben', name: 'Ben', kind: 'kind', color: 'Mint', birthday: BEN_BORN }, { id: 'p_oma', name: 'Oma Gisela', kind: 'grosseltern', color: 'Sand' }],
   comments: {},
@@ -174,6 +178,10 @@ export const actions = {
   /** The Bundesland follows from the city (Destatis list); the family can correct it. */
   setCity(city: string, land?: string) { set(() => ({ city, land: land ?? findCity(city)?.land ?? findPlace(city)?.land ?? '' })); actions.ensureHolidays(); },
   setLand(land: string) { set(() => ({ land })); actions.ensureHolidays(); },
+  /** Another country: its regions differ, so the region starts empty. */
+  setCountry(country: string) { set(() => ({ country, land: '' })); actions.ensureHolidays(); },
+  /** Wohnort only for holidays (Bayern: Mariä Himmelfahrt, Augsburg: Friedensfest). */
+  setOrt(city: string) { set(() => ({ city })); actions.ensureHolidays(); },
   setVacation(p: PersonId, days: number | undefined) {
     set((s) => ({ vacation: { ...s.vacation, [p]: days && days > 0 ? Math.min(Math.round(days), 99) : undefined } }));
   },
@@ -268,17 +276,18 @@ export const actions = {
   /** Public holidays where the family lives, this year and next; only on this phone, never synced (cal 'feiertage'). */
   ensureHolidays() {
     const y = Number(TODAY.slice(0, 4));
-    const land = state.land;
-    const days: CalEvent[] = [...feiertage(y, land), ...feiertage(y + 1, land)].map(([date, title]) => ({
-      id: `fei-${date}`, title, sub: tx('Feiertag', 'Public holiday'), icon: 'kalender', date, start: '00:00', allDay: true, who: null, cal: 'feiertage',
-    }));
-    // A synced holiday calendar already has them: no second copy.
-    const own = new Set(state.events.filter((e) => e.cal !== 'feiertage' && e.allDay).map((e) => `${e.date}|${e.title}`));
-    const mine = days.filter((d) => !own.has(`${d.date}|${d.title}`));
-    days.splice(0, days.length, ...mine);
-    const now = state.events.filter((e) => e.cal === 'feiertage');
-    if (now.length === days.length && days.every((d, i) => now[i]?.id === d.id && now[i].title === d.title)) return;
-    set((s) => ({ events: [...s.events.filter((e) => e.cal !== 'feiertage'), ...days] }));
+    const { country, land, city } = state;
+    void holidaysFor(country, land, country === 'DE' ? city : '', y).then((list) => {
+      if (state.country !== country || state.land !== land) return;
+      // A synced holiday calendar already has them: no second copy.
+      const own = new Set(state.events.filter((e) => e.cal !== 'feiertage' && e.allDay).map((e) => `${e.date}|${e.title}`));
+      const days: CalEvent[] = list.filter(([date, title]) => !own.has(`${date}|${title}`)).map(([date, title]) => ({
+        id: `fei-${date}-${title.length}`, title, sub: tx('Feiertag', 'Public holiday'), icon: 'kalender', date, start: '00:00', allDay: true, who: null, cal: 'feiertage',
+      }));
+      const now = state.events.filter((e) => e.cal === 'feiertage');
+      if (now.length === days.length && days.every((d, i) => now[i]?.id === d.id && now[i].title === d.title)) return;
+      set((s) => ({ events: [...s.events.filter((e) => e.cal !== 'feiertage'), ...days] }));
+    });
   },
   removeEvent(id: string) { set((s) => ({ events: s.events.filter((e) => e.id !== id) })); },
   restoreEvent(e: CalEvent) { set((s) => ({ events: s.events.map((x) => (x.id === e.id ? e : x)) })); },

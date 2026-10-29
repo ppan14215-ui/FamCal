@@ -22,6 +22,7 @@ import { useMicStyle, setMicStyle } from '../src/lib/micStyle';
 import { useThemeChoice, setTheme, type ThemeChoice } from '../src/theme/mode';
 import { Seg } from '../src/components/ui/kit';
 import { haptics } from '../src/lib/haptics';
+import { countryName, regionName } from '../src/lib/holidays';
 
 function SRow({ icon, t, s, right, onPress }: { icon: ClayName; t: string; s: string; right?: React.ReactNode; onPress?: () => void }) {
   return (
@@ -53,6 +54,7 @@ export default function Einstellungen() {
   const names = useStore((s) => s.names);
   const vac = useStore((s) => s.vacation);
   const land = useStore((s) => s.land);
+  const country = useStore((s) => s.country);
   const code = getFamily()?.invite_code;
   const openCals = () => router.push({ pathname: '/onboarding/kalender', params: { zurueck: '1' } });
   return (
@@ -76,7 +78,7 @@ export default function Einstellungen() {
       </View>
       <Group>
         <SRow icon="zuhause" t={tx('Eure Familie', 'Your family')} s={tx('Kinder, Großeltern, Geburtstage', 'Kids, grandparents, birthdays')} onPress={() => router.push('/personen')} />
-        <SRow icon="reise" t={tx('Urlaub und Feiertage', 'Vacation and holidays')} s={vacLine(vac, names, land)} onPress={() => router.push('/urlaub')} />
+        <SRow icon="reise" t={tx('Urlaub und Feiertage', 'Vacation and holidays')} s={vacLine(vac, names, [countryName(country), land && (country === 'DE' ? land : regionName(country, land))].filter(Boolean).join(', '))} onPress={() => router.push('/urlaub')} />
         <SRow icon="glocke" t={tx('Hinweise', 'Notifications')} s={tx('Nur Wichtiges · Ruhe 21–7 Uhr', 'Only what matters · quiet 9pm to 7am')} onPress={() => router.push('/demo/sperrbildschirm')} />
         <SRow icon="chat" t={tx('Ich spreche', 'I speak')} s={sl === 'de' ? tx('Deutsch · tippen für Englisch', 'German · tap for English') : tx('Englisch · tippen für Deutsch', 'English · tap for German')} onPress={() => { const v = sl === 'de' ? 'en' : 'de'; setSpeechLang(v); setSl(v); toast(v === 'de' ? tx('Ich höre jetzt auf Deutsch', 'Listening in German now') : tx('Ich höre jetzt auf Englisch', 'Listening in English now')); }} />
         <SRow icon="chat" t={tx('Mikro Anzeige', 'Mic display')} s={mic === 'ring' ? tx('Ring mit Stopp · tippen für Balken', 'Ring with stop · tap for bars') : tx('Balken im Knopf · tippen für Ring', 'Bars in the button · tap for ring')} onPress={() => { const v = mic === 'ring' ? 'balken' : 'ring'; setMicStyle(v); haptics.select(); toast(v === 'ring' ? tx('Mikro zeigt jetzt den Ring', 'Mic now shows the ring') : tx('Mikro zeigt jetzt die Balken', 'Mic now shows the bars')); }} />

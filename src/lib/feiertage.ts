@@ -19,7 +19,7 @@ function easter(y: number) {
 const IN = (land: string, ...lands: string[]) => !land || lands.includes(land);
 
 /** [date, name] for one year; without a Bundesland only the nationwide ones and the most common. */
-export function feiertage(year: number, land = ''): [string, string][] {
+export function feiertage(year: number, land = '', ort = ''): [string, string][] {
   const e = easter(year);
   const out: [string, string][] = [
     [iso(year, 1, 1), 'Neujahr'],
@@ -35,7 +35,9 @@ export function feiertage(year: number, land = ''): [string, string][] {
   if (land && IN(land, 'Baden-Württemberg', 'Bayern', 'Sachsen-Anhalt')) out.push([iso(year, 1, 6), 'Heilige Drei Könige']);
   if (land && IN(land, 'Berlin', 'Mecklenburg-Vorpommern')) out.push([iso(year, 3, 8), 'Frauentag']);
   if (land && IN(land, 'Baden-Württemberg', 'Bayern', 'Hessen', 'Nordrhein-Westfalen', 'Rheinland-Pfalz', 'Saarland')) out.push([addDays(e, 60), 'Fronleichnam']);
-  if (land && IN(land, 'Saarland')) out.push([iso(year, 8, 15), 'Mariä Himmelfahrt']);
+  // Bayern: only where more Catholics than Protestants live (Art. 1 Abs. 3 FTG, Zensus 2022, 1 708 of 2 056 Gemeinden).
+  if (land === 'Saarland' || (land === 'Bayern' && ort && !OHNE_HIMMELFAHRT.has(ort))) out.push([iso(year, 8, 15), 'Mariä Himmelfahrt']);
+  if (land === 'Bayern' && ort === 'Augsburg') out.push([iso(year, 8, 8), 'Augsburger Friedensfest']);
   if (land && IN(land, 'Thüringen')) out.push([iso(year, 9, 20), 'Weltkindertag']);
   if (land && IN(land, 'Brandenburg', 'Bremen', 'Hamburg', 'Mecklenburg-Vorpommern', 'Niedersachsen', 'Sachsen', 'Sachsen-Anhalt', 'Schleswig-Holstein', 'Thüringen')) out.push([iso(year, 10, 31), 'Reformationstag']);
   if (land && IN(land, 'Baden-Württemberg', 'Bayern', 'Nordrhein-Westfalen', 'Rheinland-Pfalz', 'Saarland')) out.push([iso(year, 11, 1), 'Allerheiligen']);
@@ -48,14 +50,28 @@ export function feiertage(year: number, land = ''): [string, string][] {
   return out.sort((a, b) => a[0].localeCompare(b[0]));
 }
 
+/**
+ * The 348 Bavarian Gemeinden without Mariä Himmelfahrt, names as in the Destatis list
+ * (Bayerisches Landesamt für Statistik, Datenbank "Mariä Himmelfahrt", Zensus 2022, read 29.10.2026).
+ */
+const OHNE_HIMMELFAHRT = new Set('Birgland|Edelsfeld|Hirschbach|Illschwang|Königstein|Etzelwang|Neukirchen b.Sulzbach-Rosenberg|Weigendorf|Neustadt am Kulm|Bayreuth|Coburg|Hof|Bad Berneck i.Fichtelgebirge|Betzenstein|Bindlach|Bischofsgrün|Creußen|Eckersdorf|Emtmannsberg|Gefrees|Gesees|Glashütten|Goldkronach|Haag|Heinersreuth|Hummeltal|Mistelbach|Mistelgau|Plech|Prebitz|Schnabelwaid|Seybothenreuth|Speichersdorf|Warmensteinach|Weidenberg|Ahorn|Dörfles-Esbach|Ebersdorf b.Coburg|Großheirath|Grub a.Forst|Itzgrund|Lautertal|Meeder|Neustadt b.Coburg|Niederfüllbach|Bad Rodach|Rödental|Seßlach|Sonnefeld|Untersiemau|Weidhausen b.Coburg|Weitramsdorf|Egloffstein|Gräfenberg|Hiltpoltstein|Igensdorf|Wiesenttal|Bad Steben|Berg|Döhlau|Feilitzsch|Gattendorf|Geroldsgrün|Helmbrechts|Issigau|Köditz|Konradsreuth|Leupoldsgrün|Lichtenberg|Münchberg|Naila|Oberkotzau|Regnitzlosau|Rehau|Schauenstein|Schwarzenbach a.d.Saale|Schwarzenbach a.Wald|Selbitz|Sparneck|Stammbach|Töpen|Trogen|Weißdorf|Zell im Fichtelgebirge|Küps|Ludwigsstadt|Mitwitz|Schneckenlohe|Tettau|Weißenbrunn|Grafengehaig|Guttenberg|Harsdorf|Himmelkron|Kasendorf|Ködnitz|Kulmbach|Mainleus|Marktschorgast|Neudrossenfeld|Neuenmarkt|Rugendorf|Thurnau|Trebgast|Untersteinach|Wirsberg|Wonsees|Michelau i.OFr.|Redwitz a.d.Rodach|Bad Alexandersbad|Arzberg|Höchstädt i.Fichtelgebirge|Hohenberg a.d.Eger|Kirchenlamitz|Marktleuthen|Marktredwitz|Röslau|Schirnding|Schönwald|Selb|Thiersheim|Thierstein|Tröstau|Weißenstadt|Wunsiedel|Ansbach|Erlangen|Fürth|Nürnberg|Schwabach|Adelshofen|Bechhofen|Bruckberg|Buch a.Wald|Burk|Colmberg|Dentlein a.Forst|Diebach|Dietenhofen|Dinkelsbühl|Dombühl|Ehingen|Feuchtwangen|Flachslanden|Gebsattel|Gerolfingen|Geslau|Heilsbronn|Insingen|Langfurth|Lehrberg|Leutershausen|Lichtenau|Merkendorf|Mönchsroth|Neuendettelsau|Neusitz|Oberdachstetten|Ohrenbach|Petersaurach|Röckingen|Rothenburg ob der Tauber|Rügland|Sachsen b.Ansbach|Schillingsfürst|Schnelldorf|Schopfloch|Steinsfeld|Unterschwaningen|Wassertrüdingen|Weidenbach|Weihenzell|Weiltingen|Wettringen|Wieseth|Windelsbach|Windsbach|Wittelshofen|Wörnitz|Aurachtal|Buckenhof|Eckental|Heroldsberg|Kalchreuth|Lonnerstadt|Möhrendorf|Mühlhausen|Oberreichenbach|Spardorf|Uttenreuth|Vestenbergsgreuth|Ammerndorf|Cadolzburg|Großhabersdorf|Langenzenn|Oberasbach|Obermichelbach|Puschendorf|Roßtal|Seukendorf|Stein|Tuchenbach|Veitsbronn|Wilhermsdorf|Zirndorf|Alfeld|Altdorf b.Nürnberg|Burgthann|Engelthal|Feucht|Happurg|Hartenstein|Henfenfeld|Hersbruck|Kirchensittenbach|Lauf a.d.Pegnitz|Leinburg|Offenhausen|Ottensoos|Pommelsbrunn|Reichenschwand|Röthenbach a.d.Pegnitz|Rückersdorf|Schwaig b.Nürnberg|Schwarzenbruck|Velden|Vorra|Winkelhaid|Bad Windsheim|Baudenbach|Burgbernheim|Burghaslach|Dachsbach|Diespeck|Dietersheim|Emskirchen|Ergersheim|Gallmersgarten|Gerhardshofen|Gollhofen|Gutenstetten|Hagenbüchach|Hemmersheim|Illesheim|Ippesheim|Ipsheim|Langenfeld|Marktbergel|Markt Erlbach|Markt Nordheim|Markt Taschendorf|Münchsteinach|Neuhof a.d.Zenn|Neustadt a.d.Aisch|Oberickelsheim|Obernzenn|Simmershofen|Sugenheim|Trautskirchen|Uehlfeld|Uffenheim|Weigenheim|Wilhelmsdorf|Büchenbach|Georgensgmünd|Kammerstein|Schwanstetten|Rednitzhembach|Rohr|Roth|Thalmässing|Wendelstein|Absberg|Alesheim|Muhr a.See|Bergen|Burgsalach|Dittenheim|Ettenstatt|Gunzenhausen|Haundorf|Heidenheim|Höttingen|Langenaltheim|Markt Berolzheim|Meinheim|Nennslingen|Pappenheim|Pfofeld|Polsingen|Solnhofen|Theilenhofen|Treuchtlingen|Weißenburg i.Bay.|Westheim|Geroda|Zeitlofs|Aubstadt|Höchheim|Ostheim v.d.Rhön|Sondheim v.d.Rhön|Willmars|Königsberg i.Bay.|Maroldsweisach|Rentweinsdorf|Untermerzbach|Ermershausen|Abtswind|Albertshofen|Buchbrunn|Castell|Kitzingen|Kleinlangheim|Mainbernheim|Mainstockheim|Marktbreit|Markt Einersheim|Marktsteft|Martinsheim|Obernbreit|Rödelsee|Rüdenhausen|Segnitz|Wiesenbronn|Hasloch|Mittelsinn|Partenstein|Sennfeld|Altertheim|Reichenberg|Remlingen|Sommerhausen|Uettingen|Winterhausen|Bächingen a.d.Brenz|Lauben|Woringen|Alerheim|Auhausen|Deiningen|Ederheim|Forheim|Harburg (Schwaben)|Hohenaltheim|Mönchsdeggingen|Möttingen|Nördlingen|Wechingen'.split('|'));
+
+/** Germany needs no download: every holiday is computed here. Other countries come from src/lib/holidays.ts. */
+let foreign: { country: string; days: Map<string, string> } | null = null;
+export function setForeign(country: string, days: [string, string][]) { foreign = country === 'DE' ? null : { country, days: new Map(days) }; cache.clear(); }
+
+let where = { land: '', ort: '' };
+export function setWhere(land: string, ort: string) { where = { land, ort }; cache.clear(); }
+
 const cache = new Map<string, Set<string>>();
 /** Is this day a public holiday where the family lives? */
-export function isFeiertag(date: string, land = '') {
+export function isFeiertag(date: string, _land?: string) {
+  if (foreign) return foreign.days.has(date);
   const y = Number(date.slice(0, 4));
-  const k = `${y}|${land}`;
-  if (!cache.has(k)) cache.set(k, new Set(feiertage(y, land).map(([d]) => d)));
+  const k = `${y}|${where.land}|${where.ort}`;
+  if (!cache.has(k)) cache.set(k, new Set(feiertage(y, where.land, where.ort).map(([d]) => d)));
   return cache.get(k)!.has(date);
 }
 
 /** Days off work: weekends and holidays. */
-export const isWorkday = (date: string, land = '') => { const wd = new Date(`${date}T12:00:00Z`).getUTCDay(); return wd !== 0 && wd !== 6 && !isFeiertag(date, land); };
+export const isWorkday = (date: string, _land?: string) => { const wd = new Date(`${date}T12:00:00Z`).getUTCDay(); return wd !== 0 && wd !== 6 && !isFeiertag(date); };

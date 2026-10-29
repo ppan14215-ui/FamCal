@@ -2,7 +2,7 @@
  * Urlaub und Feiertage (Julian 29.10.): each parent sets their own Urlaubstage per year,
  * the app counts every Urlaub Termin against it. The Bundesland decides the Feiertage.
  */
-import React from 'react';
+import React, { useState } from 'react';
 import { View } from 'react-native';
 import { Screen, BackBar, H1, Lead, H2, Card, Meta, Chip } from '../src/components/ui/kit';
 import Txt from '../src/components/ui/Txt';
@@ -13,18 +13,29 @@ import { actions, useStore } from '../src/state/store';
 import type { PersonId } from '../src/theme';
 import { TODAY, short } from '../src/lib/dates';
 import { usedDays, isVacation, costOf } from '../src/lib/urlaub';
-import { feiertage } from '../src/lib/feiertage';
+import { COUNTRIES, countryName, regions, regionName, phoneCountry } from '../src/lib/holidays';
+import { suggestPlaces } from '../src/lib/places';
+import { Field } from '../src/components/Field';
 import { saveVacation, saveLand } from '../src/lib/sync';
 import { haptics } from '../src/lib/haptics';
 import { tx } from '../src/i18n/lang';
 
-export const LANDS = ['Baden-Württemberg', 'Bayern', 'Berlin', 'Brandenburg', 'Bremen', 'Hamburg', 'Hessen', 'Mecklenburg-Vorpommern', 'Niedersachsen', 'Nordrhein-Westfalen', 'Rheinland-Pfalz', 'Saarland', 'Sachsen', 'Sachsen-Anhalt', 'Schleswig-Holstein', 'Thüringen'];
-
 export default function Urlaub() {
   const names = useStore((s) => s.names);
   const land = useStore((s) => s.land);
+  const country = useStore((s) => s.country);
+  const city = useStore((s) => s.city);
+  const events = useStore((s) => s.events);
+  const [allCountries, setAllCountries] = useState(false);
+  const [ort, setOrtText] = useState(city);
   const year = Number(TODAY.slice(0, 4));
-  const next = feiertage(year, land).concat(feiertage(year + 1, land)).filter(([d]) => d >= TODAY).slice(0, 3);
+  const next = events.filter((e) => e.cal === 'feiertage' && e.date >= TODAY).sort((a, b) => a.date.localeCompare(b.date)).slice(0, 3);
+  const here = country === 'DE' ? land : land ? regionName(country, land) : '';
+  const list = regions(country);
+  const shown = allCountries ? COUNTRIES.map(([c]) => c) : [...new Set([country, phoneCountry(), 'DE', 'AT', 'CH', 'US', 'GB'])];
+  const pickCountry = (c: string) => { haptics.select(); actions.setCountry(c); setAllCountries(false); void saveLand(); };
+  const pickRegion = (r: string) => { haptics.select(); actions.setLand(r === land ? '' : r); void saveLand(); };
+  const places = country === 'DE' && land === 'Bayern' && ort !== city ? suggestPlaces(ort, 4).filter((p) => p.land === 'Bayern') : [];
   return (
     <Screen gap={14}>
       <BackBar />
@@ -32,17 +43,39 @@ export default function Urlaub() {
       <Lead>{tx('Jeder Urlaubstag im Kalender zählt. Wochenenden und Feiertage kosten nichts.', 'Every vacation day in the calendar counts. Weekends and public holidays cost nothing.')}</Lead>
       {(['J', 'T'] as PersonId[]).filter((p) => names[p] || p === 'J').map((p) => <Budget key={p} p={p} name={names[p] || tx('Du', 'You')} year={year} />)}
       <H2>{tx('Feiertage', 'Public holidays')}</H2>
-      <Meta>{land
-        ? tx(`Für ${land}. Nächste: ${next.map(([d, t]) => `${t} ${short(d)}`).join(', ')}.`, `For ${land}. Next: ${next.map(([d, t]) => `${t} ${short(d)}`).join(', ')}.`)
-        : tx('Wählt euer Bundesland, dann stehen auch die Feiertage dort im Kalender. Bis dahin nur die bundesweiten.', 'Pick your state so its holidays are in the calendar too. Until then only the nationwide ones.')}</Meta>
+      <Meta>{next.length
+        ? tx(`${[countryName(country), here].filter(Boolean).join(', ')}. Nächste: ${next.map((e) => `${e.title} ${short(e.date)}`).join(', ')}.`, `${[countryName(country), here].filter(Boolean).join(', ')}. Next: ${next.map((e) => `${e.title} ${short(e.date)}`).join(', ')}.`)
+        : tx('Wählt Land und Region, dann stehen eure Feiertage im Kalender.', 'Pick your country and region so your holidays are in the calendar.')}</Meta>
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-        {LANDS.map((l) => (
-          <Chip key={l} bg={l === land ? tokens.ink : tokens.chipBg} color={l === land ? tokens.bg : tokens.ink} onPress={() => { haptics.select(); actions.setLand(l === land ? '' : l); void saveLand(); }}>{l}</Chip>
-        ))}
+        {shown.map((c) => <Pick key={c} on={c === country} label={countryName(c)} onPress={() => pickCountry(c)} />)}
+        {allCountries ? null : <Pick on={false} label={tx('Anderes Land …', 'Other country …')} onPress={() => setAllCountries(true)} />}
       </View>
+      {list.length ? (
+        <>
+          <Txt size={13} weight={600} color={tokens.sub} style={{ paddingHorizontal: 4 }}>{country === 'DE' ? tx('Bundesland', 'State') : country === 'US' ? tx('Bundesstaat', 'State') : tx('Region', 'Region')}</Txt>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+            {list.map((r) => <Pick key={r.key} on={r.key === land} label={r.label} onPress={() => pickRegion(r.key)} />)}
+          </View>
+        </>
+      ) : null}
+      {country === 'DE' && land === 'Bayern' ? (
+        <View style={{ gap: 8 }}>
+          <Field label={tx('Wohnort (für Mariä Himmelfahrt)', 'Town (for Assumption Day)')} value={ort} onChangeText={setOrtText} placeholder={tx('Zum Beispiel Fürth', 'For example Fürth')} />
+          {places.length ? (
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+              {places.map((p) => <Pick key={p.name} on={false} label={p.name} onPress={() => { haptics.select(); setOrtText(p.name); actions.setOrt(p.name); void saveLand(); }} />)}
+            </View>
+          ) : null}
+          <Meta>{tx('In Bayern ist der 15. August nur in Gemeinden mit mehr Katholiken frei (1 708 von 2 056, Landesamt für Statistik).', 'In Bavaria, 15 August is only a holiday in mostly Catholic towns (1,708 of 2,056, state statistics office).')}</Meta>
+        </View>
+      ) : null}
     </Screen>
   );
 }
+
+const Pick = ({ on, label, onPress }: { on: boolean; label: string; onPress: () => void }) => (
+  <Chip bg={on ? tokens.ink : tokens.chipBg} color={on ? tokens.bg : tokens.ink} onPress={onPress}>{label}</Chip>
+);
 
 function Budget({ p, name, year }: { p: PersonId; name: string; year: number }) {
   const budget = useStore((s) => s.vacation[p]);
