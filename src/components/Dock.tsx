@@ -22,7 +22,7 @@ import TalkBar from './TalkBar';
 import { setVeil } from './Veil';
 import { tokens, persons, springs } from '../theme';
 import { useStore, actions, get } from '../state/store';
-import { plan, splitItems, claudeSays, replyPlan, listFromClaude, thinksOnline, revisePlan, reviseOffline, draftOf, cutOff, addPicks, dishy, linkPlan, Ctx, Plan, Result, Said, SPOKEN, PLACEHOLDER } from '../lib/act';
+import { plan, splitItems, claudeSays, replyPlan, listFromClaude, asksNewList, thinksOnline, revisePlan, reviseOffline, draftOf, cutOff, addPicks, dishy, linkPlan, Ctx, Plan, Result, Said, SPOKEN, PLACEHOLDER } from '../lib/act';
 import { canUnderstand, type Convo, type Glimpse } from '../lib/verstehen';
 import { linkIn, recipeFromLink, keepRecipe, loadRecipes, type Recipe } from '../lib/rezepte';
 import { onShared } from '../lib/shared';
@@ -428,7 +428,8 @@ export default function Dock() {
   };
 
   const hear = (raw: string, how?: { voice?: boolean }) => {
-    if (where.chat && mode === 'msg') { haptics.success(); addMessage(raw.trim()); return; }
+    // One message, then back to Eintragen, so the next sentence is never lost as a plain message (Julian 29.10.).
+    if (where.chat && mode === 'msg') { haptics.success(); addMessage(raw.trim()); setMode('card'); return; }
     talkLang.current = spokenLang(raw);
     return inLang(talkLang.current, () => hearNow(raw, how));
   };
@@ -520,6 +521,8 @@ export default function Dock() {
     if (!r) return fallback ? fallback() : hold(said, { kind: 'unclear', text: tx('Das habe ich nicht verstanden.', "I didn't get that.") }, lines);
     if (r.kind === 'cut') return hold(said, { kind: 'cut' }, [{ said }]);
     if (r.kind === 'unclear') return hold(said, { kind: 'unclear', text: r.text }, lines);
+    // A list that does not exist yet is offered first, unless the sentence asked for it (Julian 29.10.).
+    if (r.kind === 'liste' && r.list === 'neu' && !asksNewList(said)) return hold(said, { kind: 'newList', name: r.name || tx('Neue Liste', 'New list'), said: r }, lines);
     if (r.kind === 'liste') return play(listFromClaude(r, said, where.ctx.kind === 'liste' ? where.ctx.id : undefined), said, false, undefined, lines);
     play(replyPlan(r), said, false, undefined, lines);
   };
@@ -685,6 +688,15 @@ export default function Dock() {
                 <Thread lines={turn.lines} cut />
                 <AppLine text={tx('Ich höre weiter zu.', "I'm still listening.")} sub={tx('Was du jetzt sagst, hänge ich an.', "What you say next, I'll add on.")} />
                 <Quiet label={tx('Abbrechen', 'Cancel')} onPress={ok} />
+              </>
+            ) : turn.result.kind === 'newList' ? (
+              <>
+                <Thread lines={turn.lines} />
+                <AppLine text={tx(`Eine Liste „${turn.result.name}“ gibt es noch nicht. Soll ich sie anlegen?`, `There is no “${turn.result.name}” list yet. Shall I create it?`)} sub={turn.result.said.items.length ? tx(`Mit ${turn.result.said.items.join(', ')}.`, `With ${turn.result.said.items.join(', ')}.`) : undefined} />
+                <Picks options={[
+                  [tx('Ja, anlegen', 'Yes, create it'), () => { const r = (turn.result as Extract<Result, { kind: 'newList' }>).said; const said = turn.said; haptics.select(); setTurn(null); ++heard.current; play(listFromClaude(r, said), said, true); }],
+                  [tx('Nein', 'No'), ok],
+                ]} />
               </>
             ) : turn.result.kind === 'unclear' ? (
               <>

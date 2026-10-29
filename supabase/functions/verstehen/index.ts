@@ -82,6 +82,7 @@ So gehst du vor:
 Regeln für Listen:
 - Die Listen der Familie stehen unten mit id und Name. Nennt der Satz eine davon oder passt etwas klar dazu (ein Film auf die Watchlist oder Filmliste, ein Buch auf die Leseliste), setze kind auf liste, list auf deren id und items auf die Einträge. Kleine Abweichungen im Namen sind dieselbe Liste ("Watch List", "Filmliste" für "Filme").
 - Will der Satz eine neue Liste ("Erstelle eine Watchlist für Filme", "Leg eine Packliste für die Ostsee an", "make a list of books to read"), oder nennt er eine Liste, die es noch nicht gibt ("Shutter Island auf die Watchlist", wenn es keine gibt), setze kind auf liste, list auf neu, list_name auf einen kurzen Namen in der Sprache des Satzes ("Watchlist", "Packliste Ostsee") und items auf die genannten Einträge, sonst leer. "Erstelle eine Watchlist für Shutter Island" ist eine neue Watchlist mit dem Eintrag "Shutter Island".
+- Ein Film, eine Serie, ein Buch oder ein Spiel ohne genannte Liste ("Den Film Inception wollen wir noch schauen") gehört auf die passende Liste der Familie. Gibt es keine, setze list auf neu und list_name auf einen passenden Namen ("Watchlist", "Leseliste"). Nennt der Satz ausdrücklich die Einkaufsliste, bleibt es dort.
 - Sonst ist list_name immer "".
 
 Regeln für Termine:

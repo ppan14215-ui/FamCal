@@ -33,6 +33,8 @@ export type Result =
   | { kind: 'cut' }
   /** Not sure what it is: the card asks, calendar or a list. */
   | { kind: 'unclear'; text: string }
+  /** Claude wants a list the family does not have yet (Julian 29.10.): asked first, one tap to make it. */
+  | { kind: 'newList'; name: string; said: ListSaid }
   /** A dish: ingredients to tick off, or first which recipe. `added` is what the sentence itself put on the list. */
   | { kind: 'recipe'; dish: string; picks: string[]; variants?: string[]; question?: string; added?: string; undo?: () => void;
       /** Read from a link: kept for the family once something lands. */
@@ -416,6 +418,9 @@ export const listFromClaude = (r: ListSaid, said = '', onScreen?: string): Plan 
   const id = own ? onScreen! : r.list;
   return id === 'aufgaben' ? liste(r.items.join(', '), id) : liste(r.items.join(', '), id, r.items);
 };
+
+/** The sentence itself asks for a new list ("Erstelle eine Watchlist"), so no need to ask again. */
+export const asksNewList = (said: string) => /\b(erstell\w*|anleg\w*|leg\w*\b.*\ban\b|neue\w* liste|mach\w*\b.*\bliste|create|make|new list|start a list)\b/i.test(said);
 
 /** Cooking or baking said out loud ("Bolognese kochen", "für einen Karottenkuchen"): Claude knows the recipe, the rules do not. */
 export const dishy = (said: string) => /\b(koch\w*|back\w*|rezept\w*|zutaten|kuchen\w*|torte|cook\w*|bak\w*|recipe|ingredients|cake)\b/i.test(said);

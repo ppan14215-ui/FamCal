@@ -18,6 +18,7 @@ import LineIcon from '../../src/components/ui/LineIcon';
 import { tokens, persons } from '../../src/theme';
 import { useStore, actions } from '../../src/state/store';
 import { useDockSpace } from '../../src/lib/dockSpace';
+import { useKeyboardInset } from '../../src/lib/keyboard';
 import { useFeed, canUndo, undoEntry, type FeedEntry, type EventSnap } from '../../src/lib/feed';
 import { getFamily, myRole } from '../../src/lib/sync';
 import { hm, short, TODAY } from '../../src/lib/dates';
@@ -187,11 +188,14 @@ export default function Chat() {
   const scroller = useRef<ScrollView>(null);
   const me = getFamily() ? myRole() : 'J';
   const veil = useVeil();
-  useEffect(() => { setTimeout(() => scroller.current?.scrollToEnd({ animated: true }), 60); }, [feed.length]);
+  const kb = useKeyboardInset();
+  // The newest message is always in view (Julian 29.10.): after sending, while thinking, and when the keyboard opens.
+  const thinking = veil.inline && veil.phase !== 'off';
+  useEffect(() => { const t = setTimeout(() => scroller.current?.scrollToEnd({ animated: true }), 80); return () => clearTimeout(t); }, [feed.length, kb, dock, thinking, veil.shown]);
   let lastDay = '';
   return (
     <View style={{ flex: 1, backgroundColor: tokens.bg, paddingTop: insets.top }}>
-      <ScrollView ref={scroller} onContentSizeChange={() => scroller.current?.scrollToEnd({ animated: false })} contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 18, paddingTop: 8, paddingBottom: dock + insets.bottom + 40, gap: 12 }} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+      <ScrollView ref={scroller} onContentSizeChange={() => scroller.current?.scrollToEnd({ animated: false })} contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 18, paddingTop: 8, paddingBottom: dock + (kb > 0 ? kb : insets.bottom) + 40, gap: 12 }} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
         <H1 sub={tx(`Familie · ${2 + people} Personen`, `Family · ${2 + people} people`)} right={<PressScale accessibilityLabel={tx('Familie und Einstellungen', 'Family and settings')} onPress={() => router.push('/einstellungen')}><Pair /></PressScale>}>Chat</H1>
         {feed.length || veil.inline && veil.phase !== 'off' ? feed.map((f) => {
           const d = dayOf(f.at);
