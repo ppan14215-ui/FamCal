@@ -109,7 +109,8 @@ export async function startSync(name?: string): Promise<{ family?: Family; error
   lastPeople = get().people;
   pushPeople();
   watchComments(family.id);
-  // Der Familienchat (Julian 29.10.).
+  // Listen, Aufgaben und der Familienchat (Julian 29.10.).
+  void import('./listSync').then((m) => m.startListSync(family!.id)).catch(() => {});
   void import('./feed').then((m) => m.startFeed(family!.id)).catch(() => {});
   // Laufender Sync from this phone's calendars (Julian 29.10.).
   void import('./phoneSync').then((m) => m.startPhoneSync()).catch(() => {});
@@ -239,6 +240,7 @@ export function stopSync() {
   channel = null;
   stopComments();
   void import('./feed').then((m) => m.stopFeed()).catch(() => {});
+  void import('./listSync').then((m) => m.stopListSync()).catch(() => {});
   family = null;
   known = new Map();
   knownP = new Map();
