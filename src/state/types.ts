@@ -92,6 +92,8 @@ export type ItemData = {
   place?: string;
   /** true while the server looks it up, so the row can show a placeholder. */
   looking?: boolean;
+  /** Which lookup version last searched, so a better server looks again once. */
+  looked?: number;
 };
 
 export type Section = { id: string; title: string; items: Item[] };

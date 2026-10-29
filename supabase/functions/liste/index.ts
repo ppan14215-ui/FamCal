@@ -8,7 +8,7 @@
  *
  * anreichern: finds cover, year and author or director for one entry.
  *   Books from Open Library (no key). Films from TMDB when the secret
- *   TMDB_TOKEN is set, else from Wikipedia. No Claude call, nothing paid.
+ *   TMDB_TOKEN is set, else films and series from iTunes, then Wikipedia. No Claude call, nothing paid.
  *   Request { action: "anreichern", source: "books" | "movies", q, lang } → { found | null }
  *
  * rezept: reads a recipe page someone pasted (Julian 28.10.: "mit einem Rezept
@@ -94,7 +94,27 @@ async function movieTmdb(q: string, lang: string, token: string): Promise<Found 
   };
 }
 
-/** Without a TMDB key: the film's Wikipedia page, its image and short description ("2019 film by Greta Gerwig"). */
+const norm = (x: string) => x.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, ' ').trim();
+const close = (a: string, b: string) => { const x = norm(a), y = norm(b); return !!x && !!y && (x.includes(y) || y.includes(x)); };
+
+/**
+ * Without a TMDB key (Julian 29.10.: "die Covers werden noch nicht rausgesucht"): the
+ * iTunes Search API, free and without a key, has posters for films and series.
+ * A film is tried first; a series ("The Office") when no film title matches.
+ */
+async function movieItunes(q: string, lang: string): Promise<Found | null> {
+  const base = `https://itunes.apple.com/search?term=${encodeURIComponent(q)}&country=${lang === 'en' ? 'us' : 'de'}&limit=5`;
+  const films: { trackName?: string; artistName?: string; releaseDate?: string; artworkUrl100?: string; trackViewUrl?: string }[] = (await getJson(`${base}&media=movie&entity=movie`))?.results ?? [];
+  const film = films.find((f) => f.trackName && close(f.trackName, q));
+  const big = (u?: string) => u?.replace(/\/\d+x\d+bb\./, '/400x600bb.');
+  if (film) return { cover: big(film.artworkUrl100), year: film.releaseDate?.slice(0, 4), by: film.artistName, link: film.trackViewUrl };
+  const shows: { collectionName?: string; artistName?: string; releaseDate?: string; artworkUrl100?: string; collectionViewUrl?: string }[] = (await getJson(`${base}&media=tvShow&entity=tvSeason`))?.results ?? [];
+  const show = shows.find((t) => t.artistName && close(t.artistName, q)) ?? shows.find((t) => t.collectionName && close(t.collectionName, q));
+  if (show) return { cover: big(show.artworkUrl100)?.replace('400x600bb', '600x600bb'), year: show.releaseDate?.slice(0, 4), link: show.collectionViewUrl };
+  return null;
+}
+
+/** Last resort: the film's Wikipedia page, its image and short description ("2019 film by Greta Gerwig"). */
 async function movieWiki(q: string): Promise<Found | null> {
   const j = await getJson(`https://en.wikipedia.org/w/api.php?action=query&format=json&generator=search&gsrsearch=${encodeURIComponent(q + ' film')}&gsrlimit=1&prop=pageimages|description|info&inprop=url&piprop=thumbnail&pithumbsize=342`);
   const page = j?.query?.pages && Object.values(j.query.pages)[0] as { thumbnail?: { source: string }; description?: string; fullurl?: string } | undefined;
@@ -235,7 +255,7 @@ Deno.serve(async (req) => {
     if (!q) return json({ error: 'empty' }, 400);
     try {
       const token = Deno.env.get('TMDB_TOKEN');
-      const found = input.source === 'books' ? await book(q) : input.source === 'movies' ? (token ? await movieTmdb(q, lang, token) : await movieWiki(q)) : null;
+      const found = input.source === 'books' ? await book(q) : input.source === 'movies' ? (token ? await movieTmdb(q, lang, token) : (await movieItunes(q, lang).catch(() => null)) ?? await movieWiki(q)) : null;
       return json({ found });
     } catch (e) {
       console.error('anreichern', e);

@@ -121,6 +121,7 @@ export async function startListSync(familyId: string) {
   }
   last = { lists: get().lists, tasks: get().tasks };
   push();
+  void import('./enrich').then((m) => m.refreshCovers());
   stopStore = subscribe(() => {
     const s = get();
     if (last && s.lists === last.lists && s.tasks === last.tasks) return;

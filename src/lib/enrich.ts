@@ -10,6 +10,8 @@ import { LANG } from '../i18n/lang';
 import type { Blueprint, ItemData } from '../state/types';
 
 type Found = Pick<ItemData, 'cover' | 'year' | 'by' | 'link'>;
+/** Raised when the server finds more (29.10.: posters from iTunes), so old rows look once more. */
+const LOOKUP = 2;
 
 async function lookUp(source: NonNullable<Blueprint['source']>, q: string): Promise<Found | null> {
   if (!supabase || !getAuth().session) return null;
@@ -19,6 +21,17 @@ async function lookUp(source: NonNullable<Blueprint['source']>, q: string): Prom
 
 export function enrichItem(listId: string, itemId: string, name: string, source: NonNullable<Blueprint['source']>) {
   // Imported late: the store calls this module, and this module writes back into the store.
-  const done = (f: Found | null) => import('../state/store').then(({ actions }) => actions.setItemData(listId, itemId, { ...(f ?? {}), looking: false }));
+  const done = (f: Found | null) => import('../state/store').then(({ actions }) => actions.setItemData(listId, itemId, { ...(f ?? {}), looking: false, looked: LOOKUP }));
   lookUp(source, name).then(done, () => done(null));
+}
+
+/** Entries without a cover that an older server could not find get one more try. */
+export function refreshCovers() {
+  import('../state/store').then(({ get }) => {
+    for (const l of get().lists) {
+      const source = l.blueprint?.source;
+      if (!source) continue;
+      for (const i of l.sections.flatMap((s) => s.items)) if (!i.data?.cover && (i.data?.looked ?? 0) < LOOKUP) enrichItem(l.id, i.id, i.name, source);
+    }
+  }).catch(() => {});
 }
