@@ -3,7 +3,7 @@
  * scrolled. "Do 15 Uhr", "übermorgen", "12.11. 930-1015", "jeden Di 19-2030",
  * "20.-27.3." all become a When. Everything is relative to the fixed TODAY.
  */
-import { EN, tx } from '../i18n/lang';
+import { EN, isEn, tx } from '../i18n/lang';
 import { TODAY, addDays, weekday, year, daysBetween, short, long, hm, minutes, WD_LONG, MONTHS_SHORT, monthIdx, dayNum } from './dates';
 
 export type When = {
@@ -216,7 +216,7 @@ const yearIfOther = (d: string) => (year(d) !== year(TODAY) ? ` ${year(d)}` : ''
 /** Collapsed line: "Do 12. Nov · 9:30–10:15", "Sa 20. bis Sa 27. März 2027". */
 export function whenLine(w: When): string {
   if (w.endDate) {
-    const same = !EN && monthIdx(w.date) === monthIdx(w.endDate);
+    const same = !isEn() && monthIdx(w.date) === monthIdx(w.endDate);
     const a = same ? `${short(w.date).split(' ').slice(0, 2).join(' ')}` : short(w.date);
     return `${a} ${tx('bis', 'to')} ${short(w.endDate)}${yearIfOther(w.endDate)}`;
   }
@@ -249,10 +249,10 @@ export function whenSentence(w: When): string {
 export function whenText(w: When): string {
   if (w.endDate) return `${dayNum(w.date)}.${monthIdx(w.date) + 1}.-${dayNum(w.endDate)}.${monthIdx(w.endDate) + 1}.`;
   const y = yearIfOther(w.date) || w.date < TODAY ? year(w.date) : '';
-  const d = EN ? `${MONTHS_SHORT[monthIdx(w.date)]} ${dayNum(w.date)}${y ? ' ' + y : ''}` : `${dayNum(w.date)}.${monthIdx(w.date) + 1}.${y}`;
-  const t = w.start ? ` ${hm(w.start)}${w.end ? (EN ? ' to ' : '-') + hm(w.end) : ''}` : '';
+  const d = isEn() ? `${MONTHS_SHORT[monthIdx(w.date)]} ${dayNum(w.date)}${y ? ' ' + y : ''}` : `${dayNum(w.date)}.${monthIdx(w.date) + 1}.${y}`;
+  const t = w.start ? ` ${hm(w.start)}${w.end ? (isEn() ? ' to ' : '-') + hm(w.end) : ''}` : '';
   const every = w.repeat?.match(/^(?:Jeden|Every) (\w{3})/);
-  return `${every ? tx('jeden ', 'every ') + every[1].slice(0, EN ? 3 : 2) + ' ' : ''}${d}${t}`;
+  return `${every ? tx('jeden ', 'every ') + every[1].slice(0, isEn() ? 3 : 2) + ' ' : ''}${d}${t}`;
 }
 
 /** Task title with a deadline: "Passfotos machen bis Fr" → title + due. */

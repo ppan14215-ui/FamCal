@@ -35,7 +35,7 @@ import { hm, short } from '../lib/dates';
 import { Tile } from './ui/Clay';
 import { haptics } from '../lib/haptics';
 import type { CalEvent, Who } from '../state/types';
-import { tx, quote } from '../i18n/lang';
+import { tx, quote, inLang, spokenLang, type Lang } from '../i18n/lang';
 import { onToday } from '../screens/kalender/TodayView';
 
 const STEP_MS = 850;
@@ -354,7 +354,9 @@ export default function Dock() {
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
   /** Counts sentences, so a slow answer for an older one never lands. */
   const heard = useRef(0);
-  const later = (ms: number, f: () => void) => timers.current.push(setTimeout(f, ms));
+  // What the app says back follows the language of the sentence (Julian 29.10.).
+  const talkLang = useRef<Lang | null>(null);
+  const later = (ms: number, f: () => void) => timers.current.push(setTimeout(() => inLang(talkLang.current, f), ms));
   const path = usePathname();
   const talking = useTalkOpen();
   // On the tabs the field only shows after the bubble was tapped, or while a card is open (Julian 28.10.).
@@ -412,6 +414,10 @@ export default function Dock() {
   };
 
   const hear = (raw: string, how?: { voice?: boolean }) => {
+    talkLang.current = spokenLang(raw);
+    return inLang(talkLang.current, () => hearNow(raw, how));
+  };
+  const hearNow = (raw: string, how?: { voice?: boolean }) => {
     const open = turn;
     timers.current.forEach(clearTimeout);
     timers.current = [];
@@ -491,7 +497,7 @@ export default function Dock() {
     // Julian 28.10.: waiting is fine when you see what is happening. Each piece Claude has read shows up at once.
     const glimpse = (g: Glimpse) => { if (heard.current !== n) return; const l = glimpseLine(g); if (l) setVeil({ lines: [tx('Ich verstehe …', 'Understanding …'), l], shown: 2 }); };
     const late = new Promise<null>((r) => setTimeout(() => r(null), FIRST_MS));
-    Promise.race([claudeSays(said, convo, glimpse), late]).then((r) => { if (heard.current === n) then(r); });
+    Promise.race([claudeSays(said, convo, glimpse), late]).then((r) => { if (heard.current === n) inLang(talkLang.current, () => then(r)); });
   };
 
   /** Whatever Claude made of it lands; cut off and unclear only open the card. */
@@ -647,7 +653,7 @@ export default function Dock() {
         <Rect x="0" y="0" width="100%" height="100%" fill="url(#dockfade)" />
       </Svg>
     </View>
-    <View pointerEvents="box-none" onLayout={(e) => setH(e.nativeEvent.layout.height)} style={{ position: 'absolute', left: 14, right: 14, bottom, gap: 10 }}>
+    <View pointerEvents="box-none" onLayout={(e) => setH(e.nativeEvent.layout.height)} style={{ position: 'absolute', left: 18, right: 18, bottom, gap: 10 }}>
       {turn ? (
         <Animated.View key={turn.id} entering={FadeInDown.duration(220)} exiting={FadeOut.duration(150)} style={[{ maxHeight: 420, borderRadius: 26, backgroundColor: tokens.row }, shadow]}>
           <ScrollView ref={scroller} onContentSizeChange={() => scroller.current?.scrollToEnd({ animated: false })} contentContainerStyle={{ padding: 18, gap: 12 }} showsVerticalScrollIndicator={false}>

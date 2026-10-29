@@ -27,8 +27,15 @@ import { speechLocale } from '../lib/speechLang';
 // Phones and tablets: Enter on the screen keyboard adds a line.
 const TOUCH = Platform.OS !== 'web' || (typeof window !== 'undefined' && !!window.matchMedia?.('(pointer: coarse)').matches);
 
-/** Quiet this long after the last word ends listening; a second tap ends it at once. */
+/**
+ * Quiet this long after the last word ends listening; a second tap ends it at once.
+ * A finished sentence ends sooner (Julian 29.10.: "immer noch ziemlich lang"),
+ * a sentence that stops on "und", "um" or a half word still waits the long pause (28.10.).
+ */
 const SILENCE_MS = 2500;
+const DONE_MS = 1100;
+const OPEN_END = /\b(und|oder|um|am|mit|für|bei|bis|von|zum|zur|nach|and|or|at|on|with|for|to|from|the|a)$/i;
+const sounded = (t: string, final: boolean) => final && !OPEN_END.test(t.replace(/[.,!?]+$/, '').trim());
 const FIRST_WORD_MS = 8000;
 
 const LINE = 22;
@@ -171,7 +178,7 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, onClose, pl
           const t = e.results[0]?.transcript ?? '';
           if (e.isFinal) { done = `${done} ${t}`; part = ''; } else part = t;
           setText(heard());
-          hush(SILENCE_MS);
+          hush(sounded(heard(), e.isFinal) ? DONE_MS : SILENCE_MS);
         }),
         // -2 to 10 from the phone; below 0 is inaudible.
         SR.addListener('volumechange', (e) => { level.value = withTiming(Math.min(1, Math.max(0, e.value / 10)), { duration: 100 }); }),
@@ -189,7 +196,7 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, onClose, pl
       SR.start({
         lang: speechLocale(), interimResults: true, continuous: true, addsPunctuation: true,
         volumeChangeEventOptions: { enabled: true, intervalMillis: 100 },
-        androidIntentOptions: { EXTRA_SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS: SILENCE_MS, EXTRA_SPEECH_INPUT_POSSIBLY_COMPLETE_SILENCE_LENGTH_MILLIS: SILENCE_MS },
+        androidIntentOptions: { EXTRA_SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS: DONE_MS, EXTRA_SPEECH_INPUT_POSSIBLY_COMPLETE_SILENCE_LENGTH_MILLIS: DONE_MS },
       });
     } catch {
       fail();

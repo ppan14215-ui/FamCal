@@ -4,7 +4,7 @@
  * and Do 30.; 29.10.2026 is the real Thursday).
  */
 import { LIVE } from './live';
-import { EN } from '../i18n/lang';
+import { EN, isEn } from '../i18n/lang';
 
 const pad2 = (n: number) => String(n).padStart(2, '0');
 const local = new Date();
@@ -12,10 +12,24 @@ const local = new Date();
 export const TODAY = LIVE ? `${local.getFullYear()}-${pad2(local.getMonth() + 1)}-${pad2(local.getDate())}` : '2026-10-29';
 export const BEN_BORN = '2026-09-14';
 
-export const WD_SHORT = EN ? ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] : ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'];
-export const WD_LONG = EN ? ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'] : ['Sonntag', 'Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag'];
-export const MONTHS = EN ? ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'] : ['Januar', 'Februar', 'März', 'April', 'Mai', 'Juni', 'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'];
-export const MONTHS_SHORT = EN ? ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'] : ['Jan', 'Feb', 'März', 'Apr', 'Mai', 'Juni', 'Juli', 'Aug', 'Sep', 'Okt', 'Nov', 'Dez'];
+const WD_SHORT_EN = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const WD_SHORT_DE = ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'];
+export const WD_SHORT = EN ? WD_SHORT_EN : WD_SHORT_DE;
+const WD_LONG_EN = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+const WD_LONG_DE = ['Sonntag', 'Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag'];
+export const WD_LONG = EN ? WD_LONG_EN : WD_LONG_DE;
+const MONTHS_EN = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+const MONTHS_DE = ['Januar', 'Februar', 'März', 'April', 'Mai', 'Juni', 'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'];
+export const MONTHS = EN ? MONTHS_EN : MONTHS_DE;
+const MONTHS_SHORT_EN = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const MONTHS_SHORT_DE = ['Jan', 'Feb', 'März', 'Apr', 'Mai', 'Juni', 'Juli', 'Aug', 'Sep', 'Okt', 'Nov', 'Dez'];
+export const MONTHS_SHORT = EN ? MONTHS_SHORT_EN : MONTHS_SHORT_DE;
+
+// What the app says back follows the spoken language (inLang), so these read it at call time.
+const wds = () => (isEn() ? WD_SHORT_EN : WD_SHORT_DE);
+const wdl = () => (isEn() ? WD_LONG_EN : WD_LONG_DE);
+const mon = () => (isEn() ? MONTHS_EN : MONTHS_DE);
+const mons = () => (isEn() ? MONTHS_SHORT_EN : MONTHS_SHORT_DE);
 
 export function parse(iso: string): Date {
   const [y, m, d] = iso.split('-').map(Number);
@@ -52,34 +66,34 @@ export function year(isoDate: string): number {
 
 /** "Do 29. Okt" */
 export function short(isoDate: string): string {
-  return EN ? `${WD_SHORT[weekday(isoDate)]} ${MONTHS_SHORT[monthIdx(isoDate)]} ${dayNum(isoDate)}` : `${WD_SHORT[weekday(isoDate)]} ${dayNum(isoDate)}. ${MONTHS_SHORT[monthIdx(isoDate)]}`;
+  return isEn() ? `${wds()[weekday(isoDate)]} ${mons()[monthIdx(isoDate)]} ${dayNum(isoDate)}` : `${wds()[weekday(isoDate)]} ${dayNum(isoDate)}. ${mons()[monthIdx(isoDate)]}`;
 }
 /** "Donnerstag, 29. Oktober" */
 export function long(isoDate: string): string {
-  return EN ? `${WD_LONG[weekday(isoDate)]}, ${MONTHS[monthIdx(isoDate)]} ${dayNum(isoDate)}` : `${WD_LONG[weekday(isoDate)]}, ${dayNum(isoDate)}. ${MONTHS[monthIdx(isoDate)]}`;
+  return isEn() ? `${wdl()[weekday(isoDate)]}, ${mon()[monthIdx(isoDate)]} ${dayNum(isoDate)}` : `${wdl()[weekday(isoDate)]}, ${dayNum(isoDate)}. ${mon()[monthIdx(isoDate)]}`;
 }
 /** "29. Oktober" */
 export function dayMonth(isoDate: string): string {
-  return EN ? `${MONTHS[monthIdx(isoDate)]} ${dayNum(isoDate)}` : `${dayNum(isoDate)}. ${MONTHS[monthIdx(isoDate)]}`;
+  return isEn() ? `${mon()[monthIdx(isoDate)]} ${dayNum(isoDate)}` : `${dayNum(isoDate)}. ${mon()[monthIdx(isoDate)]}`;
 }
 
 /** "29. Okt" / "Oct 29" */
 export function dmShort(isoDate: string): string {
-  return EN ? `${MONTHS_SHORT[monthIdx(isoDate)]} ${dayNum(isoDate)}` : `${dayNum(isoDate)}. ${MONTHS_SHORT[monthIdx(isoDate)]}`;
+  return isEn() ? `${mons()[monthIdx(isoDate)]} ${dayNum(isoDate)}` : `${dayNum(isoDate)}. ${mons()[monthIdx(isoDate)]}`;
 }
 /** "Do 29." / "Thu 29" */
 export function wdDay(isoDate: string, long = false): string {
-  return `${(long ? WD_LONG : WD_SHORT)[weekday(isoDate)]} ${dayNum(isoDate)}${EN ? '' : '.'}`;
+  return `${(long ? wdl() : wds())[weekday(isoDate)]} ${dayNum(isoDate)}${isEn() ? '' : '.'}`;
 }
 
 /** "noch 6 Wochen", "in 8 Tagen", "heute", "morgen" relative to TODAY. */
 export function until(isoDate: string): string {
   const d = daysBetween(TODAY, isoDate);
-  if (d < 0) return EN ? 'past' : 'vorbei';
-  if (d === 0) return EN ? 'today' : 'heute';
-  if (d === 1) return EN ? 'tomorrow' : 'morgen';
-  if (d < 14) return EN ? `in ${d} days` : `in ${d} Tagen`;
-  return EN ? `${Math.floor(d / 7)} weeks to go` : `noch ${Math.floor(d / 7)} Wochen`;
+  if (d < 0) return isEn() ? 'past' : 'vorbei';
+  if (d === 0) return isEn() ? 'today' : 'heute';
+  if (d === 1) return isEn() ? 'tomorrow' : 'morgen';
+  if (d < 14) return isEn() ? `in ${d} days` : `in ${d} Tagen`;
+  return isEn() ? `${Math.floor(d / 7)} weeks to go` : `noch ${Math.floor(d / 7)} Wochen`;
 }
 
 /** Ben's age in completed weeks on a given day. */
@@ -95,17 +109,18 @@ export function minutes(hhmm: string): number {
 /** Fixed clock for the prototype: 8:50, forty minutes before the U6. The real app reads the phone's clock at start. */
 export const NOW = LIVE ? `${pad2(local.getHours())}:${pad2(local.getMinutes())}` : '08:50';
 
-const NUM = EN ? ['no', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten'] : ['keine', 'eine', 'zwei', 'drei', 'vier', 'fünf', 'sechs', 'sieben', 'acht', 'neun', 'zehn'];
+const NUM_EN = ['no', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten'];
+const NUM_DE = ['keine', 'eine', 'zwei', 'drei', 'vier', 'fünf', 'sechs', 'sieben', 'acht', 'neun', 'zehn'];
 /** "Drei Termine", "eine Aufgabe" */
 export function count(n: number, one: string, many: string, cap = false): string {
-  const w = n <= 10 ? NUM[n] : String(n);
+  const w = n <= 10 ? (isEn() ? NUM_EN : NUM_DE)[n] : String(n);
   const s = `${w} ${n === 1 ? one : many}`;
   return cap ? s[0].toUpperCase() + s.slice(1) : s;
 }
 
 /** "09:30" → "9:30"; on English phones "15:00" → "3pm", "09:30" → "9:30am". */
 export const hm = (t: string) => {
-  if (!EN) return t.replace(/^0/, '');
+  if (!isEn()) return t.replace(/^0/, '');
   const [h, m] = t.split(':').map(Number);
   return `${h % 12 || 12}${m ? ':' + String(m).padStart(2, '0') : ''}${h < 12 ? 'am' : 'pm'}`;
 };
@@ -114,7 +129,7 @@ export const hm = (t: string) => {
 export function soon(date: string, start: string): string {
   if (date !== TODAY) return `${short(date)} · ${hm(start)}`;
   const d = minutes(start) - minutes(NOW);
-  if (d <= 0) return `${EN ? 'Now' : 'Jetzt'} · ${hm(start)}`;
-  if (d < 60) return `${EN ? `In ${d} min` : `In ${d} Min`} · ${hm(start)}`;
-  return `${EN ? `In ${Math.round(d / 60)} h` : `In ${Math.round(d / 60)} Std`} · ${hm(start)}`;
+  if (d <= 0) return `${isEn() ? 'Now' : 'Jetzt'} · ${hm(start)}`;
+  if (d < 60) return `${isEn() ? `In ${d} min` : `In ${d} Min`} · ${hm(start)}`;
+  return `${isEn() ? `In ${Math.round(d / 60)} h` : `In ${Math.round(d / 60)} Std`} · ${hm(start)}`;
 }

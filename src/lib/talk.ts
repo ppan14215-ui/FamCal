@@ -332,7 +332,8 @@ function kept(title: string, said: string): string {
   const f = findWhen(words);
   const rest = f ? words.filter((_, i) => !(i >= f.from && i < f.to) && !(f.also && i >= f.also.from && i < f.also.to)) : words;
   const own = titleOf(rest.join(' ')).title;
-  return own && !meaningless(own) ? own : title;
+  // A rules title that is still most of the sentence is worse than a translated one (29.10.: "Dienstag arbeite ich wieder jeden Tag").
+  return own && !meaningless(own) && own.split(/\s+/).length <= 3 ? own : title;
 }
 
 /**
@@ -345,7 +346,9 @@ export function fromModel(m: Understood, said: string, events: CalEvent[], newId
   if (m.kind !== 'termin' || !m.title) return null;
   const who: Who = m.who === 'J' || m.who === 'T' || m.who === 'both' ? m.who : null;
   if (!m.date || !ISO.test(m.date)) return { kind: 'ask', text: m.question || askWhen(m.title), title: m.title, who };
-  const start = m.start && HHMM.test(m.start) ? m.start : undefined;
+  // A start equal to the clock with no time in the sentence was made up from "now" (29.10.).
+  const madeUp = m.start === NOW && !/\d|uhr|o'?clock|mittag|abend|morgens|noon|evening|morning/i.test(said);
+  const start = m.start && HHMM.test(m.start) && !madeUp ? m.start : undefined;
   const known = recall(`${m.title} ${m.sub ?? ''}`, events);
   const guess = isIcon(m.icon) && m.icon !== 'kalender' ? m.icon : iconFor(`${m.title} ${m.sub ?? ''}`);
   const icon = guess === 'kalender' && known ? known.icon : guess;
