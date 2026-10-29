@@ -25,6 +25,7 @@ import { hm, short, TODAY } from '../../src/lib/dates';
 import { tx } from '../../src/i18n/lang';
 import { useVeil, Step } from '../../src/components/Veil';
 import { isTrip, makePackList, kidsOn, ageText } from '../../src/lib/pack';
+import { isVacation, leftLine } from '../../src/lib/urlaub';
 
 const at = (s: string) => { const d = new Date(s); return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`; };
 const dayOf = (s: string) => { const d = new Date(s); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
@@ -137,6 +138,24 @@ function BringOffer({ suggest }: { suggest: Record<string, string[]> }) {
   );
 }
 
+/** Urlaub shows what is left of the budget, live (Julian 29.10.). Tapping opens Urlaub und Feiertage. */
+function VacationLeft({ ids }: { ids: string[] }) {
+  const trip = useStore((s) => s.events.find((e) => ids.includes(e.id) && isVacation(e)));
+  const events = useStore((s) => s.events);
+  const vacation = useStore((s) => s.vacation);
+  const names = useStore((s) => s.names);
+  const land = useStore((s) => s.land);
+  if (!trip) return null;
+  const year = Number(trip.date.slice(0, 4));
+  const who = trip.who === 'both' ? (['J', 'T'] as const) : trip.who === 'J' || trip.who === 'T' ? [trip.who] : [];
+  const lines = who.map((p) => leftLine(events, p, vacation[p], year, land, trip.who === 'both' ? names[p] : '')).filter(Boolean);
+  return (
+    <PressScale scale={0.99} onPress={() => router.push('/urlaub')} style={{ paddingVertical: 10, paddingHorizontal: 14, borderTopWidth: 1, borderTopColor: tokens.hair }}>
+      <Txt size={13.5} line={19} color={tokens.sub}>{lines.length ? lines.join('\n') : tx('Urlaubstage einstellen, dann rechne ich mit.', 'Set your vacation days and I keep count.')}</Txt>
+    </PressScale>
+  );
+}
+
 /** A trip offers its packing list, made for this family (Julian 29.10.: "mitdenken"). */
 function PackOffer({ ids }: { ids: string[] }) {
   const trip = useStore((s) => s.events.find((e) => ids.includes(e.id) && isTrip(e)));
@@ -218,6 +237,7 @@ function Entry({ f, mine, me, answer }: { f: FeedEntry; mine: boolean; me: 'J' |
         {f.kind === 'made' ? (
           <View style={{ alignSelf: 'stretch', borderRadius: 18, overflow: 'hidden', backgroundColor: tokens.row, opacity: f.undone ? 0.55 : 1 }}>
             {f.undone ? null : f.events ? <Termine ids={f.events} snap={f.snap?.events} /> : null}
+            {f.undone ? null : f.events ? <VacationLeft ids={f.events} /> : null}
             {f.undone ? null : f.events ? <PackOffer ids={f.events} /> : null}
             {f.undone || !f.suggest ? null : <BringOffer suggest={f.suggest} />}
             {f.undone ? null : f.items ? <Items list={f.items.list} ids={f.items.ids} name={f.snap?.list} names={f.snap?.items} /> : null}

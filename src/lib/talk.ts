@@ -377,6 +377,13 @@ export function fromModel(m: Understood, said: string, events: CalEvent[], newId
       place: x.place || undefined, repeat: x.repeat || undefined, work: x.work || undefined, source: event.source,
     };
   });
+  // Work with an end ("bis Weihnachten", Julian 29.10.) comes as one entry from Claude; the app lays out each workday.
+  const days = [event, ...more].flatMap((e) => workDays(e, newId));
+  if (days.length > 1 + more.length || days.some((d, i) => d !== [event, ...more][i])) {
+    const [first, ...rest] = days;
+    Object.assign(event, first);
+    more.splice(0, more.length, ...rest);
+  }
   const clash = more.length ? undefined : clashOf(events, event);
   const steps = m.steps.length ? m.steps.slice(0, 4) : [`${event.title}, ${long(event.date)}${start ? ` ${tx('um', 'at')} ${hm(start)}` : ''}.`];
   if (clash) steps.push(clash);
@@ -415,4 +422,25 @@ export function suggestBring(title: string, sub?: string, fromClaude: string[] =
   const all = [...BRING_RULES.filter((r) => r.re.test(text)).flatMap((r) => r.items()), ...fromClaude];
   const seen = new Set(said.map((x) => x.toLowerCase()));
   return all.filter((x) => { const k = x.toLowerCase(); if (!x.trim() || seen.has(k)) return false; seen.add(k); return true; }).slice(0, 4);
+}
+
+const WD_WORDS: [RegExp, number][] = [[/\b(mo|montag|mon|monday)/i, 1], [/\b(di|dienstag|tue|tuesday)/i, 2], [/\b(mi|mittwoch|wed|wednesday)/i, 3], [/\b(do|donnerstag|thu|thursday)/i, 4], [/\b(fr|freitag|fri|friday)/i, 5], [/\b(sa|samstag|sat|saturday)/i, 6], [/\b(so|sonntag|sun|sunday)/i, 0]];
+
+/** The weekdays a repeat names: "Montag bis Freitag" and the default are Monday to Friday, "Mo, Mi" only those. */
+function workWeekdays(repeat?: string): number[] {
+  if (!repeat || /bis|to|through|-|–/i.test(repeat)) return [1, 2, 3, 4, 5];
+  const named = WD_WORDS.filter(([re]) => re.test(repeat)).map(([, d]) => d);
+  return named.length ? named : [1, 2, 3, 4, 5];
+}
+
+/** One work block per workday from date to endDate, at most half a year. Anything else stays as it is. */
+export function workDays(e: CalEvent, newId: () => string): CalEvent[] {
+  if (!e.work || !e.endDate || e.endDate <= e.date) return [e];
+  const on = workWeekdays(e.repeat);
+  const out: CalEvent[] = [];
+  for (let d = e.date, n = 0; d <= e.endDate && n < 190; d = addDays(d, 1), n++) {
+    if (!on.includes(weekday(d))) continue;
+    out.push({ ...e, id: out.length ? newId() : e.id, date: d, endDate: undefined, allDay: e.allDay && !e.start ? true : e.allDay });
+  }
+  return out.length ? out : [e];
 }

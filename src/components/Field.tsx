@@ -6,7 +6,7 @@ import { tokens, fonts } from '../theme';
 
 const noOutline = Platform.OS === 'web' ? ({ outlineStyle: 'none' } as any) : null;
 
-export function Field({ label, value, onChangeText, right, placeholder }: { label: string; value: string; onChangeText: (t: string) => void; right?: React.ReactNode; placeholder?: string }) {
+export function Field({ label, value, onChangeText, right, placeholder, numeric }: { label: string; value: string; onChangeText: (t: string) => void; right?: React.ReactNode; placeholder?: string; numeric?: boolean }) {
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12, paddingHorizontal: 16, borderRadius: 18, backgroundColor: tokens.row }}>
       <View style={{ flex: 1, gap: 2 }}>
@@ -15,6 +15,7 @@ export function Field({ label, value, onChangeText, right, placeholder }: { labe
           value={value}
           onChangeText={onChangeText}
           placeholder={placeholder}
+          keyboardType={numeric ? 'number-pad' : undefined}
           placeholderTextColor={tokens.mute}
           selectionColor={tokens.select} cursorColor={tokens.ink}
           style={[{ fontFamily: fonts[600], fontSize: 18, color: tokens.ink, padding: 0 }, noOutline]}

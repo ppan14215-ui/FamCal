@@ -11,6 +11,7 @@ import { blueprintFor, blueprintOnline } from '../lib/blueprint';
 import type { ClayName } from '../lib/clayIcons';
 import type { PersonId } from '../theme';
 import { TODAY, BEN_BORN } from '../lib/dates';
+import { feiertage } from '../lib/feiertage';
 import { persons, personPalette, shade } from '../theme';
 import { firstYear, Kid } from '../data/firstYear';
 import { findCity } from '../data/cities';
@@ -35,6 +36,8 @@ type State = {
   /** Where the family lives (first onboarding step) and its Bundesland. */
   city: string;
   land: string;
+  /** Urlaubstage per year for each parent (Julian 29.10.); unset means no budget. */
+  vacation: Partial<Record<PersonId, number>>;
   /** Connected calendars (onboarding "Eure Kalender"). */
   calendars: { provider: string; account: string; ids: string[] }[];
   /** Sample family loaded ("Ich wurde eingeladen", Einstellungen). */
@@ -71,6 +74,7 @@ const initial = (): State => ({
   comments: {},
   city: '',
   land: '',
+  vacation: {},
   calendars: [],
   demo: false,
   colors: { J: 0, T: 1 },
@@ -96,6 +100,8 @@ const initial = (): State => ({
 const demo = (): Partial<State> => ({
   names: { J: 'Julia', T: 'Tom' },
   kid: { name: 'Ben', born: BEN_BORN, land: 'Bayern' },
+  land: 'Bayern',
+  vacation: { J: 30, T: 28 },
   people: [{ id: 'p_ben', name: 'Ben', kind: 'kind', color: 'Mint', birthday: BEN_BORN }, { id: 'p_oma', name: 'Oma Gisela', kind: 'grosseltern', color: 'Sand' }],
   comments: {},
   calendars: [{ provider: 'google', account: 'tom.huber@gmail.com', ids: ['familie', 'arbeit'] }],
@@ -166,7 +172,11 @@ export const actions = {
   loadDemo() { const d = demo(); applyNames(d.names!); set(() => d); actions.setColor('J', 0); actions.setColor('T', 1); },
   setNames(names: { J: string; T: string }) { applyNames(names); set(() => ({ names })); },
   /** The Bundesland follows from the city (Destatis list); the family can correct it. */
-  setCity(city: string, land?: string) { set(() => ({ city, land: land ?? findCity(city)?.land ?? findPlace(city)?.land ?? '' })); },
+  setCity(city: string, land?: string) { set(() => ({ city, land: land ?? findCity(city)?.land ?? findPlace(city)?.land ?? '' })); actions.ensureHolidays(); },
+  setLand(land: string) { set(() => ({ land })); actions.ensureHolidays(); },
+  setVacation(p: PersonId, days: number | undefined) {
+    set((s) => ({ vacation: { ...s.vacation, [p]: days && days > 0 ? Math.min(Math.round(days), 99) : undefined } }));
+  },
   /** A person's colour shows everywhere they appear, so `persons` changes with it. */
   setColor(p: PersonId, i: number) {
     const c = shade(personPalette[i]);
@@ -254,6 +264,21 @@ export const actions = {
     const day = date ?? base.date;
     set((s) => ({ events: s.events.map((e) => (e.id === sid ? { ...e, skipDates: [...new Set([...(e.skipDates ?? []), day])] } : e)) }));
     return base;
+  },
+  /** Public holidays where the family lives, this year and next; only on this phone, never synced (cal 'feiertage'). */
+  ensureHolidays() {
+    const y = Number(TODAY.slice(0, 4));
+    const land = state.land;
+    const days: CalEvent[] = [...feiertage(y, land), ...feiertage(y + 1, land)].map(([date, title]) => ({
+      id: `fei-${date}`, title, sub: tx('Feiertag', 'Public holiday'), icon: 'kalender', date, start: '00:00', allDay: true, who: null, cal: 'feiertage',
+    }));
+    // A synced holiday calendar already has them: no second copy.
+    const own = new Set(state.events.filter((e) => e.cal !== 'feiertage' && e.allDay).map((e) => `${e.date}|${e.title}`));
+    const mine = days.filter((d) => !own.has(`${d.date}|${d.title}`));
+    days.splice(0, days.length, ...mine);
+    const now = state.events.filter((e) => e.cal === 'feiertage');
+    if (now.length === days.length && days.every((d, i) => now[i]?.id === d.id && now[i].title === d.title)) return;
+    set((s) => ({ events: [...s.events.filter((e) => e.cal !== 'feiertage'), ...days] }));
   },
   removeEvent(id: string) { set((s) => ({ events: s.events.filter((e) => e.id !== id) })); },
   restoreEvent(e: CalEvent) { set((s) => ({ events: s.events.map((x) => (x.id === e.id ? e : x)) })); },

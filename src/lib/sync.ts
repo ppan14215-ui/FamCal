@@ -11,7 +11,7 @@ import type { CalEvent, Bring, Person } from '../state/types';
 import { watchComments, stopComments } from './comments';
 import type { ClayName } from './clayIcons';
 
-export type Family = { id: string; name: string; invite_code: string; partner_name?: string | null; ics_token?: string | null };
+export type Family = { id: string; name: string; invite_code: string; partner_name?: string | null; ics_token?: string | null; vacation?: Partial<Record<'J' | 'T', number>> | null; land?: string | null };
 type Row = {
   id: string; family_id: string; title: string; sub: string | null; icon: string; date: string; end_date: string | null;
   start_time: string; end_time: string | null; all_day: boolean; who: 'J' | 'T' | 'both' | null; place: string | null;
@@ -89,12 +89,19 @@ export async function startSync(name?: string): Promise<{ family?: Family; error
     else if (typed && !get().demo) { names[other] = typed; void setPartnerName(typed); }
   }
   actions.setNames(names);
+  // Urlaubstage and Bundesland are the family's: what this phone set before signing in goes up once.
+  const vac = { ...get().vacation, ...(family.vacation ?? {}) };
+  set(() => ({ vacation: vac }));
+  if (Object.keys(vac).length > Object.keys(family.vacation ?? {}).length) void saveVacation();
+  if (family.land) actions.setLand(family.land);
+  else if (get().land) void saveLand();
 
   const remote = (events.data as Row[]).map(fromRow);
   known = new Map(remote.map((e) => [e.id, key(e)]));
   // Anything entered before signing in on this phone goes up with the rest.
   const local = get().events.filter((e) => shared(e) && !known.has(e.id));
   set((s) => ({ demo: false, events: [...s.events.filter((e) => !shared(e)), ...remote, ...local] }));
+  actions.ensureHolidays();
   lastEvents = get().events;
   push();
 
@@ -214,6 +221,22 @@ export async function setPartnerName(name: string) {
   const { error } = await supabase.from('families').update({ partner_name: name.trim().slice(0, 40) || null }).eq('id', family.id);
   if (error) console.warn('[sync] partner name', error.message);
   else family = { ...family, partner_name: name.trim() || null };
+}
+
+export async function saveVacation() {
+  if (!supabase || !family) return;
+  const vacation = Object.fromEntries(Object.entries(get().vacation).filter(([, n]) => typeof n === 'number'));
+  const { error } = await supabase.from('families').update({ vacation }).eq('id', family.id);
+  if (error) console.warn('[sync] vacation', error.message);
+  else family = { ...family, vacation };
+}
+
+export async function saveLand() {
+  if (!supabase || !family) return;
+  const land = get().land.slice(0, 40) || null;
+  const { error } = await supabase.from('families').update({ land }).eq('id', family.id);
+  if (error) console.warn('[sync] land', error.message);
+  else family = { ...family, land };
 }
 
 /** Abo Link (Julian 28.10.): a new token makes the old link stop working. */

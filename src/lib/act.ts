@@ -17,6 +17,11 @@ import { whenLine, splitDue, parseWhen, When } from './when';
 import { long, hm, minutes, short } from './dates';
 import { newId, listFromTemplate, templates, parseItem } from '../data/sample';
 import { savedFor, type Recipe } from './rezepte';
+import { myRole } from './sync';
+import { isFeiertag } from './feiertage';
+import { isVacation, leftLine } from './urlaub';
+
+const ids = (list: CalEvent[]) => new Set(list.map((e) => e.id));
 
 export type Ctx =
   | { kind: 'kalender' }
@@ -35,6 +40,8 @@ export type Result =
   | { kind: 'unclear'; text: string }
   /** Claude wants a list the family does not have yet (Julian 29.10.): asked first, one tap to make it. */
   | { kind: 'newList'; name: string; said: ListSaid }
+  /** New work on days that already have work (Julian 29.10.): asked, never doubled silently. */
+  | { kind: 'workClash'; incoming: CalEvent[]; old: CalEvent[] }
   /** A dish: ingredients to tick off, or first which recipe. `added` is what the sentence itself put on the list. */
   | { kind: 'recipe'; dish: string; picks: string[]; variants?: string[]; question?: string; added?: string; undo?: () => void;
       /** Read from a link: kept for the family once something lands. */
@@ -125,11 +132,69 @@ export function replyPlan(reply: Reply): Plan {
   if (reply.kind !== 'added') {
     return { steps: [tx('Schaue in euren Kalender', 'Looking at your calendar')], run: () => ({ result: { kind: 'answer', reply } }) };
   }
+  // "Ich arbeite" names nobody: work is always the speaker's (the stripes need a person).
+  [reply.event, ...(reply.more ?? [])].forEach((e) => { if (e.work && !e.who) e.who = myRole(); });
+  // A work series skips public holidays ("Feiertage sind automatisch eingetragen", Julian 29.10.).
+  const all = [reply.event, ...(reply.more ?? [])];
+  const kept = all.length > 1 ? all.filter((e) => !(e.work && isFeiertag(e.date, get().land))) : all;
+  if (kept.length && kept.length < all.length) {
+    const off = all.length - kept.length;
+    reply.event = kept[0]; reply.more = kept.slice(1);
+    reply.steps = [...reply.steps, tx(off === 1 ? 'Ein Feiertag bleibt frei' : `${off} Feiertage bleiben frei`, off === 1 ? 'One public holiday stays free' : `${off} public holidays stay free`)];
+  }
+  const incoming = [reply.event, ...(reply.more ?? [])];
+  const old = workClashes(incoming);
+  if (old.length) {
+    return {
+      head: tx('Da ist schon Arbeit eingetragen', 'Work is already booked there'),
+      steps: [...reply.steps, clashLine(old)],
+      run: () => ({ land: old[0].id, result: { kind: 'workClash', incoming, old } }),
+    };
+  }
+  // Urlaub uses the person's budget (Julian 29.10.): the receipt says what is left.
+  const trip = incoming.find(isVacation);
+  if (trip) {
+    if (!trip.who) trip.who = myRole();
+    const year = Number(trip.date.slice(0, 4));
+    const { vacation, names, land, events } = get();
+    const after = [...events.filter((e) => !ids(incoming).has(e.id)), ...incoming];
+    const lines = (trip.who === 'both' ? (['J', 'T'] as const) : trip.who === 'J' || trip.who === 'T' ? [trip.who] : [])
+      .map((p) => leftLine(after, p, vacation[p], year, land, trip.who === 'both' ? names[p] : '')).filter(Boolean);
+    reply.steps = [...reply.steps, ...lines];
+  }
   if (reply.more?.length) return manyPlan(reply.event, reply.more, reply.steps);
   return {
     head: tx('Ich trage in den Kalender ein', 'Adding to the calendar'),
     steps: reply.steps,
     run: () => { actions.addEvent(reply.event); return { land: reply.event.id, result: { kind: 'event', event: reply.event, needsTime: reply.needsTime, suggest: reply.suggest, ask: reply.ask } }; },
+  };
+}
+
+/** Work already in the calendar on the same day for the same person. */
+function workClashes(incoming: CalEvent[]): CalEvent[] {
+  const ids = new Set(incoming.map((e) => e.id));
+  const days = new Set(incoming.filter((e) => e.work).map((e) => `${e.who}|${e.date}`));
+  return get().events.filter((e) => e.work && !ids.has(e.id) && days.has(`${e.who}|${e.date}`));
+}
+
+const span = (e: CalEvent) => (e.allDay || !e.end ? tx('ganztägig', 'all day') : tx(`${hm(e.start)} bis ${hm(e.end)}`, `${hm(e.start)} to ${hm(e.end)}`));
+
+export function clashLine(old: CalEvent[]) {
+  return old.length === 1
+    ? tx(`Am ${short(old[0].date)} steht schon Arbeit ${span(old[0])}.`, `${short(old[0].date)} already has work ${span(old[0])}.`)
+    : tx(`An ${old.length} Tagen steht schon Arbeit.`, `${old.length} days already have work.`);
+}
+
+/** Ersetzen: the old blocks go, the new ones come; Beide: both stay. One Rückgängig either way. */
+export function settleWork(incoming: CalEvent[], old: CalEvent[], replace: boolean): Extract<Result, { kind: 'done' }> & { lit: string[] } {
+  if (replace) old.forEach((e) => actions.removeEvent(e.id));
+  incoming.forEach((e) => actions.addEvent(e));
+  const text = replace
+    ? (incoming.length === 1 ? tx(`Arbeit am ${short(incoming[0].date)} ist jetzt ${span(incoming[0])}.`, `Work on ${short(incoming[0].date)} is now ${span(incoming[0])}.`) : tx(`${old.length} Arbeitstage ersetzt, ${incoming.length} eingetragen.`, `${old.length} work days replaced, ${incoming.length} added.`))
+    : tx(`${incoming.length} dazu eingetragen, die alten bleiben.`, `${incoming.length} added, the old ones stay.`);
+  return {
+    kind: 'done', text, sub: otherSees(), lit: incoming.map((e) => e.id), events: incoming.map((e) => e.id),
+    undo: () => { incoming.forEach((e) => actions.removeEvent(e.id)); if (replace) old.forEach((e) => actions.addEvent(e)); },
   };
 }
 

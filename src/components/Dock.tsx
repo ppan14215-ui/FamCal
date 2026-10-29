@@ -22,7 +22,7 @@ import TalkBar from './TalkBar';
 import { setVeil } from './Veil';
 import { tokens, persons, springs } from '../theme';
 import { useStore, actions, get } from '../state/store';
-import { plan, splitItems, claudeSays, replyPlan, listFromClaude, asksNewList, thinksOnline, revisePlan, reviseOffline, draftOf, cutOff, addPicks, dishy, linkPlan, Ctx, Plan, Result, Said, SPOKEN, PLACEHOLDER } from '../lib/act';
+import { plan, splitItems, claudeSays, replyPlan, listFromClaude, asksNewList, thinksOnline, revisePlan, reviseOffline, draftOf, cutOff, addPicks, settleWork, clashLine, dishy, linkPlan, Ctx, Plan, Result, Said, SPOKEN, PLACEHOLDER } from '../lib/act';
 import { canUnderstand, type Convo, type Glimpse } from '../lib/verstehen';
 import { linkIn, recipeFromLink, keepRecipe, loadRecipes, type Recipe } from '../lib/rezepte';
 import { onShared } from '../lib/shared';
@@ -59,10 +59,15 @@ const NO = /^\s*(nein|nee|ne|nö|woanders|no|nope|somewhere else)\b/i;
 /** Answers to "Wann?" to tap; speaking works just as well. */
 const DAYS = () => [tx('Heute', 'Today'), tx('Morgen', 'Tomorrow'), tx('Übermorgen', 'Day after tomorrow'), tx('Nächste Woche', 'Next week')];
 
+/** "Anders …" on every card (Julian 29.10.: when no choice fits there must be a way to say it). */
+const Other = React.createContext<() => void>(() => {});
+
 function Picks({ options }: { options: [string, () => void][] }) {
+  const other = React.useContext(Other);
   return (
     <View style={{ flexDirection: 'row', gap: 6, flexWrap: 'wrap', paddingLeft: 36 }}>
       {options.map(([label, f]) => <Chip key={label} height={36} onPress={f}>{label}</Chip>)}
+      <Chip height={36} bg="transparent" color={tokens.sub} onPress={other}>{tx('Anders …', 'Something else …')}</Chip>
     </View>
   );
 }
@@ -358,6 +363,8 @@ export default function Dock() {
   const scroller = useRef<ScrollView>(null);
   /** Bumped to open the mic again after the card asks something, only if the last sentence was spoken. */
   const [listenKey, setListenKey] = useState(0);
+  const [focusKey, setFocusKey] = useState(0);
+  const other = React.useCallback(() => { haptics.select(); setFocusKey((k) => k + 1); }, []);
   const spoke = useRef(false);
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
   /** Counts sentences, so a slow answer for an older one never lands. */
@@ -590,6 +597,15 @@ export default function Dock() {
     light(null);
   };
   const ok = () => { haptics.select(); setTurn(null); light(null); setTalkOpen(false); };
+  /** Doubled work (Julian 29.10.): Ersetzen swaps the old blocks, Beide keeps them. */
+  const settleClash = (replace: boolean) => {
+    if (turn?.result.kind !== 'workClash') return;
+    const { incoming, old } = turn.result;
+    const done = settleWork(incoming, old, replace);
+    if (where.chat) addMade(turn.said, done.lit, done.text, done.undo, done.events);
+    lightOneByOne(done.lit.slice(0, 12), (i) => (i === Math.min(12, done.lit.length) - 1 ? haptics.success() : haptics.select()));
+    setTurn(where.chat ? null : { id: Date.now(), said: turn.said, lines: [], result: done });
+  };
   /** Ja takes the earlier place, Nein just drops the question; either way the card stays for more. */
   const answerSuggest = (yes: boolean, said?: string) => {
     if (turn?.result.kind !== 'event' || !turn.result.suggest) return;
@@ -666,7 +682,7 @@ export default function Dock() {
   if (!shown && !mounted) return null;
   if (where.chat && !shown) return null;
   return (
-    <>
+    <Other.Provider value={other}>
     {/* A tap beside the field brings the tabs back, as long as no card waits for an answer. */}
     {where.tab && !turn ? <Pressable accessibilityLabel={tx('Schließen', 'Close')} onPress={() => setTalkOpen(false)} style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0 }} /> : null}
     {/* The screen fades out under the field, so prompts never sit on text. */}
@@ -690,6 +706,16 @@ export default function Dock() {
               <>
                 <Thread lines={turn.lines} cut />
                 <AppLine text={tx('Ich höre weiter zu.', "I'm still listening.")} sub={tx('Was du jetzt sagst, hänge ich an.', "What you say next, I'll add on.")} />
+                <Quiet label={tx('Abbrechen', 'Cancel')} onPress={ok} />
+              </>
+            ) : turn.result.kind === 'workClash' ? (
+              <>
+                <Thread lines={turn.lines} />
+                <AppLine text={clashLine(turn.result.old)} sub={tx('Was soll ich machen?', 'What should I do?')} />
+                <Picks options={[
+                  [tx('Ersetzen', 'Replace'), () => settleClash(true)],
+                  [tx('Beide behalten', 'Keep both'), () => settleClash(false)],
+                ]} />
                 <Quiet label={tx('Abbrechen', 'Cancel')} onPress={ok} />
               </>
             ) : turn.result.kind === 'newList' ? (
@@ -773,6 +799,7 @@ export default function Dock() {
         onPlus={() => router.push('/neu')}
         spoken={SPOKEN[kind]}
         listenKey={listenKey}
+        focusKey={focusKey}
         placeholder={where.chat && mode === 'msg' ? tx('Nachricht an die Familie …', 'Message to the family …') : turn?.result.kind === 'cut' ? tx('Sprich einfach weiter …', 'Just keep talking …') : where.chat ? tx('Sprich oder schreib einfach …', 'Just say or type it …') : turn && kind === 'kalender' ? tx('Antworten oder ergänzen …', 'Reply or add …') : PLACEHOLDER[kind]}
       />
       </Animated.View>
@@ -784,6 +811,6 @@ export default function Dock() {
       ) : null}
       </View>
     </View>
-    </>
+    </Other.Provider>
   );
 }

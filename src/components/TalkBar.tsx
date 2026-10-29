@@ -65,6 +65,8 @@ type Props = {
   placeholder?: string;
   /** A new value above 0 starts listening as if the mic was tapped, e.g. after the card asks a follow-up. */
   listenKey?: number;
+  /** Changing it puts the cursor in the field ("Anders …" on a card, Julian 29.10.). */
+  focusKey?: number;
   /** On the tabs (Julian 28.10.): a clear way back. The × sits on the left, the + moves next to the mic. */
   onClose?: () => void;
   /**
@@ -74,7 +76,7 @@ type Props = {
   split?: boolean;
 };
 
-export default function TalkBar({ onSend, onPlus, spoken, listenKey, onClose, split, placeholder = tx('Sag oder schreib, was ansteht …', 'Say or type what\'s coming up …') }: Props) {
+export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, onClose, split, placeholder = tx('Sag oder schreib, was ansteht …', 'Say or type what\'s coming up …') }: Props) {
   const [text, setText] = useState('');
   const [listening, setListening] = useState(false);
   /** How loud the voice is right now, 0 to 1; drives the bars in the mic. */
@@ -222,6 +224,7 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, onClose, sp
   }, [listening]);
 
   // Keep the conversation going: the card asked something, so listen again.
+  useEffect(() => { if (focusKey) field.current?.focus(); }, [focusKey]);
   useEffect(() => {
     if (!listenKey || listening || text.trim()) return;
     listen();
