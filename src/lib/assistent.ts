@@ -15,7 +15,7 @@ import { fetch as streamFetch } from 'expo/fetch';
 import { supabase } from './cloud';
 import { getAuth } from './auth';
 import { getPref, setPref } from './prefs';
-import { TODAY, NOW, addDays, WD_SHORT, weekday, long, hm } from './dates';
+import { TODAY, NOW, addDays, WD_SHORT, weekday, long, hm, short } from './dates';
 import { persons } from '../theme/tokens';
 import { LANG, tx } from '../i18n/lang';
 import { get, set, actions } from '../state/store';
@@ -54,9 +54,10 @@ function eventLine(e: CalEvent) {
   const tags = [
     whoTag(e.who),
     e.place ? `Ort ${clip(e.place, 40)}` : '',
-    e.repeat ? `${clip(e.repeat, 40)}${e.repeatUntil ? ` bis ${e.repeatUntil}` : ''}` : '',
+    // Work blocks are stored day by day; their repeat text is only a note, so it must not look like a series.
+    e.repeat && !e.work ? `${clip(e.repeat, 40)}${e.repeatUntil ? ` bis ${e.repeatUntil}` : ''}` : '',
     e.skipDates?.length ? `ohne ${e.skipDates.slice(-6).join(', ')}` : '',
-    e.work ? 'Arbeit' : '',
+    e.work ? 'Arbeitstag, einzelner Eintrag' : '',
     e.bring?.length ? `mit ${e.bring.map((b) => clip(b.t, 30)).join(', ')}` : '',
     e.cal === 'feiertage' ? 'Feiertag' : e.cal ? 'aus verbundenem Kalender, nur lesen' : '',
   ].filter(Boolean).join('; ');
@@ -172,6 +173,8 @@ const whoOf = (v: unknown): Who => (v === 'J' || v === 'T' || v === 'both' ? v :
 const q = (t: string) => tx(`„${t}“`, `“${t}”`);
 const listOf = (id: string) => get().lists.find((l) => l.id === id) ?? get().lists.find((l) => l.name.toLowerCase() === id.toLowerCase());
 const findItem = (l: List, id: string) => l.sections.flatMap((x) => x.items).find((i) => i.id === id || i.name.toLowerCase() === id.toLowerCase());
+/** The Termine an action names, by id or ids; read-only calendars are left out. */
+const eventsOf = (i: Record<string, any>) => [...new Set([s(i.id), ...arr(i.ids)].filter(Boolean).map((x) => x.split('~')[0]))].map((id) => get().events.find((e) => e.id === id)).filter((e): e is CalEvent => !!e && !e.cal).slice(0, 200);
 const whenOf = (e: CalEvent) => `${long(e.date)}${e.allDay ? '' : `, ${hm(e.start)}`}`;
 
 /** What Claude said as a Termin, read the way the old path reads it, so work days, series and icons stay the same. */
@@ -211,44 +214,64 @@ function opOf(a: Action, said: string): Op | null {
   const i = a.input ?? {};
   switch (a.tool) {
     case 'termin_aendern': {
-      const e = get().events.find((x) => x.id === s(i.id));
-      if (!e || e.cal) return null;
-      const patch: Partial<CalEvent> = {};
-      if (s(i.title)) patch.title = s(i.title);
-      if (typeof i.sub === 'string') patch.sub = s(i.sub) || undefined;
-      if (ISO.test(s(i.date))) patch.date = s(i.date);
-      if (typeof i.end_date === 'string') patch.endDate = ISO.test(s(i.end_date)) ? s(i.end_date) : undefined;
-      if (HHMM.test(s(i.start))) { patch.start = s(i.start); patch.allDay = false; }
-      if (HHMM.test(s(i.end))) patch.end = s(i.end);
-      if (i.all_day === true) { patch.allDay = true; patch.start = '00:00'; patch.end = undefined; }
-      if (i.who !== undefined) patch.who = whoOf(i.who);
-      if (typeof i.place === 'string') patch.place = s(i.place) || undefined;
-      if (typeof i.repeat === 'string') patch.repeat = s(i.repeat) || undefined;
-      if (s(i.icon) && (TERMIN_ICON_NAMES as string[]).includes(s(i.icon))) patch.icon = s(i.icon) as CalEvent['icon'];
-      if (typeof i.work === 'boolean') patch.work = i.work || undefined;
-      if (typeof i.reminder === 'string') patch.reminder = i.reminder || undefined;
-      // A new start without an end keeps the old length.
-      if (patch.start && !patch.end && e.end && !e.allDay) {
-        const len = (Number(e.end.slice(0, 2)) * 60 + Number(e.end.slice(3))) - (Number(e.start.slice(0, 2)) * 60 + Number(e.start.slice(3)));
-        const m = Math.min(1439, Number(patch.start.slice(0, 2)) * 60 + Number(patch.start.slice(3)) + Math.max(15, len));
-        patch.end = `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`;
-      }
+      // Several at once (Julian 30.10.: "Ändere jeden Mittwoch Arbeit auf Büro" changed only one day): ids holds them all.
+      const evs = eventsOf(i);
+      if (!evs.length) return null;
+      const patchOf = (e: CalEvent) => {
+        const patch: Partial<CalEvent> = {};
+        if (s(i.title)) patch.title = s(i.title);
+        if (typeof i.sub === 'string') patch.sub = s(i.sub) || undefined;
+        if (evs.length === 1 && ISO.test(s(i.date))) patch.date = s(i.date);
+        if (typeof i.end_date === 'string') patch.endDate = ISO.test(s(i.end_date)) ? s(i.end_date) : undefined;
+        if (HHMM.test(s(i.start))) { patch.start = s(i.start); patch.allDay = false; }
+        if (HHMM.test(s(i.end))) patch.end = s(i.end);
+        if (i.all_day === true) { patch.allDay = true; patch.start = '00:00'; patch.end = undefined; }
+        if (i.who !== undefined) patch.who = whoOf(i.who);
+        if (typeof i.place === 'string') patch.place = s(i.place) || undefined;
+        if (typeof i.repeat === 'string' && !e.work) patch.repeat = s(i.repeat) || undefined;
+        if (s(i.icon) && (TERMIN_ICON_NAMES as string[]).includes(s(i.icon))) patch.icon = s(i.icon) as CalEvent['icon'];
+        if (typeof i.work === 'boolean') patch.work = i.work || undefined;
+        if (typeof i.reminder === 'string') patch.reminder = i.reminder || undefined;
+        // A new start without an end keeps the old length.
+        if (patch.start && !patch.end && e.end && !e.allDay) {
+          const len = (Number(e.end.slice(0, 2)) * 60 + Number(e.end.slice(3))) - (Number(e.start.slice(0, 2)) * 60 + Number(e.start.slice(3)));
+          const m = Math.min(1439, Number(patch.start.slice(0, 2)) * 60 + Number(patch.start.slice(3)) + Math.max(15, len));
+          patch.end = `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`;
+        }
+        return patch;
+      };
       const bring = arr(i.add_bring);
-      if (!Object.keys(patch).length && !bring.length) return null;
-      const after = { ...e, ...patch };
+      const changes = evs.map((e) => ({ e, patch: patchOf(e) })).filter((c) => Object.keys(c.patch).length || bring.length);
+      if (!changes.length) return null;
+      const [first] = changes;
+      const after = { ...first.e, ...first.patch };
+      const many = changes.length > 1;
+      const days = changes.map((c) => short(c.e.date)).join(', ');
       return {
-        step: tx(`${q(e.title)} ändern: ${whenOf(after)}`, `Change ${q(e.title)}: ${whenOf(after)}`),
+        step: many ? tx(`${changes.length} Termine ändern: ${days}`, `Change ${changes.length} events: ${days}`) : tx(`${q(first.e.title)} ändern: ${whenOf(after)}`, `Change ${q(first.e.title)}: ${whenOf(after)}`),
         run: () => {
-          actions.updateEvent(e.id, patch);
-          bring.forEach((t) => actions.addBring(e.id, t));
-          return { lit: [e.id], events: [e.id], text: tx(`${q(after.title)} geändert, ${whenOf(after)}.`, `${q(after.title)} changed, ${whenOf(after)}.`), undo: () => actions.restoreEvent(e) };
+          changes.forEach(({ e, patch }) => { actions.updateEvent(e.id, patch); bring.forEach((t) => actions.addBring(e.id, t)); });
+          const ids = changes.map((c) => c.e.id);
+          return {
+            lit: ids, events: ids,
+            text: many ? tx(`${changes.length} Termine geändert: ${days}.`, `${changes.length} events changed: ${days}.`) : tx(`${q(after.title)} geändert, ${whenOf(after)}.`, `${q(after.title)} changed, ${whenOf(after)}.`),
+            undo: () => changes.forEach((c) => actions.restoreEvent(c.e)),
+          };
         },
       };
     }
     case 'termin_loeschen': {
-      const e = get().events.find((x) => x.id === s(i.id));
-      if (!e || e.cal) return null;
-      const one = e.repeat && ISO.test(s(i.date)) ? s(i.date) : '';
+      const evs = eventsOf(i);
+      if (!evs.length) return null;
+      if (evs.length > 1) {
+        const days = evs.map((e) => short(e.date)).join(', ');
+        return {
+          step: tx(`${evs.length} Termine löschen: ${days}`, `Delete ${evs.length} events: ${days}`),
+          run: () => { evs.forEach((e) => actions.removeEvent(e.id)); return { lit: [], text: tx(`${evs.length} Termine gelöscht: ${days}.`, `${evs.length} events deleted: ${days}.`), undo: () => evs.forEach((e) => actions.addEvent(e)) }; },
+        };
+      }
+      const e = evs[0];
+      const one = e.repeat && !e.work && ISO.test(s(i.date)) ? s(i.date) : '';
       return {
         step: one ? tx(`${q(e.title)} am ${long(one)} streichen`, `Drop ${q(e.title)} on ${long(one)}`) : tx(`${q(e.title)} löschen`, `Delete ${q(e.title)}`),
         run: () => {

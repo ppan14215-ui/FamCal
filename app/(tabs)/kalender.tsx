@@ -32,8 +32,8 @@ const VIEWS: { key: CalView; label: string }[] = [
   { key: 'monat', label: tx('Monat', 'Month') },
   { key: 'jahr', label: tx('Jahr', 'Year') },
 ];
-// Einfache Version (Julian 30.10.): three views; Heute lists the next days too, the year opens from the month's name.
-const VIEWS_SIMPLE = VIEWS.filter((v) => v.key === 'heute' || v.key === 'woche' || v.key === 'monat');
+// Einfache Version (Julian 30.10. evening: "keep the days and years tabs"): every view, always shown, no person filter.
+const VIEWS_SIMPLE = VIEWS;
 
 /**
  * Nur eine Person (Julian 30.10.): a tap on a name shows only their Termine,
@@ -99,7 +99,7 @@ function Title({ text, sub, open, onPress, right }: { text: string; sub?: string
 export default function Kalender() {
   const simple = useSimple();
   const picked = useStore((s) => s.calView);
-  const view: CalView = simple && picked === 'tag' ? 'heute' : picked;
+  const view: CalView = picked;
   const day = useStore((s) => s.calDay);
   const kid = useStore((s) => s.kid);
   // The view switch starts open and stays open after a pick (Julian 28.10.); the chevron folds it away.
@@ -115,7 +115,7 @@ export default function Kalender() {
   const choose = (v: CalView) => { actions.setCalView(v); if (v === 'heute') actions.setCalDay(TODAY); };
   const pair = <HeaderRight />;
   const seg = simple ? (
-    <Seg items={VIEWS_SIMPLE} value={view === 'jahr' ? 'monat' : view} onChange={choose} />
+    <Seg items={VIEWS_SIMPLE} value={view} onChange={choose} />
   ) : open ? (
     <Animated.View entering={FadeInDown.duration(200)} exiting={FadeOut.duration(120)} style={{ gap: 10 }}>
       <Seg items={VIEWS} value={view} onChange={choose} />

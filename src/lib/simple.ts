@@ -11,16 +11,17 @@ import { useSyncExternalStore } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getPref, setPref } from './prefs';
 
-const KEY = 'famcal.simple';
-let on = getPref('simple') === '1';
+// Julian 30.10. evening: the simple version is the default. A new key, so an old "Wie bisher" choice does not hold it back.
+const KEY = 'famcal.simple2';
+let on = getPref('simple2') !== '0';
 const subs = new Set<() => void>();
 const emit = () => subs.forEach((l) => l());
 
-AsyncStorage.getItem(KEY).then((v) => { if (v != null && (v === '1') !== on) { on = v === '1'; emit(); } }).catch(() => {});
+AsyncStorage.getItem(KEY).then((v) => { if (v != null && (v !== '0') !== on) { on = v !== '0'; emit(); } }).catch(() => {});
 
 export function setSimple(v: boolean) {
   on = v;
-  setPref('simple', v ? '1' : '0');
+  setPref('simple2', v ? '1' : '0');
   AsyncStorage.setItem(KEY, v ? '1' : '0').catch(() => {});
   emit();
 }

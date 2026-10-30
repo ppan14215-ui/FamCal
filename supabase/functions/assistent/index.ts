@@ -52,15 +52,17 @@ const TOOLS: Tool[] = [
     ask_time: str('Nur wenn die Uhrzeit fehlt und so etwas meist eine hat: eine kurze Rückfrage ("Um wie viel Uhr ist das Spiel? Oder ganztägig?"). Der Termin wird trotzdem ganztägig eingetragen.'),
     suggest_bring: strs('Höchstens drei Dinge, die man dazu üblicherweise braucht und die nicht genannt wurden (U3: U-Heft, Impfpass). Die App bietet sie nur an.'),
   }, ['title', 'date']) },
-  { name: 'termin_aendern', ...obj('Ändert einen bestehenden Termin. Nur die Felder angeben, die sich ändern.', {
+  { name: 'termin_aendern', ...obj('Ändert einen oder mehrere bestehende Termine auf dieselbe Weise. Nur die Felder angeben, die sich ändern.', {
     id: str('id des Termins aus dem Kalender.'),
+    ids: strs('Weitere ids, wenn dieselbe Änderung für mehrere Termine gilt ("jeden Mittwoch", "alle Arbeitstage im Dezember"). Immer ALLE passenden ids aus dem Stand.'),
     ...TERMIN,
     all_day: { type: 'boolean', description: 'true macht ihn ganztägig.' },
     add_bring: strs('Dinge, die zusätzlich mitgenommen werden sollen.'),
     reminder: { type: 'string', enum: ['', '0m', '10m', '30m', '1h', '1d', '1w', 'vorabend'], description: 'Erinnerung vorher, "" für keine.' },
   }, ['id']) },
-  { name: 'termin_loeschen', ...obj('Löscht einen Termin. Bei einer Serie mit date nur diesen einen Tag, ohne date die ganze Serie.', {
+  { name: 'termin_loeschen', ...obj('Löscht einen oder mehrere Termine. Bei einer Serie mit date nur diesen einen Tag, ohne date die ganze Serie.', {
     id: str('id des Termins.'),
+    ids: strs('Weitere ids, wenn mehrere Termine wegfallen. Immer ALLE passenden ids aus dem Stand.'),
     date: str('Nur bei Serien: der eine Tag, der wegfällt, YYYY-MM-DD.'),
   }, ['id']) },
   { name: 'liste_eintragen', ...obj('Setzt Einträge auf eine bestehende Liste (Einkauf oder eine eigene Liste der Familie).', {
@@ -132,9 +134,11 @@ Grundregel (Julian):
 Verstehen:
 - Sätze aus der Spracherkennung haben halbe Sätze und falsch erkannte Wörter. Lies sinngemäß ("Schatte Island" ist "Shutter Island"). Bekannte Namen schreibst du richtig.
 - Bezieht sich ein Satz auf etwas Bestehendes ("verschieb den Zahnarzt auf Freitag", "Milch ist gekauft", "lösch das Training am Montag"), finde es im Stand unten und nimm dessen id. Passen mehrere gleich gut, frag nach.
+- Meint ein Satz mehrere Termine ("jeden Mittwoch", "alle", "im Dezember", "die ganze Woche"), gehe den Stand Zeile für Zeile durch und nimm JEDEN passenden Termin: ein termin_aendern oder termin_loeschen mit id und allen übrigen in ids. Nie nur den ersten. Arbeitstage stehen als einzelne Einträge pro Tag im Stand ("Arbeitstag, einzelner Eintrag"), keine Serie. Ein Wochentag steht hinter jedem Datum (Mi = Mittwoch).
+- Sagt die Person, dass etwas nicht geklappt hat ("du hast nur einen geändert"), prüfe den Stand und hole genau das Fehlende nach.
 - Steht ein Verlauf dabei, gehört der neue Satz meist dazu: eine Antwort auf deine Rückfrage, eine Korrektur oder Ergänzung des zuletzt Eingetragenen ("nein, um 16 Uhr", "Tom kommt auch mit", "jeden Mittwoch davon im Büro"). Dann änderst du das zuletzt Eingetragene mit termin_aendern oder löschst und legst neu an, statt etwas doppelt einzutragen.
 
-Sprache, feste Regel: Titel, Einträge und Texte stehen immer in der Sprache, in der der Satz gesagt wurde, wörtlich und nie übersetzt ("Friseurtermin" bleibt "Friseur", "Dentist" bleibt "Dentist"). Fragen und Antworten auch. Bei gemischter Sprache die Sprache des größten Teils. Keine Gedankenstriche.
+Sprache, feste Regel: Titel, Einträge und Texte stehen immer in der Sprache, in der der neue Satz gesagt wurde, wörtlich und nie übersetzt ("Friseurtermin" bleibt "Friseur", "Dentist" bleibt "Dentist"). Deine Antworten und Fragen auch: Ein deutscher Satz bekommt eine deutsche Antwort, ein englischer eine englische, egal welche Sprache die App hat. Bei gemischter Sprache die Sprache des größten Teils. Keine Gedankenstriche.
 
 Termine:
 - Relative Angaben rechnest du vom heutigen Datum aus. "Nächsten Freitag" ist der kommende Freitag, außer heute ist Freitag, dann eine Woche später. "3pm" ist 15:00.
@@ -204,7 +208,7 @@ Deno.serve(async (req) => {
     output_config: { effort: 'low' },
     messages: [{
       role: 'user',
-      content: `Heute ist ${wd}, ${today}, ${input.now ?? ''} Uhr. Eltern: ${names}. Es spricht: ${me}. Sprache der App: ${input.lang === 'en' ? 'Englisch' : 'Deutsch'}.\n\nStand der Familie:\n${snapshot || '(leer)'}${screen ? `\n\nBildschirm: ${screen}` : ''}${history ? `\n\nVerlauf:\n${history}` : ''}\n\nNeuer Satz: ${text}`,
+      content: `Heute ist ${wd}, ${today}, ${input.now ?? ''} Uhr. Eltern: ${names}. Es spricht: ${me}. Sprache der App (nur für die Oberfläche, antworte in der Sprache des neuen Satzes): ${input.lang === 'en' ? 'Englisch' : 'Deutsch'}.\n\nStand der Familie:\n${snapshot || '(leer)'}${screen ? `\n\nBildschirm: ${screen}` : ''}${history ? `\n\nVerlauf:\n${history}` : ''}\n\nNeuer Satz: ${text}`,
     }],
   } satisfies Anthropic.Messages.MessageCreateParamsNonStreaming;
   const outcome = (res: Anthropic.Messages.Message, first?: number) => {
