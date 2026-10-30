@@ -87,6 +87,8 @@ function ClayTabs({ lists, active }: { lists: List[]; active: string }) {
               accessibilityRole="tab"
               accessibilityState={{ selected: on }}
               onPress={() => { if (!on) { haptics.select(); actions.setActiveList(t.id); } }}
+              // Hold a tab to rename the list or change its icon (Julian 30.10.).
+              onLongPress={t.id === 'aufgaben' ? undefined : () => { haptics.tap(); router.push({ pathname: '/liste-bearbeiten', params: { id: t.id } }); }}
               onLayout={(e) => { xs.current[t.id] = { x: e.nativeEvent.layout.x, w: e.nativeEvent.layout.width }; if (on) reveal(t.id); }}
               style={{ minWidth: 74, flexGrow: 1, flexShrink: 0, paddingHorizontal: 8, alignItems: 'center', gap: 2, paddingBottom: 10, borderBottomWidth: 2, borderBottomColor: on ? tokens.ink : 'transparent' }}
             >
@@ -252,14 +254,24 @@ function Packliste({ list }: { list: List }) {
       {isPoints(list) ? <Scoreboard list={list} /> : null}
       <Sections list={list} counts={!plain} />
       <AddInline placeholder={isPoints(list) ? tx('Spieler hinzufügen …', 'Add player …') : tx('Hinzufügen …', 'Add …')} onAdd={(t) => actions.addItem(list.id, t)} />
-      <PressScale
-        accessibilityLabel={tx(`Liste ${list.name} löschen`, `Delete list ${list.name}`)}
-        onPress={() => { haptics.tap(); actions.deleteList(list.id); }}
-        style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 14 }}
-      >
-        <LineIcon name="x" size={16} color={tokens.frist} />
-        <Txt size={15} weight={600} color={tokens.frist}>{tx('Liste löschen', 'Delete list')}</Txt>
-      </PressScale>
+      <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 28 }}>
+        <PressScale
+          accessibilityLabel={tx(`Liste ${list.name} bearbeiten`, `Edit list ${list.name}`)}
+          onPress={() => { haptics.select(); router.push({ pathname: '/liste-bearbeiten', params: { id: list.id } }); }}
+          style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 14 }}
+        >
+          <Txt size={15} weight={600} color={tokens.sub}>✎</Txt>
+          <Txt size={15} weight={600} color={tokens.sub}>{tx('Bearbeiten', 'Edit')}</Txt>
+        </PressScale>
+        <PressScale
+          accessibilityLabel={tx(`Liste ${list.name} löschen`, `Delete list ${list.name}`)}
+          onPress={() => { haptics.tap(); actions.deleteList(list.id); }}
+          style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 14 }}
+        >
+          <LineIcon name="x" size={16} color={tokens.frist} />
+          <Txt size={15} weight={600} color={tokens.frist}>{tx('Liste löschen', 'Delete list')}</Txt>
+        </PressScale>
+      </View>
     </>
   );
 }

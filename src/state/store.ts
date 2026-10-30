@@ -483,6 +483,10 @@ export const actions = {
     set((s) => ({ lists: [...s.lists, made], activeList: list.id }));
     if (ask) blueprintOnline(list.name).then((b) => { if (b) actions.setBlueprint(list.id, b); }).catch(() => {});
   },
+  /** Name and icon of a list (Julian 30.10.: "Listen und Icons können nicht bearbeitet werden?"). */
+  updateList(id: string, patch: Partial<Pick<List, 'name' | 'icon'>>) {
+    set((s) => ({ lists: mapList(s.lists, id, (l) => ({ ...l, ...patch })) }));
+  },
   /** Removes a whole list; the toast brings it back at the same place. */
   deleteList(id: string) {
     const i = state.lists.findIndex((l) => l.id === id);
