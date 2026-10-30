@@ -14,7 +14,7 @@ import { understand, findWhen, whoOf, clean, Reply, fromModel, type Suggest } fr
 import { canUnderstand, understandOnline, understandLive, type Convo, type Glimpse } from './verstehen';
 import { tx, EN } from '../i18n/lang';
 import { whenLine, splitDue, parseWhen, When } from './when';
-import { long, hm, minutes, short } from './dates';
+import { long, hm, minutes, short, WD_SHORT, weekday, dmShort } from './dates';
 import { newId, listFromTemplate, templates, parseItem } from '../data/sample';
 import { savedFor, type Recipe } from './rezepte';
 import { myRole } from './sync';
@@ -161,6 +161,12 @@ export function replyPlan(reply: Reply): Plan {
     reply.steps = [...reply.steps, tx(off === 1 ? 'Ein Feiertag bleibt frei' : `${off} Feiertage bleiben frei`, off === 1 ? 'One public holiday stays free' : `${off} public holidays stay free`)];
   }
   const incoming = [reply.event, ...(reply.more ?? [])];
+  // The receipt counts what happened (Julian 30.10.: "keine Zweifel, was die Maschine gemacht hat").
+  const shifts = incoming.filter((e) => e.work);
+  if (shifts.length > 2) {
+    const last = shifts.reduce((a, b) => (b.date > a.date ? b : a));
+    reply.steps = [...reply.steps, tx(`${shifts.length} Arbeitstage eingetragen, der letzte am ${WD_SHORT[weekday(last.date)]} ${dmShort(last.date)}`, `${shifts.length} workdays added, the last on ${WD_SHORT[weekday(last.date)]} ${dmShort(last.date)}`)];
+  }
   const old = workClashes(incoming);
   if (old.length) {
     return {
