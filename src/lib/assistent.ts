@@ -119,12 +119,17 @@ export function screenOf(ctx: { kind: string; id?: string }): string {
   return '';
 }
 
+/** What the app sends for one sentence; the test list (scripts/eval-assistent) sends exactly this too. */
+export function agentBody(said: string, history: { said: string; app?: string }[], screen = '') {
+  return { text: said, today: TODAY, now: NOW, names: { J: persons.J.name, T: persons.T.name }, me: myRole(), lang: LANG, icons: TERMIN_ICON_NAMES, snapshot: snapshot(), history, screen };
+}
+
 export async function askAgent(said: string, lines: { said: string; app?: string }[], screen = '', onSay?: (say: string) => void): Promise<AgentAnswer | null> {
   const session = getAuth().session;
   const url = process.env.EXPO_PUBLIC_SUPABASE_URL;
   if (!supabase || !session || !url) return null;
   const history = [...chatHistory(), ...lines.slice(0, -1)].slice(-6);
-  const body = { text: said, today: TODAY, now: NOW, names: { J: persons.J.name, T: persons.T.name }, me: myRole(), lang: LANG, icons: TERMIN_ICON_NAMES, snapshot: snapshot(), history, screen, stream: true };
+  const body = { ...agentBody(said, history, screen), stream: true };
   const ctrl = new AbortController();
   const late = setTimeout(() => ctrl.abort(), WAIT_MS);
   try {
