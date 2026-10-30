@@ -2,7 +2,8 @@
  * Kalender · Woche: hour grid 8 to 19, work as stripes, events as tinted blocks.
  * Swipe sideways for the week before or after; pinch, or plus and minus, to
  * zoom the hours (Julian 27.10.). Zoomed in, blocks show their time; all the
- * way in, three days fill the width with whole titles.
+ * way in, three days fill the width with whole titles. Hold a Termin and drag
+ * it to another time or day, like in the Apple calendar (Julian 30.10.).
  */
 import React, { useMemo, useState, useRef } from 'react';
 import { View, LayoutChangeEvent } from 'react-native';
@@ -17,8 +18,10 @@ import { router } from 'expo-router';
 import Txt from '../../components/ui/Txt';
 import Stripes from '../../components/Stripes';
 import { tokens, tint, PersonId, persons } from '../../theme';
-import { useStore, actions } from '../../state/store';
-import { addDays, monday, dayNum, WD_SHORT, weekday, minutes, TODAY, NOW, MONTHS_SHORT, monthIdx, hm, dmShort } from '../../lib/dates';
+import { useStore, actions, toast } from '../../state/store';
+import { keepPhoneEdit } from '../../lib/phoneSync';
+import type { CalEvent } from '../../state/types';
+import { addDays, monday, dayNum, WD_SHORT, weekday, minutes, TODAY, NOW, MONTHS_SHORT, monthIdx, hm, dmShort, short } from '../../lib/dates';
 import PressScale from '../../components/ui/PressScale';
 import { tx } from '../../i18n/lang';
 import { useCalEvents } from '../../lib/useEvents';
@@ -58,6 +61,11 @@ export default function WeekView() {
   const w = useSharedValue(360);
   const x = useSharedValue(0);
   const op = useSharedValue(1);
+  // While a Termin is being dragged the week stays where it is.
+  const dragging = useSharedValue(0);
+  const [colsW, setColsW] = useState(300);
+  // The column of a lifted Termin sits above its neighbours, so it stays visible over them.
+  const [liftCol, setLiftCol] = useState(-1);
   const go = (dir: number) => {
     haptics.select();
     actions.setCalDay(addDays(day, dir * n));
@@ -78,8 +86,9 @@ export default function WeekView() {
     .maxPointers(1)
     .activeOffsetX([-14, 14])
     .failOffsetY([-12, 12])
-    .onUpdate((e) => { x.value = e.translationX; op.value = 1 - Math.min(0.5, Math.abs(e.translationX) / w.value); })
+    .onUpdate((e) => { if (dragging.value) return; x.value = e.translationX; op.value = 1 - Math.min(0.5, Math.abs(e.translationX) / w.value); })
     .onEnd((e) => {
+      if (dragging.value) { x.value = 0; op.value = 1; return; }
       const far = Math.abs(e.translationX) > w.value * 0.22 || Math.abs(e.velocityX) > 700;
       if (far) {
         slideTo(e.translationX < 0 ? 1 : -1, 140);
@@ -170,11 +179,11 @@ export default function WeekView() {
               <Txt size={10.5} line={14} color={tokens.mute} style={{ position: 'absolute', left: 0, top: -7 }}>{String(h)}</Txt>
             </View>
           ))}
-          <View style={{ flex: 1, flexDirection: 'row', gap: 3 }}>
+          <View onLayout={(e: LayoutChangeEvent) => setColsW(e.nativeEvent.layout.width)} style={{ flex: 1, flexDirection: 'row', gap: 3 }}>
             {days.map((d) => {
               const list = events.filter((e) => e.date === d && !isSpan(e));
               return (
-                <View key={d} style={{ flex: 1, position: 'relative' }}>
+                <View key={d} style={{ flex: 1, position: 'relative', zIndex: liftCol === days.indexOf(d) ? 5 : 0 }}>
                   {list.filter((e) => e.work).map((e) => (
                     // Work blocks open like any Termin (Julian 29.10.: they could not be seen or deleted).
                     <PressScale key={e.id} scale={0.98} onPress={() => router.push(`/termin/${e.id}`)} accessibilityLabel={tx('Arbeit ansehen', 'View work')} style={{ position: 'absolute', left: 1, right: 1, top: top(e.start), height: top(e.end ?? e.start) - top(e.start) }}>
@@ -184,15 +193,11 @@ export default function WeekView() {
                   {list.filter((e) => !e.work).map((e) => {
                     const h = Math.max(28, (e.end && top(e.end) > top(e.start) ? top(e.end) - top(e.start) : HP * 0.8) - 4);
                     return (
-                      <PressScale
-                        key={e.id}
-                        onPress={() => router.push(`/termin/${e.id}`)}
-                        style={{ position: 'absolute', left: 3, right: 3, top: top(e.start) + 2, height: h, borderRadius: 8, backgroundColor: evTint(e), borderWidth: 1.5, borderColor: tokens.onInk, paddingVertical: 3, paddingHorizontal: 4, overflow: 'hidden' }}
-                      >
+                      <Drag key={e.id} e={e} days={days} col={days.indexOf(d)} step={(colsW + 3) / n} HP={HP} dragging={dragging} onLift={setLiftCol} style={{ top: top(e.start) + 2, height: h, backgroundColor: evTint(e) }}>
                         {/* Narrow columns clip one line like Apple and Google; a word is never broken into single letters (Julian 30.10.). */}
                         <Txt size={wide ? 12.5 : 10.5} line={wide ? 16 : 13} weight={700} numberOfLines={wide ? Math.max(1, Math.floor(h / 17) - 1) : 1} ellipsizeMode="clip" textBreakStrategy="simple" android_hyphenationFrequency="none">{wide ? e.title : SHORT[e.title] ?? e.title.split(' ')[0]}</Txt>
                         {big && h >= 44 && !e.allDay ? <Txt size={wide ? 12 : 10} line={wide ? 15 : 12} color={tokens.sub} numberOfLines={1}>{wide && e.end ? `${hm(e.start)} ${tx('bis', 'to')} ${hm(e.end)}` : hm(e.start)}</Txt> : null}
-                      </PressScale>
+                      </Drag>
                     );
                   })}
                   {d === TODAY ? <View style={{ position: 'absolute', left: -2, right: -2, top: top(NOW), height: 2, backgroundColor: tokens.done }} /> : null}
@@ -220,5 +225,93 @@ export default function WeekView() {
         </PressScale>
       </View>
     </>
+  );
+}
+
+const pad = (n: number) => String(n).padStart(2, '0');
+const hhmm = (m: number) => `${pad(Math.floor(m / 60))}:${pad(m % 60)}`;
+
+/**
+ * A Termin you can hold and drag (Julian 30.10.: "wie Apple"). Hold for a
+ * moment, it lifts with a tick; up and down moves it in quarter hours, sideways
+ * to another day, a small label shows the new time. Letting go saves it with
+ * Rückgängig. A tap still opens it. Days of a series open instead, so a drag
+ * never moves the whole series by accident.
+ */
+function Drag({ e, days, col, step, HP, dragging, onLift, style, children }: {
+  e: CalEvent; days: string[]; col: number; step: number; HP: number;
+  dragging: { value: number }; onLift: (col: number) => void; style: { top: number; height: number; backgroundColor: string }; children: React.ReactNode;
+}) {
+  const dx = useSharedValue(0);
+  const dy = useSharedValue(0);
+  const lift = useSharedValue(0);
+  const [label, setLabel] = useState<string | null>(null);
+  const series = e.id.includes('~') || !!e.repeat;
+  const startM = minutes(e.start);
+  const len = e.end ? Math.max(15, minutes(e.end) - startM) : 60;
+  const where = (tx_: number, ty: number) => {
+    const c = Math.max(0, Math.min(days.length - 1, col + Math.round(tx_ / step)));
+    const m = Math.max(0, Math.min(24 * 60 - len, startM + Math.round((ty / HP) * 4) * 15));
+    return { c, m };
+  };
+  const show = (tx_: number, ty: number) => {
+    const { c, m } = where(tx_, ty);
+    const next = `${c !== col ? `${WD_SHORT[weekday(days[c])]} ` : ''}${hhmm(m)}`;
+    setLabel((l) => { if (l !== null && l !== next) haptics.select(); return next; });
+  };
+  const drop = (tx_: number, ty: number) => {
+    setLabel(null);
+    const { c, m } = where(tx_, ty);
+    const date = days[c];
+    if (date === e.date && m === startM) return;
+    const shift = date === e.date ? 0 : Math.round((Date.parse(date) - Date.parse(e.date)) / 864e5);
+    const b = actions.moveEvent(e.id, { date, start: hhmm(m), end: e.end ? hhmm(m + len) : undefined, endDate: e.endDate ? addDays(e.endDate, shift) : undefined });
+    void keepPhoneEdit(e.id);
+    haptics.commit();
+    if (b) toast(`${e.title}: ${date === e.date ? '' : `${short(date)} `}${hm(hhmm(m))}`, () => actions.restoreEvent(b), { kind: 'done' });
+  };
+  const open = () => router.push(`/termin/${e.id}`);
+  const start = () => { haptics.tap(); onLift(col); };
+  const settle = () => onLift(-1);
+  const pan = Gesture.Pan()
+    .enabled(!series)
+    .activateAfterLongPress(280)
+    .onStart(() => { dragging.value = 1; lift.value = withSpring(1, springs.snapBack); scheduleOnRN(start); })
+    .onUpdate((ev) => {
+      dx.value = Math.round(ev.translationX / step) * step;
+      dy.value = (Math.round((ev.translationY / HP) * 4) * HP) / 4;
+      scheduleOnRN(show, ev.translationX, ev.translationY);
+    })
+    .onEnd((ev) => { scheduleOnRN(drop, ev.translationX, ev.translationY); })
+    .onFinalize(() => {
+      if (dragging.value) scheduleOnRN(settle);
+      dragging.value = 0;
+      lift.value = withSpring(0, springs.snapBack);
+      dx.value = 0;
+      dy.value = 0;
+    });
+  const tap = Gesture.Tap().maxDuration(260).onEnd((_ev, ok) => { if (ok) scheduleOnRN(open); });
+  const anim = useAnimatedStyle(() => ({
+    zIndex: lift.value > 0.01 ? 10 : 1,
+    shadowOpacity: lift.value * 0.18,
+    elevation: lift.value * 8,
+    transform: [{ translateX: dx.value }, { translateY: dy.value }, { scale: 1 + lift.value * 0.04 }] as const,
+  }));
+  return (
+    <GestureDetector gesture={Gesture.Exclusive(pan, tap)}>
+      <Animated.View
+        accessibilityRole="button"
+        accessibilityLabel={`${e.title}, ${hm(e.start)}`}
+        accessibilityHint={series ? undefined : tx('Halten und ziehen zum Verschieben', 'Hold and drag to move')}
+        style={[{ position: 'absolute', left: 3, right: 3, borderRadius: 8, borderWidth: 1.5, borderColor: tokens.onInk, paddingVertical: 3, paddingHorizontal: 4, overflow: 'visible', shadowColor: '#000', shadowRadius: 10, shadowOffset: { width: 0, height: 4 } }, style, anim]}
+      >
+        <View style={{ flex: 1, overflow: 'hidden' }}>{children}</View>
+        {label ? (
+          <View style={{ position: 'absolute', top: -22, left: -4, paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6, backgroundColor: tokens.ink }}>
+            <Txt size={11} line={14} weight={700} color={tokens.onInk} numberOfLines={1}>{label}</Txt>
+          </View>
+        ) : null}
+      </Animated.View>
+    </GestureDetector>
   );
 }
