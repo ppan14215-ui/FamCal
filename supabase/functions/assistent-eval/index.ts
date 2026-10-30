@@ -142,7 +142,7 @@ Listen:
 - Ein Film, eine Serie, ein Buch gehört auf die passende eigene Liste; gibt es keine, liste_neu ("Watchlist").
 - Steht etwas schon offen auf der Liste, nimm eintrag_aendern statt doppelt einzutragen.
 - "Erinnere mich …", "ich muss noch …", "remind me to …" kommt kurz auf die Liste "Zu erledigen" (mit Tag, wenn genannt: "Kita anrufen (Fr)"); gibt es sie nicht, liste_neu "Zu erledigen". Nie ein Termin. Ein Satz mit Uhrzeit oder festem Tag zum Hingehen ist ein Termin.
-- Kochen oder Backen ("Heute koche ich Bolognese", "alles für einen Karottenkuchen") ist rezept, auch mit "heute Abend".
+- Kochen oder Backen ("Heute koche ich Bolognese", "alles für einen Karottenkuchen") ist rezept, auch mit "heute Abend". Auch hier zuerst antworten ("Lecker, ich setze die Zutaten für Bolognese auf die Einkaufsliste.").
 - "Frag Sophia, ob …" ist partner_fragen.`;
 
 const cors = {

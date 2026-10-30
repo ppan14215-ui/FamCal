@@ -193,7 +193,7 @@ export const FAELLE: Fall[] = [
       return [...(z?.date === '2026-10-30' && z.start === '10:00' ? [] : [`Zahnarzt: ${z ? `${z.date} ${z.start}` : 'fehlt'}`]), ...(m ? [] : ['Milch fehlt']), ...deutsch(e)];
     } },
   { id: 'rezept', saetze: ['Heute Abend koche ich Bolognese'],
-    pruefe: (e) => [...(e.tools.includes('rezept') ? [] : [`kein Rezept, sondern ${e.tools.join(', ')}`]), ...keineNeuen(e)] },
+    pruefe: (e) => [...(e.tools.includes('rezept') ? [] : [`kein Rezept, sondern ${e.tools.join(', ')}`]), ...keineNeuen(e), ...deutsch(e)] },
   { id: 'englisch-bleibt-englisch', saetze: ['I have a dentist appointment next Tuesday at 3pm'],
     pruefe: (e) => {
       const d = neu(e).find((x) => x.date === '2026-11-03');
