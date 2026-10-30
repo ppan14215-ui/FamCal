@@ -1,200 +1,185 @@
 /**
- * Jahr: the child's first year as a ring (Canvas v36, row 6).
- * 1 Halten: the ring thickens (10 → 14, 160 ms), a handle appears on today,
- *   haptic tick. No new screen.
- * 2 Ziehen: the week number rolls along, every milestone gives a tick; the
- *   milestone under the thumb lifts as its clay object above the finger and is
- *   highlighted in the list.
- * 3 Loslassen: on a milestone it grows into a card (sheet). Anywhere else the
- *   handle springs back to today.
+ * Jahr: the whole year at a glance (Julian 30.10.: the ring of the baby's first
+ * year no longer fits the family calendar). Twelve small months like in the
+ * Apple calendar, marked with what matters for a family: today, Feiertage,
+ * Urlaub in the person's colour and a dot for every day with a Termin. A tap
+ * on a month opens it, a swipe moves the year. Under the grid the year's
+ * highlights that are still ahead: Urlaube, Feiertage and long Termine.
  */
-import React, { useMemo, useState, useCallback } from 'react';
-import { View, Text } from 'react-native';
+import React, { useMemo } from 'react';
+import { View } from 'react-native';
 import { router } from 'expo-router';
-import Svg, { Circle, Path } from 'react-native-svg';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
-import Animated, { useAnimatedStyle, useSharedValue, withTiming, withSpring, FadeIn, FadeOut } from 'react-native-reanimated';
+import Animated, { useAnimatedStyle, useSharedValue, withSpring, withTiming } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
-import { H2, Meta } from '../../components/ui/kit';
+import { H2, Group, Row, RoundButton } from '../../components/ui/kit';
 import Txt from '../../components/ui/Txt';
-import { Tile } from '../../components/ui/Clay';
-import Timeline from '../../components/Timeline';
-import { tokens, springs } from '../../theme';
+import PressScale from '../../components/ui/PressScale';
+import { tokens, persons, springs } from '../../theme';
 import { useStore, actions } from '../../state/store';
 import { haptics } from '../../lib/haptics';
-import { BEN_BORN, TODAY, daysBetween, addDays, dayNum, monthIdx, MONTHS, MONTHS_SHORT, dmShort } from '../../lib/dates';
-import type { Milestone } from '../../state/types';
+import { addDays, monday, monthIdx, dayNum, iso, MONTHS, TODAY, dmShort, daysBetween } from '../../lib/dates';
+import { isVacation } from '../../lib/urlaub';
+import { useCalEvents } from '../../lib/useEvents';
 import { tx } from '../../i18n/lang';
+import type { CalEvent } from '../../state/types';
 
-const SIZE = 250;
-const C = SIZE / 2;
-const R = SIZE / 2 - 22;
-const YEAR = 365;
-const SNAP = 0.022;
+type Mark = { ev?: boolean; hol?: boolean; vac?: string };
 
-// The ring starts at the birth (or due) date of the child from onboarding.
-let BORN = BEN_BORN;
-const fracOf = (date: string) => Math.max(0, Math.min(1, daysBetween(BORN, date) / YEAR));
-const pt = (f: number) => {
-  const a = -Math.PI / 2 + 2 * Math.PI * f;
-  return { x: C + R * Math.cos(a), y: C + R * Math.sin(a) };
-};
-const arc = (from: number, to: number) => {
-  if (to <= from) return '';
-  const a = pt(from);
-  const b = pt(Math.min(to, 0.9999));
-  const large = to - from > 0.5 ? 1 : 0;
-  return `M ${a.x} ${a.y} A ${R} ${R} 0 ${large} 1 ${b.x} ${b.y}`;
-};
+const yearOf = (d: string) => Number(d.slice(0, 4));
 
-function weekLabel(w: number) {
-  const d = addDays(BORN, w * 7);
-  const n = dayNum(d);
-  const part = n <= 10 ? tx('Anfang', 'early') : n <= 20 ? tx('Mitte', 'mid') : tx('Ende', 'late');
-  return tx(`Woche · ${part} ${MONTHS[monthIdx(d)]}`, `Week · ${part} ${MONTHS[monthIdx(d)]}`);
+export function shiftYear(day: string, n: number): string {
+  const y = yearOf(day) + n;
+  // Back in the current year, land on today; elsewhere on New Year.
+  return y === yearOf(TODAY) ? TODAY : `${y}-01-01`;
+}
+
+export function YearArrows() {
+  const day = useStore((s) => s.calDay);
+  return (
+    <View style={{ flexDirection: 'row', gap: 6 }}>
+      <RoundButton icon="back" label={tx('Voriges Jahr', 'Previous year')} size={34} onPress={() => actions.setCalDay(shiftYear(day, -1))} />
+      <View style={{ transform: [{ scaleX: -1 }] }}>
+        <RoundButton icon="back" label={tx('Nächstes Jahr', 'Next year')} size={34} onPress={() => actions.setCalDay(shiftYear(day, 1))} />
+      </View>
+    </View>
+  );
+}
+
+/** Every day of the year with what happens on it; multi-day Termine mark each day they cover. */
+function marksFor(events: CalEvent[], y: number): Map<string, Mark> {
+  const out = new Map<string, Mark>();
+  const put = (d: string, m: Mark) => out.set(d, { ...out.get(d), ...m });
+  const from = `${y}-01-01`;
+  const to = `${y}-12-31`;
+  for (const e of events) {
+    if (e.work) continue;
+    const end = e.endDate ?? e.date;
+    if (end < from || e.date > to) continue;
+    const hol = e.cal === 'feiertage';
+    const vac = isVacation(e) ? (e.who === 'J' || e.who === 'T' ? persons[e.who].tint : tokens.doneSoft) : undefined;
+    for (let d = e.date < from ? from : e.date, i = 0; d <= end && d <= to && i < 370; d = addDays(d, 1), i++) {
+      if (e.skipDates?.includes(d)) continue;
+      put(d, hol ? { hol: true } : vac ? { vac, ev: true } : { ev: true });
+    }
+  }
+  return out;
+}
+
+function Mini({ y, m, marks, onPress }: { y: number; m: number; marks: Map<string, Mark>; onPress: () => void }) {
+  const first = iso(new Date(Date.UTC(y, m, 1)));
+  const cells: (string | null)[] = [];
+  for (let d = monday(first); cells.length < 42; d = addDays(d, 1)) cells.push(monthIdx(d) === m ? d : null);
+  while (cells.length > 35 && cells.slice(-7).every((c) => !c)) cells.splice(-7, 7);
+  const now = yearOf(TODAY) === y && monthIdx(TODAY) === m;
+  return (
+    <PressScale scale={0.96} onPress={onPress} accessibilityLabel={`${MONTHS[m]} ${y}`} style={{ width: '33.333%', paddingHorizontal: 4, paddingVertical: 6 }}>
+      <Txt size={14} line={18} weight={700} color={now ? tokens.done : tokens.ink} style={{ paddingLeft: 2, paddingBottom: 3 }}>{MONTHS[m]}</Txt>
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
+        {cells.map((d, i) => {
+          if (!d) return <View key={i} style={{ width: `${100 / 7}%`, height: 17 }} />;
+          const k = marks.get(d);
+          const today = d === TODAY;
+          const weekend = i % 7 >= 5;
+          // Days gone by fade, so the eye lands on what is still ahead.
+          const past = d < TODAY;
+          return (
+            <View key={d} style={{ width: `${100 / 7}%`, height: 17, alignItems: 'center', justifyContent: 'center', backgroundColor: !today && k?.vac ? k.vac : 'transparent', opacity: past ? 0.4 : 1 }}>
+              <View style={{ width: 15, height: 15, borderRadius: 8, alignItems: 'center', justifyContent: 'center', backgroundColor: today ? tokens.ink : 'transparent' }}>
+                <Txt size={8.5} line={10} weight={today || k?.ev || k?.hol ? 700 : 500} color={today ? tokens.onInk : k?.hol ? tokens.frist : weekend ? tokens.mute : tokens.ink}>{String(dayNum(d))}</Txt>
+              </View>
+              {k?.ev && !today && !k.vac ? <View style={{ position: 'absolute', bottom: 0, width: 3, height: 3, borderRadius: 2, backgroundColor: tokens.done }} /> : null}
+            </View>
+          );
+        })}
+      </View>
+    </PressScale>
+  );
 }
 
 export default function YearView() {
-  const kid = useStore((s) => s.kid);
-  BORN = kid?.born ?? kid?.due ?? BEN_BORN;
-  const TODAY_F = fracOf(TODAY);
-  const milestones = useStore((s) => s.milestones);
-  const sorted = useMemo(() => [...milestones].sort((a, b) => a.date.localeCompare(b.date)), [milestones]);
-  const marks = useMemo(() => sorted.map((m) => ({ id: m.id, f: fracOf(m.date) })), [sorted]);
-  const upcoming = sorted.filter((m) => !m.done);
+  const day = useStore((s) => s.calDay);
+  const events = useCalEvents();
+  const y = yearOf(day);
+  const marks = useMemo(() => marksFor(events, y), [events, y]);
 
-  const [active, setActive] = useState(false);
-  const [week, setWeek] = useState<number | null>(null);
-  const [near, setNear] = useState<string | null>(null);
-  const [dragF, setDragF] = useState(TODAY_F);
+  // What the year still brings: Urlaube, Feiertage and Termine of more than one day.
+  const ahead = useMemo(() => {
+    const start = y === yearOf(TODAY) ? TODAY : `${y}-01-01`;
+    const seen = new Set<string>();
+    return events
+      .filter((e) => !e.work && (e.endDate ?? e.date) >= start && e.date <= `${y}-12-31`)
+      .filter((e) => e.cal === 'feiertage' || isVacation(e) || (!!e.endDate && e.endDate > e.date))
+      .filter((e) => { const k = `${e.title}|${e.date}`; if (seen.has(k)) return false; seen.add(k); return true; })
+      .sort((a, b) => a.date.localeCompare(b.date))
+      .slice(0, 6);
+  }, [events, y]);
 
-  const thick = useSharedValue(10);
-  const knobF = useSharedValue(TODAY_F);
-  const knobOn = useSharedValue(0);
-  const lastWeek = useSharedValue(-1);
-  const lastNear = useSharedValue('');
-
-  const onHold = useCallback(() => { haptics.select(); setActive(true); }, []);
-  const onMove = useCallback((f: number, w: number, nid: string) => {
-    setDragF(f);
-    setWeek(w);
-    setNear(nid || null);
-    if (nid) haptics.select();
-  }, []);
-  const onWeek = useCallback((f: number, w: number) => { setDragF(f); setWeek(w); }, []);
-  const onRelease = useCallback((nid: string) => {
-    setActive(false);
-    setWeek(null);
-    setNear(null);
-    setDragF(TODAY_F);
-    if (nid) {
-      haptics.commit();
-      router.push(`/meilenstein/${nid}`);
-    }
-  }, []);
-
+  const W = useSharedValue(360);
+  const x = useSharedValue(0);
+  const go = (dir: number) => { haptics.select(); actions.setCalDay(shiftYear(day, dir)); };
   const pan = Gesture.Pan()
-    .activateAfterLongPress(220)
-    .onStart(() => {
-      thick.value = withTiming(14, { duration: 160 });
-      knobOn.value = withTiming(1, { duration: 160 });
-      knobF.value = TODAY_F;
-      lastWeek.value = -1;
-      lastNear.value = '';
-      scheduleOnRN(onHold);
-    })
-    .onUpdate((e) => {
-      const a = Math.atan2(e.y - C, e.x - C);
-      let f = (a + Math.PI / 2) / (2 * Math.PI);
-      if (f < 0) f += 1;
-      // Keep the handle from jumping across 12 o'clock.
-      if (knobF.value > 0.8 && f < 0.2) f = 0.999;
-      if (knobF.value < 0.2 && f > 0.8) f = 0;
-      let nid = '';
-      let snapF = f;
-      // Snap to the nearest milestone, not the first one in range.
-      let best = SNAP;
-      for (let i = 0; i < marks.length; i++) {
-        const d = Math.abs(marks[i].f - f);
-        if (d < best) { best = d; nid = marks[i].id; snapF = marks[i].f; }
+    .maxPointers(1)
+    .activeOffsetX([-14, 14])
+    .failOffsetY([-12, 12])
+    .onUpdate((e) => { x.value = e.translationX * 0.6; })
+    .onEnd((e) => {
+      if (Math.abs(e.translationX) > W.value * 0.22 || Math.abs(e.velocityX) > 700) {
+        const dir = e.translationX < 0 ? 1 : -1;
+        x.value = withTiming(-dir * W.value * 0.5, { duration: 130 }, (f) => {
+          if (!f) return;
+          scheduleOnRN(go, dir);
+          x.value = dir * W.value * 0.35;
+          x.value = withSpring(0, springs.smooth);
+        });
+      } else {
+        x.value = withSpring(0, springs.snapBack);
       }
-      knobF.value = snapF;
-      // Week of life counted from days, so the label matches the date.
-      const w = Math.floor(Math.round(snapF * YEAR) / 7);
-      if (nid !== lastNear.value) {
-        lastNear.value = nid;
-        lastWeek.value = w;
-        scheduleOnRN(onMove, snapF, w, nid);
-      } else if (w !== lastWeek.value) {
-        lastWeek.value = w;
-        scheduleOnRN(onWeek, snapF, w);
-      }
-    })
-    .onFinalize(() => {
-      const nid = lastNear.value;
-      thick.value = withTiming(10, { duration: 160 });
-      if (!nid) knobF.value = withSpring(TODAY_F, springs.smooth);
-      knobOn.value = withTiming(0, { duration: 240 });
-      scheduleOnRN(onRelease, nid);
-      lastNear.value = '';
     });
+  const slide = useAnimatedStyle(() => ({ transform: [{ translateX: x.value }] }));
 
-  const knob = useAnimatedStyle((): any => {
-    const a = -Math.PI / 2 + 2 * Math.PI * knobF.value;
-    return {
-      opacity: knobOn.value,
-      transform: [{ translateX: C + R * Math.cos(a) - 15 }, { translateY: C + R * Math.sin(a) - 15 }, { scale: 0.6 + 0.4 * knobOn.value }],
-    };
-  });
-  const ringW = useAnimatedStyle(() => ({ transform: [{ scale: 1 }] }));
-
-  const nearM = near ? sorted.find((m) => m.id === near) : null;
-  const tipPos = nearM ? pt(fracOf(nearM.date)) : null;
-  const sw = active ? 14 : 10;
+  const open = (m: number) => {
+    haptics.select();
+    const now = yearOf(TODAY) === y && monthIdx(TODAY) === m;
+    actions.setCalDay(now ? TODAY : iso(new Date(Date.UTC(y, m, 1))));
+    actions.setCalView('monat');
+  };
 
   return (
     <>
-      <View style={{ alignSelf: 'center', width: SIZE, height: SIZE, marginTop: nearM ? 8 : 0, zIndex: 2 }}>
-        <GestureDetector gesture={pan}>
-          <Animated.View style={[{ width: SIZE, height: SIZE }, ringW]}>
-            <Svg width={SIZE} height={SIZE}>
-              <Circle cx={C} cy={C} r={R} fill="none" stroke={tokens.hair} strokeWidth={sw} />
-              <Path d={arc(0, TODAY_F)} fill="none" stroke={tokens.done} strokeWidth={sw} strokeLinecap="round" />
-              {active && dragF > TODAY_F ? <Path d={arc(TODAY_F, dragF)} fill="none" stroke={tokens.done} strokeOpacity={0.35} strokeWidth={sw} strokeLinecap="round" /> : null}
-              {sorted.map((m) => {
-                if (m.id === near) return null;
-                const p = pt(fracOf(m.date));
-                const past = m.done || m.date < TODAY;
-                const col = past ? tokens.done : m.frist ? tokens.frist : tokens.mute;
-                return <Circle key={m.id} cx={p.x} cy={p.y} r={7} fill={past ? col : tokens.row} stroke={col} strokeWidth={2.5} />;
-              })}
-            </Svg>
-            <View pointerEvents="none" style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, alignItems: 'center', justifyContent: 'center' }}>
-              <Txt size={40} line={46} weight={700} tracking={-1.5} style={{ fontVariant: ['tabular-nums'] }}>{String(week ?? Math.max(0, Math.floor(daysBetween(BORN, TODAY) / 7)))}</Txt>
-              <Meta>{week !== null ? weekLabel(week) : BORN > TODAY ? tx(`noch ${Math.ceil(daysBetween(TODAY, BORN) / 7)} Wochen`, `${Math.ceil(daysBetween(TODAY, BORN) / 7)} weeks to go`) : tx('Wochen alt', 'weeks old')}</Meta>
-            </View>
-            <Animated.View pointerEvents="none" style={[{ position: 'absolute', top: 0, left: 0, width: 30, height: 30, borderRadius: 999, backgroundColor: tokens.row, borderWidth: 3, borderColor: tokens.ink }, knob]} />
-          </Animated.View>
-        </GestureDetector>
-        {nearM && tipPos ? (
-          <Animated.View
-            entering={FadeIn.duration(140)}
-            exiting={FadeOut.duration(120)}
-            pointerEvents="none"
-            style={{ position: 'absolute', zIndex: 10, left: tipPos.x - 80, width: 160, top: tipPos.y > C + 20 ? tipPos.y + 20 : tipPos.y - 108, flexDirection: tipPos.y > C + 20 ? 'column-reverse' : 'column', alignItems: 'center', gap: 4 }}
-          >
-            <Tile name={nearM.icon} size={60} radius={18} />
-            <View style={{ paddingVertical: 3, paddingHorizontal: 9, borderRadius: 999, backgroundColor: tokens.ink }}>
-              <Text style={{ color: tokens.onInk, fontFamily: 'Geist_600SemiBold', fontSize: 12.5 }} numberOfLines={1}>{`${nearM.title} · ${dmShort(nearM.date)}`}</Text>
-            </View>
-          </Animated.View>
-        ) : null}
-      </View>
-      <Txt size={13} color={tokens.sub} center style={{ marginTop: -4 }}>{tx('Ring halten und ziehen, um durchs Jahr zu blättern.', 'Hold and drag the ring to move through the year.')}</Txt>
-      <H2 right={tx(`${23} im Jahr`, `${23} this year`)}>{tx('Als Nächstes', 'Up next')}</H2>
-      <View style={{ padding: 14, borderRadius: 24, backgroundColor: tokens.row }}>
-        <Timeline items={upcoming} onToggle={actions.toggleMilestone} highlight={near} onPress={(m: Milestone) => router.push(`/meilenstein/${m.id}`)} />
-      </View>
+      <GestureDetector gesture={pan} touchAction="pan-y">
+        <Animated.View onLayout={(e) => { W.value = e.nativeEvent.layout.width; }} style={[{ flexDirection: 'row', flexWrap: 'wrap', marginHorizontal: -4 }, slide]}>
+          {Array.from({ length: 12 }, (_, m) => <Mini key={`${y}-${m}`} y={y} m={m} marks={marks} onPress={() => open(m)} />)}
+        </Animated.View>
+      </GestureDetector>
+      <Legend />
+      <H2>{tx('Was das Jahr noch bringt', 'Still ahead this year')}</H2>
+      {ahead.length ? (
+        <Group>
+          {ahead.map((e) => {
+            const days = e.endDate ? daysBetween(e.date, e.endDate) + 1 : 1;
+            const when = days > 1 ? tx(`${dmShort(e.date)} bis ${dmShort(e.endDate!)} · ${days} Tage`, `${dmShort(e.date)} to ${dmShort(e.endDate!)} · ${days} days`) : dmShort(e.date);
+            const inDays = daysBetween(TODAY, e.date);
+            const sub = inDays > 0 ? tx(`${when} · in ${inDays} Tagen`, `${when} · in ${inDays} days`) : when;
+            return <Row key={e.id} icon={e.icon} title={e.title} sub={sub} onPress={e.cal === 'feiertage' ? undefined : () => router.push(`/termin/${e.id}`)} />;
+          })}
+        </Group>
+      ) : (
+        <Txt size={14} color={tokens.sub}>{tx('Noch nichts Großes geplant. Sag zum Beispiel: „Urlaub vom 3. bis 14. August“.', 'Nothing big planned yet. Try: "Vacation August 3 to 14".')}</Txt>
+      )}
     </>
+  );
+}
+
+function Legend() {
+  const item = (dot: React.ReactNode, label: string) => (
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>{dot}<Txt size={12} color={tokens.sub}>{label}</Txt></View>
+  );
+  return (
+    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 14, paddingHorizontal: 2 }}>
+      {item(<View style={{ width: 5, height: 5, borderRadius: 3, backgroundColor: tokens.done }} />, tx('Termin', 'Event'))}
+      {item(<Txt size={12} weight={700} color={tokens.frist}>12</Txt>, tx('Feiertag', 'Holiday'))}
+      {item(<View style={{ width: 12, height: 10, borderRadius: 3, backgroundColor: persons.J.tint }} />, tx('Urlaub', 'Vacation'))}
+    </View>
   );
 }

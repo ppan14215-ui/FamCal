@@ -18,7 +18,7 @@ import TodayView from '../../src/screens/kalender/TodayView';
 import DayView from '../../src/screens/kalender/DayView';
 import WeekView from '../../src/screens/kalender/WeekView';
 import MonthView, { monthTitle, MonthArrows } from '../../src/screens/kalender/MonthView';
-import YearView from '../../src/screens/kalender/YearView';
+import YearView, { YearArrows } from '../../src/screens/kalender/YearView';
 import PressScale from '../../src/components/ui/PressScale';
 import { TODAY, WD_LONG, weekday, dayNum, MONTHS, monthIdx, addDays, monday, isoWeek, daysBetween } from '../../src/lib/dates';
 import { haptics } from '../../src/lib/haptics';
@@ -88,10 +88,10 @@ export default function Kalender() {
   const title = view === 'jahr' ? String(yr) : month;
   const sub = view === 'woche' ? tx(`KW ${isoWeek(day)} · ${year}`, `Week ${isoWeek(day)} · ${year}`)
     : view === 'monat' ? String(year)
-    : yr === Number(TODAY.slice(0, 4)) ? tx(`Noch ${left} Tage im Jahr`, `${left} days left this year`) : tx('Euer Jahr', 'Your year');
+    : yr === Number(TODAY.slice(0, 4)) ? tx(`Noch ${left} Tage im Jahr`, `${left} days left this year`) : yr < Number(TODAY.slice(0, 4)) ? tx('Rückblick', 'Looking back') : tx('Vorschau', 'Looking ahead');
   return (
     <Screen tab gap={14}>
-      <Title text={title} sub={sub} open={open} onPress={toggle} right={view === 'monat' ? <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}><MonthArrows />{pair}</View> : pair} />
+      <Title text={title} sub={sub} open={open} onPress={toggle} right={view === 'monat' || view === 'jahr' ? <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>{view === 'monat' ? <MonthArrows /> : <YearArrows />}{pair}</View> : pair} />
       {seg}
       <Animated.View key={view} entering={swapIn} style={{ gap: 14 }}>
         {view === 'woche' ? <WeekView /> : view === 'monat' ? <MonthView /> : <YearView />}
