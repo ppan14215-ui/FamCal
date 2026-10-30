@@ -46,7 +46,7 @@ export default function MonthView() {
     while (out.length > 28 && monthIdx(out[out.length - 7]) !== m) out.splice(out.length - 7, 7);
     return out;
   }, [start, m]);
-  const list = useMemo(() => eventsOn(events, day, false), [events, day]);
+  const list = useMemo(() => eventsOn(events, day, true), [events, day]);
   // Title, switch and weekday row take about 290, the talk field and tabs about 200.
   const { height: H } = useWindowDimensions();
   const rows = cells.length / 7;

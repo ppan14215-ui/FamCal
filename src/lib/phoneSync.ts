@@ -22,6 +22,8 @@ const CALS = 'famcal.phoneCalendars';
 const SEEN = 'famcal.phoneSynced';
 /** Synced Termine someone deleted in FamCal: the phone calendar never brings them back. */
 const DROPPED = 'famcal.phoneDropped';
+/** Synced Termine changed in FamCal: from then on FamCal's version wins (Julian 30.10.: work blocks like normal Termine). */
+const EDITED = 'famcal.phoneEdited';
 const EVERY_MS = 5 * 60 * 1000;
 const AHEAD = 92;
 
@@ -66,9 +68,10 @@ export async function syncPhoneCalendars(force = false): Promise<void> {
     const from = addDays(TODAY, -7);
     const to = addDays(TODAY, AHEAD);
     const before = new Set(await read(SEEN));
+    const edited = new Set(await read(EDITED));
     const s = get();
     const inside = (e: CalEvent) => e.date >= from && e.date <= to;
-    const kept = s.events.filter((e) => !before.has(e.id) || byId.has(e.id) || !inside(e)).map((e) => (byId.has(e.id) ? merge(e, byId.get(e.id)!) : e));
+    const kept = s.events.filter((e) => !before.has(e.id) || byId.has(e.id) || !inside(e)).map((e) => (byId.has(e.id) && !edited.has(e.id) ? merge(e, byId.get(e.id)!) : e));
     const have = new Set(kept.map((e) => e.id));
     const dropped = new Set(await read(DROPPED));
     const added = fresh.filter((e) => !have.has(e.id) && !dropped.has(e.id));
@@ -98,4 +101,13 @@ export async function dropPhoneEvents(ids: string[], back = false) {
   const now = new Set(await read(DROPPED));
   ids.forEach((id) => (back ? now.delete(id) : now.add(id)));
   void write(DROPPED, [...now].slice(-2000));
+}
+
+/** A synced Termin edited in FamCal keeps the edit; the phone calendar no longer overwrites it. */
+export async function keepPhoneEdit(id: string) {
+  if (Platform.OS === 'web' || !id) return;
+  const now = new Set(await read(EDITED));
+  if (now.has(id)) return;
+  now.add(id);
+  void write(EDITED, [...now].slice(-2000));
 }

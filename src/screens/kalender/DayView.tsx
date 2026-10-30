@@ -28,6 +28,7 @@ import Fresh from '../../components/Fresh';
 import LineIcon from '../../components/ui/LineIcon';
 import type { CalEvent, Task, Doc } from '../../state/types';
 import { eventsOn } from '../../lib/selectors';
+import { dropPhoneEvents } from '../../lib/phoneSync';
 import { addDays, monday, dayNum, WD_SHORT, weekday, WD_LONG, hm, TODAY, short, until, MONTHS_SHORT, monthIdx, daysBetween, dmShort, wdDay } from '../../lib/dates';
 import { upcomingFristen } from '../../lib/selectors';
 import { dayLabel } from '../../lib/talk';
@@ -103,7 +104,9 @@ function dropEvent(e: CalEvent) {
   const gone = get().events.find((x) => x.id === e.id);
   if (!gone) return;
   actions.removeEvent(gone.id);
-  toast(tx(`„${gone.title}“ gelöscht`, `“${gone.title}” deleted`), () => actions.addEvent(gone));
+  // A Termin from the phone calendar stays gone, or the next sync brings it back.
+  void dropPhoneEvents([gone.id]);
+  toast(tx(`„${gone.title}“ gelöscht`, `“${gone.title}” deleted`), () => { actions.addEvent(gone); void dropPhoneEvents([gone.id], true); });
 }
 
 function Item({ e, last, date }: { e: CalEvent; last: boolean; date: string }) {
@@ -120,7 +123,7 @@ function Item({ e, last, date }: { e: CalEvent; last: boolean; date: string }) {
           <Tile name={e.icon} size={46} radius={14} />
           <View style={{ flex: 1, minWidth: 0 }}>
             <Txt size={16} line={21} weight={600} numberOfLines={1}>{e.title}</Txt>
-            {span ? <Meta numberOfLines={1}>{tx(`bis ${short(e.endDate!)}`, `until ${short(e.endDate!)}`)}{e.place || e.sub ? ` · ${e.place ?? e.sub}` : ''}</Meta> : e.place || e.sub ? <Meta numberOfLines={1}>{e.place ?? e.sub}</Meta> : null}
+            {e.work && e.end && !e.allDay && !span ? <Meta numberOfLines={1}>{tx(`bis ${hm(e.end)}`, `until ${hm(e.end)}`)}</Meta> : span ? <Meta numberOfLines={1}>{tx(`bis ${short(e.endDate!)}`, `until ${short(e.endDate!)}`)}{e.place || e.sub ? ` · ${e.place ?? e.sub}` : ''}</Meta> : e.place || e.sub ? <Meta numberOfLines={1}>{e.place ?? e.sub}</Meta> : null}
           </View>
           <Owner who={e.who} />
         </View>
@@ -163,8 +166,9 @@ function WorkLine({ work }: { work: CalEvent[] }) {
 }
 
 function Day({ date, events, tasks, docs, onY }: { date: string; events: CalEvent[]; tasks: Task[]; docs: Doc[]; onY: (y: number) => void }) {
-  const work = events.filter((e) => e.work);
-  const real = events.filter((e) => !e.work).sort(byStart);
+  // Work is a Termin like any other (Julian 30.10.): it sits in the list, opens, changes and deletes the same way.
+  const work: CalEvent[] = [];
+  const real = [...events].sort(byStart);
   const empty = !real.length && !tasks.length && !docs.length;
   const past = date < TODAY;
   // A free day is one quiet line, so the busy ones carry the page.

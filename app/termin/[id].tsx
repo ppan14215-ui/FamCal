@@ -8,7 +8,7 @@ import { View, TextInput, Platform } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ScrollView } from 'react-native';
-import { dropPhoneEvents } from '../../src/lib/phoneSync';
+import { dropPhoneEvents, keepPhoneEdit } from '../../src/lib/phoneSync';
 import { BackBar, Card, Chip, Meta } from '../../src/components/ui/kit';
 import ItemRow from '../../src/components/ItemRow';
 import SourceLink from '../../src/components/SourceLink';
@@ -94,7 +94,9 @@ export default function Termin() {
     haptics.commit();
     // Repeat and its end always belong to the whole series.
     const seriesOnly = 'repeat' in p || 'repeatUntil' in p;
-    actions.updateEvent(seriesOnly ? sid : target(), p);
+    const id = seriesOnly ? sid : target();
+    actions.updateEvent(id, p);
+    void keepPhoneEdit(id);
   };
   const pickIcon = () => { haptics.select(); picking.current = true; actions.pickSymbol(e.icon); router.push('/symbol'); };
   const now: When = { date: e.date, endDate: e.endDate, start: e.allDay ? undefined : e.start, end: e.end, repeat: e.repeat };
@@ -112,6 +114,7 @@ export default function Termin() {
     const shift = t === sid && base && base.date !== e.date ? daysBetween(e.date, draft.date) : 0;
     const w = shift ? { ...draft, date: addDays(base!.date, shift), endDate: draft.endDate ? addDays(base!.endDate ?? base!.date, shift) : undefined } : draft;
     const before = actions.moveEvent(t, w);
+    void keepPhoneEdit(t);
     if ((draft.repeat ?? '') !== (e.repeat ?? '')) actions.updateEvent(sid, { repeat: draft.repeat || undefined });
     setDraft(null);
     toast(`${tx('Verschoben auf', 'Moved to')} ${WD_SHORT[weekday(draft.date)]}${draft.start ? ' ' + hm(draft.start) : ''}`, before ? () => actions.restoreEvent(before) : undefined);
