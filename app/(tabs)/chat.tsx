@@ -32,6 +32,10 @@ import { isVacation, leftLine } from '../../src/lib/urlaub';
 import { useSimple } from '../../src/lib/simple';
 import ExampleCards from '../../src/components/Examples';
 import { HIDDEN } from '../../src/lib/core';
+import WhenField from '../../src/components/WhenField';
+import type { When } from '../../src/lib/when';
+import type { CalEvent } from '../../src/state/types';
+import { haptics } from '../../src/lib/haptics';
 
 const at = (s: string) => { const d = new Date(s); return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`; };
 const dayOf = (s: string) => { const d = new Date(s); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
@@ -73,6 +77,39 @@ function WhoGoes({ e, me }: { e: EventSnap & { who?: string }; me: 'J' | 'T' }) 
           </PressScale>
         );
       })}
+    </View>
+  );
+}
+
+/**
+ * Julian 30.10. 22:49: "Details sind nicht wirklich Details. Stattdessen sollte man da die Details ändern können,
+ * wer geht, Uhrzeit." Opened from the card: who goes, day and time, right there; everything else on the Termin page.
+ */
+function EditTermine({ ids, me }: { ids: string[]; me: 'J' | 'T' }) {
+  const events = useStore((s) => s.events);
+  const live = ids.map((id) => events.find((e) => e.id === id)).filter(Boolean) as CalEvent[];
+  const [draft, setDraft] = useState<Record<string, When>>({});
+  if (!live.length) return null;
+  return (
+    <View style={{ gap: 10, paddingHorizontal: 12, paddingBottom: 12 }}>
+      {live.map((e) => {
+        const now: When = { date: e.date, endDate: e.endDate, start: e.allDay ? undefined : e.start, end: e.allDay ? undefined : e.end };
+        const done = () => {
+          const w = draft[e.id];
+          if (w) { actions.moveEvent(e.id, w); haptics.commit(); }
+          setDraft((d) => { const n = { ...d }; delete n[e.id]; return n; });
+        };
+        return (
+          <View key={e.id} style={{ gap: 8 }}>
+            {live.length > 1 ? <Txt size={13} weight={600} color={tokens.sub}>{e.title}</Txt> : null}
+            {e.work ? null : <View style={{ marginHorizontal: -12 }}><WhoGoes e={e} me={me} /></View>}
+            <WhenField card value={draft[e.id] ?? now} onChange={(w) => setDraft((d) => ({ ...d, [e.id]: w }))} onDone={done} />
+          </View>
+        );
+      })}
+      <PressScale hitSlop={8} onPress={() => router.push(`/termin/${live[0].id}`)} style={{ alignSelf: 'flex-start' }}>
+        <Txt size={13.5} weight={600} color={tokens.done}>{tx('Alles bearbeiten', 'Edit everything')}</Txt>
+      </PressScale>
     </View>
   );
 }
@@ -306,19 +343,19 @@ function EntryRow({ f, mine, me, answer }: { f: FeedEntry; mine: boolean; me: 'J
         {f.kind === 'made' && (f.events || f.items || f.tasks || f.undone) ? (
           <Animated.View layout={rowLayout} style={[cardFrame, { opacity: f.undone ? 0.55 : 1 }]}>
             {f.say && !f.undone ? <Reply text={f.say} /> : null}
-            {f.undone ? null : f.events ? <Termine ids={f.events} snap={f.snap?.events} changed={f.changed} ask={mine && Date.now() - Date.parse(f.at) < 15 * 60000 ? me : undefined} /> : null}
+            {f.undone ? null : f.events ? <Termine ids={f.events} snap={f.snap?.events} changed={f.changed} ask={mine && !open && Date.now() - Date.parse(f.at) < 15 * 60000 ? me : undefined} /> : null}
             {f.undone ? null : f.events ? <VacationLeft ids={f.events} /> : null}
             {f.undone || HIDDEN.suggestions ? null : f.events ? <PackOffer ids={f.events} /> : null}
             {f.undone || !f.suggest || HIDDEN.suggestions ? null : <BringOffer suggest={f.suggest} />}
             {f.undone ? null : f.items ? <Items list={f.items.list} ids={f.items.ids} name={f.snap?.list} names={f.snap?.items} /> : null}
             {f.undone ? null : f.tasks ? <Tasks ids={f.tasks} titles={f.snap?.tasks} /> : null}
-            {open && f.why ? <Why why={f.why} /> : null}
+            {open && f.events && !f.undone ? <EditTermine ids={f.events} me={me} /> : open && f.why ? <Why why={f.why} /> : null}
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 8, paddingHorizontal: 14, borderTopWidth: f.undone ? 0 : 1, borderTopColor: tokens.hair }}>
               <Txt size={13} weight={600} color={f.undone || f.changed ? tokens.sub : tokens.done}>{f.undone ? tx('Rückgängig gemacht', 'Undone') : f.changed ? tx('Geändert', 'Changed') : `✓ ${f.events ? tx('Im Kalender', 'In the calendar') : f.tasks ? tx('Bei den Aufgaben', 'On your tasks') : tx('Auf der Liste', 'On the list')}`}</Txt>
               <View style={{ flex: 1 }} />
-              {f.why ? (
-                <PressScale hitSlop={8} accessibilityLabel={open ? tx('Schritte zuklappen', 'Hide steps') : tx('Schritte zeigen', 'Show steps')} onPress={() => setOpen((o) => !o)} style={{ flexDirection: 'row', alignItems: 'center', gap: 2, marginRight: canUndo(f.id) && !f.undone ? 14 : 0 }}>
-                  <Txt size={13} color={tokens.sub}>{tx('Details', 'Details')}</Txt>
+              {f.why || (f.events && !f.undone) ? (
+                <PressScale hitSlop={8} accessibilityLabel={open ? tx('Zuklappen', 'Close') : f.events ? tx('Ändern', 'Change') : tx('Schritte zeigen', 'Show steps')} onPress={() => setOpen((o) => !o)} style={{ flexDirection: 'row', alignItems: 'center', gap: 2, marginRight: canUndo(f.id) && !f.undone ? 14 : 0 }}>
+                  <Txt size={13} color={f.events ? tokens.ink : tokens.sub} weight={f.events ? 600 : 400}>{f.events ? tx('Ändern', 'Change') : tx('Details', 'Details')}</Txt>
                   <View style={{ transform: [{ rotate: open ? '-90deg' : '90deg' }] }}><LineIcon name="chev" size={14} color={tokens.sub} /></View>
                 </PressScale>
               ) : null}
