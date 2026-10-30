@@ -314,10 +314,35 @@ function opOf(a: Action, said: string): Op | null {
 }
 
 /**
+ * Julian 30.10.: "Er sollte auch immer antworten". Claude's own sentence becomes
+ * the card's line; what changed stays visible on the card and in its steps.
+ * Cards that still ask something (a time, which recipe, a clash) keep their question.
+ */
+function withSay(p: Plan, say: string): Plan {
+  if (!say) return p;
+  return {
+    ...p,
+    run: () => {
+      const out = p.run();
+      const r = out.result;
+      if (r?.kind === 'done') return { ...out, result: { ...r, text: say, sub: r.text } };
+      if (r?.kind === 'event' && !r.needsTime && !r.ask && !r.suggest) return { ...out, lit: [r.event.id], result: { kind: 'done', text: say, sub: tx(`${q(r.event.title)} steht im Kalender.`, `${q(r.event.title)} is in the calendar.`), events: [r.event.id], undo: () => actions.removeEvent(r.event.id) } };
+      return out;
+    },
+  };
+}
+
+/**
  * What the app does with Claude's answer: a question back (nothing changes),
  * an answer, or one plan for all actions with one Rückgängig.
  */
 export function agentPlan(r: AgentAnswer, said: string): { ask: string } | Plan | null {
+  const p = planOf(r, said);
+  const say = s(r.actions.find((a) => a.tool === 'antworten')?.input?.text);
+  return p && !('ask' in p) && r.actions.some((a) => a.tool !== 'antworten') ? withSay(p, say) : p;
+}
+
+function planOf(r: AgentAnswer, said: string): { ask: string } | Plan | null {
   const ask = r.actions.find((a) => a.tool === 'nachfragen');
   if (ask) return { ask: s(ask.input?.question) || tx('Wie meinst du das?', 'What do you mean?') };
   const answer = r.actions.find((a) => a.tool === 'antworten');
@@ -341,7 +366,7 @@ export function agentPlan(r: AgentAnswer, said: string): { ask: string } | Plan 
     return { steps: [], run: () => ({ result: { kind: 'answer', reply: { kind: 'answer', text: s(answer.input?.text), events: ids.map((id) => get().events.find((e) => e.id === id)!) } } }) };
   }
   // One list, recipe or game keeps its own card and steps (ticking off ingredients, asking which recipe).
-  if (ops.length === 1 && !answer && ops[0].plan) return ops[0].plan;
+  if (ops.length === 1 && ops[0].plan) return ops[0].plan;
   return {
     head: ops.length === 1 ? undefined : tx(`Ich erledige ${ops.length} Dinge`, `Doing ${ops.length} things`),
     steps: ops.map((o) => o.step),
@@ -351,7 +376,6 @@ export function agentPlan(r: AgentAnswer, said: string): { ask: string } | Plan 
       const special = done.find((d) => d.result && d.result.kind !== 'done' && d.result.kind !== 'event');
       if (special && done.length === 1) return { result: special.result, go: special.go };
       const texts = done.map((d) => d.text).filter(Boolean);
-      if (answer) texts.push(s(answer.input?.text));
       const lit = done.flatMap((d) => d.lit);
       const events = done.flatMap((d) => d.events ?? []);
       const undos = done.map((d) => d.undo).filter(Boolean).reverse() as (() => void)[];

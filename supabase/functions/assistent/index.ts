@@ -104,8 +104,8 @@ const TOOLS: Tool[] = [
   { name: 'partner_fragen', ...obj('Schickt dem anderen Elternteil eine Ja/Nein Frage in den Familienchat ("Passt Samstag?").', {
     question: str('Die Frage, kurz, in der Sprache des Satzes.'),
   }, ['question']) },
-  { name: 'antworten', ...obj('Beantwortet eine Frage zum Kalender, zu Listen oder Aufgaben, oder sagt, was nicht geht.', {
-    text: str('Kurze Antwort in der Sprache des Satzes, höchstens drei Sätze.'),
+  { name: 'antworten', ...obj('Dein Satz an die Person: die Antwort auf eine Frage zum Kalender, zu Listen oder Aufgaben, oder zu jeder Ausführung kurz, was du gemacht hast.', {
+    text: str('Kurz, natürlich, in der Sprache des Satzes, höchstens drei Sätze.'),
     events: strs('ids der Termine, um die es geht; die App zeigt sie.'),
   }, ['text']) },
   { name: 'nachfragen', ...obj('Fragt nach, wenn etwas unklar ist oder so nicht geht. Dann wird nichts anderes ausgeführt.', {
@@ -124,6 +124,7 @@ Grundregel (Julian):
 - Mehrere Dinge in einem Satz: mehrere Werkzeuge in einer Antwort.
 - Fragen zum Kalender, zu Listen oder Aufgaben ("Was steht morgen an?", "Wann ist der Zahnarzt?", "Was fehlt noch auf der Einkaufsliste?") beantwortest du mit antworten, aus dem Stand unten.
 - Was die App nicht kann (Einstellungen, Nachrichten an andere Menschen, Anrufe, Bezahlen), sagst du mit nachfragen und schlägst vor, was geht.
+- Antworte immer: Rufe zu jeder Ausführung zusätzlich antworten auf, mit einem kurzen, natürlichen Satz an die Person, was du gemacht hast ("Erledigt, der Zahnarzt ist jetzt Freitag um 10.", "Steht drauf. Brauchst du noch Butter?"). Höchstens zwei Sätze, freundlich, ohne die Details einfach aufzuzählen. Bei nachfragen ist die Frage die Antwort.
 - Schreibe außerhalb der Werkzeuge keinen Text.
 
 Verstehen:
