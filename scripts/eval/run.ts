@@ -56,7 +56,7 @@ async function ask(said: string, history: { said: string; app?: string }[]): Pro
     set(() => ({ ...clone(start), people: [{ id: 'p_karlo', name: 'Karlo', kind: 'kind', color: 'Mint' }] as never }));
     const vorher = stand();
     const history: { said: string; app?: string }[] = [];
-    let last: Omit<Ergebnis, 'stand' | 'vorher'> = { antwort: '', frage: null, tools: [], karte: null };
+    let last: Omit<Ergebnis, 'stand' | 'vorher'> = { antwort: '', frage: null, tools: [], aktionen: [], karte: null };
     let fail = '';
     for (const said of c.saetze) {
       const { r, ms, error } = await ask(said, history);
@@ -74,7 +74,7 @@ async function ask(said: string, history: { said: string; app?: string }[]): Pro
         if (res?.kind === 'event' && res.ask) frage = res.ask;
         if (res?.kind === 'answer' && res.reply.kind === 'ask') frage = res.reply.text;
       }
-      last = { antwort, frage, tools: r.actions.map((a) => a.tool), karte };
+      last = { antwort, frage, tools: r.actions.map((a) => a.tool), aktionen: r.actions.map((a) => ({ tool: a.tool, input: (a.input ?? {}) as Record<string, any> })), karte };
       history.push({ said, app: frage ?? (antwort || undefined) });
     }
     const bad = fail ? [fail] : c.pruefe({ ...last, stand: stand(), vorher });

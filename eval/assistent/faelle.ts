@@ -19,6 +19,8 @@ export type Ergebnis = {
   antwort: string;
   frage: string | null;
   tools: string[];
+  /** Die Werkzeugaufrufe mit Eingaben, für Fälle, die in die Eingaben schauen. */
+  aktionen: { tool: string; input: Record<string, any> }[];
   /** Art der Karte: event, done, answer, workClash, recipe, newList … */
   karte: string | null;
 };
@@ -223,6 +225,17 @@ export const FAELLE: Fall[] = [
       const z = neu(e).find((x) => /zahnarzt/i.test(x.title));
       const m = items(e.stand, 'einkauf').some((i) => /^milch$/i.test(i.name));
       return [...(z?.date === '2026-10-30' && z.start === '10:00' ? [] : [`Zahnarzt: ${z ? `${z.date} ${z.start}` : 'fehlt'}`]), ...(m ? [] : ['Milch fehlt']), ...deutsch(e)];
+    } },
+  // Julian 30.10.: "Wieso hat er das nicht erkannt?" Kartoffeln für die Pommes fehlten, Eier und Frittieröl auch.
+  { id: 'rezept-teile', saetze: ['Ich koche morgen Schnitzel mit Pommes. Pommes selbstgemacht. Es fehlt alles'],
+    pruefe: (e) => {
+      const r = e.aktionen.find((a) => a.tool === 'rezept')?.input ?? {};
+      const all = [...(r.items ?? []), ...(r.extra ?? [])].join(' | ');
+      return [
+        ...(e.tools.includes('rezept') ? [] : [`kein Rezept, sondern ${e.tools.join(', ')}`]),
+        ...[[/kartoffel/i, 'Kartoffeln'], [/\bei(er)?\b/i, 'Eier'], [/öl/i, 'Frittieröl']].flatMap(([re, n]) => ((re as RegExp).test(all) ? [] : [`${n} fehlen: ${all}`])),
+        ...keineNeuen(e), ...deutsch(e),
+      ];
     } },
   { id: 'rezept', saetze: ['Heute Abend koche ich Bolognese'],
     pruefe: (e) => [...(e.tools.includes('rezept') ? [] : [`kein Rezept, sondern ${e.tools.join(', ')}`]), ...keineNeuen(e), ...deutsch(e)] },

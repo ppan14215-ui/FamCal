@@ -75,7 +75,7 @@ const TOOLS: Tool[] = [
   { name: 'rezept', ...obj('Für ein Gericht zum Kochen oder Backen: die App zeigt die Zutaten zum Abhaken und setzt sie auf die Einkaufsliste.', {
     dish: str('Name des Gerichts.'),
     items: strs('Nur was der Satz selbst als zu kaufen nennt.'),
-    extra: strs('Alle übrigen üblichen Zutaten für vier Personen mit kurzer Menge ("500 g Hackfleisch"), ohne Salz, Pfeffer, Öl, Wasser. Leer, wenn variants gesetzt ist.'),
+    extra: strs('Alle übrigen Zutaten für vier Personen mit kurzer Menge ("500 g Hackfleisch"), für JEDEN Teil des Gerichts: "Schnitzel mit Pommes" braucht auch Eier für die Panade und Kartoffeln für die Pommes. Ohne Salz, Pfeffer, Wasser; Öl nur, wenn frittiert wird ("1 l Frittieröl"). Leer, wenn variants gesetzt ist.'),
     variants: strs('Zwei bis vier Rezepte zur Wahl, nur wenn sehr verschiedene möglich sind und keins gewählt wurde.'),
     have: strs('Was der Satz als schon daheim nennt.'),
   }, ['dish', 'items', 'extra', 'variants', 'have']) },
@@ -125,7 +125,7 @@ Verstehen:
 Sprache, feste Regel: Titel, Einträge und Texte stehen immer in der Sprache, in der der neue Satz gesagt wurde, wörtlich und nie übersetzt ("Friseurtermin" bleibt "Friseur", "Dentist" bleibt "Dentist"). Deine Antworten und Fragen auch: Ein deutscher Satz bekommt eine deutsche Antwort, ein englischer eine englische, egal welche Sprache die App hat. Bei gemischter Sprache die Sprache des größten Teils. Keine Gedankenstriche.
 
 Termine:
-- Feiertage: "An Weihnachten" und "Heiligabend" ist der 24.12., "erster Feiertag" der 25.12., "zweiter Feiertag" oder "am zweiten" der 26.12. Silvester 31.12., Neujahr 1.1. Nennt ein Satz mehrere davon, ist jeder Tag klar; nicht nachfragen.
+- Feiertage: "An Weihnachten" und "Heiligabend" ist der 24.12., "erster Feiertag" der 25.12., "zweiter Feiertag" oder "am zweiten" der 26.12. Silvester 31.12., Neujahr 1.1. Nennt ein Satz mehrere davon, ist jeder Tag klar; nicht nachfragen. Feiertage und Tage wie Halloween im Kalender nie umbenennen oder ändern: was jemand an dem Tag vorhat, ist ein eigener termin_neu.
 - Relative Angaben rechnest du vom heutigen Datum aus. "Nächsten Freitag" ist der kommende Freitag, außer heute ist Freitag, dann eine Woche später. "3pm" ist 15:00.
 - Ohne Uhrzeit: start weglassen. Hat so etwas meist eine Uhrzeit (Arzt, Friseur, Spiel, Treffen, Kurs), trotzdem eintragen und ask_time setzen. Urlaub, Reise, Krankheit, Geburtstag, Feiertag sind ganztägig ohne Rückfrage; über mehrere Tage mit end_date.
 - Mit Startzeit ohne Ende setzt du end nach der üblichen Dauer (Arzt 45 Minuten, Friseur 1 Stunde, Fußballspiel 2 Stunden, Kino 2,5 Stunden, Elternabend 2 Stunden), sonst weglassen.
@@ -135,7 +135,7 @@ Termine:
 - Gab es so einen Termin schon (gleicher Titel oder gleiche Art, z.B. Kinderarzt, Friseur, unter Termine oder Frühere Termine), übernimm Ort, who und Dauer vom letzten (den Titel nie, der bleibt in der Sprache des neuen Satzes) und sag es kurz in antworten ("Wie beim letzten Mal bei Dr. Weber."). Ein genannter Ort oder eine genannte Person geht vor.
 - Arbeit ("Arbeit", "Schicht", "im Büro"): work true, who die sprechende Person. Mit genanntem Ende ("bis Weihnachten"): EIN termin_neu mit date = erster Arbeitstag, end_date = letzter Arbeitstag ("bis Weihnachten" ist der 24.12.), repeat "Montag bis Freitag" oder die genannten Tage; die App legt jeden Tag an. Einzelne Wochentage ohne Ende ("jeden Mittwoch im Büro"): EIN termin_neu am nächsten dieser Tage mit repeat "Jeden Mittwoch", work false. Ohne Uhrzeit bei Arbeit: start weglassen und ask_time "Von wann bis wann arbeitest du?". Erfinde nie eine Uhrzeit.
 - Bestehende Arbeitstage: Sagt jemand etwas über Tage, an denen schon Arbeit im Stand steht ("jeden Mittwoch bin ich im Büro", "freitags Homeoffice", "am Montag arbeite ich nur bis 12"), lege nichts neu an. Ändere diese Arbeitstage mit EINEM termin_aendern (id plus alle übrigen in ids), z.B. title "Büro" oder place "Büro". Nur ein Ende ("nur bis 15:39") auf einem ganztägigen Arbeitstag: termin_aendern mit end, ohne start; die App nimmt den üblichen Beginn. Nicht nachfragen.
-- "Nach der Arbeit", "nach der Kita": Steht im Stand an dem Tag eine Uhrzeit für das Ende, beginnt der Termin danach. Sonst start weglassen und ask_time.
+- "Nach der Arbeit", "nach der Kita": Steht im Stand an dem Tag eine Uhrzeit für das Ende, beginnt der Termin danach. Sonst trotzdem termin_neu ohne start, mit ask_time; nie nur nachfragen.
 - icon: der passendste Name aus der Icon-Liste, sonst kalender.
 
 Listen:
