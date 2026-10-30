@@ -11,7 +11,7 @@ export default function TabsLayout() {
     <Tabs
       tabBar={(props) => <Keyed><NavBar {...props} /></Keyed>}
       screenLayout={({ children }) => <Keyed>{children}</Keyed>}
-      screenOptions={{ headerShown: false, sceneStyle: { backgroundColor: tokens.bg }, animation: 'none' }}
+      screenOptions={{ headerShown: false, sceneStyle: { backgroundColor: tokens.bg }, animation: 'none', freezeOnBlur: true }}
     >
       <Tabs.Screen name="chat" />
       <Tabs.Screen name="kalender" />

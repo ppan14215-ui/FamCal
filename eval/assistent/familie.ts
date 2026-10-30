@@ -48,6 +48,8 @@ export function termine(): CalEvent[] {
     ev('advent1', '1. Advent', '2026-11-29'),
     ev('heiligabend', 'Heiligabend', '2026-12-24'),
     ev('weihnachten', 'Weihnachten', '2026-12-25'),
+    // Older than two weeks: only under "Frühere Termine" in the snapshot.
+    ev('kinderarzt-alt', 'Kinderarzt', '2026-09-14', { allDay: false, start: '09:00', end: '09:45', icon: 'stethoskop', who: 'T', place: 'Dr. Weber, Hauptstr. 12', sub: 'mit Karlo' }),
     ev('kardio', 'Kardiologie', '2027-01-11', { allDay: false, start: '08:15', end: '09:15', icon: 'stethoskop' }),
     ...arbeit(),
   ];

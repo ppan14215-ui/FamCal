@@ -81,6 +81,16 @@ export function snapshot(): string {
     .filter((e) => e.cal !== 'feiertage' || (e.date >= TODAY && e.date <= addDays(TODAY, 60)))
     .sort((a, b) => a.date.localeCompare(b.date) || a.start.localeCompare(b.start))
     .slice(0, 220);
+  // Julian 30.10. 22:18: "beim Kinderarzt ... falls ihr vorher schon mal wart". The last time of each older Termin, so place, who and length carry over.
+  const seen = new Set(evs.map((e) => e.title.trim().toLowerCase()));
+  const past: CalEvent[] = [];
+  for (const e of [...events].filter((x) => x.date < from && !x.work && !x.cal && !x.repeat).sort((a, b) => b.date.localeCompare(a.date))) {
+    const k = e.title.trim().toLowerCase();
+    if (seen.has(k)) continue;
+    seen.add(k);
+    past.push(e);
+    if (past.length >= 40) break;
+  }
   const listLines = lists.filter((l) => !(HIDDEN.points && isPoints(l))).slice(0, 20).map((l: List) => {
     if (isPoints(l)) {
       return `Punkteliste ${l.id} "${clip(l.name)}": ${players(l).map((p) => `${p.id} ${clip(p.name, 30)} ${total(p)}`).join(', ') || 'noch keine Spieler'}`;
@@ -96,6 +106,7 @@ export function snapshot(): string {
   return [
     people.length ? `Familie außer den Eltern: ${people.map((p) => clip(p.name, 30)).join(', ')}` : '',
     `Termine (id | Tag | Zeit | Titel | Details):\n${evs.map(eventLine).join('\n') || '(keine)'}`,
+    past.length ? `Frühere Termine (je Titel der letzte, zum Nachschlagen):\n${past.map(eventLine).join('\n')}` : '',
     `Listen (die Liste einkauf ist die Einkaufsliste):\n${listLines.join('\n') || '(keine)'}`,
     HIDDEN.tasks ? '' : `Aufgaben:\n${taskLines.join('\n') || '(keine)'}`,
   ].filter(Boolean).join('\n\n');
@@ -231,7 +242,16 @@ function opOf(a: Action, said: string): Op | null {
         if (evs.length === 1 && ISO.test(s(i.date))) patch.date = s(i.date);
         if (typeof i.end_date === 'string') patch.endDate = ISO.test(s(i.end_date)) ? s(i.end_date) : undefined;
         if (HHMM.test(s(i.start))) { patch.start = s(i.start); patch.allDay = false; }
-        if (HHMM.test(s(i.end))) patch.end = s(i.end);
+        if (HHMM.test(s(i.end))) {
+          patch.end = s(i.end);
+          // "Am Freitag arbeite ich nur bis 15:39" on an all-day work day (Julian 30.10.): the end alone must make it timed,
+          // starting when this person's timed work usually starts, so the card shows what was promised.
+          if (e.allDay && !patch.start && i.all_day !== true) {
+            const usual = e.work ? get().events.find((x) => x.work && x.who === e.who && !x.allDay && x.start && x.start < patch.end!)?.start : undefined;
+            patch.start = usual ?? (patch.end! > '09:00' ? '09:00' : '00:00');
+            patch.allDay = false;
+          }
+        }
         if (i.all_day === true) { patch.allDay = true; patch.start = '00:00'; patch.end = undefined; }
         if (i.who !== undefined) patch.who = whoOf(i.who);
         if (typeof i.place === 'string') patch.place = s(i.place) || undefined;

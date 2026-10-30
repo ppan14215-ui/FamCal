@@ -99,7 +99,7 @@ export default function Termin() {
     void keepPhoneEdit(id);
   };
   const pickIcon = () => { haptics.select(); picking.current = true; actions.pickSymbol(e.icon); router.push('/symbol'); };
-  const now: When = { date: e.date, endDate: e.endDate, start: e.allDay ? undefined : e.start, end: e.end, repeat: e.repeat };
+  const now: When = { date: e.date, endDate: e.endDate, start: e.allDay ? undefined : e.start, end: e.end, repeat: e.work ? undefined : e.repeat };
   // Moving keeps the duration when only the start changes.
   const change = (w: When) => {
     const d = e.end && !e.allDay ? minutes(e.end) - minutes(e.start) : 0;
@@ -115,7 +115,7 @@ export default function Termin() {
     const w = shift ? { ...draft, date: addDays(base!.date, shift), endDate: draft.endDate ? addDays(base!.endDate ?? base!.date, shift) : undefined } : draft;
     const before = actions.moveEvent(t, w);
     void keepPhoneEdit(t);
-    if ((draft.repeat ?? '') !== (e.repeat ?? '')) actions.updateEvent(sid, { repeat: draft.repeat || undefined });
+    if (!e.work && (draft.repeat ?? '') !== (e.repeat ?? '')) actions.updateEvent(sid, { repeat: draft.repeat || undefined });
     setDraft(null);
     toast(`${tx('Verschoben auf', 'Moved to')} ${WD_SHORT[weekday(draft.date)]}${draft.start ? ' ' + hm(draft.start) : ''}`, before ? () => actions.restoreEvent(before) : undefined);
   };
@@ -169,17 +169,18 @@ export default function Termin() {
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
             <Owner who={e.who} size={32} />
             <View style={{ flex: 1 }}>
-              <Txt size={15} weight={600}>{w.t}</Txt>
-              <Meta>{w.s}</Meta>
+              {/* Work is just whose work it is (Julian 30.10.: "Coming along? Auf Arbeit?"). */}
+              <Txt size={15} weight={600}>{e.work ? (e.who === 'T' ? persons.T.name : persons.J.name) : w.t}</Txt>
+              {e.work ? null : <Meta>{w.s}</Meta>}
             </View>
             <Chip onPress={() => { haptics.select(); actions.setEventWho(target(), NEXT[String(e.who)]); }}>{tx('Ändern', 'Change')}</Chip>
           </View>
-          <View style={{ height: 1, backgroundColor: tokens.hair, marginVertical: 12 }} />
-          <TerminPeople ids={e.people ?? []} onToggle={(pid) => actions.toggleEventPerson(target(), pid)} />
+          {e.work ? null : <View style={{ height: 1, backgroundColor: tokens.hair, marginVertical: 12 }} />}
+          {e.work ? null : <TerminPeople ids={e.people ?? []} onToggle={(pid) => actions.toggleEventPerson(target(), pid)} />}
         </Card>
         </Fresh>
         <TerminDetails key={e.id} e={e} onPatch={patch} />
-        <Card pad={14} gap={10}>
+        {e.work ? null : <Card pad={14} gap={10}>
           <Txt size={13} weight={600} color={tokens.sub}>{tx('Mitnehmen', 'Bring')}</Txt>
           <View style={{ marginHorizontal: -14 }}>
             {(e.bring ?? []).map((b) => (
@@ -203,7 +204,7 @@ export default function Termin() {
           <View style={{ marginHorizontal: -14, marginBottom: -14 }}>
             <AddInline placeholder={tx('Hinzufügen', 'Add')} onAdd={(t) => actions.addBring(target(), t)} />
           </View>
-        </Card>
+        </Card>}
         <TerminComments eventId={e.id} />
         {e.source ? <SourceLink prefix={tx('Aus', 'From')} s={{ label: e.source }} /> : null}
         {series ? (

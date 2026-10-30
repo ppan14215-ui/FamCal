@@ -4,6 +4,17 @@ Alle sichtbaren Änderungen an FamCal. Neueste oben. Agenten und Menschen: Ände
 
 ## Unreleased
 
+### Ruhiger, schneller, richtiger (30.10. abends)
+
+- Im Chat ist die Karte von Anfang an da, das Nachdenken passiert in ihr. Bei einem neuen Termin fragen Chips gleich: Ich, Partner oder Beide?
+- Der Assistent kennt frühere Termine (z.B. Kinderarzt) und übernimmt Ort und Dauer vom letzten Mal.
+- "Am Freitag arbeite ich nur bis 15:39" macht aus dem ganztägigen Arbeitstag wirklich einen Tag bis 15:39.
+- Besuche heißen nach dem Ziel ("Bei Mama", "Zu Oma") statt dreimal "Weihnachten".
+- Arbeit in der Detailansicht: keine Serie, kein "Coming along", kein Mitnehmen, nur wer arbeitet und wann.
+- Zutaten-Sheet: eigene Zutaten ergänzen, lang drücken ändert Menge oder Namen.
+- Titel und Umschalter bleiben in Kalender und Listen stehen, nur der Inhalt scrollt.
+- Schneller: versteckte Tabs rechnen nicht mehr mit, der Chat zeigt die letzten 30 Nachrichten (ältere auf Tipp), Tage-Ansicht und Monat sind leichter. Im Monat Punkte statt Icons.
+
 ### Super simpel: eine Leiste, ein Feld (30.10.)
 
 - Unten steht immer dieselbe dunkle Leiste mit Chat, Kalender und Listen. Der offene Tab ist hell und zeigt sein Wort.

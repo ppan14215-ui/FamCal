@@ -34,7 +34,7 @@ const obj = (description: string, properties: Record<string, unknown>, required:
   ({ description, input_schema: { type: 'object', properties, required } as Tool['input_schema'] });
 
 const TERMIN = {
-  title: str('Kurz wie im Kalender ("Zahnarzt", "Elternabend Kita"). Ohne Personen, Zeit und Ort.'),
+  title: str('Kurz wie im Kalender ("Zahnarzt", "Elternabend Kita"). Ohne Zeit. Bei Besuchen und Reisen nennt der Titel, wohin ("Bei Mama", "Bei Sophias Eltern", "Zu Oma"), nicht den Anlass.'),
   sub: str('Optionaler Zusatz ("Kontrolle", "mit Ben").'),
   date: str('YYYY-MM-DD'),
   end_date: str('Letzter Tag bei mehreren Tagen, YYYY-MM-DD.'),
@@ -132,6 +132,8 @@ Termine:
 - Mit Startzeit ohne Ende setzt du end nach der üblichen Dauer (Arzt 45 Minuten, Friseur 1 Stunde, Fußballspiel 2 Stunden, Kino 2,5 Stunden, Elternabend 2 Stunden), sonst weglassen.
 - who: J oder T, wenn einer der Eltern genannt ist oder "ich" sagt (wer spricht, steht unten), both für "wir", "beide", "zusammen". Kinder und Begleitung kommen in sub ("mit Ben").
 - Fehlt das Datum ganz, frag mit nachfragen.
+- Was im Kalender steht, muss den Tag unterscheiden. Mehrere Tage mit demselben Anlass (Weihnachten, Ostern, Urlaub) bekommen nie denselben Titel: der Titel sagt, wo ihr seid oder was passiert ("Bei Mama", "Bei Sophias Eltern", "Zu Oma"), der Anlass steht höchstens in sub. Den Anlass selbst ("Weihnachten") nur als Titel, wenn sonst nichts gesagt ist.
+- Gab es so einen Termin schon (gleicher Titel oder gleiche Art, z.B. Kinderarzt, Friseur, unter Termine oder Frühere Termine), übernimm Ort, who und Dauer vom letzten und sag es kurz in antworten ("Wie beim letzten Mal bei Dr. Weber."). Ein genannter Ort oder eine genannte Person geht vor.
 - Arbeit ("Arbeit", "Schicht", "im Büro"): work true, who die sprechende Person. Mit genanntem Ende ("bis Weihnachten"): EIN termin_neu mit date = erster Arbeitstag, end_date = letzter Arbeitstag ("bis Weihnachten" ist der 24.12.), repeat "Montag bis Freitag" oder die genannten Tage; die App legt jeden Tag an. Einzelne Wochentage ohne Ende ("jeden Mittwoch im Büro"): EIN termin_neu am nächsten dieser Tage mit repeat "Jeden Mittwoch", work false. Ohne Uhrzeit bei Arbeit: start weglassen und ask_time "Von wann bis wann arbeitest du?". Erfinde nie eine Uhrzeit.
 - Bestehende Arbeitstage: Sagt jemand etwas über Tage, an denen schon Arbeit im Stand steht ("jeden Mittwoch bin ich im Büro", "freitags Homeoffice", "am Montag arbeite ich nur bis 12"), lege nichts neu an. Ändere diese Arbeitstage mit EINEM termin_aendern (id plus alle übrigen in ids), z.B. title "Büro" oder place "Büro".
 - "Nach der Arbeit", "nach der Kita": Steht im Stand an dem Tag eine Uhrzeit für das Ende, beginnt der Termin danach. Sonst start weglassen und ask_time.

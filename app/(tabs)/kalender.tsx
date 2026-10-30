@@ -127,7 +127,8 @@ export default function Kalender() {
     const date = EN ? `${MONTHS[monthIdx(TODAY)]} ${dayNum(TODAY)}` : `${dayNum(TODAY)}. ${MONTHS[monthIdx(TODAY)]}`;
     return (
       <View style={{ flex: 1, backgroundColor: tokens.bg, paddingTop: insets.top }}>
-        <TodayView header={<View style={{ gap: 14, paddingTop: 12 }}><Title sub={WD_LONG[weekday(TODAY)]} text={date} open={open} onPress={toggle} right={pair} />{seg}</View>} />
+        <View style={{ gap: 14, paddingTop: 20, paddingHorizontal: 20, paddingBottom: 4 }}><Title sub={WD_LONG[weekday(TODAY)]} text={date} open={open} onPress={toggle} right={pair} />{seg}</View>
+        <TodayView header={null} />
       </View>
     );
   }
@@ -147,9 +148,7 @@ export default function Kalender() {
     : view === 'monat' ? String(year)
     : yr === Number(TODAY.slice(0, 4)) ? tx(`Noch ${left} Tage im Jahr`, `${left} days left this year`) : yr < Number(TODAY.slice(0, 4)) ? tx('Rückblick', 'Looking back') : tx('Vorschau', 'Looking ahead');
   return (
-    <Screen tab gap={14}>
-      <Title text={title} sub={sub} open={open} onPress={toggle} right={view === 'jahr' ? <HeaderRight before={<YearArrows />} /> : pair} />
-      {seg}
+    <Screen tab gap={14} head={<><Title text={title} sub={sub} open={open} onPress={toggle} right={view === 'jahr' ? <HeaderRight before={<YearArrows />} /> : pair} />{seg}</>}>
       <Animated.View key={view} entering={swapIn} style={{ gap: 14 }}>
         {view === 'woche' ? <WeekView /> : view === 'monat' ? <MonthView /> : <YearView />}
       </Animated.View>

@@ -64,6 +64,8 @@ export default function TerminDetails({ e, onPatch }: { e: CalEvent; onPatch: (p
   return (
     <Card pad={0} gap={0}>
       <Row icon="clock" label={tx('Ganztägig', 'All day')} right={<Toggle value={!!e.allDay} onChange={(v) => onPatch(v ? { allDay: true, start: '00:00', end: undefined } : { allDay: undefined, start: '09:00', end: '10:00' })} />} />
+      {/* Work days are single entries; their repeat text is only a note, so no series, reminder or countdown here. */}
+      {e.work ? null : <>
       <Line />
       <Row icon="sync" label={tx('Wiederholen', 'Repeat')} value={e.repeat || tx('Nie', 'Never')} onPress={() => toggle('repeat')} />
       {open === 'repeat' ? (
@@ -85,6 +87,7 @@ export default function TerminDetails({ e, onPatch }: { e: CalEvent; onPatch: (p
       {open === 'remind' ? <Chips items={REMINDERS.filter((r) => !e.allDay || !/m$|h$/.test(r.key) || r.key === '')} value={reminderKey(e.reminder)} onPick={(k) => { onPatch({ reminder: k || undefined }); setOpen(null); }} /> : null}
       <Line />
       <Row icon="cal" label={tx('Tage bis zum Termin zeigen', 'Show days to go')} sub={e.countdown ? daysTo(e.date) : undefined} right={<Toggle value={!!e.countdown} onChange={(v) => onPatch({ countdown: v || undefined })} />} />
+      </>}
       <Line />
       <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 12, paddingHorizontal: 16, paddingVertical: 12 }}>
         <View style={{ paddingTop: 2 }}><LineIcon name="papier" size={20} color={tokens.sub} /></View>

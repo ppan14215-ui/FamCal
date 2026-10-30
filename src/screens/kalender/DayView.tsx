@@ -182,7 +182,8 @@ function WorkLine({ work }: { work: CalEvent[] }) {
   );
 }
 
-function Day({ date, events, tasks, docs, onY }: { date: string; events: CalEvent[]; tasks: Task[]; docs: Doc[]; onY: (y: number) => void }) {
+// Memoised: scrolling changes the chosen day many times a second, and every day redrew with it.
+const Day = React.memo(function Day({ date, events, tasks, docs, onY }: { date: string; events: CalEvent[]; tasks: Task[]; docs: Doc[]; onY: (date: string, y: number) => void }) {
   // Work is a Termin like any other (Julian 30.10.): it sits in the list, opens, changes and deletes the same way.
   const work: CalEvent[] = [];
   const real = [...events].sort(byStart);
@@ -191,14 +192,14 @@ function Day({ date, events, tasks, docs, onY }: { date: string; events: CalEven
   // A free day is one quiet line, so the busy ones carry the page.
   if (empty && date !== TODAY && !work.length) {
     return (
-      <View onLayout={(e) => onY(e.nativeEvent.layout.y)} style={{ flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', opacity: past ? 0.6 : 1 }}>
+      <View onLayout={(e) => onY(date, e.nativeEvent.layout.y)} style={{ flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', opacity: past ? 0.6 : 1 }}>
         <Txt size={16} line={22} weight={600} color={tokens.sub}>{dayLabel(date)}</Txt>
         <Txt size={13.5} color={tokens.mute}>{tx('frei', 'free')}</Txt>
       </View>
     );
   }
   return (
-    <View onLayout={(e) => onY(e.nativeEvent.layout.y)} style={{ gap: 8, opacity: past ? 0.6 : 1 }}>
+    <View onLayout={(e) => onY(date, e.nativeEvent.layout.y)} style={{ gap: 8, opacity: past ? 0.6 : 1 }}>
       <View style={{ flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between' }}>
         <Txt size={21} line={26} weight={700} tracking={-0.4}>{dayLabel(date)}</Txt>
         <Txt size={13.5} color={tokens.sub}>{date === TODAY || date === addDays(TODAY, 1) ? `${WD_LONG[weekday(date)]}, ${dmShort(date)}` : past ? 'vorbei' : until(date)}</Txt>
@@ -240,7 +241,7 @@ function Day({ date, events, tasks, docs, onY }: { date: string; events: CalEven
       )}
     </View>
   );
-}
+});
 
 /** Deadlines coming closer, one quiet card above the days. */
 function Fristen() {
@@ -302,10 +303,11 @@ export default function DayView({ header }: { header: (today: React.ReactNode) =
   const ys = useRef<Record<string, number>>({});
   const view = useRef(0);
   const [shadow, setShadow] = useState(false);
-  // Far enough to show whatever was just said, then four more weeks each time the end comes near.
-  const latest = useMemo(() => events.reduce((m, e) => (e.date > m && daysBetween(TODAY, e.date) < 180 ? e.date : m), TODAY), [events]);
-  const [count, setCount] = useState(() => Math.max(daysBetween(FIRST, day) + MORE, 56));
-  const total = Math.max(count, daysBetween(FIRST, latest) + 8);
+  // Up to the chosen day plus four weeks, then four more each time the end comes near.
+  // Not up to the last Termin any more: with work days until Christmas that drew
+  // half a year of days at once, and switching to Tage took ages (Julian 30.10. 22:19).
+  const [count, setCount] = useState(() => Math.max(daysBetween(FIRST, day) + MORE, 35));
+  const total = Math.max(count, daysBetween(FIRST, day) + MORE);
   const days = useMemo(() => Array.from({ length: total }, (_, i) => {
     const date = addDays(FIRST, i);
     return {
@@ -319,6 +321,8 @@ export default function DayView({ header }: { header: (today: React.ReactNode) =
   // Opens at the chosen day, once.
   const opened = useRef(false);
   const first = useRef(day);
+  const onYRef = useRef<(date: string, y: number) => void>(() => {});
+  const onYStable = React.useCallback((date: string, y: number) => onYRef.current(date, y), []);
   const onY = (date: string, y: number) => {
     ys.current[date] = y;
     if (!opened.current && date === first.current) {
@@ -326,6 +330,7 @@ export default function DayView({ header }: { header: (today: React.ReactNode) =
       requestAnimationFrame(() => ref.current?.scrollTo({ y: Math.max(0, y - 2), animated: false }));
     }
   };
+  onYRef.current = onY;
 
   // The day at the top of the list is the day the strip shows.
   const seen = useRef(day);
@@ -369,7 +374,7 @@ export default function DayView({ header }: { header: (today: React.ReactNode) =
           <React.Fragment key={d.date}>
             {weekday(d.date) === 1 && d.date !== FIRST ? <WeekLine start={d.date} /> : null}
             {d.date === TODAY ? <Fristen /> : null}
-            <Day {...d} onY={(y) => onY(d.date, y)} />
+            <Day {...d} onY={onYStable} />
           </React.Fragment>
         ))}
       </ScrollView>

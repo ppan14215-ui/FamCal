@@ -52,9 +52,7 @@ export default function Listen() {
   }, [active, tasks, list]);
 
   return (
-    <Screen tab gap={12}>
-      <H1 sub={sub} right={<HeaderRight />}>{tx('Listen', 'Lists')}</H1>
-      <ClayTabs lists={lists} active={active} />
+    <Screen tab gap={12} head={<><H1 sub={sub} right={<HeaderRight />}>{tx('Listen', 'Lists')}</H1><ClayTabs lists={lists} active={active} /></>}>
       <Animated.View key={active} entering={swapIn} style={{ gap: 12 }}>
         {active === 'aufgaben' ? <Aufgaben tasks={tasks} /> : list?.kind === 'shopping' ? <Einkauf list={list} /> : list ? <Packliste list={list} /> : null}
       </Animated.View>

@@ -7,7 +7,7 @@
  * that changed. Questions and new Termine leave a small card above the field.
  */
 import React, { useEffect, useRef, useState } from 'react';
-import { View, ScrollView, Platform, BackHandler, useWindowDimensions } from 'react-native';
+import { View, ScrollView, Platform, BackHandler, useWindowDimensions, TextInput } from 'react-native';
 import { router, usePathname } from 'expo-router';
 import Animated, { FadeIn, FadeInDown, FadeOut } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -19,7 +19,7 @@ import { Avatar, Pair, Owner } from './ui/Person';
 import PressScale from './ui/PressScale';
 import TalkBar from './TalkBar';
 import { setVeil } from './Veil';
-import { tokens, persons } from '../theme';
+import { tokens, persons, fonts } from '../theme';
 import { useStore, actions, get } from '../state/store';
 import { plan, splitItems, claudeSays, replyPlan, listFromClaude, asksNewList, thinksOnline, revisePlan, reviseOffline, draftOf, cutOff, addPicks, settleWork, clashLine, dishy, linkPlan, Ctx, Plan, Result, Said, SPOKEN, PLACEHOLDER } from '../lib/act';
 import { canUnderstand, type Convo, type Glimpse } from '../lib/verstehen';
@@ -301,12 +301,33 @@ function Quiet({ label, onPress }: { label: string; onPress: () => void }) {
  * then every ingredient ticked, tap what you already have, add the rest.
  */
 /** Asked before a dish the family has a recipe for (Julian 28.10.). */
+const noOutline = Platform.OS === 'web' ? ({ outlineStyle: 'none' } as any) : null;
 const keptLine = (k: Recipe) => (k.host ? tx(`Wieder euer Rezept von ${k.host}?`, `Your recipe from ${k.host} again?`) : tx(`Wieder euer Rezept ${k.name}?`, `Your ${k.name} recipe again?`));
 
 function RecipeCard({ r, onVariant, onAdd, onSkip, onKept }: { r: Extract<Result, { kind: 'recipe' }>; onVariant: (v: string) => void; onAdd: (items: string[]) => void; onSkip: () => void; onKept: (yes: boolean) => void }) {
   const [off, setOff] = useState<Set<string>>(new Set());
+  // Julian 30.10.: "manuelles hinzufügen oder ergänzen fehlt". Own items join the picks; a long press edits one (amount, name).
+  const [own, setOwn] = useState<string[]>([]);
+  const [names, setNames] = useState<Record<string, string>>({});
+  const [editing, setEditing] = useState<string | null>(null);
+  const [draft, setDraft] = useState('');
   const flip = (x: string) => { haptics.select(); setOff((o) => { const n = new Set(o); if (n.has(x)) n.delete(x); else n.add(x); return n; }); };
-  const take = r.picks.filter((x) => !off.has(x));
+  const all = [...r.picks, ...own];
+  const label = (x: string) => names[x] ?? x;
+  const take = all.filter((x) => !off.has(x)).map(label).filter(Boolean);
+  const commit = () => {
+    const t = draft.trim();
+    if (editing === '+') { if (t && !all.includes(t)) { haptics.commit(); setOwn((o) => [...o, t]); } }
+    else if (editing) { if (t) setNames((n) => ({ ...n, [editing]: t })); else setOff((o) => new Set(o).add(editing)); }
+    setEditing(null); setDraft('');
+  };
+  const field = (
+    <TextInput
+      autoFocus value={draft} onChangeText={setDraft} onSubmitEditing={commit} onBlur={commit} returnKeyType="done"
+      placeholder={tx('z.B. 2 Karotten', 'e.g. 2 carrots')} placeholderTextColor={tokens.mute} selectionColor={tokens.select} cursorColor={tokens.ink}
+      style={[{ height: 36, minWidth: 140, paddingHorizontal: 12, borderRadius: 999, borderWidth: 1.5, borderColor: tokens.ink, fontFamily: fonts[600], fontSize: 13, color: tokens.ink }, noOutline]}
+    />
+  );
   if (r.kept) {
     return (
       <View style={{ gap: 10 }}>
@@ -326,17 +347,22 @@ function RecipeCard({ r, onVariant, onAdd, onSkip, onKept }: { r: Extract<Result
   }
   return (
     <View style={{ gap: 12 }}>
-      <AppLine text={r.picks.length ? (r.from ? tx(`${r.dish}${r.from.servings ? `, ${r.from.servings}` : ''}: Was fehlt euch?`, `${r.dish}${r.from.servings ? `, ${r.from.servings}` : ''}: what do you need?`) : tx(`Für ${r.dish} noch dazu?`, `Also for ${r.dish}?`)) : tx(`Für ${r.dish} steht schon alles auf der Liste.`, `Everything for ${r.dish} is already on the list.`)} sub={r.picks.length ? tx('Tipp weg, was ihr schon habt.', 'Tap away what you already have.') : undefined} />
-      {r.picks.length ? (
-        <View style={{ flexDirection: 'row', gap: 6, flexWrap: 'wrap', paddingLeft: 36 }}>
-          {r.picks.map((x) => {
-            const on = !off.has(x);
-            return (
-              <Chip key={x} height={36} bg={on ? tokens.doneSoft : tokens.chipBg} color={on ? tokens.done : tokens.mute} icon={on ? <LineIcon name="check" size={13} color={tokens.done} stroke={2.6} /> : undefined} onPress={() => flip(x)}>{x}</Chip>
-            );
-          })}
-        </View>
-      ) : null}
+      <AppLine text={all.length ? (r.from ? tx(`${r.dish}${r.from.servings ? `, ${r.from.servings}` : ''}: Was fehlt euch?`, `${r.dish}${r.from.servings ? `, ${r.from.servings}` : ''}: what do you need?`) : tx(`Für ${r.dish} noch dazu?`, `Also for ${r.dish}?`)) : tx(`Für ${r.dish} steht schon alles auf der Liste.`, `Everything for ${r.dish} is already on the list.`)} sub={tx('Tipp weg, was ihr schon habt. Lang drücken ändert.', 'Tap away what you already have. Long press to change.')} />
+      <View style={{ flexDirection: 'row', gap: 6, flexWrap: 'wrap', paddingLeft: 36 }}>
+        {all.map((x) => {
+          if (editing === x) return <React.Fragment key={x}>{field}</React.Fragment>;
+          const on = !off.has(x);
+          return (
+            <PressScale key={x} onPress={() => flip(x)} onLongPress={() => { haptics.select(); setEditing(x); setDraft(label(x)); }} style={{ height: 36, paddingHorizontal: on ? 10.5 : 12, borderRadius: 999, backgroundColor: on ? tokens.doneSoft : tokens.chipBg, borderWidth: on ? 1.5 : 0, borderColor: tokens.done, flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+              {on ? <LineIcon name="check" size={13} color={tokens.done} stroke={2.6} /> : null}
+              <Txt size={13} weight={600} color={on ? tokens.done : tokens.mute}>{label(x)}</Txt>
+            </PressScale>
+          );
+        })}
+        {editing === '+' ? field : (
+          <Chip height={36} icon={<LineIcon name="plus" size={13} color={tokens.ink} stroke={2.4} />} onPress={() => { haptics.select(); setEditing('+'); setDraft(''); }}>{tx('Ergänzen', 'Add more')}</Chip>
+        )}
+      </View>
       {r.have?.length ? (
         <View style={{ flexDirection: 'row', gap: 6, flexWrap: 'wrap', alignItems: 'center', paddingLeft: 36 }}>
           <Txt size={13} color={tokens.sub}>{tx('Habt ihr schon:', 'Already at home:')}</Txt>
@@ -349,9 +375,9 @@ function RecipeCard({ r, onVariant, onAdd, onSkip, onKept }: { r: Extract<Result
       ) : null}
       <View style={{ flexDirection: 'row', gap: 8 }}>
         <PressScale onPress={onSkip} style={{ flex: 1, height: 44, borderRadius: 999, backgroundColor: tokens.chipBg, alignItems: 'center', justifyContent: 'center' }}>
-          <Txt size={15} weight={600}>{r.picks.length ? tx('Weglassen', 'Skip') : tx('Passt', 'Done')}</Txt>
+          <Txt size={15} weight={600}>{all.length ? tx('Weglassen', 'Skip') : tx('Passt', 'Done')}</Txt>
         </PressScale>
-        {r.picks.length ? (
+        {all.length ? (
           <PressScale onPress={() => onAdd(take)} style={{ flex: 1, height: 44, borderRadius: 999, backgroundColor: take.length ? tokens.ink : tokens.chipBg, alignItems: 'center', justifyContent: 'center' }}>
             <Txt size={15} weight={600} color={take.length ? tokens.onInk : tokens.mute}>{tx(`${take.length} hinzufügen`, `Add ${take.length}`)}</Txt>
           </PressScale>

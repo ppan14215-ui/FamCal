@@ -36,7 +36,7 @@ import { HIDDEN } from '../../src/lib/core';
 const at = (s: string) => { const d = new Date(s); return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`; };
 const dayOf = (s: string) => { const d = new Date(s); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
 
-function Termine({ ids, snap, changed }: { ids: string[]; snap?: EventSnap[]; changed?: boolean }) {
+function Termine({ ids, snap, changed, ask }: { ids: string[]; snap?: EventSnap[]; changed?: boolean; ask?: 'J' | 'T' }) {
   const events = useStore((s) => s.events);
   // Live from the calendar; the snapshot only if the Termin never reached this phone.
   const live = ids.map((id) => events.find((e) => e.id === id) ?? (events.length ? undefined : snap?.find((x) => x.id === id))).filter(Boolean) as (EventSnap & { who?: typeof events[number]['who'] })[];
@@ -53,7 +53,27 @@ function Termine({ ids, snap, changed }: { ids: string[]; snap?: EventSnap[]; ch
           {e.who === 'J' || e.who === 'T' ? <Avatar p={e.who} size={26} /> : e.who === 'both' ? <Pair size={22} ring={tokens.row} /> : null}
         </PressScale>
       ))}
+      {ask && live.length === 1 ? <WhoGoes e={live[0]} me={ask} /> : null}
     </>
+  );
+}
+
+/** Julian 30.10. 22:18: the follow-up comes right away, in the card. The Termin already stands; a tap only sets who goes. */
+function WhoGoes({ e, me }: { e: EventSnap & { who?: string }; me: 'J' | 'T' }) {
+  const other = me === 'J' ? 'T' : 'J';
+  const opts: [string, 'J' | 'T' | 'both'][] = [[tx('Ich', 'Me'), me], [persons[other].name || tx('Partner', 'Partner'), other], [tx('Beide', 'Both'), 'both']];
+  return (
+    <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 6, paddingHorizontal: 12, paddingBottom: 10 }}>
+      <Txt size={13.5} color={tokens.sub} style={{ marginRight: 2 }}>{tx('Wer geht?', 'Who goes?')}</Txt>
+      {opts.map(([label, w]) => {
+        const on = e.who === w;
+        return (
+          <PressScale key={w} accessibilityRole="radio" accessibilityState={{ checked: on }} onPress={() => { actions.updateEvent(e.id, { who: w }); }} style={{ height: 32, paddingHorizontal: 12, borderRadius: 999, flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: on ? tokens.doneSoft : tokens.chipBg }}>
+            <Txt size={13.5} weight={on ? 600 : 400} color={on ? tokens.done : tokens.ink}>{label}</Txt>
+          </PressScale>
+        );
+      })}
+    </View>
   );
 }
 
@@ -246,19 +266,26 @@ function Ask({ f, me, answer }: { f: FeedEntry; me: 'J' | 'T'; answer?: FeedEntr
   );
 }
 
-/** The assistant's own words (Julian 30.10.: "wie mit einem echten Assistenten"): a message from the left, typing dots until it has spoken. */
+/**
+ * One card per sentence, there from the first moment (Julian 30.10. 22:17: "Die
+ * Card sollte von Anfang da sein und innen drin die Denkarbeit geschehen").
+ * The assistant's sentence sits on top (typing dots until it has spoken), what
+ * it did grows in below. Thinking and the finished entry draw the same frame,
+ * so nothing jumps when one becomes the other.
+ */
+const cardFrame = { alignSelf: 'stretch' as const, borderRadius: 18, overflow: 'hidden' as const, backgroundColor: tokens.row };
 function Reply({ text }: { text?: string }) {
   return (
-    <View style={{ alignSelf: 'stretch', alignItems: 'flex-start', gap: 4 }}>
-      <Txt size={12.5} color={tokens.sub}>{tx('Assistent', 'Assistant')}</Txt>
-      <Animated.View layout={rowLayout} style={{ maxWidth: '86%', borderRadius: 18, borderBottomLeftRadius: 6, paddingVertical: 9, paddingHorizontal: 13, backgroundColor: tokens.row }}>
-        {text ? <Animated.View entering={swapIn}><Txt size={15} line={21}>{text}</Txt></Animated.View> : <Dots />}
-      </Animated.View>
+    <View style={{ paddingTop: 12, paddingHorizontal: 14, paddingBottom: 4, gap: 4 }}>
+      <Txt size={12} weight={600} tracking={0.6} color={tokens.done}>{tx('ASSISTENT', 'ASSISTANT')}</Txt>
+      {text ? <Animated.View entering={swapIn}><Txt size={15} line={21}>{text}</Txt></Animated.View> : <View style={{ paddingVertical: 4 }}><Dots /></View>}
     </View>
   );
 }
 
-function Entry({ f, mine, me, answer }: { f: FeedEntry; mine: boolean; me: 'J' | 'T'; answer?: FeedEntry }) {
+const Entry = React.memo(EntryRow);
+
+function EntryRow({ f, mine, me, answer }: { f: FeedEntry; mine: boolean; me: 'J' | 'T'; answer?: FeedEntry }) {
   const [open, setOpen] = useState(false);
   const p = persons[f.by];
   const name = mine ? tx('Du', 'You') : p.name || f.by;
@@ -275,10 +302,11 @@ function Entry({ f, mine, me, answer }: { f: FeedEntry; mine: boolean; me: 'J' |
           <Txt size={15} line={21}>{f.ask ? f.ask.q : f.said}</Txt>
         </View>
         {f.ask ? <Ask f={f} me={me} answer={answer} /> : null}
-        {f.say && !f.undone ? <Reply text={f.say} /> : null}
+        {f.say && !f.undone && !(f.kind === 'made' && (f.events || f.items || f.tasks)) ? <View style={cardFrame}><Reply text={f.say} /><View style={{ height: 10 }} /></View> : null}
         {f.kind === 'made' && (f.events || f.items || f.tasks || f.undone) ? (
-          <View style={{ alignSelf: 'stretch', borderRadius: 18, overflow: 'hidden', backgroundColor: tokens.row, opacity: f.undone ? 0.55 : 1 }}>
-            {f.undone ? null : f.events ? <Termine ids={f.events} snap={f.snap?.events} changed={f.changed} /> : null}
+          <Animated.View layout={rowLayout} style={[cardFrame, { opacity: f.undone ? 0.55 : 1 }]}>
+            {f.say && !f.undone ? <Reply text={f.say} /> : null}
+            {f.undone ? null : f.events ? <Termine ids={f.events} snap={f.snap?.events} changed={f.changed} ask={mine && Date.now() - Date.parse(f.at) < 15 * 60000 ? me : undefined} /> : null}
             {f.undone ? null : f.events ? <VacationLeft ids={f.events} /> : null}
             {f.undone || HIDDEN.suggestions ? null : f.events ? <PackOffer ids={f.events} /> : null}
             {f.undone || !f.suggest || HIDDEN.suggestions ? null : <BringOffer suggest={f.suggest} />}
@@ -298,7 +326,7 @@ function Entry({ f, mine, me, answer }: { f: FeedEntry; mine: boolean; me: 'J' |
                 <PressScale hitSlop={8} onPress={() => undoEntry(f.id)}><Txt size={13} color={tokens.sub}>{tx('Rückgängig', 'Undo')}</Txt></PressScale>
               ) : null}
             </View>
-          </View>
+          </Animated.View>
         ) : null}
       </View>
     </View>
@@ -312,12 +340,16 @@ function Thinking({ by }: { by: 'J' | 'T' }) {
   return (
     <View style={{ gap: 6, alignItems: 'flex-end' }}>
       {v.said ? (
-        <View style={{ maxWidth: '86%', borderRadius: 18, borderBottomRightRadius: 6, paddingVertical: 9, paddingHorizontal: 13, backgroundColor: persons[by].tint }}>
-          <Txt size={15} line={21}>{v.said}</Txt>
-        </View>
+        <>
+          <Txt size={12.5} color={tokens.sub}>{tx('Du', 'You')} · {at(new Date().toISOString())}</Txt>
+          <View style={{ maxWidth: '86%', borderRadius: 18, borderBottomRightRadius: 6, paddingVertical: 9, paddingHorizontal: 13, backgroundColor: persons[by].tint }}>
+            <Txt size={15} line={21}>{v.said}</Txt>
+          </View>
+        </>
       ) : null}
-      {v.typing ? <Reply text={v.reply} /> : null}
-      {v.typing && !v.lines.length ? null : <View style={{ alignSelf: 'stretch', borderRadius: 18, padding: 14, gap: 10, backgroundColor: tokens.row }}>
+      <Animated.View layout={rowLayout} style={cardFrame}>
+      <Reply text={v.reply} />
+      <View style={{ paddingHorizontal: 14, paddingTop: 6, paddingBottom: 14, gap: 10 }}>
         {v.head ? <Txt size={12} weight={600} tracking={0.6} color={tokens.done}>{v.head.toUpperCase()}</Txt> : null}
         {v.lines.length ? v.lines.map((l, i) => <Step key={i} label={l} state={i < v.shown ? 'done' : i === v.shown ? 'now' : 'next'} />) : <Step label={tx('Denke nach …', 'Thinking …')} state="now" />}
         {v.head && v.onCancel && v.phase === 'think' ? (
@@ -328,10 +360,13 @@ function Thinking({ by }: { by: 'J' | 'T' }) {
             </PressScale>
           </View>
         ) : null}
-      </View>}
+      </View>
+      </Animated.View>
     </View>
   );
 }
+
+const SHOWN = 30;
 
 export default function Chat() {
   const insets = useSafeAreaInsets();
@@ -346,6 +381,10 @@ export default function Chat() {
   // The newest message is always in view (Julian 29.10.): after sending, while thinking, and when the keyboard opens.
   const thinking = veil.inline && veil.phase !== 'off';
   useEffect(() => { const t = setTimeout(() => scroller.current?.scrollToEnd({ animated: true }), 80); return () => clearTimeout(t); }, [feed.length, kb, dock, thinking, veil.shown]);
+  // Julian 30.10.: "jeder Klick dauert zu lange". Up to 300 entries each read the store; the chat draws the
+  // newest ones and the rest on request.
+  const [more, setMore] = useState(0);
+  const shown = feed.slice(-(SHOWN + more));
   let lastDay = '';
   return (
     <View style={{ flex: 1, backgroundColor: tokens.bg, paddingTop: insets.top }}>
@@ -354,8 +393,13 @@ export default function Chat() {
       <View style={{ paddingHorizontal: 18, paddingTop: 8 }}>
         <H1 sub={tx(`Familie · ${2 + people} Personen`, `Family · ${2 + people} people`)} right={<HeaderRight />}>Chat</H1>
       </View>
-      <ScrollView ref={scroller} onContentSizeChange={() => scroller.current?.scrollToEnd({ animated: false })} contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 18, paddingTop: 8, paddingBottom: dock + (kb > 0 ? kb : insets.bottom) + 40, gap: 12 }} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
-        {feed.length || veil.inline && veil.phase !== 'off' ? feed.map((f) => {
+      <ScrollView ref={scroller} onContentSizeChange={() => { if (!more) scroller.current?.scrollToEnd({ animated: false }); }} contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 18, paddingTop: 8, paddingBottom: dock + (kb > 0 ? kb : insets.bottom) + 40, gap: 12 }} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+        {feed.length > shown.length ? (
+          <PressScale onPress={() => setMore((m) => m + SHOWN)} style={{ alignSelf: 'center', paddingVertical: 8, paddingHorizontal: 14 }}>
+            <Txt size={13.5} weight={600} color={tokens.sub}>{tx('Ältere zeigen', 'Show older')}</Txt>
+          </PressScale>
+        ) : null}
+        {feed.length || veil.inline && veil.phase !== 'off' ? shown.map((f) => {
           // An answer shows on its question, not as a bubble of its own.
           if (f.answer && feed.some((x) => x.id === f.answer!.ask)) return null;
           const d = dayOf(f.at);

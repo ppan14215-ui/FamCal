@@ -160,6 +160,36 @@ export const FAELLE: Fall[] = [
       const da = e.stand.tasks.some((x) => /kita/i.test(x.title) && x.id !== 't-kita') || e.stand.lists.some((l) => l.sections.some((x) => x.items.some((i) => /kita/i.test(i.name))));
       return [...(da ? [] : ['nirgends eingetragen']), ...keineNeuen(e), ...deutsch(e)];
     } },
+  // Julian 30.10. 22:18: "Bei Kinderarzt sollte der Assistent smart genug sein zu wissen, falls ihr vorher schon mal wart."
+  { id: 'kinderarzt-wie-letztes-mal', saetze: ['Nächsten Dienstag um 9 Kinderarzt mit Karlo'],
+    pruefe: (e) => {
+      const k = neu(e).find((x) => /kinderarzt/i.test(x.title));
+      return [...(k?.date === '2026-11-03' && k.start === '09:00' ? [] : [`Kinderarzt: ${k ? `${k.date} ${k.start}` : 'fehlt'}`]), ...(k && /weber/i.test(k.place ?? '') ? [] : [`Ort nicht vom letzten Mal: ${k?.place ?? 'leer'}`]), ...deutsch(e)];
+    } },
+  // Julian 30.10.: "bestätigt aber das falsche", die Antwort sagte bis 15:39, der ganztägige Arbeitstag blieb ganztägig.
+  { id: 'arbeit-nur-bis', saetze: ['Am Freitag, den 6. November, arbeite ich nur bis 15:39'],
+    pruefe: (e) => {
+      const f = byId(e.stand, 'arb-2026-11-06');
+      const other = byId(e.stand, 'arb-2026-11-13');
+      return [
+        ...(f && !f.allDay && f.end === '15:39' ? [] : [`6.11.: ${f ? `allDay ${f.allDay}, ${f.start} bis ${f.end}` : 'fehlt'}`]),
+        ...(other?.allDay && !other.end ? [] : ['13.11. mitgeändert']),
+        ...(neu(e).length ? [`neu angelegt: ${neu(e).map((x) => x.title).join(', ')}`] : []),
+        ...deutsch(e),
+      ];
+    } },
+  // Julian 30.10.: dreimal "Weihnachten" im Kalender, der Ort stand nur in der Location. "Dass Weihnachten ist, weiß ich selber."
+  { id: 'weihnachten-wo', saetze: ['An Weihnachten sind wir bei meiner Mutter. Am zweiten fahren wir zur Oma. Am ersten Feiertag bei Sophias Eltern'],
+    pruefe: (e) => {
+      const n = neu(e);
+      const at = (d: string) => n.find((x) => x.date === d);
+      const want: [string, RegExp][] = [['2026-12-24', /mutter|mama/i], ['2026-12-25', /sophia|eltern/i], ['2026-12-26', /oma/i]];
+      return [
+        ...want.flatMap(([d, re]) => (at(d) && re.test(at(d)!.title) ? [] : [`${d}: Titel ${at(d)?.title ?? 'fehlt'}`])),
+        ...(new Set(n.map((x) => x.title)).size === n.length ? [] : ['gleicher Titel mehrmals']),
+        ...keineFrage(e), ...deutsch(e),
+      ];
+    } },
   { id: 'urlaub-ganztaegig', saetze: ['Wir fahren vom 20. bis 27. Dezember zu Oma'],
     pruefe: (e) => {
       const n = neu(e);

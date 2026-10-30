@@ -35,9 +35,11 @@ type ScreenProps = {
   /** For screens that scroll something into view themselves. */
   scrollRef?: React.RefObject<ScrollView | null>;
   onScrollY?: (y: number) => void;
+  /** Stays put above the scroll area: title and switches (Julian 30.10.: "Der Header Bereich sollte nicht mit scrollen"). */
+  head?: React.ReactNode;
 };
 
-export function Screen({ children, tab, footer, bg = tokens.bg, gap = 14, scroll = true, padTop = 8, padBottom = 0, scrollRef, onScrollY }: ScreenProps) {
+export function Screen({ children, head, tab, footer, bg = tokens.bg, gap = 14, scroll = true, padTop = 8, padBottom = 0, scrollRef, onScrollY }: ScreenProps) {
   const insets = useSafeAreaInsets();
   // The talk dock floats over the end of every screen (Julian 27.10.), so leave room for it.
   const dock = useDockSpace();
@@ -51,6 +53,7 @@ export function Screen({ children, tab, footer, bg = tokens.bg, gap = 14, scroll
   );
   return (
     <View style={{ flex: 1, backgroundColor: bg, paddingTop: insets.top }}>
+      {head ? <View style={{ paddingHorizontal: 18, paddingTop: padTop, paddingBottom: 4, gap }}>{head}</View> : null}
       {scroll ? (
         <ScrollView ref={ref} onScroll={(e) => { track(e.nativeEvent.contentOffset.y); onScrollY?.(e.nativeEvent.contentOffset.y); }} scrollEventThrottle={16} style={{ flex: 1 }} contentContainerStyle={{ flexGrow: 1 }} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
           {content}

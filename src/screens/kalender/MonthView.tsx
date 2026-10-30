@@ -11,7 +11,7 @@ import { H2, Group, Row, RoundButton } from '../../components/ui/kit';
 import Txt from '../../components/ui/Txt';
 import { ClayIcon } from '../../components/ui/Clay';
 import { Owner } from '../../components/ui/Person';
-import { tokens, tint } from '../../theme';
+import { tokens, tint, persons } from '../../theme';
 import { evTint } from '../../lib/evColor';
 import { useStore, actions } from '../../state/store';
 import { eventsOn } from '../../lib/selectors';
@@ -110,7 +110,7 @@ export default function MonthView() {
                 onPress={() => inMonth && actions.setCalDay(d)}
                 style={{
                   height: cellH, borderRadius: 14, alignItems: 'center', paddingTop: 6,
-                  backgroundColor: isToday ? tokens.doneSoft : evs.length ? evTint(evs[0]) : inMonth ? tokens.row : 'transparent',
+                  backgroundColor: isToday ? tokens.doneSoft : inMonth ? tokens.row : 'transparent',
                   borderWidth: 1.5, borderColor: sel ? tokens.ink : 'transparent',
                 }}
               >
@@ -159,8 +159,18 @@ export function MonthArrows() {
  * like in the Apple calendar. The icon pops in when the month appears, so the
  * grid feels alive instead of rigid.
  */
+const SHOW_ICONS = false;
 function DayIcons({ evs, size, delay }: { evs: CalEvent[]; size: number; delay: number }) {
+  // Julian 30.10. 22:19: no icons in the month, keep it simple. One dot per Termin in the colour of who goes.
   if (!evs.length) return <View style={{ flex: 1 }} />;
+  if (!SHOW_ICONS) {
+    return (
+      <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 3, paddingBottom: 6 }}>
+        {evs.slice(0, 3).map((e, i) => <View key={i} style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: e.who === 'J' || e.who === 'T' ? persons[e.who].ink : tokens.sub }} />)}
+        {evs.length > 3 ? <Txt size={9} line={9} weight={700} color={tokens.sub}>+</Txt> : null}
+      </View>
+    );
+  }
   const more = Math.min(3, evs.length - 1);
   return (
     <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', gap: 3, paddingBottom: 4 }}>
