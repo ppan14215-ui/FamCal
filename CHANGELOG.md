@@ -10,6 +10,10 @@ Alle sichtbaren Änderungen an FamCal. Neueste oben. Agenten und Menschen: Ände
 - Die Wochenansicht reicht so früh und so spät wie eure Termine (Fußball um 19 Uhr steht im Raster).
 - Im Chat steht dein Satz nur noch einmal; die Antwort des Assistenten sitzt in der Karte.
 - Listen lassen sich bearbeiten: Tab lange drücken oder "Bearbeiten" unter der Liste, dann Name und Symbol ändern.
+- Monatsansicht wie bei Google: kurze farbige Titel je Tag statt Punkten, darunter die Termine des gewählten Tags.
+- Zahnrad oben rechts öffnet die Einstellungen. Dort lassen sich die eigene Farbe und die des Partners ändern; sie bleiben nach dem Neustart.
+- Nach "Zutaten hinzufügen" im Chat kommt nur noch ein kurzer Hinweis statt der großen Bestätigung, die Karte im Chat zeigt es schon.
+- Rezepte denken an alle Teile: Schnitzel mit Pommes bringt Kartoffeln, Eier und Frittieröl mit.
 - Sagt man "An Weihnachten sind wir bei Mama", bleibt Heiligabend im Kalender stehen und "Bei Mama" kommt als eigener Termin dazu.
 
 ### Einkauf nach Supermarkt, gleiche Header (30.10. spät)

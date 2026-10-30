@@ -20,7 +20,7 @@ import PressScale from './ui/PressScale';
 import TalkBar from './TalkBar';
 import { setVeil } from './Veil';
 import { tokens, persons, fonts } from '../theme';
-import { useStore, actions, get } from '../state/store';
+import { useStore, actions, get, toast } from '../state/store';
 import { plan, splitItems, claudeSays, replyPlan, listFromClaude, asksNewList, thinksOnline, revisePlan, reviseOffline, draftOf, cutOff, addPicks, settleWork, clashLine, dishy, linkPlan, Ctx, Plan, Result, Said, SPOKEN, PLACEHOLDER } from '../lib/act';
 import { canUnderstand, type Convo, type Glimpse } from '../lib/verstehen';
 import { agentOn, askAgent, agentPlan, screenOf } from '../lib/assistent';
@@ -718,6 +718,8 @@ export default function Dock() {
     if (where.chat) addMade(turn?.said ?? r.dish, done.lit, done.text, () => { done.undo?.(); r.undo?.(); });
     const before = r.undo;
     lightOneByOne(done.lit, (i) => (i === done.lit.length - 1 ? haptics.success() : haptics.select()));
+    // The chat card already shows what landed; a short toast is enough (Julian 30.10.: "sehr groß und doppelt").
+    if (where.chat) { setTurn(null); light(null); toast(done.text, undefined, { kind: 'done' }); return; }
     setTurn({ id: Date.now(), said: turn?.said ?? '', lines: [], result: { kind: 'done', text: done.text, sub: done.sub, undo: () => { done.undo?.(); before?.(); } } });
   };
 
