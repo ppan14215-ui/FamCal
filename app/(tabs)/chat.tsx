@@ -5,7 +5,7 @@
  * so a tick or a changed time shows here too. Questions never land here;
  * they stay in the card above the field, seen only by whoever asked.
  */
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { View, ScrollView } from 'react-native';
 import Animated from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -63,6 +63,12 @@ function Termine({ ids, snap, changed, ask, timeQ }: { ids: string[]; snap?: Eve
   );
 }
 
+/** Time questions answered with "Ganztägig": the Termin stays all day, the question is done. */
+const settled = new Set<string>();
+const settledSubs = new Set<() => void>();
+const settle = (id: string) => { settled.add(id); settledSubs.forEach((l) => l()); };
+const useSettled = () => { const [, bump] = useState(0); useEffect(() => { const l = () => bump((n) => n + 1); settledSubs.add(l); return () => { settledSubs.delete(l); }; }, []); return settled; };
+
 const pad2 = (n: number) => String(n).padStart(2, '0');
 const plusMin = (t: string, min: number) => { const m = Math.min(23 * 60 + 59, Number(t.slice(0, 2)) * 60 + Number(t.slice(3)) + min); return `${pad2(Math.floor(m / 60))}:${pad2(m % 60)}`; };
 
@@ -71,7 +77,7 @@ const plusMin = (t: string, min: number) => { const m = Math.min(23 * 60 + 59, N
  * Klicken an, das funktioniert super"). It stays until a time is picked or "Ganztägig"; then "Bis wann?" once.
  */
 function TimeAsk({ e, q }: { e: EventSnap; q: string }) {
-  const [step, setStep] = useState<'start' | 'end' | 'done'>(e.allDay ? 'start' : 'done');
+  const [step, setStep] = useState<'start' | 'end' | 'done'>(e.allDay && !settled.has(e.id) ? 'start' : 'done');
   if (step === 'done') return null;
   const chip = (label: string, on: () => void, key = label) => (
     <PressScale key={key} onPress={() => { haptics.select(); on(); }} style={{ height: 32, paddingHorizontal: 12, borderRadius: 999, alignItems: 'center', justifyContent: 'center', backgroundColor: tokens.chipBg }}>
@@ -84,7 +90,7 @@ function TimeAsk({ e, q }: { e: EventSnap; q: string }) {
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
         {step === 'start' ? <>
           {['09:00', '12:00', '15:00', '18:00', '19:30'].map((t) => chip(hm(t), () => { actions.updateEvent(e.id, { start: t, end: plusMin(t, 60), allDay: false }); setStep('end'); }, t))}
-          {chip(tx('Ganztägig', 'All day'), () => setStep('done'))}
+          {chip(tx('Ganztägig', 'All day'), () => { settle(e.id); setStep('done'); })}
           {chip(tx('Anders …', 'Other …'), () => router.push(`/termin/${e.id}`))}
         </> : <>
           {[60, 120, 180].map((m) => chip(hm(plusMin(e.start, m)), () => { actions.updateEvent(e.id, { end: plusMin(e.start, m) }); setStep('done'); }, String(m)))}
@@ -454,6 +460,8 @@ export default function Chat() {
   // Julian 30.10.: "jeder Klick dauert zu lange". Up to 300 entries each read the store; the chat draws the
   // newest ones and the rest on request.
   const [more, setMore] = useState(0);
+  const openQ = useOpenQuestion(feed, me);
+  const qY = useRef(0);
   const shown = feed.slice(-(SHOWN + more));
   let lastDay = '';
   return (
@@ -476,6 +484,7 @@ export default function Chat() {
           const head = d !== lastDay ? (lastDay = d, d === TODAY ? tx('Heute', 'Today') : short(d)) : null;
           return (
             <React.Fragment key={f.id}>
+              {f.id === openQ?.id ? <View onLayout={(e) => { qY.current = e.nativeEvent.layout.y; }} /> : null}
               {head ? <View style={{ alignSelf: 'center', backgroundColor: tokens.segBg, borderRadius: 999, paddingVertical: 4, paddingHorizontal: 12 }}><Txt size={12.5} color={tokens.sub}>{head}</Txt></View> : null}
               <Entry f={f} mine={f.by === me} me={me} answer={f.ask ? feed.find((x) => x.answer?.ask === f.id) : undefined} />
             </React.Fragment>
@@ -494,6 +503,33 @@ export default function Chat() {
         )}
         <Thinking by={me} />
       </ScrollView>
+      {/* Only what still waits for me, like the status pills over Claude's field (Julian 30.10., "Nur offene Fragen"). */}
+      {openQ && !thinking ? (
+        <View pointerEvents="box-none" style={{ position: 'absolute', left: 0, right: 0, bottom: dock + (kb > 0 ? kb : insets.bottom) + 8, alignItems: 'center' }}>
+          <PressScale onPress={() => { haptics.select(); scroller.current?.scrollTo({ y: Math.max(0, qY.current - 12), animated: true }); }} accessibilityLabel={openQ.label} style={{ flexDirection: 'row', alignItems: 'center', gap: 8, height: 34, paddingHorizontal: 14, borderRadius: 999, backgroundColor: tokens.row, maxWidth: '90%', boxShadow: `0 0 0 1px ${tokens.hair}, 0 6px 16px rgba(22,35,42,0.10)` } as any}>
+            <View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: tokens.done }} />
+            <Txt size={13.5} weight={600} numberOfLines={1} style={{ flexShrink: 1 }}>{openQ.label}</Txt>
+          </PressScale>
+        </View>
+      ) : null}
     </View>
   );
+}
+
+/** The newest thing that still waits for me: a question from my partner, or a time or who the assistant asked about. */
+function useOpenQuestion(feed: FeedEntry[], me: 'J' | 'T'): { id: string; label: string } | null {
+  const events = useStore((s) => s.events);
+  const done = useSettled();
+  return useMemo(() => {
+    for (let i = feed.length - 1; i >= 0 && i >= feed.length - 30; i--) {
+      const f = feed[i];
+      if (f.ask && f.ask.to === me && !feed.some((x) => x.answer?.ask === f.id)) return { id: f.id, label: tx(`${persons[f.by].name} fragt: ${f.ask.q}`, `${persons[f.by].name} asks: ${f.ask.q}`) };
+      if (f.by !== me || f.undone || !f.events || f.events.length !== 1 || Date.now() - Date.parse(f.at) > 15 * 60000) continue;
+      const e = events.find((x) => x.id === f.events![0]);
+      if (!e) continue;
+      if (f.timeQ && e.allDay && !done.has(e.id)) return { id: f.id, label: tx(`Uhrzeit für ${e.title}?`, `Time for ${e.title}?`) };
+      if (!e.who) return { id: f.id, label: tx(`Wer geht zu ${e.title}?`, `Who goes to ${e.title}?`) };
+    }
+    return null;
+  }, [feed, me, events, done.size]);
 }

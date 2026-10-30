@@ -14,6 +14,7 @@ Alle sichtbaren Änderungen an FamCal. Neueste oben. Agenten und Menschen: Ände
 - Zahnrad oben rechts öffnet die Einstellungen. Dort lassen sich die eigene Farbe und die des Partners ändern; sie bleiben nach dem Neustart.
 - Nach "Zutaten hinzufügen" im Chat kommt nur noch ein kurzer Hinweis statt der großen Bestätigung, die Karte im Chat zeigt es schon.
 - Fragt der Assistent nach der Uhrzeit, stehen die Antworten zum Antippen direkt in der Karte im Chat (9, 12, 15, 18, 19:30 Uhr, ganztägig, anders), danach "Bis wann?". Kein großes Fenster mehr unten.
+- Wartet noch eine Frage auf dich (von deinem Partner oder Uhrzeit/Wer geht vom Assistenten), steht eine kleine Pill über dem Feld; Antippen springt hin.
 - Eine Uhrzeit, nach der noch gefragt wird, trägt die App nicht mehr als geraten ein.
 - Rezepte denken an alle Teile: Schnitzel mit Pommes bringt Kartoffeln, Eier und Frittieröl mit.
 - Sagt man "An Weihnachten sind wir bei Mama", bleibt Heiligabend im Kalender stehen und "Bei Mama" kommt als eigener Termin dazu.
