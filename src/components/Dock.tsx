@@ -40,6 +40,7 @@ import { haptics } from '../lib/haptics';
 import type { CalEvent, Who } from '../state/types';
 import { tx, quote, inLang, spokenLang, type Lang } from '../i18n/lang';
 import { onToday } from '../screens/kalender/TodayView';
+import { HIDDEN } from '../lib/core';
 
 const STEP_MS = 850;
 /** How long the family waits for Claude before the rules answer instead. */
@@ -811,7 +812,7 @@ export default function Dock() {
                 <Picks options={[
                   [tx('Termin', 'Event'), () => pickKind(turn.said, 'termin')],
                   [tx('Einkaufsliste', 'Shopping list'), () => pickKind(turn.said, 'einkauf')],
-                  [tx('Aufgabe', 'Task'), () => pickKind(turn.said, 'aufgaben')],
+                  ...(HIDDEN.tasks ? [] : [[tx('Aufgabe', 'Task'), () => pickKind(turn.said, 'aufgaben')] as [string, () => void]]),
                 ]} />
                 <Quiet label={tx('Abbrechen', 'Cancel')} onPress={ok} />
               </>

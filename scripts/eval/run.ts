@@ -5,7 +5,10 @@
  * what is in the calendar and on the lists afterwards. Only a run with all
  * cases passing may reach Julian's phone.
  *
- *   EVAL_TOKEN=… node scripts/eval/build.mjs && EVAL_TOKEN=… node scripts/eval/.run.cjs [--variant sonnet] [case-id …]
+ *   node scripts/eval/build.mjs && node --env-file=.env scripts/eval/.run.cjs [--variant sonnet] [case-id …]
+ *
+ * EVAL_TOKEN lives only in the .env of the machine that runs the list; the
+ * function knows just its SHA-256 (scripts/make-assistent-eval.js).
  *
  * Talks to supabase/functions/assistent-eval (same prompt as assistent, see
  * scripts/make-assistent-eval.js). Writes eval/assistent/ergebnis-<variant>.md.

@@ -31,6 +31,7 @@ import { isTrip, makePackList, kidsOn, ageText } from '../../src/lib/pack';
 import { isVacation, leftLine } from '../../src/lib/urlaub';
 import { useSimple } from '../../src/lib/simple';
 import ExampleCards from '../../src/components/Examples';
+import { HIDDEN } from '../../src/lib/core';
 
 const at = (s: string) => { const d = new Date(s); return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`; };
 const dayOf = (s: string) => { const d = new Date(s); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
@@ -280,7 +281,7 @@ function Entry({ f, mine, me, answer }: { f: FeedEntry; mine: boolean; me: 'J' |
             {f.undone ? null : f.events ? <Termine ids={f.events} snap={f.snap?.events} changed={f.changed} /> : null}
             {f.undone ? null : f.events ? <VacationLeft ids={f.events} /> : null}
             {f.undone ? null : f.events ? <PackOffer ids={f.events} /> : null}
-            {f.undone || !f.suggest ? null : <BringOffer suggest={f.suggest} />}
+            {f.undone || !f.suggest || HIDDEN.suggestions ? null : <BringOffer suggest={f.suggest} />}
             {f.undone ? null : f.items ? <Items list={f.items.list} ids={f.items.ids} name={f.snap?.list} names={f.snap?.items} /> : null}
             {f.undone ? null : f.tasks ? <Tasks ids={f.tasks} titles={f.snap?.tasks} /> : null}
             {open && f.why ? <Why why={f.why} /> : null}

@@ -27,11 +27,15 @@ import type { ClayName } from '../../src/lib/clayIcons';
 import { isPoints, players, roundsOf, total } from '../../src/lib/points';
 import HeaderRight from '../../src/components/ui/HeaderRight';
 import { tx } from '../../src/i18n/lang';
+import { HIDDEN } from '../../src/lib/core';
 
 export default function Listen() {
-  const lists = useStore((s) => s.lists);
+  const all = useStore((s) => s.lists);
+  const lists = useMemo(() => (HIDDEN.points ? all.filter((l) => !isPoints(l)) : all), [all]);
   const tasks = useStore((s) => s.tasks);
-  const active = useStore((s) => s.activeList);
+  const chosen = useStore((s) => s.activeList);
+  // Without the Aufgaben tab (Julian 30.10.) a hidden or missing choice opens the first list.
+  const active = (HIDDEN.tasks && chosen === 'aufgaben') || (chosen !== 'aufgaben' && !lists.some((l) => l.id === chosen)) ? lists[0]?.id ?? 'aufgaben' : chosen;
   const list = lists.find((l) => l.id === active);
 
   const sub = useMemo(() => {
@@ -61,7 +65,7 @@ export default function Listen() {
 const HOP = 28;
 
 function ClayTabs({ lists, active }: { lists: List[]; active: string }) {
-  const tabs: { id: string; name: string; icon: ClayName }[] = [{ id: 'aufgaben', name: tx('Aufgaben', 'Tasks'), icon: 'erledigt' }, ...lists.map((l) => ({ id: l.id, name: l.name, icon: l.icon }))];
+  const tabs: { id: string; name: string; icon: ClayName }[] = [...(HIDDEN.tasks ? [] : [{ id: 'aufgaben', name: tx('Aufgaben', 'Tasks'), icon: 'erledigt' as ClayName }]), ...lists.map((l) => ({ id: l.id, name: l.name, icon: l.icon }))];
   // Every tab is as wide as its name; more lists than fit scroll sideways and
   // the chosen one slides into view (Julian 26.10.: "Schrift überlappt").
   const scroller = useRef<ScrollView>(null);
@@ -350,7 +354,7 @@ function Sections({ list, counts }: { list: List; counts?: boolean }) {
 function BlockBelow({ listId, bp, item }: { listId: string; bp: Blueprint; item: Item }) {
   // Films and series get a score out of 10 instead of stars (Julian 29.10.).
   const me = myRole();
-  const stars = bp.source === 'movies'
+  const stars = HIDDEN.ratings ? null : bp.source === 'movies'
     ? <Score scores={item.data?.scores} me={me} onChange={(n) => actions.setItemData(listId, item.id, { scores: { ...item.data?.scores, [me]: n } })} />
     : hasBlock(bp, 'stars') ? <Stars value={item.data?.stars} onChange={(n) => actions.setItemData(listId, item.id, { stars: n })} /> : null;
   const chips = <FactChips bp={bp} data={item.data} note={item.note} />;

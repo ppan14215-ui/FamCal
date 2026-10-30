@@ -5,10 +5,10 @@
  * esbuild comes from the npx cache, so package.json stays as it is.
  */
 import { execSync } from 'node:child_process';
-import { pathToFileURL } from 'node:url';
+import { pathToFileURL, fileURLToPath } from 'node:url';
 import path from 'node:path';
 
-const here = path.dirname(new URL(import.meta.url).pathname);
+const here = path.dirname(fileURLToPath(import.meta.url));
 const mods = execSync("npm exec --yes --package=esbuild@0.28.2 -- sh -c 'dirname $(dirname $(command -v esbuild))'", { encoding: 'utf8' }).trim();
 const { build } = await import(pathToFileURL(path.join(mods, 'esbuild/lib/main.js')).href);
 
