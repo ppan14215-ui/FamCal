@@ -482,7 +482,9 @@ export default function Dock() {
     loadRecipes();
     const link = linkIn(raw);
     if (link) return readLink(raw, link, n);
-    if (cutOff(said)) return hold(said, { kind: 'cut' }, [{ said }]);
+    // The assistant reads half sentences itself ("Ich hole Karlo um 5 ab" ends like a cut-off one); the rule is only for without it.
+    const agent = agentOn() && canUnderstand() && ctx.kind !== 'liste-neu';
+    if (!agent && cutOff(said)) return hold(said, { kind: 'cut' }, [{ said }]);
     if (open?.result.kind === 'recipe' && open.result.kept && raw.split(/\s+/).length <= 3 && (YES.test(raw) || NO.test(raw))) {
       setTurn(open);
       return answerKept(YES.test(raw), raw);
@@ -494,9 +496,10 @@ export default function Dock() {
     }
 
     // Der Assistent (Julian 30.10.): Claude with every function of the app; unclear means a question first, clear means done.
-    if (agentOn() && canUnderstand() && ctx.kind !== 'liste-neu') {
+    if (agent) {
       const talk = open && open.result.kind !== 'cut' && !gone ? [...open.lines, { said }] : [{ said }];
-      return thinkAgent(said, n, talk, () => play(plan(ctx, said, null), said, false, undefined, lines));
+      // Julian 30.10.: no half guess by the old rules when the assistant cannot answer. Say so; the card still offers Termin or Einkauf.
+      return thinkAgent(said, n, talk, () => hold(said, { kind: 'unclear', text: tx('Ich komme gerade nicht an den Assistenten. Sag es gleich nochmal oder tipp an, wohin es gehört.', "I can't reach the assistant right now. Say it again in a moment or tap where it belongs.") }, talk));
     }
 
     // A card is still open: the sentence answers or changes it (Julian 28.10.).

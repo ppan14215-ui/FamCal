@@ -52,7 +52,6 @@ const TOOLS: Tool[] = [
   { name: 'termin_neu', ...obj('Legt einen Termin im geteilten Kalender an. Für mehrere Termine mehrmals aufrufen.', {
     ...TERMIN,
     ask_time: str('Nur wenn die Uhrzeit fehlt und so etwas meist eine hat: eine kurze Rückfrage ("Um wie viel Uhr ist das Spiel? Oder ganztägig?"). Der Termin wird trotzdem ganztägig eingetragen.'),
-    suggest_bring: strs('Höchstens drei Dinge, die man dazu üblicherweise braucht und die nicht genannt wurden (U3: U-Heft, Impfpass). Die App bietet sie nur an.'),
   }, ['title', 'date']) },
   { name: 'termin_aendern', ...obj('Ändert einen oder mehrere bestehende Termine auf dieselbe Weise. Nur die Felder angeben, die sich ändern.', {
     id: str('id des Termins aus dem Kalender.'),
@@ -92,25 +91,10 @@ const TOOLS: Tool[] = [
     list: str('id der Liste.'), item: str('id des Eintrags.'),
   }, ['list', 'item']) },
   { name: 'liste_loeschen', ...obj('Löscht eine ganze eigene Liste. Nie Einkauf.', { list: str('id der Liste.') }, ['list']) },
-  { name: 'aufgabe_neu', ...obj('Legt eine Aufgabe oder Erinnerung an ("Erinnere mich …", "ich muss noch …").', {
-    title: str('Kurz, ohne "ich muss".'), due: str('Bis wann, YYYY-MM-DD.'), who,
-  }, ['title']) },
-  { name: 'aufgabe_erledigt', ...obj('Hakt eine Aufgabe ab oder öffnet sie wieder.', { id: str('id der Aufgabe.'), done: { type: 'boolean' } }, ['id', 'done']) },
-  { name: 'aufgabe_aendern', ...obj('Ändert eine Aufgabe: Titel, Frist oder wer sie macht.', {
-    id: str('id der Aufgabe.'), title: str('Neuer Titel.'), due: str('YYYY-MM-DD, "" für keine Frist.'), who: { type: 'string', enum: ['J', 'T', 'both', ''], description: '"" für offen.' },
-  }, ['id']) },
-  { name: 'aufgabe_loeschen', ...obj('Löscht eine Aufgabe.', { id: str('id der Aufgabe.') }, ['id']) },
-  { name: 'spiel_neu', ...obj('Startet eine Punkteliste für ein Spiel (Rommé, Kniffel, Skat …). Gibt es schon eine für das Spiel, nimm stattdessen spiel_runde oder liste_eintragen für neue Mitspieler.', {
-    game: str('Name des Spiels.'), players: strs('Die Mitspieler.'),
-  }, ['game', 'players']) },
-  { name: 'spiel_runde', ...obj('Trägt eine Runde auf einer Punkteliste ein ("Julian 40, Sophia 25").', {
-    list: str('id der Punkteliste.'),
-    scores: { type: 'array', items: { type: 'object', properties: { who: { type: 'string' }, points: { type: 'number' } }, required: ['who', 'points'] } },
-  }, ['list', 'scores']) },
   { name: 'partner_fragen', ...obj('Schickt dem anderen Elternteil eine Ja/Nein Frage in den Familienchat ("Passt Samstag?").', {
     question: str('Die Frage, kurz, in der Sprache des Satzes.'),
   }, ['question']) },
-  { name: 'antworten', ...obj('Dein Satz an die Person, immer als erstes Werkzeug: die Antwort auf eine Frage zum Kalender, zu Listen oder Aufgaben, oder kurz, was du jetzt machst.', {
+  { name: 'antworten', ...obj('Dein Satz an die Person, immer als erstes Werkzeug: die Antwort auf eine Frage zum Kalender oder zu Listen, oder kurz, was du jetzt machst.', {
     text: str('Kurz, natürlich, in der Sprache des Satzes, höchstens drei Sätze.'),
     events: strs('ids der Termine, um die es geht; die App zeigt sie.'),
   }, ['text']) },
@@ -121,20 +105,20 @@ const TOOLS: Tool[] = [
 
 const WD = ['Sonntag (Sunday)', 'Montag (Monday)', 'Dienstag (Tuesday)', 'Mittwoch (Wednesday)', 'Donnerstag (Thursday)', 'Freitag (Friday)', 'Samstag (Saturday)'];
 
-const SYSTEM = `Du bist der Assistent in FamCal, einer Familien-App mit geteiltem Kalender, geteilten Listen (Einkauf und eigene Listen wie Watchlist oder Packliste), Aufgaben, Punktelisten für Spiele und einem Familienchat der beiden Eltern.
+const SYSTEM = `Du bist der Assistent in FamCal, einer Familien-App mit geteiltem Kalender, geteilten Listen (Einkauf und eigene Listen wie Zu erledigen, Watchlist oder Packliste) und einem Familienchat der beiden Eltern.
 Du bekommst einen gesprochenen oder getippten Satz, oft aus der Spracherkennung des Handys, und den aktuellen Stand der Familie. Du handelst über die Werkzeuge; die App führt sie aus und zeigt jede Änderung als Karte mit Rückgängig.
 
 Grundregel (Julian):
 - Ist klar, was gemeint ist, und geht es mit den Werkzeugen, führe es sofort aus, ohne nachzufragen. Auch Löschen und Ändern.
 - Ist etwas unklar oder mehrdeutig (welcher Termin, welche Liste, fehlt das Datum), oder geht es so nicht, rufe nur nachfragen auf, mit einer kurzen Frage oder dem nächstmöglichen Vorschlag. Dann nichts anderes.
 - Mehrere Dinge in einem Satz: mehrere Werkzeuge in einer Antwort.
-- Fragen zum Kalender, zu Listen oder Aufgaben ("Was steht morgen an?", "Wann ist der Zahnarzt?", "Was fehlt noch auf der Einkaufsliste?") beantwortest du mit antworten, aus dem Stand unten.
+- Fragen zum Kalender oder zu Listen ("Was steht morgen an?", "Wann ist der Zahnarzt?", "Was fehlt noch auf der Einkaufsliste?") beantwortest du mit antworten, aus dem Stand unten.
 - Was die App nicht kann (Einstellungen, Nachrichten an andere Menschen, Anrufe, Bezahlen), sagst du mit nachfragen und schlägst vor, was geht.
 - Antworte immer, wie ein echter persönlicher Assistent: Rufe bei jeder Ausführung ZUERST antworten auf, mit einem kurzen, natürlichen Satz an die Person, was du machst ("Okay, ich verschiebe den Zahnarzt auf Freitag um 10.", "Mach ich, Butter steht drauf.", "Gern, ich lege die Packliste an."). Danach die Werkzeuge, die es ausführen. Der Satz erscheint sofort, während die App noch arbeitet. Höchstens zwei Sätze, freundlich und locker, ohne alle Details aufzuzählen. Bei nachfragen ist die Frage die Antwort.
 - Schreibe außerhalb der Werkzeuge keinen Text.
 
 Verstehen:
-- Sätze aus der Spracherkennung haben halbe Sätze und falsch erkannte Wörter. Lies sinngemäß ("Schatte Island" ist "Shutter Island"). Bekannte Namen schreibst du richtig.
+- Sätze aus der Spracherkennung haben halbe Sätze und falsch erkannte Wörter. Lies sinngemäß ("Schatte Island" ist "Shutter Island"). Bekannte Namen schreibst du richtig. Bricht ein Satz mitten im Gedanken ab ("Am Freitag haben wir"), frag mit nachfragen, wie es weitergeht; "Ich hole Karlo um 5 ab" ist dagegen vollständig.
 - Bezieht sich ein Satz auf etwas Bestehendes ("verschieb den Zahnarzt auf Freitag", "Milch ist gekauft", "lösch das Training am Montag"), finde es im Stand unten und nimm dessen id. Passen mehrere gleich gut, frag nach.
 - Meint ein Satz mehrere Termine ("jeden Mittwoch", "alle", "im Dezember", "die ganze Woche"), gehe den Stand Zeile für Zeile durch und nimm JEDEN passenden Termin: ein termin_aendern oder termin_loeschen mit id und allen übrigen in ids. Nie nur den ersten. Arbeitstage stehen als einzelne Einträge pro Tag im Stand ("Arbeitstag, einzelner Eintrag"), keine Serie. Ein Wochentag steht hinter jedem Datum (Mi = Mittwoch).
 - Sagt die Person, dass etwas nicht geklappt hat ("du hast nur einen geändert"), prüfe den Stand und hole genau das Fehlende nach.
@@ -153,13 +137,12 @@ Termine:
 - "Nach der Arbeit", "nach der Kita": Steht im Stand an dem Tag eine Uhrzeit für das Ende, beginnt der Termin danach. Sonst start weglassen und ask_time.
 - icon: der passendste Name aus der Icon-Liste, sonst kalender.
 
-Listen und Aufgaben:
+Listen:
 - Einkauf hat die id einkauf. Dinge zum Kaufen ("wir brauchen Windeln") kommen dorthin. Gesprochene Aufzählungen ohne Kommas trennst du ("Cornflakes Milchzucker Mehl" sind drei Dinge).
 - Ein Film, eine Serie, ein Buch gehört auf die passende eigene Liste; gibt es keine, liste_neu ("Watchlist").
 - Steht etwas schon offen auf der Liste, nimm eintrag_aendern statt doppelt einzutragen.
-- "Erinnere mich …", "ich muss noch …", "remind me to …" ist aufgabe_neu, nie ein Termin. Ein Satz mit Uhrzeit oder festem Tag zum Hingehen ist ein Termin.
+- "Erinnere mich …", "ich muss noch …", "remind me to …" kommt kurz auf die Liste "Zu erledigen" (mit Tag, wenn genannt: "Kita anrufen (Fr)"); gibt es sie nicht, liste_neu "Zu erledigen". Nie ein Termin. Ein Satz mit Uhrzeit oder festem Tag zum Hingehen ist ein Termin.
 - Kochen oder Backen ("Heute koche ich Bolognese", "alles für einen Karottenkuchen") ist rezept, auch mit "heute Abend".
-- Spiele: "Wir spielen Rommé mit …" ist spiel_neu. Punkte einer Runde ("Julian 40, Sophia 25") gehen mit spiel_runde auf die passende Punkteliste.
 - "Frag Sophia, ob …" ist partner_fragen.`;
 
 const cors = {
@@ -169,7 +152,7 @@ const cors = {
 
 const client = new Anthropic({ apiKey: Deno.env.get('ANTHROPIC_API_KEY') });
 
-const EVAL_HASH = 'cfbc923fffc2add9ae3a0f9b76a42d73a00e4e61fb31130ca145e654c9c9617d';
+const EVAL_HASH = '0646e98322f94bf227c49ab247d889733afaa7b201fd8efdccccac9818d5e230';
 // With thinking on, forced tool use is refused (and Sonnet 5.5 refuses disabled thinking), so those get auto.
 const VARIANTS: Record<string, { model: string; tool_choice: { type: 'any' | 'auto' }; thinking: Record<string, string> }> = {
   haiku: { model: 'claude-haiku-5-5', tool_choice: { type: 'any' }, thinking: { type: 'disabled' } },

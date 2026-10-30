@@ -3,8 +3,8 @@
  * (Julian 30.10.: "Wenn wir so weiter machen und immer wieder Fehler haben
  * wird das nicht mit der App"). Same prompt, same tools, same parsing; only
  * the door is different: a secret token instead of a signed-in family
- * (only its hash is in the code), no family quota, and a choice of model so Haiku and Sonnet can be compared
- * on the same test list. A new prompt goes here first and reaches the app
+ * (only its hash is in the code), no family quota, and a choice of model,
+ * so Haiku and Sonnet can be compared on the same test list. A new prompt goes here first and reaches the app
  * only after scripts/eval-assistent passes.
  *
  *   node scripts/make-assistent-eval.js   (keeps the token of the last build)
@@ -22,9 +22,10 @@ function swap(text, from, to) {
   return text.replace(from, to);
 }
 
-// A new token (lost or leaked): EVAL_TOKEN=<64 hex> node scripts/make-assistent-eval.js, then deploy assistent-eval.
+// A new token (lost or leaked): make one on the testing machine, keep it in its .env, and pass only
+// EVAL_HASH=<its sha256> (or EVAL_TOKEN=<token> where it lives) to this script; then deploy assistent-eval.
 const prev = (() => { try { return fs.readFileSync(path.join(root, 'supabase/functions/assistent-eval/index.ts'), 'utf8').match(/EVAL_HASH = '([0-9a-f]{64})'/)?.[1]; } catch { return undefined; } })();
-const hash = process.env.EVAL_TOKEN ? require('crypto').createHash('sha256').update(process.env.EVAL_TOKEN).digest('hex') : prev;
+const hash = process.env.EVAL_TOKEN ? require('crypto').createHash('sha256').update(process.env.EVAL_TOKEN).digest('hex') : /^[0-9a-f]{64}$/.test(process.env.EVAL_HASH ?? '') ? process.env.EVAL_HASH : prev;
 if (!hash) throw new Error('make-assistent-eval: EVAL_TOKEN fehlt');
 
 let out = src;

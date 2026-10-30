@@ -24,15 +24,17 @@ import { fromModel, TERMIN_ICON_NAMES, type Understood } from './talk';
 import { replyPlan, listFromClaude, gameStart, pointsPlan, liste, type Plan, type Result } from './act';
 import { isPoints, players, total } from './points';
 import { myRole } from './sync';
+import { HIDDEN } from './core';
 import { sendAsk, feedTail } from './feed';
 import { newId, itemText } from '../data/sample';
 
 // ─── Switch ────────────────────────────────────────────────────────────────
 
 const KEY = 'famcal.assistent';
-let on = getPref('assistent') === '1';
+// On unless switched off (Julian 30.10.: the assistant is the core, the old rules only a fallback).
+let on = getPref('assistent') !== '0';
 const subs = new Set<() => void>();
-AsyncStorage.getItem(KEY).then((v) => { if (v != null && (v === '1') !== on) { on = v === '1'; subs.forEach((l) => l()); } }).catch(() => {});
+AsyncStorage.getItem(KEY).then((v) => { if (v != null && (v !== '0') !== on) { on = v !== '0'; subs.forEach((l) => l()); } }).catch(() => {});
 export function setAgent(v: boolean) {
   on = v;
   setPref('assistent', v ? '1' : '0');
@@ -79,7 +81,7 @@ export function snapshot(): string {
     .filter((e) => e.cal !== 'feiertage' || (e.date >= TODAY && e.date <= addDays(TODAY, 60)))
     .sort((a, b) => a.date.localeCompare(b.date) || a.start.localeCompare(b.start))
     .slice(0, 220);
-  const listLines = lists.slice(0, 20).map((l: List) => {
+  const listLines = lists.filter((l) => !(HIDDEN.points && isPoints(l))).slice(0, 20).map((l: List) => {
     if (isPoints(l)) {
       return `Punkteliste ${l.id} "${clip(l.name)}": ${players(l).map((p) => `${p.id} ${clip(p.name, 30)} ${total(p)}`).join(', ') || 'noch keine Spieler'}`;
     }
@@ -95,7 +97,7 @@ export function snapshot(): string {
     people.length ? `Familie außer den Eltern: ${people.map((p) => clip(p.name, 30)).join(', ')}` : '',
     `Termine (id | Tag | Zeit | Titel | Details):\n${evs.map(eventLine).join('\n') || '(keine)'}`,
     `Listen (die Liste einkauf ist die Einkaufsliste):\n${listLines.join('\n') || '(keine)'}`,
-    `Aufgaben:\n${taskLines.join('\n') || '(keine)'}`,
+    HIDDEN.tasks ? '' : `Aufgaben:\n${taskLines.join('\n') || '(keine)'}`,
   ].filter(Boolean).join('\n\n');
 }
 
