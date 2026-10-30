@@ -1,23 +1,22 @@
 /**
- * Bottom navigation (Julian 25.10.): a floating pill with line icons and
- * labels. Clay icons never appear here. Since 27.10. the "+" lives in the
- * talk field above it, which is on every screen.
+ * Bottom navigation (Julian 30.10. 21:52, "super simpel"): one dark pill,
+ * always there. The open tab is a white pill with its word, the others are
+ * just their icon. The talk field sits right above it on every screen
+ * (Dock.tsx); nothing folds away and nothing swaps places. Only the keyboard
+ * pushes the bar away while typing.
  */
-import React, { useEffect, useRef, useState } from 'react';
-import { View, Platform, LayoutChangeEvent } from 'react-native';
-import Animated, { useAnimatedStyle, useSharedValue, withSpring, withTiming, withDelay, Easing } from 'react-native-reanimated';
+import React, { useEffect } from 'react';
+import { View, Platform } from 'react-native';
+import Animated, { useAnimatedStyle, useSharedValue, withTiming, Easing, LinearTransition } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
-import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import Txt from './ui/Txt';
 import LineIcon, { LineName } from './ui/LineIcon';
 import PressScale from './ui/PressScale';
-import { tokens, springs } from '../theme';
+import { tokens } from '../theme';
 import { haptics } from '../lib/haptics';
 import { useTyping } from '../lib/keyboard';
-import { setTalkOpen, useTalkOpen, setChatTabs, useChatTabs } from '../lib/talkOpen';
-import { tx } from '../i18n/lang';
 
 const TABS: { name: string; key: string; icon: LineName }[] = [
   { name: 'chat', key: 'nav.chat', icon: 'chat' },
@@ -25,78 +24,49 @@ const TABS: { name: string; key: string; icon: LineName }[] = [
   { name: 'listen', key: 'nav.listen', icon: 'list' },
 ];
 
+/** Height of the pill; Dock.tsx puts the field right above it. */
+export const NAV_H = 54;
+/** Where the pill's top edge sits above the screen bottom. */
+export const navTop = (insetBottom: number) => Math.max(insetBottom, 12) + 10 + NAV_H;
+
 const floatShadow = Platform.select({
-  web: { boxShadow: `0 0 0 1px ${tokens.hair}, 0 8px 24px rgba(22,35,42,.08)` } as any,
-  default: { shadowColor: '#16232A', shadowOpacity: 0.08, shadowRadius: 12, shadowOffset: { width: 0, height: 8 }, elevation: 6, borderWidth: 1, borderColor: tokens.hair },
-});
-const plusShadow = Platform.select({
-  web: { boxShadow: '0 8px 20px rgba(22,35,42,.22)' } as any,
-  default: { shadowColor: '#16232A', shadowOpacity: 0.22, shadowRadius: 10, shadowOffset: { width: 0, height: 8 }, elevation: 8 },
+  web: { boxShadow: '0 12px 28px rgba(22,35,42,.28)' } as any,
+  default: { shadowColor: '#16232A', shadowOpacity: 0.28, shadowRadius: 14, shadowOffset: { width: 0, height: 10 }, elevation: 10 },
 });
 
 export default function NavBar({ state, navigation }: BottomTabBarProps) {
   const insets = useSafeAreaInsets();
   const { t } = useTranslation();
   const current = state.routes[state.index]?.name;
-  const idx = Math.max(0, TABS.findIndex((t) => t.name === current));
-  // The grey pill slides to the new tab instead of jumping.
-  const [w, setW] = useState(0);
-  const x = useSharedValue(idx);
-  useEffect(() => { x.value = withSpring(idx, springs.smooth); }, [idx]);
-  const pill = useAnimatedStyle(() => ({ transform: [{ translateX: x.value * (w + 2) }] }));
-  // While typing the keyboard takes this place, so the bar slides away.
-  // The talk field takes this place (Julian 28.10.: tabs or field, never both).
+  // While typing the keyboard takes this place, so the bar slides away; the field drops into it.
   const typing = useTyping();
-  const talking = useTalkOpen();
-  // On the chat the field is the default; the tabs only come over it from the black button (Julian 29.10.).
-  const chatTabs = useChatTabs();
-  const onChat = current === 'chat';
-  const gone = typing || talking || (onChat && !chatTabs);
   const away = useSharedValue(0);
-  // Coming back after talking, the tabs wait until the field has nearly shrunk into the bubble.
-  const was = useRef(false);
-  useEffect(() => {
-    const back = withTiming(gone ? 1 : 0, { duration: gone ? (talking ? 140 : 180) : 260, easing: Easing.bezier(0.22, 1, 0.36, 1) });
-    away.value = !gone && was.current ? withDelay(140, back) : back;
-    was.current = talking;
-  }, [gone]);
-  // Talking: the tabs fade and sink a little while the bubble grows over them; typing: the whole bar slides away.
-  const hide = useAnimatedStyle(() => ({ opacity: 1 - away.value, transform: [{ translateY: away.value * (talking ? 8 : 40) }, { scale: 1 - away.value * (talking ? 0.04 : 0) }] as const }));
-  const onLayout = (e: LayoutChangeEvent) => setW((e.nativeEvent.layout.width - 8 - 2 * (TABS.length - 1)) / TABS.length);
+  useEffect(() => { away.value = withTiming(typing ? 1 : 0, { duration: typing ? 180 : 260, easing: Easing.bezier(0.22, 1, 0.36, 1) }); }, [typing]);
+  const hide = useAnimatedStyle(() => ({ opacity: 1 - away.value, transform: [{ translateY: away.value * 40 }] }));
   return (
-    <Animated.View pointerEvents={gone ? 'none' : 'box-none'} style={[{ position: 'absolute', left: 14, right: 14, bottom: Math.max(insets.bottom, 12) + 10, flexDirection: 'row', alignItems: 'center', gap: 10 }, hide]}>
-      <View accessibilityRole="tablist" onLayout={onLayout} style={[{ flex: 1, flexDirection: 'row', gap: 2, padding: 4, borderRadius: 999, backgroundColor: tokens.row }, floatShadow]}>
-        {w ? <Animated.View pointerEvents="none" style={[{ position: 'absolute', left: 4, top: 4, bottom: 4, width: w, borderRadius: 999, backgroundColor: tokens.pillOn }, pill]} /> : null}
+    <Animated.View pointerEvents={typing ? 'none' : 'box-none'} style={[{ position: 'absolute', left: 0, right: 0, bottom: 0, height: navTop(insets.bottom) + 6, alignItems: 'center', justifyContent: 'flex-end', paddingBottom: Math.max(insets.bottom, 12) + 10 }, hide]}>
+      {/* Calm ground under the pill, so nothing reads through around it. */}
+      <View pointerEvents="none" style={{ position: 'absolute', left: 0, right: 0, bottom: 0, top: 0, backgroundColor: tokens.bg, opacity: 0.98 }} />
+      <View accessibilityRole="tablist" style={[{ flexDirection: 'row', gap: 2, padding: 5, borderRadius: 999, backgroundColor: tokens.ink }, floatShadow]}>
         {TABS.map((tab) => {
           const on = current === tab.name;
           return (
-            <PressScale
-              key={tab.name}
-              scale={0.92}
-              accessibilityRole="tab"
-              accessibilityState={{ selected: on }}
-              onPress={() => {
-                if (!on) { haptics.select(); setChatTabs(false); navigation.navigate(tab.name); }
-                else if (onChat) { haptics.select(); setChatTabs(false); }
-              }}
-              style={{ flex: 1, alignItems: 'center', gap: 2, paddingVertical: 7, borderRadius: 999, backgroundColor: !w && on ? tokens.pillOn : 'transparent' }}
-            >
-              <LineIcon name={tab.icon} size={22} color={on ? tokens.ink : tokens.mute} />
-              <Txt size={10.5} line={13} weight={600} color={on ? tokens.ink : tokens.mute}>{t(tab.key)}</Txt>
-            </PressScale>
+            <Animated.View key={tab.name} layout={LinearTransition.duration(220)}>
+              <PressScale
+                scale={0.92}
+                accessibilityRole="tab"
+                accessibilityLabel={t(tab.key)}
+                accessibilityState={{ selected: on }}
+                onPress={() => { if (!on) { haptics.select(); navigation.navigate(tab.name); } }}
+                style={{ height: NAV_H - 10, minWidth: 56, paddingHorizontal: on ? 16 : 14, borderRadius: 999, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7, backgroundColor: on ? tokens.onInk : 'transparent' }}
+              >
+                <LineIcon name={tab.icon} size={21} color={on ? tokens.ink : tokens.mute} />
+                {on ? <Txt size={14} weight={600} color={tokens.ink}>{t(tab.key)}</Txt> : null}
+              </PressScale>
+            </Animated.View>
           );
         })}
       </View>
-      <PressScale
-        accessibilityLabel={tx('Sprechen oder schreiben', 'Talk or type')}
-        onPress={() => { haptics.tap(); if (onChat) setChatTabs(false, true); else setTalkOpen(true); }}
-        // Long press goes straight to the plus menu (photo, event, task).
-        onLongPress={() => { haptics.select(); router.push('/neu'); }}
-        accessibilityHint={tx('Lang drücken für Foto, Termin, Aufgabe', 'Long press for photo, event, task')}
-        style={[{ width: 58, height: 58, borderRadius: 999, alignItems: 'center', justifyContent: 'center', backgroundColor: tokens.ink }, plusShadow]}
-      >
-        <LineIcon name="mic" size={24} color={tokens.onInk} />
-      </PressScale>
     </Animated.View>
   );
 }

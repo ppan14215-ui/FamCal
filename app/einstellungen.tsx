@@ -25,6 +25,7 @@ import { useAgent, setAgent } from '../src/lib/assistent';
 import { Seg } from '../src/components/ui/kit';
 import { haptics } from '../src/lib/haptics';
 import { countryName, regionName } from '../src/lib/holidays';
+import { HIDDEN } from '../src/lib/core';
 
 function SRow({ icon, t, s, right, onPress }: { icon: ClayName; t: string; s: string; right?: React.ReactNode; onPress?: () => void }) {
   return (
@@ -76,6 +77,7 @@ export default function Einstellungen() {
         ))}
         <SRow icon="sync" t={cals.length ? tx('Weitere Kalender', 'More calendars') : tx('Kalender verbinden', 'Connect calendars')} s={cals.length ? tx('Auswahl ändern oder hinzufügen', 'Change or add') : tx('Damit nichts doppelt ist', 'So nothing is in two places')} onPress={openCals} />
       </Group>
+      {HIDDEN.toggles ? null : <>
       <View style={{ gap: 8 }}>
         {/* Julian 30.10.: both versions side by side, to compare. */}
         <Txt size={13} weight={600} color={tokens.sub} style={{ paddingHorizontal: 4 }}>{tx('Version zum Testen', 'Version to test')}</Txt>
@@ -88,6 +90,7 @@ export default function Einstellungen() {
         <Seg items={[{ key: 'alt', label: tx('Wie bisher', 'As before') }, { key: 'neu', label: tx('Neuer Assistent', 'New assistant') }]} value={agent ? 'neu' : 'alt'} onChange={(k) => { haptics.select(); setAgent(k === 'neu'); toast(k === 'neu' ? tx('Neuer Assistent ist an', 'New assistant is on') : tx('Wieder wie bisher', 'Back to before')); }} />
         <Txt size={12.5} line={17} color={tokens.mute} style={{ paddingHorizontal: 4 }}>{tx('Neu: Claude kennt alles, was die App kann. Er ändert und löscht Termine, hakt ab, beantwortet Fragen und fragt nach, wenn etwas unklar ist.', 'New: Claude knows everything the app can do. It changes and deletes events, ticks things off, answers questions and asks when something is unclear.')}</Txt>
       </View>
+      </>}
       <View style={{ gap: 8 }}>
         <Txt size={13} weight={600} color={tokens.sub} style={{ paddingHorizontal: 4 }}>{tx('Darstellung', 'Appearance')}</Txt>
         <Seg items={[{ key: 'hell', label: tx('Hell', 'Light') }, { key: 'dunkel', label: tx('Dunkel', 'Dark') }, { key: 'system', label: tx('Wie das Handy', 'Like the phone') }]} value={theme} onChange={(k) => setTheme(k as ThemeChoice)} />
@@ -95,9 +98,9 @@ export default function Einstellungen() {
       <Group>
         <SRow icon="zuhause" t={tx('Eure Familie', 'Your family')} s={tx('Kinder, Großeltern, Geburtstage', 'Kids, grandparents, birthdays')} onPress={() => router.push('/personen')} />
         <SRow icon="reise" t={tx('Urlaub und Feiertage', 'Vacation and holidays')} s={vacLine(vac, names, [countryName(country), land && (country === 'DE' ? land : regionName(country, land))].filter(Boolean).join(', '))} onPress={() => router.push('/urlaub')} />
-        <SRow icon="glocke" t={tx('Hinweise', 'Notifications')} s={tx('Nur Wichtiges · Ruhe 21–7 Uhr', 'Only what matters · quiet 9pm to 7am')} onPress={() => router.push('/demo/sperrbildschirm')} />
+        {HIDDEN.extras ? null : <SRow icon="glocke" t={tx('Hinweise', 'Notifications')} s={tx('Nur Wichtiges · Ruhe 21–7 Uhr', 'Only what matters · quiet 9pm to 7am')} onPress={() => router.push('/demo/sperrbildschirm')} />}
         <SRow icon="chat" t={tx('Ich spreche', 'I speak')} s={sl === 'de' ? tx('Deutsch · tippen für Englisch', 'German · tap for English') : tx('Englisch · tippen für Deutsch', 'English · tap for German')} onPress={() => { const v = sl === 'de' ? 'en' : 'de'; setSpeechLang(v); setSl(v); toast(v === 'de' ? tx('Ich höre jetzt auf Deutsch', 'Listening in German now') : tx('Ich höre jetzt auf Englisch', 'Listening in English now')); }} />
-        <SRow icon="chat" t={tx('Mikro Anzeige', 'Mic display')} s={mic === 'ring' ? tx('Ring mit Stopp · tippen für Balken', 'Ring with stop · tap for bars') : tx('Balken im Knopf · tippen für Ring', 'Bars in the button · tap for ring')} onPress={() => { const v = mic === 'ring' ? 'balken' : 'ring'; setMicStyle(v); haptics.select(); toast(v === 'ring' ? tx('Mikro zeigt jetzt den Ring', 'Mic now shows the ring') : tx('Mikro zeigt jetzt die Balken', 'Mic now shows the bars')); }} />
+        {HIDDEN.toggles ? null : <SRow icon="chat" t={tx('Mikro Anzeige', 'Mic display')} s={mic === 'ring' ? tx('Ring mit Stopp · tippen für Balken', 'Ring with stop · tap for bars') : tx('Balken im Knopf · tippen für Ring', 'Bars in the button · tap for ring')} onPress={() => { const v = mic === 'ring' ? 'balken' : 'ring'; setMicStyle(v); haptics.select(); toast(v === 'ring' ? tx('Mikro zeigt jetzt den Ring', 'Mic now shows the ring') : tx('Mikro zeigt jetzt die Balken', 'Mic now shows the bars')); }} />}
         <SRow icon="chat" t={tx('Sprache', 'Language')} s={tx('Deutsch · folgt der Sprache des Handys', 'English · follows the phone language')} onPress={() => toast(tx('Ändern in den Einstellungen des Handys', 'Change it in the phone settings'))} />
         <SRow icon="kalender" t={tx('Kalender Abo und Export', 'Calendar feed and export')} s={tx('Apple, Google, Outlook oder als Datei', 'Apple, Google, Outlook or as a file')} onPress={() => router.push('/kalender-abo')} />
       </Group>
@@ -125,7 +128,7 @@ export default function Einstellungen() {
       </Group>
       <Txt size={12.5} line={17} color={tokens.mute} center>Prototyp ohne Login und ohne echte KI. Alles bleibt auf diesem Gerät und ist nach dem Neuladen wieder wie am Anfang.</Txt>
       </>}
-      <QualityTest />
+      {HIDDEN.toggles ? null : <QualityTest />}
       <Txt size={12} line={16} color={tokens.mute} center selectable>{versionLine()}</Txt>
     </Screen>
   );

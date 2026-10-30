@@ -7,10 +7,9 @@
  * that changed. Questions and new Termine leave a small card above the field.
  */
 import React, { useEffect, useRef, useState } from 'react';
-import { View, ScrollView, Platform, Pressable, BackHandler, useWindowDimensions } from 'react-native';
+import { View, ScrollView, Platform, BackHandler, useWindowDimensions } from 'react-native';
 import { router, usePathname } from 'expo-router';
-import Animated, { FadeIn, FadeInDown, FadeOut, useSharedValue, useAnimatedStyle, withSpring, withTiming, interpolate, interpolateColor, Easing } from 'react-native-reanimated';
-import { scheduleOnRN } from 'react-native-worklets';
+import Animated, { FadeIn, FadeInDown, FadeOut } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Defs, LinearGradient, Stop, Rect } from 'react-native-svg';
 import { Chip } from './ui/kit';
@@ -20,7 +19,7 @@ import { Avatar, Pair, Owner } from './ui/Person';
 import PressScale from './ui/PressScale';
 import TalkBar from './TalkBar';
 import { setVeil } from './Veil';
-import { tokens, persons, springs } from '../theme';
+import { tokens, persons } from '../theme';
 import { useStore, actions, get } from '../state/store';
 import { plan, splitItems, claudeSays, replyPlan, listFromClaude, asksNewList, thinksOnline, revisePlan, reviseOffline, draftOf, cutOff, addPicks, settleWork, clashLine, dishy, linkPlan, Ctx, Plan, Result, Said, SPOKEN, PLACEHOLDER } from '../lib/act';
 import { canUnderstand, type Convo, type Glimpse } from '../lib/verstehen';
@@ -31,7 +30,8 @@ import { dayLabel, slotLine, type Suggest } from '../lib/talk';
 import { locate, light, lightOneByOne } from '../lib/landing';
 import { setDockTop, setDockSpace } from '../lib/dockSpace';
 import { useKeyboardInset, useTyping } from '../lib/keyboard';
-import { setTalkOpen, useTalkOpen, setChatTabs, useChatTabs, chatBacks } from '../lib/talkOpen';
+import { setTalkOpen, useTalkOpen } from '../lib/talkOpen';
+import { NAV_H, navTop } from './NavBar';
 import { addMade, addMessage, addAsk, addSay, recentMade, markChanged } from '../lib/feed';
 import { useSimple, messageOf } from '../lib/simple';
 import { hm, short } from '../lib/dates';
@@ -77,11 +77,6 @@ function Picks({ options }: { options: [string, () => void][] }) {
 const shadow = Platform.select({
   web: { boxShadow: `0 0 0 1px ${tokens.hair}, 0 12px 32px rgba(22,35,42,.12)` } as any,
   default: { shadowColor: '#16232A', shadowOpacity: 0.12, shadowRadius: 16, shadowOffset: { width: 0, height: 10 }, elevation: 8, borderWidth: 1, borderColor: tokens.hair },
-});
-
-const gridShadow = Platform.select({
-  web: { boxShadow: '0 8px 20px rgba(22,35,42,.22)' } as any,
-  default: { shadowColor: '#16232A', shadowOpacity: 0.22, shadowRadius: 10, shadowOffset: { width: 0, height: 8 }, elevation: 8 },
 });
 
 /** Where am I, and where does the dock sit there. */
@@ -392,14 +387,10 @@ export default function Dock() {
   const later = (ms: number, f: () => void) => timers.current.push(setTimeout(() => inLang(talkLang.current, f), ms));
   const path = usePathname();
   const talking = useTalkOpen();
-  // On the tabs the field only shows after the bubble was tapped, or while a card is open (Julian 28.10.).
-  const chatTabs = useChatTabs();
-  const shown = where?.chat ? !chatTabs || !!turn : !where?.tab || talking || !!turn;
+  // Julian 30.10. 21:52 "super simpel": the field is always there, on every screen, right above the tabs.
+  const shown = true;
   /** Chat only: Eintragen makes cards, Nachricht just writes to the family. */
   const [mode, setMode] = useState<'card' | 'msg'>('card');
-  // Back from the tabs with the black mic: listen right away, as on the other tabs.
-  const backs = useRef(chatBacks());
-  useEffect(() => { if (!chatTabs && chatBacks() !== backs.current) { backs.current = chatBacks(); setListenKey((k) => k + 1); } }, [chatTabs]);
   // The bubble opened the field: the mic starts right away.
   useEffect(() => { if (talking) setListenKey((k) => k + 1); }, [talking]);
   useEffect(() => {
@@ -407,24 +398,12 @@ export default function Dock() {
     const sub = BackHandler.addEventListener('hardwareBackPress', () => { setTalkOpen(false); setTurn(null); light(null); return true; });
     return () => sub.remove();
   }, [talking]);
-  // Julian 28.10.: the black bubble grows to the left into the field, and shrinks back into it.
-  const grow = useSharedValue(shown ? 1 : 0);
-  const [mounted, setMounted] = useState(shown);
-  useEffect(() => {
-    if (!where?.tab) { grow.value = 1; setMounted(true); return; }
-    if (shown) { setMounted(true); grow.value = withSpring(1, springs.smooth); }
-    else grow.value = withTiming(0, { duration: 280, easing: Easing.bezier(0.4, 0, 0.6, 1) }, (f) => { if (f) scheduleOnRN(setMounted, false); });
-  }, [shown, where?.tab]);
   const full = W - 28;
-  const morph = useAnimatedStyle(() => ({
-    width: interpolate(grow.value, [0, 1], [58, full]),
-    backgroundColor: interpolateColor(grow.value, [0, 0.35], [tokens.ink, tokens.row]),
-  }));
-  const settle = useAnimatedStyle(() => ({ opacity: interpolate(grow.value, [0, 0.4, 1], [0.6, 1, 1]) }));
 
   // A card belongs to the screen it was made on.
   useEffect(() => { setTurn(null); }, [path]);
-  useEffect(() => { setDockSpace(where && shown ? h + (where.tab ? 0 : 8) : 0); }, [h, !!where, shown]);
+  // Tab screens already leave room for the tabs; the chat scrolls past both.
+  useEffect(() => { setDockSpace(where && shown ? h + (where.chat ? NAV_H + 10 : where.tab ? 0 : 8) : 0); }, [h, !!where, shown]);
   useEffect(() => () => timers.current.forEach(clearTimeout), []);
   // Shared to FamCal from the browser or another app (Julian 28.10.): as if typed into the field.
   const hearRef = useRef<(raw: string) => void>(() => {});
@@ -432,16 +411,18 @@ export default function Dock() {
   useEffect(() => onShared((text) => hearRef.current(text), (uri) => router.push({ pathname: '/bild-liste', params: { uri } })), []);
 
   // Examples only while the calendar is still empty; after that they are clutter (Julian 27.10.).
-  const navTop = Math.max(insets.bottom, 12) + 10 + 58 + 10;
+  const onTabs = !!where && (where.tab || !!where.chat);
+  const above = navTop(insets.bottom) + 10;
   // Typing hides the tabs, so the field drops into their place right above the keyboard.
-  const bottom = !where ? 0 : kb > 0 ? kb + 8 : where.chat ? Math.max(insets.bottom, 12) + 10 : kb > 0 ? kb + 8 : where.tab && !typing && !(shown || mounted) ? navTop : where.tab ? Math.max(insets.bottom, 12) + 10 : insets.bottom + 12 + where.lift;
+  const bottom = !where ? 0 : kb > 0 ? kb + 8 : onTabs ? (typing ? Math.max(insets.bottom, 12) + 10 : above) : insets.bottom + 12 + where.lift;
   useEffect(() => { setDockTop(where ? bottom + (shown ? h : 0) : 0); }, [bottom, h, !!where, shown]);
 
   if (!where) return null;
   const origin = { x: W - 14 - 6 - 24, y: H - bottom - 6 - 24 };
   // On tabs the nav stays on top of the fade, it starts just above it.
   // Above a footer button (liste-neu) the fade starts at the field, so the button stays clear.
-  const fadeFrom = kb || (where.tab && (typing || shown)) ? 0 : where.tab ? navTop - 6 : where.lift ? bottom - 8 : 0;
+  // On the tabs the bar paints its own calm ground, so the fade starts at its top.
+  const fadeFrom = kb || typing ? 0 : onTabs ? above - 10 : where.lift ? bottom - 8 : 0;
   const kind = where.ctx.kind;
 
   const ask = () => { if (spoke.current) setListenKey((k) => k + 1); };
@@ -760,12 +741,10 @@ export default function Dock() {
     play(listFromClaude({ kind: 'liste', list: k, items: k === 'einkauf' ? splitItems(said) : [said] }), said, true);
   };
 
-  if (!shown && !mounted) return null;
+  if (!shown) return null;
   if (where.chat && !shown) return null;
   return (
     <Other.Provider value={other}>
-    {/* A tap beside the field brings the tabs back, as long as no card waits for an answer. */}
-    {where.tab && !turn ? <Pressable accessibilityLabel={tx('Schließen', 'Close')} onPress={() => setTalkOpen(false)} style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0 }} /> : null}
     {/* The screen fades out under the field, so prompts never sit on text. */}
     <View pointerEvents="none" style={{ position: 'absolute', left: 0, right: 0, bottom: fadeFrom, height: bottom - fadeFrom + h + 28 }}>
       <Svg width="100%" height="100%" preserveAspectRatio="none">
@@ -779,7 +758,7 @@ export default function Dock() {
         <Rect x="0" y="0" width="100%" height="100%" fill="url(#dockfade)" />
       </Svg>
     </View>
-    <View pointerEvents="box-none" onLayout={(e) => setH(e.nativeEvent.layout.height)} style={{ position: 'absolute', left: where.chat ? 14 : 18, right: where.chat ? 14 : 18, bottom, gap: 10 }}>
+    <View pointerEvents="box-none" onLayout={(e) => setH(e.nativeEvent.layout.height)} style={{ position: 'absolute', left: onTabs ? 14 : 18, right: onTabs ? 14 : 18, bottom, gap: 10 }}>
       {turn ? (
         <Animated.View key={turn.id} entering={FadeInDown.duration(220)} exiting={FadeOut.duration(150)} style={[{ maxHeight: 420, borderRadius: 26, backgroundColor: tokens.row }, shadow]}>
           <ScrollView ref={scroller} onContentSizeChange={() => scroller.current?.scrollToEnd({ animated: false })} contentContainerStyle={{ padding: 18, gap: 12 }} showsVerticalScrollIndicator={false}>
@@ -870,26 +849,20 @@ export default function Dock() {
         </View>
       ) : null}
       <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 8 }}>
-      <Animated.View style={[{ alignSelf: 'flex-end', alignItems: 'flex-end', overflow: 'hidden', borderRadius: 30 }, where.tab ? morph : { width: where.chat ? W - 28 - 56 : full }]}>
-      <Animated.View style={[{ width: where.chat ? W - 28 - 56 : full }, where.tab ? settle : null]}>
+      <Animated.View style={[{ alignSelf: 'flex-end', alignItems: 'flex-end', overflow: 'hidden', borderRadius: 30 }, { width: onTabs ? W - 28 : full }]}>
+      <Animated.View style={{ width: onTabs ? W - 28 : full }}>
       <TalkBar
-        key={where.chat ? 'chat' : kind}
-        split={where.chat}
-        onClose={where.tab ? () => { setTalkOpen(false); setTurn(null); light(null); } : undefined}
+        key={onTabs ? 'tabs' : kind}
+        split={onTabs}
         onSend={hear}
         onPlus={() => router.push('/neu')}
         spoken={SPOKEN[kind]}
         listenKey={listenKey}
         focusKey={focusKey}
-        placeholder={where.chat && mode === 'msg' ? tx('Nachricht an die Familie …', 'Message to the family …') : turn?.result.kind === 'cut' ? tx('Sprich einfach weiter …', 'Just keep talking …') : where.chat ? tx('Sprich oder schreib einfach …', 'Just say or type it …') : turn && kind === 'kalender' ? tx('Antworten oder ergänzen …', 'Reply or add …') : PLACEHOLDER[kind]}
+        placeholder={where.chat && mode === 'msg' ? tx('Nachricht an die Familie …', 'Message to the family …') : turn?.result.kind === 'cut' ? tx('Sprich einfach weiter …', 'Just keep talking …') : onTabs && !turn ? tx('Sprich oder schreib einfach …', 'Just say or type it …') : turn && kind === 'kalender' ? tx('Antworten oder ergänzen …', 'Reply or add …') : PLACEHOLDER[kind]}
       />
       </Animated.View>
       </Animated.View>
-      {where.chat ? (
-        <PressScale accessibilityLabel={tx('Kalender und Listen zeigen', 'Show calendar and lists')} onPress={() => { haptics.select(); setTurn(null); light(null); setChatTabs(true); }} style={[{ width: 48, height: 48, marginBottom: 4, borderRadius: 999, alignItems: 'center', justifyContent: 'center', backgroundColor: tokens.ink }, gridShadow]}>
-          <LineIcon name="grid" size={22} color={tokens.onInk} />
-        </PressScale>
-      ) : null}
       </View>
     </View>
     </Other.Provider>

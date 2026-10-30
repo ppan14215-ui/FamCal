@@ -280,7 +280,7 @@ function Entry({ f, mine, me, answer }: { f: FeedEntry; mine: boolean; me: 'J' |
           <View style={{ alignSelf: 'stretch', borderRadius: 18, overflow: 'hidden', backgroundColor: tokens.row, opacity: f.undone ? 0.55 : 1 }}>
             {f.undone ? null : f.events ? <Termine ids={f.events} snap={f.snap?.events} changed={f.changed} /> : null}
             {f.undone ? null : f.events ? <VacationLeft ids={f.events} /> : null}
-            {f.undone ? null : f.events ? <PackOffer ids={f.events} /> : null}
+            {f.undone || HIDDEN.suggestions ? null : f.events ? <PackOffer ids={f.events} /> : null}
             {f.undone || !f.suggest || HIDDEN.suggestions ? null : <BringOffer suggest={f.suggest} />}
             {f.undone ? null : f.items ? <Items list={f.items.list} ids={f.items.ids} name={f.snap?.list} names={f.snap?.items} /> : null}
             {f.undone ? null : f.tasks ? <Tasks ids={f.tasks} titles={f.snap?.tasks} /> : null}

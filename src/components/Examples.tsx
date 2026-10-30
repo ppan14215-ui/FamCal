@@ -19,7 +19,7 @@ export const examples = (): { icon: ClayName; t: string; say: string }[] => [
   { icon: 'kalender', t: tx('Termin', 'Event'), say: tx('Freitag 15 Uhr Zahnarzt mit Ben', 'Dentist with Ben on Friday at 3 pm') },
   { icon: 'einkauf', t: tx('Einkauf', 'Shopping'), say: tx('Wir brauchen Milch und Windeln', 'We need milk and nappies') },
   { icon: 'kochtopf', t: tx('Kochen', 'Cooking'), say: tx('Heute Abend koche ich Bolognese', "I'm cooking Bolognese tonight") },
-  { icon: 'gesellschaftsspiel', t: tx('Spiel zählen', 'Keep score'), say: tx(`Rommé: ${persons.J.name} 40, ${persons.T.name} 25`, `Rummy: ${persons.J.name} 40, ${persons.T.name} 25`) },
+  { icon: 'checkliste', t: tx('Nachfragen', 'Ask'), say: tx('Was steht am Wochenende an?', "What's on this weekend?") },
   { icon: 'chat', t: tx(`${persons.T.name} fragen`, `Ask ${persons.T.name}`), say: tx(`Frag ${persons.T.name}, ob Samstag passt`, `Ask ${persons.T.name} if Saturday works`) },
   { icon: 'erledigt', t: tx('Erinnerung', 'Reminder'), say: tx('Erinnere mich, die Kita Anmeldung bis Freitag abzugeben', 'Remind me to hand in the nursery form by Friday') },
 ];

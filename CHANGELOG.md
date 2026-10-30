@@ -4,6 +4,12 @@ Alle sichtbaren Änderungen an FamCal. Neueste oben. Agenten und Menschen: Ände
 
 ## Unreleased
 
+### Super simpel: eine Leiste, ein Feld (30.10.)
+
+- Unten steht immer dieselbe dunkle Leiste mit Chat, Kalender und Listen. Der offene Tab ist hell und zeigt sein Wort.
+- Darüber steht auf jedem Screen dasselbe Feld mit Plus und Mikro. Nichts klappt weg, nichts wird getauscht.
+- Das Plus zeigt nur noch Termin, Listeneintrag und Neue Liste. Die Test-Schalter in den Einstellungen sind weg, die einfache Version und der Assistent sind immer an.
+
 ### Zurück zum Kern, Assistent denkt kurz nach (30.10.)
 
 - Der Assistent ist jetzt immer an und überlegt kurz, bevor er handelt. Er hat eine Liste mit 23 echten Sätzen zweimal komplett bestanden.

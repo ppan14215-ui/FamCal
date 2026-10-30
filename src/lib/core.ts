@@ -13,4 +13,8 @@ export const HIDDEN = {
   ratings: true,
   /** "Mitdenken": things to bring offered under a new Termin (U-Heft, Impfpass). */
   suggestions: true,
+  /** Julian 30.10. 21:52 "super simple": the test switches (old way, old assistant, mic look) are gone; simple and assistant are always on. */
+  toggles: true,
+  /** Plus sheet extras: photo, file, draft, forwarding by mail. Termin, list item and new list stay. */
+  extras: true,
 } as const;

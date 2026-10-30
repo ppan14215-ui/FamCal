@@ -41,8 +41,8 @@ export function setAgent(v: boolean) {
   AsyncStorage.setItem(KEY, v ? '1' : '0').catch(() => {});
   subs.forEach((l) => l());
 }
-export const agentOn = () => on;
-export const useAgent = () => useSyncExternalStore((l) => { subs.add(l); return () => { subs.delete(l); }; }, () => on, () => on);
+export const agentOn = () => HIDDEN.toggles || on;
+export const useAgent = () => useSyncExternalStore((l) => { subs.add(l); return () => { subs.delete(l); }; }, agentOn, agentOn);
 
 // ─── What Claude sees ──────────────────────────────────────────────────────
 

@@ -10,6 +10,7 @@
 import { useSyncExternalStore } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getPref, setPref } from './prefs';
+import { HIDDEN } from './core';
 
 // Julian 30.10. evening: the simple version is the default. A new key, so an old "Wie bisher" choice does not hold it back.
 const KEY = 'famcal.simple2';
@@ -25,8 +26,8 @@ export function setSimple(v: boolean) {
   AsyncStorage.setItem(KEY, v ? '1' : '0').catch(() => {});
   emit();
 }
-export const isSimple = () => on;
-export const useSimple = () => useSyncExternalStore((l) => { subs.add(l); return () => { subs.delete(l); }; }, () => on, () => on);
+export const isSimple = () => HIDDEN.toggles || on;
+export const useSimple = () => useSyncExternalStore((l) => { subs.add(l); return () => { subs.delete(l); }; }, isSimple, isSimple);
 
 /** A sentence for the field, from the plus sheet's examples: the bar picks it up and focuses. */
 let prefill: { text: string; n: number } = { text: '', n: 0 };
