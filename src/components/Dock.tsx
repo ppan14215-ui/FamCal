@@ -32,7 +32,7 @@ import { locate, light, lightOneByOne } from '../lib/landing';
 import { setDockTop, setDockSpace } from '../lib/dockSpace';
 import { useKeyboardInset, useTyping } from '../lib/keyboard';
 import { setTalkOpen, useTalkOpen, setChatTabs, useChatTabs, chatBacks } from '../lib/talkOpen';
-import { addMade, addMessage, addAsk, recentMade, markChanged } from '../lib/feed';
+import { addMade, addMessage, addAsk, addSay, recentMade, markChanged } from '../lib/feed';
 import { hm, short } from '../lib/dates';
 import { Tile } from './ui/Clay';
 import { haptics } from '../lib/haptics';
@@ -549,9 +549,9 @@ export default function Dock() {
    */
   const think = (said: string, n: number, then: (r: Said | null) => void, convo?: Convo) => {
     const stop = () => { if (heard.current === n) heard.current++; setVeil({ phase: 'off', onCancel: undefined }); haptics.select(); };
-    setVeil({ phase: 'think', inline: !!where.chat, origin, target: null, lines: [tx('Ich verstehe …', 'Understanding …')], shown: 1, said, head: undefined, onCancel: stop });
+    setVeil({ phase: 'think', inline: !!where.chat, origin, target: null, lines: [tx('Ich verstehe …', 'Understanding …')], shown: 0, said, head: undefined, onCancel: stop, typing: false, reply: undefined });
     // Julian 28.10.: waiting is fine when you see what is happening. Each piece Claude has read shows up at once.
-    const glimpse = (g: Glimpse) => { if (heard.current !== n) return; const l = glimpseLine(g); if (l) setVeil({ lines: [tx('Ich verstehe …', 'Understanding …'), l], shown: 2 }); };
+    const glimpse = (g: Glimpse) => { if (heard.current !== n) return; const l = glimpseLine(g); if (l) setVeil({ lines: [tx('Ich verstehe …', 'Understanding …'), l], shown: 1 }); };
     const late = new Promise<null>((r) => setTimeout(() => r(null), FIRST_MS));
     Promise.race([claudeSays(said, convo, glimpse), late]).then((r) => { if (heard.current === n) inLang(talkLang.current, () => then(r)); });
   };
@@ -559,14 +559,21 @@ export default function Dock() {
   /** The assistant reads; a question back opens the card and listens, everything else plays like any plan. */
   const thinkAgent = (said: string, n: number, talk: Line[], fallback: () => void) => {
     const stop = () => { if (heard.current === n) heard.current++; setVeil({ phase: 'off', onCancel: undefined }); haptics.select(); };
-    setVeil({ phase: 'think', inline: !!where.chat, origin, target: null, lines: [tx('Ich denke mit …', 'Thinking …')], shown: 1, said, head: undefined, onCancel: stop });
-    askAgent(said, talk, screenOf(where.ctx)).then((r) => {
+    // In the chat it answers like a person (Julian 30.10.): typing dots, then its sentence, then what it does.
+    const chat = !!where.chat;
+    setVeil({ phase: 'think', inline: chat, origin, target: null, lines: chat ? [] : [tx('Ich verstehe …', 'Understanding …')], shown: 0, said, head: undefined, onCancel: stop, typing: chat, reply: undefined });
+    const onSay = (say: string) => { if (heard.current !== n) return; if (chat) setVeil({ reply: say }); else setVeil({ lines: [say], shown: 0 }); };
+    askAgent(said, talk, screenOf(where.ctx), onSay).then((r) => {
       if (heard.current !== n) return;
       inLang(talkLang.current, () => {
-        if (!r) return fallback();
+        if (!r) { setVeil({ typing: false, reply: undefined }); return fallback(); }
         const p = agentPlan(r, said);
-        if (!p) return hold(said, { kind: 'unclear', text: tx('Das habe ich nicht verstanden.', "I didn't get that.") }, talk);
-        if ('ask' in p) return hold(said, { kind: 'answer', reply: { kind: 'answer', text: p.ask } }, [...talk.slice(0, -1), { said, app: p.ask }]);
+        if (!p) { setVeil({ typing: false }); return hold(said, { kind: 'unclear', text: tx('Das habe ich nicht verstanden.', "I didn't get that.") }, talk); }
+        if ('ask' in p) {
+          if (chat) addSay(said, p.ask);
+          setVeil({ typing: false });
+          return hold(said, { kind: 'answer', reply: { kind: 'answer', text: p.ask } }, [...talk.slice(0, -1), { said, app: p.ask }]);
+        }
         play(p, said, false, undefined, talk);
       });
     });
@@ -593,7 +600,7 @@ export default function Dock() {
       setVeil({ phase: 'off', onCancel: undefined });
       haptics.select();
     };
-    setVeil(fresh ? { phase: 'think', inline: !!where.chat, origin, target: null, lines: p.steps, shown: 0, said, head: p.head, onCancel: p.head ? stop : undefined } : { lines: p.steps, shown: 0, head: p.head, onCancel: p.head ? stop : undefined });
+    setVeil(fresh ? { phase: 'think', inline: !!where.chat, origin, target: null, lines: p.steps, shown: 0, said, head: p.head, onCancel: p.head ? stop : undefined, typing: false, reply: undefined } : { lines: p.steps, shown: 0, head: p.head, onCancel: p.head ? stop : undefined });
     p.steps.forEach((_, i) => later(450 + STEP_MS * i, () => { setVeil({ shown: i + 1 }); haptics.select(); }));
     later(450 + STEP_MS * p.steps.length + 150, () => {
       setVeil({ onCancel: undefined });
@@ -601,7 +608,9 @@ export default function Dock() {
       // In the chat the card lands in the log and we stay (Julian 29.10.).
       const r0 = out.result;
       if (where.chat && r0?.kind === 'event') addMade(said, [r0.event.id], undefined, () => actions.removeEvent(r0.event.id), undefined, { head: p.head, steps: p.steps });
-      else if (where.chat && r0?.kind === 'done' && !r0.note) addMade(said, out.lit ?? (out.land ? [out.land] : []), r0.text, r0.undo, r0.events, { head: p.head, steps: p.steps });
+      else if (where.chat && r0?.kind === 'done' && (!r0.note || r0.say)) addMade(said, out.lit ?? (out.land ? [out.land] : []), r0.text, r0.undo, r0.events, { head: p.head, steps: p.steps }, r0.say);
+      // An answer from the assistant stays in the chat as its message (Julian 30.10.).
+      else if (where.chat && agentOn() && r0?.kind === 'answer' && r0.reply.kind === 'answer') addSay(said, r0.reply.text);
       // A new Termin lands in the calendar; switch there first if we are elsewhere.
       const go = where.chat ? undefined : out.go ?? (out.result?.kind === 'event' ? '/kalender' : undefined);
       // Heute shows one week; a Termin further out lands in the list of days.
@@ -619,7 +628,7 @@ export default function Dock() {
           const offer = res.kind === 'event' ? [res.needsTime && res.event.allDay ? res.ask || tx('Um wie viel Uhr? Oder ganztägig?', 'What time? Or all day?') : '', res.suggest && !res.event.place ? againAt(res.suggest) : ''].filter(Boolean).join(' ') : '';
           const q = asks ? (res as { reply: { text: string } }).reply.text : res.kind === 'recipe' ? (res.kept ? keptLine(res.kept.recipe) : res.question) : offer || undefined;
           // The chat already shows the card; only a question stays above the field, for whoever asked.
-          if (where.chat && !q && (res.kind === 'event' || (res.kind === 'done' && !res.note))) return;
+          if (where.chat && !q && (res.kind === 'event' || (res.kind === 'done' && (!res.note || res.say)) || (res.kind === 'answer' && agentOn()))) return;
           const all = q ? [...lines.slice(0, -1), { ...lines[lines.length - 1], app: q }] : lines;
           setTurn({ id: Date.now(), said, result: res, lines: all });
           if (q) ask();

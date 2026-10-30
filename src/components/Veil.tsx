@@ -40,6 +40,21 @@ function Spin() {
   );
 }
 
+/** Three dots that breathe one after another, like someone typing back (Julian 30.10.: nothing static while it works). */
+export function Dots({ color = tokens.sub }: { color?: string }) {
+  return (
+    <View style={{ flexDirection: 'row', gap: 5, height: 21, alignItems: 'center' }}>
+      {[0, 1, 2].map((i) => <Dot key={i} i={i} color={color} />)}
+    </View>
+  );
+}
+function Dot({ i, color }: { i: number; color: string }) {
+  const t = useSharedValue(0);
+  useEffect(() => { t.value = withDelay(i * 160, withRepeat(withSequence(withTiming(1, { duration: 360, easing: Easing.out(Easing.quad) }), withTiming(0, { duration: 360, easing: Easing.in(Easing.quad) }), withTiming(0, { duration: 240 })), -1, false)); }, []);
+  const st = useAnimatedStyle(() => ({ opacity: 0.35 + 0.65 * t.value, transform: [{ translateY: -3 * t.value }] }));
+  return <Animated.View style={[{ width: 7, height: 7, borderRadius: 999, backgroundColor: color }, st]} />;
+}
+
 export function Step({ label, state, big }: { label: string; state: 'done' | 'now' | 'next'; big?: boolean }) {
   return (
     <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 12 }}>
@@ -147,7 +162,9 @@ export default function Veil({ phase, origin, target, lines, shown, said, head, 
 // the toasts) and driven from the screen that talks.
 
 /** inline: in the chat the same steps run as a small card in the log, without the full screen (Julian 29.10.). */
-type VeilState = { phase: VeilPhase; origin: Pt; target: Pt | null; lines: string[]; shown: number; said?: string; head?: string; onLanded?: () => void; onCancel?: () => void; inline?: boolean };
+type VeilState = { phase: VeilPhase; origin: Pt; target: Pt | null; lines: string[]; shown: number; said?: string; head?: string; onLanded?: () => void; onCancel?: () => void; inline?: boolean;
+  /** The assistant talks back (Julian 30.10.): typing dots until its sentence arrives, then the sentence. */
+  typing?: boolean; reply?: string };
 let veil: VeilState = { phase: 'off', origin: { x: 0, y: 0 }, target: null, lines: [], shown: 0 };
 const subs = new Set<() => void>();
 export function setVeil(patch: Partial<VeilState>) {

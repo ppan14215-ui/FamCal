@@ -11,6 +11,7 @@
  */
 import { useSyncExternalStore } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { fetch as streamFetch } from 'expo/fetch';
 import { supabase } from './cloud';
 import { getAuth } from './auth';
 import { getPref, setPref } from './prefs';
@@ -100,7 +101,7 @@ export function snapshot(): string {
 /** The chat a moment ago, so "nein, um 16 Uhr" knows what it is about. Only the last half hour. */
 function chatHistory(): { said: string; app?: string }[] {
   const since = new Date(Date.now() - 30 * 60000).toISOString();
-  return feedTail(6).filter((f) => f.at >= since && !f.undone).map((f) => ({ said: f.said, app: f.kind === 'made' ? f.text : f.ask ? tx(`Frage an ${persons[f.ask.to].name}`, `Asked ${persons[f.ask.to].name}`) : undefined }));
+  return feedTail(6).filter((f) => f.at >= since && !f.undone).map((f) => ({ said: f.said, app: f.kind === 'made' ? f.say ?? f.text : f.ask ? tx(`Frage an ${persons[f.ask.to].name}`, `Asked ${persons[f.ask.to].name}`) : undefined }));
 }
 
 // ─── Asking ────────────────────────────────────────────────────────────────
@@ -117,15 +118,48 @@ export function screenOf(ctx: { kind: string; id?: string }): string {
   return '';
 }
 
-export async function askAgent(said: string, lines: { said: string; app?: string }[], screen = ''): Promise<AgentAnswer | null> {
-  if (!supabase || !getAuth().session) return null;
+export async function askAgent(said: string, lines: { said: string; app?: string }[], screen = '', onSay?: (say: string) => void): Promise<AgentAnswer | null> {
+  const session = getAuth().session;
+  const url = process.env.EXPO_PUBLIC_SUPABASE_URL;
+  if (!supabase || !session || !url) return null;
   const history = [...chatHistory(), ...lines.slice(0, -1)].slice(-6);
-  const call = supabase.functions
-    .invoke<AgentAnswer & { left: number | null }>('assistent', { body: { text: said, today: TODAY, now: NOW, names: { J: persons.J.name, T: persons.T.name }, me: myRole(), lang: LANG, icons: TERMIN_ICON_NAMES, snapshot: snapshot(), history, screen } })
-    .then(({ data, error }) => (error || !data || !Array.isArray(data.actions) ? null : data))
-    .catch(() => null);
-  const late = new Promise<null>((r) => setTimeout(() => r(null), WAIT_MS));
-  return Promise.race([call, late]);
+  const body = { text: said, today: TODAY, now: NOW, names: { J: persons.J.name, T: persons.T.name }, me: myRole(), lang: LANG, icons: TERMIN_ICON_NAMES, snapshot: snapshot(), history, screen, stream: true };
+  const ctrl = new AbortController();
+  const late = setTimeout(() => ctrl.abort(), WAIT_MS);
+  try {
+    // Julian 30.10.: "Okay, verstanden, mach ich". The sentence arrives first, while the actions are still being written.
+    const res = await streamFetch(`${url}/functions/v1/assistent`, {
+      method: 'POST',
+      signal: ctrl.signal,
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}`, apikey: process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? '' },
+      body: JSON.stringify(body),
+    });
+    if (!res.ok || !res.body) return null;
+    const reader = res.body.getReader();
+    const dec = new TextDecoder();
+    let buf = '';
+    let done: AgentAnswer | null = null;
+    for (;;) {
+      const { value, done: end } = await reader.read();
+      if (end) break;
+      buf += dec.decode(value, { stream: true });
+      let cut: number;
+      while ((cut = buf.indexOf('\n\n')) >= 0) {
+        const line = buf.slice(0, cut).replace(/^data:\s*/, '');
+        buf = buf.slice(cut + 2);
+        let ev: { say?: string; done?: AgentAnswer; error?: string };
+        try { ev = JSON.parse(line); } catch { continue; }
+        if (ev.say) onSay?.(ev.say);
+        if (ev.done && Array.isArray(ev.done.actions)) done = ev.done;
+        if (ev.error) return null;
+      }
+    }
+    return done;
+  } catch {
+    return null;
+  } finally {
+    clearTimeout(late);
+  }
 }
 
 // ─── Doing ─────────────────────────────────────────────────────────────────
@@ -314,8 +348,8 @@ function opOf(a: Action, said: string): Op | null {
 }
 
 /**
- * Julian 30.10.: "Er sollte auch immer antworten". Claude's own sentence becomes
- * the card's line; what changed stays visible on the card and in its steps.
+ * Julian 30.10.: "Er sollte auch immer antworten". Claude's own sentence is
+ * shown as its message above the card; what changed stays visible on the card.
  * Cards that still ask something (a time, which recipe, a clash) keep their question.
  */
 function withSay(p: Plan, say: string): Plan {
@@ -325,8 +359,8 @@ function withSay(p: Plan, say: string): Plan {
     run: () => {
       const out = p.run();
       const r = out.result;
-      if (r?.kind === 'done') return { ...out, result: { ...r, text: say, sub: r.text } };
-      if (r?.kind === 'event' && !r.needsTime && !r.ask && !r.suggest) return { ...out, lit: [r.event.id], result: { kind: 'done', text: say, sub: tx(`${q(r.event.title)} steht im Kalender.`, `${q(r.event.title)} is in the calendar.`), events: [r.event.id], undo: () => actions.removeEvent(r.event.id) } };
+      if (r?.kind === 'done') return { ...out, result: { ...r, say } };
+      if (r?.kind === 'event' && !r.needsTime && !r.ask && !r.suggest) return { ...out, lit: [r.event.id], result: { kind: 'done', say, text: tx(`${q(r.event.title)} steht im Kalender.`, `${q(r.event.title)} is in the calendar.`), events: [r.event.id], undo: () => actions.removeEvent(r.event.id) } };
       return out;
     },
   };

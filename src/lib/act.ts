@@ -34,7 +34,9 @@ export type Ctx =
 export type Result =
   | { kind: 'event'; event: CalEvent; needsTime?: boolean; suggest?: Suggest; ask?: string }
   | { kind: 'answer'; reply: Extract<Reply, { kind: 'answer' | 'ask' }> }
-  | { kind: 'done'; text: string; sub?: string; undo?: () => void; open?: string; events?: string[]; note?: boolean }
+  | { kind: 'done'; text: string; sub?: string; undo?: () => void; open?: string; events?: string[]; note?: boolean;
+      /** The assistant's own sentence, shown as its message above the card (Julian 30.10.). */
+      say?: string }
   /** The sentence stopped mid-thought: the card shows the start and the next sentence is appended. */
   | { kind: 'cut' }
   /** Not sure what it is: the card asks, calendar or a list. */

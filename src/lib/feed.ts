@@ -37,6 +37,8 @@ export type Card = {
   answer?: { ask: string; yes: boolean };
   /** A later message changed what this card made (Julian 30.10.: "jeden Mittwoch davon"). */
   changed?: boolean;
+  /** What the assistant said back, shown as its own message (Julian 30.10.: "Okay, verstanden, mach ich"). */
+  say?: string;
 };
 export type FeedEntry = Card & {
   id: string;
@@ -51,7 +53,7 @@ export type FeedEntry = Card & {
 
 type Row = { id: string; role: PersonId; kind: 'made' | 'msg'; said: string; card: Card | null; undone: boolean; created_at: string };
 const fromRow = (r: Row): FeedEntry => ({ ...(r.card ?? {}), id: r.id, at: r.created_at, by: r.role, said: r.said, kind: r.kind, undone: r.undone || undefined });
-const cardOf = ({ events, tasks, items, text, snap, why, ask, answer, suggest, changed }: FeedEntry): Card => ({ events, tasks, items, text, snap, why, ask, answer, suggest, changed });
+const cardOf = ({ events, tasks, items, text, snap, why, ask, answer, suggest, changed, say }: FeedEntry): Card => ({ events, tasks, items, text, snap, why, ask, answer, suggest, changed, say });
 
 const KEY = 'famcal.feed';
 let feed: FeedEntry[] = [];
@@ -120,7 +122,7 @@ export function answerAsk(askId: string, yes: boolean) {
 }
 
 /** Sorts what a sentence changed into Termine, tasks and list items. */
-export function addMade(said: string, ids: string[], text?: string, undo?: () => void, events?: string[], why?: Card['why']) {
+export function addMade(said: string, ids: string[], text?: string, undo?: () => void, events?: string[], why?: Card['why'], say?: string) {
   const s = get();
   const ev = new Set(events ?? []);
   const tasks: string[] = [];
@@ -133,7 +135,7 @@ export function addMade(said: string, ids: string[], text?: string, undo?: () =>
       if (l && (!items || items.list === l.id)) items = { list: l.id, ids: [...(items?.ids ?? []), id] };
     }
   }
-  if (!ev.size && !tasks.length && !items) return;
+  if (!ev.size && !tasks.length && !items && !say) return;
   const list = items && s.lists.find((l) => l.id === items!.list);
   const all = list?.sections.flatMap((sec) => sec.items) ?? [];
   const snap: Card['snap'] = {
@@ -144,11 +146,14 @@ export function addMade(said: string, ids: string[], text?: string, undo?: () =>
   };
   const suggest: Record<string, string[]> = {};
   for (const e of s.events) if (ev.has(e.id)) { const x = suggestBring(e.title, e.sub, e.suggest, (e.bring ?? []).map((b) => b.t)); if (x.length) suggest[e.id] = x; }
-  const f: FeedEntry = { id: newId(), at: new Date().toISOString(), by: me(), said, kind: 'made', suggest: Object.keys(suggest).length ? suggest : undefined, events: ev.size ? [...ev] : undefined, tasks: tasks.length ? tasks : undefined, items, text, snap, why: why?.steps.length ? { head: why.head, steps: why.steps.slice(0, 12) } : undefined };
+  const f: FeedEntry = { id: newId(), at: new Date().toISOString(), by: me(), said, kind: 'made', suggest: Object.keys(suggest).length ? suggest : undefined, events: ev.size ? [...ev] : undefined, tasks: tasks.length ? tasks : undefined, items, text, snap: ev.size || tasks.length || items ? snap : undefined, say: say?.trim() || undefined, why: why?.steps.length ? { head: why.head, steps: why.steps.slice(0, 12) } : undefined };
   if (undo) undos.set(f.id, undo);
   put(f);
   void upload(f);
 }
+
+/** An answer or a question back from the assistant: only its words, no card (Julian 30.10.). */
+export const addSay = (said: string, say: string) => addMade(said, [], undefined, undefined, undefined, undefined, say);
 
 /** How long a sentence still belongs to the one before it (Julian 30.10.: nahe beieinander liegende Nachrichten). */
 const TOGETHER_MS = 10 * 60 * 1000;

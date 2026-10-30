@@ -13,8 +13,10 @@
  *
  * Request (signed in, JWT checked by Supabase):
  *   { text, today, now, names: { J, T }, lang, icons: string[], snapshot: string,
- *     history?: [{ said, app? }], screen?: "Offen ist die Liste …" }
+ *     history?: [{ said, app? }], screen?: "Offen ist die Liste …", stream?: true }
  * Response: { actions: [{ tool, input }], text, left } or { error }.
+ * With stream (Julian 30.10.: "Okay, verstanden, mach ich"): server-sent events,
+ * first { say } as soon as Claude's sentence is written, then { done } or { error }.
  *
  * Same plan and cost guard as verstehen (use_ai_call): one call per sentence.
  * The API key lives only here, as the secret ANTHROPIC_API_KEY.
@@ -104,7 +106,7 @@ const TOOLS: Tool[] = [
   { name: 'partner_fragen', ...obj('Schickt dem anderen Elternteil eine Ja/Nein Frage in den Familienchat ("Passt Samstag?").', {
     question: str('Die Frage, kurz, in der Sprache des Satzes.'),
   }, ['question']) },
-  { name: 'antworten', ...obj('Dein Satz an die Person: die Antwort auf eine Frage zum Kalender, zu Listen oder Aufgaben, oder zu jeder Ausführung kurz, was du gemacht hast.', {
+  { name: 'antworten', ...obj('Dein Satz an die Person, immer als erstes Werkzeug: die Antwort auf eine Frage zum Kalender, zu Listen oder Aufgaben, oder kurz, was du jetzt machst.', {
     text: str('Kurz, natürlich, in der Sprache des Satzes, höchstens drei Sätze.'),
     events: strs('ids der Termine, um die es geht; die App zeigt sie.'),
   }, ['text']) },
@@ -124,7 +126,7 @@ Grundregel (Julian):
 - Mehrere Dinge in einem Satz: mehrere Werkzeuge in einer Antwort.
 - Fragen zum Kalender, zu Listen oder Aufgaben ("Was steht morgen an?", "Wann ist der Zahnarzt?", "Was fehlt noch auf der Einkaufsliste?") beantwortest du mit antworten, aus dem Stand unten.
 - Was die App nicht kann (Einstellungen, Nachrichten an andere Menschen, Anrufe, Bezahlen), sagst du mit nachfragen und schlägst vor, was geht.
-- Antworte immer: Rufe zu jeder Ausführung zusätzlich antworten auf, mit einem kurzen, natürlichen Satz an die Person, was du gemacht hast ("Erledigt, der Zahnarzt ist jetzt Freitag um 10.", "Steht drauf. Brauchst du noch Butter?"). Höchstens zwei Sätze, freundlich, ohne die Details einfach aufzuzählen. Bei nachfragen ist die Frage die Antwort.
+- Antworte immer, wie ein echter persönlicher Assistent: Rufe bei jeder Ausführung ZUERST antworten auf, mit einem kurzen, natürlichen Satz an die Person, was du machst ("Okay, ich verschiebe den Zahnarzt auf Freitag um 10.", "Mach ich, Butter steht drauf.", "Gern, ich lege die Packliste an."). Danach die Werkzeuge, die es ausführen. Der Satz erscheint sofort, während die App noch arbeitet. Höchstens zwei Sätze, freundlich und locker, ohne alle Details aufzuzählen. Bei nachfragen ist die Frage die Antwort.
 - Schreibe außerhalb der Werkzeuge keinen Text.
 
 Verstehen:
@@ -164,7 +166,7 @@ Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors });
   const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { ...cors, 'Content-Type': 'application/json' } });
 
-  let input: { text?: string; today?: string; now?: string; names?: { J?: string; T?: string }; me?: string; lang?: string; icons?: string[]; snapshot?: string; screen?: string; history?: { said?: string; app?: string }[] };
+  let input: { text?: string; today?: string; now?: string; names?: { J?: string; T?: string }; me?: string; lang?: string; icons?: string[]; snapshot?: string; screen?: string; stream?: boolean; history?: { said?: string; app?: string }[] };
   try { input = await req.json(); } catch { return json({ error: 'bad_json' }, 400); }
   const text = (input.text ?? '').trim().slice(0, 500);
   const today = /^\d{4}-\d{2}-\d{2}$/.test(input.today ?? '') ? input.today! : new Date().toISOString().slice(0, 10);
@@ -190,28 +192,63 @@ Deno.serve(async (req) => {
   const icons = (Array.isArray(input.icons) ? input.icons : []).filter((x) => typeof x === 'string' && /^[a-z0-9-]{2,30}$/.test(x)).slice(0, 300).join(', ') || 'kalender';
 
   const t0 = Date.now();
-  try {
-    const res = await client.messages.create({
-      model: 'claude-haiku-5-5',
-      max_tokens: 3000,
-      // Rules, tools and icon names are cached; only the family's state and the sentence are read fresh.
-      system: [{ type: 'text', text: SYSTEM }, { type: 'text', text: `Icons: ${icons}`, cache_control: { type: 'ephemeral' } }],
-      tools: TOOLS,
-      tool_choice: { type: 'any' },
-      // Julian 28.10.: it must be quick. The family waits with the orb spinning.
-      thinking: { type: 'disabled' },
-      output_config: { effort: 'low' },
-      messages: [{
-        role: 'user',
-        content: `Heute ist ${wd}, ${today}, ${input.now ?? ''} Uhr. Eltern: ${names}. Es spricht: ${me}. Sprache der App: ${input.lang === 'en' ? 'Englisch' : 'Deutsch'}.\n\nStand der Familie:\n${snapshot || '(leer)'}${screen ? `\n\nBildschirm: ${screen}` : ''}${history ? `\n\nVerlauf:\n${history}` : ''}\n\nNeuer Satz: ${text}`,
-      }],
-    });
+  const params = {
+    model: 'claude-haiku-5-5',
+    max_tokens: 3000,
+    // Rules, tools and icon names are cached; only the family's state and the sentence are read fresh.
+    system: [{ type: 'text', text: SYSTEM }, { type: 'text', text: `Icons: ${icons}`, cache_control: { type: 'ephemeral' } }],
+    tools: TOOLS,
+    tool_choice: { type: 'any' },
+    // Julian 28.10.: it must be quick. The family waits with the orb spinning.
+    thinking: { type: 'disabled' },
+    output_config: { effort: 'low' },
+    messages: [{
+      role: 'user',
+      content: `Heute ist ${wd}, ${today}, ${input.now ?? ''} Uhr. Eltern: ${names}. Es spricht: ${me}. Sprache der App: ${input.lang === 'en' ? 'Englisch' : 'Deutsch'}.\n\nStand der Familie:\n${snapshot || '(leer)'}${screen ? `\n\nBildschirm: ${screen}` : ''}${history ? `\n\nVerlauf:\n${history}` : ''}\n\nNeuer Satz: ${text}`,
+    }],
+  } satisfies Anthropic.Messages.MessageCreateParamsNonStreaming;
+  const outcome = (res: Anthropic.Messages.Message, first?: number) => {
     const actions = res.content.flatMap((b) => (b.type === 'tool_use' && NAMES.has(b.name) ? [{ tool: b.name, input: b.input }] : []));
     const said = res.content.map((b) => (b.type === 'text' ? b.text : '')).join('').trim();
     // Only timing and the tools used, never what was said.
-    console.log(JSON.stringify({ ms: Date.now() - t0, tools: actions.map((a) => a.tool), follow: !!history, snap: snapshot.length, stop: res.stop_reason, out: res.usage.output_tokens, cached: res.usage.cache_read_input_tokens ?? 0 }));
-    if (res.stop_reason === 'refusal' || (!actions.length && !said)) return json({ error: 'not_understood' }, 422);
-    return json({ actions, text: said, left: allowed.left ?? null });
+    console.log(JSON.stringify({ ms: Date.now() - t0, first: first ?? null, tools: actions.map((a) => a.tool), follow: !!history, snap: snapshot.length, stop: res.stop_reason, out: res.usage.output_tokens, cached: res.usage.cache_read_input_tokens ?? 0 }));
+    return res.stop_reason === 'refusal' || (!actions.length && !said) ? null : { actions, text: said, left: allowed.left ?? null };
+  };
+
+  if (input.stream) {
+    const enc = new TextEncoder();
+    const body = new ReadableStream({
+      async start(ctrl) {
+        const send = (o: unknown) => ctrl.enqueue(enc.encode(`data: ${JSON.stringify(o)}\n\n`));
+        // The sentence goes out the moment its block is complete, before the actions are written.
+        const blocks = new Map<number, { name: string; json: string }>();
+        let first: number | undefined;
+        try {
+          const stream = client.messages.stream(params);
+          stream.on('streamEvent', (ev) => {
+            if (ev.type === 'content_block_start' && ev.content_block.type === 'tool_use') blocks.set(ev.index, { name: ev.content_block.name, json: '' });
+            if (ev.type === 'content_block_delta' && ev.delta.type === 'input_json_delta') { const b = blocks.get(ev.index); if (b) b.json += ev.delta.partial_json; }
+            if (ev.type === 'content_block_stop') {
+              const b = blocks.get(ev.index);
+              if (b?.name !== 'antworten' && b?.name !== 'nachfragen') return;
+              try { const v = JSON.parse(b.json); const t = String(v.text ?? v.question ?? '').trim(); if (t) { first ??= Date.now() - t0; send({ say: t }); } } catch { /* the done event carries it anyway */ }
+            }
+          });
+          const out = outcome(await stream.finalMessage(), first);
+          send(out ? { done: out } : { error: 'not_understood' });
+        } catch (e) {
+          console.error('assistent', Date.now() - t0, e);
+          send({ error: 'model_failed' });
+        }
+        ctrl.close();
+      },
+    });
+    return new Response(body, { headers: { ...cors, 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache' } });
+  }
+
+  try {
+    const out = outcome(await client.messages.create(params));
+    return out ? json(out) : json({ error: 'not_understood' }, 422);
   } catch (e) {
     const status = e instanceof Anthropic.RateLimitError ? 429 : e instanceof Anthropic.APIError ? 502 : 500;
     console.error('assistent', Date.now() - t0, e);

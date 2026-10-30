@@ -7,6 +7,7 @@
  */
 import React, { useEffect, useRef, useState } from 'react';
 import { View, ScrollView } from 'react-native';
+import Animated from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { H1, Check } from '../../src/components/ui/kit';
@@ -16,6 +17,7 @@ import { Tile } from '../../src/components/ui/Clay';
 import PressScale from '../../src/components/ui/PressScale';
 import LineIcon from '../../src/components/ui/LineIcon';
 import { tokens, persons } from '../../src/theme';
+import { swapIn, rowLayout } from '../../src/theme/motion';
 import { useStore, actions } from '../../src/state/store';
 import { useDockSpace } from '../../src/lib/dockSpace';
 import { useKeyboardInset } from '../../src/lib/keyboard';
@@ -24,7 +26,7 @@ import { getFamily, myRole } from '../../src/lib/sync';
 import { hm, short, TODAY } from '../../src/lib/dates';
 import HeaderRight from '../../src/components/ui/HeaderRight';
 import { tx } from '../../src/i18n/lang';
-import { useVeil, Step } from '../../src/components/Veil';
+import { useVeil, Step, Dots } from '../../src/components/Veil';
 import { isTrip, makePackList, kidsOn, ageText } from '../../src/lib/pack';
 import { isVacation, leftLine } from '../../src/lib/urlaub';
 import { useSimple } from '../../src/lib/simple';
@@ -243,6 +245,18 @@ function Ask({ f, me, answer }: { f: FeedEntry; me: 'J' | 'T'; answer?: FeedEntr
   );
 }
 
+/** The assistant's own words (Julian 30.10.: "wie mit einem echten Assistenten"): a message from the left, typing dots until it has spoken. */
+function Reply({ text }: { text?: string }) {
+  return (
+    <View style={{ alignSelf: 'stretch', alignItems: 'flex-start', gap: 4 }}>
+      <Txt size={12.5} color={tokens.sub}>{tx('Assistent', 'Assistant')}</Txt>
+      <Animated.View layout={rowLayout} style={{ maxWidth: '86%', borderRadius: 18, borderBottomLeftRadius: 6, paddingVertical: 9, paddingHorizontal: 13, backgroundColor: tokens.row }}>
+        {text ? <Animated.View entering={swapIn}><Txt size={15} line={21}>{text}</Txt></Animated.View> : <Dots />}
+      </Animated.View>
+    </View>
+  );
+}
+
 function Entry({ f, mine, me, answer }: { f: FeedEntry; mine: boolean; me: 'J' | 'T'; answer?: FeedEntry }) {
   const [open, setOpen] = useState(false);
   const p = persons[f.by];
@@ -260,7 +274,8 @@ function Entry({ f, mine, me, answer }: { f: FeedEntry; mine: boolean; me: 'J' |
           <Txt size={15} line={21}>{f.ask ? f.ask.q : f.said}</Txt>
         </View>
         {f.ask ? <Ask f={f} me={me} answer={answer} /> : null}
-        {f.kind === 'made' ? (
+        {f.say && !f.undone ? <Reply text={f.say} /> : null}
+        {f.kind === 'made' && (f.events || f.items || f.tasks || f.undone) ? (
           <View style={{ alignSelf: 'stretch', borderRadius: 18, overflow: 'hidden', backgroundColor: tokens.row, opacity: f.undone ? 0.55 : 1 }}>
             {f.undone ? null : f.events ? <Termine ids={f.events} snap={f.snap?.events} changed={f.changed} /> : null}
             {f.undone ? null : f.events ? <VacationLeft ids={f.events} /> : null}
@@ -300,7 +315,8 @@ function Thinking({ by }: { by: 'J' | 'T' }) {
           <Txt size={15} line={21}>{v.said}</Txt>
         </View>
       ) : null}
-      <View style={{ alignSelf: 'stretch', borderRadius: 18, padding: 14, gap: 10, backgroundColor: tokens.row }}>
+      {v.typing ? <Reply text={v.reply} /> : null}
+      {v.typing && !v.lines.length ? null : <View style={{ alignSelf: 'stretch', borderRadius: 18, padding: 14, gap: 10, backgroundColor: tokens.row }}>
         {v.head ? <Txt size={12} weight={600} tracking={0.6} color={tokens.done}>{v.head.toUpperCase()}</Txt> : null}
         {v.lines.length ? v.lines.map((l, i) => <Step key={i} label={l} state={i < v.shown ? 'done' : i === v.shown ? 'now' : 'next'} />) : <Step label={tx('Denke nach …', 'Thinking …')} state="now" />}
         {v.head && v.onCancel && v.phase === 'think' ? (
@@ -311,7 +327,7 @@ function Thinking({ by }: { by: 'J' | 'T' }) {
             </PressScale>
           </View>
         ) : null}
-      </View>
+      </View>}
     </View>
   );
 }
