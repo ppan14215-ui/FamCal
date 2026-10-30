@@ -21,6 +21,7 @@ import * as Updates from 'expo-updates';
 import { useMicStyle, setMicStyle } from '../src/lib/micStyle';
 import { useThemeChoice, setTheme, type ThemeChoice } from '../src/theme/mode';
 import { useSimple, setSimple } from '../src/lib/simple';
+import { useAgent, setAgent } from '../src/lib/assistent';
 import { Seg } from '../src/components/ui/kit';
 import { haptics } from '../src/lib/haptics';
 import { countryName, regionName } from '../src/lib/holidays';
@@ -51,6 +52,7 @@ export default function Einstellungen() {
   const mic = useMicStyle();
   const theme = useThemeChoice();
   const simple = useSimple();
+  const agent = useAgent();
   const cals = useStore((s) => s.calendars);
   const demo = useStore((s) => s.demo);
   const names = useStore((s) => s.names);
@@ -79,6 +81,12 @@ export default function Einstellungen() {
         <Txt size={13} weight={600} color={tokens.sub} style={{ paddingHorizontal: 4 }}>{tx('Version zum Testen', 'Version to test')}</Txt>
         <Seg items={[{ key: 'jetzt', label: tx('Wie bisher', 'As before') }, { key: 'einfach', label: tx('Einfache Version', 'Simple version') }]} value={simple ? 'einfach' : 'jetzt'} onChange={(k) => { haptics.select(); setSimple(k === 'einfach'); toast(k === 'einfach' ? tx('Einfache Version ist an', 'Simple version is on') : tx('Wieder wie bisher', 'Back to before')); }} />
         <Txt size={12.5} line={17} color={tokens.mute} style={{ paddingHorizontal: 4 }}>{tx('Einfach: Kalender mit drei Ansichten, Jahr über den Monatsnamen, ohne Personenfilter. Leerer Chat zeigt Beispielsätze.', 'Simple: a calendar with three views, year from the month name, no person filter. An empty chat shows example sentences.')}</Txt>
+      </View>
+      <View style={{ gap: 8 }}>
+        {/* Julian 30.10.: the assistant that knows every function of the app, next to the old way. */}
+        <Txt size={13} weight={600} color={tokens.sub} style={{ paddingHorizontal: 4 }}>{tx('Assistent zum Testen', 'Assistant to test')}</Txt>
+        <Seg items={[{ key: 'alt', label: tx('Wie bisher', 'As before') }, { key: 'neu', label: tx('Neuer Assistent', 'New assistant') }]} value={agent ? 'neu' : 'alt'} onChange={(k) => { haptics.select(); setAgent(k === 'neu'); toast(k === 'neu' ? tx('Neuer Assistent ist an', 'New assistant is on') : tx('Wieder wie bisher', 'Back to before')); }} />
+        <Txt size={12.5} line={17} color={tokens.mute} style={{ paddingHorizontal: 4 }}>{tx('Neu: Claude kennt alles, was die App kann. Er ändert und löscht Termine, hakt ab, beantwortet Fragen und fragt nach, wenn etwas unklar ist.', 'New: Claude knows everything the app can do. It changes and deletes events, ticks things off, answers questions and asks when something is unclear.')}</Txt>
       </View>
       <View style={{ gap: 8 }}>
         <Txt size={13} weight={600} color={tokens.sub} style={{ paddingHorizontal: 4 }}>{tx('Darstellung', 'Appearance')}</Txt>

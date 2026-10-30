@@ -67,6 +67,9 @@ AsyncStorage.getItem(KEY).then((v) => {
   try { const old: FeedEntry[] = JSON.parse(v); feed = sorted([...old.filter((o) => !feed.some((f) => f.id === o.id)), ...feed]); subs.forEach((l) => l()); } catch {}
 }).catch(() => {});
 
+/** The last entries of the chat, newest last, for the assistant's sense of the conversation. */
+export const feedTail = (n: number) => feed.slice(-n);
+
 export const useFeed = () => useSyncExternalStore((l) => { subs.add(l); return () => { subs.delete(l); }; }, () => feed, () => feed);
 const me = (): PersonId => (getFamily() ? myRole() : 'J');
 const newId = () => `f${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`;
@@ -90,17 +93,23 @@ export function addMessage(said: string) {
  * when the sentence is not such a question.
  */
 export function addAsk(said: string): boolean {
-  const by = me();
-  const to: PersonId = by === 'J' ? 'T' : 'J';
+  const to: PersonId = me() === 'J' ? 'T' : 'J';
   const name = persons[to].name.trim();
   const who = `(?:${name ? name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '|' : ''}ihn|sie|meinen mann|meine frau|meinen partner|meine partnerin|him|her|my partner|my wife|my husband)`;
   const m = said.trim().match(new RegExp(`^(?:kannst du\\s+)?(?:frag|frage|ask)\\s+${who}\\s*[,:]?\\s*(?:mal\\s+)?(?:,\\s*)?(.{3,})$`, 'i'));
   if (!m) return false;
-  const q = m[1].trim().replace(/[.?!]*$/, '?').replace(/^./, (c) => c.toUpperCase());
+  sendAsk(m[1], said);
+  return true;
+}
+
+/** A Ja/Nein question to the partner, also from the assistant (Julian 30.10.). */
+export function sendAsk(question: string, said = question) {
+  const by = me();
+  const to: PersonId = by === 'J' ? 'T' : 'J';
+  const q = question.trim().replace(/[.?!]*$/, '?').replace(/^./, (c) => c.toUpperCase());
   const f: FeedEntry = { id: newId(), at: new Date().toISOString(), by, said: said.trim(), kind: 'msg', ask: { to, q } };
   put(f);
   void upload(f);
-  return true;
 }
 
 export function answerAsk(askId: string, yes: boolean) {

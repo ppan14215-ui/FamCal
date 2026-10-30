@@ -24,6 +24,7 @@ import { tokens, persons, springs } from '../theme';
 import { useStore, actions, get } from '../state/store';
 import { plan, splitItems, claudeSays, replyPlan, listFromClaude, asksNewList, thinksOnline, revisePlan, reviseOffline, draftOf, cutOff, addPicks, settleWork, clashLine, dishy, linkPlan, Ctx, Plan, Result, Said, SPOKEN, PLACEHOLDER } from '../lib/act';
 import { canUnderstand, type Convo, type Glimpse } from '../lib/verstehen';
+import { agentOn, askAgent, agentPlan, screenOf } from '../lib/assistent';
 import { linkIn, recipeFromLink, keepRecipe, loadRecipes, type Recipe } from '../lib/rezepte';
 import { onShared } from '../lib/shared';
 import { dayLabel, slotLine, type Suggest } from '../lib/talk';
@@ -472,6 +473,12 @@ export default function Dock() {
       return answerSuggest(YES.test(raw), raw);
     }
 
+    // Der Assistent (Julian 30.10.): Claude with every function of the app; unclear means a question first, clear means done.
+    if (agentOn() && canUnderstand() && ctx.kind !== 'liste-neu') {
+      const talk = open && open.result.kind !== 'cut' && !gone ? [...open.lines, { said }] : [{ said }];
+      return thinkAgent(said, n, talk, () => play(plan(ctx, said, null), said, false, undefined, lines));
+    }
+
     // A card is still open: the sentence answers or changes it (Julian 28.10.).
     const r0 = open?.result;
     const single = r0?.kind === 'event' ? r0.event : null;
@@ -547,6 +554,22 @@ export default function Dock() {
     const glimpse = (g: Glimpse) => { if (heard.current !== n) return; const l = glimpseLine(g); if (l) setVeil({ lines: [tx('Ich verstehe …', 'Understanding …'), l], shown: 2 }); };
     const late = new Promise<null>((r) => setTimeout(() => r(null), FIRST_MS));
     Promise.race([claudeSays(said, convo, glimpse), late]).then((r) => { if (heard.current === n) inLang(talkLang.current, () => then(r)); });
+  };
+
+  /** The assistant reads; a question back opens the card and listens, everything else plays like any plan. */
+  const thinkAgent = (said: string, n: number, talk: Line[], fallback: () => void) => {
+    const stop = () => { if (heard.current === n) heard.current++; setVeil({ phase: 'off', onCancel: undefined }); haptics.select(); };
+    setVeil({ phase: 'think', inline: !!where.chat, origin, target: null, lines: [tx('Ich denke mit …', 'Thinking …')], shown: 1, said, head: undefined, onCancel: stop });
+    askAgent(said, talk, screenOf(where.ctx)).then((r) => {
+      if (heard.current !== n) return;
+      inLang(talkLang.current, () => {
+        if (!r) return fallback();
+        const p = agentPlan(r, said);
+        if (!p) return hold(said, { kind: 'unclear', text: tx('Das habe ich nicht verstanden.', "I didn't get that.") }, talk);
+        if ('ask' in p) return hold(said, { kind: 'answer', reply: { kind: 'answer', text: p.ask } }, [...talk.slice(0, -1), { said, app: p.ask }]);
+        play(p, said, false, undefined, talk);
+      });
+    });
   };
 
   /** Whatever Claude made of it lands; cut off and unclear only open the card. */

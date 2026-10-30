@@ -65,7 +65,7 @@ const NUM: Record<string, number> = { ein: 1, eine: 1, einen: 1, zwei: 2, drei: 
 const pad = (n: number) => String(n).padStart(2, '0');
 const addMin = (t: string, m: number) => { const v = Math.min(1439, minutes(t) + m); return `${pad(Math.floor(v / 60))}:${pad(v % 60)}`; };
 /** "Nudeln", "Nudeln und 2 Milch", "Nudeln, Brot und 2 Milch". */
-const joinAnd = (xs: string[]) => (xs.length < 2 ? xs.join('') : `${xs.slice(0, -1).join(', ')} ${tx('und', 'and')} ${xs[xs.length - 1]}`);
+export const joinAnd = (xs: string[]) => (xs.length < 2 ? xs.join('') : `${xs.slice(0, -1).join(', ')} ${tx('und', 'and')} ${xs[xs.length - 1]}`);
 /** Whoever else sees the change, for the receipt. */
 const otherSees = () => tx('Ihr seht es beide.', 'You both see it.');
 const nameOf = (w: Who) => (w === 'both' ? tx('euch beide', 'both of you') : w ? persons[w].name : tx('niemanden', 'nobody'));
@@ -128,6 +128,15 @@ function gamePlan(said: string): Plan | null {
   const who = said.match(/\b(?:mit|with|spieler:?|players:?)\s+(.+)$/i)?.[1] ?? '';
   const names = who.split(/,|\bund\b|\band\b/i).map((x) => x.trim().replace(/^(mir|me|uns|us)$/i, '')).filter((x) => x && x.length <= 30 && !/\d/.test(x)).map((x) => x.replace(/^./, (c) => c.toUpperCase()));
   if (existing) return liste(names.length ? names.join(', ') : said, existing.id, names.length ? names : undefined);
+  return newList(name, names);
+}
+
+/** A points list for a game the assistant named (Julian 30.10.); an existing one for the same game gets the new players. */
+export function gameStart(game: string, names: string[]): Plan {
+  const name = /^romm/i.test(game) ? 'Rommé' : game.replace(/^./, (c) => c.toUpperCase());
+  const existing = get().lists.find((x) => isPoints(x) && x.name.toLowerCase() === name.toLowerCase());
+  const fresh = existing ? names.filter((n) => !matchPlayer(players(existing), n)) : names;
+  if (existing) return fresh.length ? liste(fresh.join(', '), existing.id, fresh) : { steps: [standLine(existing)], run: () => ({ land: `tab:${existing.id}`, go: '/listen', result: { kind: 'done', text: tx(`„${existing.name}“ läuft schon: ${standLine(existing)}.`, `“${existing.name}” is already on: ${standLine(existing)}.`) } }) };
   return newList(name, names);
 }
 
@@ -340,7 +349,7 @@ function termin(said: string, id: string): Plan {
 // ─── Listen ────────────────────────────────────────────────────────────────
 
 /** A round for a points list: "Julian 35, Sophia 12", one Rückgängig takes the round back. */
-function pointsPlan(list: List, said: string): Plan | null {
+export function pointsPlan(list: List, said: string): Plan | null {
   const r = parseRound(said);
   if (!r) return null;
   const factor = r.double && list.blueprint?.points?.doubleWord !== false ? 2 : 1;
@@ -376,7 +385,7 @@ function pointsPlan(list: List, said: string): Plan | null {
   };
 }
 
-function liste(said: string, id: string, given?: string[]): Plan {
+export function liste(said: string, id: string, given?: string[]): Plan {
   if (id === 'aufgaben') {
     const parts = said.split(/,|\bund dann\b|\band then\b/).map((x) => x.trim()).filter(Boolean);
     const ts = parts.map((p) => splitDue(p));
@@ -433,7 +442,7 @@ function listeNeu(said: string): Plan {
 }
 
 /** A new list with a name and maybe first items; lists that adapt (films, books) pick their blocks by name. */
-function newList(name: string, items: string[]): Plan {
+export function newList(name: string, items: string[]): Plan {
   const urlaub = /urlaub|reise|ostsee|pack|holiday|vacation|trip/i.test(name);
   const bp = blueprintFor(name);
   const steps = [tx(`Neue Liste „${name}“.`, `New list “${name}”.`), ...(bp ? [blocksLine(bp)] : []), items.length ? tx(`Mit ${items.join(', ')}.`, `With ${items.join(', ')}.`) : urlaub ? tx('Vorlage Urlaub mit Baby, 24 Dinge.', 'Template holiday with baby, 24 things.') : tx('Noch leer, sagt einfach, was drauf soll.', 'Still empty, just say what goes on it.')];
