@@ -26,6 +26,7 @@ import { Seg } from '../src/components/ui/kit';
 import { haptics } from '../src/lib/haptics';
 import { countryName, regionName } from '../src/lib/holidays';
 import { HIDDEN } from '../src/lib/core';
+import ColorPicker from '../src/components/ColorPicker';
 
 function SRow({ icon, t, s, right, onPress }: { icon: ClayName; t: string; s: string; right?: React.ReactNode; onPress?: () => void }) {
   return (
@@ -57,6 +58,7 @@ export default function Einstellungen() {
   const cals = useStore((s) => s.calendars);
   const demo = useStore((s) => s.demo);
   const names = useStore((s) => s.names);
+  const colors = useStore((s) => s.colors);
   const vac = useStore((s) => s.vacation);
   const land = useStore((s) => s.land);
   const country = useStore((s) => s.country);
@@ -77,6 +79,12 @@ export default function Einstellungen() {
         ))}
         <SRow icon="sync" t={cals.length ? tx('Weitere Kalender', 'More calendars') : tx('Kalender verbinden', 'Connect calendars')} s={cals.length ? tx('Auswahl ändern oder hinzufügen', 'Change or add') : tx('Damit nichts doppelt ist', 'So nothing is in two places')} onPress={openCals} />
       </Group>
+      <Txt size={13} weight={600} color={tokens.sub} style={{ paddingHorizontal: 4, marginTop: 8 }}>{tx('Eure Farben', 'Your colours')}</Txt>
+      <View style={{ backgroundColor: tokens.row, borderRadius: 20, padding: 14, gap: 12 }}>
+        <ColorPicker p="J" name={names.J || tx('Du', 'You')} sel={colors.J} taken={colors.T} onSel={(i) => actions.setColor('J', i)} />
+        <View style={{ height: 1, backgroundColor: tokens.hair }} />
+        <ColorPicker p="T" name={names.T || tx('Partner', 'Partner')} sel={colors.T} taken={colors.J} onSel={(i) => actions.setColor('T', i)} />
+      </View>
       {HIDDEN.toggles ? null : <>
       <View style={{ gap: 8 }}>
         {/* Julian 30.10.: both versions side by side, to compare. */}

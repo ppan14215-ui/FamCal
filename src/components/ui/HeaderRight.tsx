@@ -8,6 +8,8 @@ import { View } from 'react-native';
 import { router } from 'expo-router';
 import PressScale from './PressScale';
 import { Pair } from './Person';
+import LineIcon from './LineIcon';
+import { tokens } from '../../theme';
 import { tx } from '../../i18n/lang';
 
 export default function HeaderRight({ before }: { before?: React.ReactNode }) {
@@ -15,6 +17,10 @@ export default function HeaderRight({ before }: { before?: React.ReactNode }) {
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
       {before}
       <PressScale accessibilityLabel={tx('Familie und Einstellungen', 'Family and settings')} onPress={() => router.push('/einstellungen')}><Pair /></PressScale>
+      {/* The pair alone was not found as the way in (Julian 30.10.: "Settings Navigation fehlt komplett"). */}
+      <PressScale accessibilityLabel={tx('Einstellungen', 'Settings')} hitSlop={6} onPress={() => router.push('/einstellungen')} style={{ width: 34, height: 34, borderRadius: 999, backgroundColor: tokens.row, alignItems: 'center', justifyContent: 'center' }}>
+        <LineIcon name="settings" size={18} color={tokens.sub} />
+      </PressScale>
     </View>
   );
 }

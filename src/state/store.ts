@@ -4,6 +4,7 @@
  * `set()` with plain immutable updates. Resets on reload by design.
  */
 import { useSyncExternalStore } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as S from '../data/sample';
 import type { CalEvent, Task, List, InboxItem, Doc, Milestone, Toast, ToastKind, Item, Who, ItemData, Blueprint, Person, Comment } from './types';
 import { enrichItem } from '../lib/enrich';
@@ -193,6 +194,7 @@ export const actions = {
     const c = shade(personPalette[i]);
     Object.assign(persons[p], { tint: c.bg, ink: c.fg, stripe: mix(c.bg, c.fg, 0.14), colorName: c.name });
     set((s) => ({ colors: { ...s.colors, [p]: i } }));
+    AsyncStorage.setItem(COLORS_KEY, JSON.stringify(state.colors)).catch(() => {});
   },
   /** From "Eure Kinder": the first year is planned from the date alone. */
   setKid(kid: Kid) {
@@ -531,3 +533,11 @@ export const actions = {
   setPlan(p: State['plan']) { set(() => ({ plan: p })); },
   setPhotoTaken(v: boolean) { set(() => ({ photoTaken: v })); },
 };
+
+// Colours stay after a restart (Julian 30.10.: changing them in the settings); kept per device for now.
+const COLORS_KEY = 'famcal.colors';
+AsyncStorage.getItem(COLORS_KEY).then((v) => {
+  const c = v ? JSON.parse(v) : null;
+  if (!c) return;
+  (['J', 'T'] as PersonId[]).forEach((p) => { if (Number.isInteger(c[p]) && personPalette[c[p]]) actions.setColor(p, c[p]); });
+}).catch(() => {});

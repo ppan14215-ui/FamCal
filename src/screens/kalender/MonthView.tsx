@@ -57,7 +57,7 @@ export default function MonthView() {
   // Title, switch and weekday row take about 290, the talk field and tabs about 200.
   const { height: H } = useWindowDimensions();
   const rows = cells.length / 7;
-  const cellH = Math.round(Math.max(60, Math.min(104, (H - 490) / rows)));
+  const cellH = Math.round(Math.max(70, Math.min(110, (H - 490) / rows)));
   const icon = Math.round(Math.min(40, cellH * 0.4));
 
   // Swipe left or right for the next or previous month (Julian 30.10.), like in the week.
@@ -108,17 +108,17 @@ export default function MonthView() {
           // A holiday colours the date like the year view, no dot (Julian 30.10.).
           const hol = inMonth && events.some((e) => e.date === d && isInfoDay(e));
           return (
-            <View key={d} style={{ width: `${100 / 7}%`, paddingHorizontal: 2 }}>
+            <View key={d} style={{ width: `${100 / 7}%`, paddingHorizontal: 1.5 }}>
               <PressScale
                 onPress={() => inMonth && actions.setCalDay(d)}
                 style={{
-                  height: cellH, borderRadius: 14, alignItems: 'center', paddingTop: 6,
+                  height: cellH, borderRadius: 12, alignItems: 'center', paddingTop: 5, overflow: 'hidden',
                   backgroundColor: isToday ? tokens.doneSoft : inMonth ? tokens.row : 'transparent',
                   borderWidth: 1.5, borderColor: sel ? tokens.ink : 'transparent',
                 }}
               >
                 <Txt size={14} line={18} weight={isToday ? 700 : 500} color={isToday ? tokens.done : hol ? tokens.frist : inMonth ? tokens.ink : tokens.circleLine}>{String(dayNum(d))}</Txt>
-                <DayIcons evs={evs} size={evs.length > 1 ? Math.round(icon * 0.85) : icon} delay={Math.min(ci * 14, 420)} />
+                <DayTitles evs={evs} lines={Math.max(1, Math.floor((cellH - 24 - (shifts.length ? 10 : 4)) / 15))} />
                 {shifts.length ? (
                   <View style={{ position: 'absolute', left: 4, right: 4, bottom: 4, gap: 2 }}>
                     {shifts.map((p) => <Stripes key={p} p={p} radius={3} style={{ height: 5 }} />)}
@@ -152,6 +152,27 @@ export function MonthArrows() {
       <View style={{ transform: [{ scaleX: -1 }] }}>
         <RoundButton icon="back" label={tx('Nächster Monat', 'Next month')} size={34} onPress={() => actions.setCalDay(shiftMonth(day, 1))} />
       </View>
+    </View>
+  );
+}
+
+/**
+ * Short titles in each cell, like Google and Apple's month (Julian 30.10.: "nur
+ * kleine Bubbles hilft nicht viel"): one tinted line per Termin in the colour of
+ * who goes, as many as fit, then "+2". The chosen day's full list sits below.
+ */
+function DayTitles({ evs, lines }: { evs: CalEvent[]; lines: number }) {
+  if (!evs.length) return <View style={{ flex: 1 }} />;
+  const sorted = [...evs].sort((a, b) => (a.allDay ? -1 : b.allDay ? 1 : a.start.localeCompare(b.start)));
+  const room = sorted.length > lines ? lines - 1 : lines;
+  return (
+    <View style={{ flex: 1, alignSelf: 'stretch', gap: 2, paddingTop: 2, paddingHorizontal: 2 }}>
+      {sorted.slice(0, Math.max(0, room)).map((e) => (
+        <View key={e.id} style={{ height: 13, borderRadius: 4, paddingHorizontal: 3, justifyContent: 'center', backgroundColor: e.who === 'J' || e.who === 'T' ? persons[e.who].tint : evTint(e) }}>
+          <Txt size={9.5} line={12} weight={600} numberOfLines={1} ellipsizeMode="clip" color={e.who === 'J' || e.who === 'T' ? persons[e.who].ink : tokens.ink}>{e.title}</Txt>
+        </View>
+      ))}
+      {sorted.length > room ? <Txt size={9.5} line={12} weight={700} color={tokens.sub} style={{ paddingHorizontal: 3 }}>{`+${sorted.length - Math.max(0, room)}`}</Txt> : null}
     </View>
   );
 }
