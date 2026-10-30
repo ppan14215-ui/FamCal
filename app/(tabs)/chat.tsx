@@ -350,8 +350,11 @@ export default function Chat() {
   return (
     <View style={{ flex: 1, backgroundColor: tokens.bg, paddingTop: insets.top }}>
       {simple ? null : <Jumps />}
-      <ScrollView ref={scroller} onContentSizeChange={() => scroller.current?.scrollToEnd({ animated: false })} contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 18, paddingTop: 8, paddingBottom: dock + (kb > 0 ? kb : insets.bottom) + 40, gap: 12 }} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+      {/* The title stays put while the messages scroll under it (Julian 30.10. 22:15). */}
+      <View style={{ paddingHorizontal: 18, paddingTop: 8 }}>
         <H1 sub={tx(`Familie · ${2 + people} Personen`, `Family · ${2 + people} people`)} right={<HeaderRight />}>Chat</H1>
+      </View>
+      <ScrollView ref={scroller} onContentSizeChange={() => scroller.current?.scrollToEnd({ animated: false })} contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 18, paddingTop: 8, paddingBottom: dock + (kb > 0 ? kb : insets.bottom) + 40, gap: 12 }} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
         {feed.length || veil.inline && veil.phase !== 'off' ? feed.map((f) => {
           // An answer shows on its question, not as a bubble of its own.
           if (f.answer && feed.some((x) => x.id === f.answer!.ask)) return null;

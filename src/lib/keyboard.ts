@@ -38,6 +38,12 @@ export function useKeyboardInset(): number {
 let typing = false;
 const subs = new Set<() => void>();
 export function setTyping(on: boolean) { if (typing !== on) { typing = on; subs.forEach((l) => l()); } }
+// Android's back key closes the keyboard but leaves the field focused, so no
+// blur ever came and the tabs stayed away for good (Julian 30.10. 22:15: "ist
+// man sofort stuck"). A closed keyboard always ends typing.
+if (Platform.OS !== 'web') {
+  Keyboard.addListener(Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide', () => { setTyping(false); Keyboard.dismiss(); });
+}
 export function useTyping() {
   return useSyncExternalStore((l) => { subs.add(l); return () => { subs.delete(l); }; }, () => typing, () => false);
 }
