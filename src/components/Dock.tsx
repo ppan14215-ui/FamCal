@@ -33,6 +33,7 @@ import { setDockTop, setDockSpace } from '../lib/dockSpace';
 import { useKeyboardInset, useTyping } from '../lib/keyboard';
 import { setTalkOpen, useTalkOpen, setChatTabs, useChatTabs, chatBacks } from '../lib/talkOpen';
 import { addMade, addMessage, addAsk, addSay, recentMade, markChanged } from '../lib/feed';
+import { useSimple, messageOf } from '../lib/simple';
 import { hm, short } from '../lib/dates';
 import { Tile } from './ui/Clay';
 import { haptics } from '../lib/haptics';
@@ -355,6 +356,8 @@ type Turn = { id: number; said: string; result: Result; lines: Line[] };
 
 export default function Dock() {
   const where = useWhere();
+  // Einfache Version (Julian 30.10.: wanted, only not its tab row): no pills, no Eintragen/Nachricht switch.
+  const simple = useSimple();
   const insets = useSafeAreaInsets();
   const kb = useKeyboardInset();
   const typing = useTyping();
@@ -439,6 +442,9 @@ export default function Dock() {
   const hear = (raw: string, how?: { voice?: boolean }) => {
     // One message, then back to Eintragen, so the next sentence is never lost as a plain message (Julian 29.10.).
     if (where.chat && mode === 'msg') { haptics.success(); addMessage(raw.trim()); setMode('card'); return; }
+    // Simple: no switch; "Sag Sophia, ich komme später" is a message by itself.
+    const note = simple && where.chat && !turn ? messageOf(raw, [persons.J.name, persons.T.name, ...get().people.map((x) => x.name)]) : null;
+    if (note) { haptics.success(); addMessage(note); return; }
     // "Frag Sophia, ob Samstag passt": a Ja/Nein card for the partner, no AI needed (Julian 29.10.).
     if (where.chat && !turn && addAsk(raw)) { haptics.success(); return; }
     talkLang.current = spokenLang(raw);
@@ -834,7 +840,7 @@ export default function Dock() {
           </ScrollView>
         </Animated.View>
       ) : null}
-      {where.chat ? (
+      {where.chat && !simple ? (
         <View accessibilityRole="radiogroup" style={{ alignSelf: 'flex-start', flexDirection: 'row', padding: 3, borderRadius: 999, backgroundColor: tokens.segBg }}>
           {(['card', 'msg'] as const).map((m) => (
             <PressScale key={m} accessibilityRole="radio" accessibilityState={{ checked: mode === m }} onPress={() => { haptics.select(); setMode(m); }} style={{ height: 32, paddingHorizontal: 14, borderRadius: 999, justifyContent: 'center', backgroundColor: mode === m ? tokens.row : 'transparent' }}>
