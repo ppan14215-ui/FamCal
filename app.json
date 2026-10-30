@@ -66,6 +66,24 @@
           "photosPermission": "FamCal liest Listen aus deinen Screenshots. Das Bild bleibt auf dem Handy.",
           "cameraPermission": "FamCal liest Listen und Briefe, die du fotografierst."
         }
+      ],
+      [
+        "react-native-android-widget",
+        {
+          "widgets": [
+            {
+              "name": "Heute",
+              "label": "FamCal Heute",
+              "description": "Heute und morgen auf einen Blick",
+              "minWidth": "250dp",
+              "minHeight": "140dp",
+              "targetCellWidth": 4,
+              "targetCellHeight": 2,
+              "updatePeriodMillis": 1800000,
+              "resizeMode": "horizontal|vertical"
+            }
+          ]
+        }
       ]
     ],
     "experiments": {
