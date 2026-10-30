@@ -231,8 +231,9 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, o
   }, [listenKey]);
 
   const plus = (
-    <PressScale accessibilityLabel={tx('Foto, Termin, Aufgabe', 'Photo, event, task')} onPress={() => { if (listening) { typed.current = true; timers.current.forEach(clearTimeout); setDemo(false); toKeys.current?.(); setText(''); } onPlus?.(); }} style={{ width: split ? 36 : 44, height: split ? 36 : 44, marginBottom: split ? 6 : 2, marginLeft: split ? 4 : 0, borderRadius: 999, alignItems: 'center', justifyContent: 'center', backgroundColor: tokens.chipBg }}>
-      <LineIcon name="plus" size={22} color={tokens.ink} stroke={2} />
+    <PressScale accessibilityLabel={tx('Foto, Termin, Aufgabe', 'Photo, event, task')} onPress={() => { if (listening) { typed.current = true; timers.current.forEach(clearTimeout); setDemo(false); toKeys.current?.(); setText(''); } onPlus?.(); }} style={{ width: split ? 36 : 44, height: split ? 36 : 44, marginBottom: split ? 6 : 2, marginLeft: split ? 4 : 0, borderRadius: 999, alignItems: 'center', justifyContent: 'center', backgroundColor: tokens.ink }}>
+      {/* Dark, so it is seen as the way to add anything (Julian 30.10.: das Plus ging unter). */}
+      <LineIcon name="plus" size={22} color={tokens.onInk} stroke={2.2} />
     </PressScale>
   );
 

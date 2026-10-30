@@ -31,11 +31,11 @@ import { isVacation, leftLine } from '../../src/lib/urlaub';
 const at = (s: string) => { const d = new Date(s); return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`; };
 const dayOf = (s: string) => { const d = new Date(s); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
 
-function Termine({ ids, snap }: { ids: string[]; snap?: EventSnap[] }) {
+function Termine({ ids, snap, changed }: { ids: string[]; snap?: EventSnap[]; changed?: boolean }) {
   const events = useStore((s) => s.events);
   // Live from the calendar; the snapshot only if the Termin never reached this phone.
   const live = ids.map((id) => events.find((e) => e.id === id) ?? (events.length ? undefined : snap?.find((x) => x.id === id))).filter(Boolean) as (EventSnap & { who?: typeof events[number]['who'] })[];
-  if (!live.length) return <Txt size={13.5} color={tokens.mute} style={{ padding: 14 }}>{tx('Nicht mehr im Kalender.', 'No longer in the calendar.')}</Txt>;
+  if (!live.length) return <Txt size={13.5} color={tokens.mute} style={{ padding: 14 }}>{changed ? tx('Mit der nächsten Nachricht geändert, siehe unten.', 'Changed by the next message, see below.') : tx('Nicht mehr im Kalender.', 'No longer in the calendar.')}</Txt>;
   return (
     <>
       {live.map((e) => (
@@ -260,7 +260,7 @@ function Entry({ f, mine, me, answer }: { f: FeedEntry; mine: boolean; me: 'J' |
         {f.ask ? <Ask f={f} me={me} answer={answer} /> : null}
         {f.kind === 'made' ? (
           <View style={{ alignSelf: 'stretch', borderRadius: 18, overflow: 'hidden', backgroundColor: tokens.row, opacity: f.undone ? 0.55 : 1 }}>
-            {f.undone ? null : f.events ? <Termine ids={f.events} snap={f.snap?.events} /> : null}
+            {f.undone ? null : f.events ? <Termine ids={f.events} snap={f.snap?.events} changed={f.changed} /> : null}
             {f.undone ? null : f.events ? <VacationLeft ids={f.events} /> : null}
             {f.undone ? null : f.events ? <PackOffer ids={f.events} /> : null}
             {f.undone || !f.suggest ? null : <BringOffer suggest={f.suggest} />}
@@ -268,7 +268,7 @@ function Entry({ f, mine, me, answer }: { f: FeedEntry; mine: boolean; me: 'J' |
             {f.undone ? null : f.tasks ? <Tasks ids={f.tasks} titles={f.snap?.tasks} /> : null}
             {open && f.why ? <Why why={f.why} /> : null}
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 8, paddingHorizontal: 14, borderTopWidth: f.undone ? 0 : 1, borderTopColor: tokens.hair }}>
-              <Txt size={13} weight={600} color={f.undone ? tokens.sub : tokens.done}>{f.undone ? tx('Rückgängig gemacht', 'Undone') : `✓ ${f.events ? tx('Im Kalender', 'In the calendar') : f.tasks ? tx('Bei den Aufgaben', 'On your tasks') : tx('Auf der Liste', 'On the list')}`}</Txt>
+              <Txt size={13} weight={600} color={f.undone || f.changed ? tokens.sub : tokens.done}>{f.undone ? tx('Rückgängig gemacht', 'Undone') : f.changed ? tx('Geändert', 'Changed') : `✓ ${f.events ? tx('Im Kalender', 'In the calendar') : f.tasks ? tx('Bei den Aufgaben', 'On your tasks') : tx('Auf der Liste', 'On the list')}`}</Txt>
               <View style={{ flex: 1 }} />
               {f.why ? (
                 <PressScale hitSlop={8} accessibilityLabel={open ? tx('Schritte zuklappen', 'Hide steps') : tx('Schritte zeigen', 'Show steps')} onPress={() => setOpen((o) => !o)} style={{ flexDirection: 'row', alignItems: 'center', gap: 2, marginRight: canUndo(f.id) && !f.undone ? 14 : 0 }}>

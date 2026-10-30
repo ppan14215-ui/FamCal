@@ -35,6 +35,8 @@ export type Card = {
   suggest?: Record<string, string[]>;
   /** The answer to an ask, shown on the ask itself. */
   answer?: { ask: string; yes: boolean };
+  /** A later message changed what this card made (Julian 30.10.: "jeden Mittwoch davon"). */
+  changed?: boolean;
 };
 export type FeedEntry = Card & {
   id: string;
@@ -49,7 +51,7 @@ export type FeedEntry = Card & {
 
 type Row = { id: string; role: PersonId; kind: 'made' | 'msg'; said: string; card: Card | null; undone: boolean; created_at: string };
 const fromRow = (r: Row): FeedEntry => ({ ...(r.card ?? {}), id: r.id, at: r.created_at, by: r.role, said: r.said, kind: r.kind, undone: r.undone || undefined });
-const cardOf = ({ events, tasks, items, text, snap, why, ask, answer, suggest }: FeedEntry): Card => ({ events, tasks, items, text, snap, why, ask, answer, suggest });
+const cardOf = ({ events, tasks, items, text, snap, why, ask, answer, suggest, changed }: FeedEntry): Card => ({ events, tasks, items, text, snap, why, ask, answer, suggest, changed });
 
 const KEY = 'famcal.feed';
 let feed: FeedEntry[] = [];
@@ -137,6 +139,29 @@ export function addMade(said: string, ids: string[], text?: string, undo?: () =>
   if (undo) undos.set(f.id, undo);
   put(f);
   void upload(f);
+}
+
+/** How long a sentence still belongs to the one before it (Julian 30.10.: nahe beieinander liegende Nachrichten). */
+const TOGETHER_MS = 10 * 60 * 1000;
+
+/** My last card in the chat, if it is fresh and its Termine are still there: the next sentence may change it. */
+export function recentMade(): { entry: FeedEntry; ids: string[] } | null {
+  const mine = me();
+  const last = [...feed].reverse().find((f) => f.by === mine);
+  if (!last || last.kind !== 'made' || last.undone || last.changed || !last.events?.length) return null;
+  if (Date.now() - new Date(last.at).getTime() > TOGETHER_MS) return null;
+  const ids = last.events.filter((id) => get().events.some((e) => e.id === id));
+  return ids.length ? { entry: last, ids } : null;
+}
+
+/** The card's Termine were replaced by the next sentence; its undo goes with them. */
+export function markChanged(id: string, on = true) {
+  const f = feed.find((x) => x.id === id);
+  if (!f) return;
+  if (on) undos.delete(id);
+  const next = { ...f, changed: on || undefined };
+  put(next);
+  if (supabase && getFamily()) void supabase.from('family_feed').update({ card: cardOf(next) }).eq('id', id);
 }
 
 export const canUndo = (id: string) => undos.has(id);

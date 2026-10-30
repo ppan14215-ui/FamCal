@@ -19,12 +19,13 @@ import { addDays, monday, dayNum, monthIdx, year, parse, iso, WD_SHORT, weekday,
 import PressScale from '../../components/ui/PressScale';
 import { tx } from '../../i18n/lang';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
-import Animated, { useAnimatedStyle, useSharedValue, withSpring, withTiming, ZoomIn } from 'react-native-reanimated';
+import Animated, { useAnimatedStyle, useSharedValue, withSpring, withTiming, FadeIn } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
 import { haptics } from '../../lib/haptics';
 import { springs } from '../../theme';
 import type { CalEvent } from '../../state/types';
 import { useCalEvents } from '../../lib/useEvents';
+import Stripes from '../../components/Stripes';
 
 const HEAD = tx('Mo Di Mi Do Fr Sa So', 'Mo Tu We Th Fr Sa Su').split(' ');
 
@@ -99,6 +100,8 @@ export default function MonthView() {
           const inMonth = monthIdx(d) === m;
           // Multi-day ones (Urlaub bis Sonntag) show on every day they cover.
           const evs = inMonth ? events.filter((e) => !e.work && (e.date === d || (!!e.endDate && e.date < d && d <= e.endDate))) : [];
+          // Julian 30.10.: work must show in the month too, as the person's stripe along the cell's foot.
+          const shifts = inMonth ? [...new Set(events.filter((e) => e.work && e.date === d).map((e): 'J' | 'T' => (e.who === 'J' ? 'J' : 'T')))] : [];
           const sel = d === day;
           const isToday = d === TODAY;
           return (
@@ -113,6 +116,11 @@ export default function MonthView() {
               >
                 <Txt size={14} line={18} weight={isToday ? 700 : 500} color={isToday ? tokens.done : inMonth ? tokens.ink : tokens.circleLine}>{String(dayNum(d))}</Txt>
                 <DayIcons evs={evs} size={evs.length > 1 ? Math.round(icon * 0.85) : icon} delay={Math.min(ci * 14, 420)} />
+                {shifts.length ? (
+                  <View style={{ position: 'absolute', left: 4, right: 4, bottom: 4, gap: 2 }}>
+                    {shifts.map((p) => <Stripes key={p} p={p} radius={3} style={{ height: 5 }} />)}
+                  </View>
+                ) : null}
               </PressScale>
             </View>
           );
@@ -156,7 +164,7 @@ function DayIcons({ evs, size, delay }: { evs: CalEvent[]; size: number; delay: 
   const more = Math.min(3, evs.length - 1);
   return (
     <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', gap: 3, paddingBottom: 4 }}>
-      <Animated.View entering={ZoomIn.springify().damping(13).stiffness(220).delay(delay)}>
+      <Animated.View entering={FadeIn.duration(140).delay(Math.min(delay, 80))}>
         <ClayIcon name={evs[0].icon} size={size} />
       </Animated.View>
       {more ? (

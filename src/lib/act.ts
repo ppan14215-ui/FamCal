@@ -146,7 +146,8 @@ function kalender(said: string, pending: { title: string; who: Who } | null): Pl
   return listPlan(said) ?? replyPlan(understand(said, get().events, pending, () => newId('e')));
 }
 
-export function replyPlan(reply: Reply): Plan {
+/** `replacing`: the entries this reading takes the place of; they are no clash (Julian 30.10.: "jeden Mittwoch davon"). */
+export function replyPlan(reply: Reply, replacing?: Set<string>): Plan {
   if (reply.kind !== 'added') {
     return { steps: [tx('Schaue in euren Kalender', 'Looking at your calendar')], run: () => ({ result: { kind: 'answer', reply } }) };
   }
@@ -167,7 +168,7 @@ export function replyPlan(reply: Reply): Plan {
     const last = shifts.reduce((a, b) => (b.date > a.date ? b : a));
     reply.steps = [...reply.steps, tx(`${shifts.length} Arbeitstage eingetragen, der letzte am ${WD_SHORT[weekday(last.date)]} ${dmShort(last.date)}`, `${shifts.length} workdays added, the last on ${WD_SHORT[weekday(last.date)]} ${dmShort(last.date)}`)];
   }
-  const old = workClashes(incoming);
+  const old = workClashes(incoming).filter((e) => !replacing?.has(e.id));
   if (old.length) {
     return {
       head: tx('Da ist schon Arbeit eingetragen', 'Work is already booked there'),
@@ -486,7 +487,16 @@ export function draftOf(ids: string[]): string | undefined {
   const es = ids.map((id) => get().events.find((e) => e.id === id)).filter(Boolean) as CalEvent[];
   if (!es.length) return undefined;
   const one = (e: CalEvent) => ({ title: e.title, sub: e.sub ?? '', date: e.date, end_date: e.endDate ?? '', start: e.allDay ? '' : e.start, end: e.allDay ? '' : e.end ?? '', who: e.who ?? 'none', place: e.place ?? '', repeat: e.repeat ?? '', work: !!e.work, bring: (e.bring ?? []).map((b) => b.t) });
-  return JSON.stringify(es.length === 1 ? one(es[0]) : es.map(one));
+  // Work laid out day by day goes back as the one entry Claude made of it ("Arbeit bis Weihnachten"), so it can change a part of it.
+  const runs = new Map<string, CalEvent[]>();
+  const rest: CalEvent[] = [];
+  for (const e of es) {
+    if (!e.work) { rest.push(e); continue; }
+    const k = [e.title, e.who, e.allDay ? '' : `${e.start}-${e.end}`, e.repeat].join('|');
+    runs.set(k, [...(runs.get(k) ?? []), e]);
+  }
+  const all = [...[...runs.values()].map((r) => r.sort((a, b) => a.date.localeCompare(b.date))).map((r) => (r.length > 1 ? { ...one(r[0]), date: r[0].date, end_date: r[r.length - 1].date, repeat: r[0].repeat || tx('Montag bis Freitag', 'Mondays to Fridays') } : one(r[0]))), ...rest.map(one)];
+  return JSON.stringify(all.length === 1 ? all[0] : all);
 }
 
 /**

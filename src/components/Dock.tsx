@@ -31,7 +31,7 @@ import { locate, light, lightOneByOne } from '../lib/landing';
 import { setDockTop, setDockSpace } from '../lib/dockSpace';
 import { useKeyboardInset, useTyping } from '../lib/keyboard';
 import { setTalkOpen, useTalkOpen, setChatTabs, useChatTabs, chatBacks } from '../lib/talkOpen';
-import { addMade, addMessage, addAsk } from '../lib/feed';
+import { addMade, addMessage, addAsk, recentMade, markChanged } from '../lib/feed';
 import { hm, short } from '../lib/dates';
 import { Tile } from './ui/Clay';
 import { haptics } from '../lib/haptics';
@@ -488,8 +488,9 @@ export default function Dock() {
           return hold(said, { kind: 'event', event: made }, [...before, { said, app: tx('Das steht schon so drin.', "That's already how it is.") }]);
         }
         if (single && (!r || r.kind === 'unclear')) return play(reviseOffline(single.id, said), said, false, undefined, lines);
-        // The new reading replaces what the card had made.
-        if (r?.kind === 'added' || r?.kind === 'liste') {
+        // The new reading replaces what the card had made, unless Claude says it is something new (Julian 30.10.).
+        const fresh = r?.kind === 'added' && r.follows === false;
+        if (!fresh && (r?.kind === 'added' || r?.kind === 'liste')) {
           if (single) actions.removeEvent(single.id);
           if (many) many.undo?.();
         }
@@ -502,6 +503,28 @@ export default function Dock() {
     if (follow && single) lines = [{ said }];
 
     const pending = r0?.kind === 'answer' && r0.reply.kind === 'ask' ? { title: r0.reply.title, who: r0.reply.who } : null;
+    // Julian 30.10.: a sentence right after the last one may belong to it ("Jeden Mittwoch davon bin ich im Büro"). Claude decides.
+    const recent = where.chat && !follow && !pending && thinksOnline(ctx, said, pending) ? recentMade() : null;
+    if (recent) {
+      const offline = () => play(plan(ctx, said, pending), said, false, undefined, lines);
+      think(said, n, (r) => {
+        if (r?.kind !== 'added' || !r.follows) return land(r, said, lines, offline);
+        const old = recent.ids.map((id) => get().events.find((e) => e.id === id)).filter(Boolean) as CalEvent[];
+        const p = replyPlan(r, new Set(recent.ids));
+        // The old entries go only when the new ones land; one Rückgängig brings them back.
+        play({ ...p, run: () => {
+          old.forEach((e) => actions.removeEvent(e.id));
+          markChanged(recent.entry.id);
+          const out = p.run();
+          const back = () => { old.forEach((e) => actions.addEvent(e)); markChanged(recent.entry.id, false); };
+          const res = out.result;
+          if (res?.kind === 'done') return { ...out, result: { ...res, undo: () => { res.undo?.(); back(); } } };
+          if (res?.kind === 'event') return { ...out, lit: [res.event.id], result: { kind: 'done', text: tx(`„${res.event.title}“ geändert.`, `“${res.event.title}” changed.`), events: [res.event.id], undo: () => { actions.removeEvent(res.event.id); back(); } } };
+          return out;
+        } }, said, false, undefined, lines);
+      }, { history: [{ said: recent.entry.said, app: recent.entry.text }], draft: draftOf(recent.ids), recent: true });
+      return;
+    }
     if (thinksOnline(ctx, said, pending)) {
       // Claude first (Julian 28.10.: the rules' half guess must never land).
       // A dish without Claude would become a strange Termin ("Wann ist Bolognese kochen?"): say so instead.

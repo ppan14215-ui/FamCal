@@ -11,6 +11,7 @@ import { parseWhen, When } from './when';
 import { iconFor } from './iconWords';
 import { TODAY, NOW, addDays, weekday, minutes, long, short, hm, count } from './dates';
 import { byTime } from './selectors';
+import { ruleOf } from './repeat';
 import { tx, EN } from '../i18n/lang';
 
 export type Slot = { date: string; from: string; to: string };
@@ -19,7 +20,7 @@ export type Suggest = { place: string; title: string; date: string };
 
 export type Reply =
   /** `steps` is what it thought on the way, shown before the Termin lands. */
-  | { kind: 'added'; event: CalEvent; clash?: string; steps: string[]; needsTime?: boolean; more?: CalEvent[]; suggest?: Suggest; ask?: string }
+  | { kind: 'added'; event: CalEvent; clash?: string; steps: string[]; needsTime?: boolean; more?: CalEvent[]; suggest?: Suggest; ask?: string; follows?: boolean }
   | { kind: 'answer'; text: string; events?: CalEvent[]; slots?: Slot[] }
   /** Understood what, not when. The next sentence can be just the time. */
   | { kind: 'ask'; text: string; title: string; who: Who };
@@ -310,6 +311,8 @@ export type Understood = {
   have?: string[];
   /** Working hours: shown as a striped block, not in the lists (Julian 28.10.). */
   work?: boolean;
+  /** Julian 30.10.: the sentence changes the entry it came with ("jeden Mittwoch davon"), not something new. */
+  follows?: boolean;
   /** Further Termine from the same sentence ("Urlaub bis Sonntag, danach Arbeit ab Dienstag"). */
   more?: { title: string; sub: string | null; date: string; end_date: string | null; start: string | null; end: string | null; who: Who | 'none'; place: string | null; repeat: string | null; icon?: string | null; work?: boolean }[];
 };
@@ -357,14 +360,17 @@ export function fromModel(m: Understood, said: string, events: CalEvent[], newId
   const icon = guess === 'kalender' && known ? known.icon : guess;
   const len = icon === 'stethoskop' || icon === 'zahnarzt' ? 45 : 60;
   const event: CalEvent = {
-    id: newId(), title: cap(kept(m.title, said)), sub: m.sub || undefined, icon, who,
+    id: newId(), title: cap(m.follows ? m.title : kept(m.title, said)), sub: m.sub || undefined, icon, who,
     date: m.date, endDate: m.end_date && ISO.test(m.end_date) && m.end_date > m.date ? m.end_date : undefined,
     start: start ?? '00:00', allDay: !start,
     end: start ? (m.end && HHMM.test(m.end) && m.end > start ? m.end : toHm(Math.min(minutes(start) + len, 23 * 60 + 59))) : undefined,
     place: m.place || undefined, repeat: m.repeat || undefined, source: tx(`Gesagt: „${said.trim()}“`, `Said: “${said.trim()}”`),
     bring: m.bring.length ? m.bring.map((t, i) => ({ id: `${newId()}-b${i}`, t, done: false })) : undefined,
   };
-  if (m.work) event.work = true;
+  // "Jeden Mittwoch ins Büro" without an end is a real weekly series (Julian 30.10.); work blocks never repeat by themselves.
+  const weekly = ruleOf(m.repeat);
+  const series = !event.endDate && !(m.more ?? []).length && weekly?.freq === 'week' && !!weekly.days && weekly.days.length < 5;
+  if (m.work && !series) event.work = true;
   const sug = suggestBring(event.title, event.sub, m.suggest_bring, m.bring);
   if (sug.length) event.suggest = sug;
   const more = (m.more ?? []).filter((x) => x.title && ISO.test(x.date)).slice(0, 20).map((x): CalEvent => {
@@ -390,7 +396,7 @@ export function fromModel(m: Understood, said: string, events: CalEvent[], newId
   // Claude asks about the time only where one is usual; "Geburtstag" or "Urlaub" stay all day without a question.
   const open = !start && !more.length && !event.endDate && !!m.question;
   if (open) steps.push(NO_TIME());
-  return { kind: 'added', event, clash, steps, needsTime: open, ask: open ? m.question ?? undefined : undefined, more: more.length ? more : undefined, suggest: m.place || more.length ? undefined : suggestOf(known) };
+  return { kind: 'added', follows: m.follows, event, clash, steps, needsTime: open, ask: open ? m.question ?? undefined : undefined, more: more.length ? more : undefined, suggest: m.place || more.length ? undefined : suggestOf(known) };
 }
 
 /** Day by day for the home screen: today plus the next six days. */

@@ -6,7 +6,7 @@
  *
  * Request (signed in, JWT checked by Supabase):
  *   { text, today: "2026-10-27", now: "14:10", names: { J: "Julian", T: "Anna" }, lang: "de" | "en",
- *     history?: [{ said, app? }], draft?: "<what is on the card, JSON>", stream?: true,
+ *     history?: [{ said, app? }], draft?: "<what is on the card, JSON>", recent?: true, stream?: true,
  *     lists?: [{ id, name }] (the family's lists, Julian 29.10.) }
  * With stream the answer comes as server-sent events: { t } pieces of the JSON, then { done } or { error }.
  * With history the sentence answers or corrects the card that is still open
@@ -56,6 +56,8 @@ const Termin = z.object({
   have: z.array(z.string()),
   // Julian 28.10.: one sentence can hold several Termine ("ab heute Urlaub bis Sonntag, danach Arbeit 8 bis 17 Uhr ab Dienstag").
   work: z.boolean(),
+  // Julian 30.10.: messages close together belong together. true only when the new sentence changes or adds to the entry it is shown with.
+  follows: z.boolean(),
   // Plain strings, "" for none: the API allows only a few nullable fields per schema (it refused 19 on 28.10.).
   more: z.array(z.object({
     title: z.string(),
@@ -106,9 +108,10 @@ Regeln für Termine:
 - icon: wähle für einen Termin den passendsten Namen aus der Icon-Liste ("Fußball mit Freunden" ergibt fussball, "Friseur" passt zu keinem, dann kalender). Nur Namen aus der Liste.
 - Mehrere Termine in einem Satz ("ab heute Urlaub bis Sonntag, danach wieder Arbeit von 8 bis 17 Uhr ab Dienstag", "Montag Zahnarzt und Mittwoch Elternabend"): der erste steht in den Hauptfeldern, alle weiteren in more, in zeitlicher Reihenfolge. In more steht "" für leer und who "none" für niemanden. steps beschreibt alle zusammen in höchstens vier kurzen Sätzen. Sonst bleibt more leer.
 - Urlaub, Reise oder Krankheit über mehrere Tage ist ein ganztägiger Termin mit date und end_date.
-- work ist true für Arbeitszeiten ("Arbeit", "Schicht", "im Büro", "work"). Regelmäßige Arbeitszeiten ohne genannte Tage gelten Montag bis Freitag. Mit genanntem Ende ("bis Weihnachten", "bis Ende März", "until Christmas"): genau EIN Eintrag mit date = erster Arbeitstag, end_date = letzter Arbeitstag davor ("bis Weihnachten" ist der 24.12.), repeat "Montag bis Freitag" (oder die genannten Tage), more bleibt dafür leer; die App verteilt das selbst auf jeden Arbeitstag. Ohne genanntes Ende: lege für jeden Arbeitstag ab dem genannten Start bis einschließlich Freitag der Woche danach einen eigenen Eintrag an (höchstens 12), mit repeat "Montag bis Freitag" ("Mondays to Fridays"). Feiertage und Urlaubstage aus demselben Satz lässt du aus. Arbeit ohne Uhrzeit ("Dienstag arbeite ich wieder jeden Tag", "ab Montag wieder im Büro"): title "Arbeit" (oder "Work"), work true, start und end null, die Arbeitstage wie oben, und question fragt kurz nach der Zeit ("Von wann bis wann arbeitest du?"). Erfinde nie eine Uhrzeit und nimm nie die aktuelle Uhrzeit als Beginn.
+- work ist true für Arbeitszeiten ("Arbeit", "Schicht", "im Büro", "work"). Regelmäßige Arbeitszeiten ohne genannte Tage gelten Montag bis Freitag. Mit genanntem Ende ("bis Weihnachten", "bis Ende März", "until Christmas"): genau EIN Eintrag mit date = erster Arbeitstag, end_date = letzter Arbeitstag davor ("bis Weihnachten" ist der 24.12.), repeat "Montag bis Freitag" (oder die genannten Tage), more bleibt dafür leer; die App verteilt das selbst auf jeden Arbeitstag. Einzelne Wochentage ohne genanntes Ende ("jeden Mittwoch muss ich ins Büro", "dienstags Homeoffice", "every Friday at the office"): genau EIN Eintrag, date = der nächste dieser Wochentage, repeat "Jeden Mittwoch" (oder die genannten Tage), work false, more leer; die App macht daraus eine Serie. Sonst ohne genanntes Ende: lege für jeden Arbeitstag ab dem genannten Start bis einschließlich Freitag der Woche danach einen eigenen Eintrag an (höchstens 12), mit repeat "Montag bis Freitag" ("Mondays to Fridays"). Feiertage und Urlaubstage aus demselben Satz lässt du aus. Arbeit ohne Uhrzeit ("Dienstag arbeite ich wieder jeden Tag", "ab Montag wieder im Büro"): title "Arbeit" (oder "Work"), work true, start und end null, die Arbeitstage wie oben, und question fragt kurz nach der Zeit ("Von wann bis wann arbeitest du?"). Erfinde nie eine Uhrzeit und nimm nie die aktuelle Uhrzeit als Beginn.
 - Bricht der Satz mitten im Gedanken ab ("Wir sind seit Sonntag", "Am Freitag haben wir", "Ben hat morgen und"), setze kind auf abgebrochen. Die App hört dann weiter und schickt den ganzen Satz noch einmal.
-- Steht ein bisheriges Gespräch dabei, ist der neue Satz eine Antwort auf die Rückfrage oder eine Korrektur oder Ergänzung des Entwurfs ("Freitag um drei", "nein, um 16 Uhr", "Tom kommt auch mit", "und Impfpass mitnehmen"). Gib dann den vollständigen neuen Stand zurück, mit allen Terminen aus dem Entwurf, auch den unveränderten, und ändere nur, was der neue Satz sagt. steps beschreibt nur die Änderung. Will der neue Satz offensichtlich etwas ganz anderes, behandle ihn wie einen neuen Satz.
+- Steht ein bisheriges Gespräch dabei, ist der neue Satz meist eine Antwort auf die Rückfrage oder eine Korrektur oder Ergänzung des Entwurfs ("Freitag um drei", "nein, um 16 Uhr", "Tom kommt auch mit", "und Impfpass mitnehmen", "jeden Mittwoch davon bin ich im Büro", "da auch die Oma"). Setze dann follows true und gib den vollständigen neuen Stand zurück, mit allen Terminen aus dem Entwurf, auch den unveränderten, und ändere nur, was der neue Satz sagt. steps beschreibt nur die Änderung. Ändert der Satz nur einige Wochentage einer Reihe mit end_date ("jeden Mittwoch davon im Büro", "freitags davon Homeoffice"), teile die Reihe: ein Eintrag für die übrigen Tage mit genau deren Wochentagen in repeat ("Montag, Dienstag, Donnerstag, Freitag") und einer in more für die genannten Tage mit dem neuen Titel ("Büro") und repeat "Jeden Mittwoch", beide mit demselben date, end_date und work wie im Entwurf. Will der neue Satz offensichtlich etwas anderes, das mit dem Entwurf nichts zu tun hat, setze follows false und behandle ihn wie einen neuen Satz, ohne den Entwurf. Ohne bisheriges Gespräch ist follows false.
+- "Zuletzt eingetragen" heißt: der Eintrag ist schon im Kalender und wurde kurz vorher im Chat gesagt. Gehört der neue Satz eindeutig dazu (er sagt "davon", "dort", "da", "dazu", "nein", "doch", "lieber", "auch" oder ergänzt ihn sonst klar), gilt er als Ergänzung wie oben, mit follows true. Im Zweifel ist es ein neuer Satz, follows false.
 - Ist es nichts davon, setze kind auf unklar und stelle in question eine kurze Rückfrage, ob es in den Kalender oder auf eine Liste gehört.`;
 
 const cors = {
@@ -122,7 +125,7 @@ Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors });
   const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { ...cors, 'Content-Type': 'application/json' } });
 
-  let input: { text?: string; today?: string; now?: string; names?: { J?: string; T?: string }; lang?: string; icons?: string[]; history?: { said?: string; app?: string }[]; draft?: string; stream?: boolean; lists?: { id?: string; name?: string }[] };
+  let input: { text?: string; today?: string; now?: string; names?: { J?: string; T?: string }; lang?: string; icons?: string[]; history?: { said?: string; app?: string }[]; draft?: string; recent?: boolean; stream?: boolean; lists?: { id?: string; name?: string }[] };
   try { input = await req.json(); } catch { return json({ error: 'bad_json' }, 400); }
   const text = (input.text ?? '').trim().slice(0, 500);
   const today = /^\d{4}-\d{2}-\d{2}$/.test(input.today ?? '') ? input.today! : new Date().toISOString().slice(0, 10);
@@ -143,7 +146,9 @@ Deno.serve(async (req) => {
     .map((h) => [h?.said ? `Gesagt: ${String(h.said).slice(0, 300)}` : '', h?.app ? `App: ${String(h.app).slice(0, 200)}` : ''].filter(Boolean).join('\n'))
     .filter(Boolean).join('\n');
   const draft = typeof input.draft === 'string' ? input.draft.slice(0, 3000) : '';
-  const talk = history ? `\n\nBisheriges Gespräch:\n${history}${draft ? `\nEntwurf auf der Karte: ${draft}` : ''}\n\nNeuer Satz dazu: ${text}` : `\n\nSatz: ${text}`;
+  // Julian 30.10.: an entry made a moment ago in the chat comes along too; Claude decides whether the new sentence belongs to it.
+  const where = input.recent ? 'Zuletzt eingetragen' : 'Entwurf auf der Karte';
+  const talk = history ? `\n\nBisheriges Gespräch:\n${history}${draft ? `\n${where}: ${draft}` : ''}\n\nNeuer Satz${input.recent ? '' : ' dazu'}: ${text}` : `\n\nSatz: ${text}`;
   // The family's own lists (Julian 29.10.), so Claude can pick one or make a new one.
   const lists = (Array.isArray(input.lists) ? input.lists : []).slice(0, 40)
     .filter((l) => l && typeof l.id === 'string' && typeof l.name === 'string')
@@ -164,7 +169,7 @@ Deno.serve(async (req) => {
   const t0 = Date.now();
   // Only timing and kind, never what was said (Julian 28.10.: why was Claude too slow?).
   const log = (out: z.infer<typeof Termin> | null | undefined, stop: string | null, usage?: { output_tokens?: number; cache_read_input_tokens?: number | null }, first?: number) =>
-    console.log(JSON.stringify({ ms: Date.now() - t0, first: first ?? null, kind: out?.kind ?? null, dish: !!out?.dish, follow: !!history, stop, out: usage?.output_tokens, cached: usage?.cache_read_input_tokens ?? 0 }));
+    console.log(JSON.stringify({ ms: Date.now() - t0, first: first ?? null, kind: out?.kind ?? null, dish: !!out?.dish, follow: !!history, recent: !!input.recent, follows: !!out?.follows, stop, out: usage?.output_tokens, cached: usage?.cache_read_input_tokens ?? 0 }));
 
   // Julian 28.10.: show live what Claude is reading. The answer arrives piece by piece as server-sent events.
   if (input.stream) {

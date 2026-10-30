@@ -41,7 +41,7 @@ async function limitHint(error: unknown) {
 }
 
 /** The open card's conversation (Julian 28.10.: weitersprechen statt Sackgasse): what was said, what the app asked, and the card as JSON. */
-export type Convo = { history: { said: string; app?: string }[]; draft?: string };
+export type Convo = { history: { said: string; app?: string }[]; draft?: string; recent?: boolean };
 
 export async function understandOnline(text: string, convo?: Convo): Promise<Understood | null> {
   if (!supabase || !getAuth().session) return null;

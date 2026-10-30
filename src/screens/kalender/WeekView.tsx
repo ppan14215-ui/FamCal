@@ -184,12 +184,18 @@ export default function WeekView() {
               const list = events.filter((e) => e.date === d && !isSpan(e));
               return (
                 <View key={d} style={{ flex: 1, position: 'relative', zIndex: liftCol === days.indexOf(d) ? 5 : 0 }}>
-                  {list.filter((e) => e.work).map((e) => (
-                    // Work blocks open like any Termin (Julian 29.10.: they could not be seen or deleted).
-                    <PressScale key={e.id} scale={0.98} onPress={() => router.push(`/termin/${e.id}`)} accessibilityLabel={tx('Arbeit ansehen', 'View work')} style={{ position: 'absolute', left: 1, right: 1, top: top(e.start), height: top(e.end ?? e.start) - top(e.start) }}>
-                      <Stripes p={(e.who === 'J' ? 'J' : 'T') as PersonId} radius={8} style={{ flex: 1, opacity: 0.9 }} />
-                    </PressScale>
-                  ))}
+                  {list.filter((e) => e.work).map((e) => {
+                    // Work without hours ("Arbeit bis Weihnachten") fills a usual working day, so it never vanishes (Julian 30.10.).
+                    const [from, to] = e.allDay || !e.end || e.end <= e.start ? ['08:00', '17:00'] : [e.start, e.end];
+                    return (
+                      // Work blocks open like any Termin (Julian 29.10.: they could not be seen or deleted).
+                      <PressScale key={e.id} scale={0.98} onPress={() => router.push(`/termin/${e.id}`)} accessibilityLabel={`${e.title}, ${tx('ansehen', 'view')}`} style={{ position: 'absolute', left: 1, right: 1, top: top(from), height: Math.max(HP * 0.6, top(to) - top(from)) }}>
+                        <Stripes p={(e.who === 'J' ? 'J' : 'T') as PersonId} radius={8} style={{ flex: 1, opacity: 0.9, padding: 3 }}>
+                          {wide || e.title !== tx('Arbeit', 'Work') ? <Txt size={10} line={12} weight={700} numberOfLines={1} ellipsizeMode="clip" color={persons[e.who === 'J' ? 'J' : 'T'].ink}>{wide ? e.title : SHORT[e.title] ?? e.title.split(' ')[0]}</Txt> : null}
+                        </Stripes>
+                      </PressScale>
+                    );
+                  })}
                   {list.filter((e) => !e.work).map((e) => {
                     const h = Math.max(28, (e.end && top(e.end) > top(e.start) ? top(e.end) - top(e.start) : HP * 0.8) - 4);
                     return (
