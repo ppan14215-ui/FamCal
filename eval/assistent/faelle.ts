@@ -237,6 +237,12 @@ export const FAELLE: Fall[] = [
         ...keineNeuen(e), ...deutsch(e),
       ];
     } },
+  // Julian 31.10.: "Essen beim Griechen" stand ganztägig da, ohne Frage nach der Uhrzeit.
+  { id: 'essen-uhrzeit', saetze: ['Morgen essen beim Griechen Penelope'],
+    pruefe: (e) => {
+      const n = neu(e).find((x) => /griech|essen|penelope/i.test(`${x.title} ${x.place ?? ''}`));
+      return [...(n ? [] : ['kein Termin']), ...(e.frage ? [] : ['keine Frage nach der Uhrzeit']), ...deutsch(e)];
+    } },
   { id: 'rezept', saetze: ['Heute Abend koche ich Bolognese'],
     pruefe: (e) => [...(e.tools.includes('rezept') ? [] : [`kein Rezept, sondern ${e.tools.join(', ')}`]), ...keineNeuen(e), ...deutsch(e)] },
   { id: 'englisch-bleibt-englisch', saetze: ['I have a dentist appointment next Tuesday at 3pm'],

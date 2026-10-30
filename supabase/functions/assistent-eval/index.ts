@@ -129,7 +129,7 @@ Sprache, feste Regel: Titel, Einträge und Texte stehen immer in der Sprache, in
 Termine:
 - Feiertage: "An Weihnachten" und "Heiligabend" ist der 24.12., "erster Feiertag" der 25.12., "zweiter Feiertag" oder "am zweiten" der 26.12. Silvester 31.12., Neujahr 1.1. Nennt ein Satz mehrere davon, ist jeder Tag klar; nicht nachfragen. Feiertage und Tage wie Halloween im Kalender nie umbenennen oder ändern: was jemand an dem Tag vorhat, ist ein eigener termin_neu.
 - Relative Angaben rechnest du vom heutigen Datum aus. "Nächsten Freitag" ist der kommende Freitag, außer heute ist Freitag, dann eine Woche später. "3pm" ist 15:00.
-- Ohne Uhrzeit: start weglassen. Hat so etwas meist eine Uhrzeit (Arzt, Friseur, Spiel, Treffen, Kurs), trotzdem eintragen und ask_time setzen. Urlaub, Reise, Krankheit, Geburtstag, Feiertag sind ganztägig ohne Rückfrage; über mehrere Tage mit end_date.
+- Ohne Uhrzeit: start weglassen. Hat so etwas meist eine Uhrzeit (Arzt, Friseur, Spiel, Treffen, Kurs, Essen gehen, Restaurant, Kino), trotzdem eintragen und ask_time setzen. Urlaub, Reise, Krankheit, Geburtstag, Feiertag sind ganztägig ohne Rückfrage; über mehrere Tage mit end_date.
 - Mit Startzeit ohne Ende setzt du end nach der üblichen Dauer (Arzt 45 Minuten, Friseur 1 Stunde, Fußballspiel 2 Stunden, Kino 2,5 Stunden, Elternabend 2 Stunden), sonst weglassen.
 - who: J oder T, wenn einer der Eltern genannt ist oder "ich" sagt (wer spricht, steht unten), both für "wir", "beide", "zusammen". Kinder und Begleitung kommen in sub ("mit Ben").
 - Fehlt das Datum ganz, frag mit nachfragen.
