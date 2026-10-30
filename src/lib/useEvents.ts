@@ -13,10 +13,21 @@ export function useCalEvents(): CalEvent[] {
   const who = simple ? null : picked;
   const people = useStore((s) => s.people);
   return useMemo(() => {
-    const all = expand(events, WINDOW.from, WINDOW.to);
+    const all = expanded(events);
     const name = people.find((p) => p.id === who)?.name.split(' ')[0];
     return who ? all.filter((e) => forWho(e, who, name)) : all;
   }, [events, who, people]);
+}
+
+/**
+ * Every series spelled out over three years is the costly part of each calendar view, and
+ * every view mounted its own copy (Julian 30.10.: "von Tagen zu Wochen super slow"). One copy
+ * per state of the events, shared by all views.
+ */
+let cache: { of: CalEvent[]; all: CalEvent[] } | null = null;
+function expanded(events: CalEvent[]): CalEvent[] {
+  if (cache?.of !== events) cache = { of: events, all: expand(events, WINDOW.from, WINDOW.to) };
+  return cache.all;
 }
 
 /** Shown when one person is picked: their own, the family's, and every Feiertag. */

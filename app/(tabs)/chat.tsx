@@ -10,7 +10,7 @@ import { View, ScrollView } from 'react-native';
 import Animated from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
-import { H1, Check } from '../../src/components/ui/kit';
+import { H1, Check, Head } from '../../src/components/ui/kit';
 import Txt from '../../src/components/ui/Txt';
 import { Avatar, Pair } from '../../src/components/ui/Person';
 import { Tile } from '../../src/components/ui/Clay';
@@ -390,9 +390,9 @@ export default function Chat() {
     <View style={{ flex: 1, backgroundColor: tokens.bg, paddingTop: insets.top }}>
       {simple ? null : <Jumps />}
       {/* The title stays put while the messages scroll under it (Julian 30.10. 22:15). */}
-      <View style={{ paddingHorizontal: 18, paddingTop: 8 }}>
+      <Head>
         <H1 sub={tx(`Familie · ${2 + people} Personen`, `Family · ${2 + people} people`)} right={<HeaderRight />}>Chat</H1>
-      </View>
+      </Head>
       <ScrollView ref={scroller} onContentSizeChange={() => { if (!more) scroller.current?.scrollToEnd({ animated: false }); }} contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 18, paddingTop: 8, paddingBottom: dock + (kb > 0 ? kb : insets.bottom) + 40, gap: 12 }} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
         {feed.length > shown.length ? (
           <PressScale onPress={() => setMore((m) => m + SHOWN)} style={{ alignSelf: 'center', paddingVertical: 8, paddingHorizontal: 14 }}>

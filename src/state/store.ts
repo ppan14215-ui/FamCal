@@ -415,6 +415,13 @@ export const actions = {
   addItem(listId: string, text: string, sectionId?: string): string | undefined {
     const p = S.parseItem(text);
     if (!p.name) return;
+    // Already open on the list (also as plural, Julian 30.10.: "doppelte Einträge"): the new amount joins it.
+    const key = S.sameItemKey(p.name);
+    const twin = state.lists.find((l) => l.id === listId)?.sections.flatMap((sec) => sec.items).find((i) => !i.done && S.sameItemKey(i.name) === key);
+    if (twin) {
+      if (p.qty || p.note) set((s) => ({ lists: mapList(s.lists, listId, (l) => mapItems(l, (i) => (i.id === twin.id ? { ...i, qty: p.qty ?? i.qty, note: p.note ?? i.note } : i))) }));
+      return twin.id;
+    }
     const id = S.newId('i');
     set((s) => ({
       lists: mapList(s.lists, listId, (l) => {
@@ -427,6 +434,21 @@ export const actions = {
     const bp = state.lists.find((l) => l.id === listId)?.blueprint;
     if (bp?.source) enrichItem(listId, id, p.name, bp.source);
     return id;
+  },
+  /** Folds open twins on a list into one (the older one stays). Returns how many went, with an undo. */
+  mergeTwins(listId: string): number {
+    const before = state.lists.find((l) => l.id === listId);
+    if (!before) return 0;
+    const seen = new Map<string, string>();
+    const gone = new Set<string>();
+    before.sections.flatMap((sec) => sec.items).filter((i) => !i.done).forEach((i) => {
+      const k = S.sameItemKey(i.name);
+      if (seen.has(k)) gone.add(i.id); else seen.set(k, i.id);
+    });
+    if (!gone.size) return 0;
+    set((s) => ({ lists: mapList(s.lists, listId, (l) => mapItems(l, (i) => (gone.has(i.id) ? null : i))) }));
+    toast(tx(`${gone.size} doppelte ${gone.size === 1 ? 'Eintrag' : 'Einträge'} zusammengeführt`, `${gone.size} duplicate${gone.size === 1 ? '' : 's'} merged`), () => set((s) => ({ lists: s.lists.map((l) => (l.id === listId ? before : l)) })));
+    return gone.size;
   },
   /** Fills or changes the blocks of one entry (cover, stars, seen …). */
   setItemData(listId: string, itemId: string, patch: Partial<ItemData>) {

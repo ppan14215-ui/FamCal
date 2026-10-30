@@ -29,10 +29,7 @@ export const NAV_H = 54;
 /** Where the pill's top edge sits above the screen bottom. */
 export const navTop = (insetBottom: number) => Math.max(insetBottom, 12) + 10 + NAV_H;
 
-const floatShadow = Platform.select({
-  web: { boxShadow: '0 12px 28px rgba(22,35,42,.28)' } as any,
-  default: { shadowColor: '#16232A', shadowOpacity: 0.28, shadowRadius: 14, shadowOffset: { width: 0, height: 10 }, elevation: 10 },
-});
+const floatShadow = { boxShadow: '0 12px 28px rgba(22,35,42,0.28)' } as any;
 
 export default function NavBar({ state, navigation }: BottomTabBarProps) {
   const insets = useSafeAreaInsets();

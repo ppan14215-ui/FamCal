@@ -7,6 +7,7 @@ import { useScroller } from '../../lib/landing';
 import React, { useEffect, useRef, useState } from 'react';
 import { ScrollView, StyleProp, View, ViewStyle, Platform, LayoutChangeEvent } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import Svg, { Defs, LinearGradient, Stop, Rect } from 'react-native-svg';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring, withTiming, interpolateColor } from 'react-native-reanimated';
 import Txt, { Dot } from './Txt';
 import LineIcon, { LineName } from './LineIcon';
@@ -39,6 +40,29 @@ type ScreenProps = {
   head?: React.ReactNode;
 };
 
+/**
+ * A screen's title and switches, standing still above what scrolls (Julian 30.10.: "padding im Header",
+ * "sehr flach"): room above and below, and a soft fade where the content slides under it.
+ */
+export function Head({ children, gap = 14, bg = tokens.bg, pad = 18 }: { children: React.ReactNode; gap?: number; bg?: string; pad?: number }) {
+  return (
+    <View style={{ zIndex: 2, paddingHorizontal: pad, paddingTop: 16, paddingBottom: 10, gap, backgroundColor: bg }}>
+      {children}
+      <View pointerEvents="none" style={{ position: 'absolute', left: 0, right: 0, bottom: -18, height: 18 }}>
+        <Svg width="100%" height="100%" preserveAspectRatio="none">
+          <Defs>
+            <LinearGradient id="headfade" x1="0" y1="0" x2="0" y2="1">
+              <Stop offset="0" stopColor={bg} stopOpacity={1} />
+              <Stop offset="1" stopColor={bg} stopOpacity={0} />
+            </LinearGradient>
+          </Defs>
+          <Rect x="0" y="0" width="100%" height="100%" fill="url(#headfade)" />
+        </Svg>
+      </View>
+    </View>
+  );
+}
+
 export function Screen({ children, head, tab, footer, bg = tokens.bg, gap = 14, scroll = true, padTop = 8, padBottom = 0, scrollRef, onScrollY }: ScreenProps) {
   const insets = useSafeAreaInsets();
   // The talk dock floats over the end of every screen (Julian 27.10.), so leave room for it.
@@ -53,7 +77,7 @@ export function Screen({ children, head, tab, footer, bg = tokens.bg, gap = 14, 
   );
   return (
     <View style={{ flex: 1, backgroundColor: bg, paddingTop: insets.top }}>
-      {head ? <View style={{ paddingHorizontal: 18, paddingTop: padTop, paddingBottom: 4, gap }}>{head}</View> : null}
+      {head ? <Head gap={gap} bg={bg}>{head}</Head> : null}
       {scroll ? (
         <ScrollView ref={ref} onScroll={(e) => { track(e.nativeEvent.contentOffset.y); onScrollY?.(e.nativeEvent.contentOffset.y); }} scrollEventThrottle={16} style={{ flex: 1 }} contentContainerStyle={{ flexGrow: 1 }} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
           {content}

@@ -191,6 +191,33 @@ export function sectionFor(name: string): 'drogerie' | 'supermarkt' {
 }
 
 /**
+ * The way through a supermarket (Julian 30.10.: "nach Supermarkt Ordnung sortiert, sodass Gemüse
+ * zusammen rausgesucht werden kann"): fruit and vegetables first, then bread, the fridge, meat,
+ * the shelves, frozen, drinks. Unknown things go last.
+ */
+const AISLES: RegExp[] = [
+  /tomate(?!nmark)|tomaten$|gurke|salat|zwiebel|knoblauch|karotte|möhre|kartoffel|paprika|zucchini|aubergine|brokkoli|blumenkohl|kohl|lauch|porree|sellerie|spinat|pilz|champignon|kürbis|mais$|^mais|avocado|ingwer|kräuter|petersilie|basilikum|schnittlauch|rucola|radieschen|apfel|äpfel|banane|birne|orange|zitrone|limette|traube|beere|kiwi|mango|ananas|melone|obst|gemüse|kokosnuss|onion|garlic|carrot|potato|pepper|lettuce|cucumber|apple|banana|lemon|berr|fruit|veg/i,
+  /brot|brötchen|toast|baguette|croissant|semmel|brezel|bread|bagel/i,
+  /milch|joghurt|quark|sahne|butter|käse|parmesan|mozzarella|feta|frischkäse|schmand|ei$|eier|margarine|pudding|milk|yog|cheese|cream|egg/i,
+  /hack|fleisch|wurst|schinken|speck|salami|hähnchen|huhn|pute|rind|schwein|lachs|fisch|thunfisch|garnele|meat|chicken|beef|pork|ham|bacon|fish|salmon/i,
+  /nudel|spaghetti|pasta|reis|mehl|zucker|salz|pfeffer|öl|essig|tomatenmark|passiert|dose|konserve|bohne|linse|kichererbse|brühe|gewürz|müsli|cornflakes|haferflocken|honig|marmelade|nutella|kaffee|tee|kakao|backpulver|hefe|rice|flour|sugar|oil|can|beans|cereal|coffee|tea/i,
+  /tiefkühl|tk |pizza|eis$|eiscreme|pommes|frozen|ice cream/i,
+  /wasser|saft|wein|bier|limo|cola|sprudel|schorle|water|juice|wine|beer|soda/i,
+  /schokolade|chips|keks|gummi|bonbon|süß|snack|nüsse|chocolate|cookie|candy/i,
+];
+export function aisleOf(name: string): number {
+  if (/passiert|dose|konserve|tomatenmark|getrocknet|canned/i.test(name)) return 4;
+  const i = AISLES.findIndex((re) => re.test(name.trim()));
+  return i < 0 ? AISLES.length : i;
+}
+
+/** "Zwiebel" and "Zwiebeln", "Ei" and "Eier", "mais" and "Mais" are one thing on a list. */
+export function sameItemKey(name: string): string {
+  const l = name.trim().toLowerCase().replace(/\s+/g, ' ');
+  return l.replace(/(en|er|n|e|s)$/, '');
+}
+
+/**
  * "2 Hafermilch, ungesüßt" → qty 2, name Hafermilch, note ungesüßt.
  * Julian 26.10.: Menge und Notiz werden aus dem Text gelesen.
  */

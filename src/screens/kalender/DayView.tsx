@@ -16,7 +16,7 @@ import { springs } from '../../theme';
 import { useScroller } from '../../lib/landing';
 import { useDockSpace } from '../../lib/dockSpace';
 import { router } from 'expo-router';
-import { Meta, Check } from '../../components/ui/kit';
+import { Meta, Check, Head } from '../../components/ui/kit';
 import Txt from '../../components/ui/Txt';
 import { Tile } from '../../components/ui/Clay';
 import { Avatar, Owner } from '../../components/ui/Person';
@@ -302,7 +302,6 @@ export default function DayView({ header }: { header: (today: React.ReactNode) =
   const track = useScroller(ref);
   const ys = useRef<Record<string, number>>({});
   const view = useRef(0);
-  const [shadow, setShadow] = useState(false);
   // Up to the chosen day plus four weeks, then four more each time the end comes near.
   // Not up to the last Termin any more: with work days until Christmas that drew
   // half a year of days at once, and switching to Tage took ages (Julian 30.10. 22:19).
@@ -350,10 +349,11 @@ export default function DayView({ header }: { header: (today: React.ReactNode) =
 
   return (
     <View style={{ flex: 1 }}>
-      <View style={{ paddingHorizontal: 18, paddingTop: 8, paddingBottom: 12, gap: 14, backgroundColor: tokens.bg, zIndex: 2, borderBottomWidth: 1, borderBottomColor: shadow ? tokens.hair : 'transparent' }}>
+      {/* Same head as every tab (Julian 30.10.: "Calendar header zu chat header springt"). */}
+      <Head>
         {header(<TodayChip away={day !== TODAY} above={day > TODAY} onPress={() => pick(TODAY)} />)}
         <WeekStrip day={day} onSelect={pick} />
-      </View>
+      </Head>
       <ScrollView
         ref={ref}
         style={{ flex: 1 }}
@@ -365,7 +365,6 @@ export default function DayView({ header }: { header: (today: React.ReactNode) =
           const { contentOffset, contentSize } = e.nativeEvent;
           track(contentOffset.y);
           spy(contentOffset.y);
-          if (shadow !== contentOffset.y > 4) setShadow(contentOffset.y > 4);
           if (contentSize.height - contentOffset.y - view.current < 900) setCount((c) => (c < total + 1 ? total + MORE : c));
         }}
         contentContainerStyle={{ paddingHorizontal: 18, paddingTop: 14, paddingBottom: 110 + insets.bottom + dock, gap: 18 }}

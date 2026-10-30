@@ -4,6 +4,14 @@ Alle sichtbaren Änderungen an FamCal. Neueste oben. Agenten und Menschen: Ände
 
 ## Unreleased
 
+### Einkauf nach Supermarkt, gleiche Header (30.10. spät)
+
+- Die Einkaufsliste sortiert sich wie der Weg durch den Laden: Obst und Gemüse zusammen, dann Brot, Kühlregal, Fleisch, Vorrat, Tiefkühl, Getränke.
+- Doppelte Einträge (auch Zwiebel und Zwiebeln) werden zusammengeführt, mit Rückgängig. Neue Doppelte entstehen nicht mehr.
+- Chat, Kalender und Listen haben denselben Header an derselben Stelle, mit Luft und einem sanften Übergang zum Inhalt.
+- Feld, Tab-Leiste und Karten haben auf Android wieder einen weichen Schatten.
+- Der Wechsel zwischen Tage, Woche und Monat rechnet die Serien nur noch einmal.
+
 ### Ruhiger, schneller, richtiger (30.10. abends)
 
 - Im Chat ist die Karte von Anfang an da, das Nachdenken passiert in ihr. Bei einem neuen Termin fragen Chips gleich: Ich, Partner oder Beide?

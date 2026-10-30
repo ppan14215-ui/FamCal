@@ -17,7 +17,7 @@ import AddInline from '../../src/components/AddInline';
 import HintCard from '../../src/components/HintCard';
 import { tokens, springs, swapIn, persons } from '../../src/theme';
 import { useStore, actions, toast } from '../../src/state/store';
-import { itemMeta, itemText } from '../../src/data/sample';
+import { itemMeta, itemText, aisleOf } from '../../src/data/sample';
 import { haptics } from '../../src/lib/haptics';
 import Fresh from '../../src/components/Fresh';
 import { Cover, Stars, Score, SeenPill, FactChips, factLine, hasBlock } from '../../src/components/Blocks';
@@ -215,6 +215,8 @@ function Balance({ tasks }: { tasks: Task[] }) {
 
 function Einkauf({ list }: { list: List }) {
   const hints = useStore((s) => s.hints);
+  // Twins from before the merge rule (Julian 30.10.: "Mais" twice, "Zwiebel" and "Zwiebeln") fold once, with an undo.
+  useEffect(() => { actions.mergeTwins(list.id); }, [list.id]);
   return (
     <>
       <AddInline placeholder={tx('Hinzufügen …', 'Add …')} mic onPress={() => router.push('/einkauf-neu')} />
@@ -311,7 +313,8 @@ function Sections({ list, counts }: { list: List; counts?: boolean }) {
         const plain = list.kind === 'collection' || !!list.blueprint;
         const bp = list.blueprint;
         const right = plain ? String(sec.items.length) : counts ? tx(`${done.length} von ${sec.items.length}`, `${done.length} of ${sec.items.length}`) : String(open.length);
-        const ordered = list.kind === 'shopping' ? [...open, ...done] : sec.items;
+        // The shop's own order: vegetables together, then bread, fridge, meat, shelves (Julian 30.10.).
+        const ordered = list.kind === 'shopping' ? [...open.map((i, k) => ({ i, k, a: aisleOf(i.name) })).sort((x, y) => x.a - y.a || x.k - y.k).map((x) => x.i), ...done] : sec.items;
         return (
           <View key={sec.id} style={{ gap: 12 }}>
             {plain && list.sections.length === 1 ? null : <H2 right={right}>{sec.title}</H2>}

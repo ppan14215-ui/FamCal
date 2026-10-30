@@ -74,10 +74,7 @@ function Picks({ options }: { options: [string, () => void][] }) {
     </View>
   );
 }
-const shadow = Platform.select({
-  web: { boxShadow: `0 0 0 1px ${tokens.hair}, 0 12px 32px rgba(22,35,42,.12)` } as any,
-  default: { shadowColor: '#16232A', shadowOpacity: 0.12, shadowRadius: 16, shadowOffset: { width: 0, height: 10 }, elevation: 8, borderWidth: 1, borderColor: tokens.hair },
-});
+const shadow = { boxShadow: `0 0 0 1px ${tokens.hair}, 0 12px 32px rgba(22,35,42,0.12)` } as any;
 
 /** Where am I, and where does the dock sit there. */
 function useWhere(): { ctx: Ctx; tab: boolean; lift: number; chat?: boolean } | null {

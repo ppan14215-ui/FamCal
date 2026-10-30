@@ -51,10 +51,8 @@ if (Platform.OS === 'web' && typeof document !== 'undefined') {
   document.head.appendChild(css);
 }
 
-const lift = Platform.select({
-  web: { boxShadow: '0 8px 24px rgba(22,35,42,.10)' } as any,
-  default: { shadowColor: '#16232A', shadowOpacity: 0.1, shadowRadius: 12, shadowOffset: { width: 0, height: 8 }, elevation: 6 },
-});
+// A real soft shadow on Android too (Julian 30.10.: "sehr flach"); elevation alone draws a hard grey edge.
+const lift = { boxShadow: '0 10px 28px rgba(22,35,42,0.14), 0 2px 6px rgba(22,35,42,0.06)' } as any;
 
 type Props = {
   /** voice: the text came from the mic, so a follow-up may listen again. */
