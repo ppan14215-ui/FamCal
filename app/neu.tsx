@@ -20,8 +20,6 @@ import type { ClayName } from '../src/lib/clayIcons';
 import { tx } from '../src/i18n/lang';
 import { canRead } from '../src/lib/screenshot';
 import Animated, { FadeInDown } from 'react-native-reanimated';
-import { useSimple } from '../src/lib/simple';
-import ExampleCards from '../src/components/Examples';
 
 // Quick and calm (Julian 30.10.: the falling, tilted cards were too playful and too slow).
 const fall = (i: number) => FadeInDown.duration(160).delay(i * 20);
@@ -39,36 +37,10 @@ export default function Neu() {
   const opts: { icon: ClayName; t: string; s: string; onPress: () => void }[] = [
     { icon: 'kalender', t: tx('Termin', 'Event'), s: tx('für euch oder Ben', 'for you or the kids'), onPress: () => go(() => router.push('/termin-neu')) },
     { icon: 'einkauf', t: tx('Listeneintrag', 'List item'), s: tx('Einkauf und eure Listen', 'Shopping and your lists'), onPress: () => go(() => router.push('/einkauf-neu')) },
+    { icon: 'checkliste', t: tx('Neue Liste', 'New list'), s: tx('Packliste, Watchlist …', 'Packing, watchlist …'), onPress: () => go(() => router.push('/liste-neu')) },
     { icon: 'erledigt', t: tx('Aufgabe', 'Task'), s: tx('mit oder ohne Datum', 'with or without a date'), onPress: () => go(() => { actions.setActiveList('aufgaben'); router.navigate('/listen'); }) },
     { icon: 'papier-stift', t: tx('Entwurf', 'Draft'), s: tx('Antwort schreiben lassen', 'Have a reply written'), onPress: () => go(() => router.push('/entwurf')) },
   ];
-  const simple = useSimple();
-  const attachRow = (
-    <View style={{ flexDirection: 'row', gap: 8 }}>
-      {attach.map((a, i) => (
-        <Animated.View key={a.t} entering={fall(i)} style={{ flex: 1 }}>
-          <PressScale accessibilityLabel={a.t} onPress={a.onPress} style={{ alignItems: 'center', gap: 6, paddingVertical: simple ? 10 : 14, borderRadius: 20, backgroundColor: tokens.row }}>
-            <LineIcon name={a.icon} size={simple ? 22 : 26} color={tokens.ink} />
-            <Txt size={14} weight={600}>{a.t}</Txt>
-          </PressScale>
-        </Animated.View>
-      ))}
-    </View>
-  );
-  // Einfache Version (Julian 30.10.): the plus shows what the app can do, in sentences to say.
-  if (simple) return (
-    <Sheet>
-      <Txt size={24} weight={700} tracking={-0.5}>{tx('Sag einfach', 'Just say')}<Dot char=" …" /></Txt>
-      {attachRow}
-      <ExampleCards onPick={goBack} />
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 4, paddingTop: 2 }}>
-        <Txt size={14} color={tokens.sub}>{tx('Lieber von Hand:', 'Rather by hand:')}</Txt>
-        <PressScale hitSlop={8} onPress={opts[0].onPress}><Txt size={14} weight={700}>{opts[0].t}</Txt></PressScale>
-        <Txt size={14} color={tokens.mute}>·</Txt>
-        <PressScale hitSlop={8} onPress={opts[1].onPress}><Txt size={14} weight={700}>{tx('Liste', 'List')}</Txt></PressScale>
-      </View>
-    </Sheet>
-  );
   return (
     <Sheet>
       <Txt size={24} weight={700} tracking={-0.5}>{tx('Was kommt dazu', 'What\'s new')}<Dot char="?" /></Txt>

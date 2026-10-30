@@ -2,7 +2,6 @@
  * Layout and control primitives. Each maps 1:1 to a helper in design/gen.py
  * (h1, h2, meta, group, card, btn, back, seg, toggle, chip, note, row, wrow).
  */
-import { useSimple } from '../../lib/simple';
 import { useDockSpace } from '../../lib/dockSpace';
 import { useScroller } from '../../lib/landing';
 import React, { useEffect, useRef, useState } from 'react';
@@ -42,12 +41,10 @@ export function Screen({ children, tab, footer, bg = tokens.bg, gap = 14, scroll
   const insets = useSafeAreaInsets();
   // The talk dock floats over the end of every screen (Julian 27.10.), so leave room for it.
   const dock = useDockSpace();
-  // Einfache Version: no floating tab bar, the dock already holds the tabs.
-  const simple = useSimple();
   const own = useRef<ScrollView>(null);
   const ref = scrollRef ?? own;
   const track = useScroller(ref);
-  const bottom = (tab && !simple ? 110 + insets.bottom : tab ? 24 + insets.bottom : footer ? 16 : 34 + insets.bottom) + padBottom + (footer ? 0 : dock);
+  const bottom = (tab ? 110 + insets.bottom : footer ? 16 : 34 + insets.bottom) + padBottom + (footer ? 0 : dock);
   // Content arrives instead of appearing (docs/MOTION.md).
   const content = (
     <Animated.View entering={rise()} style={{ gap, paddingHorizontal: 18, paddingTop: padTop, paddingBottom: bottom, flexGrow: 1 }}>{children}</Animated.View>

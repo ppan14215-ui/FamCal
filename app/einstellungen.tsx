@@ -78,7 +78,7 @@ export default function Einstellungen() {
         {/* Julian 30.10.: both versions side by side, to compare. */}
         <Txt size={13} weight={600} color={tokens.sub} style={{ paddingHorizontal: 4 }}>{tx('Version zum Testen', 'Version to test')}</Txt>
         <Seg items={[{ key: 'jetzt', label: tx('Wie bisher', 'As before') }, { key: 'einfach', label: tx('Einfache Version', 'Simple version') }]} value={simple ? 'einfach' : 'jetzt'} onChange={(k) => { haptics.select(); setSimple(k === 'einfach'); toast(k === 'einfach' ? tx('Einfache Version ist an', 'Simple version is on') : tx('Wieder wie bisher', 'Back to before')); }} />
-        <Txt size={12.5} line={17} color={tokens.mute} style={{ paddingHorizontal: 4 }}>{tx('Einfach: eine Leiste unten, das Plus zeigt Beispielsätze, Kalender mit drei Ansichten.', 'Simple: one bar at the bottom, the plus shows example sentences, a calendar with three views.')}</Txt>
+        <Txt size={12.5} line={17} color={tokens.mute} style={{ paddingHorizontal: 4 }}>{tx('Einfach: Kalender mit drei Ansichten, Jahr über den Monatsnamen, ohne Personenfilter. Leerer Chat zeigt Beispielsätze.', 'Simple: a calendar with three views, year from the month name, no person filter. An empty chat shows example sentences.')}</Txt>
       </View>
       <View style={{ gap: 8 }}>
         <Txt size={13} weight={600} color={tokens.sub} style={{ paddingHorizontal: 4 }}>{tx('Darstellung', 'Appearance')}</Txt>
