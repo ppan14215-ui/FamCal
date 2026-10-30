@@ -22,6 +22,8 @@ const FIXED = {
 await build({
   entryPoints: [path.join(here, 'run.ts')], bundle: true, platform: 'node', outfile: process.argv[2] ?? path.join(here, '.run.cjs'),
   loader: { '.webp': 'empty', '.png': 'empty', '.js': 'jsx' }, logLevel: 'error',
+  // The app runs on its fixed test day (Do 29.10.2026, 08:50), whatever .env says, so "morgen" always means the same day.
+  define: { 'process.env.EXPO_PUBLIC_DEMO': '"1"' },
   plugins: [{ name: 'stub', setup(b) {
     b.onResolve({ filter: /^(react-native|expo-localization)$/ }, (a) => ({ path: a.path, namespace: 'fixed' }));
     b.onLoad({ filter: /.*/, namespace: 'fixed' }, (a) => ({ contents: FIXED[a.path], loader: 'js' }));

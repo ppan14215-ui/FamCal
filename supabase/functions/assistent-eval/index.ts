@@ -95,7 +95,7 @@ const TOOLS: Tool[] = [
     question: str('Die Frage, kurz, in der Sprache des Satzes.'),
   }, ['question']) },
   { name: 'antworten', ...obj('Dein Satz an die Person, immer als erstes Werkzeug: die Antwort auf eine Frage zum Kalender oder zu Listen, oder kurz, was du jetzt machst.', {
-    text: str('Kurz, natürlich, in der Sprache des Satzes, höchstens drei Sätze.'),
+    text: str('Kurz, natürlich, höchstens drei Sätze, in der Sprache des neuen Satzes: englischer Satz, englische Antwort; deutscher Satz, deutsche Antwort.'),
     events: strs('ids der Termine, um die es geht; die App zeigt sie.'),
   }, ['text']) },
   { name: 'nachfragen', ...obj('Fragt nach, wenn etwas unklar ist oder so nicht geht. Dann wird nichts anderes ausgeführt.', {

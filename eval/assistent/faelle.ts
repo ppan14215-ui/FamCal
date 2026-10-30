@@ -43,7 +43,7 @@ const geaendert = (e: Ergebnis) => e.stand.events.filter((x) => { const y = e.vo
 const buero = (x: CalEvent) => /büro|office/i.test(`${x.title} ${x.place ?? ''} ${x.sub ?? ''}`);
 const homeoffice = (x: CalEvent) => /home ?office/i.test(`${x.title} ${x.place ?? ''} ${x.sub ?? ''}`);
 
-const DE = /\b(ich|ist|und|der|die|das|dir|dein|deine|trage|eingetragen|steht|habe|mach|gerne?|okay,? ich|alles klar)\b/i;
+const DE = /\b(ich|ist|und|der|die|das|dir|dein|deine|du|wie|viel|oder|um|wann|bis|kommt|trage|eingetragen|steht|habe|mach|gerne?|okay,? ich|alles klar)\b|ganztägig|ä|ö|ü|ß/i;
 const EN = /\b(I|I'll|I've|the|your|you|added|done|sure|okay,? I)\b/;
 function deutsch(e: Ergebnis): string[] {
   const t = e.frage ?? e.antwort;
