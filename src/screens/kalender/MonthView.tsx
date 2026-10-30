@@ -19,7 +19,7 @@ import { addDays, monday, dayNum, monthIdx, year, parse, iso, WD_SHORT, weekday,
 import PressScale from '../../components/ui/PressScale';
 import { tx } from '../../i18n/lang';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
-import Animated, { useAnimatedStyle, useSharedValue, withSpring, withTiming } from 'react-native-reanimated';
+import Animated, { useAnimatedStyle, useSharedValue, withSpring, withTiming, ZoomIn } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
 import { haptics } from '../../lib/haptics';
 import { springs } from '../../theme';
@@ -95,7 +95,7 @@ export default function MonthView() {
             <Txt size={12} weight={600} color={tokens.sub}>{h}</Txt>
           </View>
         ))}
-        {cells.map((d) => {
+        {cells.map((d, ci) => {
           const inMonth = monthIdx(d) === m;
           // Multi-day ones (Urlaub bis Sonntag) show on every day they cover.
           const evs = inMonth ? events.filter((e) => !e.work && (e.date === d || (!!e.endDate && e.date < d && d <= e.endDate))) : [];
@@ -112,7 +112,7 @@ export default function MonthView() {
                 }}
               >
                 <Txt size={14} line={18} weight={isToday ? 700 : 500} color={isToday ? tokens.done : inMonth ? tokens.ink : tokens.circleLine}>{String(dayNum(d))}</Txt>
-                <DayIcons evs={evs} size={icon} />
+                <DayIcons evs={evs} size={evs.length > 1 ? Math.round(icon * 0.85) : icon} delay={Math.min(ci * 14, 420)} />
               </PressScale>
             </View>
           );
@@ -146,23 +146,23 @@ export function MonthArrows() {
 }
 
 /**
- * Several Termine share the cell (Julian 28.10.: "mehrere Icons in ein
- * Feld"): one big, two side by side, three or four in a square, beyond that
- * three and the count.
+ * One clean icon per cell (Julian 30.10.: several small icons looked messy):
+ * the first Termin as clay object, every further one as a small dot below,
+ * like in the Apple calendar. The icon pops in when the month appears, so the
+ * grid feels alive instead of rigid.
  */
-function DayIcons({ evs, size }: { evs: CalEvent[]; size: number }) {
+function DayIcons({ evs, size, delay }: { evs: CalEvent[]; size: number; delay: number }) {
   if (!evs.length) return <View style={{ flex: 1 }} />;
-  if (evs.length === 1) {
-    return <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingBottom: 4 }}><ClayIcon name={evs[0].icon} size={size} /></View>;
-  }
-  const small = Math.round(size * 0.75);
-  const shown = evs.length > 4 ? evs.slice(0, 3) : evs;
+  const more = Math.min(3, evs.length - 1);
   return (
-    <View style={{ flex: 1, width: '100%', paddingHorizontal: 3, paddingBottom: 4, flexDirection: 'row', flexWrap: 'wrap', alignContent: 'center', justifyContent: 'center' }}>
-      {shown.map((e) => <View key={e.id} style={{ width: '50%', alignItems: 'center' }}><ClayIcon name={e.icon} size={small} /></View>)}
-      {evs.length > 4 ? (
-        <View style={{ width: '50%', height: small, alignItems: 'center', justifyContent: 'center' }}>
-          <Txt size={10} line={12} weight={700} color={tokens.sub}>{`+${evs.length - 3}`}</Txt>
+    <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', gap: 3, paddingBottom: 4 }}>
+      <Animated.View entering={ZoomIn.springify().damping(13).stiffness(220).delay(delay)}>
+        <ClayIcon name={evs[0].icon} size={size} />
+      </Animated.View>
+      {more ? (
+        <View style={{ flexDirection: 'row', gap: 3, height: 5 }}>
+          {Array.from({ length: more }, (_, i) => <View key={i} style={{ width: 5, height: 5, borderRadius: 3, backgroundColor: tokens.sub, opacity: 0.55 }} />)}
+          {evs.length > 4 ? <Txt size={9} line={9} weight={700} color={tokens.sub}>+</Txt> : null}
         </View>
       ) : null}
     </View>
