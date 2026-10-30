@@ -19,6 +19,11 @@ import { actions, toast } from '../src/state/store';
 import type { ClayName } from '../src/lib/clayIcons';
 import { tx } from '../src/i18n/lang';
 import { canRead } from '../src/lib/screenshot';
+import Animated, { FadeInDown } from 'react-native-reanimated';
+
+// The cards fall in one after the other with a little tilt, like cards laid on a table (Julian 30.10., mymind).
+const fall = (i: number) => FadeInDown.springify().damping(14).stiffness(180).delay(60 + i * 45);
+const TILT = ['-2deg', '1.5deg', '-1deg', '2deg'];
 
 const MAIL = 'huber-7q2@familie.app';
 
@@ -40,20 +45,24 @@ export default function Neu() {
     <Sheet>
       <Txt size={24} weight={700} tracking={-0.5}>{tx('Was kommt dazu', 'What\'s new')}<Dot char="?" /></Txt>
       <View style={{ flexDirection: 'row', gap: 8 }}>
-        {attach.map((a) => (
-          <PressScale key={a.t} accessibilityLabel={a.t} onPress={a.onPress} style={{ flex: 1, alignItems: 'center', gap: 6, paddingVertical: 14, borderRadius: 20, backgroundColor: tokens.row }}>
-            <LineIcon name={a.icon} size={26} color={tokens.ink} />
-            <Txt size={14} weight={600}>{a.t}</Txt>
-          </PressScale>
+        {attach.map((a, i) => (
+          <Animated.View key={a.t} entering={fall(i)} style={{ flex: 1 }}>
+            <PressScale accessibilityLabel={a.t} onPress={a.onPress} style={{ alignItems: 'center', gap: 6, paddingVertical: 14, borderRadius: 20, backgroundColor: tokens.row }}>
+              <LineIcon name={a.icon} size={26} color={tokens.ink} />
+              <Txt size={14} weight={600}>{a.t}</Txt>
+            </PressScale>
+          </Animated.View>
         ))}
       </View>
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-        {opts.map((o) => (
-          <PressScale key={o.t} onPress={o.onPress} style={{ width: '48.5%', flexGrow: 1, gap: 8, padding: 14, borderRadius: 22, backgroundColor: tokens.row }}>
-            <ClayIcon name={o.icon} size={58} />
-            <Txt size={16} weight={600}>{o.t}</Txt>
-            <Meta>{o.s}</Meta>
-          </PressScale>
+        {opts.map((o, i) => (
+          <Animated.View key={o.t} entering={fall(3 + i)} style={{ width: '48.5%', flexGrow: 1, transform: [{ rotate: TILT[i % 4] }] }}>
+            <PressScale onPress={o.onPress} style={{ gap: 8, padding: 14, borderRadius: 22, backgroundColor: tokens.row, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 10, shadowOffset: { width: 0, height: 3 }, elevation: 2 }}>
+              <ClayIcon name={o.icon} size={58} />
+              <Txt size={16} weight={600}>{o.t}</Txt>
+              <Meta>{o.s}</Meta>
+            </PressScale>
+          </Animated.View>
         ))}
       </View>
       <PressScale scale={0.985} onPress={() => go(() => router.push('/assistent'))} style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 10, paddingLeft: 10, paddingRight: 14, borderRadius: 20, backgroundColor: tokens.row }}>

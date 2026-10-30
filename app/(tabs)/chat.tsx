@@ -22,6 +22,7 @@ import { useKeyboardInset } from '../../src/lib/keyboard';
 import { useFeed, canUndo, undoEntry, answerAsk, type FeedEntry, type EventSnap } from '../../src/lib/feed';
 import { getFamily, myRole } from '../../src/lib/sync';
 import { hm, short, TODAY } from '../../src/lib/dates';
+import HeaderRight from '../../src/components/ui/HeaderRight';
 import { tx } from '../../src/i18n/lang';
 import { useVeil, Step } from '../../src/components/Veil';
 import { isTrip, makePackList, kidsOn, ageText } from '../../src/lib/pack';
@@ -330,7 +331,7 @@ export default function Chat() {
     <View style={{ flex: 1, backgroundColor: tokens.bg, paddingTop: insets.top }}>
       <Jumps />
       <ScrollView ref={scroller} onContentSizeChange={() => scroller.current?.scrollToEnd({ animated: false })} contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 18, paddingTop: 8, paddingBottom: dock + (kb > 0 ? kb : insets.bottom) + 40, gap: 12 }} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
-        <H1 sub={tx(`Familie · ${2 + people} Personen`, `Family · ${2 + people} people`)} right={<PressScale accessibilityLabel={tx('Familie und Einstellungen', 'Family and settings')} onPress={() => router.push('/einstellungen')}><Pair /></PressScale>}>Chat</H1>
+        <H1 sub={tx(`Familie · ${2 + people} Personen`, `Family · ${2 + people} people`)} right={<HeaderRight />}>Chat</H1>
         {feed.length || veil.inline && veil.phase !== 'off' ? feed.map((f) => {
           // An answer shows on its question, not as a bubble of its own.
           if (f.answer && feed.some((x) => x.id === f.answer!.ask)) return null;

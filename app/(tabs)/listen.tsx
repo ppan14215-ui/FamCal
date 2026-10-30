@@ -25,6 +25,7 @@ import { myRole } from '../../src/lib/sync';
 import type { List, Task, Item, Blueprint } from '../../src/state/types';
 import type { ClayName } from '../../src/lib/clayIcons';
 import { isPoints, players, roundsOf, total } from '../../src/lib/points';
+import HeaderRight from '../../src/components/ui/HeaderRight';
 import { tx } from '../../src/i18n/lang';
 
 export default function Listen() {
@@ -48,7 +49,7 @@ export default function Listen() {
 
   return (
     <Screen tab gap={12}>
-      <H1 sub={sub} right={<PressScale accessibilityLabel={tx('Familie und Einstellungen', 'Family and settings')} onPress={() => router.push('/einstellungen')}><Pair /></PressScale>}>{tx('Listen', 'Lists')}</H1>
+      <H1 sub={sub} right={<HeaderRight />}>{tx('Listen', 'Lists')}</H1>
       <ClayTabs lists={lists} active={active} />
       <Animated.View key={active} entering={swapIn} style={{ gap: 12 }}>
         {active === 'aufgaben' ? <Aufgaben tasks={tasks} /> : list?.kind === 'shopping' ? <Einkauf list={list} /> : list ? <Packliste list={list} /> : null}

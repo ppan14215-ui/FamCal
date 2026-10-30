@@ -12,12 +12,12 @@ import { router } from 'expo-router';
 import { Screen, Seg } from '../../src/components/ui/kit';
 import Txt, { Dot } from '../../src/components/ui/Txt';
 import LineIcon from '../../src/components/ui/LineIcon';
-import { Pair } from '../../src/components/ui/Person';
+import HeaderRight from '../../src/components/ui/HeaderRight';
 import { useStore, actions, CalView } from '../../src/state/store';
 import TodayView from '../../src/screens/kalender/TodayView';
 import DayView from '../../src/screens/kalender/DayView';
 import WeekView from '../../src/screens/kalender/WeekView';
-import MonthView, { monthTitle, MonthArrows } from '../../src/screens/kalender/MonthView';
+import MonthView, { monthTitle } from '../../src/screens/kalender/MonthView';
 import YearView, { YearArrows } from '../../src/screens/kalender/YearView';
 import PressScale from '../../src/components/ui/PressScale';
 import { TODAY, WD_LONG, weekday, dayNum, MONTHS, monthIdx, addDays, monday, isoWeek, daysBetween } from '../../src/lib/dates';
@@ -100,7 +100,7 @@ export default function Kalender() {
   const insets = useSafeAreaInsets();
   const toggle = () => { haptics.select(); setOpen((o) => !o); };
   const choose = (v: CalView) => { actions.setCalView(v); if (v === 'heute') actions.setCalDay(TODAY); };
-  const pair = <PressScale accessibilityLabel={tx('Familie und Einstellungen', 'Family and settings')} onPress={() => router.push('/einstellungen')}><Pair /></PressScale>;
+  const pair = <HeaderRight />;
   const seg = open ? (
     <Animated.View entering={FadeInDown.duration(200)} exiting={FadeOut.duration(120)} style={{ gap: 10 }}>
       <Seg items={VIEWS} value={view} onChange={choose} />
@@ -120,7 +120,7 @@ export default function Kalender() {
   if (view === 'tag') {
     return (
       <View style={{ flex: 1, backgroundColor: tokens.bg, paddingTop: insets.top }}>
-        <DayView header={(today) => <><Title sub={tx(`${WD_LONG[weekday(day)]}, ${dayNum(day)}.`, `${WD_LONG[weekday(day)]} ${dayNum(day)}`)} text={month} open={open} onPress={toggle} right={<View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>{today}{pair}</View>} />{seg}</>} />
+        <DayView header={(today) => <><Title sub={tx(`${WD_LONG[weekday(day)]}, ${dayNum(day)}.`, `${WD_LONG[weekday(day)]} ${dayNum(day)}`)} text={month} open={open} onPress={toggle} right={<HeaderRight before={today} />} />{seg}</>} />
       </View>
     );
   }
@@ -133,7 +133,7 @@ export default function Kalender() {
     : yr === Number(TODAY.slice(0, 4)) ? tx(`Noch ${left} Tage im Jahr`, `${left} days left this year`) : yr < Number(TODAY.slice(0, 4)) ? tx('Rückblick', 'Looking back') : tx('Vorschau', 'Looking ahead');
   return (
     <Screen tab gap={14}>
-      <Title text={title} sub={sub} open={open} onPress={toggle} right={view === 'monat' || view === 'jahr' ? <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>{view === 'monat' ? <MonthArrows /> : <YearArrows />}{pair}</View> : pair} />
+      <Title text={title} sub={sub} open={open} onPress={toggle} right={view === 'jahr' ? <HeaderRight before={<YearArrows />} /> : pair} />
       {seg}
       <Animated.View key={view} entering={swapIn} style={{ gap: 14 }}>
         {view === 'woche' ? <WeekView /> : view === 'monat' ? <MonthView /> : <YearView />}
