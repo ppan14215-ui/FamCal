@@ -93,7 +93,7 @@ const TOOLS: Tool[] = [
     question: str('Die Frage, kurz, in der Sprache des Satzes.'),
   }, ['question']) },
   { name: 'antworten', ...obj('Dein Satz an die Person, immer als erstes Werkzeug: die Antwort auf eine Frage zum Kalender oder zu Listen, oder kurz, was du jetzt machst.', {
-    text: str('Kurz, natürlich, höchstens drei Sätze, in der Sprache des neuen Satzes: englischer Satz, englische Antwort; deutscher Satz, deutsche Antwort.'),
+    text: str('Kurz, natürlich, höchstens drei Sätze, in der Sprache des neuen Satzes (auf einen englischen Satz antwortest du englisch).'),
     events: strs('ids der Termine, um die es geht; die App zeigt sie.'),
   }, ['text']) },
   { name: 'nachfragen', ...obj('Fragt nach, wenn etwas unklar ist oder so nicht geht. Dann wird nichts anderes ausgeführt.', {
@@ -187,9 +187,10 @@ Deno.serve(async (req) => {
     // Rules, tools and icon names are cached; only the family's state and the sentence are read fresh.
     system: [{ type: 'text', text: SYSTEM }, { type: 'text', text: `Icons: ${icons}`, cache_control: { type: 'ephemeral' } }],
     tools: TOOLS,
-    tool_choice: { type: 'any' },
-    // Julian 28.10.: it must be quick. The family waits with the orb spinning.
-    thinking: { type: 'disabled' },
+    // Julian 30.10.: short thinking passed the whole test list (23 of 23, 2.5 s median), without it 20.
+    // With thinking on, forced tool use is refused; the prompt says to act only through tools.
+    tool_choice: { type: 'auto' },
+    thinking: { type: 'adaptive' },
     output_config: { effort: 'low' },
     messages: [{
       role: 'user',

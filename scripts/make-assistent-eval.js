@@ -61,8 +61,8 @@ const VARIANTS: Record<string, { model: string; tool_choice: { type: 'any' | 'au
   sonnet: { model: 'claude-sonnet-5-5', tool_choice: { type: 'auto' }, thinking: { type: 'adaptive' } },
 };`);
 out = swap(out, `    model: 'claude-haiku-5-5',\n`, `    model: variant.model,\n`);
-out = swap(out, `    tool_choice: { type: 'any' },\n`, `    tool_choice: variant.tool_choice,\n`);
-out = swap(out, `    thinking: { type: 'disabled' },\n`, `    thinking: variant.thinking as never,\n`);
+out = swap(out, `    tool_choice: { type: 'auto' },\n`, `    tool_choice: variant.tool_choice,\n`);
+out = swap(out, `    thinking: { type: 'adaptive' },\n`, `    thinking: variant.thinking as never,\n`);
 out = swap(out, `import { createClient } from 'npm:@supabase/supabase-js@2';\n`, '');
 // The log says which model answered, still never what was said.
 out = swap(out, `JSON.stringify({ ms: Date.now() - t0,`, `JSON.stringify({ eval: variant.model, ms: Date.now() - t0,`);
