@@ -414,7 +414,7 @@ export default function Dock() {
   const onTabs = !!where && (where.tab || !!where.chat);
   const above = navTop(insets.bottom) + 10;
   // Typing hides the tabs, so the field drops into their place right above the keyboard.
-  const bottom = !where ? 0 : kb > 0 ? kb + 8 : onTabs ? (typing ? Math.max(insets.bottom, 12) + 10 : above) : insets.bottom + 12 + where.lift;
+  const bottom = !where ? 0 : kb > 0 ? kb + 8 : onTabs ? (typing && Platform.OS === 'web' ? Math.max(insets.bottom, 12) + 10 : above) : insets.bottom + 12 + where.lift;
   useEffect(() => { setDockTop(where ? bottom + (shown ? h : 0) : 0); }, [bottom, h, !!where, shown]);
 
   if (!where) return null;
@@ -422,7 +422,7 @@ export default function Dock() {
   // On tabs the nav stays on top of the fade, it starts just above it.
   // Above a footer button (liste-neu) the fade starts at the field, so the button stays clear.
   // On the tabs the bar paints its own calm ground, so the fade starts at its top.
-  const fadeFrom = kb || typing ? 0 : onTabs ? above - 10 : where.lift ? bottom - 8 : 0;
+  const fadeFrom = kb || (typing && Platform.OS === 'web') ? 0 : onTabs ? above - 10 : where.lift ? bottom - 8 : 0;
   const kind = where.ctx.kind;
 
   const ask = () => { if (spoke.current) setListenKey((k) => k + 1); };
