@@ -18,6 +18,11 @@ import { eventsOn } from '../../lib/selectors';
 import { addDays, monday, dayNum, monthIdx, year, parse, iso, WD_SHORT, weekday, MONTHS_SHORT, hm, TODAY, MONTHS, short } from '../../lib/dates';
 import PressScale from '../../components/ui/PressScale';
 import { tx } from '../../i18n/lang';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import Animated, { useAnimatedStyle, useSharedValue, withSpring, withTiming } from 'react-native-reanimated';
+import { scheduleOnRN } from 'react-native-worklets';
+import { haptics } from '../../lib/haptics';
+import { springs } from '../../theme';
 import type { CalEvent } from '../../state/types';
 import { useCalEvents } from '../../lib/useEvents';
 
@@ -53,9 +58,38 @@ export default function MonthView() {
   const cellH = Math.round(Math.max(60, Math.min(104, (H - 490) / rows)));
   const icon = Math.round(Math.min(40, cellH * 0.4));
 
+  // Swipe left or right for the next or previous month (Julian 30.10.), like in the week.
+  const W = useSharedValue(360);
+  const x = useSharedValue(0);
+  const op = useSharedValue(1);
+  const go = (dir: number) => { haptics.select(); actions.setCalDay(shiftMonth(day, dir)); };
+  const pan = Gesture.Pan()
+    .maxPointers(1)
+    .activeOffsetX([-14, 14])
+    .failOffsetY([-12, 12])
+    .onUpdate((e) => { x.value = e.translationX; op.value = 1 - Math.min(0.5, Math.abs(e.translationX) / W.value); })
+    .onEnd((e) => {
+      if (Math.abs(e.translationX) > W.value * 0.22 || Math.abs(e.velocityX) > 700) {
+        const dir = e.translationX < 0 ? 1 : -1;
+        x.value = withTiming(-dir * W.value * 0.6, { duration: 140 }, (f) => {
+          if (!f) return;
+          scheduleOnRN(go, dir);
+          x.value = dir * W.value * 0.4;
+          op.value = 0.3;
+          x.value = withSpring(0, springs.smooth);
+          op.value = withTiming(1, { duration: 220 });
+        });
+      } else {
+        x.value = withSpring(0, springs.snapBack);
+        op.value = withTiming(1, { duration: 160 });
+      }
+    });
+  const slide = useAnimatedStyle(() => ({ opacity: op.value, transform: [{ translateX: x.value }] }));
+
   return (
     <>
-      <View style={{ flexDirection: 'row', flexWrap: 'wrap', rowGap: 5 }}>
+      <GestureDetector gesture={pan} touchAction="pan-y">
+      <Animated.View onLayout={(e) => { W.value = e.nativeEvent.layout.width; }} style={[{ flexDirection: 'row', flexWrap: 'wrap', rowGap: 5 }, slide]}>
         {HEAD.map((h) => (
           <View key={h} style={{ width: `${100 / 7}%`, alignItems: 'center', paddingBottom: 2 }}>
             <Txt size={12} weight={600} color={tokens.sub}>{h}</Txt>
@@ -83,7 +117,8 @@ export default function MonthView() {
             </View>
           );
         })}
-      </View>
+      </Animated.View>
+      </GestureDetector>
       <H2 right={`${list.length} ${list.length === 1 ? tx('Termin', 'event') : tx('Termine', 'events')}`}>{short(day)}</H2>
       {list.length ? (
         <Group>

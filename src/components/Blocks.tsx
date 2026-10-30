@@ -75,6 +75,13 @@ export function SeenPill({ label, seen, onToggle }: { label: string; seen?: bool
 
 /** "2019 · Greta Gerwig" in the order the blueprint names them. */
 export function factLine(bp: Blueprint, data?: ItemData): string | undefined {
+  // Points: the running total and the last round, so the table reads at a glance.
+  if (bp.blocks.includes('points')) {
+    const r = data?.rounds ?? [];
+    if (!r.length) return tx('Noch keine Punkte', 'No points yet');
+    const sum = r.reduce((a, b) => a + b, 0);
+    return tx(`${sum} Punkte · zuletzt ${r[r.length - 1]}`, `${sum} points · last ${r[r.length - 1]}`);
+  }
   const parts = bp.blocks.map((b) => (b === 'year' ? data?.year : b === 'by' ? data?.by : undefined)).filter(Boolean);
   return parts.length ? parts.join(' · ') : undefined;
 }

@@ -20,6 +20,7 @@ import { savedFor, type Recipe } from './rezepte';
 import { myRole } from './sync';
 import { isFeiertag } from './feiertage';
 import { isVacation, leftLine } from './urlaub';
+import { isPoints, parseRound, players, matchPlayer, standLine, roundsOf, doubledText } from './points';
 
 const ids = (list: CalEvent[]) => new Set(list.map((e) => e.id));
 
@@ -115,8 +116,25 @@ function dueLast(t: string) {
 }
 
 /** Sentences for a list, not the calendar. */
+const GAME = /\b(romm[eé]|rummy|canasta|kniffel|yahtzee|skat|doppelkopf|uno|wizard|phase 10|darts)\b/i;
+
+/** "Wir spielen Rommé mit Julian, Sophia und Oma": a points list for that game, players from the sentence (Julian 30.10.). */
+function gamePlan(said: string): Plan | null {
+  const g = said.match(GAME);
+  const asks = /\b(spiel\w*|playing|play|punkte|zähl\w*|addier\w*|score|liste|list)\b/i.test(said);
+  if (!g || !asks) return null;
+  const name = g[1].toLowerCase().startsWith('romm') ? 'Rommé' : g[1].replace(/^./, (c) => c.toUpperCase());
+  const existing = get().lists.find((x) => isPoints(x) && x.name.toLowerCase() === name.toLowerCase());
+  const who = said.match(/\b(?:mit|with|spieler:?|players:?)\s+(.+)$/i)?.[1] ?? '';
+  const names = who.split(/,|\bund\b|\band\b/i).map((x) => x.trim().replace(/^(mir|me|uns|us)$/i, '')).filter((x) => x && x.length <= 30 && !/\d/.test(x)).map((x) => x.replace(/^./, (c) => c.toUpperCase()));
+  if (existing) return liste(names.length ? names.join(', ') : said, existing.id, names.length ? names : undefined);
+  return newList(name, names);
+}
+
 function listPlan(said: string): Plan | null {
   const l = said.toLowerCase();
+  const game = gamePlan(said);
+  if (game) return game;
   // Shopping from anywhere: "Auf die Einkaufsliste: Milch und Brot", "Wir brauchen Windeln".
   if (/einkauf|\bkaufen\b|\bbesorgen\b|wir brauchen|shopping|\bbuy\b|we need|grocer/.test(l) && !findWhen(said.split(/\s+/))) return liste(said, 'einkauf');
   if (/^\s*(neue|eine neue|leg(e)? (eine )?neue)\s+liste|^\s*liste\b|^\s*(a\s+)?new\s+list\b|^\s*list\b/.test(l)) return listeNeu(said);
@@ -314,6 +332,43 @@ function termin(said: string, id: string): Plan {
 
 // ─── Listen ────────────────────────────────────────────────────────────────
 
+/** A round for a points list: "Julian 35, Sophia 12", one Rückgängig takes the round back. */
+function pointsPlan(list: List, said: string): Plan | null {
+  const r = parseRound(said);
+  if (!r) return null;
+  const factor = r.double && list.blueprint?.points?.doubleWord !== false ? 2 : 1;
+  const n = roundsOf(list) + 1;
+  return {
+    head: tx(`Runde ${n} auf „${list.name}“`, `Round ${n} on “${list.name}”`),
+    steps: r.round.map((x) => `${x.who} ${x.points * factor}${factor === 2 ? ` (${x.points} ${doubledText()})` : ''}`),
+    run: () => {
+      actions.setActiveList(list.id);
+      const fresh = get().lists.find((l) => l.id === list.id) ?? list;
+      const made: string[] = [];
+      const before = new Map<string, number[]>();
+      const touched: string[] = [];
+      for (const x of r.round) {
+        const all = players(get().lists.find((l) => l.id === list.id) ?? fresh);
+        let p = matchPlayer(all, x.who);
+        if (!p) { const nid = actions.addItem(list.id, x.who); if (!nid) continue; made.push(nid); p = players(get().lists.find((l) => l.id === list.id)!).find((i) => i.id === nid); }
+        if (!p) continue;
+        const rounds = p.data?.rounds ?? [];
+        before.set(p.id, rounds);
+        // Everyone gets a place in each round; whoever was not named scores 0.
+        const padded = [...rounds, ...Array(Math.max(0, n - 1 - rounds.length)).fill(0)];
+        actions.setItemData(list.id, p.id, { rounds: [...padded, x.points * factor] });
+        touched.push(p.id);
+      }
+      const now = get().lists.find((l) => l.id === list.id) ?? fresh;
+      const text = tx(`Runde ${n}: ${standLine(now)}.`, `Round ${n}: ${standLine(now)}.`);
+      return {
+        land: touched[0], lit: touched, go: '/listen',
+        result: { kind: 'done', text, sub: factor === 2 ? tx('Diese Runde zählt doppelt.', 'This round counts double.') : otherSees(), undo: () => { before.forEach((v, id) => actions.setItemData(list.id, id, { rounds: v })); made.forEach((id) => actions.deleteItem(list.id, id)); } },
+      };
+    },
+  };
+}
+
 function liste(said: string, id: string, given?: string[]): Plan {
   if (id === 'aufgaben') {
     const parts = said.split(/,|\bund dann\b|\band then\b/).map((x) => x.trim()).filter(Boolean);
@@ -337,6 +392,7 @@ function liste(said: string, id: string, given?: string[]): Plan {
     };
   }
   const list = get().lists.find((x) => x.id === id) ?? get().lists[0];
+  if (isPoints(list) && !given?.length) { const pp = pointsPlan(list, said); if (pp) return pp; }
   const items = given?.length ? given.map((x) => x.trim()).filter(Boolean).map((x) => x[0].toUpperCase() + x.slice(1)) : splitItems(said);
   return {
     // Every item is its own step, so each one visibly ticks off (Julian 27.10.: "kein Zweifel, was die Maschine ausführt").
@@ -557,10 +613,19 @@ export function correction(made: CalEvent, r: Extract<Reply, { kind: 'added' }>)
 }
 
 /** Claude reads every sentence on the calendar and on the lists (Julian 29.10.: the rules put "Karotten auf meine Einkaufsliste" on the list as it was). */
-export const thinksOnline = (ctx: Ctx, said: string, pending: unknown) => !pending && canUnderstand() && (ctx.kind === 'kalender' || ctx.kind === 'liste' || (ctx.kind !== 'termin' && dishy(said)));
+export const thinksOnline = (ctx: Ctx, said: string, pending: unknown) => !pending && canUnderstand() && !(ctx.kind === 'liste' && isPoints(get().lists.find((l) => l.id === ctx.id)) && !!parseRound(said)) && !gameFor(said) && !(GAME.test(said) && gamePlan(said)) && (ctx.kind === 'kalender' || ctx.kind === 'liste' || (ctx.kind !== 'termin' && dishy(said)));
+
+/** From anywhere (chat too): a sentence whose names are all players of a points list is a round there. */
+function gameFor(said: string): List | undefined {
+  const r = parseRound(said);
+  if (!r) return undefined;
+  return get().lists.find((l) => isPoints(l) && players(l).length > 0 && r.round.every((x) => !!matchPlayer(players(l), x.who)));
+}
 
 export function plan(ctx: Ctx, said: string, pending: { title: string; who: Who } | null): Plan {
   if (ctx.kind === 'termin') return termin(said, ctx.id);
+  const game = ctx.kind !== 'liste' ? gameFor(said) : undefined;
+  if (game) { const pp = pointsPlan(game, said); if (pp) return pp; }
   if (ctx.kind === 'liste') {
     // "Erinnere mich …" is a task from any list.
     if (REMIND.test(said)) return liste(remindText(said), 'aufgaben');

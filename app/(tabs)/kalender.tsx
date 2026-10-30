@@ -20,7 +20,7 @@ import WeekView from '../../src/screens/kalender/WeekView';
 import MonthView, { monthTitle, MonthArrows } from '../../src/screens/kalender/MonthView';
 import YearView from '../../src/screens/kalender/YearView';
 import PressScale from '../../src/components/ui/PressScale';
-import { TODAY, WD_LONG, weekday, dayNum, MONTHS, monthIdx, addDays, monday } from '../../src/lib/dates';
+import { TODAY, WD_LONG, weekday, dayNum, MONTHS, monthIdx, addDays, monday, isoWeek, daysBetween } from '../../src/lib/dates';
 import { haptics } from '../../src/lib/haptics';
 import { tx, EN } from '../../src/i18n/lang';
 
@@ -78,16 +78,20 @@ export default function Kalender() {
   if (view === 'tag') {
     return (
       <View style={{ flex: 1, backgroundColor: tokens.bg, paddingTop: insets.top }}>
-        <DayView header={(today) => <><Title text={month} open={open} onPress={toggle} right={<View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>{today}{pair}</View>} />{seg}</>} />
+        <DayView header={(today) => <><Title sub={tx(`${WD_LONG[weekday(day)]}, ${dayNum(day)}.`, `${WD_LONG[weekday(day)]} ${dayNum(day)}`)} text={month} open={open} onPress={toggle} right={<View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>{today}{pair}</View>} />{seg}</>} />
       </View>
     );
   }
-  const title = view === 'jahr'
-    ? (kid?.name ? tx(`${kid.name}${/[sxzß]$/i.test(kid.name) ? '’' : 's'} Jahr`, `${kid.name}’s year`) : tx('Euer Jahr', 'Your year'))
-    : month;
+  // The small line above the title is always there (Julian 30.10.): weekday, KW, year.
+  const yr = Number(day.slice(0, 4));
+  const left = daysBetween(TODAY, `${TODAY.slice(0, 4)}-12-31`);
+  const title = view === 'jahr' ? String(yr) : month;
+  const sub = view === 'woche' ? tx(`KW ${isoWeek(day)} · ${year}`, `Week ${isoWeek(day)} · ${year}`)
+    : view === 'monat' ? String(year)
+    : yr === Number(TODAY.slice(0, 4)) ? tx(`Noch ${left} Tage im Jahr`, `${left} days left this year`) : tx('Euer Jahr', 'Your year');
   return (
     <Screen tab gap={14}>
-      <Title text={title} sub={view === 'monat' ? String(year) : undefined} open={open} onPress={toggle} right={view === 'monat' ? <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}><MonthArrows />{pair}</View> : pair} />
+      <Title text={title} sub={sub} open={open} onPress={toggle} right={view === 'monat' ? <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}><MonthArrows />{pair}</View> : pair} />
       {seg}
       <Animated.View key={view} entering={swapIn} style={{ gap: 14 }}>
         {view === 'woche' ? <WeekView /> : view === 'monat' ? <MonthView /> : <YearView />}

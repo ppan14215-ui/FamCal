@@ -9,9 +9,12 @@ import { getAuth } from './auth';
 import { LANG, tx } from '../i18n/lang';
 import type { Block, Blueprint } from '../state/types';
 
-const BLOCKS: Block[] = ['cover', 'stars', 'seen', 'year', 'by', 'link', 'date', 'price', 'place', 'note'];
+const BLOCKS: Block[] = ['cover', 'stars', 'seen', 'year', 'by', 'link', 'date', 'price', 'place', 'note', 'points'];
 
 const RULES: { re: RegExp; bp: () => Blueprint }[] = [
+  // Card and board games: players and points per round (Julian 30.10.). In Rommé the fewest points win and going out at once doubles.
+  { re: /romm[eé]|rummy|canasta/i, bp: () => ({ blocks: ['points'], source: null, points: { lowWins: true, doubleWord: true } }) },
+  { re: /punkte|spielstand|score|kniffel|yahtzee|skat|doppelkopf|wizard|uno\b|phase 10|darts|addier|zusammenz[äa]hl|tally/i, bp: () => ({ blocks: ['points'], source: null, points: {} }) },
   { re: /film|movie|kino|serie|series|watch/i, bp: () => ({ blocks: ['cover', 'year', 'by', 'stars', 'seen'], source: 'movies', seenLabel: tx('Gesehen', 'Watched') }) },
   { re: /buch|bücher|book|lesen|read/i, bp: () => ({ blocks: ['cover', 'by', 'year', 'stars', 'seen'], source: 'books', seenLabel: tx('Gelesen', 'Read') }) },
   { re: /rezept|recipe|kochen|cook/i, bp: () => ({ blocks: ['link', 'note', 'stars', 'seen'], source: null, seenLabel: tx('Gekocht', 'Cooked') }) },
@@ -35,7 +38,7 @@ export async function blueprintOnline(name: string): Promise<Blueprint | null> {
 const NAMES: Record<Block, () => string> = {
   cover: () => tx('Cover', 'cover'), stars: () => tx('Bewertung', 'rating'), seen: () => '', year: () => tx('Jahr', 'year'),
   by: () => tx('Autor oder Regie', 'author or director'), link: () => 'Link', date: () => tx('Datum', 'date'),
-  price: () => tx('Preis', 'price'), place: () => tx('Ort', 'place'), note: () => tx('Notiz', 'note'),
+  price: () => tx('Preis', 'price'), place: () => tx('Ort', 'place'), note: () => tx('Notiz', 'note'), points: () => tx('Punkten pro Runde', 'points per round'),
 };
 
 /** "Mit Cover, Bewertung und Gesehen." for the plan and the new list screen. */

@@ -75,15 +75,19 @@ export type Item = { id: string; name: string; qty?: number; note?: string; who:
  * for a list; it picks building blocks the app already draws, and the server
  * fills what it can find (cover, year, author) for each new entry.
  */
-export type Block = 'cover' | 'stars' | 'seen' | 'year' | 'by' | 'link' | 'date' | 'price' | 'place' | 'note';
+export type Block = 'cover' | 'stars' | 'seen' | 'year' | 'by' | 'link' | 'date' | 'price' | 'place' | 'note' | 'points';
 export type Blueprint = {
   blocks: Block[];
   /** Where covers and facts come from; null means nothing is looked up. */
   source: 'books' | 'movies' | null;
   /** Label for the seen block: "Gesehen", "Gelesen", "Gekocht". */
   seenLabel?: string;
+  /** Points block (Julian 30.10.: Rommé): entries are players, each sentence of numbers is a round. */
+  points?: { lowWins?: boolean; doubleWord?: boolean };
 };
 export type ItemData = {
+  /** Points per round for a player (points block), in order. */
+  rounds?: number[];
   cover?: string;
   stars?: number;
   /** Score out of 10 per parent, films and series (Julian 29.10.). */

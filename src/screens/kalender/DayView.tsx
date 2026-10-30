@@ -114,6 +114,23 @@ function Item({ e, last, date }: { e: CalEvent; last: boolean; date: string }) {
   const span = !!e.endDate && e.endDate > e.date;
   const bring = e.bring ?? [];
   const open = bring.filter((b) => !b.done);
+  if (e.work) {
+    // Work is a Termin, but it looks like a block of time, not an appointment (Julian 30.10.).
+    const p = (e.who === 'J' ? 'J' : 'T') as PersonId;
+    return (
+      <Fresh id={e.id}>
+        <SwipeRow onDelete={() => dropEvent(e)}>
+          <PressScale scale={0.985} onPress={() => { if (!justSwiped()) router.push(`/termin/${e.id}`); }} accessibilityLabel={tx('Arbeit ansehen', 'View work')} style={{ paddingVertical: 8, paddingHorizontal: 14, borderBottomWidth: last ? 0 : 1, borderBottomColor: tokens.hair }}>
+            <Stripes p={p} radius={12} style={{ flexDirection: 'row', alignItems: 'center', gap: 10, height: 40, paddingHorizontal: 12 }}>
+              <Avatar p={p} size={22} />
+              <Txt size={14.5} weight={600} color={persons[p].ink} style={{ flex: 1 }} numberOfLines={1}>{e.title}</Txt>
+              <Txt size={13.5} weight={600} color={persons[p].ink}>{e.allDay || !e.end ? tx('ganztägig', 'all day') : `${hm(e.start)} ${tx('bis', 'to')} ${hm(e.end)}`}</Txt>
+            </Stripes>
+          </PressScale>
+        </SwipeRow>
+      </Fresh>
+    );
+  }
   return (
     <Fresh id={e.id}>
       <SwipeRow onDelete={() => dropEvent(e)}>
@@ -123,7 +140,7 @@ function Item({ e, last, date }: { e: CalEvent; last: boolean; date: string }) {
           <Tile name={e.icon} size={46} radius={14} />
           <View style={{ flex: 1, minWidth: 0 }}>
             <Txt size={16} line={21} weight={600} numberOfLines={1}>{e.title}</Txt>
-            {e.work && e.end && !e.allDay && !span ? <Meta numberOfLines={1}>{tx(`bis ${hm(e.end)}`, `until ${hm(e.end)}`)}</Meta> : span ? <Meta numberOfLines={1}>{tx(`bis ${short(e.endDate!)}`, `until ${short(e.endDate!)}`)}{e.place || e.sub ? ` · ${e.place ?? e.sub}` : ''}</Meta> : e.place || e.sub ? <Meta numberOfLines={1}>{e.place ?? e.sub}</Meta> : null}
+            {span ? <Meta numberOfLines={1}>{tx(`bis ${short(e.endDate!)}`, `until ${short(e.endDate!)}`)}{e.place || e.sub ? ` · ${e.place ?? e.sub}` : ''}</Meta> : e.place || e.sub ? <Meta numberOfLines={1}>{e.place ?? e.sub}</Meta> : null}
           </View>
           <Owner who={e.who} />
         </View>

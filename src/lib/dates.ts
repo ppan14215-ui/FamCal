@@ -133,3 +133,10 @@ export function soon(date: string, start: string): string {
   if (d < 60) return `${isEn() ? `In ${d} min` : `In ${d} Min`} · ${hm(start)}`;
   return `${isEn() ? `In ${Math.round(d / 60)} h` : `In ${Math.round(d / 60)} Std`} · ${hm(start)}`;
 }
+
+/** ISO calendar week ("KW 44"): the week with the year's first Thursday is week 1. */
+export function isoWeek(isoDate: string): number {
+  const thu = addDays(monday(isoDate), 3);
+  const jan1 = `${thu.slice(0, 4)}-01-01`;
+  return Math.floor(daysBetween(jan1, thu) / 7) + 1;
+}

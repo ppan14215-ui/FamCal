@@ -16,7 +16,7 @@ import ItemRow from '../../src/components/ItemRow';
 import AddInline from '../../src/components/AddInline';
 import HintCard from '../../src/components/HintCard';
 import { tokens, springs, swapIn, persons } from '../../src/theme';
-import { useStore, actions } from '../../src/state/store';
+import { useStore, actions, toast } from '../../src/state/store';
 import { itemMeta, itemText } from '../../src/data/sample';
 import { haptics } from '../../src/lib/haptics';
 import Fresh from '../../src/components/Fresh';
@@ -24,6 +24,7 @@ import { Cover, Stars, Score, SeenPill, FactChips, factLine, hasBlock } from '..
 import { myRole } from '../../src/lib/sync';
 import type { List, Task, Item, Blueprint } from '../../src/state/types';
 import type { ClayName } from '../../src/lib/clayIcons';
+import { isPoints, players, roundsOf, total } from '../../src/lib/points';
 import { tx } from '../../src/i18n/lang';
 
 export default function Listen() {
@@ -243,8 +244,9 @@ function Packliste({ list }: { list: List }) {
           <View style={{ width: `${Math.round(pct * 100)}%`, height: '100%', backgroundColor: tokens.done }} />
         </View>
       ) : null}
+      {isPoints(list) ? <Scoreboard list={list} /> : null}
       <Sections list={list} counts={!plain} />
-      <AddInline placeholder={tx('Hinzufügen …', 'Add …')} onAdd={(t) => actions.addItem(list.id, t)} />
+      <AddInline placeholder={isPoints(list) ? tx('Spieler hinzufügen …', 'Add player …') : tx('Hinzufügen …', 'Add …')} onAdd={(t) => actions.addItem(list.id, t)} />
       <PressScale
         accessibilityLabel={tx(`Liste ${list.name} löschen`, `Delete list ${list.name}`)}
         onPress={() => { haptics.tap(); actions.deleteList(list.id); }}
@@ -254,6 +256,45 @@ function Packliste({ list }: { list: List }) {
         <Txt size={15} weight={600} color={tokens.frist}>{tx('Liste löschen', 'Delete list')}</Txt>
       </PressScale>
     </>
+  );
+}
+
+/**
+ * The table of a points list (Julian 30.10.: Rommé): who leads, how many rounds, and the
+ * sentence to say next. A new game keeps the players and clears the points.
+ */
+function Scoreboard({ list }: { list: List }) {
+  const ps = players(list);
+  const n = roundsOf(list);
+  const low = !!list.blueprint?.points?.lowWins;
+  const sorted = [...ps].sort((a, b) => (low ? total(a) - total(b) : total(b) - total(a)));
+  const lead = n ? sorted[0] : undefined;
+  const example = ps.length ? ps.slice(0, 2).map((p, i) => `${p.name} ${i ? 12 : 35}`).join(', ') : tx('Julian 35, Sophia 12', 'Julian 35, Sophia 12');
+  return (
+    <View style={{ gap: 10, padding: 16, borderRadius: 22, backgroundColor: tokens.row }}>
+      <View style={{ flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between' }}>
+        <Txt size={13} weight={600} color={tokens.sub}>{n ? tx(`Nach ${n} ${n === 1 ? 'Runde' : 'Runden'}`, `After ${n} ${n === 1 ? 'round' : 'rounds'}`) : tx('Noch keine Runde', 'No round yet')}</Txt>
+        {n ? (
+          <PressScale hitSlop={8} onPress={() => { haptics.tap(); const before = ps.map((p) => [p.id, p.data?.rounds ?? []] as const); ps.forEach((p) => actions.setItemData(list.id, p.id, { rounds: [] })); toast(tx('Neue Partie, Punkte auf null', 'New game, points reset'), () => before.forEach(([id, r]) => actions.setItemData(list.id, id, { rounds: [...r] }))); }}>
+            <Txt size={13} weight={600} color={tokens.sub}>{tx('Neue Partie', 'New game')}</Txt>
+          </PressScale>
+        ) : null}
+      </View>
+      {lead ? <Txt size={22} line={28} weight={700} tracking={-0.4}>{tx(`${lead.name} führt mit ${total(lead)}`, `${lead.name} leads with ${total(lead)}`)}</Txt> : null}
+      {n ? (
+        <View style={{ gap: 6 }}>
+          {sorted.map((p, i) => (
+            <View key={p.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+              <Txt size={15} weight={700} color={tokens.sub} style={{ width: 18 }}>{i + 1}</Txt>
+              <Txt size={15.5} weight={600} style={{ flex: 1 }} numberOfLines={1}>{p.name}</Txt>
+              <Txt size={13} color={tokens.mute} numberOfLines={1}>{(p.data?.rounds ?? []).slice(-4).join(' · ')}</Txt>
+              <Txt size={17} weight={700} style={{ minWidth: 44, textAlign: 'right' }}>{total(p)}</Txt>
+            </View>
+          ))}
+        </View>
+      ) : null}
+      <Txt size={13.5} line={19} color={tokens.sub}>{tx(`Sag einfach „${example}“. ${list.blueprint?.points?.doubleWord ? '„Hand“ oder „auf einmal raus“ zählt die Runde doppelt. ' : ''}${low ? 'Wenig Punkte gewinnt.' : 'Viele Punkte gewinnt.'}`, `Just say “${example}”. ${list.blueprint?.points?.doubleWord ? '“Hand” or “all at once” doubles the round. ' : ''}${low ? 'Fewest points win.' : 'Most points win.'}`)}</Txt>
+    </View>
   );
 }
 

@@ -138,6 +138,29 @@ function BringOffer({ suggest }: { suggest: Record<string, string[]> }) {
   );
 }
 
+/**
+ * Kalender and Listen always in sight at the top of the chat (Julian 30.10.: from the chat
+ * a first user does not see how to get there). Each says what waits there.
+ */
+function Jumps() {
+  const today = useStore((s) => s.events.filter((e) => e.date === TODAY && !e.work && e.cal !== 'feiertage').length);
+  const open = useStore((s) => s.lists.reduce((n, l) => n + l.sections.reduce((m, sec) => m + sec.items.filter((i) => !i.done).length, 0), 0));
+  const go = (to: '/kalender' | '/listen') => { router.navigate(to); };
+  const pill = (icon: 'cal' | 'list', label: string, sub: string, to: '/kalender' | '/listen') => (
+    <PressScale key={to} scale={0.96} accessibilityRole="button" accessibilityLabel={label} onPress={() => go(to)} style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8, height: 40, paddingHorizontal: 12, borderRadius: 999, backgroundColor: tokens.row }}>
+      <LineIcon name={icon} size={18} color={tokens.ink} />
+      <Txt size={14} weight={600} numberOfLines={1}>{label}</Txt>
+      <Txt size={12.5} color={tokens.sub} numberOfLines={1} style={{ flexShrink: 1 }}>{sub}</Txt>
+    </PressScale>
+  );
+  return (
+    <View style={{ flexDirection: 'row', gap: 8, paddingHorizontal: 18, paddingTop: 6, paddingBottom: 4 }}>
+      {pill('cal', tx('Kalender', 'Calendar'), today ? tx(`${today} heute`, `${today} today`) : tx('heute frei', 'free today'), '/kalender')}
+      {pill('list', tx('Listen', 'Lists'), open ? tx(`${open} offen`, `${open} open`) : '', '/listen')}
+    </View>
+  );
+}
+
 /** Urlaub shows what is left of the budget, live (Julian 29.10.). Tapping opens Urlaub und Feiertage. */
 function VacationLeft({ ids }: { ids: string[] }) {
   const trip = useStore((s) => s.events.find((e) => ids.includes(e.id) && isVacation(e)));
@@ -305,6 +328,7 @@ export default function Chat() {
   let lastDay = '';
   return (
     <View style={{ flex: 1, backgroundColor: tokens.bg, paddingTop: insets.top }}>
+      <Jumps />
       <ScrollView ref={scroller} onContentSizeChange={() => scroller.current?.scrollToEnd({ animated: false })} contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 18, paddingTop: 8, paddingBottom: dock + (kb > 0 ? kb : insets.bottom) + 40, gap: 12 }} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
         <H1 sub={tx(`Familie · ${2 + people} Personen`, `Family · ${2 + people} people`)} right={<PressScale accessibilityLabel={tx('Familie und Einstellungen', 'Family and settings')} onPress={() => router.push('/einstellungen')}><Pair /></PressScale>}>Chat</H1>
         {feed.length || veil.inline && veil.phase !== 'off' ? feed.map((f) => {
