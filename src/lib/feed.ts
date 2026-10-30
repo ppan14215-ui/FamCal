@@ -39,6 +39,8 @@ export type Card = {
   changed?: boolean;
   /** What the assistant said back, shown as its own message (Julian 30.10.: "Okay, verstanden, mach ich"). */
   say?: string;
+  /** The time question, answered with taps in the card (Julian 30.10.). */
+  timeQ?: string;
 };
 export type FeedEntry = Card & {
   id: string;
@@ -122,7 +124,7 @@ export function answerAsk(askId: string, yes: boolean) {
 }
 
 /** Sorts what a sentence changed into Termine, tasks and list items. */
-export function addMade(said: string, ids: string[], text?: string, undo?: () => void, events?: string[], why?: Card['why'], say?: string) {
+export function addMade(said: string, ids: string[], text?: string, undo?: () => void, events?: string[], why?: Card['why'], say?: string, timeQ?: string) {
   const s = get();
   const ev = new Set(events ?? []);
   const tasks: string[] = [];
@@ -146,7 +148,7 @@ export function addMade(said: string, ids: string[], text?: string, undo?: () =>
   };
   const suggest: Record<string, string[]> = {};
   for (const e of s.events) if (ev.has(e.id)) { const x = suggestBring(e.title, e.sub, e.suggest, (e.bring ?? []).map((b) => b.t)); if (x.length) suggest[e.id] = x; }
-  const f: FeedEntry = { id: newId(), at: new Date().toISOString(), by: me(), said, kind: 'made', suggest: Object.keys(suggest).length ? suggest : undefined, events: ev.size ? [...ev] : undefined, tasks: tasks.length ? tasks : undefined, items, text, snap: ev.size || tasks.length || items ? snap : undefined, say: say?.trim() || undefined, why: why?.steps.length ? { head: why.head, steps: why.steps.slice(0, 12) } : undefined };
+  const f: FeedEntry = { id: newId(), at: new Date().toISOString(), by: me(), said, kind: 'made', suggest: Object.keys(suggest).length ? suggest : undefined, events: ev.size ? [...ev] : undefined, tasks: tasks.length ? tasks : undefined, items, text, snap: ev.size || tasks.length || items ? snap : undefined, say: say?.trim() || undefined, timeQ: timeQ || undefined, why: why?.steps.length ? { head: why.head, steps: why.steps.slice(0, 12) } : undefined };
   if (undo) undos.set(f.id, undo);
   put(f);
   void upload(f);

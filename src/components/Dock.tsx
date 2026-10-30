@@ -645,7 +645,7 @@ export default function Dock() {
       const out = p.run();
       // In the chat the card lands in the log and we stay (Julian 29.10.).
       const r0 = out.result;
-      if (where.chat && r0?.kind === 'event') addMade(said, [r0.event.id], undefined, () => actions.removeEvent(r0.event.id), undefined, { head: p.head, steps: p.steps }, r0.say);
+      if (where.chat && r0?.kind === 'event') addMade(said, [r0.event.id], undefined, () => actions.removeEvent(r0.event.id), undefined, { head: p.head, steps: p.steps }, r0.say, r0.needsTime && r0.event.allDay ? r0.ask || tx('Um wie viel Uhr? Oder ganztägig?', 'What time? Or all day?') : undefined);
       else if (where.chat && r0?.kind === 'done' && (!r0.note || r0.say)) addMade(said, out.lit ?? (out.land ? [out.land] : []), r0.text, r0.undo, r0.events, { head: p.head, steps: p.steps }, r0.say);
       // An answer from the assistant stays in the chat as its message (Julian 30.10.).
       else if (where.chat && agentOn() && r0?.kind === 'answer' && r0.reply.kind === 'answer') addSay(said, r0.reply.text);
@@ -666,6 +666,8 @@ export default function Dock() {
           const offer = res.kind === 'event' ? [res.needsTime && res.event.allDay ? res.ask || tx('Um wie viel Uhr? Oder ganztägig?', 'What time? Or all day?') : '', res.suggest && !res.event.place ? againAt(res.suggest) : ''].filter(Boolean).join(' ') : '';
           const q = asks ? (res as { reply: { text: string } }).reply.text : res.kind === 'recipe' ? (res.kept ? keptLine(res.kept.recipe) : res.question) : offer || undefined;
           // The chat already shows the card; only a question stays above the field, for whoever asked.
+          // The time question sits in the chat card as options; only a place to confirm still needs the sheet.
+          if (where.chat && res.kind === 'event' && !(res.suggest && !res.event.place)) return;
           if (where.chat && !q && (res.kind === 'event' || (res.kind === 'done' && (!res.note || res.say)) || (res.kind === 'answer' && agentOn()))) return;
           const all = q ? [...lines.slice(0, -1), { ...lines[lines.length - 1], app: q }] : lines;
           setTurn({ id: Date.now(), said, result: res, lines: all });

@@ -203,7 +203,8 @@ function terminOf(a: Action, said: string): CalEvent[] {
   if (!ISO.test(date) || !s(i.title)) return [];
   const m: Understood = {
     kind: 'termin', title: s(i.title), sub: s(i.sub) || null, date, end_date: ISO.test(s(i.end_date)) ? s(i.end_date) : null,
-    start: HHMM.test(s(i.start)) ? s(i.start) : null, end: HHMM.test(s(i.end)) ? s(i.end) : null, who: whoOf(i.who),
+    // A time it still asks about is a guess (Julian 30.10.: card said 9 to 12 while asking "Um wie viel Uhr?"): left open.
+    start: HHMM.test(s(i.start)) && !s(i.ask_time) ? s(i.start) : null, end: HHMM.test(s(i.end)) && !s(i.ask_time) ? s(i.end) : null, who: whoOf(i.who),
     place: s(i.place) || null, repeat: s(i.repeat) || null, bring: arr(i.bring), steps: [], question: s(i.ask_time) || null,
     suggest_bring: arr(i.suggest_bring), icon: s(i.icon) || null, work: !!i.work, follows: true,
   };

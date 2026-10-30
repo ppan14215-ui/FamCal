@@ -40,7 +40,7 @@ import { haptics } from '../../src/lib/haptics';
 const at = (s: string) => { const d = new Date(s); return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`; };
 const dayOf = (s: string) => { const d = new Date(s); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
 
-function Termine({ ids, snap, changed, ask }: { ids: string[]; snap?: EventSnap[]; changed?: boolean; ask?: 'J' | 'T' }) {
+function Termine({ ids, snap, changed, ask, timeQ }: { ids: string[]; snap?: EventSnap[]; changed?: boolean; ask?: 'J' | 'T'; timeQ?: string }) {
   const events = useStore((s) => s.events);
   // Live from the calendar; the snapshot only if the Termin never reached this phone.
   const live = ids.map((id) => events.find((e) => e.id === id) ?? (events.length ? undefined : snap?.find((x) => x.id === id))).filter(Boolean) as (EventSnap & { who?: typeof events[number]['who'] })[];
@@ -57,8 +57,41 @@ function Termine({ ids, snap, changed, ask }: { ids: string[]; snap?: EventSnap[
           {e.who === 'J' || e.who === 'T' ? <Avatar p={e.who} size={26} /> : e.who === 'both' ? <Pair size={22} ring={tokens.row} /> : null}
         </PressScale>
       ))}
+      {timeQ && live.length === 1 ? <TimeAsk e={live[0]} q={timeQ} /> : null}
       {ask && live.length === 1 ? <WhoGoes e={live[0]} me={ask} /> : null}
     </>
+  );
+}
+
+const pad2 = (n: number) => String(n).padStart(2, '0');
+const plusMin = (t: string, min: number) => { const m = Math.min(23 * 60 + 59, Number(t.slice(0, 2)) * 60 + Number(t.slice(3)) + min); return `${pad2(Math.floor(m / 60))}:${pad2(m % 60)}`; };
+
+/**
+ * The time question as options in the card, like Claude's own cards (Julian 30.10.: "bieten immer Optionen zum
+ * Klicken an, das funktioniert super"). It stays until a time is picked or "Ganztägig"; then "Bis wann?" once.
+ */
+function TimeAsk({ e, q }: { e: EventSnap; q: string }) {
+  const [step, setStep] = useState<'start' | 'end' | 'done'>(e.allDay ? 'start' : 'done');
+  if (step === 'done') return null;
+  const chip = (label: string, on: () => void, key = label) => (
+    <PressScale key={key} onPress={() => { haptics.select(); on(); }} style={{ height: 32, paddingHorizontal: 12, borderRadius: 999, alignItems: 'center', justifyContent: 'center', backgroundColor: tokens.chipBg }}>
+      <Txt size={13.5}>{label}</Txt>
+    </PressScale>
+  );
+  return (
+    <View style={{ gap: 8, paddingHorizontal: 12, paddingBottom: 10 }}>
+      <Txt size={14} line={19} weight={600}>{step === 'start' ? q : tx(`Ab ${hm(e.start)}. Bis wann?`, `From ${hm(e.start)}. Until when?`)}</Txt>
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
+        {step === 'start' ? <>
+          {['09:00', '12:00', '15:00', '18:00', '19:30'].map((t) => chip(hm(t), () => { actions.updateEvent(e.id, { start: t, end: plusMin(t, 60), allDay: false }); setStep('end'); }, t))}
+          {chip(tx('Ganztägig', 'All day'), () => setStep('done'))}
+          {chip(tx('Anders …', 'Other …'), () => router.push(`/termin/${e.id}`))}
+        </> : <>
+          {[60, 120, 180].map((m) => chip(hm(plusMin(e.start, m)), () => { actions.updateEvent(e.id, { end: plusMin(e.start, m) }); setStep('done'); }, String(m)))}
+          {chip(tx('Offen', 'Open end'), () => { actions.updateEvent(e.id, { end: undefined }); setStep('done'); })}
+        </>}
+      </View>
+    </View>
   );
 }
 
@@ -343,7 +376,7 @@ function EntryRow({ f, mine, me, answer }: { f: FeedEntry; mine: boolean; me: 'J
         {f.kind === 'made' && (f.events || f.items || f.tasks || f.undone) ? (
           <Animated.View layout={rowLayout} style={[cardFrame, { opacity: f.undone ? 0.55 : 1 }]}>
             {f.say && !f.undone ? <Reply text={f.say} /> : null}
-            {f.undone ? null : f.events ? <Termine ids={f.events} snap={f.snap?.events} changed={f.changed} ask={mine && !open && Date.now() - Date.parse(f.at) < 15 * 60000 ? me : undefined} /> : null}
+            {f.undone ? null : f.events ? <Termine ids={f.events} snap={f.snap?.events} changed={f.changed} ask={mine && !open && Date.now() - Date.parse(f.at) < 15 * 60000 ? me : undefined} timeQ={mine && !open && Date.now() - Date.parse(f.at) < 15 * 60000 ? f.timeQ : undefined} /> : null}
             {f.undone ? null : f.events ? <VacationLeft ids={f.events} /> : null}
             {f.undone || HIDDEN.suggestions ? null : f.events ? <PackOffer ids={f.events} /> : null}
             {f.undone || !f.suggest || HIDDEN.suggestions ? null : <BringOffer suggest={f.suggest} />}
