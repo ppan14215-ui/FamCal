@@ -75,3 +75,14 @@ export function isFeiertag(date: string, _land?: string) {
 
 /** Days off work: weekends and holidays. */
 export const isWorkday = (date: string, _land?: string) => { const wd = new Date(`${date}T12:00:00Z`).getUTCDay(); return wd !== 0 && wd !== 6 && !isFeiertag(date); };
+
+/**
+ * Holidays and days like Halloween are good to know, but nobody "goes" there
+ * (Julian 30.10.: "aktuell sieht es aus als hätte ich da was vor"). They show
+ * as a quiet line on their day, never as a Termin with a person. Only the bare
+ * name counts: "Weihnachten bei Mama" is a real Termin.
+ */
+const INFO_DAYS = /^(halloween|allerheiligen|allerseelen|reformationstag|neujahr|silvester|heilige drei könige|valentinstag|rosenmontag|weiberfastnacht|fasching|karneval|aschermittwoch|gründonnerstag|karfreitag|karsamstag|ostern|ostersonntag|ostermontag|tag der arbeit|muttertag|vatertag|christi himmelfahrt|pfingsten|pfingstsonntag|pfingstmontag|fronleichnam|mariä himmelfahrt|weltkindertag|tag der deutschen einheit|erntedank|erntedankfest|martinstag|st\.? martin|volkstrauertag|buß- und bettag|totensonntag|ewigkeitssonntag|nikolaus|nikolaustag|[1-4]\. advent|heiligabend|weihnachten|1\. weihnachtstag|2\. weihnachtstag|erster weihnachtstag|zweiter weihnachtstag|new year'?s day|new year'?s eve|valentine'?s day|easter|easter sunday|easter monday|good friday|mother'?s day|father'?s day|independence day|labor day|memorial day|thanksgiving|christmas|christmas eve|christmas day|boxing day|all saints'? day)$/i;
+
+export const isInfoDay = (e: { cal?: string; title: string; allDay?: boolean; place?: string; work?: boolean }) =>
+  !e.work && (e.cal === 'feiertage' || (!!e.allDay && !e.place && INFO_DAYS.test(e.title.trim())));

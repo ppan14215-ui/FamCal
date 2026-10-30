@@ -20,6 +20,7 @@ import { Meta, Check, Head } from '../../components/ui/kit';
 import Txt from '../../components/ui/Txt';
 import { Tile } from '../../components/ui/Clay';
 import { Avatar, Owner } from '../../components/ui/Person';
+import { isInfoDay } from '../../lib/feiertage';
 import Stripes from '../../components/Stripes';
 import { tokens, persons, PersonId } from '../../theme';
 import { useStore, actions, get, toast } from '../../state/store';
@@ -70,7 +71,7 @@ export function WeekStrip({ day, onSelect }: { day: string; onSelect: (d: string
     <View onLayout={(e) => setW(e.nativeEvent.layout.width)}>
       <Animated.View style={[{ flexDirection: 'row', gap: GAP }, row]}>
         {days.map((d) => {
-          const has = events.some((e) => covers(e, d) && !e.work);
+          const has = events.some((e) => covers(e, d) && !e.work && !isInfoDay(e));
           return (
             <PressScale
               key={d}
@@ -187,7 +188,9 @@ function WorkLine({ work }: { work: CalEvent[] }) {
 const Day = React.memo(function Day({ date, events, tasks, docs, onY }: { date: string; events: CalEvent[]; tasks: Task[]; docs: Doc[]; onY: (date: string, y: number) => void }) {
   // Work is a Termin like any other (Julian 30.10.): it sits in the list, opens, changes and deletes the same way.
   const work: CalEvent[] = [];
-  const real = [...events].sort(byStart);
+  // Holidays sit as a quiet word by the date, not as a Termin (Julian 30.10.).
+  const info = events.filter(isInfoDay).map((e) => e.title).join(' · ');
+  const real = events.filter((e) => !isInfoDay(e)).sort(byStart);
   const empty = !real.length && !tasks.length && !docs.length;
   const past = date < TODAY;
   // A free day is one quiet line, so the busy ones carry the page.
@@ -195,7 +198,7 @@ const Day = React.memo(function Day({ date, events, tasks, docs, onY }: { date: 
     return (
       <View onLayout={(e) => onY(date, e.nativeEvent.layout.y)} style={{ flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', opacity: past ? 0.6 : 1 }}>
         <Txt size={16} line={22} weight={600} color={tokens.sub}>{dayLabel(date)}</Txt>
-        <Txt size={13.5} color={tokens.mute}>{tx('frei', 'free')}</Txt>
+        <Txt size={13.5} color={tokens.mute} numberOfLines={1} style={{ flexShrink: 1, marginLeft: 12 }}>{info ? `${info} · ${tx('frei', 'free')}` : tx('frei', 'free')}</Txt>
       </View>
     );
   }
@@ -205,6 +208,7 @@ const Day = React.memo(function Day({ date, events, tasks, docs, onY }: { date: 
         <Txt size={21} line={26} weight={700} tracking={-0.4}>{dayLabel(date)}</Txt>
         <Txt size={13.5} color={tokens.sub}>{date === TODAY || date === addDays(TODAY, 1) ? `${WD_LONG[weekday(date)]}, ${dmShort(date)}` : past ? 'vorbei' : until(date)}</Txt>
       </View>
+      {info ? <Txt size={13.5} color={tokens.mute} numberOfLines={1} style={{ marginTop: -4 }}>{info}</Txt> : null}
       <WorkLine work={work} />
       {empty ? (
         <Meta>{date === TODAY ? tx('Heute steht nichts an. Sag unten einfach, was ansteht.', 'Nothing today. Just say below what\'s coming up.') : tx('Sonst frei.', 'Otherwise free.')}</Meta>

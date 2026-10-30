@@ -4,6 +4,13 @@ Alle sichtbaren Änderungen an FamCal. Neueste oben. Agenten und Menschen: Ände
 
 ## Unreleased
 
+### Feiertage leise, Abende in der Woche, Chat ohne Doppel (30.10. nachts)
+
+- Feiertage und Tage wie Halloween stehen nur noch als leise Info am Tag, ohne Person, nicht mehr unter "Als Nächstes" oder als Punkt im Monat. Im Monat ist das Datum farbig.
+- Die Wochenansicht reicht so früh und so spät wie eure Termine (Fußball um 19 Uhr steht im Raster).
+- Im Chat steht dein Satz nur noch einmal; die Antwort des Assistenten sitzt in der Karte.
+- Sagt man "An Weihnachten sind wir bei Mama", bleibt Heiligabend im Kalender stehen und "Bei Mama" kommt als eigener Termin dazu.
+
 ### Einkauf nach Supermarkt, gleiche Header (30.10. spät)
 
 - Die Einkaufsliste sortiert sich wie der Weg durch den Laden: Obst und Gemüse zusammen, dann Brot, Kühlregal, Fleisch, Vorrat, Tiefkühl, Getränke.

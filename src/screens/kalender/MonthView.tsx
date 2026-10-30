@@ -25,6 +25,7 @@ import { haptics } from '../../lib/haptics';
 import { springs } from '../../theme';
 import type { CalEvent } from '../../state/types';
 import { useCalEvents } from '../../lib/useEvents';
+import { isInfoDay } from '../../lib/feiertage';
 import Stripes from '../../components/Stripes';
 
 const HEAD = tx('Mo Di Mi Do Fr Sa So', 'Mo Tu We Th Fr Sa Su').split(' ');
@@ -99,11 +100,13 @@ export default function MonthView() {
         {cells.map((d, ci) => {
           const inMonth = monthIdx(d) === m;
           // Multi-day ones (Urlaub bis Sonntag) show on every day they cover.
-          const evs = inMonth ? events.filter((e) => !e.work && (e.date === d || (!!e.endDate && e.date < d && d <= e.endDate))) : [];
+          const evs = inMonth ? events.filter((e) => !e.work && !isInfoDay(e) && (e.date === d || (!!e.endDate && e.date < d && d <= e.endDate))) : [];
           // Julian 30.10.: work must show in the month too, as the person's stripe along the cell's foot.
           const shifts = inMonth ? [...new Set(events.filter((e) => e.work && e.date === d).map((e): 'J' | 'T' => (e.who === 'J' ? 'J' : 'T')))] : [];
           const sel = d === day;
           const isToday = d === TODAY;
+          // A holiday colours the date like the year view, no dot (Julian 30.10.).
+          const hol = inMonth && events.some((e) => e.date === d && isInfoDay(e));
           return (
             <View key={d} style={{ width: `${100 / 7}%`, paddingHorizontal: 2 }}>
               <PressScale
@@ -114,7 +117,7 @@ export default function MonthView() {
                   borderWidth: 1.5, borderColor: sel ? tokens.ink : 'transparent',
                 }}
               >
-                <Txt size={14} line={18} weight={isToday ? 700 : 500} color={isToday ? tokens.done : inMonth ? tokens.ink : tokens.circleLine}>{String(dayNum(d))}</Txt>
+                <Txt size={14} line={18} weight={isToday ? 700 : 500} color={isToday ? tokens.done : hol ? tokens.frist : inMonth ? tokens.ink : tokens.circleLine}>{String(dayNum(d))}</Txt>
                 <DayIcons evs={evs} size={evs.length > 1 ? Math.round(icon * 0.85) : icon} delay={Math.min(ci * 14, 420)} />
                 {shifts.length ? (
                   <View style={{ position: 'absolute', left: 4, right: 4, bottom: 4, gap: 2 }}>

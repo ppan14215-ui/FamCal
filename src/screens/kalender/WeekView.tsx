@@ -1,5 +1,6 @@
 /**
- * Kalender · Woche: hour grid 8 to 19, work as stripes, events as tinted blocks.
+ * Kalender · Woche: hour grid 8 to 19 (wider for earlier or later Termine),
+ * work as stripes, events as tinted blocks.
  * Swipe sideways for the week before or after; pinch, or plus and minus, to
  * zoom the hours (Julian 27.10.). Zoomed in, blocks show their time; all the
  * way in, three days fill the width with whole titles. Hold a Termin and drag
@@ -25,9 +26,12 @@ import { addDays, monday, dayNum, WD_SHORT, weekday, minutes, TODAY, NOW, MONTHS
 import PressScale from '../../components/ui/PressScale';
 import { tx } from '../../i18n/lang';
 import { useCalEvents } from '../../lib/useEvents';
+import { isInfoDay } from '../../lib/feiertage';
 
-const FROM = 8;
-const TO = 19;
+// The usual day; it grows to the earliest and latest Termin of the shown days
+// (Julian 30.10.: "Wieso geht der Tag nur bis 18 Uhr?").
+const DAY_FROM = 8;
+const DAY_TO = 19;
 const HP_MIN = 30;
 const HP_MAX = 96;
 const ZOOMS = [30, 40, 60, 96];
@@ -42,6 +46,16 @@ export default function WeekView() {
   const n = HP >= 80 ? 3 : 7;
   const start = n === 7 ? monday(day) : addDays(day, -1);
   const days = useMemo(() => Array.from({ length: n }, (_, i) => addDays(start, i)), [start, n]);
+  const [FROM, TO] = useMemo(() => {
+    let a = DAY_FROM, b = DAY_TO;
+    for (const e of events) {
+      if (e.allDay || e.date < days[0] || e.date > days[days.length - 1] || (!!e.endDate && e.endDate > e.date)) continue;
+      a = Math.min(a, Math.floor(minutes(e.start) / 60));
+      const last = e.end && e.end > e.start ? minutes(e.end) : minutes(e.start) + 60;
+      b = Math.max(b, Math.min(24, Math.ceil(last / 60)));
+    }
+    return [a, b];
+  }, [events, days]);
   const hours = Array.from({ length: TO - FROM }, (_, i) => FROM + i);
   const big = HP >= 60;
   const wide = n === 3;
@@ -159,14 +173,14 @@ export default function WeekView() {
             {spans.map(({ e, from, to, row, cutL, cutR }) => (
               <PressScale
                 key={e.id}
-                onPress={() => router.push(`/termin/${e.id}`)}
+                onPress={isInfoDay(e) ? undefined : () => router.push(`/termin/${e.id}`)}
                 style={{
                   position: 'absolute', top: row * 24, height: 22, left: `${(from / n) * 100}%`, width: `${((to - from + 1) / n) * 100}%`,
                   paddingHorizontal: 2,
                 }}
               >
-                <View style={{ flex: 1, justifyContent: 'center', paddingHorizontal: 6, backgroundColor: evTint(e), borderTopLeftRadius: cutL ? 0 : 7, borderBottomLeftRadius: cutL ? 0 : 7, borderTopRightRadius: cutR ? 0 : 7, borderBottomRightRadius: cutR ? 0 : 7 }}>
-                  <Txt size={11} line={14} weight={700} numberOfLines={1}>{e.title}</Txt>
+                <View style={{ flex: 1, justifyContent: 'center', paddingHorizontal: 6, backgroundColor: isInfoDay(e) ? 'transparent' : evTint(e), borderTopLeftRadius: cutL ? 0 : 7, borderBottomLeftRadius: cutL ? 0 : 7, borderTopRightRadius: cutR ? 0 : 7, borderBottomRightRadius: cutR ? 0 : 7 }}>
+                  <Txt size={11} line={14} weight={isInfoDay(e) ? 500 : 700} color={isInfoDay(e) ? tokens.mute : undefined} numberOfLines={1}>{e.title}</Txt>
                 </View>
               </PressScale>
             ))}

@@ -27,6 +27,7 @@ import { myRole } from './sync';
 import { HIDDEN } from './core';
 import { sendAsk, feedTail } from './feed';
 import { newId, itemText } from '../data/sample';
+import { isInfoDay } from './feiertage';
 
 // ─── Switch ────────────────────────────────────────────────────────────────
 
@@ -417,6 +418,19 @@ function withSay(p: Plan, say: string): Plan {
 }
 
 /**
+ * Heiligabend, Halloween and the like are never renamed into a plan ("Heiligabend
+ * bei Mama" turned the holiday itself into the visit): a new title, person or
+ * place on one of them becomes a Termin of its own that day (Julian 30.10.).
+ */
+function ownDay(a: Action): Action {
+  if (a.tool !== 'termin_aendern') return a;
+  const i = a.input ?? {};
+  const e = !arr(i.ids).length ? get().events.find((x) => x.id === s(i.id).split('~')[0]) : undefined;
+  if (!e || !isInfoDay(e) || !(s(i.title) || i.who !== undefined || s(i.place))) return a;
+  return { ...a, tool: 'termin_neu', input: { ...i, id: undefined, title: s(i.title) || e.title, date: ISO.test(s(i.date)) ? s(i.date) : e.date } };
+}
+
+/**
  * What the app does with Claude's answer: a question back (nothing changes),
  * an answer, or one plan for all actions with one Rückgängig.
  */
@@ -430,7 +444,7 @@ function planOf(r: AgentAnswer, said: string): { ask: string } | Plan | null {
   const ask = r.actions.find((a) => a.tool === 'nachfragen');
   if (ask) return { ask: s(ask.input?.question) || tx('Wie meinst du das?', 'What do you mean?') };
   const answer = r.actions.find((a) => a.tool === 'antworten');
-  const rest = r.actions.filter((a) => a.tool !== 'antworten');
+  const rest = r.actions.filter((a) => a.tool !== 'antworten').map(ownDay);
   // Termine together, the way the old path adds several: work days and clashes stay as they were.
   const made = rest.filter((a) => a.tool === 'termin_neu').map((a) => terminOf(a, said)).filter((x) => x.length);
   const termine = made.flat();

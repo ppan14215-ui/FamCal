@@ -29,6 +29,7 @@ import { haptics } from '../../lib/haptics';
 import type { CalEvent } from '../../state/types';
 import { tx } from '../../i18n/lang';
 import { useCalEvents } from '../../lib/useEvents';
+import { isInfoDay } from '../../lib/feiertage';
 
 /** How many days "Diese Woche" looks ahead. */
 export const WEEK_AHEAD = 7;
@@ -158,8 +159,8 @@ export default function TodayView({ header }: { header: React.ReactNode }) {
   const ref = useRef<ScrollView>(null);
   const track = useScroller(ref);
 
-  const { next, later, week, todo, fristen, soon, preview } = useMemo(() => {
-    const real = events.filter((e) => !e.work);
+  const { next, later, week, todo, fristen, soon, preview, info } = useMemo(() => {
+    const real = events.filter((e) => !e.work && !isInfoDay(e));
     const today = real.filter((e) => e.date === TODAY || (!!e.endDate && e.date < TODAY && TODAY <= e.endDate)).sort(byStart);
     // Still to come today; a running Termin counts until it ends.
     const left = today.filter((e) => e.allDay || minutes(e.end ?? e.start) > minutes(NOW));
@@ -170,6 +171,9 @@ export default function TodayView({ header }: { header: React.ReactNode }) {
     const next = timed[0] ?? left[0] ?? ahead[0];
     return {
       next,
+      // Holidays and Halloween: one quiet line each, no person (Julian 30.10.).
+      info: events.filter((e) => isInfoDay(e) && e.date >= TODAY && daysBetween(TODAY, e.date) <= WEEK_AHEAD)
+        .sort((a, b) => a.date.localeCompare(b.date)),
       later: left.filter((e) => e !== next),
       week: ahead.filter((e) => e !== next),
       todo: tasks.filter((t) => !t.done && t.due && t.due <= TODAY),
@@ -265,6 +269,12 @@ export default function TodayView({ header }: { header: React.ReactNode }) {
         {week.filter((e) => e !== after).length ? week.filter((e) => e !== after).map((e) => <Row key={e.id} e={e} showTime lead={daysBetween(TODAY, e.date) === 1 ? tx('Morgen', 'Tmrw') : WD_SHORT[weekday(e.date)]} />) : (
           <Meta>{tx('Sonst ist die Woche frei.', 'The rest of the week is free.')}</Meta>
         )}
+        {info.map((e) => (
+          <View key={e.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 14, minHeight: 32 }}>
+            <Txt size={14} color={tokens.mute} style={{ width: 56 }}>{e.date === TODAY ? tx('Heute', 'Today') : daysBetween(TODAY, e.date) === 1 ? tx('Morgen', 'Tmrw') : WD_SHORT[weekday(e.date)]}</Txt>
+            <Txt size={14} color={tokens.mute} numberOfLines={1} style={{ flex: 1 }}>{e.title}</Txt>
+          </View>
+        ))}
         {fristen.map((d) => (
           <PressScale key={d.id} onPress={d.route ? () => router.push(d.route as any) : undefined} style={{ flexDirection: 'row', alignItems: 'center', gap: 14, minHeight: 44 }}>
             <View style={{ width: 56 }}><LineIcon name="clock" size={16} color={tokens.frist} /></View>

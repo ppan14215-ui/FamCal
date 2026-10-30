@@ -187,6 +187,8 @@ export const FAELLE: Fall[] = [
       return [
         ...want.flatMap(([d, re]) => (at(d) && re.test(at(d)!.title) ? [] : [`${d}: Titel ${at(d)?.title ?? 'fehlt'}`])),
         ...(new Set(n.map((x) => x.title)).size === n.length ? [] : ['gleicher Titel mehrmals']),
+        // The holidays themselves stay as they are (Julian 30.10.: "Gut zu wissen", not a plan).
+        ...[['heiligabend', 'Heiligabend'], ['weihnachten', 'Weihnachten']].flatMap(([id, t]) => (e.stand.events.find((x) => x.id === id)?.title === t ? [] : [`${t} umbenannt`])),
         ...keineFrage(e), ...deutsch(e),
       ];
     } },
