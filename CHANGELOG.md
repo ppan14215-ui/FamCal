@@ -4,6 +4,12 @@ Alle sichtbaren Änderungen an FamCal. Neueste oben. Agenten und Menschen: Ände
 
 ## Unreleased
 
+### Karte im Chat schlanker (31.10. nachts)
+
+- "Wer geht?" verschwindet, sobald jemand gewählt ist.
+- "Ändern" öffnet direkt den Termin zum Bearbeiten, ohne Zwischenschritt "Alles bearbeiten".
+- Mehrtägige Termine zeigen in der Karte Anfang und Ende ("17. Jan bis 4. Feb").
+
 ### Feiertage leise, Abende in der Woche, Chat ohne Doppel (30.10. nachts)
 
 - Feiertage und Tage wie Halloween stehen nur noch als leise Info am Tag, ohne Person, nicht mehr unter "Als Nächstes" oder als Punkt im Monat. Im Monat ist das Datum farbig.
