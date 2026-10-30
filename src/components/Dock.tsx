@@ -25,7 +25,7 @@ import { plan, splitItems, claudeSays, replyPlan, listFromClaude, asksNewList, t
 import { canUnderstand, type Convo, type Glimpse } from '../lib/verstehen';
 import { agentOn, askAgent, agentPlan, screenOf } from '../lib/assistent';
 import { linkIn, recipeFromLink, keepRecipe, loadRecipes, type Recipe } from '../lib/rezepte';
-import { onShared } from '../lib/shared';
+import { onShared, onSayInApp } from '../lib/shared';
 import { dayLabel, slotLine, type Suggest } from '../lib/talk';
 import { locate, light, lightOneByOne } from '../lib/landing';
 import { setDockTop, setDockSpace } from '../lib/dockSpace';
@@ -432,6 +432,7 @@ export default function Dock() {
   const hearRef = useRef<(raw: string) => void>(() => {});
   // A shared screenshot becomes a list offer (Julian 29.10.), never a list by itself.
   useEffect(() => onShared((text) => hearRef.current(text), (uri) => router.push({ pathname: '/bild-liste', params: { uri } })), []);
+  useEffect(() => onSayInApp((text) => hearRef.current(text)), []);
 
   // Examples only while the calendar is still empty; after that they are clutter (Julian 27.10.).
   const onTabs = !!where && (where.tab || !!where.chat);

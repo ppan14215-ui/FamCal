@@ -23,11 +23,15 @@ export default function EinkaufNeu() {
   const kb = useKeyboardInset();
   const insets = useSafeAreaInsets();
   const [q, setQ] = useState('');
+  // One place for every list (Julian 30.10.: "Listen versteht man auch nicht"): pick the list here, or start a new one.
+  const lists = useStore((s) => s.lists);
+  const [target, setTarget] = useState('einkauf');
+  const shop = target === 'einkauf';
   const list = useStore((s) => s.lists.find((l) => l.id === 'einkauf'));
   const onList = useMemo(() => new Set(list?.sections.flatMap((s) => s.items).filter((i) => !i.done).map((i) => i.name.toLowerCase()) ?? []), [list]);
 
   const name = parseItem(q).name;
-  const hits = name ? catalog.filter((c) => c.name.toLowerCase().startsWith(name.toLowerCase())).slice(0, 4) : [];
+  const hits = name && shop ? catalog.filter((c) => c.name.toLowerCase().startsWith(name.toLowerCase())).slice(0, 4) : [];
   const exact = hits.some((h) => h.name.toLowerCase() === name.toLowerCase());
 
   const toggle = (n: string) => { haptics.select(); actions.toggleShopping(n); };
@@ -46,7 +50,7 @@ export default function EinkaufNeu() {
   const addFree = () => {
     if (!q.trim()) return;
     haptics.select();
-    actions.addItem('einkauf', q);
+    actions.addItem(target, q);
     setQ('');
   };
 
@@ -101,11 +105,25 @@ export default function EinkaufNeu() {
       }
     >
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-        <Txt size={22} weight={700} tracking={-0.4}>{tx('Einkauf ergänzen', 'Add to shopping')}</Txt>
+        <Txt size={22} weight={700} tracking={-0.4}>{tx('Auf die Liste', 'To a list')}</Txt>
         <PressScale hitSlop={10} onPress={() => goBack()}><Txt size={15} weight={600}>{tx('Fertig', 'Done')}</Txt></PressScale>
       </View>
-      <H2>{tx('Oft bei euch', 'You often buy')}</H2>
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+        {lists.map((l) => {
+          const on = l.id === target;
+          return (
+            <PressScale key={l.id} onPress={() => { haptics.select(); setTarget(l.id); }} style={{ height: 36, paddingHorizontal: 14, borderRadius: 999, justifyContent: 'center', backgroundColor: on ? tokens.ink : tokens.row, borderWidth: on ? 0 : 1, borderColor: tokens.hair }}>
+              <Txt size={14.5} weight={600} color={on ? tokens.onInk : tokens.ink}>{l.name}</Txt>
+            </PressScale>
+          );
+        })}
+        <PressScale onPress={() => { haptics.select(); router.replace('/liste-neu'); }} style={{ height: 36, paddingHorizontal: 14, borderRadius: 999, flexDirection: 'row', alignItems: 'center', gap: 6, borderWidth: 1, borderColor: tokens.hair, borderStyle: 'dashed' }}>
+          <LineIcon name="plus" size={14} color={tokens.ink} />
+          <Txt size={14.5} weight={600}>{tx('Neue Liste', 'New list')}</Txt>
+        </PressScale>
+      </View>
+      {shop ? <H2>{tx('Oft bei euch', 'You often buy')}</H2> : null}
+      {shop ? <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
         {oftBeiEuch.map((n) => {
           const on = onList.has(n.toLowerCase());
           return (
@@ -119,7 +137,7 @@ export default function EinkaufNeu() {
             </PressScale>
           );
         })}
-      </View>
+      </View> : null}
       <Txt size={13.5} line={19} color={tokens.sub}>{tx('Tippen fügt hinzu, nochmal tippen nimmt es wieder raus. Wir sortieren es selbst in Drogerie oder Supermarkt. Menge und Notiz einfach mitschreiben: „2 Hafermilch, ungesüßt“.', 'Tap to add, tap again to remove. We sort it into drugstore or supermarket. Just add amount and note: “2 oat milk, unsweetened”.')}</Txt>
     </Screen>
   );

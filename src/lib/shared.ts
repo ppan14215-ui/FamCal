@@ -66,3 +66,8 @@ export function onShared(fn: (text: string) => void, onImage?: (uri: string) => 
   const app = AppState.addEventListener('change', (s) => { if (s === 'active') ask(); else last = ''; });
   return () => { sub.remove(); app.remove(); };
 }
+
+/** Text from inside the app that should be heard as if said (Julian 30.10.: a photo of a letter becomes a Termin). */
+const inApp = new Set<(text: string) => void>();
+export function sayInApp(text: string) { inApp.forEach((fn) => fn(text)); }
+export function onSayInApp(fn: (text: string) => void): () => void { inApp.add(fn); return () => { inApp.delete(fn); }; }

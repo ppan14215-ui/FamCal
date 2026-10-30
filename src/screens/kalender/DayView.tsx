@@ -136,11 +136,12 @@ function Item({ e, last, date }: { e: CalEvent; last: boolean; date: string }) {
       <SwipeRow onDelete={() => dropEvent(e)}>
       <PressScale scale={0.985} onPress={() => { if (!justSwiped()) router.push(`/termin/${e.id}`); }} style={{ paddingVertical: 12, paddingHorizontal: 14, gap: 6, borderBottomWidth: last ? 0 : 1, borderBottomColor: tokens.hair }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-          <Txt size={13.5} weight={600} style={{ width: 42 }}>{later ? tx(`Tag ${daysBetween(e.date, date) + 1}`, `Day ${daysBetween(e.date, date) + 1}`) : e.allDay ? tx('Tag', 'All day') : hm(e.start)}</Txt>
+          <Txt size={13.5} weight={600} style={{ width: 42 }}>{later || span ? tx(`Tag ${daysBetween(e.date, date) + 1}`, `Day ${daysBetween(e.date, date) + 1}`) : e.allDay ? tx('Tag', 'All day') : hm(e.start)}</Txt>
           <Tile name={e.icon} size={46} radius={14} />
           <View style={{ flex: 1, minWidth: 0 }}>
             <Txt size={16} line={21} weight={600} numberOfLines={1}>{e.title}</Txt>
-            {span ? <Meta numberOfLines={1}>{tx(`bis ${short(e.endDate!)}`, `until ${short(e.endDate!)}`)}{e.place || e.sub ? ` · ${e.place ?? e.sub}` : ''}</Meta> : e.place || e.sub ? <Meta numberOfLines={1}>{e.place ?? e.sub}</Meta> : null}
+            {/* The day count says how far along it is (Julian 30.10.: "until macht keinen Sinn"); the last day says so. */}
+            {span && date === e.endDate ? <Meta numberOfLines={1}>{tx('letzter Tag', 'last day')}{e.place || e.sub ? ` · ${e.place ?? e.sub}` : ''}</Meta> : e.place || e.sub ? <Meta numberOfLines={1}>{e.place ?? e.sub}</Meta> : null}
           </View>
           <Owner who={e.who} />
         </View>

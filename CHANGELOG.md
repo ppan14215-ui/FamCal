@@ -11,6 +11,8 @@ Alle sichtbaren Änderungen an FamCal. Neueste oben. Agenten und Menschen: Ände
 - Chat, Kalender und Listen haben denselben Header an derselben Stelle, mit Luft und einem sanften Übergang zum Inhalt.
 - Feld, Tab-Leiste und Karten haben auf Android wieder einen weichen Schatten.
 - Der Wechsel zwischen Tage, Woche und Monat rechnet die Serien nur noch einmal.
+- Plus zeigt drei klare Wege: Termin, Auf die Liste (Liste wählen oder neue anlegen) und Foto. Ein Foto von Brief, Einladung oder Zettel wird am Handy gelesen und der Assistent trägt ein, was drin steht.
+- Mehrtägiges zeigt in der Tagesansicht nur die Tageszählung, kein "bis" mehr.
 
 ### Ruhiger, schneller, richtiger (30.10. abends)
 

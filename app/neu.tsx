@@ -18,7 +18,8 @@ import { tokens } from '../src/theme';
 import { actions, toast } from '../src/state/store';
 import type { ClayName } from '../src/lib/clayIcons';
 import { tx } from '../src/i18n/lang';
-import { canRead } from '../src/lib/screenshot';
+import { canRead, pickImage, readLines } from '../src/lib/screenshot';
+import { sayInApp } from '../src/lib/shared';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { HIDDEN } from '../src/lib/core';
 
@@ -37,12 +38,24 @@ export default function Neu() {
   ];
   const all: { icon: ClayName; t: string; s: string; onPress: () => void; extra?: boolean }[] = [
     { icon: 'kalender', t: tx('Termin', 'Event'), s: tx('für euch oder Ben', 'for you or the kids'), onPress: () => go(() => router.push('/termin-neu')) },
-    { icon: 'einkauf', t: tx('Listeneintrag', 'List item'), s: tx('Einkauf und eure Listen', 'Shopping and your lists'), onPress: () => go(() => router.push('/einkauf-neu')) },
-    { icon: 'checkliste', t: tx('Neue Liste', 'New list'), s: tx('Packliste, Watchlist …', 'Packing, watchlist …'), onPress: () => go(() => router.push('/liste-neu')) },
+    // One tile for lists (Julian 30.10.: "zwei mal ... Listen versteht man auch nicht"); a new list starts from there.
+    { icon: 'einkauf', t: tx('Auf die Liste', 'To a list'), s: tx('Einkauf oder eure Listen', 'Shopping or your lists'), onPress: () => go(() => router.push('/einkauf-neu')) },
+    // A photo of a letter, invitation or note: the phone reads it, the assistant enters what is in it (Julian 30.10.).
+    { icon: 'kamera-scan', t: tx('Foto', 'Photo'), s: tx('Brief, Einladung, Zettel', 'Letter, invite, note'), onPress: () => go(() => void fromPhoto()) },
     { icon: 'erledigt', extra: HIDDEN.tasks, t: tx('Aufgabe', 'Task'), s: tx('mit oder ohne Datum', 'with or without a date'), onPress: () => go(() => { actions.setActiveList('aufgaben'); router.navigate('/listen'); }) },
     { icon: 'papier-stift', extra: true, t: tx('Entwurf', 'Draft'), s: tx('Antwort schreiben lassen', 'Have a reply written'), onPress: () => go(() => router.push('/entwurf')) },
   ];
   // Julian 30.10. 21:52 "super simpel": only entering by hand stays.
+  const fromPhoto = async () => {
+    if (!canRead()) return soon();
+    const uri = await pickImage('camera');
+    if (!uri) return;
+    // Read on the phone; numbers like IBAN or tax id are already scrubbed and never leave it.
+    const lines = await readLines(uri).catch(() => [] as string[]);
+    if (!lines.length) return toast(tx('Auf dem Foto konnte ich keinen Text lesen.', "I couldn't read any text on the photo."));
+    router.navigate('/chat');
+    sayInApp(`${tx('Vom Foto', 'From a photo')}: ${lines.join(' / ')}`.slice(0, 480));
+  };
   const opts = all.filter((o) => !(HIDDEN.extras && o.extra));
   return (
     <Sheet>
