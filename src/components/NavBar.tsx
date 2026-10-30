@@ -16,7 +16,7 @@ import LineIcon, { LineName } from './ui/LineIcon';
 import PressScale from './ui/PressScale';
 import { tokens } from '../theme';
 import { haptics } from '../lib/haptics';
-import { useTyping } from '../lib/keyboard';
+import { useTyping as useFocus, useKeyboardInset } from '../lib/keyboard';
 
 const TABS: { name: string; key: string; icon: LineName }[] = [
   { name: 'chat', key: 'nav.chat', icon: 'chat' },
@@ -39,7 +39,10 @@ export default function NavBar({ state, navigation }: BottomTabBarProps) {
   const { t } = useTranslation();
   const current = state.routes[state.index]?.name;
   // While typing the keyboard takes this place, so the bar slides away; the field drops into it.
-  const typing = useTyping();
+  // On a phone only while the keyboard is really up, so the tabs can never stay away.
+  const focus = useFocus();
+  const kb = useKeyboardInset();
+  const typing = focus && (Platform.OS === 'web' || kb > 0);
   const away = useSharedValue(0);
   useEffect(() => { away.value = withTiming(typing ? 1 : 0, { duration: typing ? 180 : 260, easing: Easing.bezier(0.22, 1, 0.36, 1) }); }, [typing]);
   const hide = useAnimatedStyle(() => ({ opacity: 1 - away.value, transform: [{ translateY: away.value * 40 }] }));
