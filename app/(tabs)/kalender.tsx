@@ -7,7 +7,7 @@ import React, { useState } from 'react';
 import { View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { FadeInDown, FadeOut } from 'react-native-reanimated';
-import { tokens, swapIn } from '../../src/theme';
+import { tokens, swapIn, persons, personPalette, shade, PersonId } from '../../src/theme';
 import { router } from 'expo-router';
 import { Screen, Seg } from '../../src/components/ui/kit';
 import Txt, { Dot } from '../../src/components/ui/Txt';
@@ -31,6 +31,47 @@ const VIEWS: { key: CalView; label: string }[] = [
   { key: 'monat', label: tx('Monat', 'Month') },
   { key: 'jahr', label: tx('Jahr', 'Year') },
 ];
+
+/**
+ * Nur eine Person (Julian 30.10.): a tap on a name shows only their Termine,
+ * plus the family's and the Feiertage. With the switch folded away only the
+ * chosen name stays, so you always see that a filter is on.
+ */
+function WhoFilter({ only }: { only?: boolean }) {
+  const who = useStore((s) => s.calWho);
+  const people = useStore((s) => s.people);
+  const all = [
+    ...(['J', 'T'] as PersonId[]).map((p) => ({ id: p as string, name: persons[p].name, bg: persons[p].tint, ink: persons[p].ink })),
+    ...people.map((p) => { const c = personPalette.find((x) => x.name === p.color); const sh = c ? shade(c) : null; return { id: p.id, name: p.name.split(' ')[0], bg: sh?.bg ?? tokens.chipBg, ink: sh?.fg ?? tokens.ink }; }),
+  ];
+  const pick = (id: string | null) => { haptics.select(); actions.setCalWho(id); };
+  if (only) {
+    const p = all.find((x) => x.id === who);
+    if (!p) return null;
+    return (
+      <Animated.View entering={FadeInDown.duration(180)} style={{ flexDirection: 'row' }}>
+        <PressScale onPress={() => pick(null)} accessibilityLabel={tx('Filter aufheben', 'Clear filter')} style={{ flexDirection: 'row', alignItems: 'center', gap: 6, height: 30, paddingHorizontal: 12, borderRadius: 999, backgroundColor: p.bg }}>
+          <Txt size={13} weight={600} color={p.ink}>{tx(`Nur ${p.name}`, `Only ${p.name}`)}</Txt>
+          <View style={{ transform: [{ rotate: '45deg' }] }}><LineIcon name="plus" size={13} color={p.ink} stroke={2.2} /></View>
+        </PressScale>
+      </Animated.View>
+    );
+  }
+  const chip = (id: string | null, name: string, bg: string, ink: string) => {
+    const on = who === id;
+    return (
+      <PressScale key={id ?? 'all'} onPress={() => pick(id)} accessibilityState={{ selected: on }} style={{ height: 30, paddingHorizontal: 12, borderRadius: 999, justifyContent: 'center', backgroundColor: on ? bg : 'transparent', borderWidth: 1.5, borderColor: on ? ink : tokens.hair }}>
+        <Txt size={13} weight={on ? 700 : 500} color={on ? ink : tokens.sub}>{name}</Txt>
+      </PressScale>
+    );
+  };
+  return (
+    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
+      {chip(null, tx('Alle', 'Everyone'), tokens.segOn, tokens.ink)}
+      {all.map((p) => chip(p.id, p.name, p.bg, p.ink))}
+    </View>
+  );
+}
 
 /** The page title; tapping it opens the view switch. */
 function Title({ text, sub, open, onPress, right }: { text: string; sub?: string; open: boolean; onPress: () => void; right?: React.ReactNode }) {
@@ -61,10 +102,11 @@ export default function Kalender() {
   const choose = (v: CalView) => { actions.setCalView(v); if (v === 'heute') actions.setCalDay(TODAY); };
   const pair = <PressScale accessibilityLabel={tx('Familie und Einstellungen', 'Family and settings')} onPress={() => router.push('/einstellungen')}><Pair /></PressScale>;
   const seg = open ? (
-    <Animated.View entering={FadeInDown.duration(200)} exiting={FadeOut.duration(120)}>
+    <Animated.View entering={FadeInDown.duration(200)} exiting={FadeOut.duration(120)} style={{ gap: 10 }}>
       <Seg items={VIEWS} value={view} onChange={choose} />
+      <WhoFilter />
     </Animated.View>
-  ) : null;
+  ) : <WhoFilter only />;
 
   if (view === 'heute') {
     const date = EN ? `${MONTHS[monthIdx(TODAY)]} ${dayNum(TODAY)}` : `${dayNum(TODAY)}. ${MONTHS[monthIdx(TODAY)]}`;

@@ -56,6 +56,8 @@ type State = {
   toast: Toast | null;
   calView: CalView;
   calDay: string;
+  /** Kalender only for one person (Julian 30.10.): J, T, a person id, or null for everyone. */
+  calWho: string | null;
   activeList: string;
   /** Symbols picked in "Alle" move to the front of the categories. */
   recentSymbols: ClayName[];
@@ -91,6 +93,7 @@ const initial = (): State => ({
   toast: null,
   calView: 'heute',
   calDay: TODAY,
+  calWho: null,
   activeList: 'aufgaben',
   recentSymbols: [],
   draftSymbol: null,
@@ -233,6 +236,7 @@ export const actions = {
   // Calendar
   setCalView(v: CalView) { set(() => ({ calView: v })); },
   setCalDay(d: string) { set(() => ({ calDay: d })); },
+  setCalWho(w: string | null) { set(() => ({ calWho: w })); },
   /** Saving the same title on the same day and time again replaces it. */
   addEvent(e: CalEvent) {
     set((s) => ({ events: [...s.events.filter((x) => x.id !== e.id && !(x.title === e.title && x.date === e.date && x.start === e.start)), e] }));
