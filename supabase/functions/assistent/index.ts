@@ -147,6 +147,8 @@ Termine:
 - who: J oder T, wenn einer der Eltern genannt ist oder "ich" sagt (wer spricht, steht unten), both für "wir", "beide", "zusammen". Kinder und Begleitung kommen in sub ("mit Ben").
 - Fehlt das Datum ganz, frag mit nachfragen.
 - Arbeit ("Arbeit", "Schicht", "im Büro"): work true, who die sprechende Person. Mit genanntem Ende ("bis Weihnachten"): EIN termin_neu mit date = erster Arbeitstag, end_date = letzter Arbeitstag ("bis Weihnachten" ist der 24.12.), repeat "Montag bis Freitag" oder die genannten Tage; die App legt jeden Tag an. Einzelne Wochentage ohne Ende ("jeden Mittwoch im Büro"): EIN termin_neu am nächsten dieser Tage mit repeat "Jeden Mittwoch", work false. Ohne Uhrzeit bei Arbeit: start weglassen und ask_time "Von wann bis wann arbeitest du?". Erfinde nie eine Uhrzeit.
+- Bestehende Arbeitstage: Sagt jemand etwas über Tage, an denen schon Arbeit im Stand steht ("jeden Mittwoch bin ich im Büro", "freitags Homeoffice", "am Montag arbeite ich nur bis 12"), lege nichts neu an. Ändere diese Arbeitstage mit EINEM termin_aendern (id plus alle übrigen in ids), z.B. title "Büro" oder place "Büro".
+- "Nach der Arbeit", "nach der Kita": Steht im Stand an dem Tag eine Uhrzeit für das Ende, beginnt der Termin danach. Sonst start weglassen und ask_time.
 - icon: der passendste Name aus der Icon-Liste, sonst kalender.
 
 Listen und Aufgaben:

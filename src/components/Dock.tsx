@@ -146,13 +146,17 @@ const nextWho = (w: Who): Who => (w === 'J' ? 'T' : w === 'T' ? 'both' : 'J');
 /** Receipt for a new Termin: what landed, every part tappable to fix it right here. */
 function EventCard({ e, needsTime, ask, suggest, onSuggest, onAllDay, onUndo, onOk }: { e: CalEvent; needsTime?: boolean; ask?: string; suggest?: Suggest; onSuggest: (yes: boolean) => void; onAllDay: () => void; onUndo: () => void; onOk: () => void }) {
   const live = useStore((s) => s.events.find((x) => x.id === e.id));
+  // Julian 30.10.: the time question had a start only. After the start comes "Bis wann?".
+  const [askEnd, setAskEnd] = useState(false);
   if (!live) return null;
   const pick = (w: Who) => { haptics.select(); actions.setEventWho(e.id, w); };
+  const plus = (t: string, min: number) => { const m = Math.min(23 * 60 + 59, Number(t.slice(0, 2)) * 60 + Number(t.slice(3)) + min); return `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`; };
   const at = (t: string) => {
     haptics.select();
-    const [h, m] = t.split(':').map(Number);
-    actions.updateEvent(e.id, { start: t, end: `${String(h + 1).padStart(2, '0')}:${String(m).padStart(2, '0')}`, allDay: false });
+    actions.updateEvent(e.id, { start: t, end: plus(t, 60), allDay: false });
+    setAskEnd(true);
   };
+  const until = (t: string | null) => { haptics.select(); actions.updateEvent(e.id, { end: t ?? undefined }); setAskEnd(false); };
   const open = () => router.push(`/termin/${e.id}`);
   const time = live.allDay ? tx('ganztägig', 'all day') : live.end ? tx(`${hm(live.start)} bis ${hm(live.end)}`, `${hm(live.start)} to ${hm(live.end)}`) : hm(live.start);
   const who = live.who === 'both' ? tx('Beide', 'Both') : live.who ? persons[live.who].name : null;
@@ -170,7 +174,7 @@ function EventCard({ e, needsTime, ask, suggest, onSuggest, onAllDay, onUndo, on
       </View>
       <View style={{ flexDirection: 'row', gap: 6, flexWrap: 'wrap' }}>
         <Chip height={36} onPress={open}>{dayLabel(live.date)}</Chip>
-        {needsTime ? null : <Chip height={36} onPress={open}>{time}</Chip>}
+        {needsTime && live.allDay ? null : <Chip height={36} onPress={open}>{time}</Chip>}
         {who ? (
           <Chip height={36} bg={live.who === 'both' ? tokens.doneSoft : persons[live.who as 'J' | 'T'].tint} color={live.who === 'both' ? tokens.done : persons[live.who as 'J' | 'T'].ink} onPress={() => pick(nextWho(live.who))}>{who}</Chip>
         ) : null}
@@ -192,6 +196,15 @@ function EventCard({ e, needsTime, ask, suggest, onSuggest, onAllDay, onUndo, on
           <View style={{ flexDirection: 'row', gap: 6, flexWrap: 'wrap', paddingLeft: 36 }}>
             {TIMES.map((t) => <Chip key={t} height={36} onPress={() => at(t)}>{hm(t)}</Chip>)}
             <Chip height={36} onPress={onAllDay}>{tx('Ganztägig', 'All day')}</Chip>
+          </View>
+        </View>
+      ) : null}
+      {askEnd && !live.allDay ? (
+        <View style={{ gap: 8 }}>
+          <AppLine text={tx(`Ab ${hm(live.start)}. Bis wann?`, `From ${hm(live.start)}. Until when?`)} />
+          <View style={{ flexDirection: 'row', gap: 6, flexWrap: 'wrap', paddingLeft: 36 }}>
+            {[60, 90, 120, 180].map((m) => { const t = plus(live.start, m); return <Chip key={m} height={36} bg={live.end === t ? tokens.doneSoft : undefined} color={live.end === t ? tokens.done : undefined} onPress={() => until(t)}>{hm(t)}</Chip>; })}
+            <Chip height={36} onPress={() => until(null)}>{tx('Offen', 'Open end')}</Chip>
           </View>
         </View>
       ) : null}
@@ -580,7 +593,10 @@ export default function Dock() {
           setVeil({ typing: false });
           return hold(said, { kind: 'answer', reply: { kind: 'answer', text: p.ask } }, [...talk.slice(0, -1), { said, app: p.ask }]);
         }
-        play(p, said, false, undefined, talk);
+        // Its sentence always shows (Julian 30.10.): a card that still asks something (time, place) keeps it as a message above.
+        const say = r.actions.find((x) => x.tool === 'antworten')?.input?.text;
+        const keep = (out: ReturnType<Plan['run']>) => { const res = out.result; if (chat && typeof say === 'string' && say.trim() && res && res.kind !== 'answer' && !(res.kind === 'done' && res.say)) addSay(said, say.trim()); return out; };
+        play({ ...p, run: () => keep(p.run()) }, said, false, undefined, talk);
       });
     });
   };
