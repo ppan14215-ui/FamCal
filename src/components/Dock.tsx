@@ -32,6 +32,8 @@ import { setDockTop, setDockSpace } from '../lib/dockSpace';
 import { useKeyboardInset, useTyping } from '../lib/keyboard';
 import { setTalkOpen, useTalkOpen, setChatTabs, useChatTabs, chatBacks } from '../lib/talkOpen';
 import { addMade, addMessage, addAsk, recentMade, markChanged } from '../lib/feed';
+import { useSimple, messageOf } from '../lib/simple';
+import { useTranslation } from 'react-i18next';
 import { hm, short } from '../lib/dates';
 import { Tile } from './ui/Clay';
 import { haptics } from '../lib/haptics';
@@ -352,8 +354,30 @@ function RecipeCard({ r, onVariant, onAdd, onSkip, onKept }: { r: Extract<Result
 
 type Turn = { id: number; said: string; result: Result; lines: Line[] };
 
+/** Einfache Version (Julian 30.10.): the three tabs as one quiet row under the field, on every tab. */
+const SIMPLE_TABS: { name: string; key: string }[] = [{ name: 'chat', key: 'nav.chat' }, { name: 'kalender', key: 'nav.kalender' }, { name: 'listen', key: 'nav.listen' }];
+function TabRow({ path }: { path: string }) {
+  const { t } = useTranslation();
+  return (
+    <View accessibilityRole="tablist" style={{ flexDirection: 'row', justifyContent: 'space-around', paddingTop: 2 }}>
+      {SIMPLE_TABS.map((tab) => {
+        const on = path === `/${tab.name}`;
+        return (
+          <PressScale key={tab.name} scale={0.94} accessibilityRole="tab" accessibilityState={{ selected: on }} hitSlop={8} onPress={() => { if (!on) { haptics.select(); router.navigate(`/${tab.name}` as any); } }} style={{ alignItems: 'center', paddingHorizontal: 14, paddingVertical: 4, gap: 3 }}>
+            <Txt size={13} weight={on ? 700 : 600} color={on ? tokens.ink : tokens.mute}>{t(tab.key)}</Txt>
+            <View style={{ height: 2, width: 18, borderRadius: 2, backgroundColor: on ? tokens.ink : 'transparent' }} />
+          </PressScale>
+        );
+      })}
+    </View>
+  );
+}
+
 export default function Dock() {
-  const where = useWhere();
+  const simple = useSimple();
+  const w0 = useWhere();
+  // Simple: the field is always there on Kalender and Listen too, no bubble to open it.
+  const where = simple && w0?.tab ? { ...w0, tab: false } : w0;
   const insets = useSafeAreaInsets();
   const kb = useKeyboardInset();
   const typing = useTyping();
@@ -373,10 +397,11 @@ export default function Dock() {
   const talkLang = useRef<Lang | null>(null);
   const later = (ms: number, f: () => void) => timers.current.push(setTimeout(() => inLang(talkLang.current, f), ms));
   const path = usePathname();
+  const onTab = simple && ['/chat', '/kalender', '/listen'].includes(path);
   const talking = useTalkOpen();
   // On the tabs the field only shows after the bubble was tapped, or while a card is open (Julian 28.10.).
   const chatTabs = useChatTabs();
-  const shown = where?.chat ? !chatTabs || !!turn : !where?.tab || talking || !!turn;
+  const shown = where?.chat ? !(chatTabs && !simple) || !!turn : !where?.tab || talking || !!turn;
   /** Chat only: Eintragen makes cards, Nachricht just writes to the family. */
   const [mode, setMode] = useState<'card' | 'msg'>('card');
   // Back from the tabs with the black mic: listen right away, as on the other tabs.
@@ -416,7 +441,7 @@ export default function Dock() {
   // Examples only while the calendar is still empty; after that they are clutter (Julian 27.10.).
   const navTop = Math.max(insets.bottom, 12) + 10 + 58 + 10;
   // Typing hides the tabs, so the field drops into their place right above the keyboard.
-  const bottom = !where ? 0 : kb > 0 ? kb + 8 : where.chat ? Math.max(insets.bottom, 12) + 10 : kb > 0 ? kb + 8 : where.tab && !typing && !(shown || mounted) ? navTop : where.tab ? Math.max(insets.bottom, 12) + 10 : insets.bottom + 12 + where.lift;
+  const bottom = !where ? 0 : kb > 0 ? kb + 8 : where.chat ? Math.max(insets.bottom, 12) + 10 : kb > 0 ? kb + 8 : where.tab && !typing && !(shown || mounted) ? navTop : where.tab ? Math.max(insets.bottom, 12) + 10 : onTab ? Math.max(insets.bottom, 8) + 2 : insets.bottom + 12 + where.lift;
   useEffect(() => { setDockTop(where ? bottom + (shown ? h : 0) : 0); }, [bottom, h, !!where, shown]);
 
   if (!where) return null;
@@ -438,6 +463,9 @@ export default function Dock() {
   const hear = (raw: string, how?: { voice?: boolean }) => {
     // One message, then back to Eintragen, so the next sentence is never lost as a plain message (Julian 29.10.).
     if (where.chat && mode === 'msg') { haptics.success(); addMessage(raw.trim()); setMode('card'); return; }
+    // Simple: no switch; "Sag Sophia, ich komme später" is a message by itself.
+    const note = simple && where.chat && !turn ? messageOf(raw, [persons.J.name, persons.T.name, ...get().people.map((x) => x.name)]) : null;
+    if (note) { haptics.success(); addMessage(note); return; }
     // "Frag Sophia, ob Samstag passt": a Ja/Nein card for the partner, no AI needed (Julian 29.10.).
     if (where.chat && !turn && addAsk(raw)) { haptics.success(); return; }
     talkLang.current = spokenLang(raw);
@@ -802,7 +830,7 @@ export default function Dock() {
           </ScrollView>
         </Animated.View>
       ) : null}
-      {where.chat ? (
+      {where.chat && !simple ? (
         <View accessibilityRole="radiogroup" style={{ alignSelf: 'flex-start', flexDirection: 'row', padding: 3, borderRadius: 999, backgroundColor: tokens.segBg }}>
           {(['card', 'msg'] as const).map((m) => (
             <PressScale key={m} accessibilityRole="radio" accessibilityState={{ checked: mode === m }} onPress={() => { haptics.select(); setMode(m); }} style={{ height: 32, paddingHorizontal: 14, borderRadius: 999, justifyContent: 'center', backgroundColor: mode === m ? tokens.row : 'transparent' }}>
@@ -812,8 +840,8 @@ export default function Dock() {
         </View>
       ) : null}
       <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 8 }}>
-      <Animated.View style={[{ alignSelf: 'flex-end', alignItems: 'flex-end', overflow: 'hidden', borderRadius: 30 }, where.tab ? morph : { width: where.chat ? W - 28 - 56 : full }]}>
-      <Animated.View style={[{ width: where.chat ? W - 28 - 56 : full }, where.tab ? settle : null]}>
+      <Animated.View style={[{ alignSelf: 'flex-end', alignItems: 'flex-end', overflow: 'hidden', borderRadius: 30 }, where.tab ? morph : { width: where.chat && !simple ? W - 28 - 56 : full }]}>
+      <Animated.View style={[{ width: where.chat && !simple ? W - 28 - 56 : full }, where.tab ? settle : null]}>
       <TalkBar
         key={where.chat ? 'chat' : kind}
         split={where.chat}
@@ -827,12 +855,13 @@ export default function Dock() {
       />
       </Animated.View>
       </Animated.View>
-      {where.chat ? (
+      {where.chat && !simple ? (
         <PressScale accessibilityLabel={tx('Kalender und Listen zeigen', 'Show calendar and lists')} onPress={() => { haptics.select(); setTurn(null); light(null); setChatTabs(true); }} style={[{ width: 48, height: 48, marginBottom: 4, borderRadius: 999, alignItems: 'center', justifyContent: 'center', backgroundColor: tokens.ink }, gridShadow]}>
           <LineIcon name="grid" size={22} color={tokens.onInk} />
         </PressScale>
       ) : null}
       </View>
+      {onTab ? <TabRow path={path} /> : null}
     </View>
     </Other.Provider>
   );

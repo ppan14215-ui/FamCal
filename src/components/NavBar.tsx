@@ -18,6 +18,7 @@ import { haptics } from '../lib/haptics';
 import { useTyping } from '../lib/keyboard';
 import { setTalkOpen, useTalkOpen, setChatTabs, useChatTabs } from '../lib/talkOpen';
 import { tx } from '../i18n/lang';
+import { useSimple } from '../lib/simple';
 
 const TABS: { name: string; key: string; icon: LineName }[] = [
   { name: 'chat', key: 'nav.chat', icon: 'chat' },
@@ -62,6 +63,9 @@ export default function NavBar({ state, navigation }: BottomTabBarProps) {
   }, [gone]);
   // Talking: the tabs fade and sink a little while the bubble grows over them; typing: the whole bar slides away.
   const hide = useAnimatedStyle(() => ({ opacity: 1 - away.value, transform: [{ translateY: away.value * (talking ? 8 : 40) }, { scale: 1 - away.value * (talking ? 0.04 : 0) }] as const }));
+  // Einfache Version: the tabs sit under the field instead (Dock).
+  const simple = useSimple();
+  if (simple) return null;
   const onLayout = (e: LayoutChangeEvent) => setW((e.nativeEvent.layout.width - 8 - 2 * (TABS.length - 1)) / TABS.length);
   return (
     <Animated.View pointerEvents={gone ? 'none' : 'box-none'} style={[{ position: 'absolute', left: 14, right: 14, bottom: Math.max(insets.bottom, 12) + 10, flexDirection: 'row', alignItems: 'center', gap: 10 }, hide]}>

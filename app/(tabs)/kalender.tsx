@@ -23,6 +23,7 @@ import PressScale from '../../src/components/ui/PressScale';
 import { TODAY, WD_LONG, weekday, dayNum, MONTHS, monthIdx, addDays, monday, isoWeek, daysBetween } from '../../src/lib/dates';
 import { haptics } from '../../src/lib/haptics';
 import { tx, EN } from '../../src/i18n/lang';
+import { useSimple } from '../../src/lib/simple';
 
 const VIEWS: { key: CalView; label: string }[] = [
   { key: 'heute', label: tx('Heute', 'Today') },
@@ -31,6 +32,8 @@ const VIEWS: { key: CalView; label: string }[] = [
   { key: 'monat', label: tx('Monat', 'Month') },
   { key: 'jahr', label: tx('Jahr', 'Year') },
 ];
+// Einfache Version (Julian 30.10.): three views; Heute lists the next days too, the year opens from the month's name.
+const VIEWS_SIMPLE = VIEWS.filter((v) => v.key === 'heute' || v.key === 'woche' || v.key === 'monat');
 
 /**
  * Nur eine Person (Julian 30.10.): a tap on a name shows only their Termine,
@@ -75,13 +78,17 @@ function WhoFilter({ only }: { only?: boolean }) {
 
 /** The page title; tapping it opens the view switch. */
 function Title({ text, sub, open, onPress, right }: { text: string; sub?: string; open: boolean; onPress: () => void; right?: React.ReactNode }) {
+  const simple = useSimple();
+  const view = useStore((s) => s.calView);
+  // Simple: the name of the month opens the year, the year's number goes back to the month.
+  const chev = !simple || view === 'monat' || view === 'jahr';
   return (
     <View style={{ flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', gap: 12 }}>
-      <PressScale scale={0.97} onPress={onPress} accessibilityLabel={tx('Ansicht wechseln', 'Change view')} accessibilityState={{ expanded: open }} style={{ flex: 1, gap: 2 }}>
+      <PressScale scale={0.97} onPress={onPress} accessibilityLabel={simple ? (view === 'monat' ? tx('Jahr zeigen', 'Show year') : tx('Monat zeigen', 'Show month')) : tx('Ansicht wechseln', 'Change view')} accessibilityState={{ expanded: open }} style={{ flex: 1, gap: 2 }}>
         {sub ? <Txt size={15} color={tokens.sub}>{sub}</Txt> : null}
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
           <Txt size={34} line={40} weight={700} tracking={-1} numberOfLines={1}>{text}<Dot /></Txt>
-          <View style={{ transform: [{ rotate: open ? '-90deg' : '90deg' }], marginTop: 4 }}><LineIcon name="chev" size={16} color={tokens.sub} stroke={2.2} /></View>
+          {chev ? <View style={{ transform: [{ rotate: simple ? (view === 'jahr' ? '-90deg' : '90deg') : open ? '-90deg' : '90deg' }], marginTop: 4 }}><LineIcon name="chev" size={16} color={tokens.sub} stroke={2.2} /></View> : null}
         </View>
       </PressScale>
       {right}
@@ -90,7 +97,9 @@ function Title({ text, sub, open, onPress, right }: { text: string; sub?: string
 }
 
 export default function Kalender() {
-  const view = useStore((s) => s.calView);
+  const simple = useSimple();
+  const picked = useStore((s) => s.calView);
+  const view: CalView = simple && picked === 'tag' ? 'heute' : picked;
   const day = useStore((s) => s.calDay);
   const kid = useStore((s) => s.kid);
   // The view switch starts open and stays open after a pick (Julian 28.10.); the chevron folds it away.
@@ -98,10 +107,16 @@ export default function Kalender() {
   // A week across two months is named after its Thursday, like calendar weeks (Julian 28.10.: Oct 26 to Nov 1 said November).
   const { month, year } = monthTitle(view === 'woche' ? addDays(monday(day), 3) : day);
   const insets = useSafeAreaInsets();
-  const toggle = () => { haptics.select(); setOpen((o) => !o); };
+  const toggle = () => {
+    haptics.select();
+    if (simple) { if (view === 'monat') actions.setCalView('jahr'); else if (view === 'jahr') actions.setCalView('monat'); return; }
+    setOpen((o) => !o);
+  };
   const choose = (v: CalView) => { actions.setCalView(v); if (v === 'heute') actions.setCalDay(TODAY); };
   const pair = <HeaderRight />;
-  const seg = open ? (
+  const seg = simple ? (
+    <Seg items={VIEWS_SIMPLE} value={view === 'jahr' ? 'monat' : view} onChange={choose} />
+  ) : open ? (
     <Animated.View entering={FadeInDown.duration(200)} exiting={FadeOut.duration(120)} style={{ gap: 10 }}>
       <Seg items={VIEWS} value={view} onChange={choose} />
       <WhoFilter />

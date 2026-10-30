@@ -21,6 +21,7 @@ import { tokens, fonts } from '../theme';
 import { haptics } from '../lib/haptics';
 import { setTyping } from '../lib/keyboard';
 import { LIVE } from '../lib/live';
+import { usePrefill, takeFill } from '../lib/simple';
 import { tx } from '../i18n/lang';
 import { speechLocale } from '../lib/speechLang';
 
@@ -225,6 +226,9 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, o
 
   // Keep the conversation going: the card asked something, so listen again.
   useEffect(() => { if (focusKey) field.current?.focus(); }, [focusKey]);
+  // An example from the plus sheet lands in the field, ready to change (Julian 30.10.).
+  const fill = usePrefill();
+  useEffect(() => { if (!takeFill(fill.n)) return; setText(fill.text); setTimeout(() => field.current?.focus(), 250); }, [fill.n]);
   useEffect(() => {
     if (!listenKey || listening || text.trim()) return;
     listen();

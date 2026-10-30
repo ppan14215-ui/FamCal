@@ -20,6 +20,7 @@ import { speechLang, setSpeechLang } from '../src/lib/speechLang';
 import * as Updates from 'expo-updates';
 import { useMicStyle, setMicStyle } from '../src/lib/micStyle';
 import { useThemeChoice, setTheme, type ThemeChoice } from '../src/theme/mode';
+import { useSimple, setSimple } from '../src/lib/simple';
 import { Seg } from '../src/components/ui/kit';
 import { haptics } from '../src/lib/haptics';
 import { countryName, regionName } from '../src/lib/holidays';
@@ -49,6 +50,7 @@ export default function Einstellungen() {
   const [sl, setSl] = React.useState(speechLang());
   const mic = useMicStyle();
   const theme = useThemeChoice();
+  const simple = useSimple();
   const cals = useStore((s) => s.calendars);
   const demo = useStore((s) => s.demo);
   const names = useStore((s) => s.names);
@@ -72,6 +74,12 @@ export default function Einstellungen() {
         ))}
         <SRow icon="sync" t={cals.length ? tx('Weitere Kalender', 'More calendars') : tx('Kalender verbinden', 'Connect calendars')} s={cals.length ? tx('Auswahl ändern oder hinzufügen', 'Change or add') : tx('Damit nichts doppelt ist', 'So nothing is in two places')} onPress={openCals} />
       </Group>
+      <View style={{ gap: 8 }}>
+        {/* Julian 30.10.: both versions side by side, to compare. */}
+        <Txt size={13} weight={600} color={tokens.sub} style={{ paddingHorizontal: 4 }}>{tx('Version zum Testen', 'Version to test')}</Txt>
+        <Seg items={[{ key: 'jetzt', label: tx('Wie bisher', 'As before') }, { key: 'einfach', label: tx('Einfache Version', 'Simple version') }]} value={simple ? 'einfach' : 'jetzt'} onChange={(k) => { haptics.select(); setSimple(k === 'einfach'); toast(k === 'einfach' ? tx('Einfache Version ist an', 'Simple version is on') : tx('Wieder wie bisher', 'Back to before')); }} />
+        <Txt size={12.5} line={17} color={tokens.mute} style={{ paddingHorizontal: 4 }}>{tx('Einfach: eine Leiste unten, das Plus zeigt Beispielsätze, Kalender mit drei Ansichten.', 'Simple: one bar at the bottom, the plus shows example sentences, a calendar with three views.')}</Txt>
+      </View>
       <View style={{ gap: 8 }}>
         <Txt size={13} weight={600} color={tokens.sub} style={{ paddingHorizontal: 4 }}>{tx('Darstellung', 'Appearance')}</Txt>
         <Seg items={[{ key: 'hell', label: tx('Hell', 'Light') }, { key: 'dunkel', label: tx('Dunkel', 'Dark') }, { key: 'system', label: tx('Wie das Handy', 'Like the phone') }]} value={theme} onChange={(k) => setTheme(k as ThemeChoice)} />

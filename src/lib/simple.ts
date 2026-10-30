@@ -1,0 +1,49 @@
+/**
+ * Einfache Version (Julian 30.10.: "Die App ist zu kompliziert", Vorschlag
+ * "FamCal einfacher"). A switch in the settings, so both versions can be
+ * compared: one bar at the bottom on every tab, the plus shows six example
+ * sentences, the calendar has three views. Kept per device.
+ */
+import { useSyncExternalStore } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { getPref, setPref } from './prefs';
+
+const KEY = 'famcal.simple';
+let on = getPref('simple') === '1';
+const subs = new Set<() => void>();
+const emit = () => subs.forEach((l) => l());
+
+AsyncStorage.getItem(KEY).then((v) => { if (v != null && (v === '1') !== on) { on = v === '1'; emit(); } }).catch(() => {});
+
+export function setSimple(v: boolean) {
+  on = v;
+  setPref('simple', v ? '1' : '0');
+  AsyncStorage.setItem(KEY, v ? '1' : '0').catch(() => {});
+  emit();
+}
+export const isSimple = () => on;
+export const useSimple = () => useSyncExternalStore((l) => { subs.add(l); return () => { subs.delete(l); }; }, () => on, () => on);
+
+/** A sentence for the field, from the plus sheet's examples: the bar picks it up and focuses. */
+let prefill: { text: string; n: number } = { text: '', n: 0 };
+const fillSubs = new Set<() => void>();
+export function fillField(text: string) {
+  prefill = { text, n: prefill.n + 1 };
+  fillSubs.forEach((l) => l());
+}
+/** Each example lands once, in the field that is open now; a field built later must not get it again. */
+let taken = 0;
+export function takeFill(n: number): boolean { if (!n || n === taken) return false; taken = n; return true; }
+export const usePrefill = () => useSyncExternalStore((l) => { fillSubs.add(l); return () => { fillSubs.delete(l); }; }, () => prefill, () => prefill);
+
+/**
+ * "Sag Sophia, ich komme später" or "Schreib Tom: Milch ist alle": a message to the
+ * family, not an entry. Returns what to send, or null.
+ */
+export function messageOf(raw: string, names: string[]): string | null {
+  const m = raw.trim().match(/^(?:sag|sage|schreib|schreibe|tell|text|message)\s+(\S+?)[,:]?\s+(.{2,})$/i);
+  if (!m) return null;
+  // Only to someone of the family ("Schreib Milch auf die Liste" stays an entry).
+  const to = m[1].toLowerCase();
+  return [...names, 'allen', 'all', 'everyone', 'familie'].some((n) => n && n.toLowerCase() === to) ? raw.trim() : null;
+}

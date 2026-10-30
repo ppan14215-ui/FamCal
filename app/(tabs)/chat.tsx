@@ -27,6 +27,8 @@ import { tx } from '../../src/i18n/lang';
 import { useVeil, Step } from '../../src/components/Veil';
 import { isTrip, makePackList, kidsOn, ageText } from '../../src/lib/pack';
 import { isVacation, leftLine } from '../../src/lib/urlaub';
+import { useSimple } from '../../src/lib/simple';
+import ExampleCards from '../../src/components/Examples';
 
 const at = (s: string) => { const d = new Date(s); return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`; };
 const dayOf = (s: string) => { const d = new Date(s); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
@@ -322,6 +324,7 @@ export default function Chat() {
   const scroller = useRef<ScrollView>(null);
   const me = getFamily() ? myRole() : 'J';
   const veil = useVeil();
+  const simple = useSimple();
   const kb = useKeyboardInset();
   // The newest message is always in view (Julian 29.10.): after sending, while thinking, and when the keyboard opens.
   const thinking = veil.inline && veil.phase !== 'off';
@@ -329,7 +332,7 @@ export default function Chat() {
   let lastDay = '';
   return (
     <View style={{ flex: 1, backgroundColor: tokens.bg, paddingTop: insets.top }}>
-      <Jumps />
+      {simple ? null : <Jumps />}
       <ScrollView ref={scroller} onContentSizeChange={() => scroller.current?.scrollToEnd({ animated: false })} contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 18, paddingTop: 8, paddingBottom: dock + (kb > 0 ? kb : insets.bottom) + 40, gap: 12 }} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
         <H1 sub={tx(`Familie · ${2 + people} Personen`, `Family · ${2 + people} people`)} right={<HeaderRight />}>Chat</H1>
         {feed.length || veil.inline && veil.phase !== 'off' ? feed.map((f) => {
@@ -346,7 +349,13 @@ export default function Chat() {
         }) : (
           <View style={{ flex: 1, justifyContent: 'center', gap: 8, paddingHorizontal: 8 }}>
             <Txt size={22} line={28} weight={700} tracking={-0.5}>{tx('Einmal sagen. Beide wissen’s.', 'Say it once. You both know.')}</Txt>
-            <Txt size={15} line={22} color={tokens.sub}>{tx('Sprich oder schreib, was ansteht: „Montag 17 Uhr Essen mit Mama“ oder „Milch und Mehl“. Hier siehst du dann, was daraus wurde, und die Familie auch.', 'Say or type what’s up: “Dinner with mum Monday 5 pm” or “milk and flour”. Here you see what it became, and so does the family.')}</Txt>
+            {simple ? (
+              <>
+                <Txt size={15} line={22} color={tokens.sub}>{tx('Sag oder schreib es einfach. Tippe auf ein Beispiel, um es auszuprobieren.', 'Just say or type it. Tap an example to try it.')}</Txt>
+                <View style={{ height: 6 }} />
+                <ExampleCards />
+              </>
+            ) : <Txt size={15} line={22} color={tokens.sub}>{tx('Sprich oder schreib, was ansteht: „Montag 17 Uhr Essen mit Mama“ oder „Milch und Mehl“. Hier siehst du dann, was daraus wurde, und die Familie auch.', 'Say or type what’s up: “Dinner with mum Monday 5 pm” or “milk and flour”. Here you see what it became, and so does the family.')}</Txt>}
           </View>
         )}
         <Thinking by={me} />

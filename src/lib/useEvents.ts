@@ -1,4 +1,5 @@
 /** Termine for the calendar views, with every series spelled out (see repeat.ts). */
+import { useSimple } from './simple';
 import { useMemo } from 'react';
 import { useStore, get } from '../state/store';
 import type { CalEvent } from '../state/types';
@@ -6,7 +7,10 @@ import { expand, WINDOW, seriesId, isInstance } from './repeat';
 
 export function useCalEvents(): CalEvent[] {
   const events = useStore((s) => s.events);
-  const who = useStore((s) => s.calWho);
+  // The Einfache Version has no person filter, so a filter left on must not hide anything.
+  const simple = useSimple();
+  const picked = useStore((s) => s.calWho);
+  const who = simple ? null : picked;
   const people = useStore((s) => s.people);
   return useMemo(() => {
     const all = expand(events, WINDOW.from, WINDOW.to);
