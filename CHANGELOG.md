@@ -4,6 +4,13 @@ Alle sichtbaren Änderungen an FamCal. Neueste oben. Agenten und Menschen: Ände
 
 ## Unreleased
 
+### Zurück zum Kern, Assistent denkt kurz nach (30.10.)
+
+- Der Assistent ist jetzt immer an und überlegt kurz, bevor er handelt. Er hat eine Liste mit 23 echten Sätzen zweimal komplett bestanden.
+- Erinnerungen landen auf der Liste „Zu erledigen“. Aufgaben, Rommé, Filmbewertungen und Vorschläge sind ausgeblendet.
+- Ist der Assistent nicht erreichbar, sagt die App das ehrlich, statt zu raten.
+- Bei „Ich koche Bolognese“ sagt er jetzt auch einen Satz dazu.
+
 ### Ruhiger unten (28.10.)
 
 - Die Vorschläge über dem Sprechfeld sind weg. Unten steht nur noch das Feld mit Mikro.
