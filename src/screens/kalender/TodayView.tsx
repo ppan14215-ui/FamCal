@@ -5,7 +5,8 @@
  * coming week as short rows. Free days are left out. "Alles zeigen" opens
  * the endless list of days.
  */
-import React, { useMemo, useRef } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import Animated, { useAnimatedStyle, useSharedValue, withRepeat, withSequence, withTiming } from 'react-native-reanimated';
 import { View, ScrollView } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
@@ -17,6 +18,7 @@ import LineIcon from '../../components/ui/LineIcon';
 import PressScale from '../../components/ui/PressScale';
 import Fresh from '../../components/Fresh';
 import { tokens, persons } from '../../theme';
+import { LIVE } from '../../lib/live';
 import { useStore, actions } from '../../state/store';
 import { useScroller } from '../../lib/landing';
 import { useDockSpace } from '../../lib/dockSpace';
@@ -42,26 +44,62 @@ function Label({ children, color = tokens.sub, right }: { children: string; colo
   );
 }
 
-/** "in 45 Min", "in 2 Std", "jetzt", "morgen", "Do 30." */
-function when(e: CalEvent): string {
+/** Minutes since midnight, ticking once a minute in the real app (the test link keeps its fixed time). */
+function useNowMin(): number {
+  const read = () => (LIVE ? new Date().getHours() * 60 + new Date().getMinutes() : minutes(NOW));
+  const [m, setM] = useState(read);
+  useEffect(() => {
+    if (!LIVE) return;
+    const t = setInterval(() => setM(read()), 30000);
+    return () => clearInterval(t);
+  }, []);
+  return m;
+}
+
+/** "in 45 Min", "in 2 Std 10", "läuft noch 20 Min", "morgen", "Do 30." */
+function when(e: CalEvent, now: number): string {
   if (e.date !== TODAY) return daysBetween(TODAY, e.date) === 1 ? tx('morgen', 'tomorrow') : `${WD_SHORT[weekday(e.date)]} ${dmShort(e.date)}`;
   if (e.allDay) return tx('heute', 'today');
-  const d = minutes(e.start) - minutes(NOW);
-  if (d <= 0) return tx('jetzt', 'now');
+  const d = minutes(e.start) - now;
+  if (d <= 0) {
+    const left = e.end ? minutes(e.end) - now : 0;
+    return left > 0 ? tx(`läuft noch ${left} Min`, `${left} min left`) : tx('jetzt', 'now');
+  }
   if (d < 60) return tx(`in ${d} Min`, `in ${d} min`);
-  return tx(`in ${Math.round(d / 60)} Std`, `in ${Math.round(d / 60)} h`);
+  const h = Math.floor(d / 60), r = d % 60;
+  if (h >= 3 || r < 5) return tx(`in ${Math.round(d / 60)} Std`, `in ${Math.round(d / 60)} h`);
+  return tx(`in ${h} Std ${r}`, `in ${h} h ${r}`);
+}
+
+/** The small dot before "Als Nächstes" breathes when it starts within 15 minutes or runs. */
+function Pulse({ on }: { on: boolean }) {
+  const o = useSharedValue(1);
+  useEffect(() => {
+    o.value = on ? withRepeat(withSequence(withTiming(0.25, { duration: 700 }), withTiming(1, { duration: 700 })), -1) : withTiming(1);
+  }, [on]);
+  const st = useAnimatedStyle(() => ({ opacity: o.value }));
+  return <Animated.View style={[{ width: 7, height: 7, borderRadius: 4, backgroundColor: tokens.done }, st]} />;
 }
 
 const span = (e: CalEvent) => (e.allDay ? tx('ganztägig', 'all day') : e.end ? tx(`${hm(e.start)} bis ${hm(e.end)}`, `${hm(e.start)} to ${hm(e.end)}`) : hm(e.start));
 
 /** The one thing to look at: the next Termin, big. */
-function Next({ e }: { e: CalEvent }) {
+function Next({ e, after }: { e: CalEvent; after?: CalEvent }) {
+  const now = useNowMin();
   const open = (e.bring ?? []).filter((b) => !b.done);
+  const today = e.date === TODAY && !e.allDay;
+  const toGo = today ? minutes(e.start) - now : 999;
+  const running = today && toGo <= 0 && !!e.end && minutes(e.end) > now;
+  // While it runs a thin bar fills up to its end.
+  const done = running ? Math.min(1, (now - minutes(e.start)) / Math.max(1, minutes(e.end!) - minutes(e.start))) : 0;
   const who = e.who === 'both' ? tx('Beide', 'Both') : e.who ? persons[e.who].name : null;
   return (
     <Fresh id={e.id} radius={24}>
       <PressScale scale={0.985} onPress={() => router.push(`/termin/${e.id}`)} style={{ backgroundColor: tokens.row, borderRadius: 24, padding: 20, gap: 14 }}>
-        <Label color={tokens.done}>{`${tx('Als Nächstes', 'Up next')} · ${when(e)}`}</Label>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+          <Pulse on={toGo <= 15} />
+          <Label color={tokens.done}>{`${running ? tx('Jetzt', 'Now') : tx('Als Nächstes', 'Up next')} · ${when(e, now)}`}</Label>
+        </View>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
           <View style={{ flex: 1, minWidth: 0, gap: 4 }}>
             <Txt size={24} line={29} weight={600} tracking={-0.4} numberOfLines={2}>{e.title}</Txt>
@@ -78,6 +116,18 @@ function Next({ e }: { e: CalEvent }) {
               </View>
             ) : null}
             {open.length ? <Txt size={13.5} color={tokens.sub} numberOfLines={1} style={{ flex: 1 }}>{`${who ? '· ' : ''}${tx('Mitbringen', 'Bring')}: ${open.map((b) => b.t).join(', ')}`}</Txt> : null}
+          </View>
+        ) : null}
+        {running ? (
+          <View style={{ height: 4, borderRadius: 2, backgroundColor: tokens.doneSoft, overflow: 'hidden' }}>
+            <View style={{ width: `${Math.round(done * 100)}%`, height: 4, backgroundColor: tokens.done }} />
+          </View>
+        ) : null}
+        {after ? (
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingTop: 12, borderTopWidth: 1, borderTopColor: tokens.hair }}>
+            <Txt size={13} color={tokens.mute}>{tx('Danach', 'Then')}</Txt>
+            <Txt size={14} weight={600} numberOfLines={1} style={{ flex: 1 }}>{after.title}</Txt>
+            <Txt size={13} color={tokens.sub}>{when(after, now)}</Txt>
           </View>
         ) : null}
       </PressScale>
@@ -138,6 +188,8 @@ export default function TodayView({ header }: { header: React.ReactNode }) {
     };
   }, [events, tasks, docs]);
 
+  // The one after next sits in the card as "Danach" and leaves the rows below.
+  const after = later.find((x) => !x.allDay) ?? (later.length ? undefined : week[0]);
   const all = () => { haptics.select(); actions.setCalDay(TODAY); actions.setCalView('tag'); };
 
   return (
@@ -150,7 +202,7 @@ export default function TodayView({ header }: { header: React.ReactNode }) {
       contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 8, paddingBottom: 110 + insets.bottom + dock, gap: 28 }}
     >
       {header}
-      {next ? <Next e={next} /> : (
+      {next ? <Next e={next} after={after} /> : (
         <View style={{ backgroundColor: tokens.row, borderRadius: 24, padding: 20, gap: 6 }}>
           <Txt size={20} weight={600}>{tx('Nichts geplant', 'Nothing planned')}</Txt>
           <Meta>{tx('Die nächsten Tage sind frei. Sag unten einfach, was ansteht.', 'The next days are free. Just say below what\'s coming up.')}</Meta>
@@ -187,10 +239,10 @@ export default function TodayView({ header }: { header: React.ReactNode }) {
         </View>
       ) : null}
 
-      {later.length || todo.length ? (
+      {later.some((e) => e !== after) || todo.length ? (
         <View style={{ gap: 6, paddingHorizontal: 4 }}>
           <Label>{tx('Später heute', 'Later today')}</Label>
-          {later.map((e) => <Row key={e.id} e={e} lead={e.allDay ? tx('Tag', 'Day') : hm(e.start)} />)}
+          {later.filter((e) => e !== after).map((e) => <Row key={e.id} e={e} lead={e.allDay ? tx('Tag', 'Day') : hm(e.start)} />)}
           {todo.map((t) => (
             <Fresh key={t.id} id={t.id} radius={14} bleed={12}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14, minHeight: 44 }}>
@@ -210,7 +262,7 @@ export default function TodayView({ header }: { header: React.ReactNode }) {
             <Txt size={14} weight={600} color={tokens.done}>{tx('Alles zeigen', 'Show all')}</Txt>
           </PressScale>
         }>{tx('Diese Woche', 'This week')}</Label>
-        {week.length ? week.map((e) => <Row key={e.id} e={e} showTime lead={daysBetween(TODAY, e.date) === 1 ? tx('Morgen', 'Tmrw') : WD_SHORT[weekday(e.date)]} />) : (
+        {week.filter((e) => e !== after).length ? week.filter((e) => e !== after).map((e) => <Row key={e.id} e={e} showTime lead={daysBetween(TODAY, e.date) === 1 ? tx('Morgen', 'Tmrw') : WD_SHORT[weekday(e.date)]} />) : (
           <Meta>{tx('Sonst ist die Woche frei.', 'The rest of the week is free.')}</Meta>
         )}
         {fristen.map((d) => (
