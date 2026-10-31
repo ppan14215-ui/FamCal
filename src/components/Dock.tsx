@@ -1,0 +1,923 @@
+/**
+ * Der Dock (Julian 27.10.: "Voice input an jeder Stelle"). One talk field for
+ * the whole app, drawn once at the root. It knows where you are: in the
+ * calendar a sentence becomes a Termin or an answer, on a Termin it changes
+ * that Termin, on a list it fills that list. Each time the orb thinks out
+ * loud, the change happens behind the veil, and a drop flies to the spot
+ * that changed. Questions and new Termine leave a small card above the field.
+ */
+import React, { useEffect, useRef, useState } from 'react';
+import { View, ScrollView, Platform, BackHandler, useWindowDimensions, TextInput } from 'react-native';
+import { router, usePathname } from 'expo-router';
+import Animated, { FadeIn, FadeInDown, FadeOut, useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import Svg, { Defs, LinearGradient, Stop, Rect } from 'react-native-svg';
+import { Chip } from './ui/kit';
+import Txt from './ui/Txt';
+import LineIcon from './ui/LineIcon';
+import { Avatar, Pair, Owner } from './ui/Person';
+import PressScale from './ui/PressScale';
+import TalkBar from './TalkBar';
+import { setVeil } from './Veil';
+import { tokens, persons, fonts } from '../theme';
+import { useStore, actions, get, toast } from '../state/store';
+import { plan, splitItems, claudeSays, replyPlan, listFromClaude, asksNewList, thinksOnline, revisePlan, reviseOffline, draftOf, cutOff, addPicks, settleWork, clashLine, dishy, linkPlan, Ctx, Plan, Result, Said, SPOKEN, PLACEHOLDER } from '../lib/act';
+import { canUnderstand, type Convo, type Glimpse } from '../lib/verstehen';
+import { agentOn, askAgent, agentPlan, screenOf, promisesOnly, RETRY_NOTE } from '../lib/assistent';
+import { linkIn, recipeFromLink, keepRecipe, loadRecipes, type Recipe } from '../lib/rezepte';
+import { onShared, onSayInApp } from '../lib/shared';
+import { dayLabel, slotLine, type Suggest } from '../lib/talk';
+import { light, lightOneByOne } from '../lib/landing';
+import { setDockTop, setDockSpace } from '../lib/dockSpace';
+import { useKeyboardInset, useTyping } from '../lib/keyboard';
+import { setTalkOpen, useTalkOpen } from '../lib/talkOpen';
+import { NAV_H, navTop } from './NavBar';
+import { useNavFolded } from '../lib/navFold';
+import { addMade, addMessage, addAsk, addSay, recentMade, markChanged } from '../lib/feed';
+import { useSimple, messageOf } from '../lib/simple';
+import { hm, short } from '../lib/dates';
+import { Tile } from './ui/Clay';
+import { haptics } from '../lib/haptics';
+import type { CalEvent, Who } from '../state/types';
+import { tx, quote, inLang, spokenLang, type Lang } from '../i18n/lang';
+import { HIDDEN } from '../lib/core';
+import Peek, { openPeek } from './Peek';
+
+const STEP_MS = 850;
+/** How long the family waits for Claude before the rules answer instead. */
+const FIRST_MS = 12000;
+/** "Termin · Friseur · Fr 30. Okt · 15:00", built while Claude is still writing. */
+const glimpseLine = (g: Glimpse) => {
+  const what = g.kind === 'termin' ? tx('Termin', 'Event') : g.kind === 'liste' ? (g.dish ? tx('Rezept', 'Recipe') : tx('Liste', 'List')) : g.kind === 'frage' ? tx('Frage', 'Question') : undefined;
+  const parts = [what, g.kind === 'liste' ? g.dish : g.title, g.kind === 'termin' && g.date && /^\d{4}-\d{2}-\d{2}$/.test(g.date) ? short(g.date) : undefined, g.kind === 'termin' && g.start ? hm(g.start) : undefined];
+  return parts.filter(Boolean).join(' · ');
+};
+/** Appears calmly, no spring or overshoot (Julian 28.10.: the bounce was too playful). */
+const CALM = FadeIn.duration(200);
+const TIMES = ['09:00', '10:30', '14:00', '16:00'];
+/** "Wieder bei Salon Schnitt wie am 12. Okt?" (Julian 28.10.: the app builds on what you entered before). */
+const againAt = (s: Suggest) => tx(`Wieder bei ${s.place} wie am ${short(s.date)}?`, `At ${s.place} again, like on ${short(s.date)}?`);
+const newThought = (said: string) => said.trim().split(/\s+/).length > 6 || (/^\s*(wir|ich|du|ihr|er|sie|es|man|we|i|you|they|he|she)\b/i.test(said) && !/\b(geh\w*|übernehm\w*|mach\w*|fahr\w*|go|goes|take|takes|drive)\b/i.test(said));
+const YES = /^\s*(ja|jo|genau|richtig|gerne|passt|yes|yeah|yep|sure|right)\b/i;
+const NO = /^\s*(nein|nee|ne|nö|woanders|no|nope|somewhere else)\b/i;
+/** Answers to "Wann?" to tap; speaking works just as well. */
+const DAYS = () => [tx('Heute', 'Today'), tx('Morgen', 'Tomorrow'), tx('Übermorgen', 'Day after tomorrow'), tx('Nächste Woche', 'Next week')];
+
+/** "Anders …" on every card (Julian 29.10.: when no choice fits there must be a way to say it). */
+const Other = React.createContext<() => void>(() => {});
+
+function Picks({ options }: { options: [string, () => void][] }) {
+  const other = React.useContext(Other);
+  return (
+    <View style={{ flexDirection: 'row', gap: 6, flexWrap: 'wrap', paddingLeft: 36 }}>
+      {options.map(([label, f]) => <Chip key={label} height={36} onPress={f}>{label}</Chip>)}
+      <Chip height={36} bg="transparent" color={tokens.sub} onPress={other}>{tx('Anders …', 'Something else …')}</Chip>
+    </View>
+  );
+}
+const shadow = { boxShadow: '0 1px 2px rgba(22,35,42,0.06), 0 4px 14px rgba(22,35,42,0.08)' } as any;
+
+/** Where am I, and where does the dock sit there. */
+function useWhere(): { ctx: Ctx; tab: boolean; lift: number; chat?: boolean } | null {
+  const path = usePathname();
+  const active = useStore((s) => s.activeList);
+  // The family chat (Julian 29.10.): the field is always there, a sentence becomes a card in the log.
+  if (path === '/chat') return { ctx: { kind: 'kalender' }, tab: false, lift: 0, chat: true };
+  if (path === '/kalender' || path === '/eingang') return { ctx: { kind: 'kalender' }, tab: true, lift: 0 };
+  if (path === '/listen') return { ctx: { kind: 'liste', id: active }, tab: true, lift: 0 };
+  const t = path.match(/^\/termin\/(.+)$/);
+  if (t) return { ctx: { kind: 'termin', id: decodeURIComponent(t[1]) }, tab: false, lift: 0 };
+  // Above the "Liste anlegen" button.
+  if (path === '/liste-neu') return { ctx: { kind: 'liste-neu' }, tab: false, lift: 74 };
+  return null;
+}
+
+/** The two answers to a receipt: take it back, or it is fine. */
+function Decide({ onUndo, onOk }: { onUndo: () => void; onOk: () => void }) {
+  return (
+    <View style={{ flexDirection: 'row', gap: 8 }}>
+      <PressScale onPress={onUndo} style={{ flex: 1, height: 44, borderRadius: 999, backgroundColor: tokens.chipBg, alignItems: 'center', justifyContent: 'center' }}>
+        <Txt size={15} weight={600}>{tx('Rückgängig', 'Undo')}</Txt>
+      </PressScale>
+      <PressScale onPress={onOk} style={{ flex: 1, height: 44, borderRadius: 999, backgroundColor: tokens.ink, alignItems: 'center', justifyContent: 'center' }}>
+        <Txt size={15} weight={600} color={tokens.onInk}>{tx('Passt', 'Done')}</Txt>
+      </PressScale>
+    </View>
+  );
+}
+
+/** The tick that opens every receipt. */
+function Tick() {
+  return (
+    <Animated.View entering={CALM} style={{ width: 34, height: 34, borderRadius: 999, backgroundColor: tokens.done, alignItems: 'center', justifyContent: 'center' }}>
+      <LineIcon name="check" size={18} color={tokens.onInk} stroke={2.8} />
+    </Animated.View>
+  );
+}
+
+/**
+ * Receipt for lists and tasks (Julian 27.10.: "es darf kein Zweifel bleiben,
+ * was von der Maschine ausgeführt wird"): one sentence with exactly what was
+ * done, who else sees it, and undo.
+ */
+function DoneCard({ text, sub, said, onUndo, onOk }: { text: string; sub?: string; said: string; onUndo?: () => void; onOk: () => void }) {
+  return (
+    <View style={{ gap: 14 }}>
+      <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 12 }}>
+        <Tick />
+        <View style={{ flex: 1, gap: 3 }}>
+          <Txt size={17} line={22} weight={600}>{text}</Txt>
+          <Txt size={13} line={18} color={tokens.sub} numberOfLines={2}>{[sub, quote(said)].filter(Boolean).join(' ')}</Txt>
+        </View>
+      </View>
+      <Decide onUndo={onUndo ?? onOk} onOk={onOk} />
+    </View>
+  );
+}
+
+const nextWho = (w: Who): Who => (w === 'J' ? 'T' : w === 'T' ? 'both' : 'J');
+
+/** Receipt for a new Termin: what landed, every part tappable to fix it right here. */
+function EventCard({ e, needsTime, ask, suggest, onSuggest, onAllDay, onUndo, onOk }: { e: CalEvent; needsTime?: boolean; ask?: string; suggest?: Suggest; onSuggest: (yes: boolean) => void; onAllDay: () => void; onUndo: () => void; onOk: () => void }) {
+  const live = useStore((s) => s.events.find((x) => x.id === e.id));
+  // Julian 30.10.: the time question had a start only. After the start comes "Bis wann?".
+  const [askEnd, setAskEnd] = useState(false);
+  if (!live) return null;
+  const pick = (w: Who) => { haptics.select(); actions.setEventWho(e.id, w); };
+  const plus = (t: string, min: number) => { const m = Math.min(23 * 60 + 59, Number(t.slice(0, 2)) * 60 + Number(t.slice(3)) + min); return `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`; };
+  const at = (t: string) => {
+    haptics.select();
+    actions.updateEvent(e.id, { start: t, end: plus(t, 60), allDay: false });
+    setAskEnd(true);
+  };
+  const until = (t: string | null) => { haptics.select(); actions.updateEvent(e.id, { end: t ?? undefined }); setAskEnd(false); };
+  const open = () => router.push(`/termin/${e.id}`);
+  const time = live.allDay ? tx('ganztägig', 'all day') : live.end ? tx(`${hm(live.start)} bis ${hm(live.end)}`, `${hm(live.start)} to ${hm(live.end)}`) : hm(live.start);
+  const who = live.who === 'both' ? tx('Beide', 'Both') : live.who ? persons[live.who].name : null;
+  return (
+    <Animated.View entering={FadeIn.duration(220)} style={{ gap: 14 }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+        <Animated.View entering={CALM}><Tile name={live.icon} size={52} radius={16} /></Animated.View>
+        <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+            <LineIcon name="check" size={13} color={tokens.done} stroke={2.8} />
+            <Txt size={12} weight={600} tracking={0.6} color={tokens.done}>{tx('IM KALENDER EINGETRAGEN', 'ADDED TO THE CALENDAR')}</Txt>
+          </View>
+          <Txt size={19} line={24} weight={600} numberOfLines={2}>{live.title}</Txt>
+        </View>
+      </View>
+      <View style={{ flexDirection: 'row', gap: 6, flexWrap: 'wrap' }}>
+        <Chip height={36} onPress={open}>{dayLabel(live.date)}</Chip>
+        {needsTime && live.allDay ? null : <Chip height={36} onPress={open}>{time}</Chip>}
+        {who ? (
+          <Chip height={36} bg={live.who === 'both' ? tokens.doneSoft : persons[live.who as 'J' | 'T'].tint} color={live.who === 'both' ? tokens.done : persons[live.who as 'J' | 'T'].ink} onPress={() => pick(nextWho(live.who))}>{who}</Chip>
+        ) : null}
+        {live.place ? <Chip height={36} onPress={open}>{live.place}</Chip> : null}
+      </View>
+      {suggest && !live.place ? (
+        <View style={{ gap: 8 }}>
+          <AppLine text={againAt(suggest)} sub={tx(`Das war bei „${suggest.title}“.`, `That was for “${suggest.title}”.`)} />
+          <View style={{ flexDirection: 'row', gap: 6, paddingLeft: 36 }}>
+            <Chip height={36} bg={tokens.doneSoft} color={tokens.done} onPress={() => onSuggest(true)}>{tx('Ja', 'Yes')}</Chip>
+            <Chip height={36} onPress={() => onSuggest(false)}>{tx('Nein', 'No')}</Chip>
+          </View>
+        </View>
+      ) : null}
+      {needsTime && live.allDay ? (
+        <View style={{ gap: 8 }}>
+          {/* Asked, not assumed (Julian 28.10.: "um wie viel Uhr ist das Spiel, oder ganztägig?"). Saying the time works too. */}
+          <AppLine text={ask || tx('Um wie viel Uhr? Oder ganztägig?', 'What time? Or all day?')} />
+          <View style={{ flexDirection: 'row', gap: 6, flexWrap: 'wrap', paddingLeft: 36 }}>
+            {TIMES.map((t) => <Chip key={t} height={36} onPress={() => at(t)}>{hm(t)}</Chip>)}
+            <Chip height={36} onPress={onAllDay}>{tx('Ganztägig', 'All day')}</Chip>
+          </View>
+        </View>
+      ) : null}
+      {askEnd && !live.allDay ? (
+        <View style={{ gap: 8 }}>
+          <AppLine text={tx(`Ab ${hm(live.start)}. Bis wann?`, `From ${hm(live.start)}. Until when?`)} />
+          <View style={{ flexDirection: 'row', gap: 6, flexWrap: 'wrap', paddingLeft: 36 }}>
+            {[60, 90, 120, 180].map((m) => { const t = plus(live.start, m); return <Chip key={m} height={36} bg={live.end === t ? tokens.doneSoft : undefined} color={live.end === t ? tokens.done : undefined} onPress={() => until(t)}>{hm(t)}</Chip>; })}
+            <Chip height={36} onPress={() => until(null)}>{tx('Offen', 'Open end')}</Chip>
+          </View>
+        </View>
+      ) : null}
+      {!live.who ? (
+        <View style={{ gap: 6 }}>
+          <Txt size={15} weight={600}>{tx('Wer geht?', 'Who\'s going?')}</Txt>
+          <View style={{ flexDirection: 'row', gap: 6, flexWrap: 'wrap' }}>
+            <Chip icon={<Avatar p="J" size={18} />} onPress={() => pick('J')}>{persons.J.name}</Chip>
+            <Chip icon={<Avatar p="T" size={18} />} onPress={() => pick('T')}>{persons.T.name}</Chip>
+            <Chip icon={<Pair size={16} ring={tokens.chipBg} />} onPress={() => pick('both')}>{tx('Beide', 'Both')}</Chip>
+          </View>
+        </View>
+      ) : null}
+      <Decide onUndo={onUndo} onOk={onOk} />
+    </Animated.View>
+  );
+}
+
+function AnswerCard({ r }: { r: Extract<Result, { kind: 'answer' }>['reply'] }) {
+  return (
+    <View style={{ gap: 10 }}>
+      <Txt size={16} line={22}>{r.text}</Txt>
+      {r.kind === 'answer' && r.slots?.length ? (
+        <View style={{ gap: 6 }}>
+          {r.slots.map((s) => (
+            <View key={s.date} style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+              <Pair size={18} ring={tokens.row} />
+              <Txt size={15} weight={600} style={{ width: 92 }}>{dayLabel(s.date)}</Txt>
+              <Txt size={15} color={tokens.sub}>{slotLine(s)}</Txt>
+            </View>
+          ))}
+        </View>
+      ) : null}
+      {r.kind === 'answer' && r.events?.length ? (
+        <View style={{ gap: 6 }}>
+          {r.events.map((e) => (
+            <PressScale key={e.id} onPress={() => router.push(`/termin/${e.id}`)} style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+              <Owner who={e.who} size={20} />
+              <Txt size={15} weight={600} style={{ width: 92 }}>{`${dayLabel(e.date)}${e.allDay ? '' : ' ' + hm(e.start)}`}</Txt>
+              <Txt size={15} color={tokens.sub} numberOfLines={1} style={{ flex: 1 }}>{e.title}</Txt>
+            </PressScale>
+          ))}
+        </View>
+      ) : null}
+    </View>
+  );
+}
+
+/** One exchange on the card: what was said, and what the app answered or asked. */
+type Line = { said: string; app?: string };
+
+/**
+ * The card as a short conversation (Julian 28.10.: "die Konversation müsste
+ * weitergehen"). Your sentences on the right, the app's question under them.
+ */
+function Thread({ lines, cut }: { lines: Line[]; cut?: boolean }) {
+  return (
+    <View style={{ gap: 10 }}>
+      {lines.map((l, i) => {
+        const open = cut && i === lines.length - 1;
+        return (
+          <View key={i} style={{ gap: 10 }}>
+            <View style={{ alignSelf: 'flex-end', maxWidth: '86%', backgroundColor: open ? tokens.chipBg : tokens.ink, borderRadius: 18, borderBottomRightRadius: 6, paddingHorizontal: 13, paddingVertical: 9 }}>
+              <Txt size={15} line={20} color={open ? tokens.sub : tokens.onInk}>{open ? `${l.said.replace(/[.…\s]+$/, '')} …` : l.said}</Txt>
+            </View>
+            {l.app ? <AppLine text={l.app} /> : null}
+          </View>
+        );
+      })}
+    </View>
+  );
+}
+
+function AppLine({ text, sub }: { text: string; sub?: string }) {
+  return (
+    <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 10 }}>
+      <View style={{ width: 26, height: 26, borderRadius: 999, backgroundColor: tokens.doneSoft, alignItems: 'center', justifyContent: 'center' }}>
+        <View style={{ width: 8, height: 8, borderRadius: 999, backgroundColor: tokens.done }} />
+      </View>
+      <View style={{ flex: 1, gap: 2, paddingTop: 2 }}>
+        <Txt size={16} line={21} weight={600}>{text}</Txt>
+        {sub ? <Txt size={13} line={18} color={tokens.sub}>{sub}</Txt> : null}
+      </View>
+    </View>
+  );
+}
+
+function Quiet({ label, onPress }: { label: string; onPress: () => void }) {
+  return (
+    <PressScale onPress={onPress} style={{ height: 42, borderRadius: 999, backgroundColor: tokens.chipBg, alignItems: 'center', justifyContent: 'center' }}>
+      <Txt size={15} weight={600}>{label}</Txt>
+    </PressScale>
+  );
+}
+
+/**
+ * A dish on the card (Julian 28.10.: "Bolognese kochen"): which recipe first,
+ * then every ingredient ticked, tap what you already have, add the rest.
+ */
+/** Asked before a dish the family has a recipe for (Julian 28.10.). */
+const noOutline = Platform.OS === 'web' ? ({ outlineStyle: 'none' } as any) : null;
+const keptLine = (k: Recipe) => (k.host ? tx(`Wieder euer Rezept von ${k.host}?`, `Your recipe from ${k.host} again?`) : tx(`Wieder euer Rezept ${k.name}?`, `Your ${k.name} recipe again?`));
+
+function RecipeCard({ r, onVariant, onAdd, onSkip, onKept }: { r: Extract<Result, { kind: 'recipe' }>; onVariant: (v: string) => void; onAdd: (items: string[]) => void; onSkip: () => void; onKept: (yes: boolean) => void }) {
+  const [off, setOff] = useState<Set<string>>(new Set());
+  // Julian 30.10.: "manuelles hinzufügen oder ergänzen fehlt". Own items join the picks; a long press edits one (amount, name).
+  const [own, setOwn] = useState<string[]>([]);
+  const [names, setNames] = useState<Record<string, string>>({});
+  const [editing, setEditing] = useState<string | null>(null);
+  const [draft, setDraft] = useState('');
+  const flip = (x: string) => { haptics.select(); setOff((o) => { const n = new Set(o); if (n.has(x)) n.delete(x); else n.add(x); return n; }); };
+  const all = [...r.picks, ...own];
+  const label = (x: string) => names[x] ?? x;
+  const take = all.filter((x) => !off.has(x)).map(label).filter(Boolean);
+  const commit = () => {
+    const t = draft.trim();
+    if (editing === '+') { if (t && !all.includes(t)) { haptics.commit(); setOwn((o) => [...o, t]); } }
+    else if (editing) { if (t) setNames((n) => ({ ...n, [editing]: t })); else setOff((o) => new Set(o).add(editing)); }
+    setEditing(null); setDraft('');
+  };
+  const field = (
+    <TextInput
+      autoFocus value={draft} onChangeText={setDraft} onSubmitEditing={commit} onBlur={commit} returnKeyType="done"
+      placeholder={tx('z.B. 2 Karotten', 'e.g. 2 carrots')} placeholderTextColor={tokens.mute} selectionColor={tokens.select} cursorColor={tokens.ink}
+      style={[{ height: 36, minWidth: 140, paddingHorizontal: 12, borderRadius: 999, borderWidth: 1.5, borderColor: tokens.ink, fontFamily: fonts[600], fontSize: 13, color: tokens.ink }, noOutline]}
+    />
+  );
+  if (r.kept) {
+    return (
+      <View style={{ gap: 10 }}>
+        <AppLine text={keptLine(r.kept.recipe)} sub={tx(`${r.kept.recipe.name}, ${r.kept.recipe.ingredients.length} Zutaten`, `${r.kept.recipe.name}, ${r.kept.recipe.ingredients.length} ingredients`)} />
+        <Picks options={[[tx('Ja', 'Yes'), () => onKept(true)], [tx('Nein, was anderes', 'No, something else'), () => onKept(false)]]} />
+      </View>
+    );
+  }
+  if (r.variants?.length) {
+    return (
+      <View style={{ gap: 10 }}>
+        <AppLine text={r.question ?? ''} sub={tx('Tipp eins an oder sag es, zum Beispiel „klassisch für vier“.', 'Tap one or say it, for example “classic for four”.')} />
+        <Picks options={r.variants.map((v) => [v, () => onVariant(v)] as [string, () => void])} />
+        <Quiet label={tx('Abbrechen', 'Cancel')} onPress={onSkip} />
+      </View>
+    );
+  }
+  return (
+    <View style={{ gap: 12 }}>
+      <AppLine text={all.length ? (r.from ? tx(`${r.dish}${r.from.servings ? `, ${r.from.servings}` : ''}: Was fehlt euch?`, `${r.dish}${r.from.servings ? `, ${r.from.servings}` : ''}: what do you need?`) : tx(`Für ${r.dish} noch dazu?`, `Also for ${r.dish}?`)) : tx(`Für ${r.dish} steht schon alles auf der Liste.`, `Everything for ${r.dish} is already on the list.`)} sub={tx('Tipp weg, was ihr schon habt. Lang drücken ändert.', 'Tap away what you already have. Long press to change.')} />
+      <View style={{ flexDirection: 'row', gap: 6, flexWrap: 'wrap', paddingLeft: 36 }}>
+        {all.map((x) => {
+          if (editing === x) return <React.Fragment key={x}>{field}</React.Fragment>;
+          const on = !off.has(x);
+          return (
+            <PressScale key={x} onPress={() => flip(x)} onLongPress={() => { haptics.select(); setEditing(x); setDraft(label(x)); }} style={{ height: 36, paddingHorizontal: on ? 10.5 : 12, borderRadius: 999, backgroundColor: on ? tokens.doneSoft : tokens.chipBg, borderWidth: on ? 1.5 : 0, borderColor: tokens.done, flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+              {on ? <LineIcon name="check" size={13} color={tokens.done} stroke={2.6} /> : null}
+              <Txt size={13} weight={600} color={on ? tokens.done : tokens.mute}>{label(x)}</Txt>
+            </PressScale>
+          );
+        })}
+        {editing === '+' ? field : (
+          <Chip height={36} icon={<LineIcon name="plus" size={13} color={tokens.ink} stroke={2.4} />} onPress={() => { haptics.select(); setEditing('+'); setDraft(''); }}>{tx('Ergänzen', 'Add more')}</Chip>
+        )}
+      </View>
+      {r.have?.length ? (
+        <View style={{ flexDirection: 'row', gap: 6, flexWrap: 'wrap', alignItems: 'center', paddingLeft: 36 }}>
+          <Txt size={13} color={tokens.sub}>{tx('Habt ihr schon:', 'Already at home:')}</Txt>
+          {r.have.map((x) => (
+            <View key={x} style={{ height: 30, paddingHorizontal: 12, borderRadius: 999, backgroundColor: tokens.chipBg, justifyContent: 'center' }}>
+              <Txt size={13} color={tokens.mute} strike>{x}</Txt>
+            </View>
+          ))}
+        </View>
+      ) : null}
+      <View style={{ flexDirection: 'row', gap: 8 }}>
+        <PressScale onPress={onSkip} style={{ flex: 1, height: 44, borderRadius: 999, backgroundColor: tokens.chipBg, alignItems: 'center', justifyContent: 'center' }}>
+          <Txt size={15} weight={600}>{all.length ? tx('Weglassen', 'Skip') : tx('Passt', 'Done')}</Txt>
+        </PressScale>
+        {all.length ? (
+          <PressScale onPress={() => onAdd(take)} style={{ flex: 1, height: 44, borderRadius: 999, backgroundColor: take.length ? tokens.ink : tokens.chipBg, alignItems: 'center', justifyContent: 'center' }}>
+            <Txt size={15} weight={600} color={take.length ? tokens.onInk : tokens.mute}>{tx(`${take.length} hinzufügen`, `Add ${take.length}`)}</Txt>
+          </PressScale>
+        ) : null}
+      </View>
+    </View>
+  );
+}
+
+type Turn = { id: number; said: string; result: Result; lines: Line[] };
+
+export default function Dock() {
+  const where = useWhere();
+  // Einfache Version (Julian 30.10.: wanted, only not its tab row): no pills, no Eintragen/Nachricht switch.
+  const simple = useSimple();
+  const insets = useSafeAreaInsets();
+  const kb = useKeyboardInset();
+  const typing = useTyping();
+  const { width: W, height: H } = useWindowDimensions();
+  const [turn, setTurn] = useState<Turn | null>(null);
+  const [h, setH] = useState(0);
+  const scroller = useRef<ScrollView>(null);
+  /** Bumped to open the mic again after the card asks something, only if the last sentence was spoken. */
+  const [listenKey, setListenKey] = useState(0);
+  const [focusKey, setFocusKey] = useState(0);
+  const other = React.useCallback(() => { haptics.select(); setFocusKey((k) => k + 1); }, []);
+  const spoke = useRef(false);
+  const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
+  /** Counts sentences, so a slow answer for an older one never lands. */
+  const heard = useRef(0);
+  // What the app says back follows the language of the sentence (Julian 29.10.).
+  const talkLang = useRef<Lang | null>(null);
+  const later = (ms: number, f: () => void) => timers.current.push(setTimeout(() => inLang(talkLang.current, f), ms));
+  const path = usePathname();
+  const talking = useTalkOpen();
+  // Julian 30.10. 21:52 "super simpel": the field is always there, on every screen, right above the tabs.
+  const shown = true;
+  /** Chat only: Eintragen makes cards, Nachricht just writes to the family. */
+  const [mode, setMode] = useState<'card' | 'msg'>('card');
+  // The bubble opened the field: the mic starts right away.
+  useEffect(() => { if (talking) setListenKey((k) => k + 1); }, [talking]);
+  useEffect(() => {
+    if (!talking) return;
+    const sub = BackHandler.addEventListener('hardwareBackPress', () => { setTalkOpen(false); setTurn(null); light(null); return true; });
+    return () => sub.remove();
+  }, [talking]);
+  const full = W - 28;
+
+  // A card belongs to the screen it was made on.
+  useEffect(() => { setTurn(null); }, [path]);
+  // Tab screens already leave room for the tabs; the chat scrolls past both.
+  // Julian 31.10. 15:40: with the tabs folded into the handle, the field drops into their place.
+  const folded = useNavFolded();
+  useEffect(() => { setDockSpace(where && shown ? h + (where.chat ? (folded ? 0 : NAV_H + 10) : where.tab ? 0 : 8) : 0); }, [h, !!where, shown, folded]);
+  useEffect(() => () => timers.current.forEach(clearTimeout), []);
+  // Shared to FamCal from the browser or another app (Julian 28.10.): as if typed into the field.
+  const hearRef = useRef<(raw: string) => void>(() => {});
+  // A shared screenshot becomes a list offer (Julian 29.10.), never a list by itself.
+  useEffect(() => onShared((text) => hearRef.current(text), (uri) => router.push({ pathname: '/bild-liste', params: { uri } })), []);
+  useEffect(() => onSayInApp((text) => hearRef.current(text)), []);
+
+  // Examples only while the calendar is still empty; after that they are clutter (Julian 27.10.).
+  const onTabs = !!where && (where.tab || !!where.chat);
+  const above = folded && onTabs ? Math.max(insets.bottom, 12) + 10 : navTop(insets.bottom) + 10;
+  // Typing hides the tabs, so the field drops into their place right above the keyboard.
+  const bottom = !where ? 0 : kb > 0 ? kb + 8 : onTabs ? (typing && Platform.OS === 'web' ? Math.max(insets.bottom, 12) + 10 : above) : insets.bottom + 12 + where.lift;
+  useEffect(() => { setDockTop(where ? bottom + (shown ? h : 0) : 0); }, [bottom, h, !!where, shown]);
+  // Folding or opening the tabs moves the field with a soft spring (keep2read: k 250, c 27); the keyboard moves it at once.
+  const bAnim = useSharedValue(bottom);
+  const wasFolded = useRef(folded);
+  useEffect(() => {
+    const spring = wasFolded.current !== folded;
+    wasFolded.current = folded;
+    bAnim.value = spring ? withSpring(bottom, { stiffness: 250, damping: 27, mass: 1 }) : bottom;
+  }, [bottom, folded]);
+  const bStyle = useAnimatedStyle(() => ({ bottom: bAnim.value }));
+
+  if (!where) return null;
+  const origin = { x: W - 14 - 6 - 24, y: H - bottom - 6 - 24 };
+  // On tabs the nav stays on top of the fade, it starts just above it.
+  // Above a footer button (liste-neu) the fade starts at the field, so the button stays clear.
+  // On the tabs the bar paints its own calm ground, so the fade starts at its top.
+  const fadeFrom = kb || (typing && Platform.OS === 'web') ? 0 : onTabs ? (folded ? 0 : above - 10) : where.lift ? bottom - 8 : 0;
+  const kind = where.ctx.kind;
+
+  const ask = () => { if (spoke.current) setListenKey((k) => k + 1); };
+  /** Shows a card that waits for the next sentence; nothing changes in the calendar. */
+  const hold = (said: string, result: Result, lines: Line[]) => {
+    setVeil({ phase: 'off', onCancel: undefined });
+    haptics.select();
+    setTurn({ id: Date.now(), said, result, lines });
+    ask();
+  };
+
+  const hear = (raw: string, how?: { voice?: boolean }) => {
+    // One message, then back to Eintragen, so the next sentence is never lost as a plain message (Julian 29.10.).
+    if (where.chat && mode === 'msg') { haptics.success(); addMessage(raw.trim()); setMode('card'); return; }
+    // Simple: no switch; "Sag Sophia, ich komme später" is a message by itself.
+    const note = simple && where.chat && !turn ? messageOf(raw, [persons.J.name, persons.T.name, ...get().people.map((x) => x.name)]) : null;
+    if (note) { haptics.success(); addMessage(note); return; }
+    // "Frag Sophia, ob Samstag passt": a Ja/Nein card for the partner, no AI needed (Julian 29.10.).
+    if (where.chat && !turn && addAsk(raw)) { haptics.success(); return; }
+    talkLang.current = spokenLang(raw);
+    if (!where.chat) openPeek();
+    return inLang(talkLang.current, () => hearNow(raw, how));
+  };
+  const hearNow = (raw: string, how?: { voice?: boolean }) => {
+    const open = turn;
+    timers.current.forEach(clearTimeout);
+    timers.current = [];
+    light(null);
+    setTurn(null);
+    spoke.current = !!how?.voice;
+    const ctx = where.ctx;
+    const n = ++heard.current;
+    // After a cut-off sentence the new words carry on the old one.
+    const said = open?.result.kind === 'cut' ? `${open.said.replace(/[.…\s]+$/, '')} ${raw}` : raw;
+    // A Termin deleted meanwhile has nothing left to change: the sentence starts fresh.
+    const gone = open?.result.kind === 'event' && !get().events.some((e) => e.id === (open.result as { event: CalEvent }).event.id);
+    const before = open && open.result.kind !== 'cut' && (ctx.kind === 'kalender' || open.result.kind === 'recipe') && !gone ? open.lines : [];
+    let lines: Line[] = [...before, { said }];
+    loadRecipes();
+    const link = linkIn(raw);
+    if (link) return readLink(raw, link, n);
+    // The assistant reads half sentences itself ("Ich hole Karlo um 5 ab" ends like a cut-off one); the rule is only for without it.
+    const agent = agentOn() && canUnderstand() && ctx.kind !== 'liste-neu';
+    if (!agent && cutOff(said)) return hold(said, { kind: 'cut' }, [{ said }]);
+    if (open?.result.kind === 'recipe' && open.result.kept && raw.split(/\s+/).length <= 3 && (YES.test(raw) || NO.test(raw))) {
+      setTurn(open);
+      return answerKept(YES.test(raw), raw);
+    }
+    // "Ja" or "Nein" to "Wieder bei …?" needs no Claude.
+    if (open?.result.kind === 'event' && open.result.suggest && raw.split(/\s+/).length <= 3 && (YES.test(raw) || NO.test(raw))) {
+      setTurn(open);
+      return answerSuggest(YES.test(raw), raw);
+    }
+
+    // Der Assistent (Julian 30.10.): Claude with every function of the app; unclear means a question first, clear means done.
+    if (agent) {
+      const talk = open && open.result.kind !== 'cut' && !gone ? [...open.lines, { said }] : [{ said }];
+      // Julian 30.10.: no half guess by the old rules when the assistant cannot answer. Say so; the card still offers Termin or Einkauf.
+      return thinkAgent(said, n, talk, () => hold(said, { kind: 'unclear', text: tx('Ich komme gerade nicht an den Assistenten. Sag es gleich nochmal oder tipp an, wohin es gehört.', "I can't reach the assistant right now. Say it again in a moment or tap where it belongs.") }, talk));
+    }
+
+    // A card is still open: the sentence answers or changes it (Julian 28.10.).
+    const r0 = open?.result;
+    const single = r0?.kind === 'event' ? r0.event : null;
+    const many = r0?.kind === 'done' && r0.events?.length ? r0 : null;
+    const follow = before.length > 0;
+    if (follow && canUnderstand()) {
+      const convo = { history: before, draft: single ? draftOf([single.id]) : many ? draftOf(many.events!) : undefined };
+      think(said, n, (r) => {
+        if (r?.kind === 'cut') return hold(said, { kind: 'cut' }, [{ said }]);
+        if (single && r?.kind === 'added' && !r.more?.length) {
+          const made = get().events.find((e) => e.id === single.id) ?? single;
+          const p = revisePlan(made, r);
+          if (p) return play(p, said, false, undefined, lines);
+          return hold(said, { kind: 'event', event: made }, [...before, { said, app: tx('Das steht schon so drin.', "That's already how it is.") }]);
+        }
+        if (single && (!r || r.kind === 'unclear')) return play(reviseOffline(single.id, said), said, false, undefined, lines);
+        // The new reading replaces what the card had made, unless Claude says it is something new (Julian 30.10.).
+        const fresh = r?.kind === 'added' && r.follows === false;
+        if (!fresh && (r?.kind === 'added' || r?.kind === 'liste')) {
+          if (single) actions.removeEvent(single.id);
+          if (many) many.undo?.();
+        }
+        land(r, said, lines);
+      }, convo);
+      return;
+    }
+    // Without Claude only short changes count as follow-ups; a new thought ("Wir sind seit Sonntag") starts fresh.
+    if (follow && single && !newThought(said)) return play(reviseOffline(single.id, said), said, true, undefined, lines);
+    if (follow && single) lines = [{ said }];
+
+    const pending = r0?.kind === 'answer' && r0.reply.kind === 'ask' ? { title: r0.reply.title, who: r0.reply.who } : null;
+    // Julian 30.10.: a sentence right after the last one may belong to it ("Jeden Mittwoch davon bin ich im Büro"). Claude decides.
+    const recent = where.chat && !follow && !pending && thinksOnline(ctx, said, pending) ? recentMade() : null;
+    if (recent) {
+      const offline = () => play(plan(ctx, said, pending), said, false, undefined, lines);
+      think(said, n, (r) => {
+        if (r?.kind !== 'added' || !r.follows) return land(r, said, lines, offline);
+        const old = recent.ids.map((id) => get().events.find((e) => e.id === id)).filter(Boolean) as CalEvent[];
+        const p = replyPlan(r, new Set(recent.ids));
+        // The old entries go only when the new ones land; one Rückgängig brings them back.
+        play({ ...p, run: () => {
+          old.forEach((e) => actions.removeEvent(e.id));
+          markChanged(recent.entry.id);
+          const out = p.run();
+          const back = () => { old.forEach((e) => actions.addEvent(e)); markChanged(recent.entry.id, false); };
+          const res = out.result;
+          if (res?.kind === 'done') return { ...out, result: { ...res, undo: () => { res.undo?.(); back(); } } };
+          if (res?.kind === 'event') return { ...out, lit: [res.event.id], result: { kind: 'done', text: tx(`„${res.event.title}“ geändert.`, `“${res.event.title}” changed.`), events: [res.event.id], undo: () => { actions.removeEvent(res.event.id); back(); } } };
+          return out;
+        } }, said, false, undefined, lines);
+      }, { history: [{ said: recent.entry.said, app: recent.entry.text }], draft: draftOf(recent.ids), recent: true });
+      return;
+    }
+    if (thinksOnline(ctx, said, pending)) {
+      // Claude first (Julian 28.10.: the rules' half guess must never land).
+      // A dish without Claude would become a strange Termin ("Wann ist Bolognese kochen?"): say so instead.
+      const slow = () => hold(said, { kind: 'done', note: true, text: tx('Das Rezept konnte ich gerade nicht nachsehen. Sag es bitte gleich noch einmal.', "I couldn't look up the recipe just now. Please say it again in a moment.") }, lines);
+      think(said, n, (r) => land(r, said, lines, dishy(said) ? slow : () => play(plan(ctx, said, pending), said, false, undefined, lines)));
+      return;
+    }
+    play(plan(ctx, said, pending), said, true, undefined, lines);
+  };
+  hearRef.current = hear;
+
+  /**
+   * "Ich verstehe …" while Claude reads, with Halt. Only offline or after
+   * FIRST_MS does the fallback answer (null).
+   */
+  const think = (said: string, n: number, then: (r: Said | null) => void, convo?: Convo) => {
+    const stop = () => { if (heard.current === n) heard.current++; setVeil({ phase: 'off', onCancel: undefined }); haptics.select(); };
+    setVeil({ phase: 'think', inline: true, origin, target: null, lines: [tx('Ich verstehe …', 'Understanding …')], shown: 0, said, head: undefined, onCancel: stop, typing: false, reply: undefined });
+    // Julian 28.10.: waiting is fine when you see what is happening. Each piece Claude has read shows up at once.
+    const glimpse = (g: Glimpse) => { if (heard.current !== n) return; const l = glimpseLine(g); if (l) setVeil({ lines: [tx('Ich verstehe …', 'Understanding …'), l], shown: 1 }); };
+    const late = new Promise<null>((r) => setTimeout(() => r(null), FIRST_MS));
+    Promise.race([claudeSays(said, convo, glimpse), late]).then((r) => { if (heard.current === n) inLang(talkLang.current, () => then(r)); });
+  };
+
+  /** The assistant reads; a question back opens the card and listens, everything else plays like any plan. */
+  const thinkAgent = (said: string, n: number, talk: Line[], fallback: () => void) => {
+    const stop = () => { if (heard.current === n) heard.current++; setVeil({ phase: 'off', onCancel: undefined }); haptics.select(); };
+    // In the chat it answers like a person (Julian 30.10.): typing dots, then its sentence, then what it does.
+    // Everywhere now (Julian 31.10.: "Wie im Chat nur außerhalb"): outside the chat the same card lays over the screen.
+    const chat = true;
+    setVeil({ phase: 'think', inline: chat, origin, target: null, lines: chat ? [] : [tx('Ich verstehe …', 'Understanding …')], shown: 0, said, head: undefined, onCancel: stop, typing: chat, reply: undefined });
+    const onSay = (say: string) => { if (heard.current !== n) return; if (chat) setVeil({ reply: say }); else setVeil({ lines: [say], shown: 0 }); };
+    askAgent(said, talk, screenOf(where.ctx), onSay)
+      .then((r) => (promisesOnly(r, said) ? askAgent(said, [...talk.slice(0, -1), { said, app: `${String(r!.actions[0]?.input?.text ?? "")} (${RETRY_NOTE})` }, { said }], screenOf(where.ctx)).then((r2) => r2 ?? r) : r))
+      .then((r) => {
+      if (heard.current !== n) return;
+      inLang(talkLang.current, () => {
+        if (!r) { setVeil({ typing: false, reply: undefined }); return fallback(); }
+        const p = agentPlan(r, said);
+        if (!p) { setVeil({ typing: false }); return hold(said, { kind: 'unclear', text: tx('Das habe ich nicht verstanden.', "I didn't get that.") }, talk); }
+        if ('ask' in p) {
+          if (chat) addSay(said, p.ask);
+          setVeil({ typing: false });
+          return hold(said, { kind: 'answer', reply: { kind: 'answer', text: p.ask } }, [...talk.slice(0, -1), { said, app: p.ask }]);
+        }
+        // Its sentence always shows (Julian 30.10.): a card that still asks something (time, place) keeps it as a message above.
+        const say = r.actions.find((x) => x.tool === 'antworten')?.input?.text;
+        // It rides on the card itself; a second entry showed the sentence twice (Julian 30.10.: "Chat zeigt meine Nachricht doppelt an").
+        const keep = (out: ReturnType<Plan['run']>) => {
+          const res = out.result;
+          if (!chat || typeof say !== 'string' || !say.trim() || !res || res.kind === 'answer') return out;
+          if (res.kind === 'event' || res.kind === 'done') { if (!res.say) res.say = say.trim(); }
+          else addSay(said, say.trim());
+          return out;
+        };
+        play({ ...p, run: () => keep(p.run()) }, said, false, undefined, talk);
+      });
+    });
+  };
+
+  /** Whatever Claude made of it lands; cut off and unclear only open the card. */
+  const land = (r: Said | null, said: string, lines: Line[], fallback?: () => void) => {
+    if (!r) return fallback ? fallback() : hold(said, { kind: 'unclear', text: tx('Das habe ich nicht verstanden.', "I didn't get that.") }, lines);
+    if (r.kind === 'cut') return hold(said, { kind: 'cut' }, [{ said }]);
+    if (r.kind === 'unclear') return hold(said, { kind: 'unclear', text: r.text }, lines);
+    // A list that does not exist yet is offered first, unless the sentence asked for it (Julian 29.10.).
+    if (r.kind === 'liste' && r.list === 'neu' && !asksNewList(said)) return hold(said, { kind: 'newList', name: r.name || tx('Neue Liste', 'New list'), said: r }, lines);
+    if (r.kind === 'liste') return play(listFromClaude(r, said, where.ctx.kind === 'liste' ? where.ctx.id : undefined), said, false, undefined, lines);
+    play(replyPlan(r), said, false, undefined, lines);
+  };
+
+  const play = (p: Plan, said: string, fresh: boolean, after?: (out: ReturnType<Plan['run']>) => void, lines: Line[] = [{ said }]) => {
+    const n = heard.current;
+    // "Halt, anders": nothing has happened yet, so stopping leaves everything as it was.
+    const stop = () => {
+      timers.current.forEach(clearTimeout);
+      timers.current = [];
+      if (heard.current === n) heard.current++;
+      setVeil({ phase: 'off', onCancel: undefined });
+      haptics.select();
+    };
+    // Julian 31.10. 17:02: thinking, then straight to the final state. The assistant already said what it does; ticking the
+    // steps off one by one before the card showed them unticked was one step too many. Undo stays on the card.
+    const quick = agentOn();
+    const steps = quick ? [] : p.steps;
+    setVeil(fresh ? { phase: 'think', inline: true, origin, target: null, lines: steps, shown: 0, said, head: quick ? undefined : p.head, onCancel: p.head && !quick ? stop : undefined, typing: false, reply: undefined } : { lines: steps, shown: 0, head: quick ? undefined : p.head, onCancel: p.head && !quick ? stop : undefined });
+    steps.forEach((_, i) => later(450 + STEP_MS * i, () => { setVeil({ shown: i + 1 }); haptics.select(); }));
+    later(quick ? 0 : 450 + STEP_MS * steps.length + 150, () => {
+      setVeil({ onCancel: undefined });
+      const out = p.run();
+      // In the chat the card lands in the log and we stay (Julian 29.10.).
+      const r0 = out.result;
+      // Every sentence lands in the chat log, wherever it was said (Julian 31.10.: "dass der log vollständig bleibt").
+      if (r0?.kind === 'event') addMade(said, [r0.event.id], undefined, () => actions.removeEvent(r0.event.id), undefined, { head: p.head, steps: p.steps }, r0.say, r0.needsTime && r0.event.allDay ? r0.ask || tx('Um wie viel Uhr? Oder ganztägig?', 'What time? Or all day?') : undefined);
+      else if (r0?.kind === 'done' && (!r0.note || r0.say)) addMade(said, out.lit ?? (out.land ? [out.land] : []), r0.text, r0.undo, r0.events, { head: p.head, steps: p.steps }, r0.say);
+      // An answer from the assistant stays in the chat as its message (Julian 30.10.).
+      else if (agentOn() && r0?.kind === 'answer' && r0.reply.kind === 'answer') addSay(said, r0.reply.text);
+      // The card shows what landed over the screen you are on; only a list item on another list still switches (Julian 31.10.).
+      const go = where.chat ? undefined : out.go;
+      if (go && go !== path) router.navigate(go as any);
+      const finish = () => {
+        // Each new row arrives on its own with a tick, then the receipt says what happened.
+        const rows = out.lit?.length ? out.lit : out.land ? [out.land] : [];
+        if (rows.length > 1) lightOneByOne(rows, (i) => (i === rows.length - 1 ? haptics.success() : haptics.select()));
+        else { light(rows.length ? rows : null); haptics.success(); }
+        if (out.result) later(rows.length > 1 ? 260 * rows.length : 120, () => {
+          const res = out.result!;
+          // A question goes under the sentence it answers, and the mic listens again for the answer.
+          const asks = res.kind === 'answer' && res.reply.kind === 'ask';
+          const offer = res.kind === 'event' ? [res.needsTime && res.event.allDay ? res.ask || tx('Um wie viel Uhr? Oder ganztägig?', 'What time? Or all day?') : '', res.suggest && !res.event.place ? againAt(res.suggest) : ''].filter(Boolean).join(' ') : '';
+          const q = asks ? (res as { reply: { text: string } }).reply.text : res.kind === 'recipe' ? (res.kept ? keptLine(res.kept.recipe) : res.question) : offer || undefined;
+          // The chat already shows the card; only a question stays above the field, for whoever asked.
+          // The time question sits in the chat card as options; only a place to confirm still needs the sheet.
+          if (res.kind === 'event' && !(res.suggest && !res.event.place)) return;
+          if (!q && (res.kind === 'event' || (res.kind === 'done' && (!res.note || res.say)) || (res.kind === 'answer' && agentOn()))) return;
+          const all = q ? [...lines.slice(0, -1), { ...lines[lines.length - 1], app: q }] : lines;
+          setTurn({ id: Date.now(), said, result: res, lines: all });
+          if (q) ask();
+        });
+        after?.(out);
+      };
+      later(go && go !== path ? 380 : 90, () => {
+        setVeil({ phase: 'land', target: { x: W / 2, y: H - bottom - 110 }, onLanded: finish });
+      });
+    });
+  };
+
+  const undo = () => {
+    if (turn?.result.kind === 'event') actions.removeEvent(turn.result.event.id);
+    if (turn?.result.kind === 'done') turn.result.undo?.();
+    haptics.select();
+    setTurn(null);
+    light(null);
+  };
+  const ok = () => { haptics.select(); setTurn(null); light(null); setTalkOpen(false); };
+  /** Doubled work (Julian 29.10.): Ersetzen swaps the old blocks, Beide keeps them. */
+  const settleClash = (replace: boolean) => {
+    if (turn?.result.kind !== 'workClash') return;
+    const { incoming, old } = turn.result;
+    const done = settleWork(incoming, old, replace);
+    addMade(turn.said, done.lit, done.text, done.undo, done.events);
+    lightOneByOne(done.lit.slice(0, 12), (i) => (i === Math.min(12, done.lit.length) - 1 ? haptics.success() : haptics.select()));
+    setTurn(null);
+    if (!where.chat) openPeek();
+  };
+  /** Ja takes the earlier place, Nein just drops the question; either way the card stays for more. */
+  const answerSuggest = (yes: boolean, said?: string) => {
+    if (turn?.result.kind !== 'event' || !turn.result.suggest) return;
+    const { event, suggest } = turn.result;
+    haptics.select();
+    if (yes) { actions.updateEvent(event.id, { place: suggest.place }); light(event.id); }
+    const lines = said ? [...turn.lines, { said, app: yes ? tx(`Ort: ${suggest.place}.`, `Place: ${suggest.place}.`) : tx('Gut, ohne Ort.', 'Okay, no place.') }] : turn.lines;
+    setTurn({ ...turn, id: said ? Date.now() : turn.id, lines, result: { ...turn.result, suggest: undefined } });
+  };
+
+  /** The ticked ingredients land on the shopping list, one receipt with undo for all. */
+  const addRecipe = (r: Extract<Result, { kind: 'recipe' }>, items: string[]) => {
+    if (!items.length) return ok();
+    const kept = r.from;
+    if (kept) keepRecipe(kept);
+    const done = addPicks(r.dish, items);
+    addMade(turn?.said ?? r.dish, done.lit, done.text, () => { done.undo?.(); r.undo?.(); });
+    lightOneByOne(done.lit, (i) => (i === done.lit.length - 1 ? haptics.success() : haptics.select()));
+    // The chat card already shows what landed; a short toast is enough (Julian 30.10.: "sehr groß und doppelt").
+    setTurn(null); light(null); toast(done.text, undefined, { kind: 'done' });
+  };
+
+  /** Ja takes the family's recipe, Nein goes on with what Claude suggested (or which recipe). */
+  const answerKept = (yes: boolean, said?: string) => {
+    if (turn?.result.kind !== 'recipe' || !turn.result.kept) return;
+    haptics.select();
+    const r = turn.result;
+    const k = r.kept!;
+    const next: Result = yes ? { ...r, kept: undefined, variants: undefined, question: undefined, picks: k.picks, from: k.recipe } : { ...r, kept: undefined };
+    const app = yes ? tx(`Gut, ${k.recipe.name}.`, `Okay, ${k.recipe.name}.`) : next.kind === 'recipe' && next.variants?.length ? next.question : undefined;
+    const lines = said ? [...turn.lines, { said, app }] : turn.lines;
+    setTurn({ ...turn, id: Date.now(), lines, result: next });
+    if (app && !yes) ask();
+  };
+
+  /** A pasted or shared link: the server reads the recipe, the card offers its ingredients. */
+  const readLink = (said: string, link: string, n: number) => {
+    let host = link;
+    try { host = new URL(link).hostname.replace(/^www\./, ''); } catch { /* shown as is */ }
+    const stop = () => { if (heard.current === n) heard.current++; setVeil({ phase: 'off', onCancel: undefined }); haptics.select(); };
+    setVeil({ phase: 'think', inline: true, origin, target: null, lines: [tx(`Ich lese das Rezept auf ${host} …`, `Reading the recipe on ${host} …`)], shown: 1, said: host, head: undefined, onCancel: stop });
+    const late = new Promise<null>((r) => setTimeout(() => r(null), 20000));
+    Promise.race([recipeFromLink(link), late]).then((res) => {
+      if (heard.current !== n) return;
+      if (res && 'recipe' in res) return play(linkPlan(res.recipe), said, false, undefined, [{ said: host }]);
+      const err = res && 'error' in res ? res.error : undefined;
+      const why = !res ? tx('Die Seite hat zu lange gebraucht.', 'The page took too long.')
+        : err === 'offline' ? tx('Rezeptlinks lese ich nur in der App mit Konto.', 'I can only read recipe links in the app with an account.')
+        : err === 'limit' ? tx('Für heute sind die Sätze aufgebraucht, morgen geht es wieder.', "Today's sentences are used up, tomorrow it works again.")
+        : err === 'no_recipe' ? tx('Auf der Seite habe ich kein Rezept gefunden.', "I couldn't find a recipe on that page.")
+        : tx('Die Seite konnte ich nicht öffnen.', "I couldn't open that page.");
+      setVeil({ phase: 'off', onCancel: undefined });
+      haptics.select();
+      setTurn({ id: Date.now(), said: host, result: { kind: 'done', text: why, note: true }, lines: [] });
+    });
+  };
+
+  /** "Ganztägig" answers the time question; the Termin already is all day. */
+  const allDay = () => {
+    if (turn?.result.kind !== 'event') return;
+    haptics.select();
+    setTurn({ ...turn, result: { ...turn.result, needsTime: false } });
+  };
+
+  /** "Kalender oder Liste?" answered by a tap: the same sentence, now where it belongs. */
+  const pickKind = (said: string, k: 'termin' | 'einkauf' | 'aufgaben') => {
+    haptics.select();
+    setTurn(null);
+    ++heard.current;
+    if (k === 'termin') return play(plan({ kind: 'kalender' }, said, null), said, true);
+    play(listFromClaude({ kind: 'liste', list: k, items: k === 'einkauf' ? splitItems(said) : [said] }), said, true);
+  };
+
+  if (!shown) return null;
+  if (where.chat && !shown) return null;
+  return (
+    <Other.Provider value={other}>
+    {/* The screen fades out under the field, so prompts never sit on text. */}
+    {/* Julian 31.10. 17:02: a short, tight fade (the long soft one covered too much of small screens), solid from just above the card down, so nothing shines through. */}
+    <View pointerEvents="none" style={{ position: 'absolute', left: 0, right: 0, bottom: fadeFrom, height: bottom - fadeFrom + h + 22 }}>
+      <Svg width="100%" height="100%" preserveAspectRatio="none">
+        <Defs>
+          <LinearGradient id="dockfade" x1="0" y1="0" x2="0" y2="1">
+            <Stop offset="0" stopColor={tokens.bg} stopOpacity={0} />
+            <Stop offset={String(Math.min(0.4, 12 / (bottom - fadeFrom + h + 22)))} stopColor={tokens.bg} stopOpacity={0.7} />
+            <Stop offset={String(Math.min(0.6, 20 / (bottom - fadeFrom + h + 22)))} stopColor={tokens.bg} stopOpacity={1} />
+            <Stop offset="1" stopColor={tokens.bg} stopOpacity={1} />
+          </LinearGradient>
+        </Defs>
+        <Rect x="0" y="0" width="100%" height="100%" fill="url(#dockfade)" />
+      </Svg>
+    </View>
+    <Animated.View pointerEvents="box-none" onLayout={(e) => setH(e.nativeEvent.layout.height)} style={[{ position: 'absolute', left: onTabs ? 14 : 18, right: onTabs ? 14 : 18, gap: 10 }, bStyle]}>
+      {where.chat || turn ? null : <Peek />}
+      {turn ? (
+        <Animated.View key={turn.id} entering={FadeInDown.duration(220)} exiting={FadeOut.duration(150)} style={[{ maxHeight: 420, borderRadius: 26, backgroundColor: tokens.row }, shadow]}>
+          <ScrollView ref={scroller} onContentSizeChange={() => scroller.current?.scrollToEnd({ animated: false })} contentContainerStyle={{ padding: 18, gap: 12 }} showsVerticalScrollIndicator={false}>
+            {turn.result.kind === 'cut' ? (
+              <>
+                <Thread lines={turn.lines} cut />
+                <AppLine text={tx('Ich höre weiter zu.', "I'm still listening.")} sub={tx('Was du jetzt sagst, hänge ich an.', "What you say next, I'll add on.")} />
+                <Quiet label={tx('Abbrechen', 'Cancel')} onPress={ok} />
+              </>
+            ) : turn.result.kind === 'workClash' ? (
+              <>
+                <Thread lines={turn.lines} />
+                <AppLine text={clashLine(turn.result.old)} sub={tx('Was soll ich machen?', 'What should I do?')} />
+                <Picks options={[
+                  [tx('Ersetzen', 'Replace'), () => settleClash(true)],
+                  [tx('Beide behalten', 'Keep both'), () => settleClash(false)],
+                ]} />
+                <Quiet label={tx('Abbrechen', 'Cancel')} onPress={ok} />
+              </>
+            ) : turn.result.kind === 'newList' ? (
+              <>
+                <Thread lines={turn.lines} />
+                <AppLine text={tx(`Eine Liste „${turn.result.name}“ gibt es noch nicht. Soll ich sie anlegen?`, `There is no “${turn.result.name}” list yet. Shall I create it?`)} sub={turn.result.said.items.length ? tx(`Mit ${turn.result.said.items.join(', ')}.`, `With ${turn.result.said.items.join(', ')}.`) : undefined} />
+                <Picks options={[
+                  [tx('Ja, anlegen', 'Yes, create it'), () => { const r = (turn.result as Extract<Result, { kind: 'newList' }>).said; const said = turn.said; haptics.select(); setTurn(null); ++heard.current; play(listFromClaude(r, said), said, true); }],
+                  [tx('Nein', 'No'), ok],
+                ]} />
+              </>
+            ) : turn.result.kind === 'unclear' ? (
+              <>
+                <Thread lines={turn.lines} />
+                <AppLine text={turn.result.text} sub={tx('Tipp an, wohin es gehört, oder sag es nochmal anders.', 'Tap where it belongs, or say it another way.')} />
+                <Picks options={[
+                  [tx('Termin', 'Event'), () => pickKind(turn.said, 'termin')],
+                  [tx('Einkaufsliste', 'Shopping list'), () => pickKind(turn.said, 'einkauf')],
+                  ...(HIDDEN.tasks ? [] : [[tx('Aufgabe', 'Task'), () => pickKind(turn.said, 'aufgaben')] as [string, () => void]]),
+                ]} />
+                <Quiet label={tx('Abbrechen', 'Cancel')} onPress={ok} />
+              </>
+            ) : turn.result.kind === 'recipe' ? (
+              <>
+                <Thread lines={turn.lines} />
+                {turn.result.added ? <AppLine text={turn.result.added} /> : null}
+                <RecipeCard r={turn.result} onVariant={(v) => hear(v)} onAdd={(items) => addRecipe(turn.result as Extract<Result, { kind: 'recipe' }>, items)} onSkip={ok} onKept={(yes) => answerKept(yes)} />
+              </>
+            ) : turn.result.kind === 'answer' && turn.result.reply.kind === 'ask' ? (
+              <>
+                <Thread lines={turn.lines} />
+                <Picks options={DAYS().map((d) => [d, () => hear(d)] as [string, () => void])} />
+                <Quiet label={tx('Abbrechen', 'Cancel')} onPress={ok} />
+              </>
+            ) : turn.result.kind === 'answer' ? (
+              <>
+                <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 10 }}>
+                  <Txt size={14} line={20} color={tokens.sub} style={{ flex: 1 }}>{quote(turn.said)}</Txt>
+                  <PressScale accessibilityLabel={tx('Schließen', 'Close')} hitSlop={10} onPress={ok}>
+                    <LineIcon name="x" size={18} color={tokens.mute} />
+                  </PressScale>
+                </View>
+                <AnswerCard r={turn.result.reply} />
+              </>
+            ) : (
+              <>
+                {/* After a follow-up the card shows the conversation that led here. */}
+                {turn.lines.length > 1 ? <Thread lines={turn.lines} /> : null}
+                {turn.result.kind === 'event' ? (
+                  <EventCard e={turn.result.event} needsTime={turn.result.needsTime} ask={turn.result.ask} suggest={turn.result.suggest} onSuggest={answerSuggest} onAllDay={allDay} onUndo={undo} onOk={ok} />
+                ) : turn.result.kind === 'done' && turn.result.note ? (
+                  <View style={{ gap: 10 }}>
+                    <AppLine text={turn.result.text} sub={turn.said} />
+                    <Quiet label={tx('Okay', 'Okay')} onPress={ok} />
+                  </View>
+                ) : turn.result.kind === 'done' ? (
+                  <DoneCard text={turn.result.text} sub={turn.result.sub} said={turn.lines.length > 1 ? '' : turn.said} onUndo={turn.result.undo ? undo : undefined} onOk={ok} />
+                ) : null}
+              </>
+            )}
+          </ScrollView>
+        </Animated.View>
+      ) : null}
+      {where.chat && !simple ? (
+        <View accessibilityRole="radiogroup" style={{ alignSelf: 'flex-start', flexDirection: 'row', padding: 3, borderRadius: 999, backgroundColor: tokens.segBg }}>
+          {(['card', 'msg'] as const).map((m) => (
+            <PressScale key={m} accessibilityRole="radio" accessibilityState={{ checked: mode === m }} onPress={() => { haptics.select(); setMode(m); }} style={{ height: 32, paddingHorizontal: 14, borderRadius: 999, justifyContent: 'center', backgroundColor: mode === m ? tokens.row : 'transparent' }}>
+              <Txt size={13.5} weight={mode === m ? 600 : 400} color={mode === m ? tokens.ink : tokens.sub}>{m === 'card' ? tx('Eintragen', 'Add') : tx('Nachricht', 'Message')}</Txt>
+            </PressScale>
+          ))}
+        </View>
+      ) : null}
+      <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 8 }}>
+      <Animated.View style={[{ alignSelf: 'flex-end', alignItems: 'flex-end', overflow: 'hidden', borderRadius: 30 }, { width: onTabs ? W - 28 : full }]}>
+      <Animated.View style={{ width: onTabs ? W - 28 : full }}>
+      <TalkBar
+        key={onTabs ? 'tabs' : kind}
+        split={onTabs}
+        onSend={hear}
+        onPlus={() => router.push('/neu')}
+        spoken={SPOKEN[kind]}
+        listenKey={listenKey}
+        focusKey={focusKey}
+        placeholder={where.chat && mode === 'msg' ? tx('Nachricht an die Familie …', 'Message to the family …') : turn?.result.kind === 'cut' ? tx('Sprich einfach weiter …', 'Just keep talking …') : onTabs && !turn ? tx('Sprich oder schreib einfach …', 'Just say or type it …') : turn && kind === 'kalender' ? tx('Antworten oder ergänzen …', 'Reply or add …') : PLACEHOLDER[kind]}
+      />
+      </Animated.View>
+      </Animated.View>
+      </View>
+    </Animated.View>
+    </Other.Provider>
+  );
+}

@@ -1,0 +1,106 @@
+{
+  "expo": {
+    "name": "FamCal",
+    "slug": "famcal",
+    "version": "0.1.0",
+    "scheme": "famcal",
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+    "backgroundColor": "#F5F5F4",
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.julian.famcal",
+      "usesAppleSignIn": true
+    },
+    "android": {
+      "package": "com.julian.famcal",
+      "adaptiveIcon": {
+        "backgroundColor": "#F5F5F4"
+      }
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "single",
+      "name": "FamCal",
+      "themeColor": "#F5F5F4"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-font",
+      "expo-localization",
+      [
+        "expo-calendar",
+        {
+          "calendarPermission": "FamCal zeigt eure Termine neben den Familienterminen, damit nichts doppelt ist."
+        }
+      ],
+      "expo-apple-authentication",
+      [
+        "expo-speech-recognition",
+        {
+          "microphonePermission": "FamCal hört zu, wenn du auf das Mikro tippst, und macht aus deinem Satz einen Termin.",
+          "speechRecognitionPermission": "Dein Satz wird auf dem Handy in Text umgewandelt, damit FamCal ihn eintragen kann.",
+          "androidSpeechServicePackages": [
+            "com.google.android.googlequicksearchbox"
+          ]
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "defaultChannel": "termine"
+        }
+      ],
+      [
+        "expo-share-intent",
+        {
+          "androidIntentFilters": [
+            "text/*",
+            "image/*"
+          ]
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "FamCal liest Listen aus deinen Screenshots. Das Bild bleibt auf dem Handy.",
+          "cameraPermission": "FamCal liest Listen und Briefe, die du fotografierst."
+        }
+      ],
+      [
+        "react-native-android-widget",
+        {
+          "widgets": [
+            {
+              "name": "Heute",
+              "label": "FamCal Heute",
+              "description": "Heute und morgen auf einen Blick",
+              "minWidth": "250dp",
+              "minHeight": "140dp",
+              "targetCellWidth": 4,
+              "targetCellHeight": 2,
+              "updatePeriodMillis": 1800000,
+              "resizeMode": "horizontal|vertical"
+            }
+          ]
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": false
+    },
+    "runtimeVersion": {
+      "policy": "fingerprint"
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "8e6b21e8-8233-4246-b477-94244b55771f"
+      }
+    },
+    "owner": "123dermensch",
+    "updates": {
+      "url": "https://u.expo.dev/8e6b21e8-8233-4246-b477-94244b55771f"
+    }
+  }
+}
