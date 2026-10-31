@@ -276,9 +276,12 @@ export function Seg<T extends string>({ items, value, onChange, height = 34 }: {
   const id = items.map((it) => it.key).join('|');
   if (!segAt.has(id)) segAt.set(id, makeMutable(idx));
   const x = segAt.get(id)!;
+  // Julian 31.10. 16:11: on the phone a new header flashed "Heute" before gliding: the first frame of a fresh switch
+  // reads the old position on the JS side. A new mount starts right on its tab; the tap itself already glided.
+  useState(() => { x.value = idx; return 0; });
   useEffect(() => { if (Math.abs(x.value - idx) > 0.001) x.value = withSpring(idx, springs.smooth); }, [idx]);
-  // The pill starts on the tap itself; the new view renders a frame later, so building it never holds the glide (Julian 31.10.: "lag").
-  const pick = (k: T, i: number) => { x.value = withSpring(i, springs.smooth); setTimeout(() => onChange(k), 16); };
+  // The pill glides on the tap itself; the new view comes once the glide is mostly done, so building it never holds the glide (Julian 31.10.: "lag").
+  const pick = (k: T, i: number) => { x.value = withSpring(i, springs.smooth); setTimeout(() => onChange(k), 140); };
   const pill = useAnimatedStyle(() => ({ transform: [{ translateX: x.value * w }] }));
   const onLayout = (e: LayoutChangeEvent) => setW((e.nativeEvent.layout.width - 8) / items.length);
   return (

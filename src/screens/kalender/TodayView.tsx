@@ -31,6 +31,9 @@ import { tx } from '../../i18n/lang';
 import { useCalEvents } from '../../lib/useEvents';
 import { isInfoDay } from '../../lib/feiertage';
 
+/** The family's to-do list, whatever it was called ("Zu erledigen", "Aufgaben", "Task"). */
+const TODO_NAME = /^(zu erledigen|erledigen|aufgaben|to-?dos?|tasks?)$/i;
+
 /** How many days "Diese Woche" looks ahead. */
 export const WEEK_AHEAD = 7;
 
@@ -158,6 +161,9 @@ export default function TodayView({ header }: { header: React.ReactNode }) {
   const events = useCalEvents();
   const tasks = useStore((s) => s.tasks);
   const docs = useStore((s) => s.docs);
+  // Julian 31.10. 16:11: Heute is the personal hub, Termine and what is still open. Reminders live on the list "Zu erledigen".
+  const todoList = useStore((s) => s.lists.find((l) => l.id === 'aufgaben') ?? s.lists.find((l) => TODO_NAME.test(l.name)));
+  const open = (todoList?.sections ?? []).flatMap((x) => x.items).filter((i) => !i.done);
   const insets = useSafeAreaInsets();
   const dock = useDockSpace();
   const ref = useRef<ScrollView>(null);
@@ -261,6 +267,25 @@ export default function TodayView({ header }: { header: React.ReactNode }) {
               </View>
             </Fresh>
           ))}
+        </View>
+      ) : null}
+
+      {todoList ? (
+        <View style={{ gap: 6, paddingHorizontal: 4 }}>
+          <Label right={
+            <PressScale onPress={() => { haptics.select(); actions.setActiveList(todoList.id); router.navigate('/listen'); }} hitSlop={10} scale={0.94} accessibilityLabel={tx('Ganze Liste zeigen', 'Show the whole list')}>
+              <Txt size={14} weight={600} color={tokens.done}>{open.length > 5 ? tx(`Alle ${open.length}`, `All ${open.length}`) : tx('Liste', 'List')}</Txt>
+            </PressScale>
+          }>{tx('Offen', 'Open')}</Label>
+          {open.length ? open.slice(0, 5).map((i) => (
+            <Fresh key={i.id} id={i.id} radius={14} bleed={12}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14, minHeight: 44 }}>
+                <View style={{ width: 56 }}><Check done={i.done} onPress={() => { haptics.commit(); actions.toggleItem(todoList.id, i.id); }} /></View>
+                <Txt size={16} weight={500} numberOfLines={1} style={{ flex: 1 }}>{i.name}</Txt>
+                {i.who ? <Owner who={i.who} size={22} /> : null}
+              </View>
+            </Fresh>
+          )) : <Meta>{tx('Nichts offen. Sag unten einfach "Erinnere mich …".', 'Nothing open. Just say "Remind me …" below.')}</Meta>}
         </View>
       ) : null}
 
