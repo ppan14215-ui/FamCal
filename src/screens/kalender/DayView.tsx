@@ -139,7 +139,7 @@ function Item({ e, last, date }: { e: CalEvent; last: boolean; date: string }) {
       <PressScale scale={0.985} onPress={() => { if (!justSwiped()) router.push(`/termin/${e.id}`); }} style={{ paddingVertical: 12, paddingHorizontal: 14, gap: 6, borderBottomWidth: last ? 0 : 1, borderBottomColor: tokens.hair }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
           <Txt size={13.5} weight={600} numberOfLines={e.allDay && !(later || span) ? 2 : 1} adjustsFontSizeToFit minimumFontScale={0.75} style={{ width: 48 }}>{later || span ? tx(`Tag ${daysBetween(e.date, date) + 1}`, `Day ${daysBetween(e.date, date) + 1}`) : e.allDay ? tx('Tag', 'All day') : hm(e.start)}</Txt>
-          <Tile name={e.icon} size={46} radius={14} />
+          <Tile name={e.icon} bg="transparent" size={46} radius={14} />
           <View style={{ flex: 1, minWidth: 0 }}>
             <Txt size={16} line={21} weight={600} numberOfLines={1}>{e.title}</Txt>
             {/* The day count says how far along it is (Julian 30.10.: "until macht keinen Sinn"); the last day says so. */}
@@ -236,7 +236,7 @@ const Day = React.memo(function Day({ date, events, tasks, docs, onY }: { date: 
               <Sub>{tx('Frist', 'Due')}</Sub>
               {docs.map((d) => (
                 <PressScale key={d.id} onPress={d.route ? () => router.push(d.route as any) : undefined} style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 10, paddingHorizontal: 14 }}>
-                  <Tile name={d.icon} size={36} radius={11} />
+                  <Tile name={d.icon} bg="transparent" size={36} radius={11} />
                   <Txt size={15.5} weight={600} style={{ flex: 1 }} numberOfLines={1}>{d.title}</Txt>
                   <Owner who={d.who ?? null} />
                 </PressScale>

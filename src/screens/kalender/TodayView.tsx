@@ -113,7 +113,7 @@ function Next({ e, after }: { e: CalEvent; after?: CalEvent }) {
             <Txt size={24} line={29} weight={600} tracking={-0.4} numberOfLines={2}>{e.title}</Txt>
             <Meta numberOfLines={1}>{[on ? tx(`bis ${WD_SHORT[weekday(e.endDate!)]} ${dmShort(e.endDate!)}`, `until ${WD_SHORT[weekday(e.endDate!)]} ${dmShort(e.endDate!)}`) : span(e), e.place ?? e.sub].filter(Boolean).join(' · ')}</Meta>
           </View>
-          <Tile name={e.icon} size={56} radius={16} />
+          <Tile name={e.icon} bg="transparent" size={56} radius={16} />
         </View>
         {who || open.length ? (
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
@@ -245,7 +245,7 @@ export default function TodayView({ header }: { header: React.ReactNode }) {
           <Label>{tx('Bald', 'Coming up')}</Label>
           {soon.map((e) => (
             <PressScale key={e.id} onPress={() => { haptics.select(); router.push(`/termin/${e.id}`); }} style={{ flexDirection: 'row', alignItems: 'center', gap: 14, minHeight: 44 }}>
-              <View style={{ width: 56 }}><Tile name={e.icon} size={36} /></View>
+              <View style={{ width: 56 }}><Tile name={e.icon} bg="transparent" size={36} /></View>
               <Txt size={16} weight={500} numberOfLines={1} style={{ flex: 1 }}>{e.title}</Txt>
               <Txt size={14} weight={600} color={tokens.done}>{daysTo(e.date)}</Txt>
             </PressScale>
