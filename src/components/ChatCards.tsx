@@ -34,12 +34,13 @@ import WhenField from './WhenField';
 import type { When } from '../lib/when';
 import type { CalEvent } from '../state/types';
 import { haptics } from '../lib/haptics';
+import PlaceAsk, { PinChip } from './PlaceAsk';
 
 
 export const at = (s: string) => { const d = new Date(s); return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`; };
 export const dayOf = (s: string) => { const d = new Date(s); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
 
-function Termine({ ids, snap, changed, ask, timeQ, fresh }: { ids: string[]; snap?: EventSnap[]; changed?: boolean; ask?: 'J' | 'T'; timeQ?: string; fresh?: boolean }) {
+function Termine({ ids, snap, changed, ask, timeQ, fresh, placeQ }: { ids: string[]; snap?: EventSnap[]; changed?: boolean; ask?: 'J' | 'T'; timeQ?: string; fresh?: boolean; placeQ?: boolean }) {
   const events = useStore((s) => s.events);
   // A card that just appeared plays its icon once (Julian 31.10.: "das icon kurz animieren").
   const [play, setPlay] = useState(false);
@@ -56,10 +57,13 @@ function Termine({ ids, snap, changed, ask, timeQ, fresh }: { ids: string[]; sna
             <Txt size={16} line={21} weight={600} numberOfLines={2}>{e.title}</Txt>
             <Txt size={13.5} color={tokens.sub} numberOfLines={1}>{[(e as CalEvent).endDate && (e as CalEvent).endDate! > e.date ? tx(`${short(e.date)} bis ${short((e as CalEvent).endDate!)}`, `${short(e.date)} to ${short((e as CalEvent).endDate!)}`) : short(e.date), e.allDay ? tx('ganztägig', 'all day') : e.end ? tx(`${hm(e.start)} bis ${hm(e.end)}`, `${hm(e.start)} to ${hm(e.end)}`) : hm(e.start), e.place].filter(Boolean).join(' · ')}</Txt>
           </View>
+          {e.place ? <PinChip place={e.place} /> : null}
           {e.who === 'J' || e.who === 'T' ? <Avatar p={e.who} size={26} /> : e.who === 'both' ? <Pair size={22} ring={tokens.row} /> : null}
         </PressScale>
       ))}
       {timeQ && live.length === 1 ? <TimeAsk e={live[0]} q={timeQ} /> : null}
+      {/* Julian 31.10.: "Welcher Kinderarzt ist das?", then remembered for next time. */}
+      {placeQ && live.length === 1 ? <PlaceAsk e={live[0]} /> : null}
       {/* Once someone is picked the question is answered and goes away (Julian 31.10.). */}
       {ask && live.length === 1 && !live[0].who ? <WhoGoes e={live[0]} me={ask} /> : null}
     </>
@@ -393,7 +397,7 @@ function EntryRow({ f, mine, me, answer }: { f: FeedEntry; mine: boolean; me: 'J
         {f.kind === 'made' && (f.events || f.items || f.tasks || f.undone) ? (
           <Animated.View layout={rowLayout} style={[cardFrame, { opacity: f.undone ? 0.55 : 1 }]}>
             {f.say && !f.undone ? <Reply text={f.say} /> : null}
-            {f.undone ? null : f.events ? <Termine ids={f.events} snap={f.snap?.events} changed={f.changed} fresh={Date.now() - Date.parse(f.at) < 60000} ask={mine && !open && Date.now() - Date.parse(f.at) < 15 * 60000 ? me : undefined} timeQ={mine && !open && Date.now() - Date.parse(f.at) < 15 * 60000 ? f.timeQ : undefined} /> : null}
+            {f.undone ? null : f.events ? <Termine ids={f.events} snap={f.snap?.events} changed={f.changed} fresh={Date.now() - Date.parse(f.at) < 60000} ask={mine && !open && Date.now() - Date.parse(f.at) < 15 * 60000 ? me : undefined} timeQ={mine && !open && Date.now() - Date.parse(f.at) < 15 * 60000 ? f.timeQ : undefined} placeQ={mine && !open && Date.now() - Date.parse(f.at) < 15 * 60000} /> : null}
             {f.undone ? null : f.events ? <VacationLeft ids={f.events} /> : null}
             {f.undone || HIDDEN.suggestions ? null : f.events ? <PackOffer ids={f.events} /> : null}
             {f.undone || !f.suggest || HIDDEN.suggestions ? null : <BringOffer suggest={f.suggest} />}

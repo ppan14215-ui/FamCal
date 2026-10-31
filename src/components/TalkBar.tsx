@@ -30,16 +30,13 @@ import { speechLocale } from '../lib/speechLang';
 const TOUCH = Platform.OS !== 'web' || (typeof window !== 'undefined' && !!window.matchMedia?.('(pointer: coarse)').matches);
 
 /**
- * Quiet this long after the last word ends listening; a second tap ends it at once.
- * A finished sentence ends sooner (Julian 29.10.: "immer noch ziemlich lang"),
- * a sentence that stops on "und", "um" or a half word still waits the long pause (28.10.).
+ * Julian 31.10. 12:55: "Start und Stop sollten per Klick vom User gestartet und gestoppt werden wie bei Claude".
+ * A tap starts, a second tap stops; no pause detection any more (it kept cutting sentences off).
+ * Only a long safety cap ends a recording nobody stops, so a forgotten mic cannot run on.
  */
-// Julian 31.10.: "bricht oft zu früh ab". Longer pauses before the phone gives up.
-const SILENCE_MS = 3200;
-const DONE_MS = 1900;
-const OPEN_END = /\b(und|oder|um|am|mit|für|bei|bis|von|zum|zur|nach|and|or|at|on|with|for|to|from|the|a)$/i;
-const sounded = (t: string, final: boolean) => final && !OPEN_END.test(t.replace(/[.,!?]+$/, '').trim());
-const FIRST_WORD_MS = 8000;
+const MAX_MS = 3 * 60000;
+// Android ends on silence by itself unless told to wait; give it the same cap.
+const ANDROID_SILENCE_MS = MAX_MS;
 
 const LINE = 22;
 const PAD = 11;
@@ -152,6 +149,7 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, o
       const r = new SR();
       r.lang = speechLocale();
       r.interimResults = true;
+      r.continuous = true;
       let heard = '';
       let failed = false;
       const fallback = () => { if (failed) return; failed = true; try { r.abort(); } catch {} say(sentence); };
@@ -196,14 +194,15 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, o
       let sent = false;
       const cloud = cloudOn();
       const finish = async () => {
-        const h = heard();
-        if (sent || !h || typed.current) return;
+        if (sent || typed.current) return;
         sent = true;
         setWriting(true);
         await audioReady;
-        const better = audio ? await hearInCloud(audio) : null;
+        // The phone's guess may be empty when it heard the wrong language; the recording still goes to the cloud ears.
+        const better = audio && (heard() || cloud) ? await hearInCloud(audio) : null;
         setWriting(false);
-        if (!typed.current) land(better ?? h);
+        const t = better ?? heard();
+        if (t && !typed.current) land(t);
       };
       const hush = (ms: number) => { clearTimeout(quiet); quiet = setTimeout(() => SR.stop(), ms); };
       const subs = [
@@ -212,7 +211,6 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, o
           if (e.isFinal) { done = `${done} ${t}`; part = ''; } else part = t;
           // The phone hears in one language only, so its live guess is often wrong English (Julian 31.10.). With the cloud ears on, the field waits for their text.
           if (!cloud) setText(heard());
-          hush(sounded(heard(), e.isFinal) ? DONE_MS : SILENCE_MS);
         }),
         // -2 to 10 from the phone; below 0 is inaudible.
         SR.addListener('volumechange', (e) => { level.value = withTiming(Math.min(1, Math.max(0, e.value / 10)), { duration: 100 }); }),
@@ -227,12 +225,12 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, o
         void finish();
       };
       toKeys.current = () => { clearTimeout(quiet); SR.abort(); setListening(false); };
-      // Nothing at all after a while: stop instead of listening forever.
-      hush(FIRST_WORD_MS);
+      // Only the user stops it; the cap is a safety net, not a pause guess.
+      hush(MAX_MS);
       SR.start({
         lang: speechLocale(), interimResults: true, continuous: true, addsPunctuation: true,
         volumeChangeEventOptions: { enabled: true, intervalMillis: 100 },
-        androidIntentOptions: { EXTRA_SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS: DONE_MS, EXTRA_SPEECH_INPUT_POSSIBLY_COMPLETE_SILENCE_LENGTH_MILLIS: DONE_MS },
+        androidIntentOptions: { EXTRA_SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS: ANDROID_SILENCE_MS, EXTRA_SPEECH_INPUT_POSSIBLY_COMPLETE_SILENCE_LENGTH_MILLIS: ANDROID_SILENCE_MS },
         recordingOptions: { persist: true },
       });
     } catch {
@@ -298,7 +296,7 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, o
         }}
         scrollEnabled={boxH >= MAX_H}
         editable={!demo}
-        placeholder={writing ? tx('Schreibe auf …', 'Writing it down …') : listening ? tx('Ich höre zu …', 'Listening …') : placeholder}
+        placeholder={writing ? tx('Schreibe auf …', 'Writing it down …') : listening ? tx('Ich höre zu … Tippe ■ wenn fertig', 'Listening … Tap ■ when done') : placeholder}
         placeholderTextColor={tokens.mute}
         selectionColor={tokens.select} cursorColor={tokens.ink}
         returnKeyType={TOUCH ? 'default' : 'send'}
@@ -314,7 +312,8 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, o
             onPress={listen}
             style={{ width: 36, height: 44, marginBottom: 2, borderRadius: 999, alignItems: 'center', justifyContent: 'center' }}
           >
-            {listening ? <VoiceBars level={level} color={tokens.ink} /> : <LineIcon name="mic" size={22} color={tokens.ink} />}
+            {/* Julian 31.10. 12:55: a clear stop button while recording, like Claude; bars next to it show it hears. */}
+            {listening ? <View style={{ width: 34, height: 34, borderRadius: 999, backgroundColor: tokens.ink, alignItems: 'center', justifyContent: 'center' }}><View style={{ width: 12, height: 12, borderRadius: 3, backgroundColor: tokens.onInk }} /></View> : <LineIcon name="mic" size={22} color={tokens.ink} />}
           </PressScale>
           {text && !listening ? (
             <PressScale accessibilityLabel={tx('Senden', 'Send')} onPress={() => send()} style={{ width: 44, height: 44, marginBottom: 2, borderRadius: 999, alignItems: 'center', justifyContent: 'center', backgroundColor: tokens.ink }}>

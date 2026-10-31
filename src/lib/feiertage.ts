@@ -62,6 +62,7 @@ export function setForeign(country: string, days: [string, string][]) { foreign 
 
 let where = { land: '', ort: '' };
 export function setWhere(land: string, ort: string) { where = { land, ort }; cache.clear(); }
+export const whereNow = () => where;
 
 const cache = new Map<string, Set<string>>();
 /** Is this day a public holiday where the family lives? */
