@@ -191,7 +191,8 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, o
       // The recording the phone keeps (Android 13 and newer); ElevenLabs then writes the final text in the language it hears.
       let audio: string | null = null;
       let audioDone: (() => void) | null = null;
-      const audioReady = new Promise<void>((r) => { audioDone = r; setTimeout(r, 1500); });
+      // A long sentence takes the phone a moment to close the file (31.10. 12:42 a voice note missed the cloud ears after 1.5 s and fell back to the phone's English guess); the wait ends the moment the file is there.
+      const audioReady = new Promise<void>((r) => { audioDone = r; setTimeout(r, 5000); });
       let sent = false;
       const cloud = cloudOn();
       const finish = async () => {
