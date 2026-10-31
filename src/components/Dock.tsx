@@ -458,7 +458,7 @@ export default function Dock() {
   // On tabs the nav stays on top of the fade, it starts just above it.
   // Above a footer button (liste-neu) the fade starts at the field, so the button stays clear.
   // On the tabs the bar paints its own calm ground, so the fade starts at its top.
-  const fadeFrom = kb || (typing && Platform.OS === 'web') ? 0 : onTabs ? above - 10 : where.lift ? bottom - 8 : 0;
+  const fadeFrom = kb || (typing && Platform.OS === 'web') ? 0 : onTabs ? (folded ? 0 : above - 10) : where.lift ? bottom - 8 : 0;
   const kind = where.ctx.kind;
 
   const ask = () => { if (spoke.current) setListenKey((k) => k + 1); };
