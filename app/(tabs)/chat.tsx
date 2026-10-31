@@ -24,6 +24,7 @@ import { useKeyboardInset } from '../../src/lib/keyboard';
 import { useFeed, canUndo, undoEntry, answerAsk, type FeedEntry, type EventSnap } from '../../src/lib/feed';
 import { getFamily, myRole } from '../../src/lib/sync';
 import { hm, short, TODAY } from '../../src/lib/dates';
+import { useScroller } from '../../src/lib/landing';
 import HeaderRight from '../../src/components/ui/HeaderRight';
 import { tx } from '../../src/i18n/lang';
 import { useVeil, Step, Dots } from '../../src/components/Veil';
@@ -47,6 +48,7 @@ export default function Chat() {
   const feed = useFeed();
   const people = useStore((s) => s.people.length);
   const scroller = useRef<ScrollView>(null);
+  const trackY = useScroller(scroller);
   const me = getFamily() ? myRole() : 'J';
   const veil = useVeil();
   const simple = useSimple();
@@ -68,7 +70,7 @@ export default function Chat() {
       <Head>
         <H1 sub={tx(`Familie · ${2 + people} Personen`, `Family · ${2 + people} people`)} right={<HeaderRight />}>Chat</H1>
       </Head>
-      <ScrollView ref={scroller} onContentSizeChange={() => { if (!more) scroller.current?.scrollToEnd({ animated: false }); }} contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 18, paddingTop: 8, paddingBottom: dock + (kb > 0 ? kb : insets.bottom) + 40, gap: 12 }} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+      <ScrollView ref={scroller} onScroll={(e) => trackY(e.nativeEvent.contentOffset.y)} scrollEventThrottle={32} onContentSizeChange={() => { if (!more) scroller.current?.scrollToEnd({ animated: false }); }} contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 18, paddingTop: 8, paddingBottom: dock + (kb > 0 ? kb : insets.bottom) + 40, gap: 12 }} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
         {feed.length > shown.length ? (
           <PressScale onPress={() => setMore((m) => m + SHOWN)} style={{ alignSelf: 'center', paddingVertical: 8, paddingHorizontal: 14 }}>
             <Txt size={13.5} weight={600} color={tokens.sub}>{tx('Ältere zeigen', 'Show older')}</Txt>

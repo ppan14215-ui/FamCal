@@ -21,15 +21,26 @@ export function useLanding(id: string | undefined) {
   }, [id]);
 }
 
+// Something lies under the standing head of the focused screen, so the head casts a faint shadow (Julian 31.10.).
+let under = false;
+const underSubs = new Set<() => void>();
+const setUnder = (v: boolean) => { if (v === under) return; under = v; underSubs.forEach((f) => f()); };
+export function useHeadUnder() {
+  return useSyncExternalStore((f) => { underSubs.add(f); return () => { underSubs.delete(f); }; }, () => under, () => under);
+}
+
 /** The scroll view of the focused screen. */
 export function useScroller(ref: React.RefObject<ScrollView | null>) {
   const y = useRef(0);
+  const mine = useRef<Scroller | null>(null);
   useFocusEffect(useCallback(() => {
     const me = { ref, y };
     scroller = me;
+    mine.current = me;
+    setUnder(y.current > 4);
     return () => { if (scroller === me) scroller = null; };
   }, [ref]));
-  return (v: number) => { y.current = v; };
+  return (v: number) => { y.current = v; if (scroller && scroller === mine.current) setUnder(v > 4); };
 }
 
 export type Pt = { x: number; y: number };

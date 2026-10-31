@@ -23,7 +23,7 @@ import { setTyping } from '../lib/keyboard';
 import { LIVE } from '../lib/live';
 import { usePrefill, takeFill } from '../lib/simple';
 import { tx } from '../i18n/lang';
-import { hearInCloud } from '../lib/hoeren';
+import { hearInCloud, cloudOn } from '../lib/hoeren';
 import { speechLocale } from '../lib/speechLang';
 
 // Phones and tablets: Enter on the screen keyboard adds a line.
@@ -94,6 +94,10 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, o
   /** Tapping into the field while the mic listens switches to typing (Julian 28.10.): what was heard stays, nothing is sent. */
   const toKeys = useRef<(() => void) | null>(null);
   const typed = useRef(false);
+  /** The field holds spoken text; sending it counts as voice, so a follow-up may listen again. */
+  const spokenText = useRef(false);
+  /** ElevenLabs is writing the sentence down. */
+  const [writing, setWriting] = useState(false);
   useEffect(() => () => { timers.current.forEach(clearTimeout); clearTimeout(blurT.current); setTyping(false); }, []);
 
   // On the web the textarea never shrinks by itself, so measure it fresh.
@@ -109,9 +113,10 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, o
     setBoxH(Math.min(MAX_H, Math.max(MIN_H, sh)));
   }, [text]);
 
-  const send = (t = text, voice = false) => {
+  const send = (t = text, voice = spokenText.current) => {
     const q = t.trim();
     if (!q) return;
+    spokenText.current = false;
     setText('');
     haptics.tap();
     if (voice) onSend(q, { voice: true }); else onSend(q);
@@ -126,10 +131,13 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, o
       i += 2;
       setText(sentence.slice(0, i));
       if (i < sentence.length) timers.current.push(setTimeout(step, 45));
-      else timers.current.push(setTimeout(() => { setListening(false); setDemo(false); send(sentence); }, 500));
+      else timers.current.push(setTimeout(() => { setListening(false); setDemo(false); land(sentence); }, 500));
     };
     timers.current.push(setTimeout(step, 700));
   };
+
+  // Julian 31.10.: spoken words never send by themselves. They land in the field, correct, and only Senden sends.
+  const land = (t: string) => { setText(t.trim()); spokenText.current = true; };
 
   const listen = () => {
     if (listening) { haptics.tap(); stopNative.current?.(); return; }
@@ -152,9 +160,9 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, o
       timers.current.push(guard);
       r.onresult = (e: any) => { heard = Array.from(e.results).map((x: any) => x[0].transcript).join(' '); setText(heard); };
       r.onerror = () => { clearTimeout(guard); fallback(); };
-      r.onend = () => { clearTimeout(guard); if (failed) return; setListening(false); if (typed.current) return; if (heard) send(heard, true); else fallback(); };
+      r.onend = () => { clearTimeout(guard); if (failed) return; setListening(false); if (typed.current) return; if (heard) land(heard); else fallback(); };
       toKeys.current = () => { failed = true; clearTimeout(guard); try { r.abort(); } catch {} setListening(false); };
-      stopNative.current = () => { const h = heard; toKeys.current?.(); if (h) send(h, true); };
+      stopNative.current = () => { const h = heard; toKeys.current?.(); if (h) land(h); };
       r.start();
     } catch {
       say(sentence);
@@ -185,20 +193,24 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, o
       let audioDone: (() => void) | null = null;
       const audioReady = new Promise<void>((r) => { audioDone = r; setTimeout(r, 1500); });
       let sent = false;
+      const cloud = cloudOn();
       const finish = async () => {
         const h = heard();
         if (sent || !h || typed.current) return;
         sent = true;
+        setWriting(true);
         await audioReady;
         const better = audio ? await hearInCloud(audio) : null;
-        if (!typed.current) send(better ?? h, true);
+        setWriting(false);
+        if (!typed.current) land(better ?? h);
       };
       const hush = (ms: number) => { clearTimeout(quiet); quiet = setTimeout(() => SR.stop(), ms); };
       const subs = [
         SR.addListener('result', (e) => {
           const t = e.results[0]?.transcript ?? '';
           if (e.isFinal) { done = `${done} ${t}`; part = ''; } else part = t;
-          setText(heard());
+          // The phone hears in one language only, so its live guess is often wrong English (Julian 31.10.). With the cloud ears on, the field waits for their text.
+          if (!cloud) setText(heard());
           hush(sounded(heard(), e.isFinal) ? DONE_MS : SILENCE_MS);
         }),
         // -2 to 10 from the phone; below 0 is inaudible.
@@ -207,7 +219,7 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, o
         SR.addListener('audioend', (e) => { audio = e.uri ?? null; audioDone?.(); }),
         SR.addListener('end', () => { clearTimeout(quiet); setListening(false); void finish().finally(() => subs.forEach((x) => x.remove())); }),
       ];
-      // A tap on the mic ends at once (Julian 28.10.): keep what was heard, send it, no waiting for the phone to finish.
+      // A tap on the mic ends at once (Julian 28.10.): keep what was heard and put it in the field, no waiting for the phone to finish.
       // stop, not abort, so the recording is finished and can go to the cloud ears.
       stopNative.current = () => {
         clearTimeout(quiet); SR.stop(); setListening(false);
@@ -285,7 +297,7 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, o
         }}
         scrollEnabled={boxH >= MAX_H}
         editable={!demo}
-        placeholder={listening ? tx('Ich höre zu …', 'Listening …') : placeholder}
+        placeholder={writing ? tx('Schreibe auf …', 'Writing it down …') : listening ? tx('Ich höre zu …', 'Listening …') : placeholder}
         placeholderTextColor={tokens.mute}
         selectionColor={tokens.select} cursorColor={tokens.ink}
         returnKeyType={TOUCH ? 'default' : 'send'}

@@ -9,6 +9,9 @@ const WAIT_MS = 7000;
 // Once the server says it has no key, stop trying until the app restarts.
 let off = false;
 
+/** False once the server said it has no key: then the phone's own words show live again. */
+export const cloudOn = () => !off;
+
 export async function hearInCloud(uri: string): Promise<string | null> {
   const session = getAuth().session;
   const url = process.env.EXPO_PUBLIC_SUPABASE_URL;

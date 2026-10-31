@@ -3,7 +3,7 @@
  * (h1, h2, meta, group, card, btn, back, seg, toggle, chip, note, row, wrow).
  */
 import { useDockSpace } from '../../lib/dockSpace';
-import { useScroller } from '../../lib/landing';
+import { useScroller, useHeadUnder } from '../../lib/landing';
 import React, { useEffect, useRef, useState } from 'react';
 import { ScrollView, StyleProp, View, ViewStyle, Platform, LayoutChangeEvent } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -45,9 +45,25 @@ type ScreenProps = {
  * "sehr flach"): room above and below, and a soft fade where the content slides under it.
  */
 export function Head({ children, gap = 14, bg = tokens.bg, pad = 18 }: { children: React.ReactNode; gap?: number; bg?: string; pad?: number }) {
+  // Once content lies under the head, a very faint shadow shows the edge (Julian 31.10.: "sehr subtil").
+  const under = useHeadUnder();
+  const shade = useSharedValue(under ? 1 : 0);
+  useEffect(() => { shade.value = withTiming(under ? 1 : 0, { duration: 220 }); }, [under]);
+  const shadeStyle = useAnimatedStyle(() => ({ opacity: shade.value }));
   return (
     <View style={{ zIndex: 2, paddingHorizontal: pad, paddingTop: 16, paddingBottom: 10, gap, backgroundColor: bg }}>
       {children}
+      <Animated.View pointerEvents="none" style={[{ position: 'absolute', left: 0, right: 0, bottom: -10, height: 10, zIndex: 1 }, shadeStyle]}>
+        <Svg width="100%" height="100%" preserveAspectRatio="none">
+          <Defs>
+            <LinearGradient id="headshade" x1="0" y1="0" x2="0" y2="1">
+              <Stop offset="0" stopColor="#000000" stopOpacity={0.06} />
+              <Stop offset="1" stopColor="#000000" stopOpacity={0} />
+            </LinearGradient>
+          </Defs>
+          <Rect x="0" y="0" width="100%" height="100%" fill="url(#headshade)" />
+        </Svg>
+      </Animated.View>
       <View pointerEvents="none" style={{ position: 'absolute', left: 0, right: 0, bottom: -18, height: 18 }}>
         <Svg width="100%" height="100%" preserveAspectRatio="none">
           <Defs>
