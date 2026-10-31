@@ -22,3 +22,5 @@ Julian 27.10.: Vor der Veröffentlichung muss sicher sein, dass niemand über di
 - [ ] Sicherheitshinweise in Supabase (Advisors) ohne offene Warnungen außer den bewusst erlaubten.
 
 - Vor Release: Tabelle `ai_testers` leeren (Testkonto hat 1000 Sätze am Tag statt 60, seit 28.10.2026).
+
+- Karten und Ortssuche (31.10.2026): Die Mini-Karte nutzt tile.openstreetmap.org, die Ortssuche Photon (komoot). Beide sind nur für leichte Nutzung gedacht. Vor dem Release auf einen eigenen oder kommerziellen Anbieter umstellen (src/components/PlaceAsk.tsx, src/lib/orte.ts).
