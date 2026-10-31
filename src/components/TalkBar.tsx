@@ -202,7 +202,8 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, o
         const better = audio && (heard() || cloud) ? await hearInCloud(audio) : null;
         setWriting(false);
         const t = better ?? heard();
-        if (t && !typed.current) land(t);
+        if (typed.current) return;
+        if (t) land(t); else fail();
       };
       const hush = (ms: number) => { clearTimeout(quiet); quiet = setTimeout(() => SR.stop(), ms); };
       const subs = [
@@ -214,7 +215,9 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, o
         }),
         // -2 to 10 from the phone; below 0 is inaudible.
         SR.addListener('volumechange', (e) => { level.value = withTiming(Math.min(1, Math.max(0, e.value / 10)), { duration: 100 }); }),
-        SR.addListener('error', () => { clearTimeout(quiet); subs.forEach((x) => x.remove()); if (!heard()) fail(); }),
+        // Android can end a long recording with an error (no-speech, network) although the file is there (31.10. 14:16 a
+        // voice note skipped the cloud ears). Keep listening for the file and finish like a normal stop.
+        SR.addListener('error', () => { clearTimeout(quiet); setListening(false); void finish().finally(() => subs.forEach((x) => x.remove())); }),
         SR.addListener('audioend', (e) => { audio = e.uri ?? null; audioDone?.(); }),
         SR.addListener('end', () => { clearTimeout(quiet); setListening(false); void finish().finally(() => subs.forEach((x) => x.remove())); }),
       ];
