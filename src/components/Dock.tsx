@@ -27,7 +27,7 @@ import { agentOn, askAgent, agentPlan, screenOf } from '../lib/assistent';
 import { linkIn, recipeFromLink, keepRecipe, loadRecipes, type Recipe } from '../lib/rezepte';
 import { onShared, onSayInApp } from '../lib/shared';
 import { dayLabel, slotLine, type Suggest } from '../lib/talk';
-import { locate, light, lightOneByOne } from '../lib/landing';
+import { light, lightOneByOne } from '../lib/landing';
 import { setDockTop, setDockSpace } from '../lib/dockSpace';
 import { useKeyboardInset, useTyping } from '../lib/keyboard';
 import { setTalkOpen, useTalkOpen } from '../lib/talkOpen';
@@ -39,8 +39,8 @@ import { Tile } from './ui/Clay';
 import { haptics } from '../lib/haptics';
 import type { CalEvent, Who } from '../state/types';
 import { tx, quote, inLang, spokenLang, type Lang } from '../i18n/lang';
-import { onToday } from '../screens/kalender/TodayView';
 import { HIDDEN } from '../lib/core';
+import Peek, { openPeek } from './Peek';
 
 const STEP_MS = 850;
 /** How long the family waits for Claude before the rules answer instead. */
@@ -467,6 +467,7 @@ export default function Dock() {
     // "Frag Sophia, ob Samstag passt": a Ja/Nein card for the partner, no AI needed (Julian 29.10.).
     if (where.chat && !turn && addAsk(raw)) { haptics.success(); return; }
     talkLang.current = spokenLang(raw);
+    if (!where.chat) openPeek();
     return inLang(talkLang.current, () => hearNow(raw, how));
   };
   const hearNow = (raw: string, how?: { voice?: boolean }) => {
@@ -577,7 +578,7 @@ export default function Dock() {
    */
   const think = (said: string, n: number, then: (r: Said | null) => void, convo?: Convo) => {
     const stop = () => { if (heard.current === n) heard.current++; setVeil({ phase: 'off', onCancel: undefined }); haptics.select(); };
-    setVeil({ phase: 'think', inline: !!where.chat, origin, target: null, lines: [tx('Ich verstehe …', 'Understanding …')], shown: 0, said, head: undefined, onCancel: stop, typing: false, reply: undefined });
+    setVeil({ phase: 'think', inline: true, origin, target: null, lines: [tx('Ich verstehe …', 'Understanding …')], shown: 0, said, head: undefined, onCancel: stop, typing: false, reply: undefined });
     // Julian 28.10.: waiting is fine when you see what is happening. Each piece Claude has read shows up at once.
     const glimpse = (g: Glimpse) => { if (heard.current !== n) return; const l = glimpseLine(g); if (l) setVeil({ lines: [tx('Ich verstehe …', 'Understanding …'), l], shown: 1 }); };
     const late = new Promise<null>((r) => setTimeout(() => r(null), FIRST_MS));
@@ -588,7 +589,8 @@ export default function Dock() {
   const thinkAgent = (said: string, n: number, talk: Line[], fallback: () => void) => {
     const stop = () => { if (heard.current === n) heard.current++; setVeil({ phase: 'off', onCancel: undefined }); haptics.select(); };
     // In the chat it answers like a person (Julian 30.10.): typing dots, then its sentence, then what it does.
-    const chat = !!where.chat;
+    // Everywhere now (Julian 31.10.: "Wie im Chat nur außerhalb"): outside the chat the same card lays over the screen.
+    const chat = true;
     setVeil({ phase: 'think', inline: chat, origin, target: null, lines: chat ? [] : [tx('Ich verstehe …', 'Understanding …')], shown: 0, said, head: undefined, onCancel: stop, typing: chat, reply: undefined });
     const onSay = (say: string) => { if (heard.current !== n) return; if (chat) setVeil({ reply: say }); else setVeil({ lines: [say], shown: 0 }); };
     askAgent(said, talk, screenOf(where.ctx), onSay).then((r) => {
@@ -638,21 +640,20 @@ export default function Dock() {
       setVeil({ phase: 'off', onCancel: undefined });
       haptics.select();
     };
-    setVeil(fresh ? { phase: 'think', inline: !!where.chat, origin, target: null, lines: p.steps, shown: 0, said, head: p.head, onCancel: p.head ? stop : undefined, typing: false, reply: undefined } : { lines: p.steps, shown: 0, head: p.head, onCancel: p.head ? stop : undefined });
+    setVeil(fresh ? { phase: 'think', inline: true, origin, target: null, lines: p.steps, shown: 0, said, head: p.head, onCancel: p.head ? stop : undefined, typing: false, reply: undefined } : { lines: p.steps, shown: 0, head: p.head, onCancel: p.head ? stop : undefined });
     p.steps.forEach((_, i) => later(450 + STEP_MS * i, () => { setVeil({ shown: i + 1 }); haptics.select(); }));
     later(450 + STEP_MS * p.steps.length + 150, () => {
       setVeil({ onCancel: undefined });
       const out = p.run();
       // In the chat the card lands in the log and we stay (Julian 29.10.).
       const r0 = out.result;
-      if (where.chat && r0?.kind === 'event') addMade(said, [r0.event.id], undefined, () => actions.removeEvent(r0.event.id), undefined, { head: p.head, steps: p.steps }, r0.say, r0.needsTime && r0.event.allDay ? r0.ask || tx('Um wie viel Uhr? Oder ganztägig?', 'What time? Or all day?') : undefined);
-      else if (where.chat && r0?.kind === 'done' && (!r0.note || r0.say)) addMade(said, out.lit ?? (out.land ? [out.land] : []), r0.text, r0.undo, r0.events, { head: p.head, steps: p.steps }, r0.say);
+      // Every sentence lands in the chat log, wherever it was said (Julian 31.10.: "dass der log vollständig bleibt").
+      if (r0?.kind === 'event') addMade(said, [r0.event.id], undefined, () => actions.removeEvent(r0.event.id), undefined, { head: p.head, steps: p.steps }, r0.say, r0.needsTime && r0.event.allDay ? r0.ask || tx('Um wie viel Uhr? Oder ganztägig?', 'What time? Or all day?') : undefined);
+      else if (r0?.kind === 'done' && (!r0.note || r0.say)) addMade(said, out.lit ?? (out.land ? [out.land] : []), r0.text, r0.undo, r0.events, { head: p.head, steps: p.steps }, r0.say);
       // An answer from the assistant stays in the chat as its message (Julian 30.10.).
-      else if (where.chat && agentOn() && r0?.kind === 'answer' && r0.reply.kind === 'answer') addSay(said, r0.reply.text);
-      // A new Termin lands in the calendar; switch there first if we are elsewhere.
-      const go = where.chat ? undefined : out.go ?? (out.result?.kind === 'event' ? '/kalender' : undefined);
-      // Heute shows one week; a Termin further out lands in the list of days.
-      if (!where.chat && out.result?.kind === 'event' && !onToday(out.result.event.date) && get().calView === 'heute') actions.setCalView('tag');
+      else if (agentOn() && r0?.kind === 'answer' && r0.reply.kind === 'answer') addSay(said, r0.reply.text);
+      // The card shows what landed over the screen you are on; only a list item on another list still switches (Julian 31.10.).
+      const go = where.chat ? undefined : out.go;
       if (go && go !== path) router.navigate(go as any);
       const finish = () => {
         // Each new row arrives on its own with a tick, then the receipt says what happened.
@@ -667,19 +668,16 @@ export default function Dock() {
           const q = asks ? (res as { reply: { text: string } }).reply.text : res.kind === 'recipe' ? (res.kept ? keptLine(res.kept.recipe) : res.question) : offer || undefined;
           // The chat already shows the card; only a question stays above the field, for whoever asked.
           // The time question sits in the chat card as options; only a place to confirm still needs the sheet.
-          if (where.chat && res.kind === 'event' && !(res.suggest && !res.event.place)) return;
-          if (where.chat && !q && (res.kind === 'event' || (res.kind === 'done' && (!res.note || res.say)) || (res.kind === 'answer' && agentOn()))) return;
+          if (res.kind === 'event' && !(res.suggest && !res.event.place)) return;
+          if (!q && (res.kind === 'event' || (res.kind === 'done' && (!res.note || res.say)) || (res.kind === 'answer' && agentOn()))) return;
           const all = q ? [...lines.slice(0, -1), { ...lines[lines.length - 1], app: q }] : lines;
           setTurn({ id: Date.now(), said, result: res, lines: all });
           if (q) ask();
         });
         after?.(out);
       };
-      // The receipt covers the lower half, so whatever landed must sit above it.
-      const band = { top: insets.top + 70, floor: H * 0.45, height: H };
       later(go && go !== path ? 380 : 90, () => {
-        if (!out.land || where.chat) return setVeil({ phase: 'land', target: { x: W / 2, y: H - bottom - 110 }, onLanded: finish });
-        locate(out.land, band, (target) => setVeil({ phase: 'land', target, onLanded: finish }));
+        setVeil({ phase: 'land', target: { x: W / 2, y: H - bottom - 110 }, onLanded: finish });
       });
     });
   };
@@ -697,9 +695,10 @@ export default function Dock() {
     if (turn?.result.kind !== 'workClash') return;
     const { incoming, old } = turn.result;
     const done = settleWork(incoming, old, replace);
-    if (where.chat) addMade(turn.said, done.lit, done.text, done.undo, done.events);
+    addMade(turn.said, done.lit, done.text, done.undo, done.events);
     lightOneByOne(done.lit.slice(0, 12), (i) => (i === Math.min(12, done.lit.length) - 1 ? haptics.success() : haptics.select()));
-    setTurn(where.chat ? null : { id: Date.now(), said: turn.said, lines: [], result: done });
+    setTurn(null);
+    if (!where.chat) openPeek();
   };
   /** Ja takes the earlier place, Nein just drops the question; either way the card stays for more. */
   const answerSuggest = (yes: boolean, said?: string) => {
@@ -717,12 +716,10 @@ export default function Dock() {
     const kept = r.from;
     if (kept) keepRecipe(kept);
     const done = addPicks(r.dish, items);
-    if (where.chat) addMade(turn?.said ?? r.dish, done.lit, done.text, () => { done.undo?.(); r.undo?.(); });
-    const before = r.undo;
+    addMade(turn?.said ?? r.dish, done.lit, done.text, () => { done.undo?.(); r.undo?.(); });
     lightOneByOne(done.lit, (i) => (i === done.lit.length - 1 ? haptics.success() : haptics.select()));
     // The chat card already shows what landed; a short toast is enough (Julian 30.10.: "sehr groß und doppelt").
-    if (where.chat) { setTurn(null); light(null); toast(done.text, undefined, { kind: 'done' }); return; }
-    setTurn({ id: Date.now(), said: turn?.said ?? '', lines: [], result: { kind: 'done', text: done.text, sub: done.sub, undo: () => { done.undo?.(); before?.(); } } });
+    setTurn(null); light(null); toast(done.text, undefined, { kind: 'done' });
   };
 
   /** Ja takes the family's recipe, Nein goes on with what Claude suggested (or which recipe). */
@@ -743,7 +740,7 @@ export default function Dock() {
     let host = link;
     try { host = new URL(link).hostname.replace(/^www\./, ''); } catch { /* shown as is */ }
     const stop = () => { if (heard.current === n) heard.current++; setVeil({ phase: 'off', onCancel: undefined }); haptics.select(); };
-    setVeil({ phase: 'think', inline: !!where.chat, origin, target: null, lines: [tx(`Ich lese das Rezept auf ${host} …`, `Reading the recipe on ${host} …`)], shown: 1, said: host, head: undefined, onCancel: stop });
+    setVeil({ phase: 'think', inline: true, origin, target: null, lines: [tx(`Ich lese das Rezept auf ${host} …`, `Reading the recipe on ${host} …`)], shown: 1, said: host, head: undefined, onCancel: stop });
     const late = new Promise<null>((r) => setTimeout(() => r(null), 20000));
     Promise.race([recipeFromLink(link), late]).then((res) => {
       if (heard.current !== n) return;
@@ -794,6 +791,7 @@ export default function Dock() {
       </Svg>
     </View>
     <View pointerEvents="box-none" onLayout={(e) => setH(e.nativeEvent.layout.height)} style={{ position: 'absolute', left: onTabs ? 14 : 18, right: onTabs ? 14 : 18, bottom, gap: 10 }}>
+      {where.chat || turn ? null : <Peek />}
       {turn ? (
         <Animated.View key={turn.id} entering={FadeInDown.duration(220)} exiting={FadeOut.duration(150)} style={[{ maxHeight: 420, borderRadius: 26, backgroundColor: tokens.row }, shadow]}>
           <ScrollView ref={scroller} onContentSizeChange={() => scroller.current?.scrollToEnd({ animated: false })} contentContainerStyle={{ padding: 18, gap: 12 }} showsVerticalScrollIndicator={false}>

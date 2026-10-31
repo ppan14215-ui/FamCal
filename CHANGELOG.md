@@ -2,6 +2,10 @@
 
 Alle sichtbaren Änderungen an FamCal. Neueste oben. Agenten und Menschen: Änderung unter **Unreleased** in einfacher Sprache eintragen.
 
+## Karte statt Orb auf Kalender und Listen (31.10. nachts)
+- Ein Satz auf Kalender oder Listen denkt jetzt in derselben Karte wie im Chat, über dem Feld und über dem, was du gerade anschaust (src/components/Peek.tsx). Kein Orb, kein Sprung in den Kalender. Die Karte geht nach ein paar Sekunden von selbst, außer du berührst sie.
+- Alles, was außerhalb vom Chat passiert, landet automatisch auch im Chat (Satz plus Karte), damit der Verlauf vollständig bleibt.
+- Die Chat-Karten liegen jetzt in src/components/ChatCards.tsx, damit Chat und Overlay dieselben benutzen.
 ## Unreleased
 
 ### Karte im Chat schlanker (31.10. nachts)
