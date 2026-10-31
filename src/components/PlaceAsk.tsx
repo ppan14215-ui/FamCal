@@ -151,7 +151,7 @@ export default function PlaceAsk({ e }: { e: EventSnap }) {
   </>);
 }
 
-/** A small static map from free OpenStreetMap tiles (CARTO Voyager), pin in the middle. */
+/** A small static map from free OpenStreetMap tiles, pin in the middle. */
 const Z = 16;
 function MiniMap({ lat, lon, h = 120 }: { lat: number; lon: number; h?: number }) {
   const [w, setW] = useState(0);
@@ -164,12 +164,14 @@ function MiniMap({ lat, lon, h = 120 }: { lat: number; lon: number; h?: number }
       {w ? tiles.map(({ tx, ty }) => (
         <Image
           key={`${tx}-${ty}`}
-          source={{ uri: `https://a.basemaps.cartocdn.com/rastertiles/voyager/${Z}/${tx}/${ty}@2x.png` }}
+          // CARTO now wants a key (31.10. 13:46 "KEY REQUIRED" on Julian's phone). OpenStreetMap's own tiles need none,
+          // only a real app name in the User-Agent. Fine for testing; before launch host tiles ourselves or pay a provider.
+          source={{ uri: `https://tile.openstreetmap.org/${Z}/${tx}/${ty}.png`, headers: { 'User-Agent': 'FamCal/0.1 (famcal.app family calendar)' } }}
           style={{ position: 'absolute', width: 256, height: 256, left: tx * 256 - cx + w / 2, top: ty * 256 - cy + h / 2 }}
         />
       )) : null}
       <View pointerEvents="none" style={{ position: 'absolute', left: w / 2 - 9, top: h / 2 - 9, width: 18, height: 18, borderRadius: 9, backgroundColor: tokens.done, borderWidth: 3, borderColor: '#FFFFFF' }} />
-      <Txt size={9} color="#5B6166" style={{ position: 'absolute', right: 6, bottom: 3 }}>© OpenStreetMap © CARTO</Txt>
+      <Txt size={9} color="#5B6166" style={{ position: 'absolute', right: 6, bottom: 3 }}>© OpenStreetMap</Txt>
     </View>
   );
 }
