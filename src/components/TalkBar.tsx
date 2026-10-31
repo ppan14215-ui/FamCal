@@ -196,12 +196,15 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, o
       let audioDone: (() => void) | null = null;
       // A long sentence takes the phone a moment to close the file (31.10. 12:42 a voice note missed the cloud ears after 1.5 s and fell back to the phone's English guess); the wait ends the moment the file is there.
       const audioReady = new Promise<void>((r) => { audioDone = r; setTimeout(r, 5000); });
-      let sent = false;
       const cloud = cloudOn();
       setWavy(cloud);
-      const finish = async () => {
-        if (sent || typed.current) return;
-        sent = true;
+      // One finish per recording, shared by the stop tap, the error and the end event. Julian 31.10. 16:10: every second
+      // try failed: Android sends an error after a stop BEFORE the recording file; the second caller got an empty
+      // promise, removed all listeners at once, and the file (audioend) arrived with nobody listening.
+      let finishing: Promise<void> | null = null;
+      const finish = () => (finishing ??= finishNow());
+      const finishNow = async () => {
+        if (typed.current) return;
         setWriting(true);
         await audioReady;
         // The phone's guess may be empty when it heard the wrong language; the recording still goes to the cloud ears.
@@ -231,7 +234,8 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, o
         // Android can end a long recording with an error (no-speech, network) although the file is there (31.10. 14:16 a
         // voice note skipped the cloud ears). Keep listening for the file and finish like a normal stop.
         SR.addListener('error', () => { clearTimeout(quiet); setListening(false); void finish().finally(() => subs.forEach((x) => x.remove())); }),
-        SR.addListener('audioend', (e) => { audio = e.uri ?? null; audioDone?.(); }),
+        // A second teardown can send audioend again without a file; keep the first real one.
+        SR.addListener('audioend', (e) => { if (e.uri) { audio = e.uri; audioDone?.(); } }),
         SR.addListener('end', () => { clearTimeout(quiet); setListening(false); void finish().finally(() => subs.forEach((x) => x.remove())); }),
       ];
       // A tap on the mic ends at once (Julian 28.10.): keep what was heard and put it in the field, no waiting for the phone to finish.
