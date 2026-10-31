@@ -15,6 +15,7 @@ import LineIcon from './ui/LineIcon';
 import PressScale from './ui/PressScale';
 import VoiceBars from './VoiceBars';
 import VoiceRing from './VoiceRing';
+import VoiceWaves from './VoiceWaves';
 import { useMicStyle } from '../lib/micStyle';
 import { useSharedValue, withTiming } from 'react-native-reanimated';
 import { tokens, fonts } from '../theme';
@@ -96,9 +97,9 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, o
   const spokenText = useRef(false);
   /** ElevenLabs is writing the sentence down. */
   const [writing, setWriting] = useState(false);
-  // Julian 31.10. 15:26: "der Text sollte auch im Input-Feld auftauchen, während ich spreche". The phone's live guess shows grey;
-  // the cloud text replaces it at the end.
-  const [draft, setDraft] = useState(false);
+  // Julian 31.10. 15:42: that grey guess was the phone's English and jumped to German at the end. With the cloud ears on
+  // the field shows only a wave while listening (like Claude); the text appears once, correct.
+  const [wavy, setWavy] = useState(false);
   useEffect(() => () => { timers.current.forEach(clearTimeout); clearTimeout(blurT.current); setTyping(false); }, []);
 
   // On the web the textarea never shrinks by itself, so measure it fresh.
@@ -138,7 +139,7 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, o
   };
 
   // Julian 31.10.: spoken words never send by themselves. They land in the field, correct, and only Senden sends.
-  const land = (t: string) => { setDraft(false); setText(t.trim()); spokenText.current = true; };
+  const land = (t: string) => { setText(t.trim()); spokenText.current = true; };
 
   const listen = () => {
     if (listening) { haptics.tap(); stopNative.current?.(); return; }
@@ -197,6 +198,7 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, o
       const audioReady = new Promise<void>((r) => { audioDone = r; setTimeout(r, 5000); });
       let sent = false;
       const cloud = cloudOn();
+      setWavy(cloud);
       const finish = async () => {
         if (sent || typed.current) return;
         sent = true;
@@ -210,7 +212,7 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, o
         // phone's guess (one language, often wrong English) never lands; a miss says so and asks to speak again.
         if (cloud) {
           if (better) land(better);
-          else { setDraft(false); setText(''); haptics.tap(); toast(tx('Die Aufnahme kam nicht an. Tipp aufs Mikro und sag es bitte nochmal.', 'The recording didn\'t come through. Tap the mic and say it again.'), undefined, { kind: 'warn' }); }
+          else { setText(''); haptics.tap(); toast(tx('Die Aufnahme kam nicht an. Tipp aufs Mikro und sag es bitte nochmal.', 'The recording didn\'t come through. Tap the mic and say it again.'), undefined, { kind: 'warn' }); }
           return;
         }
         const t = heard();
@@ -221,9 +223,8 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, o
         SR.addListener('result', (e) => {
           const t = e.results[0]?.transcript ?? '';
           if (e.isFinal) { done = `${done} ${t}`; part = ''; } else part = t;
-          // The phone hears in one language only, so its live guess is often wrong English (Julian 31.10.). With the cloud ears on, the field waits for their text.
-          if (cloud) setDraft(true);
-          setText(heard());
+          // The phone hears in one language only, so its live guess is often wrong English (Julian 31.10.). With the cloud ears on it never shows.
+          if (!cloud) setText(heard());
         }),
         // -2 to 10 from the phone; below 0 is inaudible.
         SR.addListener('volumechange', (e) => { level.value = withTiming(Math.min(1, Math.max(0, e.value / 10)), { duration: 100 }); }),
@@ -239,7 +240,7 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, o
         clearTimeout(quiet); SR.stop(); setListening(false);
         void finish();
       };
-      toKeys.current = () => { clearTimeout(quiet); SR.abort(); setListening(false); setDraft(false); };
+      toKeys.current = () => { clearTimeout(quiet); SR.abort(); setListening(false); };
       // Only the user stops it; the cap is a safety net, not a pause guess.
       hush(MAX_MS);
       SR.start({
@@ -290,6 +291,7 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, o
           <LineIcon name="x" size={20} color={tokens.ink} stroke={2} />
         </PressScale>
       ) : plus}
+      <View style={{ flex: 1, minWidth: 0 }}>
       <TextInput
         ref={field}
         onFocus={() => {
@@ -311,13 +313,19 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, o
         }}
         scrollEnabled={boxH >= MAX_H}
         editable={!demo}
-        placeholder={writing ? tx('Schreibe auf …', 'Writing it down …') : listening ? tx('Ich höre zu … Tippe ■ wenn fertig', 'Listening … Tap ■ when done') : placeholder}
+        placeholder={writing ? tx('Schreibe auf …', 'Writing it down …') : listening && wavy ? '' : listening ? tx('Ich höre zu … Tippe ■ wenn fertig', 'Listening … Tap ■ when done') : placeholder}
         placeholderTextColor={tokens.mute}
         selectionColor={tokens.select} cursorColor={tokens.ink}
         returnKeyType={TOUCH ? 'default' : 'send'}
         accessibilityLabel={tx('Was steht an?', 'What\'s on?')}
-        style={[{ flex: 1, minWidth: 0, height: boxH, marginBottom: 2, fontFamily: fonts[400], fontSize: split ? 16 : 16.5, lineHeight: LINE, color: draft ? tokens.mute : tokens.ink, paddingVertical: PAD, paddingHorizontal: split ? 3 : 8, textAlignVertical: 'top', includeFontPadding: false }, Platform.OS === 'web' ? ({ outlineStyle: 'none' } as any) : null]}
+        style={[{ width: '100%', height: boxH, marginBottom: 2, fontFamily: fonts[400], fontSize: split ? 16 : 16.5, lineHeight: LINE, color: tokens.ink, paddingVertical: PAD, paddingHorizontal: split ? 3 : 8, textAlignVertical: 'top', includeFontPadding: false }, Platform.OS === 'web' ? ({ outlineStyle: 'none' } as any) : null]}
       />
+      {listening && wavy ? (
+        <View pointerEvents="none" style={{ position: 'absolute', left: split ? 3 : 8, right: 6, top: 0, bottom: 2, justifyContent: 'center' }}>
+          <VoiceWaves level={level} />
+        </View>
+      ) : null}
+      </View>
       {/* Plus stays reachable while the mic listens (Julian 28.10.: "wie komme ich an das + Menü?"). */}
       {onClose && (!text || listening) ? plus : null}
       {split ? (
