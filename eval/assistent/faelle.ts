@@ -203,6 +203,9 @@ export const FAELLE: Fall[] = [
   { id: 'nach-der-arbeit', saetze: ['Marco kommt am Donnerstag nach der Arbeit'],
     pruefe: (e) => {
       const m = neu(e).find((x) => /marco/i.test(x.title));
+      // Der Testtag ist selbst ein Donnerstag: "am Donnerstag" kann heute oder
+      // nächste Woche heißen. Eine Rückfrage genau dazu ist richtig (erst klären, dann eintragen).
+      if (!m && e.frage && /(heute|29\.|nächst|5\.11|kommend)/i.test(e.frage)) return [...nichtsGeaendert(e), ...deutsch(e)];
       if (!m) return ['kein Termin für Marco'];
       const bad = m.date === '2026-11-05' || m.date === '2026-10-29' ? [] : [`Marco am ${m.date}`];
       // Arbeit hat an dem Tag keine Uhrzeit: keine erfundene Startzeit.
