@@ -1,0 +1,66 @@
+diff --git a/src/lib/assistent.ts b/src/lib/assistent.ts
+index 2f03656..79894e2 100644
+--- a/src/lib/assistent.ts
++++ b/src/lib/assistent.ts
+@@ -43,7 +43,7 @@ export function setAgent(v: boolean) {
+   AsyncStorage.setItem(KEY, v ? '1' : '0').catch(() => {});
+   subs.forEach((l) => l());
+ }
+-export const agentOn = () => HIDDEN.toggles || on;
++export const agentOn = () => HIDDEN.toggles || on || !!(globalThis as any).__canned;
+ export const useAgent = () => useSyncExternalStore((l) => { subs.add(l); return () => { subs.delete(l); }; }, agentOn, agentOn);
+ 
+ // ─── What Claude sees ──────────────────────────────────────────────────────
+@@ -149,6 +149,8 @@ export function agentBody(said: string, history: { said: string; app?: string }[
+ }
+ 
+ export async function askAgent(said: string, lines: { said: string; app?: string }[], screen = '', onSay?: (say: string) => void): Promise<AgentAnswer | null> {
++  const canned = (globalThis as any).__canned;
++  if (canned) { const a = canned[said.trim()] ?? null; if (a) { await new Promise((ok) => setTimeout(ok, 400)); onSay?.(a.text); } return a; }
+   const session = getAuth().session;
+   const url = process.env.EXPO_PUBLIC_SUPABASE_URL;
+   if (!supabase || !session || !url) return null;
+diff --git a/src/lib/feed.ts b/src/lib/feed.ts
+index 73e378d..46537da 100644
+--- a/src/lib/feed.ts
++++ b/src/lib/feed.ts
+@@ -65,6 +65,7 @@ const subs = new Set<() => void>();
+ const sorted = (xs: FeedEntry[]) => [...xs].sort((a, b) => a.at.localeCompare(b.at));
+ const emit = () => { subs.forEach((l) => l()); AsyncStorage.setItem(KEY, JSON.stringify(feed.slice(-300))).catch(() => {}); };
+ const put = (f: FeedEntry) => { feed = sorted([...feed.filter((x) => x.id !== f.id), f]); emit(); };
++(globalThis as any).__feed = { put };
+ 
+ AsyncStorage.getItem(KEY).then((v) => {
+   if (!v) return;
+diff --git a/src/lib/verstehen.ts b/src/lib/verstehen.ts
+index 1c0ab93..e984810 100644
+--- a/src/lib/verstehen.ts
++++ b/src/lib/verstehen.ts
+@@ -18,7 +18,7 @@ const myLists = () => get().lists.filter((l) => l.id !== 'wissen').map((l) => ({
+ /** The rules have answered already; Claude may take longer for a sentence with many Termine (Julian 28.10.). */
+ const WAIT_MS = 15000;
+ 
+-export const canUnderstand = () => !!supabase && !!getAuth().session;
++export const canUnderstand = () => !!(globalThis as any).__canned || (!!supabase && !!getAuth().session);
+ 
+ /** The free month is used up (Julian 27.10.: 14 Tage Plus, dann 30 Sätze im Monat). Said once, then the rules answer quietly. */
+ let toldLimit = false;
+diff --git a/src/state/store.ts b/src/state/store.ts
+index 61a9a55..88471de 100644
+--- a/src/state/store.ts
++++ b/src/state/store.ts
+@@ -175,7 +175,7 @@ const mapItems = (l: List, f: (i: Item) => Item | null): List => ({
+ 
+ // ─── Actions ───────────────────────────────────────────────────────────────
+ 
+-export const actions = {
++export const actions: any = {
+   reset() { state = initial(); applyNames(state.names); actions.setColor('J', 0); actions.setColor('T', 1); },
+   loadDemo() { const d = demo(); applyNames(d.names!); set(() => d); actions.setColor('J', 0); actions.setColor('T', 1); },
+   setNames(names: { J: string; T: string }) { applyNames(names); set(() => ({ names })); },
+@@ -541,3 +541,5 @@ AsyncStorage.getItem(COLORS_KEY).then((v) => {
+   if (!c) return;
+   (['J', 'T'] as PersonId[]).forEach((p) => { if (Number.isInteger(c[p]) && personPalette[c[p]]) actions.setColor(p, c[p]); });
+ }).catch(() => {});
++
++(globalThis as any).__fc = { get, set, actions };

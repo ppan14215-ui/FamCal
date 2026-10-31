@@ -246,12 +246,22 @@ h1 { font-weight: 600; font-size: clamp(40px, 6.4vw, 78px); line-height: 1.02; l
       <div class="scr shot stacked" data-scr-name="termin" style="background:{{bg:termin}}"><div class="status"><span>8:50</span><span>●●●</span></div><img src="{{shot:termin}}" alt=""></div>
       <div class="scr shot stacked" data-scr-name="nachfrage" style="background:{{bg:nachfrage}}"><div class="status"><span>8:50</span><span>●●●</span></div><img src="{{shot:nachfrage}}" alt=""></div>
       <div class="scr shot stacked" data-scr-name="einkauf" style="background:{{bg:einkauf}}"><div class="status"><span>8:50</span><span>●●●</span></div><img src="{{shot:einkauf}}" alt=""></div>
+      <div class="scr shot stacked" data-scr-name="rezept" style="background:{{bg:rezept}}"><div class="status"><span>8:50</span><span>●●●</span></div><img src="{{shot:rezept}}" alt=""></div>
       <div class="scr shot stacked" data-scr-name="brief" style="background:{{bg:brief}}"><div class="status"><span>8:50</span><span>●●●</span></div><img src="{{shot:brief}}" alt=""></div>
+      <div class="scr shot stacked" data-scr-name="teilen" style="background:{{bg:teilen}}"><div class="status"><span>8:50</span><span>●●●</span></div><img src="{{shot:teilen}}" alt=""></div>
+      <div class="scr shot stacked" data-scr-name="mail" style="background:{{bg:mail}}"><div class="status"><span>8:50</span><span>●●●</span></div><img src="{{shot:mail}}" alt=""></div>
       <div class="scr shot stacked" data-scr-name="fragen" style="background:{{bg:fragen}}"><div class="status"><span>8:50</span><span>●●●</span></div><img src="{{shot:fragen}}" alt=""></div>
+      <div class="scr shot stacked" data-scr-name="chat2" style="background:{{bg:chat2}}"><div class="status"><span>8:50</span><span>●●●</span></div><img src="{{shot:chat2}}" alt=""></div>
+      <div class="scr shot stacked" data-scr-name="wissen" style="background:{{bg:wissen}}"><div class="status"><span>8:50</span><span>●●●</span></div><img src="{{shot:wissen}}" alt=""></div>
+      <div class="scr shot stacked" data-scr-name="briefing" style="background:{{bg:briefing}}"><div class="status"><span>8:50</span><span>●●●</span></div><img src="{{shot:briefing}}" alt=""></div>
+      <div class="scr shot stacked" data-scr-name="mitgedacht" style="background:{{bg:mitgedacht}}"><div class="status"><span>8:50</span><span>●●●</span></div><img src="{{shot:mitgedacht}}" alt=""></div>
       <div class="scr shot stacked" data-scr-name="heute" style="background:{{bg:heute}}"><div class="status"><span>8:50</span><span>●●●</span></div><img src="{{shot:heute}}" alt=""></div>
       <div class="scr shot stacked" data-scr-name="woche" style="background:{{bg:woche}}"><div class="status"><span>8:50</span><span>●●●</span></div><img src="{{shot:woche}}" alt=""></div>
+      <div class="scr shot stacked" data-scr-name="bearbeiten" style="background:{{bg:bearbeiten}}"><div class="status"><span>8:50</span><span>●●●</span></div><img src="{{shot:bearbeiten}}" alt=""></div>
       <div class="scr shot stacked" data-scr-name="listen" style="background:{{bg:listen}}"><div class="status"><span>8:50</span><span>●●●</span></div><img src="{{shot:listen}}" alt=""></div>
-      <div class="scr shot stacked" data-scr-name="ort" style="background:{{bg:ort}}"><div class="status"><span>8:50</span><span>●●●</span></div><img src="{{shot:ort}}" alt=""></div>
+      <div class="scr shot stacked" data-scr-name="watchlist" style="background:{{bg:watchlist}}"><div class="status"><span>8:50</span><span>●●●</span></div><img src="{{shot:watchlist}}" alt=""></div>
+      <div class="scr shot stacked" data-scr-name="wieder" style="background:{{bg:wieder}}"><div class="status"><span>8:50</span><span>●●●</span></div><img src="{{shot:wieder}}" alt=""></div>
+      <div class="scr shot stacked" data-scr-name="karte" style="background:{{bg:karte}}"><div class="status"><span>8:50</span><span>●●●</span></div><img src="{{shot:karte}}" alt=""></div>
       <div class="scr shot stacked" data-scr-name="urlaub" style="background:{{bg:urlaub}}"><div class="status"><span>8:50</span><span>●●●</span></div><img src="{{shot:urlaub}}" alt=""></div>
       <div class="scr shot stacked" data-scr-name="kalender" style="background:{{bg:kalender}}"><div class="status"><span>8:50</span><span>●●●</span></div><img src="{{shot:kalender}}" alt=""></div>
       <div class="scr shot stacked" data-scr-name="widget" style="background:{{bg:widget}}"><div class="status"><span>8:50</span><span>●●●</span></div><img src="{{shot:widget}}" alt=""></div>
@@ -297,11 +307,11 @@ function setMode(m) { document.documentElement.dataset.mode = m; $('mode').setAt
 // Sprache: Deutsch und Englisch, Standard aus dem Browser, Wahl wird gemerkt
 const T = {
   de: {
-    nav: 'Hauptnavigation', navProto: 'Prototyp', navList: 'Warteliste', other: 'English', dark: 'Dunkler Modus', light: 'Heller Modus',
+    soon: 'Bald', nav: 'Hauptnavigation', navProto: 'Prototyp', navList: 'Warteliste', other: 'English', dark: 'Dunkler Modus', light: 'Heller Modus',
     h1: 'Einmal sagen. Beide wissen’s.',
     lede: 'Sprich, tipp oder fotografier, was ansteht. FamCal erkennt, ob es ein Termin oder etwas für die Einkaufsliste ist, und legt es an die richtige Stelle. Bei euch beiden, sofort.',
     cta1: 'Auf die Warteliste', cta2: 'Prototyp ansehen',
-    phone: 'Echte Screens aus der FamCal App: Chat, Termin per Satz, Nachfrage, Einkauf, Brief per Foto, Partner fragen, Heute, Woche, Listen, Orte, Urlaub und Feiertage, Kalender verbinden, Widget.',
+    phone: 'Echte Screens aus der FamCal App, eine pro Funktion.',
     wlH: 'Bald zu zweit ausprobieren.', wlP: 'Tragt euch ein, dann melden wir uns, sobald ihr FamCal gemeinsam testen könnt.',
     mail: 'E‑Mail', ph: 'eure@mail.de', submit: 'Eintragen', note: 'Vorschau: Das Formular speichert noch nichts.', thanks: 'Danke! In dieser Vorschau wird noch nichts gespeichert.',
     t1: 'In eurer Sprache', t1s: 'Deutsch und Englisch ab dem ersten Tag. Versteht „übermorgen“ und „halb drei“.',
@@ -309,38 +319,36 @@ const T = {
     t3: 'Alle gleichberechtigt', t3s: 'Niemand ist Admin, alle sehen und ändern alles.',
     f1: 'FamCal · Arbeitsname · Köln', f2: 'Einmal sagen. Beide wissen’s.',
     feats: [
-      { h: "Sag es einfach.", p: "Sprich oder tipp einen Satz, in jeder Sprache. FamCal macht daraus einen Termin mit Tag, Uhrzeit und wer hingeht, und antwortet kurz in deiner Sprache.",
-        f: [["Sprechen in jeder Sprache", "Das Handy hört zu, der Text landet im Feld."], ["Anlegen, ändern, löschen", "„Verschieb den Zahnarzt auf Montag“ reicht."], ["Alles bleibt bearbeitbar", "Jeder Eintrag lässt sich antippen und ändern."]] },
-      { h: "Fehlt etwas, fragt er nach.", p: "Keine Uhrzeit genannt? FamCal trägt den Termin trotzdem ein und fragt kurz nach. Ein Tipp auf die Antwort, fertig.",
-        f: [["Antworten zum Antippen", "9:00, 15:00 oder ganztägig, ohne zu tippen."], ["Wer geht?", "Ich, Tom oder beide, direkt am Termin."]] },
-      { h: "Ein Satz, und es steht auf der Liste.", p: "„Wir brauchen Milch und Windeln“ landet auf der Einkaufsliste, bei euch beiden. Schickt ein Rezept oder einen Link, und die Zutaten kommen dazu.",
-        f: [["Rezept zu Zutaten", "Ein Link oder ein Gericht genügt."], ["Gemerkt fürs nächste Mal", "Beim nächsten „Ich koche Bolognese“ kennt FamCal das Rezept."]] },
-      { h: "Brief fotografieren, fertig.", p: "Ein Foto vom Brief, und FamCal findet Termine, Fristen und was mitzubringen ist. Ihr bestätigt mit einem Tipp.",
-        f: [["Fristen im Kalender", "Mit Datum und Erinnerung."], ["Aufgaben und Mitbringen", "Landen dort, wo sie hingehören."], ["Das Foto bleibt bei euch", "Nur die Einträge kommen in den Kalender."]] },
-      { h: "Partner fragen, ohne Hin und Her.", p: "„Frag Tom, ob Samstag passt.“ Tom bekommt eine Karte mit Ja und Nein. Im Familienchat seht ihr beide alles live.",
-        f: [["Ja oder Nein", "Eine Antwort, und der Termin steht."], ["Familienchat mit Live Karten", "Jeder Eintrag erscheint sofort beim anderen."]] },
-      { h: "Heute auf einen Blick.", p: "Was als Nächstes ansteht, wer hingeht und was mit muss. Darunter eure offenen To-dos.",
-        f: [["Als Nächstes", "Mit Countdown, Ort und Mitbringen."], ["Offene To-dos", "Was heute fällig ist, steht mit drin."]] },
-      { h: "Jede Ansicht, die ihr braucht.", p: "Tage, Woche, Monat und Jahr. Jeder Termin hat die Farbe der Person, die hingeht.",
-        f: [["Termine ziehen", "Verschieben mit dem Finger."], ["Nach Person filtern", "Nur Toms oder nur Julias Termine."], ["Wischen zum Löschen", "Mit Rückgängig, falls es zu schnell ging."]] },
-      { h: "Listen für alles.", p: "Einkauf, Zu erledigen und eure eigenen Listen, für beide gleichzeitig aktuell.",
-        f: [["Punkteliste", "Für Rommé und andere Spiele."], ["Watchlist mit Covern", "Filme und Serien, die ihr sehen wollt."], ["Vorlagen", "Urlaub, Kliniktasche, Erstausstattung."]] },
-      { h: "Er merkt sich eure Orte.", p: "Einmal bestätigt, kennt FamCal euren Kinderarzt. Beim nächsten Termin stehen Adresse und Karte von selbst dabei.",
-        f: [["Einmal sagen", "Danach kommt der Ort automatisch."], ["Mit Karte", "Adresse direkt am Termin."]] },
-      { h: "Urlaub und Feiertage.", p: "Wählt Land und Bundesland, dann stehen eure Feiertage im Kalender. Urlaubstage zählt FamCal für jeden mit.",
-        f: [["Feiertage nach Region", "Deutschland, Österreich, Schweiz und mehr."], ["Urlaubstage im Blick", "Wochenenden und Feiertage zählen nicht."]] },
-      { h: "Eure Kalender kommen mit.", p: "Verbindet den Kalender vom Handy, damit nichts doppelt ist. Ihr wählt, was erscheint, der Rest bleibt privat.",
-        f: [["iCloud, Google, Outlook", "Arbeit erscheint nur als gestreifter Block."], ["Kalender Abo", "Eure Termine auch in Apple oder Google Kalender."]] },
-      { h: "Heute auf dem Homescreen.", p: "Das Widget zeigt den nächsten Termin und den Tag, ohne die App zu öffnen. Ein Tipp führt an die richtige Stelle.",
-        f: [["Klein und mittel", "Zuerst für Android."], ["Immer aktuell", "Ändert einer etwas, sieht es der andere sofort."]] }
+      {"h": "Sag es einfach.", "p": "Sprich oder tipp einen Satz, in jeder Sprache. FamCal macht daraus einen Termin mit Tag, Uhrzeit und wer hingeht, und antwortet kurz in deiner Sprache.", "f": [["Sprechen in jeder Sprache", "Das Handy hört zu, der Text landet im Feld."], ["Anlegen, ändern, löschen", "„Verschieb den Zahnarzt auf Montag“ reicht."]]},
+      {"h": "Fehlt etwas, fragt er nach.", "p": "Keine Uhrzeit genannt? FamCal trägt den Termin trotzdem ein und fragt kurz nach. Ein Tipp auf die Antwort, fertig.", "f": [["Antworten zum Antippen", "9:00, 15:00 oder ganztägig, ohne zu tippen."], ["Wer geht?", "Ich, Tom oder beide, direkt am Termin."]]},
+      {"h": "Ein Satz, und es steht auf der Liste.", "p": "„Wir brauchen Milch und Windeln“ landet auf der Einkaufsliste, bei euch beiden gleichzeitig.", "f": [["Termin oder Einkauf", "FamCal erkennt selbst, wohin es gehört."], ["Auch gemischt", "Ein Satz mit Einkauf und Termin wird aufgeteilt."]]},
+      {"h": "Vom Rezept zur Einkaufsliste.", "p": "„Ich koche heute Abend Bolognese.“ FamCal schlägt die Zutaten vor, ihr tippt weg, was schon da ist, der Rest kommt auf die Liste.", "f": [["Gericht oder Link", "Ein Rezept aus dem Netz geht genauso."], ["Gemerkt fürs nächste Mal", "Beim nächsten Mal kennt FamCal euer Rezept."]]},
+      {"h": "Brief fotografieren, fertig.", "p": "Ein Foto vom Brief, und FamCal findet Termine, Fristen und was zu tun ist. Ihr bestätigt mit einem Tipp.", "f": [["Fristen im Kalender", "Mit Datum und Erinnerung."], ["Das Foto bleibt bei euch", "Nur die Einträge kommen in den Kalender."]]},
+      {"h": "Aus jeder App teilen.", "p": "Die Nachricht aus der Kita Gruppe einfach mit FamCal teilen. Termin, Uhrzeit und was mitzubringen ist, stehen danach im Kalender.", "f": [["WhatsApp, Mail, Browser", "Überall, wo es Teilen gibt."], ["Wie gesagt", "Geteilter Text wird verstanden wie ein Satz."]]},
+      {"h": "Mails einfach weiterleiten.", "p": "Jede Familie bekommt eine eigene Adresse. Leitet Einladungen und Bestätigungen dorthin weiter, FamCal liest mit und trägt ein.", "f": [["Eure Familienadresse", "Auch bei Ärzten und Ämtern hinterlegen."], ["Ihr bestätigt", "Nichts landet ungefragt im Kalender."]], "soon": true},
+      {"h": "Partner fragen, ohne Hin und Her.", "p": "„Frag Tom, ob Samstag passt.“ Tom bekommt eine Karte mit Ja und Nein, und die Antwort steht direkt am Termin.", "f": [["Ja oder Nein", "Eine Antwort, und der Termin steht."], ["Kein Weiterleiten", "Kein Screenshot, kein Nachhaken."]]},
+      {"h": "Euer Chat zu zweit.", "p": "Alles, was einer sagt oder einträgt, steht im gemeinsamen Chat. Mit Karten, die live bleiben: abgehakt in der Liste heißt abgehakt im Chat.", "f": [["Das Protokoll eurer Familie", "Wer hat was wann eingetragen."], ["Auch einfach schreiben", "Eine Nachricht an den anderen geht genauso."]]},
+      {"h": "Er erinnert sich.", "p": "„Merk dir, Ben hat Schuhgröße 22.“ FamCal merkt es sich für euch beide und weiß es, wenn ihr später fragt, mit Quelle.", "f": [["Was ich weiß", "Alles Gemerkte auf einer Seite, wischen löscht."], ["Nie Passwörter", "PINs und Kontonummern merkt er sich nicht."]]},
+      {"h": "Eure Woche, kurz erklärt.", "p": "Das Wochenbriefing zeigt, wie viele Termine anstehen, wo sich etwas überschneidet und wo noch keiner zuständig ist.", "f": [["Überschneidungen", "Bevor es eng wird."], ["Wer geht?", "Offene Termine auf einen Blick."]]},
+      {"h": "Mitgedacht für eure Kinder.", "p": "FamCal kennt das Alter eurer Kinder und erinnert an das, was ansteht: U-Untersuchungen, Impfungen, Schulanmeldung.", "f": [["Zur richtigen Zeit", "„Erste Impfungen, ab 14. Nov“."], ["Ein Tipp genügt", "Auf die Liste oder schon erledigt."]]},
+      {"h": "Heute auf einen Blick.", "p": "Was als Nächstes ansteht, wer hingeht und was mit muss. Darunter eure offenen To-dos.", "f": [["Als Nächstes", "Mit Countdown, Ort und Mitbringen."], ["Offene To-dos", "Was heute fällig ist, steht mit drin."]]},
+      {"h": "Jede Ansicht, die ihr braucht.", "p": "Tage, Woche, Monat und Jahr. Jeder Termin hat die Farbe der Person, die hingeht.", "f": [["Termine ziehen", "Verschieben mit dem Finger."], ["Nach Person filtern", "Nur Toms oder nur Julias Termine."]]},
+      {"h": "Jeden Termin anpassen.", "p": "Antippen und ändern: Zeit, wer geht, wer dabei ist, Wiederholung, Erinnerung und was mit muss. Oder einfach unten sagen, was anders ist.", "f": [["Per Satz ändern", "„Tom bringt Ben“ ändert den Termin."], ["Wischen zum Löschen", "Mit Rückgängig, falls es zu schnell ging."]]},
+      {"h": "Listen für alles.", "p": "Einkauf, Zu erledigen und eure eigenen Listen, für beide gleichzeitig aktuell. FamCal bemerkt auch, was ihr regelmäßig kauft.", "f": [["Punkteliste", "Für Rommé und andere Spiele."], ["Vorlagen", "Urlaub, Kliniktasche, Erstausstattung."]]},
+      {"h": "Eure Filmliste.", "p": "„Erstelle eine Watchlist mit Dune, Oppenheimer und Barbie.“ Die Liste weiß, dass es Filme sind, holt Cover und Jahr dazu und merkt, was ihr gesehen habt.", "f": [["Mit Covern", "Filme und Serien, ganz von selbst."], ["Gesehen abhaken", "Und Sterne vergeben."]]},
+      {"h": "Er merkt sich eure Orte.", "p": "Einmal bestätigt, kennt FamCal euren Kinderarzt. Beim nächsten Termin steht er von selbst dabei, wie beim letzten Mal.", "f": [["Einmal sagen", "Danach kommt der Ort automatisch."], ["Für beide", "Was einer bestätigt, kennt auch der andere."]]},
+      {"h": "Mit Karte und Google Maps.", "p": "Nennt einen Namen, FamCal sucht die Praxis in eurer Nähe und zeigt sie auf der Karte. Ein Tipp öffnet den Weg in Google Maps.", "f": [["Ist er das?", "Ihr bestätigt die richtige Adresse."], ["Route mit einem Tipp", "Direkt aus dem Termin."]]},
+      {"h": "Urlaub und Feiertage.", "p": "Wählt Land und Bundesland, dann stehen eure Feiertage im Kalender. Urlaubstage zählt FamCal für jeden mit.", "f": [["Feiertage nach Region", "Deutschland, Österreich, Schweiz und mehr."], ["Urlaubstage im Blick", "Wochenenden und Feiertage zählen nicht."]]},
+      {"h": "Eure Kalender kommen mit.", "p": "Verbindet den Kalender vom Handy, damit nichts doppelt ist. Ihr wählt, was erscheint, der Rest bleibt privat.", "f": [["iCloud, Google, Outlook", "Arbeit erscheint nur als gestreifter Block."], ["Kalender Abo", "Eure Termine auch in Apple oder Google Kalender."]]},
+      {"h": "Heute auf dem Homescreen.", "p": "Das Widget zeigt den nächsten Termin und den Tag, ohne die App zu öffnen. Ein Tipp führt an die richtige Stelle.", "f": [["Klein und mittel", "Zuerst für Android."], ["Immer aktuell", "Ändert einer etwas, sieht es der andere sofort."]]}
     ]
   },
   en: {
-    nav: 'Main navigation', navProto: 'Prototype', navList: 'Waitlist', other: 'Deutsch', dark: 'Dark mode', light: 'Light mode',
+    soon: 'Coming soon', nav: 'Main navigation', navProto: 'Prototype', navList: 'Waitlist', other: 'Deutsch', dark: 'Dark mode', light: 'Light mode',
     h1: 'Say it once. You both know.',
     lede: 'Say, type or snap what’s coming up. FamCal knows whether it’s an appointment or something for the shopping list and puts it in the right place. For both of you, instantly.',
     cta1: 'Join the waitlist', cta2: 'See the prototype',
-    phone: 'Real screens from the FamCal app, in German: chat, an event from one sentence, a follow-up question, shopping, a letter photo, asking your partner, today, week, lists, places, holidays, connected calendars, widget.',
+    phone: 'Real screens from the FamCal app, in German, one per feature.',
     wlH: 'Try it as a pair soon.', wlP: 'Sign up and we will let you know as soon as you can test FamCal together.',
     mail: 'Email', ph: 'you@email.com', submit: 'Sign up', note: 'Preview: the form does not save anything yet.', thanks: 'Thanks! Nothing is saved in this preview yet.',
     t1: 'In your language', t1s: 'English and German from day one. Gets “day after tomorrow” and “half past two”.',
@@ -348,30 +356,28 @@ const T = {
     t3: 'Everyone equal', t3s: 'No admins. Everyone sees and edits everything.',
     f1: 'FamCal · working name · Cologne', f2: 'Say it once. You both know.',
     feats: [
-      { h: "Just say it.", p: "Say or type one sentence, in any language. FamCal turns it into an event with day, time and who is going, and answers briefly in your language.",
-        f: [["Speak in any language", "Your phone listens, the text lands in the field."], ["Add, change, delete", "“Move the dentist to Monday” is enough."], ["Everything stays editable", "Tap any entry to change it."]] },
-      { h: "Something missing? It asks.", p: "No time given? FamCal adds the event anyway and asks a quick question. One tap on the answer and you are done.",
-        f: [["Answers to tap", "9:00, 15:00 or all day, no typing."], ["Who is going?", "Me, Tom or both, right on the event."]] },
-      { h: "One sentence, and it's on the list.", p: "“We need milk and nappies” lands on the shopping list, for both of you. Send a recipe or a link and the ingredients are added.",
-        f: [["Recipe to ingredients", "A link or a dish is enough."], ["Remembered for next time", "Next time you say “I'm making bolognese”, FamCal knows the recipe."]] },
-      { h: "Snap a letter, done.", p: "Take a photo of a letter and FamCal finds the dates, deadlines and what to bring. You confirm with one tap.",
-        f: [["Deadlines in the calendar", "With date and reminder."], ["To-dos and things to bring", "Land where they belong."], ["The photo stays with you", "Only the entries go into the calendar."]] },
-      { h: "Ask your partner, no back and forth.", p: "“Ask Tom if Saturday works.” Tom gets a card with yes and no. In the family chat you both see everything live.",
-        f: [["Yes or no", "One answer and the event is set."], ["Family chat with live cards", "Every entry shows up for the other right away."]] },
-      { h: "Today at a glance.", p: "What is next, who is going and what to bring. Below it, your open to-dos.",
-        f: [["Up next", "With countdown, place and things to bring."], ["Open to-dos", "Whatever is due today is right there."]] },
-      { h: "Every view you need.", p: "Days, week, month and year. Every event has the color of the person going.",
-        f: [["Drag events", "Move them with your finger."], ["Filter by person", "Only Tom's or only Julia's events."], ["Swipe to delete", "With undo, in case it was too quick."]] },
-      { h: "Lists for everything.", p: "Shopping, to-dos and your own lists, up to date for both of you at once.",
-        f: [["Score sheet", "For rummy and other games."], ["Watchlist with covers", "Films and shows you want to see."], ["Templates", "Holidays, hospital bag, baby essentials."]] },
-      { h: "It remembers your places.", p: "Confirm your pediatrician once and FamCal knows it. Next time, address and map are added on their own.",
-        f: [["Say it once", "After that the place comes automatically."], ["With a map", "The address right on the event."]] },
-      { h: "Holidays and time off.", p: "Pick your country and region and your public holidays appear in the calendar. FamCal counts everyone's vacation days.",
-        f: [["Holidays by region", "Germany, Austria, Switzerland, the US, the UK and more."], ["Vacation days in view", "Weekends and holidays don't count."]] },
-      { h: "Your calendars come along.", p: "Connect the calendar on your phone so nothing is doubled. You choose what shows up, the rest stays private.",
-        f: [["iCloud, Google, Outlook", "Work shows up only as a striped block."], ["Calendar subscription", "Your events in Apple or Google Calendar too."]] },
-      { h: "Today on your home screen.", p: "The widget shows the next event and your day without opening the app. One tap takes you to the right spot.",
-        f: [["Small and medium", "Android first."], ["Always up to date", "When one of you changes something, the other sees it right away."]] }
+      {"h": "Just say it.", "p": "Say or type one sentence, in any language. FamCal turns it into an event with day, time and who is going, and answers briefly in your language.", "f": [["Speak in any language", "Your phone listens, the text lands in the field."], ["Add, change, delete", "“Move the dentist to Monday” is enough."]]},
+      {"h": "Something missing? It asks.", "p": "No time given? FamCal adds the event anyway and asks a quick question. One tap on the answer and you are done.", "f": [["Answers to tap", "9:00, 15:00 or all day, no typing."], ["Who is going?", "Me, Tom or both, right on the event."]]},
+      {"h": "One sentence, and it's on the list.", "p": "“We need milk and nappies” lands on the shopping list, for both of you at once.", "f": [["Event or shopping", "FamCal works out where it belongs."], ["Mixed works too", "One sentence with shopping and an event gets split."]]},
+      {"h": "From recipe to shopping list.", "p": "“I'm making bolognese tonight.” FamCal suggests the ingredients, you tap away what you have, the rest goes on the list.", "f": [["Dish or link", "A recipe from the web works just the same."], ["Remembered for next time", "Next time FamCal knows your recipe."]]},
+      {"h": "Snap a letter, done.", "p": "Take a photo of a letter and FamCal finds the dates, deadlines and what to do. You confirm with one tap.", "f": [["Deadlines in the calendar", "With date and reminder."], ["The photo stays with you", "Only the entries go into the calendar."]]},
+      {"h": "Share from any app.", "p": "Share the message from the nursery group with FamCal. Date, time and what to bring end up in the calendar.", "f": [["WhatsApp, mail, browser", "Anywhere there is a share button."], ["Like you said it", "Shared text is understood like a sentence."]]},
+      {"h": "Just forward your mail.", "p": "Every family gets its own address. Forward invitations and confirmations to it, FamCal reads along and adds them.", "f": [["Your family address", "Leave it with doctors and offices too."], ["You confirm", "Nothing lands in the calendar unasked."]], "soon": true},
+      {"h": "Ask your partner, no back and forth.", "p": "“Ask Tom if Saturday works.” Tom gets a card with yes and no, and the answer shows on the event.", "f": [["Yes or no", "One answer and the event is set."], ["No forwarding", "No screenshots, no chasing."]]},
+      {"h": "Your chat for two.", "p": "Everything one of you says or adds shows up in the shared chat. With cards that stay live: ticked in the list means ticked in the chat.", "f": [["Your family's log", "Who added what and when."], ["Just write, too", "A message to the other works the same way."]]},
+      {"h": "It remembers.", "p": "“Remember, Ben wears shoe size 22.” FamCal keeps it for both of you and knows it when you ask later, with the source.", "f": [["What I know", "Everything remembered on one page, swipe to delete."], ["Never passwords", "It won't keep PINs or account numbers."]]},
+      {"h": "Your week, in short.", "p": "The weekly briefing shows how many events are coming up, where things clash and where nobody is in charge yet.", "f": [["Clashes", "Before it gets tight."], ["Who is going?", "Open events at a glance."]]},
+      {"h": "Thinking ahead for your kids.", "p": "FamCal knows how old your kids are and reminds you of what is due: checkups, vaccinations, school enrolment.", "f": [["At the right time", "“First vaccinations, from 14 Nov”."], ["One tap", "Onto the list or already done."]]},
+      {"h": "Today at a glance.", "p": "What is next, who is going and what to bring. Below it, your open to-dos.", "f": [["Up next", "With countdown, place and things to bring."], ["Open to-dos", "Whatever is due today is right there."]]},
+      {"h": "Every view you need.", "p": "Days, week, month and year. Every event has the color of the person going.", "f": [["Drag events", "Move them with your finger."], ["Filter by person", "Only Tom's or only Julia's events."]]},
+      {"h": "Fine-tune any event.", "p": "Tap and change it: time, who goes, who joins, repeat, reminder and what to bring. Or just say below what's different.", "f": [["Change it by sentence", "“Tom takes Ben” updates the event."], ["Swipe to delete", "With undo, in case it was too quick."]]},
+      {"h": "Lists for everything.", "p": "Shopping, to-dos and your own lists, up to date for both of you at once. FamCal also notices what you buy regularly.", "f": [["Score sheet", "For rummy and other games."], ["Templates", "Holidays, hospital bag, baby essentials."]]},
+      {"h": "Your film list.", "p": "“Make a watchlist with Dune, Oppenheimer and Barbie.” The list knows they are films, adds cover and year and tracks what you've watched.", "f": [["With covers", "Films and shows, all by itself."], ["Tick off watched", "And give stars."]]},
+      {"h": "It remembers your places.", "p": "Confirm your pediatrician once and FamCal knows it. Next time it is added on its own, just like last time.", "f": [["Say it once", "After that the place comes automatically."], ["For both", "What one confirms, the other knows too."]]},
+      {"h": "With a map and Google Maps.", "p": "Say a name and FamCal finds the practice near you and shows it on a map. One tap opens directions in Google Maps.", "f": [["Is this it?", "You confirm the right address."], ["Directions in one tap", "Straight from the event."]]},
+      {"h": "Holidays and time off.", "p": "Pick your country and region and your public holidays appear in the calendar. FamCal counts everyone's vacation days.", "f": [["Holidays by region", "Germany, Austria, Switzerland, the US, the UK and more."], ["Vacation days in view", "Weekends and holidays don't count."]]},
+      {"h": "Your calendars come along.", "p": "Connect the calendar on your phone so nothing is doubled. You choose what shows up, the rest stays private.", "f": [["iCloud, Google, Outlook", "Work shows up only as a striped block."], ["Calendar subscription", "Your events in Apple or Google Calendar too."]]},
+      {"h": "Today on your home screen.", "p": "The widget shows the next event and your day without opening the app. One tap takes you to the right spot.", "f": [["Small and medium", "Android first."], ["Always up to date", "When one of you changes something, the other sees it right away."]]}
     ]
   }
 };
@@ -389,7 +395,7 @@ function setLang(l) {
   const other = l === 'de' ? 'en' : 'de';
   $('lang').textContent = other.toUpperCase(); $('lang').lang = other; $('lang').setAttribute('aria-label', t.other);
   $('mode').setAttribute('aria-label', t[document.documentElement.dataset.mode === 'dark' ? 'light' : 'dark']);
-  $('innerL').innerHTML = FEATS.map((x, i) => `<div class="blk"><span class="num">${i + 1} / ${FEATS.length}</span><h2>${x.h}</h2><p>${x.p}</p></div>`).join('');
+  $('innerL').innerHTML = FEATS.map((x, i) => `<div class="blk"><span class="num">${i + 1} / ${FEATS.length}${x.soon ? ` · ${T[lang].soon}` : ''}</span><h2>${x.h}</h2><p>${x.p}</p></div>`).join('');
   $('innerR').innerHTML = FEATS.map(x => `<div class="blk">${featsHTML(x.f)}</div>`).join('');
   $('srFeat').innerHTML = FEATS.map(x => `<h2>${x.h}</h2><p>${x.p}</p><ul>${x.f.map(([b, s]) => `<li>${b}: ${s}</li>`).join('')}</ul>`).join('');
 }
@@ -419,7 +425,7 @@ function measure() {
     $('scrolly').style.height = '';
     buildMobile(); frame(0); return;
   }
-  const L = H * .78, p1 = H * .85;
+  const L = H * .7, p1 = H * .85;
   if (narrow) {
     // Handy: Telefon oben fest, eine Textkarte darunter
     const top = document.querySelector('.nav').getBoundingClientRect().bottom + 12, cardMin = 190;
