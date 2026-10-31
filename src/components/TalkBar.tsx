@@ -23,6 +23,7 @@ import { setTyping } from '../lib/keyboard';
 import { LIVE } from '../lib/live';
 import { usePrefill, takeFill } from '../lib/simple';
 import { tx } from '../i18n/lang';
+import { hearInCloud } from '../lib/hoeren';
 import { speechLocale } from '../lib/speechLang';
 
 // Phones and tablets: Enter on the screen keyboard adds a line.
@@ -33,8 +34,9 @@ const TOUCH = Platform.OS !== 'web' || (typeof window !== 'undefined' && !!windo
  * A finished sentence ends sooner (Julian 29.10.: "immer noch ziemlich lang"),
  * a sentence that stops on "und", "um" or a half word still waits the long pause (28.10.).
  */
-const SILENCE_MS = 2500;
-const DONE_MS = 1100;
+// Julian 31.10.: "bricht oft zu früh ab". Longer pauses before the phone gives up.
+const SILENCE_MS = 3200;
+const DONE_MS = 1900;
 const OPEN_END = /\b(und|oder|um|am|mit|für|bei|bis|von|zum|zur|nach|and|or|at|on|with|for|to|from|the|a)$/i;
 const sounded = (t: string, final: boolean) => final && !OPEN_END.test(t.replace(/[.,!?]+$/, '').trim());
 const FIRST_WORD_MS = 8000;
@@ -178,6 +180,19 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, o
       let part = '';
       let quiet: ReturnType<typeof setTimeout> | undefined;
       const heard = () => `${done} ${part}`.replace(/\s+/g, ' ').trim();
+      // The recording the phone keeps (Android 13 and newer); ElevenLabs then writes the final text in the language it hears.
+      let audio: string | null = null;
+      let audioDone: (() => void) | null = null;
+      const audioReady = new Promise<void>((r) => { audioDone = r; setTimeout(r, 1500); });
+      let sent = false;
+      const finish = async () => {
+        const h = heard();
+        if (sent || !h || typed.current) return;
+        sent = true;
+        await audioReady;
+        const better = audio ? await hearInCloud(audio) : null;
+        if (!typed.current) send(better ?? h, true);
+      };
       const hush = (ms: number) => { clearTimeout(quiet); quiet = setTimeout(() => SR.stop(), ms); };
       const subs = [
         SR.addListener('result', (e) => {
@@ -189,12 +204,14 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, o
         // -2 to 10 from the phone; below 0 is inaudible.
         SR.addListener('volumechange', (e) => { level.value = withTiming(Math.min(1, Math.max(0, e.value / 10)), { duration: 100 }); }),
         SR.addListener('error', () => { clearTimeout(quiet); subs.forEach((x) => x.remove()); if (!heard()) fail(); }),
-        SR.addListener('end', () => { clearTimeout(quiet); subs.forEach((x) => x.remove()); setListening(false); const h = heard(); if (h && !typed.current) send(h, true); }),
+        SR.addListener('audioend', (e) => { audio = e.uri ?? null; audioDone?.(); }),
+        SR.addListener('end', () => { clearTimeout(quiet); setListening(false); void finish().finally(() => subs.forEach((x) => x.remove())); }),
       ];
       // A tap on the mic ends at once (Julian 28.10.): keep what was heard, send it, no waiting for the phone to finish.
+      // stop, not abort, so the recording is finished and can go to the cloud ears.
       stopNative.current = () => {
-        clearTimeout(quiet); subs.forEach((x) => x.remove()); SR.abort(); setListening(false);
-        const h = heard(); if (h && !typed.current) send(h, true);
+        clearTimeout(quiet); SR.stop(); setListening(false);
+        void finish();
       };
       toKeys.current = () => { clearTimeout(quiet); SR.abort(); setListening(false); };
       // Nothing at all after a while: stop instead of listening forever.
@@ -203,6 +220,7 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, o
         lang: speechLocale(), interimResults: true, continuous: true, addsPunctuation: true,
         volumeChangeEventOptions: { enabled: true, intervalMillis: 100 },
         androidIntentOptions: { EXTRA_SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS: DONE_MS, EXTRA_SPEECH_INPUT_POSSIBLY_COMPLETE_SILENCE_LENGTH_MILLIS: DONE_MS },
+        recordingOptions: { persist: true },
       });
     } catch {
       fail();
