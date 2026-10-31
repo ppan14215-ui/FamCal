@@ -57,6 +57,7 @@ export default function RootLayout() {
             <Stack.Screen name="neu" options={sheet} />
             <Stack.Screen name="symbol" options={sheet} />
             <Stack.Screen name="meilenstein/[id]" options={sheet} />
+            <Stack.Screen name="titel" options={sheet} />
             <Stack.Screen name="foto-kamera" options={{ animation: 'fade', contentStyle: { backgroundColor: '#1E2427' } }} />
             <Stack.Screen name="foto-lesen" options={{ animation: 'fade' }} />
             <Stack.Screen name="demo/sperrbildschirm" options={{ animation: 'fade' }} />

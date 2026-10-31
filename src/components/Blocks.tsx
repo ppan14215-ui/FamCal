@@ -25,18 +25,29 @@ const H = 68;
 const paletteOf = (title: string) => shade(personPalette[[...title].reduce((a, c) => a + c.charCodeAt(0), 0) % personPalette.length]);
 
 /** Poster or book cover. While the server looks, it breathes; without one, the first letter on a tinted card. */
-export function Cover({ title, data }: { title: string; data?: ItemData }) {
+/** Tapping the cover opens the title's details (Julian 31.10.). */
+export function Cover({ title, data, onPress }: { title: string; data?: ItemData; onPress?: () => void }) {
+  const art = <CoverArt title={title} data={data} />;
+  if (!onPress || data?.looking) return art;
+  return (
+    <PressScale scale={0.94} hitSlop={6} accessibilityRole="button" accessibilityLabel={tx(`Details zu ${title}`, `Details for ${title}`)} onPress={() => { haptics.select(); onPress(); }}>
+      {art}
+    </PressScale>
+  );
+}
+
+function CoverArt({ title, data, w = W, h = H, radius = 10 }: { title: string; data?: ItemData; w?: number; h?: number; radius?: number }) {
   const o = useSharedValue(1);
   useEffect(() => {
     o.value = data?.looking ? withRepeat(withTiming(0.45, { duration: 700, easing: Easing.inOut(Easing.quad) }), -1, true) : withTiming(1, { duration: 200 });
   }, [data?.looking]);
   const breathe = useAnimatedStyle(() => ({ opacity: o.value }));
   const p = paletteOf(title);
-  const box = { width: W, height: H, borderRadius: 10, overflow: 'hidden' as const };
+  const box = { width: w, height: h, borderRadius: radius, overflow: 'hidden' as const };
   if (data?.cover) return <Image source={{ uri: data.cover }} style={[box, { backgroundColor: tokens.chipBg }]} resizeMode="cover" accessibilityIgnoresInvertColors />;
   return (
     <Animated.View style={[box, { backgroundColor: data?.looking ? tokens.chipBg : p.bg, alignItems: 'center', justifyContent: 'center' }, breathe]}>
-      {data?.looking ? null : <Txt size={22} weight={700} color={p.fg}>{(title.trim()[0] ?? '?').toUpperCase()}</Txt>}
+      {data?.looking ? null : <Txt size={Math.round(h * 0.38)} weight={700} color={p.fg}>{(title.trim()[0] ?? '?').toUpperCase()}</Txt>}
     </Animated.View>
   );
 }
@@ -161,4 +172,9 @@ export function Score({ scores, me, onChange }: { scores?: Partial<Record<Person
       </View>
     </View>
   );
+}
+
+/** The big cover on the detail sheet. */
+export function BigCover({ title, data }: { title: string; data?: ItemData }) {
+  return <CoverArt title={title} data={data} w={112} h={data?.kind === 'serie' ? 112 : 166} radius={14} />;
 }

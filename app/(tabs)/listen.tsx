@@ -341,7 +341,7 @@ function Sections({ list, counts }: { list: List; counts?: boolean }) {
                     done={plain ? false : i.done}
                     noCheck={plain}
                     dim={bp ? !!i.data?.seen : false}
-                    lead={bp && hasBlock(bp, 'cover') ? <Cover title={i.name} data={i.data} /> : undefined}
+                    lead={bp && hasBlock(bp, 'cover') ? <Cover title={i.name} data={i.data} onPress={bp.source ? () => router.push({ pathname: '/titel', params: { l: list.id, i: i.id } }) : undefined} /> : undefined}
                     below={bp ? <BlockBelow listId={list.id} bp={bp} item={i} /> : undefined}
                     trailing={bp && hasBlock(bp, 'seen') ? <SeenPill label={bp.seenLabel ?? tx('Erledigt', 'Done')} seen={i.data?.seen} onToggle={() => actions.setItemData(list.id, i.id, { seen: !i.data?.seen })} /> : undefined}
                     who={i.who}

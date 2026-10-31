@@ -97,6 +97,9 @@ export type ItemData = {
   /** Author, director, shop. */
   by?: string;
   link?: string;
+  /** One Wikipedia sentence on what the film, series or book is about (31.10.). */
+  about?: string;
+  kind?: 'film' | 'serie' | 'buch';
   date?: string;
   price?: string;
   place?: string;

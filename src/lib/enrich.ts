@@ -9,9 +9,9 @@ import { getAuth } from './auth';
 import { LANG } from '../i18n/lang';
 import type { Blueprint, ItemData } from '../state/types';
 
-type Found = Pick<ItemData, 'cover' | 'year' | 'by' | 'link'>;
-/** Raised when the server finds more (29.10.: posters from iTunes), so old rows look once more. */
-const LOOKUP = 3;
+type Found = Pick<ItemData, 'cover' | 'year' | 'by' | 'link' | 'about' | 'kind'>;
+/** Raised when the server finds more (29.10.: posters from iTunes; 31.10.: a Wikipedia sentence), so old rows look once more. */
+const LOOKUP = 3; // goes to 4 once the server sends the Wikipedia sentence, so old rows look once more
 
 async function lookUp(source: NonNullable<Blueprint['source']>, q: string): Promise<Found | null> {
   if (!supabase || !getAuth().session) return null;
@@ -25,13 +25,13 @@ export function enrichItem(listId: string, itemId: string, name: string, source:
   lookUp(source, name).then(done, () => done(null));
 }
 
-/** Entries without a cover that an older server could not find get one more try. */
+/** Entries an older server looked up without cover or sentence get one more try. */
 export function refreshCovers() {
   import('../state/store').then(({ get }) => {
     for (const l of get().lists) {
       const source = l.blueprint?.source;
       if (!source) continue;
-      for (const i of l.sections.flatMap((s) => s.items)) if (!i.data?.cover && (i.data?.looked ?? 0) < LOOKUP) enrichItem(l.id, i.id, i.name, source);
+      for (const i of l.sections.flatMap((s) => s.items)) if ((!i.data?.cover || !i.data?.about) && (i.data?.looked ?? 0) < LOOKUP) enrichItem(l.id, i.id, i.name, source);
     }
   }).catch(() => {});
 }

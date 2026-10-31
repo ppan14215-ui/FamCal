@@ -8,7 +8,8 @@
  *
  * anreichern: finds cover, year and author or director for one entry.
  *   Books from Open Library (no key). Films from TMDB when the secret
- *   TMDB_TOKEN is set, else films and series from iTunes, then Wikipedia. No Claude call, nothing paid.
+ *   TMDB_TOKEN is set, else films and series from iTunes, then Wikipedia. Plus one
+ *   Wikipedia sentence on what it is about. No Claude call, nothing paid.
  *   Request { action: "anreichern", source: "books" | "movies", q, lang } → { found | null }
  *
  * rezept: reads a recipe page someone pasted (Julian 28.10.: "mit einem Rezept
@@ -71,7 +72,24 @@ Regeln:
 
 const client = new Anthropic({ apiKey: Deno.env.get('ANTHROPIC_API_KEY') });
 
-type Found = { cover?: string; year?: string; by?: string; link?: string };
+type Found = { cover?: string; year?: string; by?: string; link?: string; about?: string; kind?: 'film' | 'serie' | 'buch' };
+
+/**
+ * One sentence on what the title is about (Julian 31.10.: "einen Satz aus
+ * irgendeinem Wikipedia-Eintrag, damit man auch weiß, um was es sich handelt").
+ * Wikipedia in the app's language, free and without a key; null when nothing fits.
+ */
+async function wikiAbout(q: string, kind: Found['kind'], lang: string, year?: string): Promise<string | undefined> {
+  const de = lang !== 'en';
+  const hint = kind === 'buch' ? (de ? 'Buch' : 'novel') : kind === 'serie' ? (de ? 'Fernsehserie' : 'TV series') : de ? 'Film' : 'film';
+  const host = de ? 'de.wikipedia.org' : 'en.wikipedia.org';
+  const j = await getJson(`https://${host}/w/api.php?action=query&format=json&generator=search&gsrsearch=${encodeURIComponent(`${q} ${hint} ${kind === 'film' ? year ?? '' : ''}`.trim())}&gsrlimit=1&prop=extracts&exintro=1&explaintext=1&exsentences=2&redirects=1`).catch(() => null);
+  const page = j?.query?.pages && Object.values(j.query.pages)[0] as { title?: string; extract?: string } | undefined;
+  if (!page?.extract || !page.title || !close(page.title.replace(/\s*\(.*\)$/, ''), q)) return undefined;
+  // First sentence only; abbreviations like "US-amerikanische" stay intact because we split on ". " followed by a capital.
+  const first = page.extract.replace(/\s*\([^()]*\)/g, '').replace(/\s+/g, ' ').trim().split(/(?<=[.!?])\s+(?=[A-ZÄÖÜ])/)[0];
+  return first && first.length > 20 ? first.slice(0, 280) : undefined;
+}
 
 async function getJson(url: string, headers: Record<string, string> = {}) {
   const r = await fetch(url, { headers: { ...UA, ...headers }, signal: AbortSignal.timeout(6000) });
@@ -87,6 +105,7 @@ async function book(q: string): Promise<Found | null> {
     year: d.first_publish_year ? String(d.first_publish_year) : undefined,
     by: d.author_name?.[0],
     link: d.key ? `https://openlibrary.org${d.key}` : undefined,
+    kind: 'buch',
   };
 }
 
@@ -101,6 +120,7 @@ async function movieTmdb(q: string, lang: string, token: string): Promise<Found 
     year: m.release_date?.slice(0, 4) || undefined,
     by: credits?.crew?.find((c: { job: string }) => c.job === 'Director')?.name,
     link: `https://www.themoviedb.org/movie/${m.id}`,
+    kind: 'film',
   };
 }
 
@@ -117,10 +137,10 @@ async function movieItunes(q: string, lang: string, country = lang === 'en' ? 'u
   const films: { trackName?: string; artistName?: string; releaseDate?: string; artworkUrl100?: string; trackViewUrl?: string }[] = (await getJson(`${base}&media=movie&entity=movie`))?.results ?? [];
   const film = films.find((f) => f.trackName && close(f.trackName, q));
   const big = (u?: string) => u?.replace(/\/\d+x\d+bb\./, '/400x600bb.');
-  if (film) return { cover: big(film.artworkUrl100), year: film.releaseDate?.slice(0, 4), by: film.artistName, link: film.trackViewUrl };
+  if (film) return { cover: big(film.artworkUrl100), year: film.releaseDate?.slice(0, 4), by: film.artistName, link: film.trackViewUrl, kind: 'film' };
   const shows: { collectionName?: string; artistName?: string; releaseDate?: string; artworkUrl100?: string; collectionViewUrl?: string }[] = (await getJson(`${base}&media=tvShow&entity=tvSeason`))?.results ?? [];
   const show = shows.find((t) => t.artistName && close(t.artistName, q)) ?? shows.find((t) => t.collectionName && close(t.collectionName, q));
-  if (show) return { cover: big(show.artworkUrl100)?.replace('400x600bb', '600x600bb'), year: show.releaseDate?.slice(0, 4), link: show.collectionViewUrl };
+  if (show) return { cover: big(show.artworkUrl100)?.replace('400x600bb', '600x600bb'), year: show.releaseDate?.slice(0, 4), link: show.collectionViewUrl, kind: 'serie' };
   // Not every film is in the German store (Shutter Island was missing on 29.10.): the US store has more.
   return country === 'us' ? null : movieItunes(q, lang, 'us');
 }
@@ -136,6 +156,7 @@ async function movieWiki(q: string): Promise<Found | null> {
     year: desc.match(/\b(19|20)\d{2}\b/)?.[0],
     by: desc.match(/\bby ([^,;]+)$/)?.[1],
     link: page.fullurl,
+    kind: /series/i.test(desc) ? 'serie' : 'film',
   };
 }
 
@@ -298,6 +319,7 @@ Deno.serve(async (req) => {
     try {
       const token = Deno.env.get('TMDB_TOKEN');
       const found = input.source === 'books' ? await book(q) : input.source === 'movies' ? (token ? await movieTmdb(q, lang, token) : (await movieItunes(q, lang).catch(() => null)) ?? await movieWiki(q)) : null;
+      if (found) found.about = await wikiAbout(q, found.kind ?? (input.source === 'books' ? 'buch' : 'film'), lang, found.year);
       return json({ found });
     } catch (e) {
       console.error('anreichern', e);
