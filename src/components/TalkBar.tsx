@@ -96,6 +96,9 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, o
   const spokenText = useRef(false);
   /** ElevenLabs is writing the sentence down. */
   const [writing, setWriting] = useState(false);
+  // Julian 31.10. 15:26: "der Text sollte auch im Input-Feld auftauchen, während ich spreche". The phone's live guess shows grey;
+  // the cloud text replaces it at the end.
+  const [draft, setDraft] = useState(false);
   useEffect(() => () => { timers.current.forEach(clearTimeout); clearTimeout(blurT.current); setTyping(false); }, []);
 
   // On the web the textarea never shrinks by itself, so measure it fresh.
@@ -135,7 +138,7 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, o
   };
 
   // Julian 31.10.: spoken words never send by themselves. They land in the field, correct, and only Senden sends.
-  const land = (t: string) => { setText(t.trim()); spokenText.current = true; };
+  const land = (t: string) => { setDraft(false); setText(t.trim()); spokenText.current = true; };
 
   const listen = () => {
     if (listening) { haptics.tap(); stopNative.current?.(); return; }
@@ -207,7 +210,7 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, o
         // phone's guess (one language, often wrong English) never lands; a miss says so and asks to speak again.
         if (cloud) {
           if (better) land(better);
-          else { haptics.tap(); toast(tx('Die Aufnahme kam nicht an. Tipp aufs Mikro und sag es bitte nochmal.', 'The recording didn\'t come through. Tap the mic and say it again.'), undefined, { kind: 'warn' }); }
+          else { setDraft(false); setText(''); haptics.tap(); toast(tx('Die Aufnahme kam nicht an. Tipp aufs Mikro und sag es bitte nochmal.', 'The recording didn\'t come through. Tap the mic and say it again.'), undefined, { kind: 'warn' }); }
           return;
         }
         const t = heard();
@@ -219,7 +222,8 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, o
           const t = e.results[0]?.transcript ?? '';
           if (e.isFinal) { done = `${done} ${t}`; part = ''; } else part = t;
           // The phone hears in one language only, so its live guess is often wrong English (Julian 31.10.). With the cloud ears on, the field waits for their text.
-          if (!cloud) setText(heard());
+          if (cloud) setDraft(true);
+          setText(heard());
         }),
         // -2 to 10 from the phone; below 0 is inaudible.
         SR.addListener('volumechange', (e) => { level.value = withTiming(Math.min(1, Math.max(0, e.value / 10)), { duration: 100 }); }),
@@ -235,7 +239,7 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, o
         clearTimeout(quiet); SR.stop(); setListening(false);
         void finish();
       };
-      toKeys.current = () => { clearTimeout(quiet); SR.abort(); setListening(false); };
+      toKeys.current = () => { clearTimeout(quiet); SR.abort(); setListening(false); setDraft(false); };
       // Only the user stops it; the cap is a safety net, not a pause guess.
       hush(MAX_MS);
       SR.start({
@@ -312,7 +316,7 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, o
         selectionColor={tokens.select} cursorColor={tokens.ink}
         returnKeyType={TOUCH ? 'default' : 'send'}
         accessibilityLabel={tx('Was steht an?', 'What\'s on?')}
-        style={[{ flex: 1, minWidth: 0, height: boxH, marginBottom: 2, fontFamily: fonts[400], fontSize: split ? 16 : 16.5, lineHeight: LINE, color: tokens.ink, paddingVertical: PAD, paddingHorizontal: split ? 3 : 8, textAlignVertical: 'top', includeFontPadding: false }, Platform.OS === 'web' ? ({ outlineStyle: 'none' } as any) : null]}
+        style={[{ flex: 1, minWidth: 0, height: boxH, marginBottom: 2, fontFamily: fonts[400], fontSize: split ? 16 : 16.5, lineHeight: LINE, color: draft ? tokens.mute : tokens.ink, paddingVertical: PAD, paddingHorizontal: split ? 3 : 8, textAlignVertical: 'top', includeFontPadding: false }, Platform.OS === 'web' ? ({ outlineStyle: 'none' } as any) : null]}
       />
       {/* Plus stays reachable while the mic listens (Julian 28.10.: "wie komme ich an das + Menü?"). */}
       {onClose && (!text || listening) ? plus : null}
