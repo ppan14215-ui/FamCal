@@ -204,7 +204,7 @@ function terminOf(a: Action, said: string): CalEvent[] {
   const m: Understood = {
     kind: 'termin', title: s(i.title), sub: s(i.sub) || null, date, end_date: ISO.test(s(i.end_date)) ? s(i.end_date) : null,
     // A time it still asks about is a guess (Julian 30.10.: card said 9 to 12 while asking "Um wie viel Uhr?"): left open.
-    start: HHMM.test(s(i.start)) && !s(i.ask_time) ? s(i.start) : null, end: HHMM.test(s(i.end)) && !s(i.ask_time) ? s(i.end) : null, who: whoOf(i.who),
+    start: HHMM.test(s(i.start)) && !asksStart(i) ? s(i.start) : null, end: HHMM.test(s(i.end)) && !s(i.ask_time) ? s(i.end) : null, who: whoOf(i.who),
     place: s(i.place) || null, repeat: s(i.repeat) || null, bring: arr(i.bring), steps: [], question: s(i.ask_time) || null,
     suggest_bring: arr(i.suggest_bring), icon: s(i.icon) || null, work: !!i.work, follows: true,
   };
@@ -214,6 +214,12 @@ function terminOf(a: Action, said: string): CalEvent[] {
 
 /** One step with its undo; plans from the old path (lists, recipes, games) run as they are. */
 type Op = { step: string; plan?: Plan; run: () => { lit: string[]; events?: string[]; text: string; undo?: () => void; result?: Result; go?: string } | null };
+
+/**
+ * A guessed start goes when the model still asks for the time (bf33de6). A question only about the end or the
+ * length ("Wie lange dauert das Laternenfest?") keeps the start it was given (eval 31.10.: 17:00 from a letter became 00:00).
+ */
+const asksStart = (i: Record<string, any>) => { const q = s(i.ask_time); return !!q && !/(bis wann|wie lange|ende\b|dauer|until when|how long|\bend\b|finish)/i.test(q); };
 
 const GAME_NAME = /romm[eé]|rummy|canasta|kniffel|yahtzee|skat|doppelkopf|\buno\b|wizard|phase 10|darts|punkte|spielstand|score/i;
 
