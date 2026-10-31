@@ -54,7 +54,8 @@ export default function Neu() {
     const lines = await readLines(uri).catch(() => [] as string[]);
     if (!lines.length) return toast(tx('Auf dem Foto konnte ich keinen Text lesen.', "I couldn't read any text on the photo."));
     router.navigate('/chat');
-    sayInApp(`${tx('Vom Foto', 'From a photo')}: ${lines.join(' / ')}`.slice(0, 480));
+    // A letter is longer than a sentence; the server allows photo text up to 2500 characters.
+    sayInApp(`${tx('Vom Foto', 'From a photo')}: ${lines.join(' / ')}`.slice(0, 2500));
   };
   const opts = all.filter((o) => !(HIDDEN.extras && o.extra));
   return (

@@ -362,6 +362,14 @@ function Reply({ text }: { text?: string }) {
   );
 }
 
+/** Text read from a photo is a whole letter; the bubble shows only its start (the assistant's card says what came of it). */
+export function shortSaid(said: string) {
+  const m = /^(Vom Foto|From a photo):\s*/.exec(said);
+  if (!m) return said;
+  const rest = said.slice(m[0].length);
+  return `${tx('Foto', 'Photo')}: ${rest.length > 120 ? `${rest.slice(0, 120).replace(/\s+\S*$/, '')} …` : rest}`;
+}
+
 export const Entry = React.memo(EntryRow);
 
 function EntryRow({ f, mine, me, answer }: { f: FeedEntry; mine: boolean; me: 'J' | 'T'; answer?: FeedEntry }) {
@@ -378,7 +386,7 @@ function EntryRow({ f, mine, me, answer }: { f: FeedEntry; mine: boolean; me: 'J
         <Txt size={12.5} color={tokens.sub}>{[name, f.kind === 'msg' ? tx('Nachricht', 'Message') : null, at(f.at)].filter(Boolean).join(' · ')}</Txt>
         <View style={[{ maxWidth: '86%', borderRadius: 18, paddingVertical: 9, paddingHorizontal: 13 }, mine ? { borderBottomRightRadius: 6 } : { borderBottomLeftRadius: 6 }, bubble]}>
           {f.ask ? <Txt size={12} weight={600} tracking={0.6} color={tokens.done}>{tx(`FRAGE AN ${persons[f.ask.to].name.toUpperCase()}`, `QUESTION FOR ${persons[f.ask.to].name.toUpperCase()}`)}</Txt> : null}
-          <Txt size={15} line={21}>{f.ask ? f.ask.q : f.said}</Txt>
+          <Txt size={15} line={21}>{f.ask ? f.ask.q : shortSaid(f.said)}</Txt>
         </View>
         {f.ask ? <Ask f={f} me={me} answer={answer} /> : null}
         {f.say && !f.undone && !(f.kind === 'made' && (f.events || f.items || f.tasks)) ? <View style={cardFrame}><Reply text={f.say} /><View style={{ height: 10 }} /></View> : null}
@@ -422,7 +430,7 @@ export function Thinking({ by }: { by: 'J' | 'T' }) {
         <>
           <Txt size={12.5} color={tokens.sub}>{tx('Du', 'You')} · {at(new Date().toISOString())}</Txt>
           <View style={{ maxWidth: '86%', borderRadius: 18, borderBottomRightRadius: 6, paddingVertical: 9, paddingHorizontal: 13, backgroundColor: persons[by].tint }}>
-            <Txt size={15} line={21}>{v.said}</Txt>
+            <Txt size={15} line={21}>{shortSaid(v.said)}</Txt>
           </View>
         </>
       ) : null}

@@ -252,6 +252,21 @@ export const FAELLE: Fall[] = [
   // Julian 31.10.: "Die Sprache springt noch immer": kurzer deutscher Satz ohne Verb bekam auf dem englischen Handy eine englische Antwort.
   { id: 'kurz-deutsch', saetze: ['Schokolade auf die Einkaufsliste'],
     pruefe: (e) => [...(items(e.stand, 'einkauf').some((i) => /schokolade/i.test(i.text)) ? [] : ['Schokolade nicht auf Einkauf']), ...keineNeuen(e), ...deutsch(e)] },
+  // Julian 31.10. "Brief, Foto, Mail rein": ein fotografierter Elternbrief, so wie das Handy ihn liest.
+  { id: 'foto-elternbrief', saetze: ['Vom Foto: Kita Sonnenschein / Musterstraße 4 / Liebe Eltern, / am Mittwoch, den 11.11.2026 feiern wir um 17:00 Uhr / unser Laternenfest im Garten der Kita. / Bitte bringt eine Laterne und warme Kleidung mit. / Der Elternbeitrag für das Fest von 5 € ist bis 6.11. zu zahlen. / IBAN ··· / Herzliche Grüße, Ihr Kita-Team'],
+    pruefe: (e) => {
+      const n = neu(e).find((x) => /latern/i.test(x.title));
+      const todo = e.stand.lists.find((l) => /zu erledigen/i.test(l.name));
+      const offen = todo ? items(e.stand, todo.id).map((i) => i.text).join(' ') : '';
+      return [
+        ...(n ? [] : ['kein Laternenfest im Kalender']),
+        ...(n && n.date !== '2026-11-11' ? [`falscher Tag: ${n.date}`] : []),
+        ...(n && n.start !== '17:00' ? [`falsche Uhrzeit: ${n.start ?? 'keine'}`] : []),
+        ...(n && !(n.bring ?? []).some((b) => /latern/i.test(b.t)) ? ['Laterne fehlt bei Mitbringen'] : []),
+        ...(/beitrag|zahl|5 ?€/i.test(offen) ? [] : ['Zahlung bis 6.11. nicht auf Zu erledigen']),
+        ...deutsch(e),
+      ];
+    } },
   { id: 'rezept', saetze: ['Heute Abend koche ich Bolognese'],
     pruefe: (e) => [...(e.tools.includes('rezept') ? [] : [`kein Rezept, sondern ${e.tools.join(', ')}`]), ...keineNeuen(e), ...deutsch(e)] },
   { id: 'englisch-bleibt-englisch', saetze: ['I have a dentist appointment next Tuesday at 3pm'],

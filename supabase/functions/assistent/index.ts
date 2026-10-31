@@ -119,6 +119,7 @@ Verstehen:
 - Sätze aus der Spracherkennung haben halbe Sätze und falsch erkannte Wörter. Lies sinngemäß ("Schatte Island" ist "Shutter Island"). Bekannte Namen schreibst du richtig. Bricht ein Satz mitten im Gedanken ab ("Am Freitag haben wir"), frag mit nachfragen, wie es weitergeht; "Ich hole Karlo um 5 ab" ist dagegen vollständig.
 - Bezieht sich ein Satz auf etwas Bestehendes ("verschieb den Zahnarzt auf Freitag", "Milch ist gekauft", "lösch das Training am Montag"), finde es im Stand unten und nimm dessen id. Passen mehrere gleich gut, frag nach.
 - Meint ein Satz mehrere Termine ("jeden Mittwoch", "alle", "im Dezember", "die ganze Woche"), gehe den Stand Zeile für Zeile durch und nimm JEDEN passenden Termin: ein termin_aendern oder termin_loeschen mit id und allen übrigen in ids. Nie nur den ersten. Arbeitstage stehen als einzelne Einträge pro Tag im Stand ("Arbeitstag, einzelner Eintrag"), keine Serie. Ein Wochentag steht hinter jedem Datum (Mi = Mittwoch).
+- Beginnt der Satz mit "Vom Foto:" oder "From a photo:", ist es der vom Handy gelesene Text eines Briefs, einer Einladung oder eines Zettels, Zeilen mit " / " getrennt, mit Lesefehlern. Trage jeden Termin daraus ein (mit Uhrzeit, Ort und Mitbringen, wenn sie dastehen), Fristen ("bis 15.11. zahlen", "Anmeldung bis Freitag") kurz auf "Zu erledigen" mit Tag. Briefkopf, Anrede, Grüße, Werbung und Bankdaten ignorierst du. Titel kurz und in der Sprache des Briefs. In antworten sagst du in einem Satz, was du aus dem Brief eingetragen hast. Steht nichts zum Eintragen drin, sag das mit antworten. "···" sind geschwärzte Nummern, nie nachfragen.
 - Sagt die Person, dass etwas nicht geklappt hat ("du hast nur einen geändert"), prüfe den Stand und hole genau das Fehlende nach.
 - Steht ein Verlauf dabei, gehört der neue Satz meist dazu: eine Antwort auf deine Rückfrage, eine Korrektur oder Ergänzung des zuletzt Eingetragenen ("nein, um 16 Uhr", "Tom kommt auch mit", "jeden Mittwoch davon im Büro"). Dann änderst du das zuletzt Eingetragene mit termin_aendern oder löschst und legst neu an, statt etwas doppelt einzutragen.
 
@@ -160,7 +161,9 @@ Deno.serve(async (req) => {
 
   let input: { text?: string; today?: string; now?: string; names?: { J?: string; T?: string }; me?: string; lang?: string; icons?: string[]; snapshot?: string; screen?: string; stream?: boolean; history?: { said?: string; app?: string }[] };
   try { input = await req.json(); } catch { return json({ error: 'bad_json' }, 400); }
-  const text = (input.text ?? '').trim().slice(0, 500);
+  // Text read from a photo of a letter is longer than a spoken sentence (Julian 31.10.: "Brief, Foto, Mail rein").
+  const raw = (input.text ?? '').trim();
+  const text = raw.slice(0, /^(Vom Foto|From a photo):/.test(raw) ? 2500 : 500);
   const today = /^\d{4}-\d{2}-\d{2}$/.test(input.today ?? '') ? input.today! : new Date().toISOString().slice(0, 10);
   if (!text) return json({ error: 'empty' }, 400);
 
