@@ -267,18 +267,13 @@ export function StepDots({ i, n = 8 }: { i: number; n?: number }) {
  * Segmented control on a grey track; the white pill slides to the tapped
  * item on a spring instead of jumping.
  */
-/** One pill position per switch, shared by every mount: a screen that draws a new header (Heute, Tage) keeps the glide going. */
-const segAt = new Map<string, SharedValue<number>>();
 export function Seg<T extends string>({ items, value, onChange, height = 34 }: { items: { key: T; label: string }[]; value: T; onChange: (k: T) => void; height?: number }) {
   const idx = Math.max(0, items.findIndex((it) => it.key === value));
   const [w, setW] = useState(0);
-  // A screen that draws its own header mounts a new switch (Heute): it starts where the last one was and glides on (Julian 31.10.).
-  const id = items.map((it) => it.key).join('|');
-  if (!segAt.has(id)) segAt.set(id, makeMutable(idx));
-  const x = segAt.get(id)!;
-  // Julian 31.10. 16:11: on the phone a new header flashed "Heute" before gliding: the first frame of a fresh switch
-  // reads the old position on the JS side. A new mount starts right on its tab; the tap itself already glided.
-  useState(() => { x.value = idx; return 0; });
+  // Julian 31.10. 18:20: on the phone a fresh switch (each Kalender view draws its own header) showed the pill at the
+  // OLD tab for a frame: a position shared across mounts is stale on the JS side. Each switch now owns its position and
+  // starts right on its tab; the tap glides the old one first (140 ms) before the new view takes over.
+  const x = useSharedValue(idx);
   useEffect(() => { if (Math.abs(x.value - idx) > 0.001) x.value = withSpring(idx, springs.smooth); }, [idx]);
   // The pill glides on the tap itself; the new view comes once the glide is mostly done, so building it never holds the glide (Julian 31.10.: "lag").
   const pick = (k: T, i: number) => { x.value = withSpring(i, springs.smooth); setTimeout(() => onChange(k), 140); };
@@ -397,7 +392,7 @@ type RowProps = {
 export function Row({ icon, title, sub, subColor, right, time, strike, onPress, lead = 'clay', tileSize = 48 }: RowProps) {
   const body = (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: lead === 'tile' ? 10 : 12, paddingHorizontal: 14, paddingLeft: lead === 'tile' ? 10 : 14, backgroundColor: tokens.row }}>
-      {time !== undefined ? <Txt size={13.5} weight={600} style={{ width: 44 }}>{time}</Txt> : null}
+      {time !== undefined ? <Txt size={13.5} weight={600} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75} style={{ width: 48 }}>{time}</Txt> : null}
       {lead === 'clay' ? <ClayIcon name={icon} size={46} celebrate={strike} /> : <Tile name={icon} size={tileSize} radius={tileSize >= 48 ? 16 : 14} celebrate={strike} />}
       <View style={{ flex: 1, minWidth: 0, gap: 1 }}>
         <Txt size={16} line={21} weight={600} strike={strike} color={strike ? tokens.mute : tokens.ink} numberOfLines={2}>{title}</Txt>

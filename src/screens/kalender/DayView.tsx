@@ -97,7 +97,7 @@ const byStart = (a: CalEvent, b: CalEvent) => (a.allDay ? -1 : b.allDay ? 1 : a.
 
 /** One Termin with what belongs to it underneath. */
 /** Swipe left deletes (Julian 28.10.); a day of a series goes alone, the toast brings it back. */
-function dropEvent(e: CalEvent) {
+export function dropEvent(e: CalEvent) {
   if (e.id.includes('~')) {
     const before = actions.skipOccurrence(e.id);
     if (before) toast(tx(`„${e.title}“ an diesem Tag gelöscht`, `“${e.title}” deleted on this day`), () => actions.restoreEvent(before));
@@ -138,7 +138,7 @@ function Item({ e, last, date }: { e: CalEvent; last: boolean; date: string }) {
       <SwipeRow onDelete={() => dropEvent(e)}>
       <PressScale scale={0.985} onPress={() => { if (!justSwiped()) router.push(`/termin/${e.id}`); }} style={{ paddingVertical: 12, paddingHorizontal: 14, gap: 6, borderBottomWidth: last ? 0 : 1, borderBottomColor: tokens.hair }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-          <Txt size={13.5} weight={600} style={{ width: 42 }}>{later || span ? tx(`Tag ${daysBetween(e.date, date) + 1}`, `Day ${daysBetween(e.date, date) + 1}`) : e.allDay ? tx('Tag', 'All day') : hm(e.start)}</Txt>
+          <Txt size={13.5} weight={600} numberOfLines={e.allDay && !(later || span) ? 2 : 1} adjustsFontSizeToFit minimumFontScale={0.75} style={{ width: 48 }}>{later || span ? tx(`Tag ${daysBetween(e.date, date) + 1}`, `Day ${daysBetween(e.date, date) + 1}`) : e.allDay ? tx('Tag', 'All day') : hm(e.start)}</Txt>
           <Tile name={e.icon} size={46} radius={14} />
           <View style={{ flex: 1, minWidth: 0 }}>
             <Txt size={16} line={21} weight={600} numberOfLines={1}>{e.title}</Txt>
@@ -148,7 +148,7 @@ function Item({ e, last, date }: { e: CalEvent; last: boolean; date: string }) {
           <Owner who={e.who} />
         </View>
         {bring.length ? (
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginLeft: 42 + 12 + 46 + 12 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginLeft: 48 + 12 + 46 + 12 }}>
             <LineIcon name={open.length ? 'list' : 'check'} size={14} color={open.length ? tokens.sub : tokens.done} />
             <Txt size={13} line={18} color={open.length ? tokens.sub : tokens.done} numberOfLines={1} style={{ flex: 1 }}>
               {open.length ? tx(`Mitbringen: ${open.map((b) => b.t).join(', ')}`, `Bring: ${open.map((b) => b.t).join(', ')}`) : tx('Alles dabei', 'All packed')}
@@ -293,8 +293,7 @@ function TodayChip({ away, above, onPress }: { away: boolean; above: boolean; on
   );
 }
 
-const FIRST = addDays(monday(TODAY), -14);
-const MORE = 28;
+const MORE = 21;
 
 /** The week strip and the endless list of days under it, as one piece. */
 export default function DayView({ header }: { header: (today: React.ReactNode) => React.ReactNode }) {
@@ -308,43 +307,26 @@ export default function DayView({ header }: { header: (today: React.ReactNode) =
   const track = useScroller(ref);
   const ys = useRef<Record<string, number>>({});
   const view = useRef(0);
-  // Up to the chosen day plus four weeks, then four more each time the end comes near.
-  // Not up to the last Termin any more: with work days until Christmas that drew
-  // half a year of days at once, and switching to Tage took ages (Julian 30.10. 22:19).
-  const [count, setCount] = useState(() => Math.max(daysBetween(FIRST, day) + MORE, 35));
-  const total = Math.max(count, daysBetween(FIRST, day) + MORE);
+  // Julian 31.10. 18:19: Tage still jumped and loaded slower than the other tabs. It drew two weeks before the chosen
+  // day and then scrolled to it. Now the list starts AT the chosen day (nothing to scroll, nothing to jump), draws a
+  // short stretch first and adds two weeks each time the end comes near. Picking an earlier day restarts it there.
+  const [start, setStart] = useState(day);
+  const [count, setCount] = useState(10);
+  const total = count;
   const days = useMemo(() => Array.from({ length: total }, (_, i) => {
-    const date = addDays(FIRST, i);
+    const date = addDays(start, i);
     return {
       date,
       events: events.filter((e) => covers(e, date)),
       tasks: tasks.filter((t) => t.who !== undefined && t.due && (t.due === date || (date === TODAY && t.due < TODAY && !t.done))),
       docs: docs.filter((d) => d.frist === date),
     };
-  }), [total, events, tasks, docs]);
-
-  // Opens at the chosen day, once.
-  const opened = useRef(false);
-  const shown = useSharedValue(0);
-  const showStyle = useAnimatedStyle(() => ({ opacity: shown.value, transform: [{ translateY: 10 * (1 - shown.value) }] }));
-  // Safety: never stay hidden if the day never reports its place.
-  useEffect(() => { const t = setTimeout(() => { if (shown.value === 0) shown.value = withTiming(1, { duration: 200 }); }, 600); return () => clearTimeout(t); }, []);
-  const first = useRef(day);
+  }), [start, total, events, tasks, docs]);
+  // The rest of the stretch comes right after the first frame, so the switch itself stays quick.
+  useEffect(() => { const t = setTimeout(() => setCount((c) => Math.max(c, MORE)), 350); return () => clearTimeout(t); }, [start]);
   const onYRef = useRef<(date: string, y: number) => void>(() => {});
   const onYStable = React.useCallback((date: string, y: number) => onYRef.current(date, y), []);
-  const onY = (date: string, y: number) => {
-    ys.current[date] = y;
-    if (!opened.current && date === first.current) {
-      opened.current = true;
-      // Julian 31.10. 17:00: switching Heute to Tage still jumped. The list drew at the first day and then leapt to
-      // today; now it stays hidden until it sits on the right day, then builds in.
-      requestAnimationFrame(() => {
-        ref.current?.scrollTo({ y: Math.max(0, y - 2), animated: false });
-        requestAnimationFrame(() => { shown.value = withTiming(1, { duration: 240, easing: Easing.bezier(0.22, 1, 0.36, 1) }); });
-      });
-    }
-  };
-  onYRef.current = onY;
+  onYRef.current = (date: string, y: number) => { ys.current[date] = y; };
 
   // The day at the top of the list is the day the strip shows.
   const seen = useRef(day);
@@ -358,6 +340,8 @@ export default function DayView({ header }: { header: (today: React.ReactNode) =
     haptics.select();
     seen.current = d;
     actions.setCalDay(d);
+    // Before the list or far ahead of it: start the list on that day.
+    if (d < start || d >= addDays(start, total)) { ys.current = {}; setStart(d); setCount(10); ref.current?.scrollTo({ y: 0, animated: false }); return; }
     const y = ys.current[d];
     if (y !== undefined) ref.current?.scrollTo({ y: Math.max(0, y - 2), animated: true });
   };
@@ -370,7 +354,7 @@ export default function DayView({ header }: { header: (today: React.ReactNode) =
         <WeekStrip day={day} onSelect={pick} />
       </Head>
       {/* The days build up under the head that stays put (Julian 31.10.). */}
-      <Animated.View style={[{ flex: 1 }, showStyle]}>
+      <Animated.View entering={build} style={{ flex: 1 }}>
       <ScrollView
         ref={ref}
         style={{ flex: 1 }}
@@ -382,13 +366,13 @@ export default function DayView({ header }: { header: (today: React.ReactNode) =
           const { contentOffset, contentSize } = e.nativeEvent;
           track(contentOffset.y);
           spy(contentOffset.y);
-          if (contentSize.height - contentOffset.y - view.current < 900) setCount((c) => (c < total + 1 ? total + MORE : c));
+          if (contentSize.height - contentOffset.y - view.current < 900) setCount((c) => (c <= total ? total + 14 : c));
         }}
         contentContainerStyle={{ paddingHorizontal: 18, paddingTop: 14, paddingBottom: 110 + insets.bottom + dock, gap: 18 }}
       >
         {days.map((d) => (
           <React.Fragment key={d.date}>
-            {weekday(d.date) === 1 && d.date !== FIRST ? <WeekLine start={d.date} /> : null}
+            {weekday(d.date) === 1 && d.date !== start ? <WeekLine start={d.date} /> : null}
             {d.date === TODAY ? <Fristen /> : null}
             <Day {...d} onY={onYStable} />
           </React.Fragment>

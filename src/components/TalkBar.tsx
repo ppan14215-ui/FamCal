@@ -90,6 +90,8 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, o
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
   /** Ends listening on the phone early: a second tap on the orb sends what was heard. */
   const stopNative = useRef<(() => void) | null>(null);
+  // Listeners of the last recording; removed before the next one starts.
+  const lastSubs = useRef<{ remove: () => void }[]>([]);
   /** Tapping into the field while the mic listens switches to typing (Julian 28.10.): what was heard stays, nothing is sent. */
   const toKeys = useRef<(() => void) | null>(null);
   const typed = useRef(false);
@@ -185,6 +187,20 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, o
       const { ExpoSpeechRecognitionModule: SR } = await import('expo-speech-recognition');
       const ok = await SR.requestPermissionsAsync();
       if (!ok.granted || !SR.isRecognitionAvailable()) return fail();
+      // Julian 31.10. 18:25: still every second try failed, and no recording reached the server. The phone kept the
+      // last session open after the file came, so the next start hit a busy recognizer. Clear the old listeners and
+      // make sure the recognizer is idle before a new start.
+      lastSubs.current.forEach((x) => x.remove()); lastSubs.current = [];
+      const idle = async () => {
+        for (let i = 0; i < 10; i++) {
+          let st = 'inactive';
+          try { st = String(await SR.getStateAsync()); } catch {}
+          if (st === 'inactive') return;
+          if (i === 0) { try { SR.abort(); } catch {} }
+          await new Promise((r) => setTimeout(r, 100));
+        }
+      };
+      await idle();
       // Let the person finish (Julian 28.10.: "wartet nicht lange genug"): listen
       // on through short pauses and stop only after a longer silence or a second tap.
       let done = '';
@@ -208,6 +224,8 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, o
         setWriting(true);
         await audioReady;
         // The phone's guess may be empty when it heard the wrong language; the recording still goes to the cloud ears.
+        // The file is here: close the session for good, so the next tap starts on an idle recognizer.
+        try { if (String(await SR.getStateAsync()) !== 'inactive') SR.abort(); } catch {}
         const better = audio && (heard() || cloud) ? await hearInCloud(audio) : null;
         setWriting(false);
         if (typed.current) return;
@@ -238,6 +256,7 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, o
         SR.addListener('audioend', (e) => { if (e.uri) { audio = e.uri; audioDone?.(); } }),
         SR.addListener('end', () => { clearTimeout(quiet); setListening(false); void finish().finally(() => subs.forEach((x) => x.remove())); }),
       ];
+      lastSubs.current = subs;
       // A tap on the mic ends at once (Julian 28.10.): keep what was heard and put it in the field, no waiting for the phone to finish.
       // stop, not abort, so the recording is finished and can go to the cloud ears.
       stopNative.current = () => {

@@ -13,6 +13,9 @@ import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring, withTiming } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
 import { H2, Group, Row, RoundButton } from '../../components/ui/kit';
+import { isInfoDay } from '../../lib/feiertage';
+import SwipeRow, { justSwiped } from '../../components/SwipeRow';
+import { dropEvent } from './DayView';
 import Txt from '../../components/ui/Txt';
 import PressScale from '../../components/ui/PressScale';
 import { tokens, persons, springs } from '../../theme';
@@ -164,7 +167,9 @@ export default function YearView() {
             const when = days > 1 ? tx(`${dmShort(e.date)} bis ${dmShort(e.endDate!)} · ${days} Tage`, `${dmShort(e.date)} to ${dmShort(e.endDate!)} · ${days} days`) : dmShort(e.date);
             const inDays = daysBetween(TODAY, e.date);
             const sub = inDays > 0 ? tx(`${when} · in ${inDays} Tagen`, `${when} · in ${inDays} days`) : when;
-            return <Row key={e.id} icon={e.icon} title={e.title} sub={sub} onPress={e.cal === 'feiertage' ? undefined : () => router.push(`/termin/${e.id}`)} />;
+            if (e.cal === 'feiertage' || isInfoDay(e)) return <Row key={e.id} icon={e.icon} title={e.title} sub={sub} onPress={e.cal === 'feiertage' ? undefined : () => router.push(`/termin/${e.id}`)} />;
+            // Swipe left deletes, like in Tage (Julian 31.10. 18:21).
+            return <SwipeRow key={e.id} onDelete={() => dropEvent(e)}><Row icon={e.icon} title={e.title} sub={sub} onPress={() => { if (!justSwiped()) router.push(`/termin/${e.id}`); }} /></SwipeRow>;
           })}
         </Group>
       ) : (

@@ -8,6 +8,8 @@ import React, { useMemo } from 'react';
 import { View, useWindowDimensions } from 'react-native';
 import { router } from 'expo-router';
 import { H2, Group, Row, RoundButton } from '../../components/ui/kit';
+import SwipeRow, { justSwiped } from '../../components/SwipeRow';
+import { dropEvent } from './DayView';
 import Txt from '../../components/ui/Txt';
 import { ClayIcon } from '../../components/ui/Clay';
 import { Owner } from '../../components/ui/Person';
@@ -135,7 +137,12 @@ export default function MonthView() {
       {list.length ? (
         <Group>
           {list.map((e) => (
-            <Row key={e.id} icon={e.icon} title={e.title} sub={e.sub} time={hm(e.start)} right={<Owner who={e.who} />} onPress={() => router.push(`/termin/${e.id}`)} />
+            // Swipe left deletes, like in Tage (Julian 31.10. 18:21); holidays stay.
+            isInfoDay(e) ? <Row key={e.id} icon={e.icon} title={e.title} sub={e.sub} time={hm(e.start)} right={<Owner who={e.who} />} onPress={() => router.push(`/termin/${e.id}`)} /> : (
+              <SwipeRow key={e.id} onDelete={() => dropEvent(e)}>
+                <Row icon={e.icon} title={e.title} sub={e.sub} time={hm(e.start)} right={<Owner who={e.who} />} onPress={() => { if (!justSwiped()) router.push(`/termin/${e.id}`); }} />
+              </SwipeRow>
+            )
           ))}
         </Group>
       ) : (
