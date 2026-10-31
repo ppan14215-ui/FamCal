@@ -9,7 +9,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { View, ScrollView, Platform, BackHandler, useWindowDimensions, TextInput } from 'react-native';
 import { router, usePathname } from 'expo-router';
-import Animated, { FadeIn, FadeInDown, FadeOut } from 'react-native-reanimated';
+import Animated, { FadeIn, FadeInDown, FadeOut, useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Defs, LinearGradient, Stop, Rect } from 'react-native-svg';
 import { Chip } from './ui/kit';
@@ -32,6 +32,7 @@ import { setDockTop, setDockSpace } from '../lib/dockSpace';
 import { useKeyboardInset, useTyping } from '../lib/keyboard';
 import { setTalkOpen, useTalkOpen } from '../lib/talkOpen';
 import { NAV_H, navTop } from './NavBar';
+import { useNavFolded } from '../lib/navFold';
 import { addMade, addMessage, addAsk, addSay, recentMade, markChanged } from '../lib/feed';
 import { useSimple, messageOf } from '../lib/simple';
 import { hm, short } from '../lib/dates';
@@ -426,7 +427,9 @@ export default function Dock() {
   // A card belongs to the screen it was made on.
   useEffect(() => { setTurn(null); }, [path]);
   // Tab screens already leave room for the tabs; the chat scrolls past both.
-  useEffect(() => { setDockSpace(where && shown ? h + (where.chat ? NAV_H + 10 : where.tab ? 0 : 8) : 0); }, [h, !!where, shown]);
+  // Julian 31.10. 15:40: with the tabs folded into the handle, the field drops into their place.
+  const folded = useNavFolded();
+  useEffect(() => { setDockSpace(where && shown ? h + (where.chat ? (folded ? 0 : NAV_H + 10) : where.tab ? 0 : 8) : 0); }, [h, !!where, shown, folded]);
   useEffect(() => () => timers.current.forEach(clearTimeout), []);
   // Shared to FamCal from the browser or another app (Julian 28.10.): as if typed into the field.
   const hearRef = useRef<(raw: string) => void>(() => {});
@@ -436,10 +439,19 @@ export default function Dock() {
 
   // Examples only while the calendar is still empty; after that they are clutter (Julian 27.10.).
   const onTabs = !!where && (where.tab || !!where.chat);
-  const above = navTop(insets.bottom) + 10;
+  const above = folded && onTabs ? Math.max(insets.bottom, 12) + 10 : navTop(insets.bottom) + 10;
   // Typing hides the tabs, so the field drops into their place right above the keyboard.
   const bottom = !where ? 0 : kb > 0 ? kb + 8 : onTabs ? (typing && Platform.OS === 'web' ? Math.max(insets.bottom, 12) + 10 : above) : insets.bottom + 12 + where.lift;
   useEffect(() => { setDockTop(where ? bottom + (shown ? h : 0) : 0); }, [bottom, h, !!where, shown]);
+  // Folding or opening the tabs moves the field with a soft spring (keep2read: k 250, c 27); the keyboard moves it at once.
+  const bAnim = useSharedValue(bottom);
+  const wasFolded = useRef(folded);
+  useEffect(() => {
+    const spring = wasFolded.current !== folded;
+    wasFolded.current = folded;
+    bAnim.value = spring ? withSpring(bottom, { stiffness: 250, damping: 27, mass: 1 }) : bottom;
+  }, [bottom, folded]);
+  const bStyle = useAnimatedStyle(() => ({ bottom: bAnim.value }));
 
   if (!where) return null;
   const origin = { x: W - 14 - 6 - 24, y: H - bottom - 6 - 24 };
@@ -790,7 +802,7 @@ export default function Dock() {
         <Rect x="0" y="0" width="100%" height="100%" fill="url(#dockfade)" />
       </Svg>
     </View>
-    <View pointerEvents="box-none" onLayout={(e) => setH(e.nativeEvent.layout.height)} style={{ position: 'absolute', left: onTabs ? 14 : 18, right: onTabs ? 14 : 18, bottom, gap: 10 }}>
+    <Animated.View pointerEvents="box-none" onLayout={(e) => setH(e.nativeEvent.layout.height)} style={[{ position: 'absolute', left: onTabs ? 14 : 18, right: onTabs ? 14 : 18, gap: 10 }, bStyle]}>
       {where.chat || turn ? null : <Peek />}
       {turn ? (
         <Animated.View key={turn.id} entering={FadeInDown.duration(220)} exiting={FadeOut.duration(150)} style={[{ maxHeight: 420, borderRadius: 26, backgroundColor: tokens.row }, shadow]}>
@@ -897,7 +909,7 @@ export default function Dock() {
       </Animated.View>
       </Animated.View>
       </View>
-    </View>
+    </Animated.View>
     </Other.Provider>
   );
 }
