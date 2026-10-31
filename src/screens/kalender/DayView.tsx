@@ -325,6 +325,10 @@ export default function DayView({ header }: { header: (today: React.ReactNode) =
 
   // Opens at the chosen day, once.
   const opened = useRef(false);
+  const shown = useSharedValue(0);
+  const showStyle = useAnimatedStyle(() => ({ opacity: shown.value, transform: [{ translateY: 10 * (1 - shown.value) }] }));
+  // Safety: never stay hidden if the day never reports its place.
+  useEffect(() => { const t = setTimeout(() => { if (shown.value === 0) shown.value = withTiming(1, { duration: 200 }); }, 600); return () => clearTimeout(t); }, []);
   const first = useRef(day);
   const onYRef = useRef<(date: string, y: number) => void>(() => {});
   const onYStable = React.useCallback((date: string, y: number) => onYRef.current(date, y), []);
@@ -332,7 +336,12 @@ export default function DayView({ header }: { header: (today: React.ReactNode) =
     ys.current[date] = y;
     if (!opened.current && date === first.current) {
       opened.current = true;
-      requestAnimationFrame(() => ref.current?.scrollTo({ y: Math.max(0, y - 2), animated: false }));
+      // Julian 31.10. 17:00: switching Heute to Tage still jumped. The list drew at the first day and then leapt to
+      // today; now it stays hidden until it sits on the right day, then builds in.
+      requestAnimationFrame(() => {
+        ref.current?.scrollTo({ y: Math.max(0, y - 2), animated: false });
+        requestAnimationFrame(() => { shown.value = withTiming(1, { duration: 240, easing: Easing.bezier(0.22, 1, 0.36, 1) }); });
+      });
     }
   };
   onYRef.current = onY;
@@ -361,7 +370,7 @@ export default function DayView({ header }: { header: (today: React.ReactNode) =
         <WeekStrip day={day} onSelect={pick} />
       </Head>
       {/* The days build up under the head that stays put (Julian 31.10.). */}
-      <Animated.View entering={build} style={{ flex: 1 }}>
+      <Animated.View style={[{ flex: 1 }, showStyle]}>
       <ScrollView
         ref={ref}
         style={{ flex: 1 }}

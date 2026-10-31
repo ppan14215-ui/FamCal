@@ -242,6 +242,9 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, o
       // stop, not abort, so the recording is finished and can go to the cloud ears.
       stopNative.current = () => {
         clearTimeout(quiet); SR.stop(); setListening(false);
+        // Android sometimes never closes a segmented session after stop, so the file never comes (Julian 31.10. 17:02,
+        // still errors). abort() tears down and hands over the recording right away; the cloud writes the words anyway.
+        setTimeout(() => { if (!audio) { try { SR.abort(); } catch {} } }, 1200);
         void finish();
       };
       toKeys.current = () => { clearTimeout(quiet); SR.abort(); setListening(false); };

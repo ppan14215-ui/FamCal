@@ -18,7 +18,7 @@ import { getFamily, myRole } from '../lib/sync';
 import { tx } from '../i18n/lang';
 
 /** How long a finished card stays before it goes by itself. */
-const STAY_MS = 9000;
+const STAY_MS = 4500;
 
 let since = 0;
 const subs = new Set<() => void>();
@@ -47,7 +47,7 @@ export default function Peek() {
   if (!from || (!thinking && !made)) return null;
   return (
     <Animated.View entering={FadeInDown.duration(220)} exiting={FadeOut.duration(150)} onTouchStart={() => setHeld(true)}
-      style={{ maxHeight: H * 0.55, borderRadius: 24, backgroundColor: tokens.bg, boxShadow: `0 0 0 1px ${tokens.hair}, 0 12px 32px rgba(22,35,42,0.16)` } as any}>
+      style={{ maxHeight: H * 0.55, borderRadius: 24, backgroundColor: tokens.bg, boxShadow: '0 1px 2px rgba(22,35,42,0.06), 0 4px 14px rgba(22,35,42,0.08)' } as any}>
       <ScrollView contentContainerStyle={{ padding: 12, paddingTop: 10, gap: 8 }} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
         <PressScale accessibilityLabel={tx('Schließen', 'Close')} hitSlop={10} onPress={() => openPeek(0)} style={{ position: 'absolute', top: 10, left: 12, zIndex: 2 }}>
           <LineIcon name="x" size={18} color={tokens.mute} />

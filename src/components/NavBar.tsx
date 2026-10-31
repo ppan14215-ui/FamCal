@@ -149,7 +149,7 @@ export default function NavBar({ state, navigation }: BottomTabBarProps) {
     const p = m();
     return { opacity: interpolate(1 - (p - 0.2) * 2.4, [0, 1], [0, 1], Extrapolation.CLAMP), transform: [{ scale: interpolate(bw.value / pw, [0.2, 1], [0.6, 1], Extrapolation.CLAMP) }] };
   });
-  const ground = useAnimatedStyle(() => ({ opacity: 0.98 * interpolate(1 - (m() - 0.3) * 1.9, [0, 1], [0, 1], Extrapolation.CLAMP) }));
+  const ground = useAnimatedStyle(() => ({ opacity: interpolate(1 - (m() - 0.3) * 1.9, [0, 1], [0, 1], Extrapolation.CLAMP) }));
   const zone = useAnimatedStyle(() => ({ top: by.value + bh.value / 2 - 44 }));
 
   return (

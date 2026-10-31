@@ -75,7 +75,7 @@ function Picks({ options }: { options: [string, () => void][] }) {
     </View>
   );
 }
-const shadow = { boxShadow: `0 0 0 1px ${tokens.hair}, 0 12px 32px rgba(22,35,42,0.12)` } as any;
+const shadow = { boxShadow: '0 1px 2px rgba(22,35,42,0.06), 0 4px 14px rgba(22,35,42,0.08)' } as any;
 
 /** Where am I, and where does the dock sit there. */
 function useWhere(): { ctx: Ctx; tab: boolean; lift: number; chat?: boolean } | null {
@@ -654,9 +654,13 @@ export default function Dock() {
       setVeil({ phase: 'off', onCancel: undefined });
       haptics.select();
     };
-    setVeil(fresh ? { phase: 'think', inline: true, origin, target: null, lines: p.steps, shown: 0, said, head: p.head, onCancel: p.head ? stop : undefined, typing: false, reply: undefined } : { lines: p.steps, shown: 0, head: p.head, onCancel: p.head ? stop : undefined });
-    p.steps.forEach((_, i) => later(450 + STEP_MS * i, () => { setVeil({ shown: i + 1 }); haptics.select(); }));
-    later(450 + STEP_MS * p.steps.length + 150, () => {
+    // Julian 31.10. 17:02: thinking, then straight to the final state. The assistant already said what it does; ticking the
+    // steps off one by one before the card showed them unticked was one step too many. Undo stays on the card.
+    const quick = agentOn();
+    const steps = quick ? [] : p.steps;
+    setVeil(fresh ? { phase: 'think', inline: true, origin, target: null, lines: steps, shown: 0, said, head: quick ? undefined : p.head, onCancel: p.head && !quick ? stop : undefined, typing: false, reply: undefined } : { lines: steps, shown: 0, head: quick ? undefined : p.head, onCancel: p.head && !quick ? stop : undefined });
+    steps.forEach((_, i) => later(450 + STEP_MS * i, () => { setVeil({ shown: i + 1 }); haptics.select(); }));
+    later(quick ? 0 : 450 + STEP_MS * steps.length + 150, () => {
       setVeil({ onCancel: undefined });
       const out = p.run();
       // In the chat the card lands in the log and we stay (Julian 29.10.).
@@ -792,16 +796,15 @@ export default function Dock() {
   return (
     <Other.Provider value={other}>
     {/* The screen fades out under the field, so prompts never sit on text. */}
-    {/* Julian 31.10. 16:01: subtler. A longer, eased fade instead of a hard white band above the card. */}
-    <View pointerEvents="none" style={{ position: 'absolute', left: 0, right: 0, bottom: fadeFrom, height: bottom - fadeFrom + h + 48 }}>
+    {/* Julian 31.10. 17:02: a short, tight fade (the long soft one covered too much of small screens), solid from just above the card down, so nothing shines through. */}
+    <View pointerEvents="none" style={{ position: 'absolute', left: 0, right: 0, bottom: fadeFrom, height: bottom - fadeFrom + h + 22 }}>
       <Svg width="100%" height="100%" preserveAspectRatio="none">
         <Defs>
           <LinearGradient id="dockfade" x1="0" y1="0" x2="0" y2="1">
             <Stop offset="0" stopColor={tokens.bg} stopOpacity={0} />
-            <Stop offset={String(Math.min(0.3, 26 / (bottom - fadeFrom + h + 48)))} stopColor={tokens.bg} stopOpacity={0.35} />
-            <Stop offset={String(Math.min(0.55, 60 / (bottom - fadeFrom + h + 48)))} stopColor={tokens.bg} stopOpacity={0.8} />
-            <Stop offset={String(Math.min(0.7, 84 / (bottom - fadeFrom + h + 48)))} stopColor={tokens.bg} stopOpacity={0.95} />
-            <Stop offset="1" stopColor={tokens.bg} stopOpacity={0.98} />
+            <Stop offset={String(Math.min(0.4, 12 / (bottom - fadeFrom + h + 22)))} stopColor={tokens.bg} stopOpacity={0.7} />
+            <Stop offset={String(Math.min(0.6, 20 / (bottom - fadeFrom + h + 22)))} stopColor={tokens.bg} stopOpacity={1} />
+            <Stop offset="1" stopColor={tokens.bg} stopOpacity={1} />
           </LinearGradient>
         </Defs>
         <Rect x="0" y="0" width="100%" height="100%" fill="url(#dockfade)" />
