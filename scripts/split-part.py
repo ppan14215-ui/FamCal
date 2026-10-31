@@ -13,14 +13,16 @@ solid = im[:, :, 3] > 40
 lab, k = ndimage.label(solid)
 sizes = ndimage.sum(solid, lab, range(1, k + 1))
 order = np.argsort(sizes)[::-1]
-main, piece = order[0] + 1, order[1] + 1
+main = order[0] + 1
+# Everything that is not the main body is the piece (one ball, or all the rays of a sun).
+pieces = [i + 1 for i in order[1:] if sizes[i] > 30]
 # Soft edges belong to the nearest solid region.
 _, (iy, ix) = ndimage.distance_transform_edt(lab == 0, return_indices=True)
 near = lab[iy, ix]
-for label, suffix in ((main, 'base'), (piece, part)):
+for labels, suffix in (([main], 'base'), (pieces, part)):
     out = im.copy()
-    out[near != label, 3] = 0
+    out[~np.isin(near, labels), 3] = 0
     Image.fromarray(out).save(f'assets/icons/icon-{name}__{suffix}.webp', lossless=True)
-y, x = np.where(lab == piece)
+y, x = np.where(np.isin(lab, pieces))
 s = 1024 / im.shape[0]
 print(name, part, 'box', [int(x.min() * s), int(y.min() * s), int(x.max() * s), int(y.max() * s)])

@@ -1,44 +1,101 @@
 /**
- * Icons that are one piece still get their own little story (Julian 31.10.:
- * "Animationen, die nicht einfach nur Hüpfen sind"). The whole picture moves
- * the way the thing moves: rackets swing, cars drive off and come back, the
- * plane takes off, the phone rings, the heart beats. Hop stays the default
- * for the few icons nothing fits.
+ * One-piece icons and how the whole picture moves (motion designer pass,
+ * Julian 31.10.). Only icons that really are ONE thing move as a whole: a
+ * ball bounces, a key turns, a plane flies. Icons whose separate pieces are
+ * baked into one picture (racket and ball, drum and sticks, pot and plant)
+ * must never move as one; they get the quiet "press" until their parts are
+ * rendered (docs/design-notes/Icon-Teile-Prompts.md). Curves: clayCurves.ts.
  */
 import type { ClayName } from './clayIcons';
 
-export type WholeKind = 'swing' | 'drive' | 'fly' | 'roll' | 'rock' | 'ring' | 'beat' | 'shine' | 'buzz' | 'pour' | 'sway' | 'drum' | 'scrub' | 'drift' | 'drop' | 'turn' | 'pump';
+type W = { kind: string; origin?: string; what: string };
+const w = (kind: string, what: string, origin?: string): W => ({ kind, what, origin });
 
-const groups: Record<WholeKind, string[]> = {
-  swing: ['tennis', 'badminton', 'squash', 'tischtennis', 'golf', 'hockey', 'cricket', 'fechten', 'darts'],
-  drive: ['zug', 'schulbus', 'radfahren', 'laufrad', 'skateboard', 'inline-skaten', 'umzug', 'bowling', 'schlittschuhlaufen', 'ski', 'snowboard', 'laufen', 'rollstuhl', 'reise', 'termin-verschieben'],
-  fly: ['flugzeug', 'surfen'],
-  roll: ['ball', 'fussball', 'basketball', 'volleyball', 'handball', 'rugby', 'boule', 'gesellschaftsspiel'],
-  rock: ['schwimmen', 'segeln', 'kanu', 'rudern', 'stand-up-paddling', 'babybett', 'mobile', 'schlafsack', 'waage', 'reiten'],
-  ring: ['telefon', 'uhr', 'stoppuhr', 'babyphone', 'rassel'],
-  beat: ['herz', 'gluehbirne', 'blutdruck', 'sparschwein', 'schnuller', 'foto', 'kamera-scan', 'geburtstagskrone', 'prioritaet'],
-  shine: ['sonne', 'wolke-sonne', 'mond'],
-  buzz: ['bohrmaschine', 'medizin', 'thermometer', 'werkzeugkasten', 'rasenmaeher', 'waschmaschine', 'geschirrspueler', 'heckenschere', 'milchpumpe', 'friseur', 'termin-absagen'],
-  pour: ['giesskanne', 'tee', 'wassertrinken', 'flaeschchen', 'cafe'],
-  sway: ['tanzen', 'mikrofon', 'pflanze', 'kuscheltier', 'haustier', 'hundeleine', 'massage', 'saeen', 'wandern', 'einkauf', 'rucksack', 'wickeltasche'],
-  drum: ['musik'],
-  scrub: ['besen', 'fensterputzen', 'buegeleisen', 'staubsauger', 'hautpflege', 'sonnencreme', 'manikuere', 'haendewaschen'],
-  drift: ['wolke', 'regen', 'gewitter', 'meditation', 'schlafmaske', 'ausflug'],
-  drop: ['ort', 'anheften', 'fussabdruck', 'spielplatz', 'sandkasten', 'zuhause', 'puzzle', 'termin-hinzufuegen', 'tagesplan', 'wochenplan', 'monatsplan'],
-  turn: ['schluessel', 'einstellungen', 'suchen', 'recycling'],
-  pump: ['fitness', 'klettern', 'turnen', 'pilates', 'yogamatte', 'kampfsport', 'boxen'],
+export const clayWhole: Partial<Record<ClayName, W>> = {
+  abschluss: w('toss', 'Hut fliegt hoch, dreht sich, wird gefangen', '50% 50%'),
+  aktenkoffer: w('carry', 'wird am Griff hochgehoben, pendelt, abgestellt', '50% 18%'),
+  anheften: w('pressin', 'Nadel wird kurz angehoben und fest hineingedrückt', '50% 95%'),
+  augenuntersuchung: w('blink', 'Auge blinzelt zweimal', '50% 50%'),
+  ausflug: w('look', 'Fernglas schaut nach links und rechts', '50% 70%'),
+  babybett: w('lull', 'Bett wiegt sich ganz sanft', '50% 95%'),
+  ball: w('bounce', 'Ball springt mit echter Schwerkraft, dreht sich aus', '50% 50%'),
+  basketball: w('bounce', 'Ball springt mit echter Schwerkraft, dreht sich aus', '50% 50%'),
+  besen: w('sweep', 'fegt aus dem Griff heraus, drei Striche', '62% 8%'),
+  bohrmaschine: w('buzz', 'Bohrmaschine vibriert', '50% 60%'),
+  brille: w('adjust', 'Brille wird hochgeschoben und fällt zurück', '50% 50%'),
+  buegeleisen: w('iron', 'Bügeleisen gleitet vor und zurück', '50% 85%'),
+  einstellungen: w('gear', 'Zahnrad dreht sich einmal mit Gewicht', '50% 50%'),
+  experiment: w('swirl', 'Kolben wird geschwenkt', '50% 90%'),
+  fitness: w('curl', 'Hantel wird im Bogen hochgezogen', '30% 70%'),
+  flugzeug: w('fly', 'hebt ab und landet wieder', '50% 60%'),
+  foto: w('shake', 'Polaroid wird geschüttelt', '50% 50%'),
+  fussabdruck: w('pressin', 'wird in den Boden gedrückt', '50% 90%'),
+  fussball: w('bounce', 'Ball springt mit echter Schwerkraft, dreht sich aus', '50% 50%'),
+  'geburtstagskrone': w('drop', 'Krone fällt an ihren Platz', '50% 95%'),
+  giesskanne: w('pour', 'Kanne kippt und gießt', '62% 80%'),
+  gluehbirne: w('glow', 'flackert an und leuchtet warm', '50% 45%'),
+  handball: w('bounce', 'Ball springt mit echter Schwerkraft, dreht sich aus', '50% 50%'),
+  hautpflege: w('squeeze', 'Tube wird gedrückt', '50% 90%'),
+  herz: w('beat', 'schlägt zweimal', '50% 60%'),
+  hundeleine: w('dangle', 'pendelt an der Schlaufe', '78% 12%'),
+  inhalator: w('squeeze', 'wird heruntergedrückt', '50% 95%'),
+  'inline-skaten': w('glide', 'stößt ab und gleitet', '50% 90%'),
+  klettern: w('dangle', 'Karabiner pendelt am Seil', '55% 8%'),
+  kontakt: w('cardflip', 'Karte dreht sich einmal', '50% 50%'),
+  krankenkasse: w('cardflip', 'Karte dreht sich einmal', '50% 50%'),
+  kuscheltier: w('squish', 'wird gedrückt und federt zurück', '50% 90%'),
+  laetzchen: w('dangle', 'pendelt am Hals', '50% 10%'),
+  laufen: w('step', 'Ferse hebt sich über die Spitze, setzt auf', '82% 88%'),
+  laufrad: w('drive', 'rollt los und kommt zurück', '50% 90%'),
+  medizin: w('shake', 'Flasche wird geschüttelt', '50% 80%'),
+  meditation: w('breathe', 'atmet langsam ein und aus', '50% 90%'),
+  mobile: w('dangle', 'pendelt am Haken', '50% 6%'),
+  ort: w('drop', 'Pin fällt auf seinen Ort', '50% 95%'),
+  radfahren: w('drive', 'fährt los und kommt zurück', '50% 90%'),
+  rasenmaeher: w('mow', 'mäht vor und zurück', '50% 90%'),
+  rassel: w('shake', 'Rassel wird geschüttelt', '30% 80%'),
+  recycling: w('cycle', 'Pfeile laufen einmal rund', '50% 50%'),
+  reise: w('carry', 'Koffer wird angehoben, pendelt, abgestellt', '50% 12%'),
+  reiten: w('gallop', 'Sattel wippt im Galopp', '50% 90%'),
+  rollstuhl: w('drive', 'rollt los und kommt zurück', '50% 90%'),
+  rucksack: w('carry', 'wird hochgehoben und geschultert', '50% 12%'),
+  rugby: w('toss', 'Ei wird hochgeworfen und dreht sich', '50% 50%'),
+  schlafmaske: w('breathe', 'atmet ruhig', '50% 50%'),
+  schlafsack: w('breathe', 'atmet ruhig', '50% 90%'),
+  schlittschuhlaufen: w('glide', 'stößt ab und gleitet', '50% 90%'),
+  schluessel: w('dangle', 'baumelt am Ring und klimpert aus', '72% 28%'),
+  schnuller: w('beat', 'nuckelt', '50% 50%'),
+  schulbus: w('drive', 'fährt los und kommt zurück', '50% 90%'),
+  schule: w('present', 'Schultüte wird hochgehalten und gewackelt', '50% 90%'),
+  schwimmen: w('float', 'plumpst aufs Wasser und schaukelt aus', '50% 70%'),
+  segeln: w('rock', 'schaukelt auf den Wellen', '50% 90%'),
+  kanu: w('rock', 'schaukelt auf dem Wasser', '50% 80%'),
+  skateboard: w('ollie', 'Ollie: Tail runter, springt, landet', '50% 70%'),
+  snowboard: w('glide', 'gleitet und kippt in die Kurve', '50% 70%'),
+  sonnencreme: w('squeeze', 'Flasche wird gedrückt', '50% 90%'),
+  'stand-up-paddling': w('float', 'schaukelt auf dem Wasser', '50% 70%'),
+  strampler: w('dangle', 'hängt auf der Leine und pendelt', '50% 6%'),
+  suchen: w('scan', 'Lupe sucht im Kreis', '50% 50%'),
+  surfen: w('glide', 'reitet die Welle', '50% 70%'),
+  tee: w('pour', 'Kanne kippt und gießt', '60% 85%'),
+  telefon: w('ring', 'klingelt', '50% 40%'),
+  'termin-absagen': w('no', 'schüttelt den Kopf', '50% 50%'),
+  'termin-verschieben': w('nudge', 'schiebt sich nach rechts', '50% 50%'),
+  therapie: w('squish', 'Sessel gibt nach wie beim Hinsetzen', '50% 95%'),
+  tierarzt: w('pressin', 'Pfote wird eingedrückt', '50% 90%'),
+  turnen: w('dangle', 'Ringe schwingen', '50% 4%'),
+  uhr: w('ring', 'Wecker klingelt', '50% 40%'),
+  versicherung: w('umbrella', 'Schirm spannt sich auf', '50% 90%'),
+  videokonferenz: w('beat', 'pulsiert wie live', '50% 50%'),
+  volleyball: w('bounce', 'Ball springt mit echter Schwerkraft, dreht sich aus', '50% 50%'),
+  waage: w('pressin', 'Schale wird heruntergedrückt', '50% 90%'),
+  wandern: w('step', 'Ferse hebt sich über die Spitze, setzt auf', '80% 88%'),
+  waschmaschine: w('buzz', 'schleudert', '50% 90%'),
+  wassertrinken: w('pour', 'Glas kippt zum Trinken', '50% 90%'),
+  wickeltasche: w('carry', 'wird am Griff hochgehoben, pendelt', '50% 10%'),
+  wolke: w('drift', 'zieht zur Seite und zurück', '50% 50%'),
+  zug: w('drive', 'fährt los und kommt zurück', '50% 90%'),
 };
 
-export const clayWhole: Partial<Record<ClayName, WholeKind>> = Object.fromEntries(
-  (Object.entries(groups) as [WholeKind, string[]][]).flatMap(([k, names]) => names.map((n) => [n, k])),
-) as any;
-
-/** Where the whole icon turns: a racket at its grip, a can at its foot, the rest near the bottom. */
-export const wholeOrigin: Record<WholeKind, string> = {
-  swing: '28% 82%', drive: '50% 90%', fly: '50% 60%', roll: '50% 50%', rock: '50% 85%', ring: '50% 40%',
-  beat: '50% 60%', shine: '50% 50%', buzz: '50% 80%', pour: '62% 80%', sway: '50% 95%', drum: '50% 80%',
-  scrub: '50% 85%', drift: '50% 50%', drop: '50% 95%', turn: '50% 50%', pump: '50% 90%',
-};
-
-const ORIGIN_OF: Partial<Record<string, string>> = { badminton: '78% 84%', golf: '82% 18%', hockey: '82% 18%', darts: '50% 50%', fechten: '20% 80%' };
-export const originOf = (name: string, kind: WholeKind) => ORIGIN_OF[name] ?? wholeOrigin[kind];
+/** Everything not listed and without parts waits for its parts and answers with the quiet press. */
+export const PRESS: W = { kind: 'press', what: 'wartet auf Einzelteile, bis dahin nur ein leichtes Antippen', origin: '50% 92%' };
