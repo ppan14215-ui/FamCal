@@ -14,7 +14,7 @@ import PressScale from './ui/PressScale';
 import { Meta } from './ui/kit';
 import MonthGrid, { firstOf, shiftMonth } from './MonthGrid';
 import { tokens, fonts, persons, rise, swapIn } from '../theme';
-import { TODAY, addDays, WD_SHORT, WD_LONG, weekday, dayNum, minutes, MONTHS_SHORT, monthIdx, long, dayMonth, year } from '../lib/dates';
+import { TODAY, addDays, WD_SHORT, WD_LONG, weekday, dayNum, minutes, hm, MONTHS_SHORT, monthIdx, long, dayMonth, year } from '../lib/dates';
 import { parseWhen, whenLine, whenSentence, whenText, When } from '../lib/when';
 import { getPref, setPref } from '../lib/prefs';
 import { haptics } from '../lib/haptics';
@@ -198,6 +198,17 @@ export default function WhenField({ value, onChange, kind = 'termin', past, icon
           {mode === 'cal' ? (
             <Animated.View entering={swapIn} style={{ marginLeft: label || card ? 0 : -32 }}>
               <MonthGrid month={month} onMonth={setMonth} date={value?.date} endDate={value?.endDate} dots={dots} max={past ? TODAY : undefined} onPick={pick} />
+              {kind === 'termin' && value && !value.endDate ? (
+                <StartStrip
+                  start={value.start}
+                  onPick={(t) => {
+                    haptics.select();
+                    // The length stays (Julian 31.10.: moving a Termin to the evening keeps its hour).
+                    const len = value.start && value.end ? minutes(value.end) - minutes(value.start) : 60;
+                    onChange({ ...value, start: t, end: plusMin(t, Math.max(15, len)) });
+                  }}
+                />
+              ) : null}
             </Animated.View>
           ) : null}
         </Animated.View>
@@ -216,5 +227,39 @@ function WChip({ label, icon, on, onPress }: { label: string; icon?: LineName; o
       {icon ? <LineIcon name={icon} size={14} color={tokens.ink} /> : null}
       <Txt size={13.5} weight={600}>{label}</Txt>
     </PressScale>
+  );
+}
+
+/**
+ * Julian 31.10. 20:27: the time must be its own control, the grid alone could not move a Termin to the evening.
+ * A row of start times every 30 minutes; it opens at the current start.
+ */
+const SLOTS = Array.from({ length: 36 }, (_, i) => {
+  const m = 6 * 60 + i * 30;
+  return `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`;
+});
+function StartStrip({ start, onPick }: { start?: string; onPick: (t: string) => void }) {
+  const ref = useRef<ScrollView>(null);
+  const xs = useRef<Record<string, number>>({});
+  const near = start ? SLOTS.reduce((a, b) => (Math.abs(minutes(b) - minutes(start)) < Math.abs(minutes(a) - minutes(start)) ? b : a)) : '09:00';
+  const slots = start && !SLOTS.includes(start) ? [...SLOTS, start].sort() : SLOTS;
+  const jumped = useRef(false);
+  return (
+    <View style={{ gap: 8, paddingTop: 12 }}>
+      <Txt size={13} weight={600} color={tokens.sub} style={{ paddingHorizontal: 4 }}>{tx('Beginn', 'Starts at')}</Txt>
+      <ScrollView ref={ref} horizontal showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="handled" contentContainerStyle={{ gap: 6, paddingRight: 16 }} style={{ marginRight: -16 }}>
+        {slots.map((t) => (
+          <View
+            key={t}
+            onLayout={(e) => {
+              xs.current[t] = e.nativeEvent.layout.x;
+              if (!jumped.current && t === (start ?? near)) { jumped.current = true; ref.current?.scrollTo({ x: Math.max(0, e.nativeEvent.layout.x - 80), animated: false }); }
+            }}
+          >
+            <WChip label={hm(t)} on={t === start} onPress={() => onPick(t)} />
+          </View>
+        ))}
+      </ScrollView>
+    </View>
   );
 }
