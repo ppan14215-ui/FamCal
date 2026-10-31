@@ -57,7 +57,7 @@ function marksFor(events: CalEvent[], y: number): Map<string, Mark> {
     const end = e.endDate ?? e.date;
     if (end < from || e.date > to) continue;
     const hol = e.cal === 'feiertage';
-    const vac = isVacation(e) ? (e.who === 'J' || e.who === 'T' ? persons[e.who].tint : tokens.doneSoft) : undefined;
+    const vac = isVacation(e) ? tokens.vac : undefined;
     for (let d = e.date < from ? from : e.date, i = 0; d <= end && d <= to && i < 370; d = addDays(d, 1), i++) {
       if (e.skipDates?.includes(d)) continue;
       put(d, hol ? { hol: true } : vac ? { vac, ev: true } : { ev: true });
@@ -84,11 +84,13 @@ function Mini({ y, m, marks, onPress }: { y: number; m: number; marks: Map<strin
           // Days gone by fade, so the eye lands on what is still ahead.
           const past = d < TODAY;
           return (
-            <View key={d} style={{ width: `${100 / 7}%`, height: 17, alignItems: 'center', justifyContent: 'center', backgroundColor: !today && k?.vac ? k.vac : 'transparent', opacity: past ? 0.4 : 1 }}>
+            <View key={d} style={{ width: `${100 / 7}%`, height: 17, alignItems: 'center', justifyContent: 'center', backgroundColor: !today && k?.vac ? k.vac : 'transparent', opacity: past ? (k?.vac ? 0.6 : 0.4) : 1,
+              // One bar per Urlaub: round where it starts and ends, and at the week's edges.
+              ...(k?.vac ? { borderTopLeftRadius: i % 7 === 0 || !marks.get(addDays(d, -1))?.vac ? 8 : 0, borderBottomLeftRadius: i % 7 === 0 || !marks.get(addDays(d, -1))?.vac ? 8 : 0, borderTopRightRadius: i % 7 === 6 || !marks.get(addDays(d, 1))?.vac ? 8 : 0, borderBottomRightRadius: i % 7 === 6 || !marks.get(addDays(d, 1))?.vac ? 8 : 0 } : null) }}>
               {/* Heatmap: the fuller the day, the deeper the teal behind its number. */}
               {k?.n && !today && !k.vac ? <View style={{ position: 'absolute', width: 15, height: 15, borderRadius: 8, backgroundColor: tokens.done, opacity: Math.min(0.5, 0.12 + (k.n - 1) * 0.13) }} /> : null}
               <View style={{ width: 15, height: 15, borderRadius: 8, alignItems: 'center', justifyContent: 'center', backgroundColor: today ? tokens.ink : 'transparent' }}>
-                <Txt size={8.5} line={10} weight={today || k?.ev || k?.hol ? 700 : 500} color={today ? tokens.onInk : k?.hol ? tokens.frist : weekend ? tokens.mute : tokens.ink}>{String(dayNum(d))}</Txt>
+                <Txt size={8.5} line={10} weight={today || k?.ev || k?.hol ? 700 : 500} color={today ? tokens.onInk : k?.hol ? tokens.frist : k?.vac ? tokens.vacInk : weekend ? tokens.mute : tokens.ink}>{String(dayNum(d))}</Txt>
               </View>
             </View>
           );
@@ -180,7 +182,7 @@ function Legend() {
     <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 14, paddingHorizontal: 2 }}>
       {item(<View style={{ flexDirection: 'row', gap: 2 }}>{[0.12, 0.25, 0.5].map((o) => <View key={o} style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: tokens.done, opacity: o }} />)}</View>, tx('wenig bis viel los', 'quiet to busy'))}
       {item(<Txt size={12} weight={700} color={tokens.frist}>12</Txt>, tx('Feiertag', 'Holiday'))}
-      {item(<View style={{ width: 12, height: 10, borderRadius: 3, backgroundColor: persons.J.tint }} />, tx('Urlaub', 'Vacation'))}
+      {item(<View style={{ width: 12, height: 10, borderRadius: 3, backgroundColor: tokens.vac }} />, tx('Urlaub', 'Vacation'))}
     </View>
   );
 }

@@ -11,7 +11,9 @@ export default function TabsLayout() {
     <Tabs
       tabBar={(props) => <Keyed><NavBar {...props} /></Keyed>}
       screenLayout={({ children }) => <Keyed>{children}</Keyed>}
-      screenOptions={{ headerShown: false, sceneStyle: { backgroundColor: tokens.bg }, animation: 'none', freezeOnBlur: true }}
+      screenOptions={{ headerShown: false, sceneStyle: { backgroundColor: tokens.bg }, freezeOnBlur: true,
+        // Each tab builds up quickly instead of just appearing (Julian 31.10.).
+        animation: 'shift', transitionSpec: { animation: 'timing', config: { duration: 200 } } }}
     >
       <Tabs.Screen name="chat" />
       <Tabs.Screen name="kalender" />

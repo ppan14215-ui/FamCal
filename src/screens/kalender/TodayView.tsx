@@ -91,6 +91,10 @@ function Next({ e, after }: { e: CalEvent; after?: CalEvent }) {
   const today = e.date === TODAY && !e.allDay;
   const toGo = today ? minutes(e.start) - now : 999;
   const running = today && toGo <= 0 && !!e.end && minutes(e.end) > now;
+  // A trip that already started is going on, not coming up (Julian 31.10.: "sollte eher heißen currently on").
+  const on = !!e.endDate && e.endDate > e.date && e.date <= TODAY && TODAY <= e.endDate;
+  const head = on ? tx(`Gerade · Tag ${daysBetween(e.date, TODAY) + 1} von ${daysBetween(e.date, e.endDate!) + 1}`, `Currently on · day ${daysBetween(e.date, TODAY) + 1} of ${daysBetween(e.date, e.endDate!) + 1}`)
+    : `${running ? tx('Jetzt', 'Now') : tx('Als Nächstes', 'Up next')} · ${when(e, now)}`;
   // While it runs a thin bar fills up to its end.
   const done = running ? Math.min(1, (now - minutes(e.start)) / Math.max(1, minutes(e.end!) - minutes(e.start))) : 0;
   const who = e.who === 'both' ? tx('Beide', 'Both') : e.who ? persons[e.who].name : null;
@@ -98,13 +102,13 @@ function Next({ e, after }: { e: CalEvent; after?: CalEvent }) {
     <Fresh id={e.id} radius={24}>
       <PressScale scale={0.985} onPress={() => router.push(`/termin/${e.id}`)} style={{ backgroundColor: tokens.row, borderRadius: 24, padding: 20, gap: 14 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-          <Pulse on={toGo <= 15} />
-          <Label color={tokens.done}>{`${running ? tx('Jetzt', 'Now') : tx('Als Nächstes', 'Up next')} · ${when(e, now)}`}</Label>
+          <Pulse on={toGo <= 15 && !on} />
+          <Label color={tokens.done}>{head}</Label>
         </View>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
           <View style={{ flex: 1, minWidth: 0, gap: 4 }}>
             <Txt size={24} line={29} weight={600} tracking={-0.4} numberOfLines={2}>{e.title}</Txt>
-            <Meta numberOfLines={1}>{[span(e), e.place ?? e.sub].filter(Boolean).join(' · ')}</Meta>
+            <Meta numberOfLines={1}>{[on ? tx(`bis ${WD_SHORT[weekday(e.endDate!)]} ${dmShort(e.endDate!)}`, `until ${WD_SHORT[weekday(e.endDate!)]} ${dmShort(e.endDate!)}`) : span(e), e.place ?? e.sub].filter(Boolean).join(' · ')}</Meta>
           </View>
           <Tile name={e.icon} size={56} radius={16} />
         </View>

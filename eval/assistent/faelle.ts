@@ -243,6 +243,12 @@ export const FAELLE: Fall[] = [
       const n = neu(e).find((x) => /griech|essen|penelope/i.test(`${x.title} ${x.place ?? ''}`));
       return [...(n ? [] : ['kein Termin']), ...(e.frage ? [] : ['keine Frage nach der Uhrzeit']), ...deutsch(e)];
     } },
+  // Julian 31.10.: "Das sollte bei allen Terminen so funktionieren": jeder Termin ohne Uhrzeit fragt nach ihr.
+  { id: 'jeder-termin-uhrzeit', saetze: ['Am Dienstag Laternenumzug in der Kita'],
+    pruefe: (e) => {
+      const n = neu(e).find((x) => /latern/i.test(x.title));
+      return [...(n ? [] : ['kein Termin']), ...(n && !n.allDay ? [`Uhrzeit erfunden: ${n.start}`] : []), ...(e.frage ? [] : ['keine Frage nach der Uhrzeit']), ...deutsch(e)];
+    } },
   { id: 'rezept', saetze: ['Heute Abend koche ich Bolognese'],
     pruefe: (e) => [...(e.tools.includes('rezept') ? [] : [`kein Rezept, sondern ${e.tools.join(', ')}`]), ...keineNeuen(e), ...deutsch(e)] },
   { id: 'englisch-bleibt-englisch', saetze: ['I have a dentist appointment next Tuesday at 3pm'],

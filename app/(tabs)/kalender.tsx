@@ -7,7 +7,7 @@ import React, { useState } from 'react';
 import { View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { FadeInDown, FadeOut } from 'react-native-reanimated';
-import { tokens, swapIn, persons, personPalette, shade, PersonId } from '../../src/theme';
+import { tokens, swapIn, build, persons, personPalette, shade, PersonId } from '../../src/theme';
 import { router } from 'expo-router';
 import { Screen, Seg, Head } from '../../src/components/ui/kit';
 import Txt, { Dot } from '../../src/components/ui/Txt';
@@ -128,7 +128,7 @@ export default function Kalender() {
     return (
       <View style={{ flex: 1, backgroundColor: tokens.bg, paddingTop: insets.top }}>
         <Head><Title sub={WD_LONG[weekday(TODAY)]} text={date} open={open} onPress={toggle} right={pair} />{seg}</Head>
-        <TodayView header={null} />
+        <Animated.View entering={build} style={{ flex: 1 }}><TodayView header={null} /></Animated.View>
       </View>
     );
   }
@@ -149,7 +149,7 @@ export default function Kalender() {
     : yr === Number(TODAY.slice(0, 4)) ? tx(`Noch ${left} Tage im Jahr`, `${left} days left this year`) : yr < Number(TODAY.slice(0, 4)) ? tx('Rückblick', 'Looking back') : tx('Vorschau', 'Looking ahead');
   return (
     <Screen tab gap={14} head={<><Title text={title} sub={sub} open={open} onPress={toggle} right={view === 'jahr' ? <HeaderRight before={<YearArrows />} /> : pair} />{seg}</>}>
-      <Animated.View key={view} entering={swapIn} style={{ gap: 14 }}>
+      <Animated.View key={view} entering={build} style={{ gap: 14 }}>
         {view === 'woche' ? <WeekView /> : view === 'monat' ? <MonthView /> : <YearView />}
       </Animated.View>
     </Screen>

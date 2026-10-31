@@ -20,6 +20,9 @@ const LIGHT = {
   done: '#075056',
   doneSoft: '#E2EEEC',
   frist: '#C2410C',
+  /** Urlaub, sunny and clearly its own (Julian 31.10.: "Vacation kaum zu erkennen"). */
+  vac: '#F6CD6A',
+  vacInk: '#5B4100',
   segBg: '#EAEAE7',
   /** The chosen pill in a segmented control: it must stand out from segBg in both modes. */
   segOn: '#FFFFFF',
@@ -51,7 +54,7 @@ export type Tokens = Record<keyof typeof LIGHT, string>;
  */
 const DARK: Tokens = {
   bg: '#0F1518', row: '#1A2328', ink: '#F2F4F4', sub: '#A9B2B6', mute: '#7C878C', hair: '#2C3840',
-  done: '#5FB7AE', doneSoft: '#1E4F49', frist: '#F08A4B', segBg: '#151C20', segOn: '#3B4B53', pillOn: '#3B4B53', chipBg: '#2A363C',
+  done: '#5FB7AE', doneSoft: '#1E4F49', frist: '#F08A4B', vac: '#8C6A1F', vacInk: '#FFF4D6', segBg: '#151C20', segOn: '#3B4B53', pillOn: '#3B4B53', chipBg: '#2A363C',
   circleLine: '#3A464C', dotOff: '#3A464C', danger: '#F0766C', select: 'rgba(95,183,174,0.32)', ok: '#4CC28E',
   scrim: 'rgba(0,0,0,0.55)', noteBg: '#1F272B', paper: '#1C2326', onInk: '#16232A', glass: 'rgba(26,35,40,0.72)', veil: 'rgba(15,21,24,0.95)',
 };

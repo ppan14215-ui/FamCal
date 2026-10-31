@@ -51,7 +51,7 @@ const TERMIN = {
 const TOOLS: Tool[] = [
   { name: 'termin_neu', ...obj('Legt einen Termin im geteilten Kalender an. Für mehrere Termine mehrmals aufrufen.', {
     ...TERMIN,
-    ask_time: str('Nur wenn die Uhrzeit fehlt und so etwas meist eine hat: eine kurze Rückfrage ("Um wie viel Uhr ist das Spiel? Oder ganztägig?"). Der Termin wird trotzdem ganztägig eingetragen.'),
+    ask_time: str('Immer wenn die Uhrzeit fehlt, außer bei Ganztägigem wie Urlaub oder Geburtstag: eine kurze Rückfrage ("Um wie viel Uhr ist das Spiel? Oder ganztägig?"). Der Termin wird trotzdem ganztägig eingetragen.'),
   }, ['title', 'date']) },
   { name: 'termin_aendern', ...obj('Ändert einen oder mehrere bestehende Termine auf dieselbe Weise. Nur die Felder angeben, die sich ändern.', {
     id: str('id des Termins aus dem Kalender.'),
@@ -129,7 +129,7 @@ Sprache, feste Regel: Titel, Einträge und Texte stehen immer in der Sprache, in
 Termine:
 - Feiertage: "An Weihnachten" und "Heiligabend" ist der 24.12., "erster Feiertag" der 25.12., "zweiter Feiertag" oder "am zweiten" der 26.12. Silvester 31.12., Neujahr 1.1. Nennt ein Satz mehrere davon, ist jeder Tag klar; nicht nachfragen. Feiertage und Tage wie Halloween im Kalender nie umbenennen oder ändern: was jemand an dem Tag vorhat, ist ein eigener termin_neu.
 - Relative Angaben rechnest du vom heutigen Datum aus. "Nächsten Freitag" ist der kommende Freitag, außer heute ist Freitag, dann eine Woche später. "3pm" ist 15:00.
-- Ohne Uhrzeit: start weglassen. Hat so etwas meist eine Uhrzeit (Arzt, Friseur, Spiel, Treffen, Kurs, Essen gehen, Restaurant, Kino), trotzdem eintragen und ask_time setzen. Urlaub, Reise, Krankheit, Geburtstag, Feiertag sind ganztägig ohne Rückfrage; über mehrere Tage mit end_date.
+- Ohne Uhrzeit: start weglassen, trotzdem eintragen und ask_time setzen, bei JEDEM Termin (Julian: jeder Termin ohne Uhrzeit bekommt die Frage). Nur echte Ganztagssachen sind ganztägig ohne Rückfrage: Urlaub, Reise, Ferien, Krankheit, Geburtstag, Feiertag und ganze Tage bei jemandem ("An Weihnachten sind wir bei Mama"); über mehrere Tage mit end_date.
 - Mit Startzeit ohne Ende setzt du end nach der üblichen Dauer (Arzt 45 Minuten, Friseur 1 Stunde, Fußballspiel 2 Stunden, Kino 2,5 Stunden, Elternabend 2 Stunden), sonst weglassen.
 - who: J oder T, wenn einer der Eltern genannt ist oder "ich" sagt (wer spricht, steht unten), both für "wir", "beide", "zusammen". Kinder und Begleitung kommen in sub ("mit Ben").
 - Fehlt das Datum ganz, frag mit nachfragen.

@@ -8,7 +8,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { ScrollView, StyleProp, View, ViewStyle, Platform, LayoutChangeEvent } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Defs, LinearGradient, Stop, Rect } from 'react-native-svg';
-import Animated, { useAnimatedStyle, useSharedValue, withSpring, withTiming, interpolateColor } from 'react-native-reanimated';
+import Animated, { useAnimatedStyle, useSharedValue, withSpring, withTiming, interpolateColor, makeMutable, type SharedValue } from 'react-native-reanimated';
 import Txt, { Dot } from './Txt';
 import LineIcon, { LineName } from './LineIcon';
 import PressScale from './PressScale';
@@ -251,15 +251,18 @@ export function StepDots({ i, n = 8 }: { i: number; n?: number }) {
  * Segmented control on a grey track; the white pill slides to the tapped
  * item on a spring instead of jumping.
  */
-/** Where each switch last stood, so a remounted one glides from there instead of jumping. */
-const segAt = new Map<string, number>();
+/** One pill position per switch, shared by every mount: a screen that draws a new header (Heute, Tage) keeps the glide going. */
+const segAt = new Map<string, SharedValue<number>>();
 export function Seg<T extends string>({ items, value, onChange, height = 34 }: { items: { key: T; label: string }[]; value: T; onChange: (k: T) => void; height?: number }) {
   const idx = Math.max(0, items.findIndex((it) => it.key === value));
   const [w, setW] = useState(0);
   // A screen that draws its own header mounts a new switch (Heute): it starts where the last one was and glides on (Julian 31.10.).
   const id = items.map((it) => it.key).join('|');
-  const x = useSharedValue(segAt.get(id) ?? idx);
-  useEffect(() => { segAt.set(id, idx); x.value = withSpring(idx, springs.smooth); }, [idx]);
+  if (!segAt.has(id)) segAt.set(id, makeMutable(idx));
+  const x = segAt.get(id)!;
+  useEffect(() => { if (Math.abs(x.value - idx) > 0.001) x.value = withSpring(idx, springs.smooth); }, [idx]);
+  // The pill starts on the tap itself; the new view renders a frame later, so building it never holds the glide (Julian 31.10.: "lag").
+  const pick = (k: T, i: number) => { x.value = withSpring(i, springs.smooth); setTimeout(() => onChange(k), 16); };
   const pill = useAnimatedStyle(() => ({ transform: [{ translateX: x.value * w }] }));
   const onLayout = (e: LayoutChangeEvent) => setW((e.nativeEvent.layout.width - 8) / items.length);
   return (
@@ -273,7 +276,7 @@ export function Seg<T extends string>({ items, value, onChange, height = 34 }: {
             accessibilityRole="tab"
             accessibilityState={{ selected: on }}
             scale={0.95}
-            onPress={() => { if (!on) { haptics.select(); onChange(it.key); } }}
+            onPress={() => { if (!on) { haptics.select(); pick(it.key, items.indexOf(it)); } }}
             style={{
               flex: 1, height, borderRadius: 999, alignItems: 'center', justifyContent: 'center',
               backgroundColor: !w && on ? tokens.segOn : 'transparent',

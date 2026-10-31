@@ -11,6 +11,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { View, ScrollView } from 'react-native';
 import Animated, { useSharedValue, useAnimatedStyle, withSpring, withTiming, Easing } from 'react-native-reanimated';
+import { build } from '../../theme/motion';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { springs } from '../../theme';
 import { useScroller } from '../../lib/landing';
@@ -359,6 +360,8 @@ export default function DayView({ header }: { header: (today: React.ReactNode) =
         {header(<TodayChip away={day !== TODAY} above={day > TODAY} onPress={() => pick(TODAY)} />)}
         <WeekStrip day={day} onSelect={pick} />
       </Head>
+      {/* The days build up under the head that stays put (Julian 31.10.). */}
+      <Animated.View entering={build} style={{ flex: 1 }}>
       <ScrollView
         ref={ref}
         style={{ flex: 1 }}
@@ -382,6 +385,7 @@ export default function DayView({ header }: { header: (today: React.ReactNode) =
           </React.Fragment>
         ))}
       </ScrollView>
+      </Animated.View>
     </View>
   );
 }

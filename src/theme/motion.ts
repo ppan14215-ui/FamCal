@@ -11,7 +11,7 @@
  *   OS asks for reduced motion.
  */
 import { Platform } from 'react-native';
-import { Easing, FadeInDown, FadeIn, FadeOut, LinearTransition } from 'react-native-reanimated';
+import { Easing, FadeInDown, FadeIn, FadeOut, LinearTransition, Keyframe } from 'react-native-reanimated';
 
 export const motion = {
   press: 120,     // press-in / press-out feedback
@@ -62,3 +62,5 @@ export const rowLayout = LinearTransition.duration(motion.base).easing(easing.ou
 
 /** Swapping content in place (tab, view, step). */
 export const swapIn = FadeIn.duration(motion.micro).easing(easing.out);
+/** A new view builds up: fades in and settles 10 px, fast (Julian 31.10.: "sauber animierter schneller Aufbau"). */
+export const build = new Keyframe({ 0: { opacity: 0, transform: [{ translateY: 10 }] }, 100: { opacity: 1, transform: [{ translateY: 0 }], easing: Easing.bezier(0.22, 1, 0.36, 1) } }).duration(240);

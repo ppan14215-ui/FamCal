@@ -4,6 +4,14 @@ Alle sichtbaren Änderungen an FamCal. Neueste oben. Agenten und Menschen: Ände
 
 ## Unreleased
 
+### Kalender ruhiger und klarer (31.10. morgens)
+- Der Umschalter gleitet sofort beim Tippen los, auch zwischen Heute und Tage.
+- Tabs und Kalenderansichten bauen sich kurz animiert auf, statt einfach umzuspringen.
+- Urlaub hat eine eigene sonnige Farbe: im Jahr als durchgehender Balken, im Monat als gelber Eintrag.
+- Läuft ein Urlaub schon, sagt die große Karte auf Heute "Gerade · Tag 5 von 6" statt "Als Nächstes".
+- Geburtstage von Personen, deren Name schon "Geburtstag" enthält, heißen nicht mehr doppelt.
+- Assistent (erst im Testserver): jeder Termin ohne Uhrzeit fragt nach ihr, außer Urlaub, Geburtstag und Ähnlichem. Neuer Testfall jeder-termin-uhrzeit.
+
 ### Umschalter und Icons (31.10. morgens)
 - Von Heute auf Woche gleitet die Auswahl im Kalender-Umschalter jetzt, statt zu springen.
 - Die untere Leiste ändert beim Tab-Wechsel nicht mehr ihre Breite, die weiße Pille schießt bei Listen nicht mehr über.

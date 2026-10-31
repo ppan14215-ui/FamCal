@@ -26,6 +26,7 @@ import { springs } from '../../theme';
 import type { CalEvent } from '../../state/types';
 import { useCalEvents } from '../../lib/useEvents';
 import { isInfoDay } from '../../lib/feiertage';
+import { isVacation } from '../../lib/urlaub';
 import Stripes from '../../components/Stripes';
 
 const HEAD = tx('Mo Di Mi Do Fr Sa So', 'Mo Tu We Th Fr Sa Su').split(' ');
@@ -168,8 +169,8 @@ function DayTitles({ evs, lines }: { evs: CalEvent[]; lines: number }) {
   return (
     <View style={{ flex: 1, alignSelf: 'stretch', gap: 2, paddingTop: 2, paddingHorizontal: 2 }}>
       {sorted.slice(0, Math.max(0, room)).map((e) => (
-        <View key={e.id} style={{ height: 13, borderRadius: 4, paddingHorizontal: 3, justifyContent: 'center', backgroundColor: e.who === 'J' || e.who === 'T' ? persons[e.who].tint : evTint(e) }}>
-          <Txt size={9.5} line={12} weight={600} numberOfLines={1} ellipsizeMode="clip" color={e.who === 'J' || e.who === 'T' ? persons[e.who].ink : tokens.ink}>{e.title}</Txt>
+        <View key={e.id} style={{ height: 13, borderRadius: 4, paddingHorizontal: 3, justifyContent: 'center', backgroundColor: isVacation(e) ? tokens.vac : e.who === 'J' || e.who === 'T' ? persons[e.who].tint : evTint(e) }}>
+          <Txt size={9.5} line={12} weight={600} numberOfLines={1} ellipsizeMode="clip" color={isVacation(e) ? tokens.vacInk : e.who === 'J' || e.who === 'T' ? persons[e.who].ink : tokens.ink}>{e.title}</Txt>
         </View>
       ))}
       {sorted.length > room ? <Txt size={9.5} line={12} weight={700} color={tokens.sub} style={{ paddingHorizontal: 3 }}>{`+${sorted.length - Math.max(0, room)}`}</Txt> : null}

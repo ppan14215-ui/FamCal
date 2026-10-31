@@ -33,7 +33,9 @@ function birthdayEvent(p: Person) {
   const [, m, d] = p.birthday.split('-');
   let next = `${year(TODAY)}-${m}-${d}`;
   if (next < TODAY) next = `${year(TODAY) + 1}-${m}-${d}`;
-  const title = tx(`Geburtstag ${p.name}`, `${p.name}'s birthday`);
+  // A name that already says it ("Jerome Geburtstag") must not say it twice (Julian 31.10.).
+  const name = p.name.replace(/\s*\b(geburtstag|birthday|bday)\b\s*/gi, ' ').trim() || p.name;
+  const title = tx(`Geburtstag ${name}`, `${name}'s birthday`);
   if (get().events.some((e) => e.title === title)) return;
   const e: CalEvent = { id: `bd-${p.id}`, title, icon: 'geburtstag', date: next, start: '00:00', allDay: true, who: 'both', repeat: tx('Jährlich', 'Every year'), reminder: '1w', countdown: true, people: [p.id], note: tx('Geschenkidee: ', 'Gift idea: ') };
   actions.addEvent(e);
