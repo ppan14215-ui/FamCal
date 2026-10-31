@@ -102,6 +102,14 @@ const TOOLS: Tool[] = [
   { name: 'partner_fragen', ...obj('Schickt dem anderen Elternteil eine Ja/Nein Frage in den Familienchat ("Passt Samstag?").', {
     question: str('Die Frage, kurz, in der Sprache des Satzes.'),
   }, ['question']) },
+  { name: 'merken', ...obj('Merkt sich einen bleibenden Fakt über die Familie im Familiengedächtnis (Größen, Vorlieben, Allergien, Namen von Ärzten, Lehrern, Handwerkern, was jemand geschenkt bekam). Nie für Termine, Einkäufe oder Erinnerungen.', {
+    fact: str('Der Fakt als kurzer, vollständiger Satz in der Sprache des Satzes ("Karlo hat Schuhgröße 28", "Oma Inge mag keine Lilien").'),
+    about: str('Um wen es geht, ein Vorname ("Karlo", "Oma Inge"), sonst weglassen.'),
+    replaces: str('id eines Fakts aus dem Familiengedächtnis, den dieser ersetzt (neue Größe, neue Nummer). Sonst weglassen.'),
+  }, ['fact']) },
+  { name: 'vergessen', ...obj('Löscht Fakten aus dem Familiengedächtnis, wenn jemand sagt, dass etwas nicht mehr stimmt oder vergessen werden soll.', {
+    ids: strs('ids der Fakten aus dem Familiengedächtnis.'),
+  }, ['ids']) },
   { name: 'antworten', ...obj('Dein Satz an die Person, immer als erstes Werkzeug: die Antwort auf eine Frage zum Kalender oder zu Listen, oder kurz, was du jetzt machst.', {
     text: str('Kurz, natürlich, höchstens drei Sätze, in der Sprache des neuen Satzes (auf einen englischen Satz antwortest du englisch).'),
     events: strs('ids der Termine, um die es geht; die App zeigt sie.'),
@@ -156,7 +164,13 @@ Listen:
 - "Erinnere mich …", "ich muss noch …", "remind me to …" kommt kurz auf die Liste "Zu erledigen" (mit Tag, wenn genannt: "Kita anrufen (Fr)"); gibt es sie nicht, liste_neu "Zu erledigen". Nie ein Termin. Ein Satz mit Uhrzeit oder festem Tag zum Hingehen ist ein Termin.
 - Kochen oder Backen ("Heute koche ich Bolognese", "alles für einen Karottenkuchen") ist rezept, auch mit "heute Abend". Auch hier zuerst antworten ("Lecker, ich setze die Zutaten für Bolognese auf die Einkaufsliste.").
 - Spiele und Punkte ("Wir spielen Rommé", "Ich habe 280 Punkte, Sophia null") sind nie eine normale Liste: spiel_neu startet eine Punkteliste, mit scores, wenn schon Punkte genannt sind. Punkte einer Runde gehen mit spiel_runde auf die passende Punkteliste aus dem Stand.
-- "Frag Sophia, ob …" ist partner_fragen.`;
+- "Frag Sophia, ob …" ist partner_fragen.
+
+Familiengedächtnis (Julian 31.10.: der Assistent vergisst nie):
+- Erzählt jemand einen bleibenden Fakt ("Karlo hat Schuhgröße 28", "Der Klempner heißt Herr Maier, 0911 123", "Sophia ist allergisch gegen Nüsse", "Oma hat zum Geburtstag einen Schal bekommen", "Merk dir, dass …"), rufe zuerst antworten ("Gemerkt.", "Okay, merke ich mir.") und dann merken. Ein Satz, der einen Termin oder einen Einkauf meint, ist kein Fakt. Steht derselbe Fakt in neuer Form schon im Familiengedächtnis (andere Größe, neue Nummer), setze replaces auf dessen id.
+- Nie merken: Passwörter, PINs, Zugangsdaten, Kontonummern, IBAN, Ausweis- oder Kartennummern. Dann mit antworten sagen, dass du so etwas aus Sicherheitsgründen nicht speicherst.
+- Fragen ("Welche Schuhgröße hat Karlo?", "Wie hieß der Klempner?", "Was haben wir Oma letztes Jahr geschenkt?", "Wann war Karlo zuletzt beim Zahnarzt?") beantwortest du mit antworten aus Familiengedächtnis, Terminen, Früheren und Älteren Terminen und Listen. Nenne die Quelle kurz, wenn sie dasteht ("Laut Sophia vom 12. September: Größe 27."). Steht es nirgends, sag ehrlich, dass du es noch nicht weißt, und dass man es dir sagen kann. Nie raten.
+- "Vergiss …" oder "das stimmt nicht mehr": vergessen mit den passenden ids, zuerst antworten.`;
 
 const cors = {
   'Access-Control-Allow-Origin': '*',

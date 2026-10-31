@@ -1,62 +1,61 @@
-/** Assistent · Was ich weiß. Visible memory (R3): everything here can be changed or deleted. */
-import React, { useState } from 'react';
+/**
+ * Was ich weiß (Julian 31.10. 21:10: Familiengedächtnis). Everything the assistant was told to remember, for both
+ * parents, grouped by who it is about. Visible, deletable with a swipe (Rückgängig in the toast), never guessed.
+ */
+import React, { useMemo } from 'react';
 import { View } from 'react-native';
-import { Screen, BackBar, H1, H2, Lead, Group, Meta, Chevron, Hint } from '../src/components/ui/kit';
+import { Screen, BackBar, H1, H2, Lead, Group, Meta, Hint } from '../src/components/ui/kit';
 import Txt from '../src/components/ui/Txt';
-import { Tile } from '../src/components/ui/Clay';
-import { Avatar } from '../src/components/ui/Person';
 import SwipeRow from '../src/components/SwipeRow';
-import { tokens } from '../src/theme';
-import { toast } from '../src/state/store';
-import { weeksOld } from '../src/lib/dates';
-import type { ClayName } from '../src/lib/clayIcons';
-
-type K = { id: string; lead: React.ReactNode; t: string; s: string };
-
-const FAMILIE: K[] = [
-  { id: 'j', lead: <Avatar p="J" size={30} />, t: 'Julia', s: 'Mama · Farbe Rosa' },
-  { id: 't', lead: <Avatar p="T" size={30} />, t: 'Tom', s: 'Papa · Farbe Blau' },
-  { id: 'b', lead: <Tile name="schnuller" size={38} radius={12} />, t: 'Ben', s: `${weeksOld()} Wochen · geboren 14. Sep 2026` },
-];
-const tile = (n: ClayName) => <Tile name={n} size={38} radius={12} />;
-const MENSCHEN: K[] = [
-  { id: 'w', lead: tile('stethoskop'), t: 'Dr. Weber', s: 'Kinderarzt · Hauptstr. 12' },
-  { id: 's', lead: tile('hebamme'), t: 'Sarah Lind', s: 'Hebamme' },
-  { id: 'i', lead: tile('geburtstag'), t: 'Oma Inge', s: 'Geburtstag 2. Nov · letztes Geschenk: Kalender' },
-  { id: 'l', lead: tile('kochtopf'), t: 'Lena', s: 'Freundin · isst vegetarisch' },
-];
+import { tokens, persons } from '../src/theme';
+import { toast, useStore } from '../src/state/store';
+import { facts, forget, Fact } from '../src/lib/wissen';
+import { short } from '../src/lib/dates';
+import { tx } from '../src/i18n/lang';
 
 export default function Wissen() {
-  const [people, setPeople] = useState(MENSCHEN);
-  const row = (k: K, del?: () => void) => {
-    const body = (
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 10, paddingHorizontal: 14, backgroundColor: tokens.row }}>
-        {k.lead}
-        <View style={{ flex: 1 }}>
-          <Txt size={15.5} weight={600}>{k.t}</Txt>
-          <Meta>{k.s}</Meta>
-        </View>
-        <Chevron />
-      </View>
-    );
-    return del ? <SwipeRow key={k.id} onDelete={del}>{body}</SwipeRow> : <View key={k.id}>{body}</View>;
+  const lists = useStore((s) => s.lists);
+  const all = useMemo(() => facts(lists), [lists]);
+  const groups = useMemo(() => {
+    const m = new Map<string, Fact[]>();
+    for (const f of [...all].reverse()) {
+      const k = f.about?.trim() || tx('Allgemein', 'General');
+      m.set(k, [...(m.get(k) ?? []), f]);
+    }
+    return [...m.entries()];
+  }, [all]);
+  const drop = (f: Fact) => {
+    const undo = forget([f.id]);
+    toast(tx('Vergessen', 'Forgotten'), undo);
   };
   return (
     <Screen gap={12}>
       <BackBar />
-      <H1>Was ich weiß</H1>
-      <Lead>Alles hier ist sichtbar, änderbar und löschbar. Nichts davon wird zum Training genutzt.</Lead>
-      <H2>Familie</H2>
-      <Group>{FAMILIE.map((k) => row(k))}</Group>
-      <H2>Menschen und Orte</H2>
-      <Group>
-        {people.map((k) => row(k, () => {
-          const before = people;
-          setPeople(people.filter((p) => p.id !== k.id));
-          toast(`${k.t} vergessen`, () => setPeople(before));
-        }))}
-      </Group>
-      <Hint icon="lock">U- und Impfstatus bleiben nur auf diesem Gerät.</Hint>
+      <H1>{tx('Was ich weiß', 'What I know')}</H1>
+      <Lead>{tx('Alles, was ihr mir zum Merken gesagt habt. Ihr seht beide dasselbe. Wischen löscht.', 'Everything you asked me to remember. You both see the same. Swipe to delete.')}</Lead>
+      {groups.length ? groups.map(([who, list]) => (
+        <View key={who} style={{ gap: 8 }}>
+          <H2>{who}</H2>
+          <Group>
+            {list.map((f) => (
+              <SwipeRow key={f.id} onDelete={() => drop(f)}>
+                <View style={{ paddingVertical: 12, paddingHorizontal: 14, gap: 2, backgroundColor: tokens.row }}>
+                  <Txt size={15.5} line={21} weight={600}>{f.text}</Txt>
+                  {f.by || f.at ? <Meta>{[f.by ? persons[f.by].name : '', f.at ? short(f.at) : ''].filter(Boolean).join(' · ')}</Meta> : null}
+                </View>
+              </SwipeRow>
+            ))}
+          </Group>
+        </View>
+      )) : (
+        <Group>
+          <View style={{ paddingVertical: 16, paddingHorizontal: 14, gap: 4, backgroundColor: tokens.row }}>
+            <Txt size={15.5} weight={600}>{tx('Noch nichts gemerkt', 'Nothing remembered yet')}</Txt>
+            <Meta>{tx('Sag einfach: "Karlo hat Schuhgröße 28" oder "Merk dir, der Klempner heißt Herr Maier". Später fragst du: "Welche Größe hat Karlo?"', 'Just say: "Karlo wears shoe size 28" or "Remember, the plumber is Mr Maier". Later ask: "What size is Karlo?"')}</Meta>
+          </View>
+        </Group>
+      )}
+      <Hint icon="lock">{tx('Passwörter, PINs und Kontonummern merke ich mir nie.', 'I never store passwords, PINs or account numbers.')}</Hint>
     </Screen>
   );
 }

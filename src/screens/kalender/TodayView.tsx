@@ -30,6 +30,9 @@ import type { CalEvent } from '../../state/types';
 import { tx } from '../../i18n/lang';
 import { useCalEvents } from '../../lib/useEvents';
 import { isInfoDay } from '../../lib/feiertage';
+import DueOffer from '../../components/DueOffer';
+import { weekBriefing } from '../../lib/briefing';
+import { dueItems, kidsOf, useHandled } from '../../lib/mitdenken';
 
 /** The family's to-do list, whatever it was called ("Zu erledigen", "Aufgaben", "Task"). */
 const TODO_NAME = /^(zu erledigen|erledigen|aufgaben|to-?dos?|tasks?)$/i;
@@ -169,7 +172,15 @@ export default function TodayView({ header }: { header: React.ReactNode }) {
   const ref = useRef<ScrollView>(null);
   const track = useScroller(ref);
 
-  const { next, later, week, todo, fristen, soon, preview, info } = useMemo(() => {
+  const people = useStore((s) => s.people);
+  const kid = useStore((s) => s.kid);
+  const country = useStore((s) => s.country);
+  const lists = useStore((s) => s.lists);
+  const handled = useHandled();
+  // Julian 31.10.: Wochenbriefing (the coming week from Sunday on, else the next seven days), Mitdenken nach Alter whenever something is due.
+  const brief = useMemo(() => weekBriefing(events, lists, kidsOf(people, kid), country), [events, lists, people, kid, country, handled]);
+  const due = useMemo(() => dueItems(kidsOf(people, kid), country, 30), [people, kid, country, handled]);
+  const { next, later, week, todo, fristen, soon, info } = useMemo(() => {
     const real = events.filter((e) => !e.work && !isInfoDay(e));
     const today = real.filter((e) => e.date === TODAY || (!!e.endDate && e.date < TODAY && TODAY <= e.endDate)).sort(byStart);
     // Still to come today; a running Termin counts until it ends.
@@ -194,11 +205,6 @@ export default function TodayView({ header }: { header: React.ReactNode }) {
         .sort((a, b) => a.date.localeCompare(b.date))
         .filter((e, i, l) => l.findIndex((x) => x.id.split('~')[0] === e.id.split('~')[0]) === i)
         .slice(0, 3),
-      // Sonntags Vorschau (Spec 5): on Sunday the coming week at a glance, and what nobody has taken yet.
-      preview: weekday(TODAY) === 0 ? (() => {
-        const days = real.filter((e) => e.date > TODAY && e.date <= addDays(TODAY, 7));
-        return { count: days.length, open: days.filter((e) => !e.who).sort((a, b) => a.date.localeCompare(b.date) || byStart(a, b)) };
-      })() : null,
     };
   }, [events, tasks, docs]);
 
@@ -223,20 +229,25 @@ export default function TodayView({ header }: { header: React.ReactNode }) {
         </View>
       )}
 
-      {preview && preview.count ? (
-        <View style={{ backgroundColor: tokens.doneSoft, borderRadius: 24, padding: 18, gap: 8 }}>
-          <Txt size={13} weight={600} color={tokens.done}>{tx('Eure Woche', 'Your week')}</Txt>
-          <Txt size={18} weight={600}>
-            {tx(`${preview.count} ${preview.count === 1 ? 'Termin' : 'Termine'}`, `${preview.count} ${preview.count === 1 ? 'event' : 'events'}`)}
-            {preview.open.length ? tx(`, ${preview.open.length} noch ohne Zuständigen`, `, ${preview.open.length} nobody has taken yet`) : tx(', alles verteilt', ', all taken')}
+      {brief ? (
+        <PressScale scale={0.985} onPress={() => { haptics.select(); router.push('/woche'); }} style={{ backgroundColor: tokens.doneSoft, borderRadius: 24, padding: 18, gap: 6 }}>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Txt size={13} weight={600} color={tokens.done}>{tx('Wochenbriefing', 'Weekly briefing')}</Txt>
+            <LineIcon name="chev" size={14} color={tokens.done} stroke={2.2} />
+          </View>
+          <Txt size={18} line={24} weight={600}>
+            {[tx(`${brief.count} ${brief.count === 1 ? 'Termin' : 'Termine'}`, `${brief.count} ${brief.count === 1 ? 'event' : 'events'}`),
+              brief.clashes.length ? tx(`${brief.clashes.length} ${brief.clashes.length === 1 ? 'Überschneidung' : 'Überschneidungen'}`, `${brief.clashes.length} ${brief.clashes.length === 1 ? 'clash' : 'clashes'}`) : '',
+              brief.unassigned.length ? tx(`${brief.unassigned.length} ohne Zuständigen`, `${brief.unassigned.length} unassigned`) : ''].filter(Boolean).join(', ')}
           </Txt>
-          {preview.open.slice(0, 4).map((e) => (
-            <PressScale key={e.id} onPress={() => { haptics.select(); router.push(`/termin/${e.id}`); }} style={{ flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 36 }}>
-              <Txt size={14} weight={600} color={tokens.done} style={{ width: 30 }}>{WD_SHORT[weekday(e.date)]}</Txt>
-              <Txt size={15} numberOfLines={1} style={{ flex: 1 }}>{e.title}</Txt>
-              <Txt size={13} weight={600} color={tokens.done}>{tx('Wer geht?', "Who's going?")}</Txt>
-            </PressScale>
-          ))}
+          <Meta>{tx('Tippen für die ganze Woche', 'Tap for the whole week')}</Meta>
+        </PressScale>
+      ) : null}
+
+      {due.length ? (
+        <View style={{ gap: 2, paddingHorizontal: 4 }}>
+          <Label>{tx('Mitgedacht', 'Thought ahead')}</Label>
+          {due.slice(0, 3).map((d) => <DueOffer key={d.key} d={d} />)}
         </View>
       ) : null}
 

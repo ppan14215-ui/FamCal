@@ -26,6 +26,7 @@ import { isPoints, players, total, parseRound } from './points';
 import { myRole } from './sync';
 import { HIDDEN } from './core';
 import { sendAsk, feedTail } from './feed';
+import { facts, remember, forget, isWissen } from './wissen';
 import { newId, itemText } from '../data/sample';
 import { isInfoDay } from './feiertage';
 
@@ -92,7 +93,14 @@ export function snapshot(): string {
     past.push(e);
     if (past.length >= 40) break;
   }
-  const listLines = lists.filter((l) => !(HIDDEN.points && isPoints(l))).slice(0, 20).map((l: List) => {
+  // Familiengedächtnis (Julian 31.10.): the last twelve months stay askable ("Wann war Ben zuletzt beim Zahnarzt?").
+  const year = events
+    .filter((x) => x.date < from && x.date >= addDays(TODAY, -365) && !x.work && !x.cal && !x.repeat && !past.includes(x))
+    .sort((a, b) => b.date.localeCompare(a.date))
+    .slice(0, 160)
+    .map((e) => `${day(e.date)} | ${clip(e.title, 50)}${e.sub ? ` (${clip(e.sub, 30)})` : ''}`);
+  const known = facts(lists).slice(-120).map((f) => `${f.id}: ${clip(f.text, 160)}${f.about ? ` [über ${clip(f.about, 30)}]` : ''}${f.by ? ` (${persons[f.by].name}${f.at ? `, ${day(f.at)}` : ''})` : f.at ? ` (${day(f.at)})` : ''}`);
+  const listLines = lists.filter((l) => !isWissen(l) && !(HIDDEN.points && isPoints(l))).slice(0, 20).map((l: List) => {
     if (isPoints(l)) {
       return `Punkteliste ${l.id} "${clip(l.name)}": ${players(l).map((p) => `${p.id} ${clip(p.name, 30)} ${total(p)}`).join(', ') || 'noch keine Spieler'}`;
     }
@@ -108,6 +116,8 @@ export function snapshot(): string {
     people.length ? `Familie außer den Eltern: ${people.map((p) => clip(p.name, 30)).join(', ')}` : '',
     `Termine (id | Tag | Zeit | Titel | Details):\n${evs.map(eventLine).join('\n') || '(keine)'}`,
     past.length ? `Frühere Termine (je Titel der letzte, zum Nachschlagen):\n${past.map(eventLine).join('\n')}` : '',
+    `Familiengedächtnis (id: Fakt [über wen] (wer, wann)):\n${known.join('\n') || '(noch nichts gemerkt)'}`,
+    year.length ? `Ältere Termine der letzten 12 Monate (nur zum Nachschlagen):\n${year.join('\n')}` : '',
     `Listen (die Liste einkauf ist die Einkaufsliste):\n${listLines.join('\n') || '(keine)'}`,
     HIDDEN.tasks ? '' : `Aufgaben:\n${taskLines.join('\n') || '(keine)'}`,
   ].filter(Boolean).join('\n\n');
@@ -430,6 +440,19 @@ function opOf(a: Action, said: string): Op | null {
       if (!l || !isPoints(l) || !scores.length) return null;
       const p = pointsPlan(l, scores.map((x: any) => `${x.who} ${Math.round(Number(x.points))}`).join(', '));
       return p ? fromPlan(p) : null;
+    }
+    case 'merken': {
+      const text = s(i.fact);
+      if (!text) return null;
+      const about = s(i.about) || undefined;
+      const replaces = s(i.replaces) || undefined;
+      return { step: tx(`Gemerkt: ${text}`, `Remembered: ${text}`), run: () => { const undo = remember(text, about, myRole(), replaces); return { lit: [], text: tx(`Gemerkt: ${text}`, `Remembered: ${text}`), undo }; } };
+    }
+    case 'vergessen': {
+      const ids = arr(i.ids).filter((id) => facts().some((f) => f.id === id));
+      if (!ids.length) return null;
+      const what = facts().filter((f) => ids.includes(f.id)).map((f) => f.text).join(', ');
+      return { step: tx(`Vergessen: ${what}`, `Forgot: ${what}`), run: () => { const undo = forget(ids); return { lit: [], text: tx(`Vergessen: ${what}`, `Forgot: ${what}`), undo }; } };
     }
     case 'partner_fragen': {
       const question = s(i.question);

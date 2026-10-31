@@ -104,7 +104,7 @@ function plan(events: CalEvent[], now: Date): Plan[] {
     if (!week.length) continue;
     const open = week.filter((e) => !e.who).length;
     const n = week.length;
-    out.push({ id: `${PREFIX}s:${ymd(d)}:${n}:${open}`, when: new Date(d), open: '/kalender', title: tx('Eure Woche', 'Your week'),
+    out.push({ id: `${PREFIX}s:${ymd(d)}:${n}:${open}`, when: new Date(d), open: '/woche', title: tx('Eure Woche', 'Your week'),
       body: tx(`Eure Woche: ${n} ${n === 1 ? 'Termin' : 'Termine'}, ${open} noch ohne Zuständigen`, `Your week: ${n} ${n === 1 ? 'event' : 'events'}, ${open} still unassigned`) });
   }
   return out;

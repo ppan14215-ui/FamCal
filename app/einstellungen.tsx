@@ -104,6 +104,7 @@ export default function Einstellungen() {
         <Seg items={[{ key: 'hell', label: tx('Hell', 'Light') }, { key: 'dunkel', label: tx('Dunkel', 'Dark') }, { key: 'system', label: tx('Wie das Handy', 'Like the phone') }]} value={theme} onChange={(k) => setTheme(k as ThemeChoice)} />
       </View>
       <Group>
+        <SRow icon="notizblock" t={tx('Was ich weiß', 'What I know')} s={tx('Das Familiengedächtnis des Assistenten', 'The assistant\'s family memory')} onPress={() => router.push('/wissen')} />
         <SRow icon="zuhause" t={tx('Eure Familie', 'Your family')} s={tx('Kinder, Großeltern, Geburtstage', 'Kids, grandparents, birthdays')} onPress={() => router.push('/personen')} />
         <SRow icon="reise" t={tx('Urlaub und Feiertage', 'Vacation and holidays')} s={vacLine(vac, names, [countryName(country), land && (country === 'DE' ? land : regionName(country, land))].filter(Boolean).join(', '))} onPress={() => router.push('/urlaub')} />
         {HIDDEN.extras ? null : <SRow icon="glocke" t={tx('Hinweise', 'Notifications')} s={tx('Nur Wichtiges · Ruhe 21–7 Uhr', 'Only what matters · quiet 9pm to 7am')} onPress={() => router.push('/demo/sperrbildschirm')} />}

@@ -24,7 +24,7 @@ export default function EinkaufNeu() {
   const insets = useSafeAreaInsets();
   const [q, setQ] = useState('');
   // One place for every list (Julian 30.10.: "Listen versteht man auch nicht"): pick the list here, or start a new one.
-  const lists = useStore((s) => s.lists);
+  const lists = useStore((s) => s.lists).filter((l) => l.id !== 'wissen');
   const [target, setTarget] = useState('einkauf');
   const shop = target === 'einkauf';
   const list = useStore((s) => s.lists.find((l) => l.id === 'einkauf'));

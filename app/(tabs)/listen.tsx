@@ -28,10 +28,11 @@ import { isPoints, players, roundsOf, total } from '../../src/lib/points';
 import HeaderRight from '../../src/components/ui/HeaderRight';
 import { tx } from '../../src/i18n/lang';
 import { HIDDEN } from '../../src/lib/core';
+import { isWissen } from '../../src/lib/wissen';
 
 export default function Listen() {
   const all = useStore((s) => s.lists);
-  const lists = useMemo(() => (HIDDEN.points ? all.filter((l) => !isPoints(l)) : all), [all]);
+  const lists = useMemo(() => all.filter((l) => !isWissen(l) && !(HIDDEN.points && isPoints(l))), [all]);
   const tasks = useStore((s) => s.tasks);
   const chosen = useStore((s) => s.activeList);
   // Without the Aufgaben tab (Julian 30.10.) a hidden or missing choice opens the first list.

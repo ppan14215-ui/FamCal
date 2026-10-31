@@ -35,6 +35,9 @@ export type Fall = {
 
 // ─── Helfer ────────────────────────────────────────────────────────────────
 
+/** Familie mit einem gemerkten Fakt (Familiengedächtnis). */
+const mitFakt = (s: Stand): Stand => ({ ...s, lists: [...s.lists, { id: 'wissen', name: 'Familiengedächtnis', icon: 'notizblock', kind: 'collection', sections: [{ id: 'main', title: '', items: [{ id: 'f1', name: 'Karlo hat Schuhgröße 27', note: 'Karlo', who: 'T', done: false, data: { date: '2026-09-12' } }] }] } as List] });
+
 const work = (s: Stand) => s.events.filter((e) => e.work);
 const byId = (s: Stand, id: string) => s.events.find((e) => e.id === id);
 const items = (s: Stand, list: string) => (s.lists.find((l) => l.id === list)?.sections.flatMap((x) => x.items) ?? []).map((i) => ({ ...i, text: `${i.qty ? `${i.qty} ` : ''}${i.name}` }));
@@ -298,5 +301,18 @@ export const FAELLE: Fall[] = [
       const sum = (n: RegExp) => { const p = ps.find((x) => n.test(x.name)); return p ? (p.data?.rounds ?? []).reduce((a, b) => a + b, 0) : null; };
       const j = sum(/^julian$/i), so = sum(/^sophia$/i);
       return [...(j === 280 ? [] : [`Julian: ${j}`]), ...(so === 0 ? [] : [`Sophia: ${so}`]), ...(ps.length === 2 ? [] : [`Spieler: ${ps.map((x) => x.name).join(', ')}`]), ...deutsch(e)];
+    } },
+  // Julian 31.10. 21:10: Familiengedächtnis. Ein Fakt wird gemerkt, nicht als Termin oder Einkauf eingetragen.
+  { id: 'merken', saetze: ['Karlo hat Schuhgröße 28'],
+    pruefe: (e) => {
+      const f = items(e.stand, 'wissen');
+      return [...(f.some((i) => /28/.test(i.text) && /karlo|schuh/i.test(`${i.text} ${i.note ?? ''}`)) ? [] : ['nicht gemerkt']), ...keineNeuen(e), ...deutsch(e)];
+    } },
+  { id: 'gedaechtnis-frage', saetze: ['Welche Schuhgröße hat Karlo?'], start: mitFakt,
+    pruefe: (e) => [...(/27/.test(e.antwort) ? [] : [`Antwort ohne 27: ${e.antwort}`]), ...(items(e.stand, 'wissen').length === 1 ? [] : ['Gedächtnis verändert']), ...keineNeuen(e), ...deutsch(e)] },
+  { id: 'gedaechtnis-ersetzen', saetze: ['Karlo hat jetzt Schuhgröße 29'], start: mitFakt,
+    pruefe: (e) => {
+      const t = items(e.stand, 'wissen').map((i) => i.text).join(' | ');
+      return [...(/29/.test(t) ? [] : ['29 nicht gemerkt']), ...(/27/.test(t) ? [`alte Größe noch da: ${t}`] : []), ...keineNeuen(e), ...deutsch(e)];
     } },
 ];

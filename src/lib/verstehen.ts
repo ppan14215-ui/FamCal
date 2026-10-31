@@ -13,7 +13,7 @@ import { LANG, tx } from '../i18n/lang';
 import { toast, get } from '../state/store';
 
 /** The family's own lists, so Claude can put things on the Watchlist or the Ostsee packing list (Julian 29.10.). */
-const myLists = () => get().lists.map((l) => ({ id: l.id, name: l.name })).slice(0, 40);
+const myLists = () => get().lists.filter((l) => l.id !== 'wissen').map((l) => ({ id: l.id, name: l.name })).slice(0, 40);
 
 /** The rules have answered already; Claude may take longer for a sentence with many Termine (Julian 28.10.). */
 const WAIT_MS = 15000;
