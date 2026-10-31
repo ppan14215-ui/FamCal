@@ -11,7 +11,7 @@ import type { Blueprint, ItemData } from '../state/types';
 
 type Found = Pick<ItemData, 'cover' | 'year' | 'by' | 'link' | 'about' | 'kind'>;
 /** Raised when the server finds more (29.10.: posters from iTunes; 31.10.: a Wikipedia sentence), so old rows look once more. */
-const LOOKUP = 3; // goes to 4 once the server sends the Wikipedia sentence, so old rows look once more
+const LOOKUP = 4;
 
 async function lookUp(source: NonNullable<Blueprint['source']>, q: string): Promise<Found | null> {
   if (!supabase || !getAuth().session) return null;
