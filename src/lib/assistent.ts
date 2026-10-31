@@ -473,11 +473,26 @@ function ownDay(a: Action): Action {
   return { ...a, tool: 'termin_neu', input: { ...i, id: undefined, title: s(i.title) || e.title, date: ISO.test(s(i.date)) ? s(i.date) : e.date } };
 }
 
+const GERMAN = /[äöüß]|\b(ich|wir|und|die|der|das|auf|mit|heute|morgen|koche|kochen|brauchen|bitte|noch|ein|eine)\b/i;
+
+/**
+ * Julian: the assistant always answers in a short sentence. Now and then the model only calls the tool (eval 31.10.:
+ * rezept without antworten). Then the app says it itself, in the language of the sentence.
+ */
+export function withReply(r: AgentAnswer, said: string): AgentAnswer {
+  if (r.actions.some((a) => a.tool === 'antworten' || a.tool === 'nachfragen') || !r.actions.length) return r;
+  const de = GERMAN.test(said);
+  const dish = s(r.actions.find((a) => a.tool === 'rezept')?.input?.dish);
+  const text = dish ? (de ? `Mach ich, die Zutaten für ${dish} kommen auf die Einkaufsliste.` : `Sure, the ingredients for ${dish} go on the shopping list.`) : (de ? 'Okay, mach ich.' : 'Okay, on it.');
+  return { ...r, actions: [{ tool: 'antworten', input: { text } }, ...r.actions] };
+}
+
 /**
  * What the app does with Claude's answer: a question back (nothing changes),
  * an answer, or one plan for all actions with one Rückgängig.
  */
-export function agentPlan(r: AgentAnswer, said: string): { ask: string } | Plan | null {
+export function agentPlan(r0: AgentAnswer, said: string): { ask: string } | Plan | null {
+  const r = withReply(r0, said);
   const p = planOf(r, said);
   const say = s(r.actions.find((a) => a.tool === 'antworten')?.input?.text);
   return p && !('ask' in p) && r.actions.some((a) => a.tool !== 'antworten') ? withSay(p, say) : p;

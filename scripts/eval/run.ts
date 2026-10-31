@@ -15,7 +15,7 @@
  */
 import fs from 'node:fs';
 import path from 'node:path';
-import { agentBody, agentPlan, type AgentAnswer } from '../../src/lib/assistent';
+import { agentBody, agentPlan, withReply, type AgentAnswer } from '../../src/lib/assistent';
 import { get, set } from '../../src/state/store';
 import { persons } from '../../src/theme/tokens';
 import { termine, listen, aufgaben } from '../../eval/assistent/familie';
@@ -62,7 +62,8 @@ async function ask(said: string, history: { said: string; app?: string }[]): Pro
       const { r, ms, error } = await ask(said, history);
       times.push(ms);
       if (!r) { fail = `Server: ${error}`; break; }
-      const antwort = String(r.actions.find((a) => a.tool === 'antworten')?.input?.text ?? '');
+      // What the app shows: the model's sentence, or the app's own when the model only acted.
+      const antwort = String(withReply(r, said).actions.find((a) => a.tool === 'antworten')?.input?.text ?? '');
       const p = agentPlan(r, said);
       let karte: string | null = null;
       let frage: string | null = null;
