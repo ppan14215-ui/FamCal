@@ -289,4 +289,14 @@ export const FAELLE: Fall[] = [
       const f = e.stand.events.filter((x) => /friseur/i.test(x.title));
       return [...(f.length === 1 ? [] : [`${f.length} Friseur-Termine`]), ...(f[0]?.start === '16:00' && f[0].date === '2026-11-02' ? [] : [`Friseur: ${f[0]?.date} ${f[0]?.start}`]), ...deutsch(e)];
     } },
+  // Julian 31.10. 13:59: a game became a checklist "Julian: 280 Punkte" ("das macht kein Sinn").
+  { id: 'romme-punkte', saetze: ['Erstelle eine Liste. Wir spielen gerade Rommé. Ich habe zweihundertachtzig Punkte, Sophia null'],
+    pruefe: (e) => {
+      const l = e.stand.lists.find((x) => x.blueprint?.blocks.includes('points'));
+      if (!l) return ['keine Punkteliste', ...deutsch(e)];
+      const ps = l.sections.flatMap((x) => x.items);
+      const sum = (n: RegExp) => { const p = ps.find((x) => n.test(x.name)); return p ? (p.data?.rounds ?? []).reduce((a, b) => a + b, 0) : null; };
+      const j = sum(/^julian$/i), so = sum(/^sophia$/i);
+      return [...(j === 280 ? [] : [`Julian: ${j}`]), ...(so === 0 ? [] : [`Sophia: ${so}`]), ...(ps.length === 2 ? [] : [`Spieler: ${ps.map((x) => x.name).join(', ')}`]), ...deutsch(e)];
+    } },
 ];

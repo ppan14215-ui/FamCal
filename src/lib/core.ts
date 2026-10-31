@@ -7,8 +7,8 @@
 export const HIDDEN = {
   /** Aufgaben as their own tab; reminders go on the list "Zu erledigen" instead. */
   tasks: true,
-  /** Rommé and other points lists. */
-  points: true,
+  /** Rommé and other points lists. Back 31.10. 13:59 (Julian: a game as checklist "macht kein Sinn"). */
+  points: false,
   /** Scores and stars on films, series and books. */
   ratings: true,
   /** "Mitdenken": things to bring offered under a new Termin (U-Heft, Impfpass). */

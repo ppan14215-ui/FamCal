@@ -22,7 +22,7 @@ import { get, set, actions } from '../state/store';
 import type { CalEvent, List, Task, Who } from '../state/types';
 import { fromModel, TERMIN_ICON_NAMES, type Understood } from './talk';
 import { replyPlan, listFromClaude, gameStart, pointsPlan, liste, type Plan, type Result } from './act';
-import { isPoints, players, total } from './points';
+import { isPoints, players, total, parseRound } from './points';
 import { myRole } from './sync';
 import { HIDDEN } from './core';
 import { sendAsk, feedTail } from './feed';
@@ -215,6 +215,31 @@ function terminOf(a: Action, said: string): CalEvent[] {
 /** One step with its undo; plans from the old path (lists, recipes, games) run as they are. */
 type Op = { step: string; plan?: Plan; run: () => { lit: string[]; events?: string[]; text: string; undo?: () => void; result?: Result; go?: string } | null };
 
+const GAME_NAME = /romm[eé]|rummy|canasta|kniffel|yahtzee|skat|doppelkopf|\buno\b|wizard|phase 10|darts|punkte|spielstand|score/i;
+
+/** A points list for a game, with the points already said as round 1 ("Ich habe 280, Sophia null"). */
+function startGame(game: string, names: string[], scores: { who: string; points: number }[]): Plan {
+  const all = [...names, ...scores.map((x) => x.who)].filter((n, k, a) => n && a.findIndex((m) => m.toLowerCase() === n.toLowerCase()) === k);
+  const start = gameStart(game, all);
+  if (!scores.length) return start;
+  const name = /^romm/i.test(game) ? 'Rommé' : game.replace(/^./, (c) => c.toUpperCase());
+  const line = scores.map((x) => `${x.who} ${x.points}`).join(', ');
+  return {
+    head: start.head,
+    steps: [...start.steps, line],
+    run: () => {
+      const first = start.run();
+      const l = get().lists.find((x) => isPoints(x) && x.name.toLowerCase() === name.toLowerCase());
+      const round = l && pointsPlan(l, line);
+      if (!round) return first;
+      const out = round.run();
+      const undoA = first.result?.kind === 'done' ? first.result.undo : undefined;
+      const r = out.result;
+      return r?.kind === 'done' ? { ...out, result: { ...r, undo: () => { r.undo?.(); undoA?.(); } } } : out;
+    },
+  };
+}
+
 function fromPlan(p: Plan): Op {
   return {
     plan: p,
@@ -316,8 +341,16 @@ function opOf(a: Action, said: string): Op | null {
       if (!items.length) return null;
       return fromPlan(l ? liste(items.join(', '), l.id, l.id === 'aufgaben' ? undefined : items) : listFromClaude({ kind: 'liste', list: 'neu', name: s(i.list), items }, said));
     }
-    case 'liste_neu':
+    case 'liste_neu': {
+      // Julian 31.10. 13:59: "Erstelle eine Liste. Wir spielen gerade Rommé …" became a checklist "Julian: 280 Punkte".
+      // A game is a points list, whatever tool the model picked.
+      if (GAME_NAME.test(s(i.name))) {
+        const r = parseRound(arr(i.items).join(', ').replace(/:/g, ' '));
+        const names = arr(i.items).map((x) => x.replace(/[:\d].*$/, '').trim()).filter(Boolean);
+        return fromPlan(startGame(s(i.name), names, r?.round ?? []));
+      }
       return fromPlan(listFromClaude({ kind: 'liste', list: 'neu', name: s(i.name) || tx('Neue Liste', 'New list'), items: arr(i.items) }, said));
+    }
     case 'rezept':
       return fromPlan(listFromClaude({ kind: 'liste', list: 'einkauf', items: arr(i.items), dish: s(i.dish), extra: arr(i.extra), variants: arr(i.variants), have: arr(i.have) }, said));
     case 'eintrag_abhaken':
@@ -380,8 +413,11 @@ function opOf(a: Action, said: string): Op | null {
       const title = patch.title ?? t.title;
       return { step: tx(`${q(t.title)} ändern`, `Change ${q(t.title)}`), run: () => { set((st) => ({ tasks: st.tasks.map((x) => (x.id === t.id ? { ...x, ...patch } : x)) })); return { lit: [t.id], text: tx(`${q(title)} geändert${patch.due ? `, bis ${long(patch.due)}` : ''}.`, `${q(title)} changed${patch.due ? `, by ${long(patch.due)}` : ''}.`), undo: restore }; } };
     }
-    case 'spiel_neu':
-      return s(i.game) ? fromPlan(gameStart(s(i.game), arr(i.players))) : null;
+    case 'spiel_neu': {
+      if (!s(i.game)) return null;
+      const scores = (Array.isArray(i.scores) ? i.scores : []).filter((x: any) => x && typeof x.who === 'string' && Number.isFinite(Number(x.points))).map((x: any) => ({ who: String(x.who), points: Math.round(Number(x.points)) }));
+      return fromPlan(startGame(s(i.game), arr(i.players), scores));
+    }
     case 'spiel_runde': {
       const l = listOf(s(i.list));
       const scores = (Array.isArray(i.scores) ? i.scores : []).filter((x: any) => x && typeof x.who === 'string' && Number.isFinite(Number(x.points)));

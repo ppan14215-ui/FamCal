@@ -35,6 +35,7 @@ import type { When } from '../lib/when';
 import type { CalEvent } from '../state/types';
 import { haptics } from '../lib/haptics';
 import PlaceAsk, { PinChip } from './PlaceAsk';
+import { isPoints, total } from '../lib/points';
 
 
 export const at = (s: string) => { const d = new Date(s); return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`; };
@@ -182,7 +183,13 @@ function Items({ list, ids, name, names }: { list: string; ids: string[]; name?:
       <PressScale scale={0.99} onPress={() => { actions.setActiveList(l.id); router.navigate('/listen'); }} style={{ paddingHorizontal: 14, paddingTop: 12, paddingBottom: 4 }}>
         <Txt size={15} weight={600}>{l.name}</Txt>
       </PressScale>
-      {live.map((i) => (
+      {/* A game shows the score, not checkboxes (Julian 31.10. 13:59). */}
+      {isPoints(l) ? live.map((i) => (
+        <View key={i.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 14, paddingVertical: 7 }}>
+          <Txt size={15} style={{ flex: 1 }}>{i.name}</Txt>
+          <Txt size={15} weight={600}>{tx(`${total(i)} Punkte`, `${total(i)} points`)}</Txt>
+        </View>
+      )) : live.map((i) => (
         <View key={i.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 14, paddingVertical: 7 }}>
           <Check size={22} done={i.done} onPress={() => actions.toggleItem(l.id, i.id)} />
           <Txt size={15} style={{ flex: 1 }} color={i.done ? tokens.mute : tokens.ink}>{i.qty ? `${i.qty} ` : ''}{i.name}</Txt>

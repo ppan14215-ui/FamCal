@@ -91,6 +91,14 @@ const TOOLS: Tool[] = [
     list: str('id der Liste.'), item: str('id des Eintrags.'),
   }, ['list', 'item']) },
   { name: 'liste_loeschen', ...obj('Löscht eine ganze eigene Liste. Nie Einkauf.', { list: str('id der Liste.') }, ['list']) },
+  { name: 'spiel_neu', ...obj('Startet eine Punkteliste für ein Spiel (Rommé, Kniffel, Skat …). Gibt es schon eine für das Spiel, nimm stattdessen spiel_runde.', {
+    game: str('Name des Spiels.'), players: strs('Die Mitspieler.'),
+    scores: { type: 'array', items: { type: 'object', properties: { who: { type: 'string' }, points: { type: 'number' } }, required: ['who', 'points'] }, description: 'Punkte, die schon genannt sind, als erste Runde ("ich" ist die sprechende Person mit Namen).' },
+  }, ['game', 'players']) },
+  { name: 'spiel_runde', ...obj('Trägt eine Runde auf einer Punkteliste ein ("Julian 40, Sophia 25").', {
+    list: str('id der Punkteliste.'),
+    scores: { type: 'array', items: { type: 'object', properties: { who: { type: 'string' }, points: { type: 'number' } }, required: ['who', 'points'] } },
+  }, ['list', 'scores']) },
   { name: 'partner_fragen', ...obj('Schickt dem anderen Elternteil eine Ja/Nein Frage in den Familienchat ("Passt Samstag?").', {
     question: str('Die Frage, kurz, in der Sprache des Satzes.'),
   }, ['question']) },
@@ -147,6 +155,7 @@ Listen:
 - Steht etwas schon offen auf der Liste, nimm eintrag_aendern statt doppelt einzutragen. Eine genannte Menge ist dann die neue Gesamtmenge ("Wir brauchen 3 Hafermilch" bei 2 auf der Liste: 3). Nur bei "noch", "mehr" oder "zusätzlich" zählst du dazu.
 - "Erinnere mich …", "ich muss noch …", "remind me to …" kommt kurz auf die Liste "Zu erledigen" (mit Tag, wenn genannt: "Kita anrufen (Fr)"); gibt es sie nicht, liste_neu "Zu erledigen". Nie ein Termin. Ein Satz mit Uhrzeit oder festem Tag zum Hingehen ist ein Termin.
 - Kochen oder Backen ("Heute koche ich Bolognese", "alles für einen Karottenkuchen") ist rezept, auch mit "heute Abend". Auch hier zuerst antworten ("Lecker, ich setze die Zutaten für Bolognese auf die Einkaufsliste.").
+- Spiele und Punkte ("Wir spielen Rommé", "Ich habe 280 Punkte, Sophia null") sind nie eine normale Liste: spiel_neu startet eine Punkteliste, mit scores, wenn schon Punkte genannt sind. Punkte einer Runde gehen mit spiel_runde auf die passende Punkteliste aus dem Stand.
 - "Frag Sophia, ob …" ist partner_fragen.`;
 
 const cors = {
