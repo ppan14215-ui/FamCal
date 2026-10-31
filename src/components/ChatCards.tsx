@@ -39,8 +39,11 @@ import { haptics } from '../lib/haptics';
 export const at = (s: string) => { const d = new Date(s); return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`; };
 export const dayOf = (s: string) => { const d = new Date(s); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
 
-function Termine({ ids, snap, changed, ask, timeQ }: { ids: string[]; snap?: EventSnap[]; changed?: boolean; ask?: 'J' | 'T'; timeQ?: string }) {
+function Termine({ ids, snap, changed, ask, timeQ, fresh }: { ids: string[]; snap?: EventSnap[]; changed?: boolean; ask?: 'J' | 'T'; timeQ?: string; fresh?: boolean }) {
   const events = useStore((s) => s.events);
+  // A card that just appeared plays its icon once (Julian 31.10.: "das icon kurz animieren").
+  const [play, setPlay] = useState(false);
+  useEffect(() => { if (!fresh) return; const t = setTimeout(() => setPlay(true), 220); return () => clearTimeout(t); }, []);
   // Live from the calendar; the snapshot only if the Termin never reached this phone.
   const live = ids.map((id) => events.find((e) => e.id === id) ?? (events.length ? undefined : snap?.find((x) => x.id === id))).filter(Boolean) as (EventSnap & { who?: typeof events[number]['who'] })[];
   if (!live.length) return <Txt size={13.5} color={tokens.mute} style={{ padding: 14 }}>{changed ? tx('Mit der nächsten Nachricht geändert, siehe unten.', 'Changed by the next message, see below.') : tx('Nicht mehr im Kalender.', 'No longer in the calendar.')}</Txt>;
@@ -48,7 +51,7 @@ function Termine({ ids, snap, changed, ask, timeQ }: { ids: string[]; snap?: Eve
     <>
       {live.map((e) => (
         <PressScale key={e.id} scale={0.99} onPress={() => router.push(`/termin/${e.id}`)} style={{ flexDirection: 'row', alignItems: 'center', gap: 12, padding: 10, paddingRight: 12 }}>
-          <Tile name={e.icon} size={48} radius={14} />
+          <Tile name={e.icon} size={48} radius={14} celebrate={play} />
           <View style={{ flex: 1, minWidth: 0, gap: 1 }}>
             <Txt size={16} line={21} weight={600} numberOfLines={2}>{e.title}</Txt>
             <Txt size={13.5} color={tokens.sub} numberOfLines={1}>{[(e as CalEvent).endDate && (e as CalEvent).endDate! > e.date ? tx(`${short(e.date)} bis ${short((e as CalEvent).endDate!)}`, `${short(e.date)} to ${short((e as CalEvent).endDate!)}`) : short(e.date), e.allDay ? tx('ganztägig', 'all day') : e.end ? tx(`${hm(e.start)} bis ${hm(e.end)}`, `${hm(e.start)} to ${hm(e.end)}`) : hm(e.start), e.place].filter(Boolean).join(' · ')}</Txt>
@@ -382,7 +385,7 @@ function EntryRow({ f, mine, me, answer }: { f: FeedEntry; mine: boolean; me: 'J
         {f.kind === 'made' && (f.events || f.items || f.tasks || f.undone) ? (
           <Animated.View layout={rowLayout} style={[cardFrame, { opacity: f.undone ? 0.55 : 1 }]}>
             {f.say && !f.undone ? <Reply text={f.say} /> : null}
-            {f.undone ? null : f.events ? <Termine ids={f.events} snap={f.snap?.events} changed={f.changed} ask={mine && !open && Date.now() - Date.parse(f.at) < 15 * 60000 ? me : undefined} timeQ={mine && !open && Date.now() - Date.parse(f.at) < 15 * 60000 ? f.timeQ : undefined} /> : null}
+            {f.undone ? null : f.events ? <Termine ids={f.events} snap={f.snap?.events} changed={f.changed} fresh={Date.now() - Date.parse(f.at) < 60000} ask={mine && !open && Date.now() - Date.parse(f.at) < 15 * 60000 ? me : undefined} timeQ={mine && !open && Date.now() - Date.parse(f.at) < 15 * 60000 ? f.timeQ : undefined} /> : null}
             {f.undone ? null : f.events ? <VacationLeft ids={f.events} /> : null}
             {f.undone || HIDDEN.suggestions ? null : f.events ? <PackOffer ids={f.events} /> : null}
             {f.undone || !f.suggest || HIDDEN.suggestions ? null : <BringOffer suggest={f.suggest} />}

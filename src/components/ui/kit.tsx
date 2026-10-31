@@ -251,11 +251,15 @@ export function StepDots({ i, n = 8 }: { i: number; n?: number }) {
  * Segmented control on a grey track; the white pill slides to the tapped
  * item on a spring instead of jumping.
  */
+/** Where each switch last stood, so a remounted one glides from there instead of jumping. */
+const segAt = new Map<string, number>();
 export function Seg<T extends string>({ items, value, onChange, height = 34 }: { items: { key: T; label: string }[]; value: T; onChange: (k: T) => void; height?: number }) {
   const idx = Math.max(0, items.findIndex((it) => it.key === value));
   const [w, setW] = useState(0);
-  const x = useSharedValue(idx);
-  useEffect(() => { x.value = withSpring(idx, springs.smooth); }, [idx]);
+  // A screen that draws its own header mounts a new switch (Heute): it starts where the last one was and glides on (Julian 31.10.).
+  const id = items.map((it) => it.key).join('|');
+  const x = useSharedValue(segAt.get(id) ?? idx);
+  useEffect(() => { segAt.set(id, idx); x.value = withSpring(idx, springs.smooth); }, [idx]);
   const pill = useAnimatedStyle(() => ({ transform: [{ translateX: x.value * w }] }));
   const onLayout = (e: LayoutChangeEvent) => setW((e.nativeEvent.layout.width - 8) / items.length);
   return (
