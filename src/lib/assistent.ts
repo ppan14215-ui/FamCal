@@ -479,6 +479,19 @@ const GERMAN = /[äöüß]|\b(ich|wir|und|die|der|das|auf|mit|heute|morgen|koche
  * Julian: the assistant always answers in a short sentence. Now and then the model only calls the tool (eval 31.10.:
  * rezept without antworten). Then the app says it itself, in the language of the sentence.
  */
+/**
+ * Eval 31.10.: "Mach ich, ich setze die Mittwochs-Arbeitstage auf Büro." with no tool call: a promise and nothing done.
+ * Such an answer is asked once more, with the note that nothing happened, so the app never confirms what it didn't do.
+ */
+const PROMISE = /\b(mach ich|erledigt|ich (setze|trage|lege|ändere|verschiebe|lösche|streiche|packe|schreibe|nehme|mache)|wird (eingetragen|geändert|verschoben)|on it|done|i('ll| will)|i('ve| have) (added|moved|changed|set))\b/i;
+const QUESTION = /\?\s*$|^(was|wann|wo|wer|wie|welche[rsmn]?|haben|habe|hat|ist|sind|gibt|steht|what|when|where|who|how|which|do|does|is|are)\b/i;
+export function promisesOnly(r: AgentAnswer | null, said: string): boolean {
+  if (!r || !r.actions.length || r.actions.some((a) => a.tool !== 'antworten')) return false;
+  if (QUESTION.test(said.trim())) return false;
+  return PROMISE.test(s(r.actions[0]?.input?.text));
+}
+export const RETRY_NOTE = 'Du hast eben nur geantwortet und nichts ausgeführt. Führe es jetzt mit den Werkzeugen aus. / You only replied and did nothing; do it now with the tools.';
+
 export function withReply(r: AgentAnswer, said: string): AgentAnswer {
   if (r.actions.some((a) => a.tool === 'antworten' || a.tool === 'nachfragen') || !r.actions.length) return r;
   const de = GERMAN.test(said);

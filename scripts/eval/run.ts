@@ -15,7 +15,7 @@
  */
 import fs from 'node:fs';
 import path from 'node:path';
-import { agentBody, agentPlan, withReply, type AgentAnswer } from '../../src/lib/assistent';
+import { agentBody, agentPlan, withReply, promisesOnly, RETRY_NOTE, type AgentAnswer } from '../../src/lib/assistent';
 import { get, set } from '../../src/state/store';
 import { persons } from '../../src/theme/tokens';
 import { termine, listen, aufgaben } from '../../eval/assistent/familie';
@@ -59,7 +59,10 @@ async function ask(said: string, history: { said: string; app?: string }[]): Pro
     let last: Omit<Ergebnis, 'stand' | 'vorher'> = { antwort: '', frage: null, tools: [], aktionen: [], karte: null };
     let fail = '';
     for (const said of c.saetze) {
-      const { r, ms, error } = await ask(said, history);
+      const first = await ask(said, history);
+      // Same as the app: a promise without any action is asked once more.
+      const again = promisesOnly(first.r, said) ? await ask(said, [...history, { said, app: `${String(first.r!.actions[0]?.input?.text ?? '')} (${RETRY_NOTE})` }]) : null;
+      const { r, ms, error } = again?.r ? { ...again, ms: first.ms + again.ms } : first;
       times.push(ms);
       if (!r) { fail = `Server: ${error}`; break; }
       // What the app shows: the model's sentence, or the app's own when the model only acted.

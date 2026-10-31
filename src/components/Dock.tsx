@@ -23,7 +23,7 @@ import { tokens, persons, fonts } from '../theme';
 import { useStore, actions, get, toast } from '../state/store';
 import { plan, splitItems, claudeSays, replyPlan, listFromClaude, asksNewList, thinksOnline, revisePlan, reviseOffline, draftOf, cutOff, addPicks, settleWork, clashLine, dishy, linkPlan, Ctx, Plan, Result, Said, SPOKEN, PLACEHOLDER } from '../lib/act';
 import { canUnderstand, type Convo, type Glimpse } from '../lib/verstehen';
-import { agentOn, askAgent, agentPlan, screenOf } from '../lib/assistent';
+import { agentOn, askAgent, agentPlan, screenOf, promisesOnly, RETRY_NOTE } from '../lib/assistent';
 import { linkIn, recipeFromLink, keepRecipe, loadRecipes, type Recipe } from '../lib/rezepte';
 import { onShared, onSayInApp } from '../lib/shared';
 import { dayLabel, slotLine, type Suggest } from '../lib/talk';
@@ -605,7 +605,9 @@ export default function Dock() {
     const chat = true;
     setVeil({ phase: 'think', inline: chat, origin, target: null, lines: chat ? [] : [tx('Ich verstehe …', 'Understanding …')], shown: 0, said, head: undefined, onCancel: stop, typing: chat, reply: undefined });
     const onSay = (say: string) => { if (heard.current !== n) return; if (chat) setVeil({ reply: say }); else setVeil({ lines: [say], shown: 0 }); };
-    askAgent(said, talk, screenOf(where.ctx), onSay).then((r) => {
+    askAgent(said, talk, screenOf(where.ctx), onSay)
+      .then((r) => (promisesOnly(r, said) ? askAgent(said, [...talk.slice(0, -1), { said, app: `${String(r!.actions[0]?.input?.text ?? "")} (${RETRY_NOTE})` }, { said }], screenOf(where.ctx)).then((r2) => r2 ?? r) : r))
+      .then((r) => {
       if (heard.current !== n) return;
       inLang(talkLang.current, () => {
         if (!r) { setVeil({ typing: false, reply: undefined }); return fallback(); }
