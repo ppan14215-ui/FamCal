@@ -790,12 +790,15 @@ export default function Dock() {
   return (
     <Other.Provider value={other}>
     {/* The screen fades out under the field, so prompts never sit on text. */}
-    <View pointerEvents="none" style={{ position: 'absolute', left: 0, right: 0, bottom: fadeFrom, height: bottom - fadeFrom + h + 28 }}>
+    {/* Julian 31.10. 16:01: subtler. A longer, eased fade instead of a hard white band above the card. */}
+    <View pointerEvents="none" style={{ position: 'absolute', left: 0, right: 0, bottom: fadeFrom, height: bottom - fadeFrom + h + 48 }}>
       <Svg width="100%" height="100%" preserveAspectRatio="none">
         <Defs>
           <LinearGradient id="dockfade" x1="0" y1="0" x2="0" y2="1">
             <Stop offset="0" stopColor={tokens.bg} stopOpacity={0} />
-            <Stop offset={String(Math.min(0.5, 40 / (bottom - fadeFrom + h + 28)))} stopColor={tokens.bg} stopOpacity={0.94} />
+            <Stop offset={String(Math.min(0.3, 26 / (bottom - fadeFrom + h + 48)))} stopColor={tokens.bg} stopOpacity={0.35} />
+            <Stop offset={String(Math.min(0.55, 60 / (bottom - fadeFrom + h + 48)))} stopColor={tokens.bg} stopOpacity={0.8} />
+            <Stop offset={String(Math.min(0.7, 84 / (bottom - fadeFrom + h + 48)))} stopColor={tokens.bg} stopOpacity={0.95} />
             <Stop offset="1" stopColor={tokens.bg} stopOpacity={0.98} />
           </LinearGradient>
         </Defs>

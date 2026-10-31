@@ -62,11 +62,12 @@ export function wholeF(kind: string, x: number, s: number): F {
       return { sx, sy, ty: -0.025 * s * bump(seg(x, 0.22, 0.6)) };
     }
     case 'bounce': {
-      // Kicked up from rest: falls on a real parabola, squashes on the floor, two smaller bounces, spin slows down.
-      const ty = arc(x, 0.1, 0.5, -0.42 * s) + arc(x, 0.5, 0.72, -0.14 * s) + arc(x, 0.72, 0.86, -0.04 * s);
-      const sq = 0.16 * hit(x, 0.5) + 0.08 * hit(x, 0.72, 0.05) + 0.03 * hit(x, 0.86, 0.04) + 0.1 * bump(seg(x, 0.02, 0.12));
-      const st = 0.05 * bump(seg(x, 0.1, 0.18)) + 0.05 * bump(seg(x, 0.42, 0.49));
-      return { ty, r: 220 * out(seg(x, 0.1, 0.9)), sx: 1 + sq - st, sy: 1 - sq + st };
+      // Kicked up from rest: falls on a real parabola, squashes on the floor, one small bounce, spin slows down.
+      // Julian 31.10. 16:01: three hops were too many, two feel smoother.
+      const ty = arc(x, 0.1, 0.58, -0.42 * s) + arc(x, 0.58, 0.84, -0.1 * s);
+      const sq = 0.16 * hit(x, 0.58) + 0.06 * hit(x, 0.84, 0.05) + 0.1 * bump(seg(x, 0.02, 0.12));
+      const st = 0.05 * bump(seg(x, 0.1, 0.18)) + 0.05 * bump(seg(x, 0.5, 0.57));
+      return { ty, r: 200 * out(seg(x, 0.1, 0.88)), sx: 1 + sq - st, sy: 1 - sq + st };
     }
     case 'blink': {
       // Two blinks, the second quicker, like a real eye.
