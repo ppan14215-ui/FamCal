@@ -23,6 +23,7 @@ import { setTyping } from '../lib/keyboard';
 import { LIVE } from '../lib/live';
 import { usePrefill, takeFill } from '../lib/simple';
 import { tx } from '../i18n/lang';
+import { toast } from '../state/store';
 import { hearInCloud, cloudOn } from '../lib/hoeren';
 import { speechLocale } from '../lib/speechLang';
 
@@ -201,8 +202,15 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, o
         // The phone's guess may be empty when it heard the wrong language; the recording still goes to the cloud ears.
         const better = audio && (heard() || cloud) ? await hearInCloud(audio) : null;
         setWriting(false);
-        const t = better ?? heard();
         if (typed.current) return;
+        // Julian 31.10. 15:20: "Lokale Handy-Erkennung ist offensichtlich nicht gut genug". With the cloud ears on, the
+        // phone's guess (one language, often wrong English) never lands; a miss says so and asks to speak again.
+        if (cloud) {
+          if (better) land(better);
+          else { haptics.tap(); toast(tx('Die Aufnahme kam nicht an. Tipp aufs Mikro und sag es bitte nochmal.', 'The recording didn\'t come through. Tap the mic and say it again.'), undefined, { kind: 'warn' }); }
+          return;
+        }
+        const t = heard();
         if (t) land(t); else fail();
       };
       const hush = (ms: number) => { clearTimeout(quiet); quiet = setTimeout(() => SR.stop(), ms); };
