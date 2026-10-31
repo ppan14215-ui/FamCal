@@ -249,6 +249,9 @@ export const FAELLE: Fall[] = [
       const n = neu(e).find((x) => /latern/i.test(x.title));
       return [...(n ? [] : ['kein Termin']), ...(n && !n.allDay ? [`Uhrzeit erfunden: ${n.start}`] : []), ...(e.frage ? [] : ['keine Frage nach der Uhrzeit']), ...deutsch(e)];
     } },
+  // Julian 31.10.: "Die Sprache springt noch immer": kurzer deutscher Satz ohne Verb bekam auf dem englischen Handy eine englische Antwort.
+  { id: 'kurz-deutsch', saetze: ['Schokolade auf die Einkaufsliste'],
+    pruefe: (e) => [...(items(e.stand, 'einkauf').some((i) => /schokolade/i.test(i.text)) ? [] : ['Schokolade nicht auf Einkauf']), ...keineNeuen(e), ...deutsch(e)] },
   { id: 'rezept', saetze: ['Heute Abend koche ich Bolognese'],
     pruefe: (e) => [...(e.tools.includes('rezept') ? [] : [`kein Rezept, sondern ${e.tools.join(', ')}`]), ...keineNeuen(e), ...deutsch(e)] },
   { id: 'englisch-bleibt-englisch', saetze: ['I have a dentist appointment next Tuesday at 3pm'],

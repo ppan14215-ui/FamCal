@@ -124,7 +124,7 @@ Verstehen:
 - Sagt die Person, dass etwas nicht geklappt hat ("du hast nur einen geändert"), prüfe den Stand und hole genau das Fehlende nach.
 - Steht ein Verlauf dabei, gehört der neue Satz meist dazu: eine Antwort auf deine Rückfrage, eine Korrektur oder Ergänzung des zuletzt Eingetragenen ("nein, um 16 Uhr", "Tom kommt auch mit", "jeden Mittwoch davon im Büro"). Dann änderst du das zuletzt Eingetragene mit termin_aendern oder löschst und legst neu an, statt etwas doppelt einzutragen.
 
-Sprache, feste Regel: Titel, Einträge und Texte stehen immer in der Sprache, in der der neue Satz gesagt wurde, wörtlich und nie übersetzt ("Friseurtermin" bleibt "Friseur", "Dentist" bleibt "Dentist"). Deine Antworten und Fragen auch: Ein deutscher Satz bekommt eine deutsche Antwort, ein englischer eine englische, egal welche Sprache die App hat. Bei gemischter Sprache die Sprache des größten Teils. Keine Gedankenstriche.
+Sprache, feste Regel: Titel, Einträge und Texte stehen immer in der Sprache, in der der neue Satz gesagt wurde, wörtlich und nie übersetzt ("Friseurtermin" bleibt "Friseur", "Dentist" bleibt "Dentist"). Deine Antworten und Fragen auch, IMMER: Ein deutscher Satz bekommt eine deutsche Antwort, ein englischer eine englische (Julian: "Antwort immer in der Sprache der Nachricht"). Auch kurze Sätze ohne Verb ("Schokolade auf die Einkaufsliste", "Morgen Zahnarzt 10 Uhr") sind deutsch. Die Sprache von Verlauf, Stand, Listen oder Handy spielt keine Rolle, nur die des neuen Satzes. Bei gemischter Sprache die Sprache des größten Teils. Keine Gedankenstriche.
 
 Termine:
 - Feiertage: "An Weihnachten" und "Heiligabend" ist der 24.12., "erster Feiertag" der 25.12., "zweiter Feiertag" oder "am zweiten" der 26.12. Silvester 31.12., Neujahr 1.1. Nennt ein Satz mehrere davon, ist jeder Tag klar; nicht nachfragen. Feiertage und Tage wie Halloween im Kalender nie umbenennen oder ändern: was jemand an dem Tag vorhat, ist ein eigener termin_neu.
@@ -209,7 +209,7 @@ Deno.serve(async (req) => {
     output_config: { effort: 'low' },
     messages: [{
       role: 'user',
-      content: `Heute ist ${wd}, ${today}, ${input.now ?? ''} Uhr. Eltern: ${names}. Es spricht: ${me}. Sprache der App (nur für die Oberfläche, antworte in der Sprache des neuen Satzes): ${input.lang === 'en' ? 'Englisch' : 'Deutsch'}.\n\nStand der Familie:\n${snapshot || '(leer)'}${screen ? `\n\nBildschirm: ${screen}` : ''}${history ? `\n\nVerlauf:\n${history}` : ''}\n\nNeuer Satz: ${text}`,
+      content: `Heute ist ${wd}, ${today}, ${input.now ?? ''} Uhr. Eltern: ${names}. Es spricht: ${me}.\n\nStand der Familie:\n${snapshot || '(leer)'}${screen ? `\n\nBildschirm: ${screen}` : ''}${history ? `\n\nVerlauf:\n${history}` : ''}\n\nNeuer Satz (antworte in genau dieser Sprache): ${text}`,
     }],
   } satisfies Anthropic.Messages.MessageCreateParamsNonStreaming;
   const outcome = (res: Anthropic.Messages.Message, first?: number) => {

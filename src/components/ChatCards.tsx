@@ -391,11 +391,11 @@ function EntryRow({ f, mine, me, answer }: { f: FeedEntry; mine: boolean; me: 'J
             {f.undone || !f.suggest || HIDDEN.suggestions ? null : <BringOffer suggest={f.suggest} />}
             {f.undone ? null : f.items ? <Items list={f.items.list} ids={f.items.ids} name={f.snap?.list} names={f.snap?.items} /> : null}
             {f.undone ? null : f.tasks ? <Tasks ids={f.tasks} titles={f.snap?.tasks} /> : null}
-            {open && !f.events && f.why ? <Why why={f.why} /> : null}
+            {open && !f.events && !f.items && !f.tasks && f.why ? <Why why={f.why} /> : null}
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 8, paddingHorizontal: 14, borderTopWidth: f.undone ? 0 : 1, borderTopColor: tokens.hair }}>
               <Txt size={13} weight={600} color={f.undone || f.changed ? tokens.sub : tokens.done}>{f.undone ? tx('Rückgängig gemacht', 'Undone') : f.changed ? tx('Geändert', 'Changed') : `✓ ${f.events ? tx('Im Kalender', 'In the calendar') : f.tasks ? tx('Bei den Aufgaben', 'On your tasks') : tx('Auf der Liste', 'On the list')}`}</Txt>
               <View style={{ flex: 1 }} />
-              {(f.why && !f.events) || (f.events?.length === 1 && !f.undone) ? (
+              {(f.why && !f.events && !f.items && !f.tasks) || (f.events?.length === 1 && !f.undone) ? (
                 <PressScale hitSlop={8} accessibilityLabel={open ? tx('Zuklappen', 'Close') : f.events ? tx('Ändern', 'Change') : tx('Schritte zeigen', 'Show steps')} onPress={() => { if (f.events && !f.undone) { haptics.select(); router.push(`/termin/${f.events[0]}`); } else setOpen((o) => !o); }} style={{ flexDirection: 'row', alignItems: 'center', gap: 2, marginRight: canUndo(f.id) && !f.undone ? 14 : 0 }}>
                   <Txt size={13} color={f.events ? tokens.ink : tokens.sub} weight={f.events ? 600 : 400}>{f.events ? tx('Ändern', 'Change') : tx('Details', 'Details')}</Txt>
                   <View style={{ transform: [{ rotate: f.events ? '0deg' : open ? '-90deg' : '90deg' }] }}><LineIcon name="chev" size={14} color={tokens.sub} /></View>
@@ -428,9 +428,10 @@ export function Thinking({ by }: { by: 'J' | 'T' }) {
       ) : null}
       <Animated.View layout={rowLayout} style={cardFrame}>
       <Reply text={v.reply} />
-      <View style={{ paddingHorizontal: 14, paddingTop: 6, paddingBottom: 14, gap: 10 }}>
+      {/* Julian 31.10.: one thinking sign only. The typing dots in Reply say it; steps show only once there is a plan. */}
+      {v.head || v.lines.length ? <View style={{ paddingHorizontal: 14, paddingTop: 6, paddingBottom: 14, gap: 10 }}>
         {v.head ? <Txt size={12} weight={600} tracking={0.6} color={tokens.done}>{v.head.toUpperCase()}</Txt> : null}
-        {v.lines.length ? v.lines.map((l, i) => <Step key={i} label={l} state={i < v.shown ? 'done' : i === v.shown ? 'now' : 'next'} />) : <Step label={tx('Denke nach …', 'Thinking …')} state="now" />}
+        {v.lines.map((l, i) => <Step key={i} label={l} state={i < v.shown ? 'done' : i === v.shown ? 'now' : 'next'} />)}
         {v.head && v.onCancel && v.phase === 'think' ? (
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
             <Txt size={13} color={tokens.sub}>{tx('Passiert gleich von selbst', 'Happens in a moment')}</Txt>
@@ -439,7 +440,7 @@ export function Thinking({ by }: { by: 'J' | 'T' }) {
             </PressScale>
           </View>
         ) : null}
-      </View>
+      </View> : <View style={{ height: 10 }} />}
       </Animated.View>
     </View>
   );
