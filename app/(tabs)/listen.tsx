@@ -24,7 +24,7 @@ import { Cover, Stars, Score, SeenPill, FactChips, factLine, hasBlock } from '..
 import { myRole } from '../../src/lib/sync';
 import type { List, Task, Item, Blueprint } from '../../src/state/types';
 import type { ClayName } from '../../src/lib/clayIcons';
-import { isPoints, players, roundsOf, total, looksOver } from '../../src/lib/points';
+import { isPoints, players, roundsOf, total, looksOver, listIcon } from '../../src/lib/points';
 import HeaderRight from '../../src/components/ui/HeaderRight';
 import { tx } from '../../src/i18n/lang';
 import { HIDDEN } from '../../src/lib/core';
@@ -64,7 +64,7 @@ export default function Listen() {
 const HOP = 28;
 
 function ClayTabs({ lists, active }: { lists: List[]; active: string }) {
-  const tabs: { id: string; name: string; icon: ClayName }[] = [...(HIDDEN.tasks ? [] : [{ id: 'aufgaben', name: tx('Aufgaben', 'Tasks'), icon: 'erledigt' as ClayName }]), ...lists.map((l) => ({ id: l.id, name: l.name, icon: l.icon }))];
+  const tabs: { id: string; name: string; icon: ClayName }[] = [...(HIDDEN.tasks ? [] : [{ id: 'aufgaben', name: tx('Aufgaben', 'Tasks'), icon: 'erledigt' as ClayName }]), ...lists.map((l) => ({ id: l.id, name: l.name, icon: listIcon(l) }))];
   // Every tab is as wide as its name; more lists than fit scroll sideways and
   // the chosen one slides into view (Julian 26.10.: "Schrift überlappt").
   const scroller = useRef<ScrollView>(null);

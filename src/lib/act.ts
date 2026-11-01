@@ -20,7 +20,7 @@ import { savedFor, type Recipe } from './rezepte';
 import { myRole } from './sync';
 import { isFeiertag } from './feiertage';
 import { isVacation, leftLine } from './urlaub';
-import { isPoints, parseRound, players, matchPlayer, standLine, roundsOf, doubledText } from './points';
+import { isPoints, GAME_ICON, parseRound, players, matchPlayer, standLine, roundsOf, doubledText } from './points';
 
 const ids = (list: CalEvent[]) => new Set(list.map((e) => e.id));
 
@@ -452,7 +452,7 @@ export function newList(name: string, items: string[]): Plan {
     head: tx('Ich lege eine neue Liste an', 'Creating a new list'),
     steps,
     run: () => {
-      const l: List = urlaub && !items.length ? listFromTemplate(name, 'reise', templates.urlaub) : listFromTemplate(name, urlaub ? 'reise' : 'karten', null);
+      const l: List = urlaub && !items.length ? listFromTemplate(name, 'reise', templates.urlaub) : listFromTemplate(name, urlaub ? 'reise' : bp?.blocks.includes('points') ? GAME_ICON : 'karten', null);
       actions.createList(l, { auto: true });
       let last: string | undefined;
       const lit: string[] = [];

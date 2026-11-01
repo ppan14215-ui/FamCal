@@ -5,6 +5,7 @@
  * or "doppelt" doubles that round. A name nobody has yet becomes a new player.
  */
 import type { List, Item } from '../state/types';
+import type { ClayName } from './clayIcons';
 import { tx } from '../i18n/lang';
 
 export type Round = { who: string; points: number }[];
@@ -18,6 +19,10 @@ const DOUBLE = /(hand[\s-]?romm[eé]|\bhand\b|auf einmal|in einem rutsch|mal zwe
 const FILLER = /^(hat|haben|hatte|bekommt|kriegt|macht|minus|plus|und|and|has|had|got|gets|punkte?|points?|pkt|ist|war|ging|geht|raus|out|went|is|was|der|die|das|bei|for|für|:|=|-)$/i;
 
 export const isPoints = (l?: List) => !!l?.blueprint?.blocks.includes('points');
+/** Icon for game lists. Interim until the playing-cards clay icon arrives (Julian 01.11.). */
+export const GAME_ICON: ClayName = 'gesellschaftsspiel';
+/** Game lists made before 01.11. carry the blank 'karten' default; show the game icon instead. */
+export const listIcon = (l: List): ClayName => (isPoints(l) && l.icon === 'karten' ? GAME_ICON : l.icon);
 export const players = (l: List): Item[] => l.sections.flatMap((s) => s.items);
 /** When the last round of a game was added, or undefined before the first. */
 export const lastRound = (l: List): number | undefined => {
