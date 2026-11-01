@@ -9,7 +9,7 @@
 import type { CalEvent, Who, List } from '../state/types';
 import { get, actions, toast } from '../state/store';
 import { persons } from '../theme/tokens';
-import { blueprintFor, blocksLine } from './blueprint';
+import { blueprintFor, blocksLine, GAMES, gameBlueprint } from './blueprint';
 import { understand, findWhen, whoOf, clean, Reply, fromModel, type Suggest } from './talk';
 import { canUnderstand, understandOnline, understandLive, type Convo, type Glimpse } from './verstehen';
 import { tx, EN } from '../i18n/lang';
@@ -118,7 +118,7 @@ function dueLast(t: string) {
 }
 
 /** Sentences for a list, not the calendar. */
-const GAME = /\b(romm[eé]|rummy|canasta|kniffel|yahtzee|skat|doppelkopf|uno|wizard|phase 10|darts)\b/i;
+const GAME = new RegExp(`\\b(romm[eé]|rummy|canasta|${GAMES.source.slice(3, -3)})\\b`, 'i');
 
 /** "Wir spielen Rommé mit Julian, Sophia und Oma": a points list for that game, players from the sentence (Julian 30.10.). */
 function gamePlan(said: string): Plan | null {
@@ -130,7 +130,7 @@ function gamePlan(said: string): Plan | null {
   const who = said.match(/\b(?:mit|with|spieler:?|players:?)\s+(.+)$/i)?.[1] ?? '';
   const names = who.split(/,|\bund\b|\band\b/i).map((x) => x.trim().replace(/^(mir|me|uns|us)$/i, '')).filter((x) => x && x.length <= 30 && !/\d/.test(x)).map((x) => x.replace(/^./, (c) => c.toUpperCase()));
   if (existing) return liste(names.length ? names.join(', ') : said, existing.id, names.length ? names : undefined);
-  return newList(name, names);
+  return newList(name, names, true);
 }
 
 /** A points list for a game the assistant named (Julian 30.10.); an existing one for the same game gets the new players. */
@@ -139,7 +139,7 @@ export function gameStart(game: string, names: string[]): Plan {
   const existing = get().lists.find((x) => isPoints(x) && x.name.toLowerCase() === name.toLowerCase());
   const fresh = existing ? names.filter((n) => !matchPlayer(players(existing), n)) : names;
   if (existing) return fresh.length ? liste(fresh.join(', '), existing.id, fresh) : { steps: [standLine(existing)], run: () => ({ land: `tab:${existing.id}`, go: '/listen', result: { kind: 'done', text: tx(`„${existing.name}“ läuft schon: ${standLine(existing)}.`, `“${existing.name}” is already on: ${standLine(existing)}.`) } }) };
-  return newList(name, names);
+  return newList(name, names, true);
 }
 
 function listPlan(said: string): Plan | null {
@@ -444,9 +444,9 @@ function listeNeu(said: string): Plan {
 }
 
 /** A new list with a name and maybe first items; lists that adapt (films, books) pick their blocks by name. */
-export function newList(name: string, items: string[]): Plan {
+export function newList(name: string, items: string[], game = false): Plan {
   const urlaub = /urlaub|reise|ostsee|pack|holiday|vacation|trip/i.test(name);
-  const bp = blueprintFor(name);
+  const bp = game ? (blueprintFor(name)?.blocks.includes('points') ? blueprintFor(name) : gameBlueprint(name)) : blueprintFor(name);
   const steps = [tx(`Neue Liste „${name}“.`, `New list “${name}”.`), ...(bp ? [blocksLine(bp)] : []), items.length ? tx(`Mit ${items.join(', ')}.`, `With ${items.join(', ')}.`) : urlaub ? tx('Vorlage Urlaub mit Baby, 24 Dinge.', 'Template holiday with baby, 24 things.') : tx('Noch leer, sagt einfach, was drauf soll.', 'Still empty, just say what goes on it.')];
   return {
     head: tx('Ich lege eine neue Liste an', 'Creating a new list'),

@@ -11,10 +11,19 @@ import type { Block, Blueprint } from '../state/types';
 
 const BLOCKS: Block[] = ['cover', 'stars', 'seen', 'year', 'by', 'link', 'date', 'price', 'place', 'note', 'points'];
 
+/** Common games that count points per round (Julian 01.11.: "alle gängigen Spiele"). Rommé has its own rule above. */
+export const GAMES = /\b(kniffel|yahtzee|skat|doppelkopf|schafkopf|binokel|wizard|uno|mau[\s-]?mau|phase 10|cribbage|hearts|black ?jack|qwixx|scrabble|carcassonne|catan|siedler von catan|darts|tichu|6 nimmt|elfer raus|stadt[\s-]?land[\s-]?fluss|monopoly)\b/i;
+/** Sports a family keeps score in; only for list names, since "Golf am Samstag" is a Termin. */
+export const SCORE_SPORTS = /\b(dart|m[öo]lkky|boule|boccia|minigolf|bowling|kegeln|kubb|wikinger ?schach)\b/i;
+/** Points for a game the assistant named, even one not in GAMES. */
+export const gameBlueprint = (name: string): Blueprint => (/romm[eé]|rummy|canasta/i.test(name) ? RULES[0].bp() : { blocks: ['points'], source: null, points: {} });
+
 const RULES: { re: RegExp; bp: () => Blueprint }[] = [
   // Card and board games: players and points per round (Julian 30.10.). In Rommé the fewest points win and going out at once doubles.
   { re: /romm[eé]|rummy|canasta/i, bp: () => ({ blocks: ['points'], source: null, points: { lowWins: true, doubleWord: true } }) },
-  { re: /punkte|spielstand|score|kniffel|yahtzee|skat|doppelkopf|wizard|uno\b|phase 10|darts|addier|zusammenz[äa]hl|tally/i, bp: () => ({ blocks: ['points'], source: null, points: {} }) },
+  { re: GAMES, bp: () => ({ blocks: ['points'], source: null, points: {} }) },
+  { re: SCORE_SPORTS, bp: () => ({ blocks: ['points'], source: null, points: {} }) },
+  { re: /punkte|spielstand|score|addier|zusammenz[äa]hl|tally/i, bp: () => ({ blocks: ['points'], source: null, points: {} }) },
   { re: /film|movie|kino|serie|series|watch/i, bp: () => ({ blocks: ['cover', 'year', 'by', 'stars', 'seen'], source: 'movies', seenLabel: tx('Gesehen', 'Watched') }) },
   { re: /buch|bücher|book|lesen|read/i, bp: () => ({ blocks: ['cover', 'by', 'year', 'stars', 'seen'], source: 'books', seenLabel: tx('Gelesen', 'Read') }) },
   { re: /rezept|recipe|kochen|cook/i, bp: () => ({ blocks: ['link', 'note', 'stars', 'seen'], source: null, seenLabel: tx('Gekocht', 'Cooked') }) },
