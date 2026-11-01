@@ -1,19 +1,24 @@
-/** 5 · Zu zweit (Partner einladen, Farbe oder Profilbild) */
-import React, { useState } from 'react';
+/**
+ * Zu zweit (storyboard 01.11.2026, step 7): two phones, Memo hops from yours
+ * to your partner's, lands and blinks. Then the invite. Colours and photos
+ * moved out of onboarding (each picks their own later in Einstellungen).
+ */
+import React, { useEffect, useState } from 'react';
 import { View, Share } from 'react-native';
 import { router } from 'expo-router';
 import * as Clipboard from 'expo-clipboard';
-import { Screen, BackBar, StepDots, H1, Lead, Btn, Card, Chip, Meta, TextLink } from '../../src/components/ui/kit';
+import Animated, { useSharedValue, useAnimatedStyle, withDelay, withTiming, withSequence, Easing, useReducedMotion, runOnJS } from 'react-native-reanimated';
+import { Btn, Chip, TextLink } from '../../src/components/ui/kit';
 import Txt from '../../src/components/ui/Txt';
 import LineIcon from '../../src/components/ui/LineIcon';
-import { Avatar, Pair } from '../../src/components/ui/Person';
-import { tokens, personPalette, shade } from '../../src/theme';
-import ColorPicker from '../../src/components/ColorPicker';
-import { toast, useStore, actions } from '../../src/state/store';
+import { Avatar } from '../../src/components/ui/Person';
+import { Tile } from '../../src/components/ui/Clay';
+import Step from '../../src/components/onboarding/Step';
+import Memo from '../../src/components/onboarding/Memo';
+import { toast, useStore } from '../../src/state/store';
 import { haptics } from '../../src/lib/haptics';
-import type { PersonId } from '../../src/theme';
-import PressScale from '../../src/components/ui/PressScale';
 import { getFamily } from '../../src/lib/sync';
+import { tokens } from '../../src/theme';
 import { tx } from '../../src/i18n/lang';
 
 const LINK = 'familie.app/j/huber-7Q2';
@@ -27,48 +32,85 @@ const invite = () => {
 
 export default function Partner() {
   const names = useStore((s) => s.names);
-  const sel = useStore((s) => s.colors);
-  // The screen takes on the partner's colour as soon as it is picked (Julian 26.10.).
-  const partner = shade(personPalette[sel.T]);
+  const you = names.T || tx('dein Partner', 'your partner');
+  const done = () => router.replace('/chat');
   return (
-    <Screen
-      bg={partner.bg}
+    <Step
+      step={3}
+      memo={null}
+      title={tx(`Ab jetzt weiß ${names.T || 'ihr beide'} alles sofort`, `From now on ${names.T || 'you both'} know${names.T ? 's' : ''} right away`)}
+      lead={tx(`Was du sagst, sieht ${you} sofort, und umgekehrt. Die App läuft auf iPhone und Android.`, `What you say, ${you} sees right away, and the other way round. Works on iPhone and Android.`)}
       footer={<>
-        <Btn
-          label={tx('Einladung senden', 'Send invite')}
-          icon="send"
-          onPress={async () => {
-            await Share.share({ message: invite().message(names.J) }).catch(() => {});
-            router.replace('/chat');
-          }}
-        />
-        <TextLink label={tx('Später einladen', 'Invite later')} weight={400} onPress={() => router.replace('/chat')} />
+        <Btn label={tx('Einladung senden', 'Send invite')} icon="send" onPress={async () => { await Share.share({ message: invite().message(names.J) }).catch(() => {}); done(); }} />
+        <TextLink label={tx('Später einladen', 'Invite later')} weight={400} onPress={done} />
       </>}
     >
-      <BackBar center={<StepDots i={2} n={3} />} />
-      <H1 dot={partner.fg}>{tx('Zu zweit', 'The two of you')}</H1>
-      <Lead>{tx(`${names.T || 'Dein Partner'} bekommt einen Link. Ein iPhone ist nicht nötig, die App läuft auch auf Android.`, `${names.T || 'Your partner'} gets a link. No iPhone needed, the app runs on Android too.`)}</Lead>
-      <Card>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
-          <Pair size={44} ring={tokens.row} />
+      <Phones me={names.J} you={names.T} />
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 10, paddingLeft: 16, paddingRight: 10, borderRadius: 18, backgroundColor: tokens.row }}>
+        <Txt size={15} color={tokens.sub} style={{ flex: 1 }} numberOfLines={1}>{invite().shown}</Txt>
+        <Chip icon={<LineIcon name="copy" size={16} />} onPress={async () => { await Clipboard.setStringAsync(invite().copy).catch(() => {}); haptics.select(); toast(getFamily() ? tx('Code kopiert', 'Code copied') : tx('Link kopiert', 'Link copied')); }}>{tx('Kopieren', 'Copy')}</Chip>
+      </View>
+    </Step>
+  );
+}
+
+const PHONE_W = 118;
+const GAP = 40;
+const M = 54;
+
+/** Two phones; Memo carries the Termin from one to the other in an arc. */
+function Phones({ me, you }: { me: string; you: string }) {
+  const reduced = useReducedMotion();
+  const x = useSharedValue(0);
+  const y = useSharedValue(0);
+  const [arrived, setArrived] = useState(reduced);
+  const [beat, setBeat] = useState(0);
+  const land = () => { setArrived(true); setBeat((b) => b + 1); haptics.success(); };
+
+  useEffect(() => {
+    if (reduced) { x.value = PHONE_W + GAP; return; }
+    const D = 620;
+    x.value = withDelay(900, withTiming(PHONE_W + GAP, { duration: D, easing: Easing.inOut(Easing.cubic) }, (ok) => { if (ok) runOnJS(land)(); }));
+    y.value = withDelay(900, withSequence(
+      withTiming(-58, { duration: D / 2, easing: Easing.out(Easing.quad) }),
+      withTiming(0, { duration: D / 2, easing: Easing.in(Easing.quad) }),
+    ));
+  }, []);
+  const hop = useAnimatedStyle(() => ({ transform: [{ translateX: x.value }, { translateY: y.value }] as any }));
+
+  return (
+    <View style={{ alignItems: 'center', paddingTop: 34 }}>
+      <View style={{ width: PHONE_W * 2 + GAP }}>
+        <View style={{ flexDirection: 'row', gap: GAP }}>
+          <Phone name={me || tx('Du', 'You')} p="J" show />
+          <Phone name={you || tx('Partner', 'Partner')} p="T" show={arrived} />
+        </View>
+        <Animated.View style={[{ position: 'absolute', top: -M + 6, left: (PHONE_W - M) / 2 }, hop]}>
+          <Memo act={beat ? 'blink' : 'idle'} beat={beat} size={M} shadow={false} />
+        </Animated.View>
+      </View>
+    </View>
+  );
+}
+
+function Phone({ name, p, show }: { name: string; p: 'J' | 'T'; show: boolean }) {
+  return (
+    <View style={{ width: PHONE_W, height: 200, borderRadius: 26, borderWidth: 5, borderColor: tokens.ink, backgroundColor: tokens.row, padding: 8, gap: 8 }}>
+      <View style={{ alignSelf: 'center', width: 34, height: 6, borderRadius: 3, backgroundColor: tokens.hair }} />
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+        <Avatar p={p} size={20} letter={name[0]?.toUpperCase()} />
+        <Txt size={11} weight={600} numberOfLines={1} style={{ flex: 1 }}>{name}</Txt>
+      </View>
+      {show ? (
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, padding: 5, borderRadius: 10, backgroundColor: tokens.bg }}>
+          <Tile name="stethoskop" size={22} radius={7} />
           <View style={{ flex: 1 }}>
-            <Txt size={17} weight={600}>{tx(`${names.J || 'Du'} und ${names.T || 'dein Partner'}`, `${names.J || 'You'} and ${names.T || 'your partner'}`)}</Txt>
-            <Meta>{tx('Ein Haushalt, eine Familie', 'One household, one family')}</Meta>
+            <Txt size={9.5} weight={700} numberOfLines={1}>{tx('Kinderarzt', 'Pediatrician')}</Txt>
+            <Txt size={8.5} color={tokens.sub} numberOfLines={1}>{tx('Do · 10:00', 'Thu · 10am')}</Txt>
           </View>
         </View>
-        <View style={{ height: 1, backgroundColor: tokens.hair }} />
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-          <Txt size={15} color={tokens.sub} style={{ flex: 1 }}>{invite().shown}</Txt>
-          <Chip icon={<LineIcon name="copy" size={16} />} onPress={async () => { await Clipboard.setStringAsync(invite().copy).catch(() => {}); toast(getFamily() ? tx('Code kopiert', 'Code copied') : tx('Link kopiert', 'Link copied')); }}>{tx('Kopieren', 'Copy')}</Chip>
-        </View>
-      </Card>
-      <Card pad={14}>
-        <Txt size={13} weight={600} color={tokens.sub}>{tx('Profilbild oder Farbe', 'Photo or colour')}</Txt>
-        <ColorPicker p="J" name={names.J || 'Du'} sel={sel.J} taken={sel.T} onSel={(i) => actions.setColor('J', i)} />
-        <View style={{ height: 1, backgroundColor: tokens.hair }} />
-        <ColorPicker p="T" name={names.T || 'Partner'} sel={sel.T} taken={sel.J} onSel={(i) => actions.setColor('T', i)} />
-        <Meta>{tx(`Profilbild oder eine Farbe aus der Palette. Jeder wählt selbst und kann es später ändern.`, `A photo or a colour from the palette. Everyone picks their own and can change it later.`)}</Meta>
-      </Card>
-    </Screen>
+      ) : <View style={{ height: 34 }} />}
+      {[0.9, 0.7, 0.8].map((w, k) => <View key={k} style={{ height: 22, width: `${w * 100}%`, borderRadius: 7, backgroundColor: tokens.bg }} />)}
+    </View>
   );
 }
