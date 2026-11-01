@@ -315,4 +315,15 @@ export const FAELLE: Fall[] = [
       const t = items(e.stand, 'wissen').map((i) => i.text).join(' | ');
       return [...(/29/.test(t) ? [] : ['29 nicht gemerkt']), ...(/27/.test(t) ? [`alte Größe noch da: ${t}`] : []), ...keineNeuen(e), ...deutsch(e)];
     } },
+  // Julian 01.11. (Screenshot): "Parvis" wurde "Parvez", und "gegen Abend" bekam 19 Uhr und trotzdem eine Frage.
+  { id: 'name-wie-getippt', saetze: ['Parvis, 13.11. gegen 19 Uhr'],
+    pruefe: (e) => {
+      const n = neu(e)[0];
+      return [...(n ? [] : ['kein Termin']), ...(n && /parvis/i.test(n.title) ? [] : [`Name verändert: ${n?.title}`]), ...(n?.start === '19:00' ? [] : [`Start ${n?.start}`]), ...deutsch(e)];
+    } },
+  { id: 'gegen-abend', saetze: ['Samstag, 14.11., Marco, gegen Abend'],
+    pruefe: (e) => {
+      const n = neu(e)[0];
+      return [...(n ? [] : ['kein Termin']), ...(n && n.allDay ? [] : [`Uhrzeit erfunden: ${n?.start}`]), ...(e.frage ? [] : ['keine Frage nach der Uhrzeit']), ...deutsch(e)];
+    } },
 ];
