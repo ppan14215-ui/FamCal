@@ -12,6 +12,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { H1, Check, Head } from '../../src/components/ui/kit';
 import Txt from '../../src/components/ui/Txt';
+import Memo from '../../src/components/onboarding/Memo';
 import { Avatar, Pair } from '../../src/components/ui/Person';
 import { Tile } from '../../src/components/ui/Clay';
 import PressScale from '../../src/components/ui/PressScale';
@@ -90,6 +91,8 @@ export default function Chat() {
           );
         }) : (
           <View style={{ flex: 1, justifyContent: 'center', gap: 8, paddingHorizontal: 8 }}>
+            {/* Memo waits here until the first sentence (onboarding storyboard 01.11., step 8). */}
+            <Memo act="land" size={72} delay={200} style={{ marginLeft: -6 }} />
             <Txt size={22} line={28} weight={700} tracking={-0.5}>{tx('Einmal sagen. Beide wissen’s.', 'Say it once. You both know.')}</Txt>
             {simple ? (
               <>

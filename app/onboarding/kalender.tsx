@@ -9,7 +9,8 @@ import { View, TextInput, Platform } from 'react-native';
 import Animated from 'react-native-reanimated';
 import { router, useLocalSearchParams } from 'expo-router';
 import { goBack } from '../../src/lib/nav';
-import { Screen, BackBar, StepDots, H1, Lead, Btn, Hint, TextLink, Toggle, Meta } from '../../src/components/ui/kit';
+import OnboardStep from '../../src/components/onboarding/Step';
+import { Screen, BackBar, H1, Lead, Btn, Hint, TextLink, Toggle, Meta } from '../../src/components/ui/kit';
 import Txt from '../../src/components/ui/Txt';
 import { Tile } from '../../src/components/ui/Clay';
 import PressScale from '../../src/components/ui/PressScale';
@@ -28,21 +29,54 @@ type Step = 'login' | 'pick';
 
 export default function Kalender() {
   const connected = useStore((s) => s.calendars);
+  const count = useStore((s) => s.events.length);
   // Opened from Einstellungen: Weiter goes back there instead of on.
   const { zurueck } = useLocalSearchParams<{ zurueck?: string }>();
-  const next = () => (zurueck ? goBack() : router.push('/onboarding/partner'));
+  const next = () => (zurueck ? goBack() : router.push('/onboarding/kann'));
+  const cards = (
+    <View style={{ gap: 8 }}>
+      {hasDeviceCalendars
+        ? <DeviceCard conn={connected.find((c) => c.provider === 'device')} />
+        : PROVIDERS.map((p) => <ProviderCard key={p.key} p={p} conn={connected.find((c) => c.provider === p.key)} />)}
+    </View>
+  );
+  const hint = <Hint icon="lock">{tx('Arbeitstermine erscheinen nur als gestreifter Block „Arbeit“.', 'Work events only show as a striped “Work” block.')}</Hint>;
+  if (zurueck) {
+    return (
+      <Screen footer={<Btn label={tx('Weiter', 'Next')} onPress={next} />}>
+        <BackBar />
+        <H1>{tx('Eure Kalender', 'Your calendars')}</H1>
+        <Lead>{tx('Damit nichts doppelt ist. Ihr wählt, welche Kalender hier erscheinen, der Rest bleibt privat.', 'So nothing is double booked. You choose which calendars show up here, the rest stays private.')}</Lead>
+        {cards}
+        {hint}
+      </Screen>
+    );
+  }
+  return <Onboard count={count} cards={cards} hint={hint} next={next} any={connected.length > 0} />;
+}
+
+/** Storyboard step 5: Memo collects what comes in and blinks once it is all here. */
+function Onboard({ count, cards, hint, next, any }: { count: number; cards: React.ReactNode; hint: React.ReactNode; next: () => void; any: boolean }) {
+  const [start] = useState(count);
+  const taken = Math.max(0, count - start);
   return (
-    <Screen footer={<><Btn label={tx('Weiter', 'Next')} onPress={next} />{zurueck ? null : <TextLink label={tx('Später', 'Later')} weight={400} onPress={next} />}</>}>
-      <BackBar center={zurueck ? undefined : <StepDots i={1} n={3} />} />
-      <H1>{tx('Eure Kalender', 'Your calendars')}</H1>
-      <Lead>{tx('Damit nichts doppelt ist. Ihr wählt, welche Kalender hier erscheinen, der Rest bleibt privat.', 'So nothing is double booked. You choose which calendars show up here, the rest stays private.')}</Lead>
-      <View style={{ gap: 8 }}>
-        {hasDeviceCalendars
-          ? <DeviceCard conn={connected.find((c) => c.provider === 'device')} />
-          : PROVIDERS.map((p) => <ProviderCard key={p.key} p={p} conn={connected.find((c) => c.provider === p.key)} />)}
-      </View>
-      <Hint icon="lock">{tx('Arbeitstermine erscheinen nur als gestreifter Block „Arbeit“.', 'Work events only show as a striped “Work” block.')}</Hint>
-    </Screen>
+    <OnboardStep
+      step={1}
+      memo={taken ? 'blink' : 'idle'}
+      memoBeat={taken}
+      title={tx('Nehmt eure Kalender mit', 'Bring your calendars')}
+      lead={tx('Ich hole eure Termine rein, damit nichts doppelt ist. Ihr wählt, was hier erscheint.', 'I bring your events in so nothing is double booked. You choose what shows up.')}
+      footer={<><Btn label={tx('Weiter', 'Next')} onPress={next} />{any ? null : <TextLink label={tx('Später', 'Later')} weight={400} onPress={next} />}</>}
+    >
+      {cards}
+      {taken ? (
+        <Animated.View key={taken} entering={rise(0)} style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 4 }}>
+          <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: tokens.done }} />
+          <Txt size={16} weight={600} color={tokens.done}>{tx(`${taken} Termine übernommen`, `${taken} events brought in`)}</Txt>
+        </Animated.View>
+      ) : null}
+      {hint}
+    </OnboardStep>
   );
 }
 

@@ -17,6 +17,6 @@ export default function Index() {
     if (LIVE && ready && session && !loading) { setLoading(true); afterSignIn(); }
   }, [ready, session]);
   if (!LIVE) return <Redirect href="/onboarding" />;
-  if (ready && !session) return <Redirect href="/anmelden" />;
+  if (ready && !session) return <Redirect href="/onboarding" />;
   return <View style={{ flex: 1, backgroundColor: tokens.bg }} />;
 }
