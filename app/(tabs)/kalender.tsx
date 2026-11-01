@@ -104,12 +104,17 @@ export default function Kalender() {
   const kid = useStore((s) => s.kid);
   // The view switch starts open and stays open after a pick (Julian 28.10.); the chevron folds it away.
   const [open, setOpen] = useState(true);
+  // The switch fades in only when the chevron opens it; a view change that redraws the head keeps it still (Julian 01.11.).
+  const toggled = React.useRef(false);
+  const fadeIn = toggled.current ? FadeInDown.duration(200) : undefined;
+  toggled.current = false;
   // A week across two months is named after its Thursday, like calendar weeks (Julian 28.10.: Oct 26 to Nov 1 said November).
   const { month, year } = monthTitle(view === 'woche' ? addDays(monday(day), 3) : day);
   const insets = useSafeAreaInsets();
   const toggle = () => {
     haptics.select();
     if (simple) { if (view === 'monat') actions.setCalView('jahr'); else if (view === 'jahr') actions.setCalView('monat'); return; }
+    toggled.current = true;
     setOpen((o) => !o);
   };
   const choose = (v: CalView) => { actions.setCalView(v); if (v === 'heute') actions.setCalDay(TODAY); };
@@ -117,7 +122,7 @@ export default function Kalender() {
   const seg = simple ? (
     <Seg items={VIEWS_SIMPLE} value={view} onChange={choose} />
   ) : open ? (
-    <Animated.View entering={FadeInDown.duration(200)} exiting={FadeOut.duration(120)} style={{ gap: 10 }}>
+    <Animated.View entering={fadeIn} exiting={FadeOut.duration(120)} style={{ gap: 10 }}>
       <Seg items={VIEWS} value={view} onChange={choose} />
       <WhoFilter />
     </Animated.View>

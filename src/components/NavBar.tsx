@@ -12,7 +12,7 @@
  */
 import React, { useEffect, useState } from 'react';
 import { View, Platform } from 'react-native';
-import Animated, { useAnimatedStyle, useSharedValue, withTiming, withSpring, Easing, useReducedMotion, interpolate, Extrapolation } from 'react-native-reanimated';
+import Animated, { useAnimatedStyle, useSharedValue, withTiming, withSpring, Easing, useReducedMotion, interpolate, Extrapolation, FadeIn } from 'react-native-reanimated';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { scheduleOnRN } from 'react-native-worklets';
 import { tx } from '../i18n/lang';
@@ -26,6 +26,8 @@ import PressScale from './ui/PressScale';
 import { tokens } from '../theme';
 import { haptics } from '../lib/haptics';
 import { useTyping as useFocus, useKeyboardInset } from '../lib/keyboard';
+import { useDockTop } from '../lib/dockSpace';
+import Svg, { Defs, LinearGradient, Stop, Rect } from 'react-native-svg';
 
 const TABS: { name: string; key: string; icon: LineName }[] = [
   { name: 'chat', key: 'nav.chat', icon: 'chat' },
@@ -45,6 +47,10 @@ const PILL_W = ON_W + 56 * 2 + 4 + 10;
 const HANDLE_W = 8;
 const HANDLE_H = 44;
 const EDGE = 16;
+
+/** Tab switch: the white pill glides and the tabs resize on the same curve, so the two stay together. */
+const SWITCH = { duration: 300, easing: Easing.bezier(0.22, 1, 0.36, 1) };
+const FADE_H = 22;
 
 const floatShadow = { boxShadow: '0 12px 28px rgba(22,35,42,0.28)' } as any;
 
@@ -149,16 +155,42 @@ export default function NavBar({ state, navigation }: BottomTabBarProps) {
     const p = m();
     return { opacity: interpolate(1 - (p - 0.2) * 2.4, [0, 1], [0, 1], Extrapolation.CLAMP), transform: [{ scale: interpolate(bw.value / pw, [0.2, 1], [0.6, 1], Extrapolation.CLAMP) }] };
   });
-  const ground = useAnimatedStyle(() => ({ opacity: interpolate(1 - (m() - 0.3) * 1.9, [0, 1], [0, 1], Extrapolation.CLAMP) }));
+  // Julian 01.11.: the chat showed through between field and pill, and after folding and opening there was no ground at all.
+  // One ground now, owned here: solid from the screen bottom up to the top of the talk field, a short fade above it.
+  // It follows the field (folded or open) instead of fading with the pill, so nothing can read through in between.
+  const dockTop = useDockTop();
+  const groundTo = Math.max(dockTop, folded ? 0 : navTop(insets.bottom) + 6);
+  const gh = useSharedValue(groundTo);
+  useEffect(() => { gh.value = reduced ? groundTo : withSpring(groundTo, { stiffness: 250, damping: 27, mass: 1 }); }, [groundTo]);
+  const ground = useAnimatedStyle(() => ({ height: gh.value }));
+  const groundFade = useAnimatedStyle(() => ({ bottom: gh.value - 0.5 }));
+  // The white pill glides to the open tab like the calendar switch (Julian 01.11.).
+  const at = Math.max(0, TABS.findIndex((tb) => tb.name === current));
+  const ix = useSharedValue(at);
+  useEffect(() => { ix.value = reduced ? at : withTiming(at, SWITCH); }, [at]);
+  const marker = useAnimatedStyle(() => ({ transform: [{ translateX: 5 + ix.value * 58 }] }));
   const zone = useAnimatedStyle(() => ({ top: by.value + bh.value / 2 - 44 }));
 
   return (
     <Animated.View pointerEvents={typing ? 'none' : 'box-none'} onLayout={(e) => { setW(e.nativeEvent.layout.width); setH(e.nativeEvent.layout.height); }} style={[{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0 }, hide]}>
       {/* Calm ground under the pill, so nothing reads through around it. It fades as the pill folds away. */}
-      <Animated.View pointerEvents="none" style={[{ position: 'absolute', left: 0, right: 0, bottom: 0, height: navTop(insets.bottom) + 6, backgroundColor: tokens.bg }, ground]} />
+      <Animated.View pointerEvents="none" style={[{ position: 'absolute', left: 0, right: 0, bottom: 0, backgroundColor: tokens.bg }, ground]} />
+      <Animated.View pointerEvents="none" style={[{ position: 'absolute', left: 0, right: 0, height: FADE_H }, groundFade]}>
+        <Svg width="100%" height="100%" preserveAspectRatio="none">
+          <Defs>
+            <LinearGradient id="navground" x1="0" y1="0" x2="0" y2="1">
+              <Stop offset="0" stopColor={tokens.bg} stopOpacity={0} />
+              <Stop offset="0.55" stopColor={tokens.bg} stopOpacity={0.75} />
+              <Stop offset="1" stopColor={tokens.bg} stopOpacity={1} />
+            </LinearGradient>
+          </Defs>
+          <Rect x="0" y="0" width="100%" height="100%" fill="url(#navground)" />
+        </Svg>
+      </Animated.View>
       <GestureDetector gesture={pillPan}>
         <Animated.View accessibilityRole="tablist" pointerEvents={folded ? 'none' : 'auto'} style={[{ position: 'absolute', overflow: 'hidden', backgroundColor: tokens.ink, alignItems: 'center', justifyContent: 'center' }, floatShadow, box]}>
           <Animated.View onLayout={(e) => { const w = Math.round(e.nativeEvent.layout.width); if (w && w !== pw) setPw(w); }} style={[{ position: 'absolute', flexDirection: 'row', gap: 2, padding: 5 }, inner]}>
+            <Animated.View pointerEvents="none" style={[{ position: 'absolute', left: 0, top: 5, width: ON_W, height: NAV_H - 10, borderRadius: 999, backgroundColor: tokens.onInk }, marker]} />
             {TABS.map((tab) => {
               const on = current === tab.name;
               return <Tab key={tab.name} on={on} icon={tab.icon} label={t(tab.key)} onPress={() => { if (!on) { haptics.select(); navigation.navigate(tab.name); } }} />;
@@ -185,7 +217,7 @@ function rubber(x: number, d: number) {
 /** Each tab grows and shrinks by its own width, so the white pill moves without stretching icons or overshooting. */
 function Tab({ on, icon, label, onPress }: { on: boolean; icon: LineName; label: string; onPress: () => void }) {
   const w = useSharedValue(on ? ON_W : 56);
-  useEffect(() => { w.value = withTiming(on ? ON_W : 56, { duration: 240, easing: Easing.bezier(0.22, 1, 0.36, 1) }); }, [on]);
+  useEffect(() => { w.value = withTiming(on ? ON_W : 56, SWITCH); }, [on]);
   const size = useAnimatedStyle(() => ({ width: w.value }));
   return (
     <Animated.View style={[{ overflow: 'hidden', borderRadius: 999 }, size]}>
@@ -195,10 +227,10 @@ function Tab({ on, icon, label, onPress }: { on: boolean; icon: LineName; label:
         accessibilityLabel={label}
         accessibilityState={{ selected: on }}
         onPress={onPress}
-        style={{ height: NAV_H - 10, paddingHorizontal: on ? 12 : 0, borderRadius: 999, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7, backgroundColor: on ? tokens.onInk : 'transparent' }}
+        style={{ height: NAV_H - 10, paddingHorizontal: on ? 12 : 0, borderRadius: 999, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7 }}
       >
         <LineIcon name={icon} size={21} color={on ? tokens.ink : tokens.mute} />
-        {on ? <Txt size={14} weight={600} color={tokens.ink} numberOfLines={1}>{label}</Txt> : null}
+        {on ? <Animated.View entering={FadeIn.duration(180).delay(90)}><Txt size={14} weight={600} color={tokens.ink} numberOfLines={1}>{label}</Txt></Animated.View> : null}
       </PressScale>
     </Animated.View>
   );

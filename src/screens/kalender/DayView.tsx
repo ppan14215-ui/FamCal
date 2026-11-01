@@ -330,7 +330,18 @@ export default function DayView({ header }: { header: (today: React.ReactNode) =
 
   // The day at the top of the list is the day the strip shows.
   const seen = useRef(day);
+  // Julian 01.11.: picking an earlier day showed today for a blink. The scroll event of the restart still saw the old
+  // list (starting today) with no measured rows, so the spy took its first day. While a picked day is on its way the
+  // spy waits: until the list starts there (restart) or the scroll has reached it (glide).
+  const going = useRef<{ to: string; restart: boolean; until: number } | null>(null);
   const spy = (y: number) => {
+    const g = going.current;
+    if (g) {
+      if (Date.now() > g.until) going.current = null;
+      else if (g.restart) { if (days[0].date !== g.to || ys.current[g.to] === undefined) return; going.current = null; }
+      else { const ty = ys.current[g.to]; if (ty === undefined || Math.abs(ty - 2 - y) > 4) return; going.current = null; return; }
+    }
+    if (ys.current[days[0].date] === undefined) return;
     let top = days[0].date;
     for (const d of days) { const dy = ys.current[d.date]; if (dy !== undefined && dy <= y + 24) top = d.date; else if (dy !== undefined) break; }
     if (top !== seen.current) { seen.current = top; actions.setCalDay(top); }
@@ -340,8 +351,10 @@ export default function DayView({ header }: { header: (today: React.ReactNode) =
     haptics.select();
     seen.current = d;
     actions.setCalDay(d);
+    const restart = d < start || d >= addDays(start, total);
+    going.current = { to: d, restart, until: Date.now() + 900 };
     // Before the list or far ahead of it: start the list on that day.
-    if (d < start || d >= addDays(start, total)) { ys.current = {}; setStart(d); setCount(10); ref.current?.scrollTo({ y: 0, animated: false }); return; }
+    if (restart) { ys.current = {}; setStart(d); setCount(10); ref.current?.scrollTo({ y: 0, animated: false }); return; }
     const y = ys.current[d];
     if (y !== undefined) ref.current?.scrollTo({ y: Math.max(0, y - 2), animated: true });
   };
