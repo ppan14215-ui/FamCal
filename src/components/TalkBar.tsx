@@ -141,11 +141,19 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, o
   };
 
   // Julian 31.10.: spoken words never send by themselves. They land in the field, correct, and only Senden sends.
-  const land = (t: string) => { setText(t.trim()); spokenText.current = true; };
+  // Julian 01.11.: like Claude, a send button next to the check while recording. It finishes and sends what was heard.
+  const sendAfter = useRef(false);
+  const land = (t: string) => {
+    if (sendAfter.current && t.trim()) { sendAfter.current = false; send(t, true); return; }
+    sendAfter.current = false;
+    setText(t.trim()); spokenText.current = true;
+  };
+  const finishAndSend = () => { if (!listening) return send(); sendAfter.current = true; listen(); };
 
   const listen = () => {
     if (listening) { haptics.tap(); stopNative.current?.(); return; }
     typed.current = false;
+    sendAfter.current = false;
     haptics.select();
     setListening(true);
     const sentence = spoken[turn.current++ % spoken.length];
@@ -233,7 +241,7 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, o
         // phone's guess (one language, often wrong English) never lands; a miss says so and asks to speak again.
         if (cloud) {
           if (better) land(better);
-          else { setText(''); haptics.tap(); toast(tx('Die Aufnahme kam nicht an. Tipp aufs Mikro und sag es bitte nochmal.', 'The recording didn\'t come through. Tap the mic and say it again.'), undefined, { kind: 'warn' }); }
+          else { sendAfter.current = false; setText(''); haptics.tap(); toast(tx('Die Aufnahme kam nicht an. Tipp aufs Mikro und sag es bitte nochmal.', 'The recording didn\'t come through. Tap the mic and say it again.'), undefined, { kind: 'warn' }); }
           return;
         }
         const t = heard();
@@ -339,7 +347,7 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, o
         }}
         scrollEnabled={boxH >= MAX_H}
         editable={!demo}
-        placeholder={writing ? tx('Schreibe auf …', 'Writing it down …') : listening && wavy ? '' : listening ? tx('Ich höre zu … Tippe ■ wenn fertig', 'Listening … Tap ■ when done') : placeholder}
+        placeholder={writing ? tx('Schreibe auf …', 'Writing it down …') : listening && wavy ? '' : listening ? tx('Ich höre zu … Tippe ✓ wenn fertig', 'Listening … Tap ✓ when done') : placeholder}
         placeholderTextColor={tokens.mute}
         selectionColor={tokens.select} cursorColor={tokens.ink}
         returnKeyType={TOUCH ? 'default' : 'send'}
@@ -361,16 +369,22 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, o
             onPress={listen}
             style={{ width: 36, height: 44, marginBottom: 2, borderRadius: 999, alignItems: 'center', justifyContent: 'center' }}
           >
-            {/* Julian 31.10. 12:55: a clear stop button while recording, like Claude; bars next to it show it hears. */}
-            {listening ? <View style={{ width: 34, height: 34, borderRadius: 999, backgroundColor: tokens.ink, alignItems: 'center', justifyContent: 'center' }}><View style={{ width: 12, height: 12, borderRadius: 3, backgroundColor: tokens.onInk }} /></View> : <LineIcon name="mic" size={22} color={tokens.ink} />}
+            {/* Julian 31.10. 12:55: a clear button to finish, like Claude. 01.11.: a check, not a stop square, since it keeps what was said. */}
+            {listening ? <View style={{ width: 34, height: 34, borderRadius: 999, backgroundColor: tokens.ink, alignItems: 'center', justifyContent: 'center' }}><LineIcon name="check" size={19} color={tokens.onInk} stroke={2.4} /></View> : <LineIcon name="mic" size={22} color={tokens.ink} />}
           </PressScale>
-          {text && !listening ? (
-            <PressScale accessibilityLabel={tx('Senden', 'Send')} onPress={() => send()} style={{ width: 44, height: 44, marginBottom: 2, borderRadius: 999, alignItems: 'center', justifyContent: 'center', backgroundColor: tokens.ink }}>
+          {(text && !listening) || listening ? (
+            <PressScale accessibilityLabel={tx('Senden', 'Send')} onPress={finishAndSend} style={{ width: 44, height: 44, marginBottom: 2, borderRadius: 999, alignItems: 'center', justifyContent: 'center', backgroundColor: tokens.ink }}>
               <LineIcon name="send" size={20} color={tokens.onInk} />
             </PressScale>
           ) : null}
         </>
       ) : (
+      <>
+      {listening ? (
+        <PressScale accessibilityLabel={tx('Senden', 'Send')} onPress={finishAndSend} style={{ width: 44, height: 44, marginBottom: 2, borderRadius: 999, alignItems: 'center', justifyContent: 'center', backgroundColor: tokens.chipBg }}>
+          <LineIcon name="send" size={20} color={tokens.ink} />
+        </PressScale>
+      ) : null}
       <View style={{ width: 48, height: 48 }}>
       {listening && micStyle === 'ring' ? <VoiceRing level={level} /> : null}
       <PressScale
@@ -378,9 +392,10 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, o
         onPress={text && !listening ? () => send() : listen}
         style={{ width: 48, height: 48, borderRadius: 999, backgroundColor: tokens.ink, alignItems: 'center', justifyContent: 'center' }}
       >
-        {listening ? (micStyle === 'ring' ? <View style={{ width: 15, height: 15, borderRadius: 4, backgroundColor: tokens.onInk }} /> : <VoiceBars level={level} />) : <LineIcon name={text ? 'send' : 'mic'} size={22} color={tokens.onInk} />}
+        {listening ? (micStyle === 'ring' ? <LineIcon name="check" size={22} color={tokens.onInk} stroke={2.4} /> : <VoiceBars level={level} />) : <LineIcon name={text ? 'send' : 'mic'} size={22} color={tokens.onInk} />}
       </PressScale>
       </View>
+      </>
       )}
     </View>
   );

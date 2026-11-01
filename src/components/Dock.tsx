@@ -29,7 +29,7 @@ import { onShared, onSayInApp } from '../lib/shared';
 import { dayLabel, slotLine, type Suggest } from '../lib/talk';
 import { light, lightOneByOne } from '../lib/landing';
 import { setDockTop, setDockSpace } from '../lib/dockSpace';
-import { useKeyboardInset, useTyping } from '../lib/keyboard';
+import { useKeyboardInset, useTyping, useInlineEditing } from '../lib/keyboard';
 import { setTalkOpen, useTalkOpen } from '../lib/talkOpen';
 import { NAV_H, navTop } from './NavBar';
 import { useNavFolded } from '../lib/navFold';
@@ -394,6 +394,7 @@ export default function Dock() {
   const insets = useSafeAreaInsets();
   const kb = useKeyboardInset();
   const typing = useTyping();
+  const inlineEditing = useInlineEditing();
   const { width: W, height: H } = useWindowDimensions();
   const [turn, setTurn] = useState<Turn | null>(null);
   const [h, setH] = useState(0);
@@ -453,7 +454,8 @@ export default function Dock() {
   }, [bottom, folded]);
   const bStyle = useAnimatedStyle(() => ({ bottom: bAnim.value }));
 
-  if (!where) return null;
+  // A field on the page is being typed in: one input at a time (Julian 01.11.).
+  if (!where || inlineEditing) return null;
   const origin = { x: W - 14 - 6 - 24, y: H - bottom - 6 - 24 };
   // On tabs the nav stays on top of the fade, it starts just above it.
   // Above a footer button (liste-neu) the fade starts at the field, so the button stays clear.

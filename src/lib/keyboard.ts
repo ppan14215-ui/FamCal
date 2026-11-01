@@ -47,3 +47,15 @@ if (Platform.OS !== 'web') {
 export function useTyping() {
   return useSyncExternalStore((l) => { subs.add(l); return () => { subs.delete(l); }; }, () => typing, () => false);
 }
+
+// Someone types in a field on the page (add a player, add an item): the talk
+// field steps aside, so there is one input, not two (Julian 01.11.).
+let inline = false;
+const inlineSubs = new Set<() => void>();
+export function setInlineEditing(on: boolean) { if (inline !== on) { inline = on; inlineSubs.forEach((l) => l()); } }
+if (Platform.OS !== 'web') {
+  Keyboard.addListener(Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide', () => setInlineEditing(false));
+}
+export function useInlineEditing() {
+  return useSyncExternalStore((l) => { inlineSubs.add(l); return () => { inlineSubs.delete(l); }; }, () => inline, () => false);
+}

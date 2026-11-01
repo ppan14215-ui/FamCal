@@ -1,4 +1,6 @@
 /** "Hinzufügen …" row that turns into a text field in place; stays open for the next entry. */
+import { setInlineEditing } from '../lib/keyboard';
+import { tx } from '../i18n/lang';
 import React, { useState } from 'react';
 import { View, TextInput, Platform } from 'react-native';
 import Txt from './ui/Txt';
@@ -25,7 +27,8 @@ export default function AddInline({ placeholder, onAdd, mic, onPress }: { placeh
           value={text}
           onChangeText={setText}
           onSubmitEditing={submit}
-          onBlur={() => { submit(); setOpen(false); }}
+          onFocus={() => setInlineEditing(true)}
+          onBlur={() => { submit(); setOpen(false); setInlineEditing(false); }}
           blurOnSubmit={false}
           returnKeyType="done"
           placeholder={placeholder}
@@ -38,6 +41,11 @@ export default function AddInline({ placeholder, onAdd, mic, onPress }: { placeh
           <Txt size={16} color={tokens.mute}>{placeholder}</Txt>
         </View>
       )}
+      {open && text.trim() ? (
+        <PressScale accessibilityLabel={tx('Hinzufügen', 'Add')} hitSlop={8} onPress={submit} style={{ height: 34, paddingHorizontal: 14, borderRadius: 999, alignItems: 'center', justifyContent: 'center', backgroundColor: tokens.ink }}>
+          <Txt size={14} weight={600} color={tokens.bg}>{tx('Hinzufügen', 'Add')}</Txt>
+        </PressScale>
+      ) : null}
       {mic ? <LineIcon name="mic" size={20} color={tokens.sub} /> : null}
     </PressScale>
   );
