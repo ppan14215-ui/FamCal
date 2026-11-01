@@ -366,11 +366,11 @@ function Ask({ f, me, answer }: { f: FeedEntry; me: 'J' | 'T'; answer?: FeedEntr
  */
 const cardFrame = { alignSelf: 'stretch' as const, borderRadius: 18, overflow: 'hidden' as const, backgroundColor: tokens.row };
 /**
- * Memo is the assistant's face (Julian 01.11.): wobbles while thinking, blinks once when it has answered or
+ * Memo is the assistant's face (Julian 01.11.): thinks with a "?" while working, happy eyes when it has answered,
  * just entered something. Older cards in the log stay still, so a long chat never twitches.
  */
 function Reply({ text, live, fresh }: { text?: string; live?: boolean; fresh?: boolean }) {
-  const act = live ? (text ? 'blink' : 'wobble') : fresh ? 'blink' : 'idle';
+  const act = live ? (text ? 'happy' : 'think') : fresh ? 'blink' : 'idle';
   return (
     <View style={{ paddingTop: 10, paddingHorizontal: 14, paddingBottom: 4, gap: 4 }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>

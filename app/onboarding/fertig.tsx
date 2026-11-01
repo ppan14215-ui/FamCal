@@ -1,7 +1,7 @@
 /**
  * Memo festkleben (concept + collection 01.11.2026: a tactile close, then the widget). Hold Memo
  * until the ring is full; Memo sticks to the fridge with a squash and a blink. Then the Heute widget
- * is offered, and the chat opens with the Termin that was tried.
+ * is offered, Memo winks, and the chat opens. Nothing tried earlier was saved.
  */
 import React, { useState } from 'react';
 import { View, Platform } from 'react-native';
@@ -13,7 +13,6 @@ import Txt from '../../src/components/ui/Txt';
 import Step from '../../src/components/onboarding/Step';
 import Memo from '../../src/components/onboarding/Memo';
 import { isPreview, endPreview } from '../../src/lib/vorschau';
-import { triedEvent } from '../../src/lib/onboardingTry';
 import { haptics } from '../../src/lib/haptics';
 import { toast } from '../../src/state/store';
 import { tokens } from '../../src/theme';
@@ -24,6 +23,7 @@ const SIZE = 150;
 
 export default function Fertig() {
   const [stuck, setStuck] = useState(false);
+  const [winked, setWinked] = useState(false);
   const p = useSharedValue(0);
   const stick = () => { setStuck(true); haptics.success(); };
   const hold = Gesture.LongPress()
@@ -41,20 +41,19 @@ export default function Fertig() {
     if (isPreview()) { endPreview(); router.dismissTo('/einstellungen'); toast(tx('Vorschau beendet, nichts geändert', 'Preview ended, nothing changed')); return; }
     router.replace('/chat');
   };
-  const t = triedEvent();
   return (
     <Step
       step={5}
       memo={null}
       title={stuck ? tx('Ich bin da', 'I’m here') : tx('Kleb mich an den Kühlschrank', 'Stick me on the fridge')}
-      lead={stuck ? (t ? tx(`„${t.title}“ wartet schon im Chat. Sag mir einfach, was als Nächstes ansteht.`, `“${t.title}” is already in the chat. Just tell me what’s next.`) : tx('Sag mir einfach, was ansteht. Ich merke es mir für euch beide.', 'Just tell me what’s coming up. I’ll keep it for both of you.')) : tx('Halte mich gedrückt.', 'Press and hold me.')}
+      lead={stuck ? tx('Ab jetzt einfach sagen, was ansteht. Ich merke es mir für euch beide.', 'From now on just tell me what’s coming up. I’ll keep it for both of you.') : tx('Halte mich gedrückt.', 'Press and hold me.')}
       footer={stuck ? <Btn label={tx('Los geht’s', 'Let’s go')} onPress={go} /> : <View style={{ height: 52 }} />}
     >
       <View style={{ alignItems: 'center', justifyContent: 'center', paddingVertical: 24 }}>
         <Animated.View pointerEvents="none" style={[{ position: 'absolute', width: SIZE + 40, height: SIZE + 40, borderRadius: 999, borderWidth: 3, borderColor: tokens.done }, ring]} />
         <GestureDetector gesture={hold}>
           <Animated.View style={press} accessibilityRole="button" accessibilityLabel={tx('Memo gedrückt halten', 'Press and hold Memo')}>
-            <Memo act={stuck ? 'land' : 'idle'} beat={stuck ? 1 : 0} size={SIZE} />
+            <Memo act={winked ? 'wink' : stuck ? 'land' : 'idle'} beat={stuck ? 1 : 0} size={SIZE} onDone={() => { if (stuck && !winked) setTimeout(() => setWinked(true), 700); }} />
           </Animated.View>
         </GestureDetector>
       </View>
