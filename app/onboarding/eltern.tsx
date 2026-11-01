@@ -22,6 +22,7 @@ import { actions, useStore, get } from '../../src/state/store';
 import { dueItems } from '../../src/lib/mitdenken';
 import { TODAY } from '../../src/lib/dates';
 import { setMyName } from '../../src/lib/sync';
+import { isPreview, setPreviewNames } from '../../src/lib/vorschau';
 import { haptics } from '../../src/lib/haptics';
 import { tokens, fonts, personPalette } from '../../src/theme';
 import { tx } from '../../src/i18n/lang';
@@ -51,8 +52,8 @@ function thinksOf(name: string, born: string, country: string) {
 export default function Familie() {
   const names = useStore((s) => s.names);
   const country = useStore((s) => s.country);
-  const [j, setJ] = useState(names.J || '');
-  const [t, setT] = useState(names.T || '');
+  const [j, setJ] = useState(isPreview() ? '' : names.J || '');
+  const [t, setT] = useState(isPreview() ? '' : names.T || '');
   const [others, setOthers] = useState<Draft[]>([]);
   const [beat, setBeat] = useState(0);
 
@@ -66,6 +67,7 @@ export default function Familie() {
   const named = () => setBeat((b) => b + 1);
 
   const next = () => {
+    if (isPreview()) { setPreviewNames({ J: j.trim(), T: t.trim() }); return router.push('/onboarding/kalender'); }
     actions.setNames({ J: j.trim(), T: t.trim() });
     setMyName(j.trim());
     const taken = new Set(get().people.map((p) => p.name.toLowerCase()));

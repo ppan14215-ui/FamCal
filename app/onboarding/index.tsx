@@ -10,8 +10,9 @@ import Animated, { FadeInDown } from 'react-native-reanimated';
 import { Screen, Btn, TextLink } from '../../src/components/ui/kit';
 import Txt, { Dot } from '../../src/components/ui/Txt';
 import Memo from '../../src/components/onboarding/Memo';
-import { actions } from '../../src/state/store';
+import { actions, toast } from '../../src/state/store';
 import { LIVE } from '../../src/lib/live';
+import { isPreview } from '../../src/lib/vorschau';
 import { tokens } from '../../src/theme';
 import { tx } from '../../src/i18n/lang';
 
@@ -19,11 +20,13 @@ const after = (ms: number) => FadeInDown.duration(420).delay(ms);
 
 export default function Hallo() {
   const start = () => {
+    if (isPreview()) return router.push('/onboarding/eltern');
     if (LIVE) return router.push('/anmelden');
     actions.reset();
     router.push('/onboarding/eltern');
   };
   const invited = () => {
+    if (isPreview()) return toast(tx('Vorschau: hier ginge es zur Anmeldung', 'Preview: this would go to sign in'));
     if (LIVE) return router.push('/anmelden');
     actions.loadDemo();
     router.replace('/chat');

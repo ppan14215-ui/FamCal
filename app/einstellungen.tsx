@@ -26,6 +26,7 @@ import { Seg } from '../src/components/ui/kit';
 import { haptics } from '../src/lib/haptics';
 import { countryName, regionName } from '../src/lib/holidays';
 import { HIDDEN } from '../src/lib/core';
+import { startPreview } from '../src/lib/vorschau';
 import ColorPicker from '../src/components/ColorPicker';
 
 function SRow({ icon, t, s, right, onPress }: { icon: ClayName; t: string; s: string; right?: React.ReactNode; onPress?: () => void }) {
@@ -111,6 +112,7 @@ export default function Einstellungen() {
         <SRow icon="chat" t={tx('Ich spreche', 'I speak')} s={sl === 'de' ? tx('Deutsch · tippen für Englisch', 'German · tap for English') : tx('Englisch · tippen für Deutsch', 'English · tap for German')} onPress={() => { const v = sl === 'de' ? 'en' : 'de'; setSpeechLang(v); setSl(v); toast(v === 'de' ? tx('Ich höre jetzt auf Deutsch', 'Listening in German now') : tx('Ich höre jetzt auf Englisch', 'Listening in English now')); }} />
         {HIDDEN.toggles ? null : <SRow icon="chat" t={tx('Mikro Anzeige', 'Mic display')} s={mic === 'ring' ? tx('Ring mit Stopp · tippen für Balken', 'Ring with stop · tap for bars') : tx('Balken im Knopf · tippen für Ring', 'Bars in the button · tap for ring')} onPress={() => { const v = mic === 'ring' ? 'balken' : 'ring'; setMicStyle(v); haptics.select(); toast(v === 'ring' ? tx('Mikro zeigt jetzt den Ring', 'Mic now shows the ring') : tx('Mikro zeigt jetzt die Balken', 'Mic now shows the bars')); }} />}
         <SRow icon="chat" t={tx('Sprache', 'Language')} s={tx('Deutsch · folgt der Sprache des Handys', 'English · follows the phone language')} onPress={() => toast(tx('Ändern in den Einstellungen des Handys', 'Change it in the phone settings'))} />
+        <SRow icon="zuhause" t={tx('Onboarding ansehen', 'View onboarding')} s={tx('Vorschau, deine Daten bleiben wie sie sind', 'Preview, your data stays as it is')} onPress={() => { startPreview(); router.push('/onboarding'); }} />
         <SRow icon="kalender" t={tx('Kalender Abo und Export', 'Calendar feed and export')} s={tx('Apple, Google, Outlook oder als Datei', 'Apple, Google, Outlook or as a file')} onPress={() => router.push('/kalender-abo')} />
       </Group>
       <PressScale scale={0.985} onPress={() => router.push('/plus')} style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12, paddingHorizontal: 14, borderRadius: 20, backgroundColor: tokens.row }}>

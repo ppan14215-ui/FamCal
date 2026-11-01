@@ -7,6 +7,7 @@ import React, { useEffect, useState } from 'react';
 import { View, Share } from 'react-native';
 import { router } from 'expo-router';
 import * as Clipboard from 'expo-clipboard';
+import { isPreview, endPreview, previewNames } from '../../src/lib/vorschau';
 import Animated, { useSharedValue, useAnimatedStyle, withDelay, withTiming, withSequence, Easing, useReducedMotion, runOnJS } from 'react-native-reanimated';
 import { Btn, Chip, TextLink } from '../../src/components/ui/kit';
 import Txt from '../../src/components/ui/Txt';
@@ -31,9 +32,17 @@ const invite = () => {
 };
 
 export default function Partner() {
-  const names = useStore((s) => s.names);
+  const stored = useStore((s) => s.names);
+  const preview = isPreview();
+  const names = preview ? previewNames() : stored;
   const you = names.T || tx('dein Partner', 'your partner');
-  const done = () => router.replace('/chat');
+  // Preview ends back in Einstellungen, where it was opened, with everything as it was.
+  const done = () => {
+    if (!preview) return router.replace('/chat');
+    endPreview();
+    router.dismissTo('/einstellungen');
+    toast(tx('Vorschau beendet, nichts geändert', 'Preview ended, nothing changed'));
+  };
   return (
     <Step
       step={3}
@@ -41,14 +50,14 @@ export default function Partner() {
       title={tx(`Ab jetzt weiß ${names.T || 'ihr beide'} alles sofort`, `From now on ${names.T || 'you both'} know${names.T ? 's' : ''} right away`)}
       lead={tx(`Was du sagst, sieht ${you} sofort, und umgekehrt. Die App läuft auf iPhone und Android.`, `What you say, ${you} sees right away, and the other way round. Works on iPhone and Android.`)}
       footer={<>
-        <Btn label={tx('Einladung senden', 'Send invite')} icon="send" onPress={async () => { await Share.share({ message: invite().message(names.J) }).catch(() => {}); done(); }} />
+        <Btn label={tx('Einladung senden', 'Send invite')} icon="send" onPress={async () => { if (!preview) await Share.share({ message: invite().message(names.J) }).catch(() => {}); done(); }} />
         <TextLink label={tx('Später einladen', 'Invite later')} weight={400} onPress={done} />
       </>}
     >
       <Phones me={names.J} you={names.T} />
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 10, paddingLeft: 16, paddingRight: 10, borderRadius: 18, backgroundColor: tokens.row }}>
         <Txt size={15} color={tokens.sub} style={{ flex: 1 }} numberOfLines={1}>{invite().shown}</Txt>
-        <Chip icon={<LineIcon name="copy" size={16} />} onPress={async () => { await Clipboard.setStringAsync(invite().copy).catch(() => {}); haptics.select(); toast(getFamily() ? tx('Code kopiert', 'Code copied') : tx('Link kopiert', 'Link copied')); }}>{tx('Kopieren', 'Copy')}</Chip>
+        <Chip icon={<LineIcon name="copy" size={16} />} onPress={async () => { if (preview) return toast(tx('Vorschau: nichts kopiert', 'Preview: nothing copied')); await Clipboard.setStringAsync(invite().copy).catch(() => {}); haptics.select(); toast(getFamily() ? tx('Code kopiert', 'Code copied') : tx('Link kopiert', 'Link copied')); }}>{tx('Kopieren', 'Copy')}</Chip>
       </View>
     </Step>
   );

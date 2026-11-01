@@ -9,6 +9,7 @@ import { View, TextInput, Platform } from 'react-native';
 import Animated from 'react-native-reanimated';
 import { router, useLocalSearchParams } from 'expo-router';
 import { goBack } from '../../src/lib/nav';
+import { isPreview } from '../../src/lib/vorschau';
 import OnboardStep from '../../src/components/onboarding/Step';
 import { Screen, BackBar, H1, Lead, Btn, Hint, TextLink, Toggle, Meta } from '../../src/components/ui/kit';
 import Txt from '../../src/components/ui/Txt';
@@ -28,7 +29,8 @@ import { tx } from '../../src/i18n/lang';
 type Step = 'login' | 'pick';
 
 export default function Kalender() {
-  const connected = useStore((s) => s.calendars);
+  const real = useStore((s) => s.calendars);
+  const connected = isPreview() ? [] : real;
   const count = useStore((s) => s.events.length);
   // Opened from Einstellungen: Weiter goes back there instead of on.
   const { zurueck } = useLocalSearchParams<{ zurueck?: string }>();
@@ -96,6 +98,7 @@ function ProviderCard({ p, conn }: { p: (typeof PROVIDERS)[number]; conn?: { acc
   };
   const save = () => {
     const ids = cals.filter((c) => c.on).map((c) => c.id);
+    if (isPreview()) { haptics.success(); toast(tx('Vorschau: nichts verbunden', 'Preview: nothing connected')); return setStep(null); }
     actions.connectCalendar(p.key, mail.trim(), ids, importEvents(p.key as Provider, ids, owner, kid?.land));
     haptics.success();
     toast(ids.length ? tx(`${ids.length} Kalender verbunden`, `${ids.length} ${ids.length === 1 ? 'calendar' : 'calendars'} connected`) : tx(`${p.title} getrennt`, `${p.title} disconnected`));
@@ -181,6 +184,7 @@ function DeviceCard({ conn }: { conn?: { account: string; ids: string[] } }) {
     setState('pick');
   };
   const save = async () => {
+    if (isPreview()) { haptics.success(); toast(tx('Vorschau: nichts übernommen', 'Preview: nothing moved in')); return setState('idle'); }
     setBusy(true);
     try {
       const events = await importDeviceEvents(cals, owner, LIVE ? 365 : 92);
