@@ -15,10 +15,12 @@ import { ClayIcon } from '../src/components/ui/Clay';
 import { tokens, tint, springs } from '../src/theme';
 import { haptics } from '../src/lib/haptics';
 import PressScale from '../src/components/ui/PressScale';
+import { tx } from '../src/i18n/lang';
 
-const STEPS = ['Brief der Elterngeldstelle', 'Frist gefunden: 12. Dezember', 'Was zu tun ist', 'Wo es hingehört'];
+const steps = () => [tx('Brief der Elterngeldstelle', 'Letter from the allowance office'), tx('Frist gefunden: 12. Dezember', 'Deadline found: December 12'), tx('Was zu tun ist', 'What needs doing'), tx('Wo es hingehört', 'Where it belongs')];
 
 export default function FotoLesen() {
+  const STEPS = steps();
   const [done, setDone] = useState(0);
   const bob = useSharedValue(0);
   const pop = useSharedValue(0.9);
@@ -36,10 +38,10 @@ export default function FotoLesen() {
   return (
     <Screen bg="#F7F5F0" scroll={false}>
       <View style={{ flexDirection: 'row', justifyContent: 'flex-end' }}>
-        <PressScale hitSlop={10} onPress={() => goBack()}><Txt size={15} color={tokens.sub}>Abbrechen</Txt></PressScale>
+        <PressScale hitSlop={10} onPress={() => goBack()}><Txt size={15} color={tokens.sub}>{tx('Abbrechen', 'Cancel')}</Txt></PressScale>
       </View>
       <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', gap: 40 }}>
-        <PressScale accessibilityLabel="Weiter" onPress={() => router.replace('/foto-verstanden')} style={{ width: 220, height: 220, borderRadius: 56, backgroundColor: tint('umschlag-euro'), alignItems: 'center', justifyContent: 'center' }}>
+        <PressScale accessibilityLabel={tx('Weiter', 'Next')} onPress={() => router.replace('/foto-verstanden')} style={{ width: 220, height: 220, borderRadius: 56, backgroundColor: tint('umschlag-euro'), alignItems: 'center', justifyContent: 'center' }}>
           <Animated.View style={icon}><ClayIcon name="brief-gelesen" size={170} /></Animated.View>
         </PressScale>
         <View style={{ gap: 14, width: 260 }}>
@@ -58,7 +60,7 @@ export default function FotoLesen() {
           })}
         </View>
       </View>
-      <Txt size={13.5} color={tokens.mute} center>Das Foto bleibt nur bei euch.</Txt>
+      <Txt size={13.5} color={tokens.mute} center>{tx('Das Foto bleibt nur bei euch.', 'The photo stays with you.')}</Txt>
     </Screen>
   );
 }

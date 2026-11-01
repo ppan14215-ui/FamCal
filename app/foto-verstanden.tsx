@@ -9,22 +9,24 @@ import { Tile, ClayIcon } from '../src/components/ui/Clay';
 import { tokens } from '../src/theme';
 import { set, toast } from '../src/state/store';
 import type { ClayName } from '../src/lib/clayIcons';
+import { tx } from '../src/i18n/lang';
 
-const PARTS: { key: string; icon: ClayName; label: string; meta?: string }[] = [
-  { key: 'frist', icon: 'glocke', label: 'Frist im Kalender', meta: '12. Dez' },
-  { key: 'task', icon: 'erledigt', label: 'Aufgabe: Bescheinigung anfragen' },
-  { key: 'doc', icon: 'vertrag', label: 'Infozettel in Dokumente' },
+const parts = (): { key: string; icon: ClayName; label: string; meta?: string }[] => [
+  { key: 'frist', icon: 'glocke', label: tx('Frist im Kalender', 'Deadline in the calendar'), meta: tx('12. Dez', 'Dec 12') },
+  { key: 'task', icon: 'erledigt', label: tx('Aufgabe: Bescheinigung anfragen', 'To do: request the confirmation') },
+  { key: 'doc', icon: 'vertrag', label: tx('Infozettel in Dokumente', 'Info sheet to documents') },
 ];
 
 export default function FotoVerstanden() {
+  const PARTS = parts();
   const [on, setOn] = useState<Record<string, boolean>>({ frist: true, task: true, doc: true });
   const take = () => {
     // The sample family already has this letter filed; taking it over again
     // just refreshes the inbox entry so the flow is repeatable.
     set((s) => ({
-      inbox: [{ id: `in-foto-${Date.now()}`, icon: 'umschlag-euro', src: 'Foto von dir · gerade eben', title: 'Elterngeld: Bescheinigung fehlt', made: 'Frist 12. Dez · Aufgabe Tom', state: 'ok' }, ...s.inbox.filter((i) => !i.id.startsWith('in-foto'))],
+      inbox: [{ id: `in-foto-${Date.now()}`, icon: 'umschlag-euro', src: tx('Foto von dir · gerade eben', 'Your photo · just now'), title: tx('Elterngeld: Bescheinigung fehlt', 'Parental allowance: confirmation missing'), made: tx('Frist 12. Dez · Aufgabe Tom', 'Deadline Dec 12 · to do Tom'), state: 'ok' }, ...s.inbox.filter((i) => !i.id.startsWith('in-foto'))],
     }));
-    toast('Übernommen');
+    toast(tx('Übernommen', 'Added'));
     router.replace('/infozettel');
   };
   return (
@@ -32,8 +34,8 @@ export default function FotoVerstanden() {
       gap={12}
       footer={
         <>
-          <TextLink label="Nichts davon" onPress={() => goBack()} />
-          <Btn label="Übernehmen" disabled={!Object.values(on).some(Boolean)} onPress={take} />
+          <TextLink label={tx('Nichts davon', 'None of it')} onPress={() => goBack()} />
+          <Btn label={tx('Übernehmen', 'Add')} disabled={!Object.values(on).some(Boolean)} onPress={take} />
         </>
       }
     >
@@ -41,12 +43,12 @@ export default function FotoVerstanden() {
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14, paddingTop: 4, paddingHorizontal: 2 }}>
         <Tile name="brief-gelesen" size={56} radius={18} />
         <View style={{ gap: 1, flex: 1 }}>
-          <Txt size={15} weight={600}>Elterngeldstelle Bayern</Txt>
-          <Meta>Brief vom 24. Oktober · Toms Elterngeld</Meta>
+          <Txt size={15} weight={600}>{tx('Elterngeldstelle Bayern', 'Parental Allowance Office')}</Txt>
+          <Meta>{tx('Brief vom 24. Oktober · Toms Elterngeld', 'Letter of October 24 · Tom’s allowance')}</Meta>
         </View>
       </View>
-      <Txt size={28} line={34} weight={700} tracking={-0.8} style={{ marginTop: 6 }}>Bis 12. Dezember fehlt noch die Arbeitgeber­bescheinigung.</Txt>
-      <Meta color={tokens.mute}>Aktenzeichen EG-2026-118734</Meta>
+      <Txt size={28} line={34} weight={700} tracking={-0.8} style={{ marginTop: 6 }}>{tx('Bis 12. Dezember fehlt noch die Arbeitgeber­bescheinigung.', 'The employer confirmation is still missing, due December 12.')}</Txt>
+      <Meta color={tokens.mute}>{tx('Aktenzeichen EG-2026-118734', 'Reference EG-2026-118734')}</Meta>
       <View style={{ height: 6 }} />
       <Group>
         {PARTS.map((p) => (

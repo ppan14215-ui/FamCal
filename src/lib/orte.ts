@@ -7,6 +7,7 @@
  * check its fair-use limits or host our own (see memory famcal-orte-lernen).
  */
 import { whereNow } from './feiertage';
+import { tx, isEn } from '../i18n/lang';
 import type { CalEvent } from '../state/types';
 
 export type PlaceKind = { key: string; de: boolean; q: string; again: (p: string) => string };
@@ -33,11 +34,15 @@ const KINDS: [RegExp, { key: string; de: boolean; q: string }][] = [
   [/doctor|\bgp\b/i, en('arzt', 'Which doctor is it?')],
 ];
 
+const Q_DE: Record<string, string> = Object.fromEntries(KINDS.filter(([, k]) => k.de).map(([, k]) => [k.key, k.q]));
+const Q_EN: Record<string, string> = { ...Object.fromEntries(KINDS.filter(([, k]) => !k.de).map(([, k]) => [k.key, k.q])), physio: 'Which physio practice is it?' };
+
 export function placeKind(title: string): PlaceKind | undefined {
   const hit = KINDS.find(([re]) => re.test(title));
   if (!hit) return undefined;
   const k = hit[1];
-  return { ...k, again: (p) => (k.de ? `Wieder bei ${p} eingetragen, wie beim letzten Mal.` : `Added at ${p} again, like last time.`) };
+  // The app's language decides the words, not the language the title was written in (01.11.).
+  return { ...k, de: !isEn(), q: isEn() ? Q_EN[k.key] ?? k.q : Q_DE[k.key] ?? k.q, again: (p) => tx(`Wieder bei ${p} eingetragen, wie beim letzten Mal.`, `Added at ${p} again, like last time.`) };
 }
 
 /** The place used last time for this kind, from the family's own calendar. */

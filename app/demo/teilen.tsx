@@ -17,13 +17,14 @@ import { actions, toast } from '../../src/state/store';
 import { haptics } from '../../src/lib/haptics';
 import type { CalEvent } from '../../src/state/types';
 import PressScale from '../../src/components/ui/PressScale';
+import { tx } from '../../src/i18n/lang';
 
-const EVENT: CalEvent = {
-  id: 'e-laterne', title: 'Laternenbasteln', sub: 'Krabbelgruppe Südstadt', icon: 'geburtstag',
-  date: '2026-11-14', start: '10:00', end: '12:00', who: null, place: 'Gemeindehaus',
-  bring: [{ id: 'b-glas', t: 'Ein Glas', done: false }],
-  source: 'Geteilt aus dem Chat „Krabbelgruppe Südstadt“',
-};
+const event = (): CalEvent => ({
+  id: 'e-laterne', title: tx('Laternenbasteln', 'Lantern crafts'), sub: tx('Krabbelgruppe Südstadt', 'Toddler group Southside'), icon: 'geburtstag',
+  date: '2026-11-14', start: '10:00', end: '12:00', who: null, place: tx('Gemeindehaus', 'Community hall'),
+  bring: [{ id: 'b-glas', t: tx('Ein Glas', 'A jar'), done: false }],
+  source: tx('Geteilt aus dem Chat „Krabbelgruppe Südstadt“', 'Shared from the chat “Toddler group Southside”'),
+});
 
 function App({ children, label, on, onPress }: { children: React.ReactNode; label: string; on?: boolean; onPress: () => void }) {
   return (
@@ -39,15 +40,16 @@ function App({ children, label, on, onPress }: { children: React.ReactNode; labe
 export default function Teilen() {
   const insets = useSafeAreaInsets();
   const [picked, setPicked] = useState(false);
-  const other = (n: string) => () => toast(`${n} ist im Prototyp nur Kulisse`);
+  const other = (n: string) => () => toast(tx(`${n} ist im Prototyp nur Kulisse`, `${n} is only a backdrop in the prototype`));
   const line = (n: LineName) => <LineIcon name={n} size={26} />;
 
   const eintragen = () => {
+    const EVENT = event();
     haptics.success();
     actions.addEvent(EVENT);
     actions.setCalDay(EVENT.date);
     actions.setCalView('monat');
-    toast('Laternenbasteln eingetragen');
+    toast(tx('Laternenbasteln eingetragen', 'Lantern crafts added'));
     router.dismissTo('/kalender');
   };
 
@@ -55,24 +57,24 @@ export default function Teilen() {
     <View style={{ flex: 1, backgroundColor: '#E9E4DC' }}>
       <View style={{ paddingTop: insets.top + 8, paddingHorizontal: 16, gap: 10 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-          <RoundButton icon="x" label="Schließen" onPress={() => goBack()} />
-          <Txt size={13} color={tokens.sub}>Chat „Krabbelgruppe Südstadt“</Txt>
+          <RoundButton icon="x" label={tx('Schließen', 'Close')} onPress={() => goBack()} />
+          <Txt size={13} color={tokens.sub}>{tx('Chat „Krabbelgruppe Südstadt“', 'Chat “Toddler group Southside”')}</Txt>
           <View style={{ width: 40 }} />
         </View>
         <View style={{ alignSelf: 'flex-start', maxWidth: 270, marginTop: 8, paddingVertical: 10, paddingHorizontal: 12, borderRadius: 16, borderBottomLeftRadius: 4, backgroundColor: tokens.row, borderWidth: 3, borderColor: tokens.done }}>
-          <Txt size={15} line={21}>Liebe Eltern, am Sa 14. Nov ist Laternenbasteln, 10–12 Uhr im Gemeindehaus. Bitte ein Glas mitbringen.</Txt>
+          <Txt size={15} line={21}>{tx('Liebe Eltern, am Sa 14. Nov ist Laternenbasteln, 10–12 Uhr im Gemeindehaus. Bitte ein Glas mitbringen.', 'Dear parents, lantern crafts are on Sat Nov 14, 10 to 12 at the community hall. Please bring a jar.')}</Txt>
         </View>
       </View>
 
       <View style={{ position: 'absolute', left: 0, right: 0, bottom: 0, paddingTop: 14, paddingHorizontal: 16, paddingBottom: 34 + insets.bottom, borderTopLeftRadius: 28, borderTopRightRadius: 28, backgroundColor: tokens.bg, gap: 16 }}>
         <SheetHandle />
-        <Txt size={15} weight={600}>Teilen mit</Txt>
+        <Txt size={15} weight={600}>{tx('Teilen mit', 'Share with')}</Txt>
         <View style={{ flexDirection: 'row', gap: 8 }}>
-          <App label={'Familien-\nassistent'} on onPress={() => { haptics.select(); setPicked(true); }}>
+          <App label={tx('Familien-\nassistent', 'Family\nassistant')} on onPress={() => { haptics.select(); setPicked(true); }}>
             <ClayIcon name="kalender" size={46} />
           </App>
-          <App label="Nachricht" onPress={other('Nachricht')}>{line('send')}</App>
-          <App label="Kopieren" onPress={other('Kopieren')}>{line('copy')}</App>
+          <App label={tx('Nachricht', 'Message')} onPress={other(tx('Nachricht', 'Message'))}>{line('send')}</App>
+          <App label={tx('Kopieren', 'Copy')} onPress={other(tx('Kopieren', 'Copy'))}>{line('copy')}</App>
           <App label="Mail" onPress={other('Mail')}>{line('inbox')}</App>
         </View>
         {picked ? (
@@ -81,19 +83,19 @@ export default function Teilen() {
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
                 <Tile name="geburtstag" size={44} radius={14} />
                 <View style={{ flex: 1 }}>
-                  <Meta>Erkannt, noch nicht eingetragen</Meta>
-                  <Txt size={16} weight={600}>Laternenbasteln · Sa 14. Nov, 10–12</Txt>
-                  <Meta>Mitbringen: ein Glas</Meta>
+                  <Meta>{tx('Erkannt, noch nicht eingetragen', 'Recognised, not added yet')}</Meta>
+                  <Txt size={16} weight={600}>{tx('Laternenbasteln · Sa 14. Nov, 10–12', 'Lantern crafts · Sat Nov 14, 10 to 12')}</Txt>
+                  <Meta>{tx('Mitbringen: ein Glas', 'Bring: a jar')}</Meta>
                 </View>
               </View>
               <View style={{ flexDirection: 'row', gap: 8 }}>
-                <Btn label="Ändern" primary={false} style={{ flex: 1 }} onPress={() => router.push('/termin-neu')} />
-                <Btn label="Eintragen" style={{ flex: 2 }} onPress={eintragen} />
+                <Btn label={tx('Ändern', 'Edit')} primary={false} style={{ flex: 1 }} onPress={() => router.push('/termin-neu')} />
+                <Btn label={tx('Eintragen', 'Add')} style={{ flex: 2 }} onPress={eintragen} />
               </View>
             </Card>
           </Animated.View>
         ) : (
-          <Txt size={13.5} color={tokens.sub} center>Tippe auf Familienassistent.</Txt>
+          <Txt size={13.5} color={tokens.sub} center>{tx('Tippe auf Familienassistent.', 'Tap Family assistant.')}</Txt>
         )}
       </View>
     </View>

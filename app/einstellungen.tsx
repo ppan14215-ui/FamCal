@@ -72,7 +72,7 @@ export default function Einstellungen() {
         {LIVE ? (
           code ? <SRow icon="eingang" t={code} s={tx('Familiencode · damit tritt dein Partner bei', 'Family code · your partner joins with it')} right={<LineIcon name="copy" size={18} color={tokens.sub} />} onPress={async () => { await Clipboard.setStringAsync(code).catch(() => {}); toast(tx('Code kopiert', 'Code copied')); }} /> : null
         ) : (
-          <SRow icon="eingang" t="huber-7q2@familie.app" s="Familienadresse · weiterleiten oder hinterlegen" right={<LineIcon name="copy" size={18} color={tokens.sub} />} onPress={async () => { await Clipboard.setStringAsync('huber-7q2@familie.app').catch(() => {}); toast('Adresse kopiert'); }} />
+          <SRow icon="eingang" t="huber-7q2@familie.app" s={tx('Familienadresse · weiterleiten oder hinterlegen', 'Family address · forward or save')} right={<LineIcon name="copy" size={18} color={tokens.sub} />} onPress={async () => { await Clipboard.setStringAsync('huber-7q2@familie.app').catch(() => {}); toast(tx('Adresse kopiert', 'Address copied')); }} />
         )}
         {cals.map((c) => (
           <SRow key={c.provider} icon={CAL_NAME[c.provider]?.icon ?? 'kalender'} t={CAL_NAME[c.provider]?.t ?? c.provider} s={`${c.ids.length} ${tx('Kalender', c.ids.length === 1 ? 'calendar' : 'calendars')} · ${c.account}`} right={<Dot />} onPress={openCals} />
@@ -127,15 +127,15 @@ export default function Einstellungen() {
           <Txt size={15} weight={600} color={tokens.danger}>{tx('Abmelden', 'Sign out')}</Txt>
         </PressScale>
       ) : <>
-      <H2>Prototyp</H2>
+      <H2>{tx('Prototyp', 'Prototype')}</H2>
       <Group>
-        <SRow icon="glocke" t="Hinweise · Sperrbildschirm" s="So sehen Push-Hinweise aus" onPress={() => router.push('/demo/sperrbildschirm')} />
-        <SRow icon="chat" t="Teilen aus einem Chat" s="Nachricht aus WhatsApp übernehmen" onPress={() => router.push('/demo/teilen')} />
-        <SRow icon="kalender" t="Widgets" s="Homescreen, klein und mittel" onPress={() => router.push('/demo/widgets')} />
-        <SRow icon="u-heft" t="Beispielfamilie laden" s="Julia, Tom und Ben mit vollem Kalender" onPress={() => { actions.loadDemo(); router.dismissAll(); router.replace('/chat'); }} />
-        <SRow icon="zuhause" t="Onboarding neu starten" s="Alles leeren, wie beim ersten Öffnen" onPress={() => { actions.reset(); router.dismissAll(); router.replace('/onboarding'); }} />
+        <SRow icon="glocke" t={tx('Hinweise · Sperrbildschirm', 'Notifications · lock screen')} s={tx('So sehen Push-Hinweise aus', 'How push notices look')} onPress={() => router.push('/demo/sperrbildschirm')} />
+        <SRow icon="chat" t={tx('Teilen aus einem Chat', 'Share from a chat')} s={tx('Nachricht aus WhatsApp übernehmen', 'Take a message from WhatsApp')} onPress={() => router.push('/demo/teilen')} />
+        <SRow icon="kalender" t="Widgets" s={tx('Homescreen, klein und mittel', 'Home screen, small and medium')} onPress={() => router.push('/demo/widgets')} />
+        <SRow icon="u-heft" t={tx('Beispielfamilie laden', 'Load sample family')} s={tx('Julia, Tom und Ben mit vollem Kalender', 'Julia, Tom and Ben with a full calendar')} onPress={() => { actions.loadDemo(); router.dismissAll(); router.replace('/chat'); }} />
+        <SRow icon="zuhause" t={tx('Onboarding neu starten', 'Restart onboarding')} s={tx('Alles leeren, wie beim ersten Öffnen', 'Clear everything, like the first launch')} onPress={() => { actions.reset(); router.dismissAll(); router.replace('/onboarding'); }} />
       </Group>
-      <Txt size={12.5} line={17} color={tokens.mute} center>Prototyp ohne Login und ohne echte KI. Alles bleibt auf diesem Gerät und ist nach dem Neuladen wieder wie am Anfang.</Txt>
+      <Txt size={12.5} line={17} color={tokens.mute} center>{tx('Prototyp ohne Login und ohne echte KI. Alles bleibt auf diesem Gerät und ist nach dem Neuladen wieder wie am Anfang.', 'Prototype without login and without real AI. Everything stays on this device and resets when you reload.')}</Txt>
       </>}
       {HIDDEN.toggles ? null : <QualityTest />}
       <Txt size={12} line={16} color={tokens.mute} center selectable>{versionLine()}</Txt>

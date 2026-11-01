@@ -15,6 +15,7 @@ import { haptics } from '../src/lib/haptics';
 import Letter from '../src/components/Letter';
 import { easing } from '../src/theme';
 import PressScale from '../src/components/ui/PressScale';
+import { tx } from '../src/i18n/lang';
 
 export default function FotoKamera() {
   const insets = useSafeAreaInsets();
@@ -38,17 +39,17 @@ export default function FotoKamera() {
       </View>
       <Animated.View style={[{ position: 'absolute', left: 24, right: 24, top: 130, bottom: 204, borderRadius: 22, borderWidth: 3, borderColor: 'rgba(255,255,255,0.9)' }, frame]} />
       <View style={{ position: 'absolute', top: insets.top + 14, left: 0, right: 0, flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 22 }}>
-        <PressScale accessibilityLabel="Schließen" onPress={() => goBack()} style={{ width: 42, height: 42, borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.14)', alignItems: 'center', justifyContent: 'center' }}>
+        <PressScale accessibilityLabel={tx('Schließen', 'Close')} onPress={() => goBack()} style={{ width: 42, height: 42, borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.14)', alignItems: 'center', justifyContent: 'center' }}>
           <LineIcon name="x" size={20} color="#FFFFFF" />
         </PressScale>
         <Animated.View style={[{ height: 42, paddingHorizontal: 16, borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.14)', flexDirection: 'row', alignItems: 'center', gap: 6 }, pill]}>
           <LineIcon name="flash" size={16} color="#FFFFFF" />
-          <Txt size={14} weight={600} color="#FFFFFF">Seite erkannt</Txt>
+          <Txt size={14} weight={600} color="#FFFFFF">{tx('Seite erkannt', 'Page found')}</Txt>
         </Animated.View>
       </View>
       <View style={{ position: 'absolute', bottom: insets.bottom + 34, left: 0, right: 0, alignItems: 'center', gap: 14 }}>
-        <Txt size={14} line={19} center color="rgba(255,255,255,0.8)" style={{ paddingHorizontal: 40 }}>Im Testlink liegt ein Beispielbrief im Rahmen. In der App ist das eure Kamera.</Txt>
-        <PressScale accessibilityLabel="Aufnehmen" onPress={shoot} scale={0.92} style={{ width: 76, height: 76, borderRadius: 999, borderWidth: 4, borderColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center' }}>
+        <Txt size={14} line={19} center color="rgba(255,255,255,0.8)" style={{ paddingHorizontal: 40 }}>{tx('Im Testlink liegt ein Beispielbrief im Rahmen. In der App ist das eure Kamera.', 'The test link shows a sample letter in the frame. In the app this is your camera.')}</Txt>
+        <PressScale accessibilityLabel={tx('Aufnehmen', 'Take photo')} onPress={shoot} scale={0.92} style={{ width: 76, height: 76, borderRadius: 999, borderWidth: 4, borderColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center' }}>
           <View style={{ width: 60, height: 60, borderRadius: 999, backgroundColor: '#FFFFFF' }} />
         </PressScale>
       </View>

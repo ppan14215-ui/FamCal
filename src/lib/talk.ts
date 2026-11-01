@@ -122,15 +122,18 @@ const KNOWN: [RegExp, RegExp][] = [
   [/rückbildung/, /rückbildung/],
   [/bürgeramt|pass|ausweis/, /bürgeramt/],
 ];
-function recall(title: string, events: CalEvent[]): CalEvent | undefined {
-  const l = title.toLowerCase();
+/** Small words that say nothing about the kind of Termin ("with" made every English Termin find the pediatrician, 01.11.). */
+const NOT_KIND = /^(with|mit|from|beim|beim|zum|zur|für|for|the|der|die|das|den|dem|und|and|goes|geht|kommt|comes|bring|bringt|holt|pick|this|that|next|nächsten|morgen|today|heute|tomorrow|uhr|o'clock|abends|morning|evening|afternoon|nachmittag|vormittag)$/;
+function recall(title: string, events: CalEvent[], sub?: string): CalEvent | undefined {
+  const l = `${title} ${sub ?? ''}`.toLowerCase();
   if (/zahn|tierarzt/.test(l)) return;
   const rule = KNOWN.find(([want]) => want.test(l));
   // Only what really happened: past Termine with a place, not ones just said.
   const past = events.filter((e) => e.place && e.date <= TODAY && !/^(Gesagt|Said)/.test(e.source ?? ''));
   // Any earlier Termin with the same main word ("Friseur" and "Friseurtermin"), not only the known kinds.
   if (!rule) {
-    const stems = l.split(/[^a-zäöüß]+/).map((w) => w.replace(/(termin|besuch|appointment)$/, '')).filter((w) => w.length >= 4 && !FILLER.test(w));
+    // Only the title says what it is; the sub holds who goes along ("Tom goes with Ben").
+    const stems = title.toLowerCase().split(/[^a-zäöüß]+/).map((w) => w.replace(/(termin|besuch|appointment)$/, '')).filter((w) => w.length >= 4 && !FILLER.test(w) && !NOT_KIND.test(w));
     if (!stems.length) return;
     return past.filter((e) => stems.some((st) => e.title.toLowerCase().includes(st))).sort((a, b) => b.date.localeCompare(a.date))[0];
   }
@@ -270,7 +273,7 @@ export function understand(input: string, events: CalEvent[], pending?: { title:
   if (!found) return { kind: 'ask', text: askWhen(title), title, who };
 
   const w = found.when;
-  const known = recall(`${title} ${sub ?? ''}`, events);
+  const known = recall(title, events, sub);
   const guess = iconFor(`${title} ${sub ?? ''}`);
   const icon = guess === 'kalender' && known ? known.icon : guess;
   const len = icon === 'stethoskop' || icon === 'zahnarzt' ? 45 : 60;
@@ -355,7 +358,7 @@ export function fromModel(m: Understood, said: string, events: CalEvent[], newId
   // A start equal to the clock with no time in the sentence was made up from "now" (29.10.).
   const madeUp = m.start === NOW && !/\d|uhr|o'?clock|mittag|abend|morgens|noon|evening|morning/i.test(said);
   const start = m.start && HHMM.test(m.start) && !madeUp ? m.start : undefined;
-  const known = recall(`${m.title} ${m.sub ?? ''}`, events);
+  const known = recall(m.title, events, m.sub);
   const guess = isIcon(m.icon) && m.icon !== 'kalender' ? m.icon : iconFor(`${m.title} ${m.sub ?? ''}`);
   const icon = guess === 'kalender' && known ? known.icon : guess;
   const len = icon === 'stethoskop' || icon === 'zahnarzt' ? 45 : 60;
