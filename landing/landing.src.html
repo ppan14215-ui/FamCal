@@ -320,7 +320,7 @@ const T = {
     cta1: 'Auf die Warteliste', cta2: 'Prototyp ansehen',
     phone: 'Echte Screens aus der FamCal App, eine pro Funktion.',
     wlH: 'Bald zu zweit ausprobieren.', wlP: 'Tragt euch ein, dann melden wir uns, sobald ihr FamCal gemeinsam testen könnt.',
-    mail: 'E‑Mail', ph: 'eure@mail.de', submit: 'Eintragen', note: 'Vorschau: Das Formular speichert noch nichts.', thanks: 'Danke! In dieser Vorschau wird noch nichts gespeichert.',
+    mail: 'E‑Mail', ph: 'eure@mail.de', submit: 'Eintragen', note: 'Wir schreiben euch einmal, wenn FamCal startet. Kein Spam.', thanks: 'Danke! Ihr steht auf der Warteliste.', sending: 'Einen Moment …', fail: 'Das hat nicht geklappt. Bitte gleich nochmal versuchen.',
     t1: 'In eurer Sprache', t1s: 'Deutsch und Englisch ab dem ersten Tag. Versteht „übermorgen“ und „halb drei“.',
     t2: 'Keine Werbung', t2s: 'Eure Termine gehören euch und werden nicht vermarktet.',
     t3: 'Alle gleichberechtigt', t3s: 'Niemand ist Admin, alle sehen und ändern alles.',
@@ -357,7 +357,7 @@ const T = {
     cta1: 'Join the waitlist', cta2: 'See the prototype',
     phone: 'Real screens from the FamCal app, one per feature.',
     wlH: 'Try it as a pair soon.', wlP: 'Sign up and we will let you know as soon as you can test FamCal together.',
-    mail: 'Email', ph: 'you@email.com', submit: 'Sign up', note: 'Preview: the form does not save anything yet.', thanks: 'Thanks! Nothing is saved in this preview yet.',
+    mail: 'Email', ph: 'you@email.com', submit: 'Sign up', note: 'We write once when FamCal launches. No spam.', thanks: 'Thanks! You are on the waitlist.', sending: 'One moment …', fail: 'That did not work. Please try again in a moment.',
     t1: 'In your language', t1s: 'English and German from day one. Gets “day after tomorrow” and “half past two”.',
     t2: 'No ads', t2s: 'Your events belong to you and are never sold.',
     t3: 'Everyone equal', t3s: 'No admins. Everyone sees and edits everything.',
@@ -525,5 +525,21 @@ measure();
 
 $('lang').addEventListener('click', () => { const l = lang === 'de' ? 'en' : 'de'; setLang(l); try { localStorage.setItem('famcal-lang', l) } catch (e) {} built = false; measure() });
 
-$('wl').addEventListener('submit', e => { e.preventDefault(); $('wlnote').textContent = T[lang].thanks });
+const SB = 'https://jzfubxcdpznzxqtvnodm.supabase.co/rest/v1/waitlist', SBKEY = 'sb_publishable_2RyeUE1Z0ztcbz5lzxAlPA_TE18nN0M';
+async function saveMail(email) {
+  try {
+    const r = await fetch(SB, { method: 'POST', headers: { apikey: SBKEY, 'Content-Type': 'application/json', Prefer: 'return=minimal' }, body: JSON.stringify({ email, lang, source: 'landing' }) });
+    if (r.ok || r.status === 409) return true;
+  } catch (e) {}
+  return false;
+}
+$('wl').addEventListener('submit', async e => {
+  e.preventDefault();
+  const inp = $('mail'), btn = $('wl').querySelector('button'), email = inp.value.trim();
+  if (!email) return;
+  btn.disabled = true; $('wlnote').textContent = T[lang].sending;
+  const ok = await saveMail(email);
+  btn.disabled = false; $('wlnote').textContent = T[lang][ok ? 'thanks' : 'fail'];
+  if (ok) inp.value = '';
+});
 </script>
