@@ -16,7 +16,18 @@ cells = [(d, True) for d in range(26, 32)] + [(d, False) for d in range(1, 31)] 
 s = s.replace('{{month}}', "".join(f'<span class="{"o" if o else ""}"><b>{d}</b><span class="d">{"" if o else "".join(f"<i class={chr(34)}{c}{chr(34)}></i>" for c in dots.get(d, ""))}</span></span>' for d, o in cells))
 from PIL import Image
 SH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'shots') + '/' if os.path.isdir(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'shots')) else '/home/claude/FamCal/landing/shots/'
-s = re.sub(r'\{\{shot:([a-z0-9-]+)\}\}', lambda m: 'data:image/webp;base64,' + base64.b64encode(open(SH + m.group(1) + '.webp', 'rb').read()).decode(), s)
-s = re.sub(r'\{\{bg:([a-z0-9-]+)\}\}', lambda m: '#%02X%02X%02X' % Image.open(SH + m.group(1) + '.webp').convert('RGB').getpixel((4, 4)), s)
+SHOTS = {}
+for v in ('de-light', 'de-dark', 'en-light', 'en-dark'):
+    d = os.path.join(SH, v)
+    if not os.path.isdir(d): continue
+    for f in sorted(os.listdir(d)):
+        if f.endswith('.webp'):
+            path = os.path.join(d, f)
+            bg = '#%02X%02X%02X' % Image.open(path).convert('RGB').getpixel((4, 4))
+            SHOTS.setdefault(f[:-5], {})[v] = ['data:image/webp;base64,' + base64.b64encode(open(path, 'rb').read()).decode(), bg]
+used = set(re.findall(r'data-shot="([a-z0-9]+)"', s))
+missing = [n for n in used if 'de-light' not in SHOTS.get(n, {})]
+assert not missing, missing
+s = s.replace('{{shots}}', json.dumps({n: SHOTS[n] for n in sorted(used)}))
 assert '{{' not in s
 open(out, 'w').write(s); print(len(s), js)

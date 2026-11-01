@@ -7,7 +7,8 @@
  *   (im App-Repo)  git apply <famcal>/landing/screens-harness.patch
  *                  EXPO_PUBLIC_DEMO=1 EXPO_OFFLINE=1 CI=1 npx expo export -p web
  *                  git checkout -- src   (Patch wieder entfernen, nie committen)
- *   node landing/sync-screens.js <app>/dist
+ *   node landing/sync-screens.js <app>/dist [varianten] [screens]
+ *   (Varianten: de-light, de-dark, en-light, en-dark; Bilder nach landing/shots/<variante>/)
  *   python3 landing/build.py landing/landing.src.html <ausgabe.html>
  *
  * Der Patch ist nur für die Fotos: Antworten des Assistenten (Rezept, Watchlist, Merken) kommen
@@ -28,60 +29,112 @@ const ROOT = process.argv[2] && path.resolve(process.argv[2]);
 if (!ROOT || !fs.existsSync(path.join(ROOT, 'index.html'))) { console.error('Aufruf: node landing/sync-screens.js <app>/dist'); process.exit(1); }
 const OUT = path.join(__dirname, 'shots');
 const W = 393, H = 790, PORT = 8765;
+// Optional: nur bestimmte Varianten (de-light,en-dark) und Screens (chat,termin)
+const VARIANTS = (process.argv[3] || 'de-light,de-dark,en-light,en-dark').split(',');
+const ONLY = process.argv[4] ? process.argv[4].split(',') : null;
 const URL = `http://localhost:${PORT}`;
 const MIME = { '.html': 'text/html', '.js': 'application/javascript', '.css': 'text/css', '.webp': 'image/webp', '.png': 'image/png', '.ttf': 'font/ttf', '.json': 'application/json', '.jpg': 'image/jpeg' };
 
 const CANNED = {
   'Ich koche heute Abend Bolognese': { text: 'Mach ich.', actions: [{ tool: 'rezept', input: { dish: 'Bolognese', items: [], extra: ['Hackfleisch 500 g', 'Spaghetti', 'Passierte Tomaten', 'Zwiebeln', 'Karotten', 'Parmesan'] } }] },
   'Erstelle eine Watchlist mit Dune, Oppenheimer und Barbie': { text: 'Mach ich.', actions: [{ tool: 'liste_neu', input: { name: 'Watchlist', items: ['Dune', 'Oppenheimer', 'Barbie'] } }] },
-  'Merk dir, Ben hat Schuhgröße 22': { text: 'Gemerkt.', actions: [{ tool: 'merken', input: { fact: 'Ben hat Schuhgröße 22', about: 'Ben' } }] },
-  'Merk dir, Oma Inge mag keine Lilien': { text: 'Gemerkt.', actions: [{ tool: 'merken', input: { fact: 'Oma Inge mag keine Lilien', about: 'Oma Inge' } }] },
-  'Merk dir, Ben verträgt keine Erdbeeren': { text: 'Gemerkt.', actions: [{ tool: 'merken', input: { fact: 'Ben verträgt keine Erdbeeren', about: 'Ben' } }] },
-  'Merk dir, der Kinderarzt hat mittwochs zu': { text: 'Gemerkt.', actions: [{ tool: 'merken', input: { fact: 'Der Kinderarzt hat mittwochs zu', about: 'Kinderarzt' } }] },
+  "I'm cooking Bolognese tonight": { text: 'On it.', actions: [{ tool: 'rezept', input: { dish: 'Bolognese', items: [], extra: ['Minced beef 500 g', 'Spaghetti', 'Passata', 'Onions', 'Carrots', 'Parmesan'] } }] },
+  'Make a watchlist with Dune, Oppenheimer and Barbie': { text: 'On it.', actions: [{ tool: 'liste_neu', input: { name: 'Watchlist', items: ['Dune', 'Oppenheimer', 'Barbie'] } }] },
 };
+const FACTS = {
+  de: [['Ben hat Schuhgröße 22', 'Ben'], ['Oma Inge mag keine Lilien', 'Oma Inge'], ['Ben verträgt keine Erdbeeren', 'Ben'], ['Der Kinderarzt hat mittwochs zu', 'Kinderarzt']],
+  en: [['Ben wears shoe size 22', 'Ben'], ['Grandma Inge doesn\'t like lilies', 'Grandma Inge'], ['Ben can\'t have strawberries', 'Ben'], ['The pediatrician is closed on Wednesdays', 'Pediatrician']],
+};
+for (const l of ['de', 'en']) for (const [fact, about] of FACTS[l]) CANNED[(l === 'de' ? 'Merk dir, ' : 'Remember, ') + fact] = { text: 'Ok.', actions: [{ tool: 'merken', input: { fact, about } }] };
+
+// Was die Steps je Sprache antippen oder sagen
+const TX = {
+  de: { invited: 'Ich wurde eingeladen', cal: 'Kalender', lists: 'Listen', settings: /Einstellungen/, days: 'Tage', week: 'Woche', month: 'Monat', year: 'Jahr',
+    termin: 'Freitag 15 Uhr Zahnarzt mit Ben', karte: 'Freitag 15 Uhr Zahnarzt mit Ben', einkauf: 'Wir brauchen Milch und Windeln', nachfrage: 'Samstag Kindergeburtstag bei Lena', fragen: 'Frag Tom, ob Samstag passt',
+    rezept: 'Ich koche heute Abend Bolognese', watch: 'Erstelle eine Watchlist mit Dune, Oppenheimer und Barbie', u7: 'Montag 10 Uhr U7 mit Ben',
+    brief: 'Wochenbriefing', u6: 'U6 bei Dr. Weber', wissen: 'Was ich weiß', urlaub: 'Urlaub und Feiertage', gcal: 'Google Kalender', teilen: 'Teilen aus einem Chat', search: 'Suchen', who: 'Dr. Müller',
+    zoo: 'Sonntag 15 Uhr Zoo mit Lena, wir alle', zooT: 'Zoo mit Lena', pick: 'Ich hol Ben morgen um 16 Uhr ab 👍' },
+  en: { invited: 'I was invited', cal: 'Calendar', lists: 'Lists', settings: /^Settings$/, days: 'Days', week: 'Week', month: 'Month', year: 'Year',
+    termin: 'Swimming with Ben on Friday at 3 pm', karte: 'Hairdresser on Friday at 3 pm', einkauf: 'We need milk and nappies', nachfrage: "Kids' birthday party at Lena's on Saturday", fragen: 'Ask Tom if Saturday works',
+    rezept: "I'm cooking Bolognese tonight", watch: 'Make a watchlist with Dune, Oppenheimer and Barbie', u7: 'Monday 10am U7 checkup with Ben',
+    brief: 'Weekly briefing', u6: 'U6 checkup with Dr. Weber', wissen: 'What I know', urlaub: 'Vacation and holidays', gcal: 'Google Calendar', teilen: 'Teilen aus einem Chat', search: 'Search', who: 'Salon Miller',
+    zoo: 'Sunday 3pm zoo with Lena, all of us', zooT: 'Zoo with Lena', pick: "I'll pick Ben up tomorrow at 4 👍" },
+};
+
+// Die Beispielfamilie ist auf Deutsch angelegt; für die englischen Screens werden ihre Texte übersetzt.
+const EN_DATA = {
+  'Arbeit': 'Work', 'Hebamme Sarah': 'Midwife Sarah', 'Nachsorge zu Hause': 'Home visit', 'Krabbelgruppe': 'Baby group', 'Gemeindehaus Südstadt': 'Community hall',
+  'U6 bei Dr. Weber': 'U6 checkup with Dr. Weber', 'Tom bringt Ben': 'Tom takes Ben', 'Kinderarztpraxis Weber · Hauptstr. 12': 'Weber Pediatrics · 12 High St', 'Kinderarztpraxis Weber': 'Weber Pediatrics',
+  'Aus der Bestätigung von Doctolib, 12. Oktober': 'From the Doctolib confirmation, 12 October', 'U-Heft': 'Health booklet', 'Impfpass': 'Vaccination card', 'Versichertenkarte': 'Insurance card',
+  'Rückbildung': 'Postnatal class', 'Hebammenpraxis': 'Midwife practice', 'Hebammenpraxis Lind': 'Lind midwife practice', 'Jeden Donnerstag': 'Every Thursday', 'Jeden Dienstag': 'Every Tuesday',
+  'Bürgeramt: Pass': 'Passport for Ben', 'Ben muss mit': 'Ben has to come', 'Bürgeramt Mitte': 'Citizens office', 'Geburtsurkunde des Kindes': "Child's birth certificate",
+  'Digitales biometrisches Passfoto vom Fotografen': 'Biometric passport photo', 'Ausweise von euch beiden': 'IDs of you both', '37,50 Euro Gebühr (unter 24 Jahren)': '37.50 euro fee',
+  'Falls einer von euch nicht mitkommt: seine Einverständniserklärung und Ausweiskopie': "If one of you can't come: their consent and ID copy",
+  'Oma Renate kommt': 'Grandma Renate visits', 'Abendessen': 'Dinner', 'Wochenmarkt': 'Farmers market', 'Gemüse für die Woche': 'Veggies for the week', 'Zoo mit Lena': 'Zoo with Lena', 'Kinderwagen mitnehmen': 'Bring the stroller',
+  'Krankenkasse anrufen': 'Call health insurance', 'Ben anmelden': 'Register Ben', 'U3 bei Dr. Weber': 'U3 checkup with Dr. Weber', 'U5 bei Dr. Weber': 'U5 checkup with Dr. Weber', 'erledigt': 'done',
+  'Geburtstag Lena': "Lena's birthday", 'Kaffee bei Lena': "Coffee at Lena's", 'Essen bei Lena': "Dinner at Lena's", 'Nachtisch mitbringen': 'Bring dessert', 'Babyflohmarkt': 'Baby flea market', 'Schule am Park': 'Park School',
+  'Oma Inge wird 70': 'Grandma Inge turns 70', 'Geburtstag': 'Birthday', 'Fußball': 'Football', 'Sportplatz Süd': 'South sports ground',
+  'Bescheinigung anfragen': 'Request employer letter', 'bis 28. Nov': 'by 28 Nov', 'Passfotos machen': 'Get passport photos', 'heute fällig': 'due today', 'Geburtsurkunde abholen': 'Pick up birth certificate',
+  'Geschenk für Oma Inge': 'Gift for Grandma Inge', 'bis So 1. Nov': 'by Sun 1 Nov', 'Windeln Größe 3 bestellen': 'Order size 3 nappies', 'ab Dezember': 'from December', 'Essen für Sonntag planen': 'Plan Sunday lunch',
+  'Kita-Platz anfragen': 'Apply for nursery place', 'bis Ende Januar': 'by end of January',
+  'Einkauf': 'Shopping', 'Drogerie': 'Drugstore', 'Windeln Gr. 2': 'Nappies size 2', 'ab Dezember Größe 3': 'size 3 from December', 'Wundcreme': 'Nappy cream', 'Supermarkt': 'Supermarket',
+  'Hafermilch': 'Oat milk', 'ungesüßt': 'unsweetened', 'Brot': 'Bread', 'Kaffee': 'Coffee', 'Bananen': 'Bananas', 'Kliniktasche': 'Hospital bag', 'Geschenke': 'Gifts',
+  'Oma Inge, 70': 'Grandma Inge, 70', 'Fotobuch vom ersten Monat': 'Photo book of the first month', 'Mia, 3': 'Mia, 3', 'Holzpuzzle': 'Wooden puzzle', 'Oma Gisela': 'Grandma Gisela',
+  'Erste Impfungen': 'First vaccinations', 'Elterngeld: Bescheinigung fehlt': 'Parental allowance: letter missing', 'Elterngeld': 'Parental allowance',
+};
+async function english(p) {
+  await p.evaluate((M) => {
+    const tr = (v) => (typeof v === 'string' ? (M[v] ?? v) : Array.isArray(v) ? v.map(tr) : v && typeof v === 'object' ? Object.fromEntries(Object.entries(v).map(([k, x]) => [k, k === 'id' ? x : tr(x)])) : v);
+    globalThis.__fc.set((st) => ({ events: tr(st.events), tasks: tr(st.tasks), lists: tr(st.lists), milestones: tr(st.milestones), inbox: tr(st.inbox), people: tr(st.people) }));
+  }, EN_DATA);
+}
 const TILE = fs.readFileSync(path.join(__dirname, 'shots-tile.png'));
 const feat = (name, street, housenumber, postcode, city, lon, lat) => ({ type: 'Feature', geometry: { type: 'Point', coordinates: [lon, lat] }, properties: { name, street, housenumber, postcode, city } });
 async function routes(p) {
-  await p.route(/photon\.komoot\.io/, (r) => r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ type: 'FeatureCollection', features: [feat('Zahnarztpraxis Dr. Müller', 'Lindenstraße', '8', '80331', 'München', 11.5702, 48.1371)] }) }));
+  await p.route(/photon\.komoot\.io/, (r) => {
+    const salon = /salon/i.test(decodeURIComponent(r.request().url()));
+    const f = salon ? feat('Salon Miller', 'Lindenstraße', '8', '80331', 'München', 11.5702, 48.1371) : feat('Zahnarztpraxis Dr. Müller', 'Lindenstraße', '8', '80331', 'München', 11.5702, 48.1371);
+    r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ type: 'FeatureCollection', features: [f] }) });
+  });
   await p.route(/tile\.openstreetmap\.org/, (r) => r.fulfill({ status: 200, contentType: 'image/png', body: TILE }));
 }
 
 // Jeder Screen: Name in landing/shots und der Weg dorthin, ausgehend vom Chat der Beispielfamilie.
 const SCREENS = [
   ['chat', async () => {}],
-  ['termin', async ({ say }) => { await say('Freitag 15 Uhr Zahnarzt mit Ben'); }],
-  ['einkauf', async ({ say }) => { await say('Wir brauchen Milch und Windeln'); }],
-  ['nachfrage', async ({ say }) => { await say('Samstag Kindergeburtstag bei Lena'); }],
-  ['fragen', async ({ say }) => { await say('Frag Tom, ob Samstag passt'); }],
-  ['rezept', async ({ can, say }) => { await can(); await say('Ich koche heute Abend Bolognese'); }],
-  ['chat2', async ({ p, say }) => {
-    await say('Wir brauchen Milch und Windeln');
-    await p.evaluate(() => {
+  ['termin', async ({ p, say, t }) => { await say(t.termin); await p.getByText(/^(Done|Passt)$/).first().click({ timeout: 1500 }).catch(() => {}); }],
+  ['einkauf', async ({ say, t }) => { await say(t.einkauf); }],
+  ['nachfrage', async ({ say, t }) => { await say(t.nachfrage); }],
+  ['fragen', async ({ say, t }) => { await say(t.fragen); }],
+  ['rezept', async ({ can, say, t }) => { await can(); await say(t.rezept); }],
+  ['chat2', async ({ p, say, t }) => {
+    await say(t.einkauf);
+    await p.evaluate((t) => {
       const at = (m) => new Date(Date.now() + m * 60000).toISOString();
-      globalThis.__feed.put({ id: 'ft2', at: at(1), by: 'T', kind: 'made', said: 'Sonntag 15 Uhr Zoo mit Lena, wir alle', events: ['e-zoo'], text: 'Zoo mit Lena steht im Kalender.', snap: { events: [{ id: 'e-zoo', title: 'Zoo mit Lena', date: '2026-11-01', start: '15:00', end: '17:00', icon: 'kinderwagen' }] } });
-      globalThis.__feed.put({ id: 'ft3', at: at(2), by: 'T', kind: 'msg', said: 'Ich hol Ben morgen um 16 Uhr ab 👍' });
-    });
+      globalThis.__feed.put({ id: 'ft2', at: at(1), by: 'T', kind: 'made', said: t.zoo, events: ['e-zoo'], snap: { events: [{ id: 'e-zoo', title: t.zooT, date: '2026-11-01', start: '15:00', end: '17:00', icon: 'kinderwagen' }] } });
+      globalThis.__feed.put({ id: 'ft3', at: at(2), by: 'T', kind: 'msg', said: t.pick });
+    }, t);
   }],
-  ['heute', async ({ tab }) => { await tab('Kalender'); }],
-  ['mitgedacht', async ({ p, tab }) => { await tab('Kalender'); await p.mouse.move(200, 400); await p.mouse.wheel(0, 260); }],
-  ['briefing', async ({ p, tab }) => { await tab('Kalender'); await p.getByText('Wochenbriefing').first().click(); }],
-  ['tage', async ({ tab, view }) => { await tab('Kalender'); await view('Tage'); }],
-  ['woche', async ({ tab, view }) => { await tab('Kalender'); await view('Woche'); }],
-  ['monat', async ({ tab, view }) => { await tab('Kalender'); await view('Monat'); }],
-  ['jahr', async ({ tab, view }) => { await tab('Kalender'); await view('Jahr'); }],
-  ['bearbeiten', async ({ p, tab }) => { await tab('Kalender'); await p.getByText('U6 bei Dr. Weber').first().click(); }],
-  ['listen', async ({ tab }) => { await tab('Listen'); }],
-  ['watchlist', async ({ p, can, say, tab }) => { await can(); await say('Erstelle eine Watchlist mit Dune, Oppenheimer und Barbie'); await tab('Listen'); await p.getByText('Watchlist', { exact: true }).last().click({ timeout: 3000 }).catch(() => {}); }],
-  ['wissen', async ({ can, say, setting }) => { await can(); for (const t of ['Merk dir, Ben hat Schuhgröße 22', 'Merk dir, Oma Inge mag keine Lilien', 'Merk dir, Ben verträgt keine Erdbeeren', 'Merk dir, der Kinderarzt hat mittwochs zu']) await say(t); await setting('Was ich weiß'); }],
-  ['wieder', async ({ say }) => { await say('Montag 10 Uhr U7 mit Ben'); }],
-  ['karte', async ({ p, say }) => { await say('Freitag 15 Uhr Zahnarzt mit Ben'); await p.getByPlaceholder(/Dr. Müller/).fill('Dr. Müller'); await p.getByText('Suchen', { exact: true }).click(); }],
-  ['urlaub', async ({ setting }) => { await setting('Urlaub und Feiertage'); }],
-  ['kalender', async ({ setting }) => { await setting('Google Kalender'); }],
+  ['heute', async ({ tab, t }) => { await tab(t.cal); }],
+  ['mitgedacht', async ({ p, tab, t }) => { await tab(t.cal); await p.mouse.move(200, 400); await p.mouse.wheel(0, 260); }],
+  ['briefing', async ({ p, tab, t }) => { await tab(t.cal); await p.getByText(t.brief).first().click(); }],
+  ['tage', async ({ tab, view, t }) => { await tab(t.cal); await view(t.days); }],
+  ['woche', async ({ tab, view, t }) => { await tab(t.cal); await view(t.week); }],
+  ['monat', async ({ tab, view, t }) => { await tab(t.cal); await view(t.month); }],
+  ['jahr', async ({ tab, view, t }) => { await tab(t.cal); await view(t.year); }],
+  ['bearbeiten', async ({ p, tab, t }) => { await tab(t.cal); await p.getByText(t.u6).first().click(); }],
+  ['listen', async ({ tab, t }) => { await tab(t.lists); }],
+  ['watchlist', async ({ p, can, say, tab, t }) => { await can(); await say(t.watch); await tab(t.lists); await p.getByText('Watchlist', { exact: true }).last().click({ timeout: 3000 }).catch(() => {}); }],
+  ['wissen', async ({ can, say, setting, t, l }) => { await can(); for (const [fact] of FACTS[l]) await say((l === 'de' ? 'Merk dir, ' : 'Remember, ') + fact); await setting(t.wissen); }],
+  ['wieder', async ({ say, t }) => { await say(t.u7); }],
+  ['karte', async ({ p, say, t }) => { await say(t.karte); await p.getByPlaceholder(/Dr\.|Salon|e\.g\./).first().fill(t.who); await p.getByText(t.search, { exact: true }).click(); }],
+  ['urlaub', async ({ setting, t }) => { await setting(t.urlaub); }],
+  ['kalender', async ({ setting, t }) => { await setting(t.gcal); }],
   ['widget', async ({ setting }) => { await setting('Widgets'); }],
-  ['teilen', async ({ setting }) => { await setting('Teilen aus einem Chat'); }],
-  ['mail', async ({ p }) => { await p.getByLabel(/Einstellungen/).first().click(); }],
-  ['brief', async ({ p }) => { await p.goto(URL + '/foto-verstanden'); }],
-  ['brieflesen', async ({ p }) => { await p.goto(URL + '/foto-lesen'); }],
+  ['teilen', async ({ setting, t }) => { await setting(t.teilen); }],
+  ['mail', async ({ p, t }) => { await p.getByLabel(t.settings).first().click(); }],
+  ['brief', async ({ p, l }) => { await p.goto(URL + '/foto-verstanden' + (l === 'en' ? '#en' : '')); await p.reload(); }],
+  ['brieflesen', async ({ p, l }) => { await p.goto(URL + '/foto-lesen' + (l === 'en' ? '#en' : '')); await p.reload(); }],
 ];
 
 (async () => {
@@ -94,30 +147,37 @@ const SCREENS = [
   const p = await b.newPage({ viewport: { width: W, height: H }, deviceScaleFactor: 2 });
   await routes(p);
   const tmp = fs.mkdtempSync(path.join(require('os').tmpdir(), 'famcal-shots-'));
+  let OUTV = OUT;
   const save = async (name) => {
     await p.waitForTimeout(1800);
     const png = path.join(tmp, name + '.png');
     await p.screenshot({ path: png });
-    execFileSync('python3', ['-c', `from PIL import Image; Image.open(${JSON.stringify(png)}).convert('RGB').save(${JSON.stringify(path.join(OUT, name + '.webp'))}, 'WEBP', quality=80)`]);
-    console.log('ok', name);
-  };
-  // Neu laden verliert die Beispielfamilie, darum jedes Mal frisch über "Ich wurde eingeladen"
-  const fresh = async () => {
-    await p.goto(URL); await p.evaluate(() => localStorage.clear()); await p.goto(URL); await p.waitForTimeout(2500);
-    await p.getByText('Ich wurde eingeladen').click({ timeout: 8000 }); await p.waitForTimeout(2200);
-  };
-  const h = {
-    p,
-    can: () => p.evaluate((c) => { globalThis.__canned = c; }, CANNED),
-    say: async (t) => { await p.getByPlaceholder(/Sprich oder schreib/).fill(t); await p.waitForTimeout(300); await p.keyboard.press('Enter'); await p.waitForTimeout(3000); },
-    tab: async (n) => { await p.getByLabel(n, { exact: true }).first().click(); await p.waitForTimeout(1800); },
-    view: async (n) => { await p.getByText(n, { exact: true }).first().click(); await p.waitForTimeout(1500); },
-    setting: async (n) => { await p.getByLabel(/Einstellungen/).first().click(); await p.waitForTimeout(1500); await p.getByText(n, { exact: true }).first().click(); },
+    execFileSync('python3', ['-c', `from PIL import Image; Image.open(${JSON.stringify(png)}).convert('RGB').save(${JSON.stringify(path.join(OUTV, name + '.webp'))}, 'WEBP', quality=78)`]);
   };
   const failed = [];
-  for (const [name, go] of SCREENS) {
-    try { await fresh(); await go(h); await save(name); }
-    catch (e) { failed.push(name); console.log('FEHLT', name, e.message.split('\n')[0]); }
+  for (const v of VARIANTS) {
+    const [l, mode] = v.split('-');
+    const t = TX[l];
+    OUTV = path.join(OUT, v); fs.mkdirSync(OUTV, { recursive: true });
+    // Neu laden verliert die Beispielfamilie, darum jedes Mal frisch über "Ich wurde eingeladen". Sprache per #en, Modus per gespeicherter Wahl.
+    const fresh = async () => {
+      await p.goto(URL); await p.evaluate((d) => { localStorage.clear(); if (d) localStorage.setItem('famcal.theme', 'dunkel'); }, mode === 'dark');
+      await p.goto(URL + (l === 'en' ? '/#en' : '/')); await p.reload(); await p.waitForTimeout(2500);
+      await p.getByText(t.invited).click({ timeout: 8000 }); await p.waitForTimeout(2200);
+      if (l === 'en') { await english(p); await p.waitForTimeout(300); }
+    };
+    const h = {
+      p, t, l,
+      can: () => p.evaluate((c) => { globalThis.__canned = c; }, CANNED),
+      say: async (x) => { await p.getByPlaceholder(/Sprich oder schreib|Just say or type/).fill(x); await p.waitForTimeout(300); await p.keyboard.press('Enter'); await p.waitForTimeout(3000); },
+      tab: async (n) => { await p.getByLabel(n, { exact: true }).first().click(); await p.waitForTimeout(1800); },
+      view: async (n) => { await p.getByText(n, { exact: true }).first().click(); await p.waitForTimeout(1500); },
+      setting: async (n) => { await p.getByLabel(t.settings).first().click(); await p.waitForTimeout(1500); await p.getByText(n, { exact: true }).first().click(); },
+    };
+    for (const [name, go] of SCREENS.filter(([n]) => !ONLY || ONLY.includes(n))) {
+      try { await fresh(); await go(h); await save(name); console.log('ok', v, name); }
+      catch (e) { failed.push(`${v}/${name}`); console.log('FEHLT', v, name, e.message.split('\n')[0]); }
+    }
   }
   await b.close(); server.close();
   if (failed.length) { console.log('Nicht aktualisiert:', failed.join(', ')); process.exitCode = 2; }

@@ -1,6 +1,6 @@
 # Landing Page
 
-Quelle: `landing.src.html`. Die Telefone zeigen echte Screens aus der App (`shots/*.webp`), eine Funktion pro Abschnitt im Hero. Texte stehen auf Deutsch und Englisch im `T` Dictionary, die Funktionen in `feats`. Die Reihenfolge der Screens im `#mainScreen` muss zu `feats` passen.
+Quelle: `landing.src.html`. Die Telefone zeigen echte Screens aus der App, je in vier Varianten (`shots/de-light`, `de-dark`, `en-light`, `en-dark`); die Seite wechselt sie mit Sprache und Modus, eine Funktion pro Abschnitt im Hero. Texte stehen auf Deutsch und Englisch im `T` Dictionary, die Funktionen in `feats`. Die Reihenfolge der Screens im `#mainScreen` muss zu `feats` passen.
 
 Nach jeder neuen App-Version:
 
@@ -9,7 +9,8 @@ Nach jeder neuen App-Version:
     EXPO_PUBLIC_DEMO=1 EXPO_OFFLINE=1 CI=1 npx expo export -p web
     git checkout -- src
     # hier
-    node landing/sync-screens.js <app>/dist           # Screens neu fotografieren
+    node landing/sync-screens.js <app>/dist           # alle Screens in allen vier Varianten (dauert ca. 20 Min)
+    node landing/sync-screens.js <app>/dist en-dark chat,termin   # nur einzelne
     python3 landing/build.py landing/landing.src.html famcal-landing.html
 
 Danach `famcal-landing.html` auf https://claude.ai/artifact/996SkyXtAPmLNg3yicTGtW veröffentlichen.
@@ -17,3 +18,5 @@ Danach `famcal-landing.html` auf https://claude.ai/artifact/996SkyXtAPmLNg3yicTG
 Welche Screens wohin kommen, steht in `SCREENS` in `sync-screens.js`. Ändert sich ein Text, über den das Skript navigiert (z. B. „U6 bei Dr. Weber“ oder „Urlaub und Feiertage“), meldet es den Screen als fehlend und behält das alte Bild.
 
 Der Patch lässt feste Antworten des Assistenten zu (Rezept, Watchlist, Merken) und macht den Chat für Toms Nachrichten beschreibbar. Ortssuche und Kartenkacheln sind in der Cloud gesperrt; das Skript antwortet mit einer Beispielpraxis und der neutralen Kachel `shots-tile.png`. Mails weiterleiten ist als „Bald“ markiert (`soon: true` in `feats`).
+
+Englisch: Die App zeigt Englisch über `#en` im Link, Dunkel über die gespeicherte Wahl `famcal.theme`. Die Beispielfamilie ist auf Deutsch angelegt, darum übersetzt `EN_DATA` in `sync-screens.js` ihre Texte vor den englischen Fotos.

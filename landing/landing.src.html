@@ -71,6 +71,7 @@ h1 { font-weight: 600; font-size: clamp(40px, 6.4vw, 78px); line-height: 1.02; l
 .island { position: absolute; z-index: 9; top: 10px; left: 50%; transform: translateX(-50%); width: 92px; height: 26px; border-radius: 999px; background: #000 }
 .scr.shot img { display: block; width: 100%; height: auto }
 .scr.shot .status { padding-bottom: 6px; color: #16232A }
+:root[data-mode="dark"] .scr.shot .status { color: #F2F1EE }
 .scr { position: absolute; inset: 0; background: var(--screen); display: flex; flex-direction: column; will-change: transform; transform-origin: 50% 0 }
 .scr.stacked { border-radius: 30px 30px 0 0; box-shadow: 0 -10px 30px rgba(10,10,10,.12); transform: translateY(100%) }
 .status { display: flex; justify-content: space-between; padding: 14px 26px 0; font: 600 13px/1 var(--f-body); flex-shrink: 0 }
@@ -236,35 +237,35 @@ h1 { font-weight: 600; font-size: clamp(40px, 6.4vw, 78px); line-height: 1.02; l
       <div class="cta-row"><a class="btn btn-primary" href="#liste" data-i18n="cta1">Auf die Warteliste</a><a class="btn btn-ghost" href="https://claude.ai/artifact/NfyQBbzthKG9d21rTXfM1F" target="_blank" rel="noopener" data-i18n="cta2">Prototyp ansehen</a></div>
     </div>
 
-    <div class="ph side" data-pos="-2" aria-hidden="true"><div class="screen"><span class="island"></span><div class="scr shot" data-scr-name="jahr" style="background:{{bg:jahr}}"><div class="status"><span>8:50</span><span>●●●</span></div><img src="{{shot:jahr}}" alt=""></div></div></div>
-    <div class="ph side" data-pos="-1" aria-hidden="true"><div class="screen"><span class="island"></span><div class="scr shot" data-scr-name="tage" style="background:{{bg:tage}}"><div class="status"><span>8:50</span><span>●●●</span></div><img src="{{shot:tage}}" alt=""></div></div></div>
-    <div class="ph side" data-pos="1" aria-hidden="true"><div class="screen"><span class="island"></span><div class="scr shot" data-scr-name="brieflesen" style="background:{{bg:brieflesen}}"><div class="status"><span>8:50</span><span>●●●</span></div><img src="{{shot:brieflesen}}" alt=""></div></div></div>
-    <div class="ph side" data-pos="2" aria-hidden="true"><div class="screen"><span class="island"></span><div class="scr shot" data-scr-name="monat" style="background:{{bg:monat}}"><div class="status"><span>8:50</span><span>●●●</span></div><img src="{{shot:monat}}" alt=""></div></div></div>
+    <div class="ph side" data-pos="-2" aria-hidden="true"><div class="screen"><span class="island"></span><div class="scr shot" data-shot="jahr"><div class="status"><span>8:50</span><span>●●●</span></div><img alt=""></div></div></div>
+    <div class="ph side" data-pos="-1" aria-hidden="true"><div class="screen"><span class="island"></span><div class="scr shot" data-shot="tage"><div class="status"><span>8:50</span><span>●●●</span></div><img alt=""></div></div></div>
+    <div class="ph side" data-pos="1" aria-hidden="true"><div class="screen"><span class="island"></span><div class="scr shot" data-shot="brieflesen"><div class="status"><span>8:50</span><span>●●●</span></div><img alt=""></div></div></div>
+    <div class="ph side" data-pos="2" aria-hidden="true"><div class="screen"><span class="island"></span><div class="scr shot" data-shot="monat"><div class="status"><span>8:50</span><span>●●●</span></div><img alt=""></div></div></div>
 
     <div class="ph" id="mainPhone" role="img" data-i18n-aria="phone"><div class="screen" id="mainScreen"><span class="island"></span>
-      <div class="scr shot" data-scr-name="chat" style="background:{{bg:chat}}"><div class="status"><span>8:50</span><span>●●●</span></div><img src="{{shot:chat}}" alt=""></div>
-      <div class="scr shot stacked" data-scr-name="termin" style="background:{{bg:termin}}"><div class="status"><span>8:50</span><span>●●●</span></div><img src="{{shot:termin}}" alt=""></div>
-      <div class="scr shot stacked" data-scr-name="nachfrage" style="background:{{bg:nachfrage}}"><div class="status"><span>8:50</span><span>●●●</span></div><img src="{{shot:nachfrage}}" alt=""></div>
-      <div class="scr shot stacked" data-scr-name="einkauf" style="background:{{bg:einkauf}}"><div class="status"><span>8:50</span><span>●●●</span></div><img src="{{shot:einkauf}}" alt=""></div>
-      <div class="scr shot stacked" data-scr-name="rezept" style="background:{{bg:rezept}}"><div class="status"><span>8:50</span><span>●●●</span></div><img src="{{shot:rezept}}" alt=""></div>
-      <div class="scr shot stacked" data-scr-name="brief" style="background:{{bg:brief}}"><div class="status"><span>8:50</span><span>●●●</span></div><img src="{{shot:brief}}" alt=""></div>
-      <div class="scr shot stacked" data-scr-name="teilen" style="background:{{bg:teilen}}"><div class="status"><span>8:50</span><span>●●●</span></div><img src="{{shot:teilen}}" alt=""></div>
-      <div class="scr shot stacked" data-scr-name="mail" style="background:{{bg:mail}}"><div class="status"><span>8:50</span><span>●●●</span></div><img src="{{shot:mail}}" alt=""></div>
-      <div class="scr shot stacked" data-scr-name="fragen" style="background:{{bg:fragen}}"><div class="status"><span>8:50</span><span>●●●</span></div><img src="{{shot:fragen}}" alt=""></div>
-      <div class="scr shot stacked" data-scr-name="chat2" style="background:{{bg:chat2}}"><div class="status"><span>8:50</span><span>●●●</span></div><img src="{{shot:chat2}}" alt=""></div>
-      <div class="scr shot stacked" data-scr-name="wissen" style="background:{{bg:wissen}}"><div class="status"><span>8:50</span><span>●●●</span></div><img src="{{shot:wissen}}" alt=""></div>
-      <div class="scr shot stacked" data-scr-name="briefing" style="background:{{bg:briefing}}"><div class="status"><span>8:50</span><span>●●●</span></div><img src="{{shot:briefing}}" alt=""></div>
-      <div class="scr shot stacked" data-scr-name="mitgedacht" style="background:{{bg:mitgedacht}}"><div class="status"><span>8:50</span><span>●●●</span></div><img src="{{shot:mitgedacht}}" alt=""></div>
-      <div class="scr shot stacked" data-scr-name="heute" style="background:{{bg:heute}}"><div class="status"><span>8:50</span><span>●●●</span></div><img src="{{shot:heute}}" alt=""></div>
-      <div class="scr shot stacked" data-scr-name="woche" style="background:{{bg:woche}}"><div class="status"><span>8:50</span><span>●●●</span></div><img src="{{shot:woche}}" alt=""></div>
-      <div class="scr shot stacked" data-scr-name="bearbeiten" style="background:{{bg:bearbeiten}}"><div class="status"><span>8:50</span><span>●●●</span></div><img src="{{shot:bearbeiten}}" alt=""></div>
-      <div class="scr shot stacked" data-scr-name="listen" style="background:{{bg:listen}}"><div class="status"><span>8:50</span><span>●●●</span></div><img src="{{shot:listen}}" alt=""></div>
-      <div class="scr shot stacked" data-scr-name="watchlist" style="background:{{bg:watchlist}}"><div class="status"><span>8:50</span><span>●●●</span></div><img src="{{shot:watchlist}}" alt=""></div>
-      <div class="scr shot stacked" data-scr-name="wieder" style="background:{{bg:wieder}}"><div class="status"><span>8:50</span><span>●●●</span></div><img src="{{shot:wieder}}" alt=""></div>
-      <div class="scr shot stacked" data-scr-name="karte" style="background:{{bg:karte}}"><div class="status"><span>8:50</span><span>●●●</span></div><img src="{{shot:karte}}" alt=""></div>
-      <div class="scr shot stacked" data-scr-name="urlaub" style="background:{{bg:urlaub}}"><div class="status"><span>8:50</span><span>●●●</span></div><img src="{{shot:urlaub}}" alt=""></div>
-      <div class="scr shot stacked" data-scr-name="kalender" style="background:{{bg:kalender}}"><div class="status"><span>8:50</span><span>●●●</span></div><img src="{{shot:kalender}}" alt=""></div>
-      <div class="scr shot stacked" data-scr-name="widget" style="background:{{bg:widget}}"><div class="status"><span>8:50</span><span>●●●</span></div><img src="{{shot:widget}}" alt=""></div>
+      <div class="scr shot" data-shot="chat"><div class="status"><span>8:50</span><span>●●●</span></div><img alt=""></div>
+      <div class="scr shot stacked" data-shot="termin"><div class="status"><span>8:50</span><span>●●●</span></div><img alt=""></div>
+      <div class="scr shot stacked" data-shot="nachfrage"><div class="status"><span>8:50</span><span>●●●</span></div><img alt=""></div>
+      <div class="scr shot stacked" data-shot="einkauf"><div class="status"><span>8:50</span><span>●●●</span></div><img alt=""></div>
+      <div class="scr shot stacked" data-shot="rezept"><div class="status"><span>8:50</span><span>●●●</span></div><img alt=""></div>
+      <div class="scr shot stacked" data-shot="brief"><div class="status"><span>8:50</span><span>●●●</span></div><img alt=""></div>
+      <div class="scr shot stacked" data-shot="teilen"><div class="status"><span>8:50</span><span>●●●</span></div><img alt=""></div>
+      <div class="scr shot stacked" data-shot="mail"><div class="status"><span>8:50</span><span>●●●</span></div><img alt=""></div>
+      <div class="scr shot stacked" data-shot="fragen"><div class="status"><span>8:50</span><span>●●●</span></div><img alt=""></div>
+      <div class="scr shot stacked" data-shot="chat2"><div class="status"><span>8:50</span><span>●●●</span></div><img alt=""></div>
+      <div class="scr shot stacked" data-shot="wissen"><div class="status"><span>8:50</span><span>●●●</span></div><img alt=""></div>
+      <div class="scr shot stacked" data-shot="briefing"><div class="status"><span>8:50</span><span>●●●</span></div><img alt=""></div>
+      <div class="scr shot stacked" data-shot="mitgedacht"><div class="status"><span>8:50</span><span>●●●</span></div><img alt=""></div>
+      <div class="scr shot stacked" data-shot="heute"><div class="status"><span>8:50</span><span>●●●</span></div><img alt=""></div>
+      <div class="scr shot stacked" data-shot="woche"><div class="status"><span>8:50</span><span>●●●</span></div><img alt=""></div>
+      <div class="scr shot stacked" data-shot="bearbeiten"><div class="status"><span>8:50</span><span>●●●</span></div><img alt=""></div>
+      <div class="scr shot stacked" data-shot="listen"><div class="status"><span>8:50</span><span>●●●</span></div><img alt=""></div>
+      <div class="scr shot stacked" data-shot="watchlist"><div class="status"><span>8:50</span><span>●●●</span></div><img alt=""></div>
+      <div class="scr shot stacked" data-shot="wieder"><div class="status"><span>8:50</span><span>●●●</span></div><img alt=""></div>
+      <div class="scr shot stacked" data-shot="karte"><div class="status"><span>8:50</span><span>●●●</span></div><img alt=""></div>
+      <div class="scr shot stacked" data-shot="urlaub"><div class="status"><span>8:50</span><span>●●●</span></div><img alt=""></div>
+      <div class="scr shot stacked" data-shot="kalender"><div class="status"><span>8:50</span><span>●●●</span></div><img alt=""></div>
+      <div class="scr shot stacked" data-shot="widget"><div class="status"><span>8:50</span><span>●●●</span></div><img alt=""></div>
     </div></div>
 
     <div class="card l" id="cardL" aria-hidden="true"><div class="inner" id="innerL"></div></div>
@@ -294,6 +295,12 @@ h1 { font-weight: 600; font-size: clamp(40px, 6.4vw, 78px); line-height: 1.02; l
 
 <script>
 const IMG = {{imgmap}};
+// Echte App-Screens je Sprache und Modus (build.py füllt SHOTS aus landing/shots/<sprache>-<modus>/)
+const SHOTS = {{shots}};
+function applyShots() {
+  const v = `${lang}-${document.documentElement.dataset.mode === 'dark' ? 'dark' : 'light'}`;
+  document.querySelectorAll('.scr[data-shot]').forEach(el => { const s = SHOTS[el.dataset.shot]; const [src, bg] = s[v] || s['de-light']; el.style.background = bg; const im = el.querySelector('img'); if (im.getAttribute('src') !== src) im.src = src; });
+}
 const CHK = '{{chkraw}}';
 const $ = id => document.getElementById(id);
 const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v));
@@ -302,7 +309,7 @@ const ease = t => t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
 const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 // Hell/Dunkel: Standard hell, Wahl wird pro Browser gemerkt
-function setMode(m) { document.documentElement.dataset.mode = m; $('mode').setAttribute('aria-pressed', m === 'dark'); $('mode').setAttribute('aria-label', T[lang][m === 'dark' ? 'light' : 'dark']); try { localStorage.setItem('famcal-mode', m) } catch (e) {} }
+function setMode(m) { document.documentElement.dataset.mode = m; $('mode').setAttribute('aria-pressed', m === 'dark'); $('mode').setAttribute('aria-label', T[lang][m === 'dark' ? 'light' : 'dark']); try { localStorage.setItem('famcal-mode', m) } catch (e) {} applyShots(); }
 
 // Sprache: Deutsch und Englisch, Standard aus dem Browser, Wahl wird gemerkt
 const T = {
@@ -348,7 +355,7 @@ const T = {
     h1: 'Say it once. You both know.',
     lede: 'Say, type or snap what’s coming up. FamCal knows whether it’s an appointment or something for the shopping list and puts it in the right place. For both of you, instantly.',
     cta1: 'Join the waitlist', cta2: 'See the prototype',
-    phone: 'Real screens from the FamCal app, in German, one per feature.',
+    phone: 'Real screens from the FamCal app, one per feature.',
     wlH: 'Try it as a pair soon.', wlP: 'Sign up and we will let you know as soon as you can test FamCal together.',
     mail: 'Email', ph: 'you@email.com', submit: 'Sign up', note: 'Preview: the form does not save anything yet.', thanks: 'Thanks! Nothing is saved in this preview yet.',
     t1: 'In your language', t1s: 'English and German from day one. Gets “day after tomorrow” and “half past two”.',
@@ -398,6 +405,7 @@ function setLang(l) {
   $('innerL').innerHTML = FEATS.map((x, i) => `<div class="blk"><span class="num">${i + 1} / ${FEATS.length}${x.soon ? ` · ${T[lang].soon}` : ''}</span><h2>${x.h}</h2><p>${x.p}</p></div>`).join('');
   $('innerR').innerHTML = FEATS.map(x => `<div class="blk">${featsHTML(x.f)}</div>`).join('');
   $('srFeat').innerHTML = FEATS.map(x => `<h2>${x.h}</h2><p>${x.p}</p><ul>${x.f.map(([b, s]) => `<li>${b}: ${s}</li>`).join('')}</ul>`).join('');
+  applyShots();
 }
 setLang(lang);
 let savedMode = 'light'; try { savedMode = localStorage.getItem('famcal-mode') || 'light' } catch (e) {}
