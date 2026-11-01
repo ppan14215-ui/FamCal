@@ -53,7 +53,7 @@ function Termine({ ids, snap, changed, ask, timeQ, fresh, placeQ }: { ids: strin
     <>
       {live.map((e) => (
         <PressScale key={e.id} scale={0.99} onPress={() => router.push(`/termin/${e.id}`)} style={{ flexDirection: 'row', alignItems: 'center', gap: 12, padding: 10, paddingRight: 12 }}>
-          <Tile name={e.icon} size={48} radius={14} celebrate={play} />
+          <Tile bg="transparent" name={e.icon} size={48} radius={14} celebrate={play} />
           <View style={{ flex: 1, minWidth: 0, gap: 1 }}>
             <Txt size={16} line={21} weight={600} numberOfLines={2}>{e.title}</Txt>
             <Txt size={13.5} color={tokens.sub} numberOfLines={1}>{[(e as CalEvent).endDate && (e as CalEvent).endDate! > e.date ? tx(`${short(e.date)} bis ${short((e as CalEvent).endDate!)}`, `${short(e.date)} to ${short((e as CalEvent).endDate!)}`) : short(e.date), e.allDay ? tx('ganztägig', 'all day') : e.end ? tx(`${hm(e.start)} bis ${hm(e.end)}`, `${hm(e.start)} to ${hm(e.end)}`) : hm(e.start), e.place].filter(Boolean).join(' · ')}</Txt>
@@ -305,7 +305,7 @@ function PackOffer({ ids }: { ids: string[] }) {
     const n = list.sections.reduce((a, sec) => a + sec.items.length, 0);
     return (
       <PressScale scale={0.99} onPress={() => { actions.setActiveList(list.id); router.push('/listen'); }} style={{ flexDirection: 'row', alignItems: 'center', gap: 12, padding: 10, paddingRight: 14, borderTopWidth: 1, borderTopColor: tokens.hair }}>
-        <Tile name="reise" size={40} radius={12} />
+        <Tile bg="transparent" name="reise" size={40} radius={12} />
         <View style={{ flex: 1, minWidth: 0 }}>
           <Txt size={15} weight={600} numberOfLines={1}>{list.name}</Txt>
           <Txt size={13} color={tokens.sub}>{tx(`${n} Dinge, für euch gedacht`, `${n} things, made for you`)}</Txt>
@@ -318,7 +318,7 @@ function PackOffer({ ids }: { ids: string[] }) {
   const forWhom = kids.length ? kids.map((k) => `${k.name} (${ageText(k.months)})`).join(', ') : '';
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, padding: 10, paddingRight: 12, borderTopWidth: 1, borderTopColor: tokens.hair }}>
-      <Tile name="reise" size={40} radius={12} />
+      <Tile bg="transparent" name="reise" size={40} radius={12} />
       <View style={{ flex: 1, minWidth: 0 }}>
         <Txt size={15} weight={600}>{tx('Packliste dazu?', 'Packing list for it?')}</Txt>
         <Txt size={13} color={tokens.sub} numberOfLines={2}>{forWhom ? tx(`Passend für ${forWhom}`, `Made for ${forWhom}`) : tx('Passend zu Reise und Dauer', 'Made for the trip and its length')}</Txt>

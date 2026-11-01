@@ -76,7 +76,7 @@ export default function Chat() {
             {m.kind === 'u5' ? (
               <View style={{ padding: 12, borderRadius: 20, borderBottomLeftRadius: 6, backgroundColor: tokens.row, gap: 10 }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-                  <Tile name="u-heft" size={44} radius={14} />
+                  <Tile bg="transparent" name="u-heft" size={44} radius={14} />
                   <View>
                     <Txt size={16} weight={600}>U5 · 6. bis 7. Monat</Txt>
                     <Meta>14. März bis 14. April 2027</Meta>

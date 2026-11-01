@@ -157,7 +157,7 @@ function EventCard({ e, needsTime, ask, suggest, onSuggest, onAllDay, onUndo, on
   return (
     <Animated.View entering={FadeIn.duration(220)} style={{ gap: 14 }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-        <Animated.View entering={CALM}><Tile name={live.icon} size={52} radius={16} /></Animated.View>
+        <Animated.View entering={CALM}><Tile bg="transparent" name={live.icon} size={52} radius={16} /></Animated.View>
         <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
             <LineIcon name="check" size={13} color={tokens.done} stroke={2.8} />

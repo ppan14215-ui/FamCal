@@ -18,7 +18,7 @@ export default function HintCard({ icon, tile, kicker, title, body, yes, no, onY
   return (
     <Animated.View exiting={FadeOut.duration(180)} style={{ gap: 12, padding: 16, borderRadius: 22, backgroundColor: tokens.row }}>
       <View style={{ flexDirection: 'row', gap: 12, alignItems: 'flex-start' }}>
-        {tile ? <Tile name={icon} size={44} radius={13} /> : <ClayIcon name={icon} size={44} />}
+        {tile ? <Tile bg="transparent" name={icon} size={44} radius={13} /> : <ClayIcon name={icon} size={44} />}
         <View style={{ flex: 1, gap: 4 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
             <LineIcon name="sparkle" size={13} color={tokens.sub} />
