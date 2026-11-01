@@ -92,7 +92,8 @@ export default function Chat() {
         }) : (
           <View style={{ flex: 1, justifyContent: 'center', gap: 8, paddingHorizontal: 8 }}>
             {/* Memo waits here until the first sentence (onboarding storyboard 01.11., step 8). */}
-            <Memo act="land" size={72} delay={200} style={{ marginLeft: -6 }} />
+            {/* After 21 Uhr Memo sleeps in the empty chat (concept 01.11.). */}
+            <Memo act={new Date().getHours() >= 21 || new Date().getHours() < 6 ? 'sleep' : 'land'} size={72} delay={200} style={{ marginLeft: -6 }} />
             <Txt size={22} line={28} weight={700} tracking={-0.5}>{tx('Einmal sagen. Beide wissen’s.', 'Say it once. You both know.')}</Txt>
             {simple ? (
               <>

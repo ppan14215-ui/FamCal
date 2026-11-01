@@ -24,6 +24,7 @@ import { getFamily, myRole } from '../lib/sync';
 import { hm, short, TODAY } from '../lib/dates';
 import HeaderRight from './ui/HeaderRight';
 import { tx } from '../i18n/lang';
+import Memo from './onboarding/Memo';
 import { useVeil, Step, Dots } from './Veil';
 import { isTrip, makePackList, kidsOn, ageText } from '../lib/pack';
 import { isVacation, leftLine } from '../lib/urlaub';
@@ -364,10 +365,18 @@ function Ask({ f, me, answer }: { f: FeedEntry; me: 'J' | 'T'; answer?: FeedEntr
  * so nothing jumps when one becomes the other.
  */
 const cardFrame = { alignSelf: 'stretch' as const, borderRadius: 18, overflow: 'hidden' as const, backgroundColor: tokens.row };
-function Reply({ text }: { text?: string }) {
+/**
+ * Memo is the assistant's face (Julian 01.11.): wobbles while thinking, blinks once when it has answered or
+ * just entered something. Older cards in the log stay still, so a long chat never twitches.
+ */
+function Reply({ text, live, fresh }: { text?: string; live?: boolean; fresh?: boolean }) {
+  const act = live ? (text ? 'blink' : 'wobble') : fresh ? 'blink' : 'idle';
   return (
-    <View style={{ paddingTop: 12, paddingHorizontal: 14, paddingBottom: 4, gap: 4 }}>
-      <Txt size={12} weight={600} tracking={0.6} color={tokens.done}>{tx('ASSISTENT', 'ASSISTANT')}</Txt>
+    <View style={{ paddingTop: 10, paddingHorizontal: 14, paddingBottom: 4, gap: 4 }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+        <Memo act={act} size={24} shadow={false} alive={false} delay={0} beat={text ? 1 : 0} />
+        <Txt size={12} weight={600} tracking={0.6} color={tokens.done}>MEMO</Txt>
+      </View>
       {text ? <Animated.View entering={swapIn}><Txt size={15} line={21}>{text}</Txt></Animated.View> : <View style={{ paddingVertical: 4 }}><Dots /></View>}
     </View>
   );
@@ -400,10 +409,10 @@ function EntryRow({ f, mine, me, answer }: { f: FeedEntry; mine: boolean; me: 'J
           <Txt size={15} line={21}>{f.ask ? f.ask.q : shortSaid(f.said)}</Txt>
         </View>
         {f.ask ? <Ask f={f} me={me} answer={answer} /> : null}
-        {f.say && !f.undone && !(f.kind === 'made' && (f.events || f.items || f.tasks)) ? <View style={cardFrame}><Reply text={f.say} /><View style={{ height: 10 }} /></View> : null}
+        {f.say && !f.undone && !(f.kind === 'made' && (f.events || f.items || f.tasks)) ? <View style={cardFrame}><Reply text={f.say} fresh={Date.now() - Date.parse(f.at) < 60000} /><View style={{ height: 10 }} /></View> : null}
         {f.kind === 'made' && (f.events || f.items || f.tasks || f.undone) ? (
           <Animated.View layout={rowLayout} style={[cardFrame, { opacity: f.undone ? 0.55 : 1 }]}>
-            {f.say && !f.undone ? <Reply text={f.say} /> : null}
+            {f.say && !f.undone ? <Reply text={f.say} fresh={Date.now() - Date.parse(f.at) < 60000} /> : null}
             {f.undone ? null : f.events ? <Termine ids={f.events} snap={f.snap?.events} changed={f.changed} fresh={Date.now() - Date.parse(f.at) < 60000} ask={mine && !open && Date.now() - Date.parse(f.at) < 15 * 60000 ? me : undefined} timeQ={mine && !open && Date.now() - Date.parse(f.at) < 15 * 60000 ? f.timeQ : undefined} placeQ={mine && !open && Date.now() - Date.parse(f.at) < 15 * 60000} /> : null}
             {f.undone ? null : f.events ? <VacationLeft ids={f.events} /> : null}
             {f.undone || HIDDEN.suggestions ? null : f.events ? <PackOffer ids={f.events} /> : null}
@@ -446,7 +455,7 @@ export function Thinking({ by }: { by: 'J' | 'T' }) {
         </>
       ) : null}
       <Animated.View layout={rowLayout} style={cardFrame}>
-      <Reply text={v.reply} />
+      <Reply text={v.reply} live />
       {/* Julian 31.10.: one thinking sign only. The typing dots in Reply say it; steps show only once there is a plan. */}
       {v.head || v.lines.length ? <View style={{ paddingHorizontal: 14, paddingTop: 6, paddingBottom: 14, gap: 10 }}>
         {v.head ? <Txt size={12} weight={600} tracking={0.6} color={tokens.done}>{v.head.toUpperCase()}</Txt> : null}

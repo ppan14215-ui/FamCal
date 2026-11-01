@@ -81,6 +81,7 @@ export default function Memo({ act = 'idle', size = 88, beat = 0, alive = true, 
       sy.value = withDelay(delay, withTiming(1.1, { duration: 420, easing: Easing.in(Easing.quad) }));
       sx.value = withDelay(delay, withTiming(0.93, { duration: 420, easing: Easing.in(Easing.quad) }));
     } else if (act === 'blink') {
+      rot.value = withTiming(0, { duration: 160 });
       squash(0.94, 80);
       setTimeout(() => { sy.value = withSpring(1, { stiffness: 400, damping: 14 }); sx.value = withSpring(1, { stiffness: 400, damping: 14 }); }, 90);
       blink(40);
