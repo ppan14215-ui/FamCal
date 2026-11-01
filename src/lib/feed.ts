@@ -15,6 +15,7 @@ import { get, toast } from '../state/store';
 import { getFamily, myRole } from './sync';
 import { tx } from '../i18n/lang';
 import { suggestBring } from './talk';
+import { isPoints } from './points';
 import { persons, type PersonId } from '../theme';
 import type { ClayName } from './clayIcons';
 
@@ -139,6 +140,8 @@ export function addMade(said: string, ids: string[], text?: string, undo?: () =>
   }
   if (!ev.size && !tasks.length && !items && !say) return;
   const list = items && s.lists.find((l) => l.id === items!.list);
+  // Julian 01.11.: game points stay on the scoreboard, never in the chat log.
+  if (list && isPoints(list) && !ev.size && !tasks.length) return;
   const all = list?.sections.flatMap((sec) => sec.items) ?? [];
   const snap: Card['snap'] = {
     events: ev.size ? s.events.filter((e) => ev.has(e.id)).map((e) => ({ id: e.id, title: e.title, date: e.date, start: e.start, end: e.end, allDay: e.allDay, icon: e.icon, place: e.place })) : undefined,
