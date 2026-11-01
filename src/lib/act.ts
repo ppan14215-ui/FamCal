@@ -10,7 +10,7 @@ import type { CalEvent, Who, List } from '../state/types';
 import { get, actions, toast } from '../state/store';
 import { persons } from '../theme/tokens';
 import { blueprintFor, blocksLine, GAMES, gameBlueprint } from './blueprint';
-import { gameRule } from './games';
+import { gameRule, kniffelRound, KNIFFEL_FIELDS, KNIFFEL_BONUS, kniffelUpper } from './games';
 import { understand, findWhen, whoOf, clean, Reply, fromModel, type Suggest } from './talk';
 import { canUnderstand, understandOnline, understandLive, type Convo, type Glimpse } from './verstehen';
 import { tx, EN } from '../i18n/lang';
@@ -353,6 +353,7 @@ function termin(said: string, id: string): Plan {
 
 /** A round for a points list: "Julian 35, Sophia 12", one Rückgängig takes the round back. */
 export function pointsPlan(list: List, said: string): Plan | null {
+  if (/kniffel|yahtzee/i.test(list.name)) { const k = kniffelPlan(list, said); if (k) return k; }
   // Game words become points first: "Julian sagt 2, macht 2" in Wizard, "Full House" in Kniffel (Julian 01.11.).
   const r = parseRound(gameRule(list.name)?.spoken?.(said) ?? said);
   if (!r) return null;
@@ -384,6 +385,48 @@ export function pointsPlan(list: List, said: string): Plan | null {
       return {
         land: touched[0], lit: touched, go: '/listen',
         result: { kind: 'done', text, sub: factor === 2 ? tx('Diese Runde zählt doppelt.', 'This round counts double.') : otherSees(), undo: () => { before.forEach((v, id) => actions.setItemData(list.id, id, { rounds: v })); made.forEach((id) => actions.deleteItem(list.id, id)); } },
+      };
+    },
+  };
+}
+
+/** Kniffel: each named box goes on the player's sheet; 63 on top adds the 35 bonus once (Julian 01.11.). */
+function kniffelPlan(list: List, said: string): Plan | null {
+  const r = kniffelRound(said);
+  if (!r) return null;
+  const label = (k: string) => { const f = KNIFFEL_FIELDS.find((x) => x.key === k)!; return tx(f.de, f.en); };
+  const taken = r.filter((x) => { const p = matchPlayer(players(list), x.who); return p?.data?.fields?.[x.field] !== undefined; });
+  const todo = r.filter((x) => !taken.includes(x));
+  const steps = [
+    ...todo.map((x) => `${x.who}: ${label(x.field)} ${x.points}`),
+    ...taken.map((x) => tx(`${x.who} hat ${label(x.field)} schon, bleibt wie es ist.`, `${x.who} already has ${label(x.field)}, left as is.`)),
+  ];
+  return {
+    head: tx(`Kniffel-Block`, `Yahtzee sheet`),
+    steps,
+    run: () => {
+      actions.setActiveList(list.id);
+      const before = new Map<string, { rounds?: number[]; fields?: Record<string, number> }>();
+      const made: string[] = [];
+      const touched: string[] = [];
+      let bonus: string | undefined;
+      for (const x of todo) {
+        const cur = () => get().lists.find((l) => l.id === list.id) ?? list;
+        let p = matchPlayer(players(cur()), x.who);
+        if (!p) { const nid = actions.addItem(list.id, x.who); if (!nid) continue; made.push(nid); p = players(cur()).find((i) => i.id === nid); }
+        if (!p) continue;
+        if (!before.has(p.id)) before.set(p.id, { rounds: p.data?.rounds ?? [], fields: p.data?.fields ?? {} });
+        const fields = { ...(p.data?.fields ?? {}), [x.field]: x.points };
+        const rounds = [...(p.data?.rounds ?? []), x.points];
+        if (fields.bonus === undefined && kniffelUpper(fields) >= 63) { fields.bonus = KNIFFEL_BONUS; rounds.push(KNIFFEL_BONUS); bonus = p.name; }
+        actions.setItemData(list.id, p.id, { fields, rounds, at: new Date().toISOString() });
+        touched.push(p.id);
+      }
+      const now = get().lists.find((l) => l.id === list.id) ?? list;
+      const text = touched.length ? tx(`Eingetragen. ${standLine(now)}.`, `Done. ${standLine(now)}.`) : tx('Das Feld ist schon belegt.', 'That box is already filled.');
+      return {
+        land: touched[0], lit: touched, go: '/listen',
+        result: { kind: 'done', text, sub: bonus ? tx(`${bonus} hat oben 63 geschafft: 35 Bonus.`, `${bonus} made 63 on top: 35 bonus.`) : otherSees(), undo: () => { before.forEach((v, id) => actions.setItemData(list.id, id, v)); made.forEach((id) => actions.deleteItem(list.id, id)); } },
       };
     },
   };

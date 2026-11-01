@@ -73,3 +73,44 @@ export const GAME_RULES: GameRule[] = [
 ];
 
 export const gameRule = (name: string): GameRule | undefined => GAME_RULES.find((g) => g.re.test(name));
+
+/** Kniffel sheet (Julian 01.11.): 13 boxes, each once per player, 35 bonus at 63 on top. */
+export type KniffelField = { key: string; de: string; en: string; re: RegExp; fixed?: number; face?: number };
+export const KNIFFEL_FIELDS: KniffelField[] = [
+  { key: '1', de: 'Einser', en: 'Ones', re: /einser|\bones\b|1er/i, face: 1 },
+  { key: '2', de: 'Zweier', en: 'Twos', re: /zweier|\btwos\b|2er/i, face: 2 },
+  { key: '3', de: 'Dreier', en: 'Threes', re: /(?<!pasch\s)dreier(?!pasch)|\bthrees\b|3er/i, face: 3 },
+  { key: '4', de: 'Vierer', en: 'Fours', re: /vierer(?!pasch)|\bfours\b|4er/i, face: 4 },
+  { key: '5', de: 'Fünfer', en: 'Fives', re: /f[üu]nfer|\bfives\b|5er/i, face: 5 },
+  { key: '6', de: 'Sechser', en: 'Sixes', re: /sechser|\bsixes\b|6er/i, face: 6 },
+  { key: '3k', de: 'Dreierpasch', en: '3 of a kind', re: /dreierpasch|three of a kind|3 of a kind/i },
+  { key: '4k', de: 'Viererpasch', en: '4 of a kind', re: /viererpasch|four of a kind|4 of a kind/i },
+  { key: 'fh', de: 'Full House', en: 'Full house', re: /full[\s-]?house/i, fixed: 25 },
+  { key: 'ks', de: 'Kleine Straße', en: 'Small straight', re: /kleine\w*\s+stra(ß|ss)e|small straight/i, fixed: 30 },
+  { key: 'gs', de: 'Große Straße', en: 'Large straight', re: /gro(ß|ss)e\w*\s+stra(ß|ss)e|large straight/i, fixed: 40 },
+  { key: 'kn', de: 'Kniffel', en: 'Yahtzee', re: /\bkniffel\b|\byahtzee\b/i, fixed: 50 },
+  { key: 'ch', de: 'Chance', en: 'Chance', re: /chance/i },
+];
+export const KNIFFEL_BONUS = 35;
+export const kniffelUpper = (f: Record<string, number> = {}) => KNIFFEL_FIELDS.filter((x) => x.face).reduce((a, x) => a + (f[x.key] ?? 0), 0);
+
+/**
+ * "Julian Full House, Sophia Dreierpasch 17, Oma Sechser 18" or "Julian streicht Kniffel".
+ * Points per box: the number said, else the fixed value; "drei Sechser" is 18. Null when no box is named.
+ */
+export function kniffelRound(said: string): { who: string; field: string; points: number }[] | null {
+  const out: { who: string; field: string; points: number }[] = [];
+  for (const part of said.split(/,|;|\s(?:und|and)\s/i)) {
+    const f = KNIFFEL_FIELDS.find((x) => x.re.test(part));
+    if (!f) continue;
+    const rest = part.replace(f.re, ' ');
+    const struck = /streich|gestrichen|null|\bnix\b|scratch|zero/i.test(rest);
+    const nums = (rest.match(/\d+/g) ?? []).map(Number);
+    const count = { ein: 1, eine: 1, zwei: 2, drei: 3, vier: 4, fünf: 5, fuenf: 5, one: 1, two: 2, three: 3, four: 4, five: 5 }[rest.match(/\b(eine?|zwei|drei|vier|f[üu]n?f|fuenf|one|two|three|four|five)\b/i)?.[1].toLowerCase() as string];
+    const points = struck ? 0 : nums.length ? (f.face && nums[0] <= 5 ? nums[0] * f.face : nums[0]) : f.fixed ?? (f.face && count ? count * f.face : NaN);
+    const who = rest.replace(/\d+/g, ' ').replace(/\b(streich\w*|gestrichen|null|nix|scratch|zero|hat|haben|mit|eine?|zwei|drei|vier|f[üu]n?f|one|two|three|four|five|punkte?|points?|für|for|auf|in|im|den|die|das|der|has|got|gets)\b/gi, ' ').trim().split(/\s+/).filter(Boolean).slice(0, 2).join(' ');
+    if (!who || !Number.isFinite(points)) continue;
+    out.push({ who: who.replace(/^./, (c) => c.toUpperCase()), field: f.key, points });
+  }
+  return out.length ? out : null;
+}

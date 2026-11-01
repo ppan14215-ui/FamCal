@@ -9,6 +9,7 @@
  *
  * A switch in the settings (per phone) picks this or the old way, to compare.
  */
+import { kniffelRound } from './games';
 import { useSyncExternalStore } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { fetch as streamFetch } from 'expo/fetch';
@@ -438,6 +439,8 @@ function opOf(a: Action, said: string): Op | null {
       const l = listOf(s(i.list));
       const scores = (Array.isArray(i.scores) ? i.scores : []).filter((x: any) => x && typeof x.who === 'string' && Number.isFinite(Number(x.points)));
       if (!l || !isPoints(l) || !scores.length) return null;
+      // Kniffel boxes come from the sentence itself, so the sheet knows which box was filled (Julian 01.11.).
+      if (/kniffel|yahtzee/i.test(l.name) && kniffelRound(said)) { const k = pointsPlan(l, said); if (k) return fromPlan(k); }
       const p = pointsPlan(l, scores.map((x: any) => `${x.who} ${Math.round(Number(x.points))}`).join(', '));
       return p ? fromPlan(p) : null;
     }
