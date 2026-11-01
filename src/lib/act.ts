@@ -374,7 +374,7 @@ export function pointsPlan(list: List, said: string): Plan | null {
         before.set(p.id, rounds);
         // Everyone gets a place in each round; whoever was not named scores 0.
         const padded = [...rounds, ...Array(Math.max(0, n - 1 - rounds.length)).fill(0)];
-        actions.setItemData(list.id, p.id, { rounds: [...padded, x.points * factor] });
+        actions.setItemData(list.id, p.id, { rounds: [...padded, x.points * factor], at: new Date().toISOString() });
         touched.push(p.id);
       }
       const now = get().lists.find((l) => l.id === list.id) ?? fresh;

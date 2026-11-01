@@ -15,8 +15,9 @@
 import { Platform } from 'react-native';
 import * as Notifications from 'expo-notifications';
 import { router } from 'expo-router';
-import { get, subscribe } from '../state/store';
-import type { CalEvent } from '../state/types';
+import { get, subscribe, actions } from '../state/store';
+import type { CalEvent, List } from '../state/types';
+import { isPoints, lastRound, GAME_IDLE_MS } from './points';
 import { myRole } from './sync';
 import { tx } from '../i18n/lang';
 import { expand, seriesId } from './repeat';
@@ -51,7 +52,7 @@ function outsideQuiet(t: Date, limit: Date): Date | null {
   return night < limit ? night : null;
 }
 
-type Plan = { id: string; when: Date; title: string; body: string; event?: string; open?: string };
+type Plan = { id: string; when: Date; title: string; body: string; event?: string; open?: string; list?: string };
 
 /** "In 10 Minuten", "In einer Stunde", "Morgen": how far ahead the reminder rings. */
 function lead(off: number, e: CalEvent) {
@@ -65,7 +66,7 @@ function lead(off: number, e: CalEvent) {
 function whenText(e: CalEvent) { return e.allDay ? tx('ganztägig', 'all day') : `${tx('um', 'at')} ${e.start}`; }
 
 /** Everything that should ring for the coming days, keyed so a changed Termin gets a new key. */
-function plan(events: CalEvent[], now: Date): Plan[] {
+function plan(events: CalEvent[], now: Date, lists: List[] = []): Plan[] {
   const until = new Date(now.getTime() + AHEAD_DAYS * 864e5);
   const me = myRole();
   const out: Plan[] = [];
@@ -107,6 +108,17 @@ function plan(events: CalEvent[], now: Date): Plan[] {
     out.push({ id: `${PREFIX}s:${ymd(d)}:${n}:${open}`, when: new Date(d), open: '/woche', title: tx('Eure Woche', 'Your week'),
       body: tx(`Eure Woche: ${n} ${n === 1 ? 'Termin' : 'Termine'}, ${open} noch ohne Zuständigen`, `Your week: ${n} ${n === 1 ? 'event' : 'events'}, ${open} still unassigned`) });
   }
+  // Julian 01.11.: a game list is temporary. Three hours after the last round, ask whether it is over.
+  for (const l of lists) {
+    if (!isPoints(l)) continue;
+    const t = lastRound(l);
+    if (t === undefined) continue;
+    const when = new Date(t + GAME_IDLE_MS);
+    if (when.getHours() >= QUIET_FROM || when.getHours() < QUIET_TO) { if (when.getHours() >= QUIET_FROM) when.setDate(when.getDate() + 1); when.setHours(9, 0, 0, 0); }
+    if (when <= now) continue;
+    out.push({ id: `${PREFIX}g:${l.id}:${t}`, when, open: '/listen', list: l.id, title: l.name,
+      body: tx(`Ist ${l.name} vorbei? Tippe, dann räume ich die Liste weg.`, `Is ${l.name} over? Tap and I'll clear the list.`) });
+  }
   return out;
 }
 
@@ -114,13 +126,14 @@ let started = false;
 let busy = false;
 let again = false;
 let lastEvents: unknown = null;
+let lastLists: unknown = null;
 
 /** Brings the phone's schedule in line with the plan: cancels what is gone, adds what is new. */
 async function reconcile() {
   if (busy) { again = true; return; }
   busy = true;
   try {
-    const want = plan(get().events, new Date());
+    const want = plan(get().events, new Date(), get().lists);
     const have = (await Notifications.getAllScheduledNotificationsAsync()).map((n) => n.identifier).filter((id) => id.startsWith(PREFIX));
     const wantIds = new Set(want.map((p) => p.id));
     for (const id of have) if (!wantIds.has(id)) await Notifications.cancelScheduledNotificationAsync(id);
@@ -129,7 +142,7 @@ async function reconcile() {
       if (haveIds.has(p.id)) continue;
       await Notifications.scheduleNotificationAsync({
         identifier: p.id,
-        content: { title: p.title, body: p.body, data: { event: p.event, open: p.open }, sound: 'default' },
+        content: { title: p.title, body: p.body, data: { event: p.event, open: p.open, list: p.list }, sound: 'default' },
         trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: p.when, channelId: CHANNEL },
       });
     }
@@ -158,19 +171,21 @@ export async function startNotifications() {
     const ok = perm.granted || (await Notifications.requestPermissionsAsync()).granted;
     if (!ok) return;
     Notifications.addNotificationResponseReceivedListener((r) => {
-      const { event: id, open } = r.notification.request.content.data ?? {};
+      const { event: id, open, list } = r.notification.request.content.data ?? {};
+      if (typeof list === 'string' && get().lists.some((l) => l.id === list)) actions.setActiveList(list);
       if (typeof open === 'string') router.push(open as never);
       else if (typeof id === 'string' && get().events.some((e) => e.id === seriesId(id))) router.push(`/termin/${id}`);
     });
     let timer: ReturnType<typeof setTimeout> | undefined;
     subscribe(() => {
       const ev = get().events;
-      if (ev === lastEvents) return;
-      lastEvents = ev;
+      const ls = get().lists;
+      if (ev === lastEvents && ls === lastLists) return;
+      lastEvents = ev; lastLists = ls;
       clearTimeout(timer);
       timer = setTimeout(reconcile, 800);
     });
-    lastEvents = get().events;
+    lastEvents = get().events; lastLists = get().lists;
     reconcile();
   } catch (e) {
     console.warn('[notify] start', e);

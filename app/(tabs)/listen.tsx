@@ -24,7 +24,7 @@ import { Cover, Stars, Score, SeenPill, FactChips, factLine, hasBlock } from '..
 import { myRole } from '../../src/lib/sync';
 import type { List, Task, Item, Blueprint } from '../../src/state/types';
 import type { ClayName } from '../../src/lib/clayIcons';
-import { isPoints, players, roundsOf, total } from '../../src/lib/points';
+import { isPoints, players, roundsOf, total, looksOver } from '../../src/lib/points';
 import HeaderRight from '../../src/components/ui/HeaderRight';
 import { tx } from '../../src/i18n/lang';
 import { HIDDEN } from '../../src/lib/core';
@@ -298,6 +298,20 @@ function Scoreboard({ list }: { list: List }) {
           </PressScale>
         ) : null}
       </View>
+      {lead && looksOver(list) ? (
+        // Julian 01.11.: a game is a temporary list; hours after the last round we ask whether it is over.
+        <View style={{ gap: 10, padding: 12, borderRadius: 16, backgroundColor: tokens.chipBg }}>
+          <Txt size={15} line={20} weight={600}>{tx(`Ist die Partie vorbei? ${lead.name} hat mit ${total(lead)} gewonnen.`, `Is the game over? ${lead.name} won with ${total(lead)}.`)}</Txt>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+            <PressScale onPress={() => { haptics.commit(); actions.deleteList(list.id); }} style={{ height: 36, paddingHorizontal: 14, borderRadius: 999, alignItems: 'center', justifyContent: 'center', backgroundColor: tokens.doneSoft }}>
+              <Txt size={14} weight={600} color={tokens.done}>{tx('Ja, Liste wegräumen', 'Yes, clear the list')}</Txt>
+            </PressScale>
+            <PressScale onPress={() => { haptics.select(); if (ps[0]) actions.setItemData(list.id, ps[0].id, { at: new Date().toISOString() }); }} style={{ height: 36, paddingHorizontal: 14, borderRadius: 999, alignItems: 'center', justifyContent: 'center', backgroundColor: tokens.row }}>
+              <Txt size={14}>{tx('Wir spielen noch', 'Still playing')}</Txt>
+            </PressScale>
+          </View>
+        </View>
+      ) : null}
       {lead ? <Txt size={22} line={28} weight={700} tracking={-0.4}>{tx(`${lead.name} führt mit ${total(lead)}`, `${lead.name} leads with ${total(lead)}`)}</Txt> : null}
       {n ? (
         <View style={{ gap: 6 }}>

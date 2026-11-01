@@ -88,6 +88,8 @@ export type Blueprint = {
 export type ItemData = {
   /** Points per round for a player (points block), in order. */
   rounds?: number[];
+  /** When the last round was added (ISO), so a forgotten game can be closed (Julian 01.11.). */
+  at?: string;
   cover?: string;
   stars?: number;
   /** Score out of 10 per parent, films and series (Julian 29.10.). */

@@ -19,6 +19,15 @@ const FILLER = /^(hat|haben|hatte|bekommt|kriegt|macht|minus|plus|und|and|has|ha
 
 export const isPoints = (l?: List) => !!l?.blueprint?.blocks.includes('points');
 export const players = (l: List): Item[] => l.sections.flatMap((s) => s.items);
+/** When the last round of a game was added, or undefined before the first. */
+export const lastRound = (l: List): number | undefined => {
+  const t = players(l).map((p) => (p.data?.at ? Date.parse(p.data.at) : NaN)).filter((x) => Number.isFinite(x));
+  return t.length ? Math.max(...t) : undefined;
+};
+/** Julian 01.11.: a game is a temporary list. Three hours without a round, and we ask whether it is over. */
+export const GAME_IDLE_MS = 3 * 3600e3;
+export const looksOver = (l: List, now = Date.now()) => { const t = lastRound(l); return t !== undefined && now - t >= GAME_IDLE_MS; };
+
 export const total = (i: Item) => (i.data?.rounds ?? []).reduce((a, b) => a + b, 0);
 
 /** Pairs of name and number from a sentence; null when it holds no number at all. */
