@@ -24,7 +24,8 @@ import { Cover, Stars, Score, SeenPill, FactChips, factLine, hasBlock } from '..
 import { myRole } from '../../src/lib/sync';
 import type { List, Task, Item, Blueprint } from '../../src/state/types';
 import type { ClayName } from '../../src/lib/clayIcons';
-import { isPoints, players, roundsOf, total, looksOver, listIcon } from '../../src/lib/points';
+import { isPoints, players, roundsOf, total, looksOver, listIcon, ranked, gameOver, lowWinsOf } from '../../src/lib/points';
+import { gameRule } from '../../src/lib/games';
 import HeaderRight from '../../src/components/ui/HeaderRight';
 import { tx } from '../../src/i18n/lang';
 import { HIDDEN } from '../../src/lib/core';
@@ -284,9 +285,11 @@ function Packliste({ list }: { list: List }) {
 function Scoreboard({ list }: { list: List }) {
   const ps = players(list);
   const n = roundsOf(list);
-  const low = !!list.blueprint?.points?.lowWins;
-  const sorted = [...ps].sort((a, b) => (low ? total(a) - total(b) : total(b) - total(a)));
+  const sorted = ranked(list);
   const lead = n ? sorted[0] : undefined;
+  const rule = gameRule(list.name);
+  const over = gameOver(list);
+  const low = lowWinsOf(list);
   const example = ps.length ? ps.slice(0, 2).map((p, i) => `${p.name} ${i ? 12 : 35}`).join(', ') : tx('Julian 35, Sophia 12', 'Julian 35, Sophia 12');
   return (
     <View style={{ gap: 10, padding: 16, borderRadius: 22, backgroundColor: tokens.row }}>
@@ -298,10 +301,11 @@ function Scoreboard({ list }: { list: List }) {
           </PressScale>
         ) : null}
       </View>
-      {lead && looksOver(list) ? (
+      {!n && rule ? <Txt size={14} line={20} color={tokens.sub}>{rule.how()}</Txt> : null}
+      {lead && (over || looksOver(list)) ? (
         // Julian 01.11.: a game is a temporary list; hours after the last round we ask whether it is over.
         <View style={{ gap: 10, padding: 12, borderRadius: 16, backgroundColor: tokens.chipBg }}>
-          <Txt size={15} line={20} weight={600}>{tx(`Ist die Partie vorbei? ${lead.name} hat mit ${total(lead)} gewonnen.`, `Is the game over? ${lead.name} won with ${total(lead)}.`)}</Txt>
+          <Txt size={15} line={20} weight={600}>{over ? tx(`Partie vorbei: ${over.name} hat mit ${total(over)} gewonnen.`, `Game over: ${over.name} won with ${total(over)}.`) : tx(`Ist die Partie vorbei? ${lead.name} hat mit ${total(lead)} gewonnen.`, `Is the game over? ${lead.name} won with ${total(lead)}.`)}</Txt>
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
             <PressScale onPress={() => { haptics.commit(); actions.deleteList(list.id); }} style={{ height: 36, paddingHorizontal: 14, borderRadius: 999, alignItems: 'center', justifyContent: 'center', backgroundColor: tokens.doneSoft }}>
               <Txt size={14} weight={600} color={tokens.done}>{tx('Ja, Liste wegräumen', 'Yes, clear the list')}</Txt>

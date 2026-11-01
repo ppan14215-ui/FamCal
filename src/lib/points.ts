@@ -6,6 +6,7 @@
  */
 import type { List, Item } from '../state/types';
 import type { ClayName } from './clayIcons';
+import { gameRule } from './games';
 import { tx } from '../i18n/lang';
 
 export type Round = { who: string; points: number }[];
@@ -34,6 +35,16 @@ export const GAME_IDLE_MS = 3 * 3600e3;
 export const looksOver = (l: List, now = Date.now()) => { const t = lastRound(l); return t !== undefined && now - t >= GAME_IDLE_MS; };
 
 export const total = (i: Item) => (i.data?.rounds ?? []).reduce((a, b) => a + b, 0);
+/** Fewest points win: the game's rule first, then the list's own setting. */
+export const lowWinsOf = (l: List) => gameRule(l.name)?.lowWins ?? !!l.blueprint?.points?.lowWins;
+/** Players best first, by the game's rule. */
+export const ranked = (l: List) => [...players(l)].sort((a, b) => (lowWinsOf(l) ? total(a) - total(b) : total(b) - total(a)));
+/** The game is over by its rule (Uno 500, 6 nimmt 66): who won, else undefined. */
+export const gameOver = (l: List): Item | undefined => {
+  const end = gameRule(l.name)?.endAt;
+  if (!end || !players(l).some((p) => total(p) >= end)) return undefined;
+  return ranked(l)[0];
+};
 
 /** Pairs of name and number from a sentence; null when it holds no number at all. */
 export function parseRound(said: string): { round: Round; double: boolean } | null {
@@ -67,8 +78,7 @@ export function matchPlayer(list: Item[], who: string): Item | undefined {
 
 /** "Sophia 40, Julian 71" in the order that wins. */
 export function standLine(l: List): string {
-  const low = !!l.blueprint?.points?.lowWins;
-  const ps = players(l).filter((p) => p.data?.rounds?.length).sort((a, b) => (low ? total(a) - total(b) : total(b) - total(a)));
+  const ps = ranked(l).filter((p) => p.data?.rounds?.length);
   return ps.map((p) => `${p.name} ${total(p)}`).join(', ');
 }
 

@@ -10,6 +10,7 @@ import type { CalEvent, Who, List } from '../state/types';
 import { get, actions, toast } from '../state/store';
 import { persons } from '../theme/tokens';
 import { blueprintFor, blocksLine, GAMES, gameBlueprint } from './blueprint';
+import { gameRule } from './games';
 import { understand, findWhen, whoOf, clean, Reply, fromModel, type Suggest } from './talk';
 import { canUnderstand, understandOnline, understandLive, type Convo, type Glimpse } from './verstehen';
 import { tx, EN } from '../i18n/lang';
@@ -352,7 +353,8 @@ function termin(said: string, id: string): Plan {
 
 /** A round for a points list: "Julian 35, Sophia 12", one Rückgängig takes the round back. */
 export function pointsPlan(list: List, said: string): Plan | null {
-  const r = parseRound(said);
+  // Game words become points first: "Julian sagt 2, macht 2" in Wizard, "Full House" in Kniffel (Julian 01.11.).
+  const r = parseRound(gameRule(list.name)?.spoken?.(said) ?? said);
   if (!r) return null;
   const factor = r.double && list.blueprint?.points?.doubleWord !== false ? 2 : 1;
   const n = roundsOf(list) + 1;
