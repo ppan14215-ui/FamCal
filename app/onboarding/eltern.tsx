@@ -67,7 +67,7 @@ export default function Familie() {
   const named = () => setBeat((b) => b + 1);
 
   const next = () => {
-    if (isPreview()) { setPreviewNames({ J: j.trim(), T: t.trim() }); return router.push('/onboarding/kalender'); }
+    if (isPreview()) { setPreviewNames({ J: j.trim(), T: t.trim() }); return router.push('/onboarding/termin'); }
     actions.setNames({ J: j.trim(), T: t.trim() });
     setMyName(j.trim());
     const taken = new Set(get().people.map((p) => p.name.toLowerCase()));
@@ -75,7 +75,7 @@ export default function Familie() {
       if (taken.has(d.name.trim().toLowerCase())) return;
       actions.addPerson({ name: d.name.trim(), kind: d.kind, color: personPalette[(i + 2) % personPalette.length].name, ...(d.kind === 'kind' && d.birthday ? { birthday: d.birthday } : {}) });
     });
-    router.push('/onboarding/kalender');
+    router.push('/onboarding/termin');
   };
 
   return (

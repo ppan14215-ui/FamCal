@@ -34,7 +34,7 @@ export default function Kalender() {
   const count = useStore((s) => s.events.length);
   // Opened from Einstellungen: Weiter goes back there instead of on.
   const { zurueck } = useLocalSearchParams<{ zurueck?: string }>();
-  const next = () => (zurueck ? goBack() : router.push('/onboarding/kann'));
+  const next = () => (zurueck ? goBack() : router.push('/onboarding/partner'));
   const cards = (
     <View style={{ gap: 8 }}>
       {hasDeviceCalendars
@@ -63,7 +63,7 @@ function Onboard({ count, cards, hint, next, any }: { count: number; cards: Reac
   const taken = Math.max(0, count - start);
   return (
     <OnboardStep
-      step={1}
+      step={3}
       memo={taken ? 'blink' : 'idle'}
       memoBeat={taken}
       title={tx('Nehmt eure Kalender mit', 'Bring your calendars')}

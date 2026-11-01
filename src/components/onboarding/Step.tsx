@@ -14,7 +14,7 @@ import { tx } from '../../i18n/lang';
 import Memo, { type MemoAct } from './Memo';
 
 /** The steps after sign-in, in order. Hallo comes before and has no bar. */
-export const STEPS = ['familie', 'kalender', 'kann', 'partner'] as const;
+export const STEPS = ['familie', 'termin', 'einkauf', 'kalender', 'partner', 'fertig'] as const;
 
 export function StoryBar({ i, n = STEPS.length }: { i: number; n?: number }) {
   return (

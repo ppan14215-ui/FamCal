@@ -36,6 +36,7 @@ export default function Hallo() {
       scroll={false}
       footer={
         <Animated.View entering={after(1100)} style={{ gap: 8 }}>
+          <Txt size={13} color={tokens.mute} center>{tx('Dauert etwa 2 Minuten', 'Takes about 2 minutes')}</Txt>
           <Btn label={tx('Los geht’s', 'Let’s go')} onPress={start} />
           <TextLink label={tx('Ich habe eine Einladung', 'I was invited')} weight={400} onPress={invited} />
         </Animated.View>

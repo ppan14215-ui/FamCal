@@ -7,7 +7,9 @@ import React, { useEffect, useState } from 'react';
 import { View, Share } from 'react-native';
 import { router } from 'expo-router';
 import * as Clipboard from 'expo-clipboard';
-import { isPreview, endPreview, previewNames } from '../../src/lib/vorschau';
+import { isPreview, previewNames } from '../../src/lib/vorschau';
+import { triedEvent } from '../../src/lib/onboardingTry';
+import { short } from '../../src/lib/dates';
 import Animated, { useSharedValue, useAnimatedStyle, withDelay, withTiming, withSequence, Easing, useReducedMotion, runOnJS } from 'react-native-reanimated';
 import { Btn, Chip, TextLink } from '../../src/components/ui/kit';
 import Txt from '../../src/components/ui/Txt';
@@ -37,15 +39,11 @@ export default function Partner() {
   const names = preview ? previewNames() : stored;
   const you = names.T || tx('dein Partner', 'your partner');
   // Preview ends back in Einstellungen, where it was opened, with everything as it was.
-  const done = () => {
-    if (!preview) return router.replace('/chat');
-    endPreview();
-    router.dismissTo('/einstellungen');
-    toast(tx('Vorschau beendet, nichts geändert', 'Preview ended, nothing changed'));
-  };
+  // Memo festkleben comes last; the preview ends there too.
+  const done = () => router.push('/onboarding/fertig');
   return (
     <Step
-      step={3}
+      step={4}
       memo={null}
       title={tx(`Ab jetzt weiß ${names.T || 'ihr beide'} alles sofort`, `From now on ${names.T || 'you both'} know${names.T ? 's' : ''} right away`)}
       lead={tx(`Was du sagst, sieht ${you} sofort, und umgekehrt. Die App läuft auf iPhone und Android.`, `What you say, ${you} sees right away, and the other way round. Works on iPhone and Android.`)}
@@ -103,6 +101,8 @@ function Phones({ me, you }: { me: string; you: string }) {
 }
 
 function Phone({ name, p, show }: { name: string; p: 'J' | 'T'; show: boolean }) {
+  // The Termin just tried in the onboarding, as the partner will see it (collection review 01.11.).
+  const tried = triedEvent();
   return (
     <View style={{ width: PHONE_W, height: 200, borderRadius: 26, borderWidth: 5, borderColor: tokens.ink, backgroundColor: tokens.row, padding: 8, gap: 8 }}>
       <View style={{ alignSelf: 'center', width: 34, height: 6, borderRadius: 3, backgroundColor: tokens.hair }} />
@@ -112,10 +112,10 @@ function Phone({ name, p, show }: { name: string; p: 'J' | 'T'; show: boolean })
       </View>
       {show ? (
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, padding: 5, borderRadius: 10, backgroundColor: tokens.bg }}>
-          <Tile name="stethoskop" size={22} radius={7} />
+          <Tile name={tried?.icon ?? 'stethoskop'} size={22} radius={7} />
           <View style={{ flex: 1 }}>
-            <Txt size={9.5} weight={700} numberOfLines={1}>{tx('Kinderarzt', 'Pediatrician')}</Txt>
-            <Txt size={8.5} color={tokens.sub} numberOfLines={1}>{tx('Do · 10:00', 'Thu · 10am')}</Txt>
+            <Txt size={9.5} weight={700} numberOfLines={1}>{tried?.title ?? tx('Kinderarzt', 'Pediatrician')}</Txt>
+            <Txt size={8.5} color={tokens.sub} numberOfLines={1}>{tried ? `${short(tried.date)}${tried.allDay ? '' : ` · ${tried.start}`}` : tx('Do · 10:00', 'Thu · 10am')}</Txt>
           </View>
         </View>
       ) : <View style={{ height: 34 }} />}
