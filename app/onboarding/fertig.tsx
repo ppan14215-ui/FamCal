@@ -10,7 +10,7 @@ import Animated, { useSharedValue, useAnimatedStyle, withTiming, Easing, runOnJS
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { Btn } from '../../src/components/ui/kit';
 import Txt from '../../src/components/ui/Txt';
-import Step from '../../src/components/onboarding/Step';
+import Step, { stepOf } from '../../src/components/onboarding/Step';
 import Memo from '../../src/components/onboarding/Memo';
 import { isPreview, endPreview } from '../../src/lib/vorschau';
 import { haptics } from '../../src/lib/haptics';
@@ -43,7 +43,7 @@ export default function Fertig() {
   };
   return (
     <Step
-      step={5}
+      step={stepOf('fertig')}
       memo={null}
       title={stuck ? tx('Ich bin da', 'I’m here') : tx('Kleb mich an den Kühlschrank', 'Stick me on the fridge')}
       lead={stuck ? tx('Ab jetzt einfach sagen, was ansteht. Ich merke es mir für euch beide.', 'From now on just tell me what’s coming up. I’ll keep it for both of you.') : tx('Halte mich gedrückt.', 'Press and hold me.')}

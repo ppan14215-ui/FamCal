@@ -5,11 +5,11 @@
  * when it is empty, so a blueprint can name blocks a row does not fill yet.
  */
 import React, { useEffect, useState } from 'react';
-import { View, Image, Linking } from 'react-native';
+import { View, Image, Linking, type ImageSourcePropType } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { scheduleOnRN } from 'react-native-worklets';
 import Animated, { useAnimatedStyle, useSharedValue, withRepeat, withTiming, Easing } from 'react-native-reanimated';
-import Svg, { Path } from 'react-native-svg';
+import Svg, { Path, Defs, LinearGradient, Stop, Rect } from 'react-native-svg';
 import Txt from './ui/Txt';
 import PressScale from './ui/PressScale';
 import { Chip } from './ui/kit';
@@ -24,10 +24,17 @@ const H = 68;
 /** A soft colour per title, so placeholders differ but stay calm. */
 const paletteOf = (title: string) => shade(personPalette[[...title].reduce((a, c) => a + c.charCodeAt(0), 0) % personPalette.length]);
 
+/**
+ * How a cover looks without a poster: `letter` is the tinted first letter (lists), `designed` a calm
+ * colour field with the title set on it and one soft light from the top (onboarding showcase,
+ * 02.11.: our own covers, never studio posters).
+ */
+export type CoverLook = { source?: ImageSourcePropType; fallback?: 'letter' | 'designed'; color?: { bg: string; fg: string } };
+
 /** Poster or book cover. While the server looks, it breathes; without one, the first letter on a tinted card. */
 /** Tapping the cover opens the title's details (Julian 31.10.). */
-export function Cover({ title, data, onPress }: { title: string; data?: ItemData; onPress?: () => void }) {
-  const art = <CoverArt title={title} data={data} />;
+export function Cover({ title, data, onPress, source, fallback, color }: { title: string; data?: ItemData; onPress?: () => void } & CoverLook) {
+  const art = <CoverArt title={title} data={data} source={source} fallback={fallback} color={color} />;
   if (!onPress || data?.looking) return art;
   return (
     <PressScale scale={0.94} hitSlop={6} accessibilityRole="button" accessibilityLabel={tx(`Details zu ${title}`, `Details for ${title}`)} onPress={() => { haptics.select(); onPress(); }}>
@@ -36,19 +43,46 @@ export function Cover({ title, data, onPress }: { title: string; data?: ItemData
   );
 }
 
-function CoverArt({ title, data, w = W, h = H, radius = 10 }: { title: string; data?: ItemData; w?: number; h?: number; radius?: number }) {
+export function CoverArt({ title, data, w = W, h = H, radius = 10, source, fallback = 'letter', color }: { title: string; data?: ItemData; w?: number; h?: number; radius?: number } & CoverLook) {
   const o = useSharedValue(1);
   useEffect(() => {
     o.value = data?.looking ? withRepeat(withTiming(0.45, { duration: 700, easing: Easing.inOut(Easing.quad) }), -1, true) : withTiming(1, { duration: 200 });
   }, [data?.looking]);
   const breathe = useAnimatedStyle(() => ({ opacity: o.value }));
-  const p = paletteOf(title);
+  const p = color ?? paletteOf(title);
   const box = { width: w, height: h, borderRadius: radius, overflow: 'hidden' as const };
+  // A local image (bundled with the app) wins, then a looked-up poster.
+  if (source) return <Image source={source} style={[box, { backgroundColor: tokens.chipBg }]} resizeMode="cover" accessibilityIgnoresInvertColors />;
   if (data?.cover) return <Image source={{ uri: data.cover }} style={[box, { backgroundColor: tokens.chipBg }]} resizeMode="cover" accessibilityIgnoresInvertColors />;
+  if (fallback === 'designed' && !data?.looking) return <DesignedCover title={title} w={w} h={h} radius={radius} bg={p.bg} fg={p.fg} />;
   return (
     <Animated.View style={[box, { backgroundColor: data?.looking ? tokens.chipBg : p.bg, alignItems: 'center', justifyContent: 'center' }, breathe]}>
       {data?.looking ? null : <Txt size={Math.round(h * 0.38)} weight={700} color={p.fg}>{(title.trim()[0] ?? '?').toUpperCase()}</Txt>}
     </Animated.View>
+  );
+}
+
+/** Colour field, a soft light from the top, the title low on the left, a thin rule above it. */
+function DesignedCover({ title, w, h, radius, bg, fg }: { title: string; w: number; h: number; radius: number; bg: string; fg: string }) {
+  const pad = Math.max(4, Math.round(w * 0.1));
+  const size = Math.max(7, Math.round(w * 0.17));
+  const id = `cv${[...title].reduce((a, c) => a + c.charCodeAt(0), 0)}`;
+  return (
+    <View style={{ width: w, height: h, borderRadius: radius, overflow: 'hidden', backgroundColor: bg }} accessibilityLabel={title}>
+      <Svg width={w} height={h} style={{ position: 'absolute', left: 0, top: 0 }}>
+        <Defs>
+          <LinearGradient id={id} x1="0" y1="0" x2="0" y2="1">
+            <Stop offset="0" stopColor="#FFFFFF" stopOpacity={0.35} />
+            <Stop offset="0.6" stopColor="#FFFFFF" stopOpacity={0} />
+          </LinearGradient>
+        </Defs>
+        <Rect x={0} y={0} width={w} height={h} fill={`url(#${id})`} />
+      </Svg>
+      <View style={{ flex: 1, justifyContent: 'flex-end', padding: pad, gap: Math.max(2, Math.round(pad / 2)) }}>
+        <View style={{ width: Math.round(w * 0.3), height: 1.5, borderRadius: 1, backgroundColor: fg, opacity: 0.5 }} />
+        <Txt size={size} line={Math.round(size * 1.15)} weight={700} tracking={-0.2} color={fg} numberOfLines={3}>{title}</Txt>
+      </View>
+    </View>
   );
 }
 
@@ -175,6 +209,6 @@ export function Score({ scores, me, onChange }: { scores?: Partial<Record<Person
 }
 
 /** The big cover on the detail sheet. */
-export function BigCover({ title, data }: { title: string; data?: ItemData }) {
-  return <CoverArt title={title} data={data} w={112} h={data?.kind === 'serie' ? 112 : 166} radius={14} />;
+export function BigCover({ title, data, source, fallback, color }: { title: string; data?: ItemData } & CoverLook) {
+  return <CoverArt title={title} data={data} w={112} h={data?.kind === 'serie' ? 112 : 166} radius={14} source={source} fallback={fallback} color={color} />;
 }

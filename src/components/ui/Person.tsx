@@ -1,11 +1,20 @@
 /** Owner initials in the person colour, and the J/T pair from the headers. */
-import React from 'react';
+import React, { createContext, useContext } from 'react';
 import { View } from 'react-native';
 import Txt from './Txt';
 import { persons, PersonId, tokens, personPalette, shade } from '../../theme';
 
+export type Persons = typeof persons;
+/**
+ * Who J and T are (name, tint, ink). The real app mounts no provider, so this is the global
+ * `persons` (kept in step by applyNames and setColor). The onboarding showcase provides its
+ * demo parents here, so the real names and colours are never touched.
+ */
+export const PersonsContext = createContext<Persons>(persons);
+export const usePersons = () => useContext(PersonsContext);
+
 export function Avatar({ p, size = 28, ring, letter }: { p: PersonId; size?: number; ring?: string; letter?: string }) {
-  const c = persons[p];
+  const c = usePersons()[p];
   // The initial follows the name the family typed in, J/T only as a fallback.
   const l = letter ?? (c.name.trim()[0]?.toUpperCase() || p);
   return (

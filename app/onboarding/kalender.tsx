@@ -10,7 +10,7 @@ import Animated from 'react-native-reanimated';
 import { router, useLocalSearchParams } from 'expo-router';
 import { goBack } from '../../src/lib/nav';
 import { isPreview } from '../../src/lib/vorschau';
-import OnboardStep from '../../src/components/onboarding/Step';
+import OnboardStep, { stepOf } from '../../src/components/onboarding/Step';
 import { Screen, BackBar, H1, Lead, Btn, Hint, TextLink, Toggle, Meta } from '../../src/components/ui/kit';
 import Txt from '../../src/components/ui/Txt';
 import { Tile } from '../../src/components/ui/Clay';
@@ -63,7 +63,7 @@ function Onboard({ count, cards, hint, next, any }: { count: number; cards: Reac
   const taken = Math.max(0, count - start);
   return (
     <OnboardStep
-      step={3}
+      step={stepOf('kalender')}
       memo={taken ? 'blink' : 'idle'}
       memoBeat={taken}
       title={tx('Nehmt eure Kalender mit', 'Bring your calendars')}

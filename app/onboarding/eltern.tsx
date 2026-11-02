@@ -17,7 +17,7 @@ import { Avatar } from '../../src/components/ui/Person';
 import Txt from '../../src/components/ui/Txt';
 import LineIcon from '../../src/components/ui/LineIcon';
 import PressScale from '../../src/components/ui/PressScale';
-import Step from '../../src/components/onboarding/Step';
+import Step, { stepOf } from '../../src/components/onboarding/Step';
 import { actions, useStore, get } from '../../src/state/store';
 import { dueItems } from '../../src/lib/mitdenken';
 import { TODAY } from '../../src/lib/dates';
@@ -67,7 +67,7 @@ export default function Familie() {
   const named = () => setBeat((b) => b + 1);
 
   const next = () => {
-    if (isPreview()) { setPreviewNames({ J: j.trim(), T: t.trim() }); return router.push('/onboarding/termin'); }
+    if (isPreview()) { setPreviewNames({ J: j.trim(), T: t.trim() }); return router.push('/onboarding/kalender'); }
     actions.setNames({ J: j.trim(), T: t.trim() });
     setMyName(j.trim());
     const taken = new Set(get().people.map((p) => p.name.toLowerCase()));
@@ -75,12 +75,12 @@ export default function Familie() {
       if (taken.has(d.name.trim().toLowerCase())) return;
       actions.addPerson({ name: d.name.trim(), kind: d.kind, color: personPalette[(i + 2) % personPalette.length].name, ...(d.kind === 'kind' && d.birthday ? { birthday: d.birthday } : {}) });
     });
-    router.push('/onboarding/termin');
+    router.push('/onboarding/kalender');
   };
 
   return (
     <Step
-      step={0}
+      step={stepOf('eltern')}
       memo="blink"
       memoBeat={beat}
       title={tx('Wer gehört zu eurer Familie', 'Who is in your family')}

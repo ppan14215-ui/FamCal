@@ -13,8 +13,12 @@ import { goBack } from '../../lib/nav';
 import { tx } from '../../i18n/lang';
 import Memo, { type MemoAct } from './Memo';
 
-/** The steps after sign-in, in order. Hallo comes before and has no bar. */
-export const STEPS = ['familie', 'termin', 'einkauf', 'kalender', 'partner', 'fertig'] as const;
+/**
+ * The whole onboarding, in order (v3, 02.11.2026): the showcase (Hallo, with its own chapter bar) counts
+ * as the first step, so the family step opens with one segment already full.
+ */
+export const STEPS = ['showcase', 'eltern', 'kalender', 'partner', 'fertig'] as const;
+export const stepOf = (s: typeof STEPS[number]) => STEPS.indexOf(s);
 
 export function StoryBar({ i, n = STEPS.length }: { i: number; n?: number }) {
   return (

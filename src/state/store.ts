@@ -3,7 +3,7 @@
  * Components subscribe with `useStore(selector)`; actions mutate through
  * `set()` with plain immutable updates. Resets on reload by design.
  */
-import { useSyncExternalStore } from 'react';
+import { createContext, useContext, useSyncExternalStore } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as S from '../data/sample';
 import type { CalEvent, Task, List, InboxItem, Doc, Milestone, Toast, ToastKind, Item, Who, ItemData, Blueprint, Person, Comment } from './types';
@@ -26,7 +26,7 @@ export const setMeRole = (r: PersonId) => { meRole = r; };
 
 export type CalView = 'heute' | 'tag' | 'woche' | 'monat' | 'jahr';
 
-type State = {
+export type State = {
   names: { J: string; T: string };
   /** The child from onboarding; null until then. */
   kid: Kid | null;
@@ -103,6 +103,9 @@ const initial = (): State => ({
   plan: 'gruender',
 });
 
+/** A fresh first-launch state, for stores other than the app's (the onboarding showcase). */
+export const blankState = (): State => initial();
+
 /** Julia, Tom and Ben as in the canvas. */
 const demo = (): Partial<State> => ({
   names: { J: 'Julia', T: 'Tom' },
@@ -130,19 +133,44 @@ function applyNames(n: { J: string; T: string }) {
   persons.T.name = n.T || 'Partner';
 }
 
-let state = initial();
-applyNames(state.names);
-const subs = new Set<() => void>();
+export type Store = {
+  get: () => State;
+  set: (fn: (s: State) => Partial<State>) => void;
+  subscribe: (l: () => void) => () => void;
+  /** Swap the whole state without notifying (reset); the next set() notifies. */
+  replace: (next: State) => void;
+};
 
-export function get() { return state; }
-export function set(fn: (s: State) => Partial<State>) {
-  state = { ...state, ...fn(state) };
-  subs.forEach((l) => l());
+/**
+ * A store holds one State and its listeners. The app has exactly one (`app`
+ * below); the onboarding showcase makes its own isolated demo store and hands
+ * it down through StoreContext, so nothing it does reaches the real data.
+ */
+export function createStore(init: State): Store {
+  let state = init;
+  const subs = new Set<() => void>();
+  return {
+    get: () => state,
+    set: (fn) => { state = { ...state, ...fn(state) }; subs.forEach((l) => l()); },
+    subscribe: (l) => { subs.add(l); return () => { subs.delete(l); }; },
+    replace: (next) => { state = next; },
+  };
 }
-export function subscribe(l: () => void) { subs.add(l); return () => { subs.delete(l); }; }
+
+const app = createStore(initial());
+applyNames(app.get().names);
+
+/** Null in the real app; the showcase provides its demo store here. Only useStore reads it. */
+export const StoreContext = createContext<Store | null>(null);
+
+// Sync, list sync, notify, widget and feed import these: they stay bound to the app store.
+export function get() { return app.get(); }
+export function set(fn: (s: State) => Partial<State>) { app.set(fn); }
+export function subscribe(l: () => void) { return app.subscribe(l); }
 
 export function useStore<T>(sel: (s: State) => T): T {
-  return useSyncExternalStore(subscribe, () => sel(state), () => sel(state));
+  const store = useContext(StoreContext) ?? app;
+  return useSyncExternalStore(store.subscribe, () => sel(store.get()), () => sel(store.get()));
 }
 
 // ─── Toast ──────────────────────────────────────────────────────────────────
@@ -155,7 +183,7 @@ export function toast(text: string, undo?: () => void, opts: { kind?: ToastKind;
   const t: Toast = { id: ++toastSeq, text, sub: opts.sub, kind, undo, ms };
   set(() => ({ toast: t }));
   if (toastTimer) clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => { if (state.toast?.id === t.id) set(() => ({ toast: null })); }, ms);
+  toastTimer = setTimeout(() => { if (app.get().toast?.id === t.id) set(() => ({ toast: null })); }, ms);
 }
 export function dismissToast() { set(() => ({ toast: null })); }
 
@@ -176,7 +204,7 @@ const mapItems = (l: List, f: (i: Item) => Item | null): List => ({
 // ─── Actions ───────────────────────────────────────────────────────────────
 
 export const actions = {
-  reset() { state = initial(); applyNames(state.names); actions.setColor('J', 0); actions.setColor('T', 1); },
+  reset() { app.replace(initial()); applyNames(app.get().names); actions.setColor('J', 0); actions.setColor('T', 1); },
   loadDemo() { const d = demo(); applyNames(d.names!); set(() => d); actions.setColor('J', 0); actions.setColor('T', 1); },
   setNames(names: { J: string; T: string }) { applyNames(names); set(() => ({ names })); },
   /** The Bundesland follows from the city (Destatis list); the family can correct it. */
@@ -194,13 +222,13 @@ export const actions = {
     const c = shade(personPalette[i]);
     Object.assign(persons[p], { tint: c.bg, ink: c.fg, stripe: mix(c.bg, c.fg, 0.14), colorName: c.name });
     set((s) => ({ colors: { ...s.colors, [p]: i } }));
-    AsyncStorage.setItem(COLORS_KEY, JSON.stringify(state.colors)).catch(() => {});
+    AsyncStorage.setItem(COLORS_KEY, JSON.stringify(app.get().colors)).catch(() => {});
   },
   /** From "Eure Kinder": the first year is planned from the date alone. */
   setKid(kid: Kid) {
-    const { milestones, cards } = firstYear(kid, findCity(state.city));
+    const { milestones, cards } = firstYear(kid, findCity(app.get().city));
     // The child is also one of the family's people, so Termine can say who is there.
-    const has = state.people.some((p) => p.kind === 'kind' && p.name === kid.name);
+    const has = app.get().people.some((p) => p.kind === 'kind' && p.name === kid.name);
     const person: Person = { id: S.newId('p_'), name: kid.name, kind: 'kind', color: 'Mint', birthday: kid.born };
     set((s) => ({ kid, milestones, onboardingCards: cards, people: has ? s.people : [...s.people, person] }));
   },
@@ -211,7 +239,7 @@ export const actions = {
   },
   updatePerson(id: string, patch: Partial<Person>) { set((s) => ({ people: s.people.map((p) => (p.id === id ? { ...p, ...patch } : p)) })); },
   removePerson(id: string) {
-    const gone = state.people.find((p) => p.id === id);
+    const gone = app.get().people.find((p) => p.id === id);
     if (!gone) return;
     set((s) => ({ people: s.people.filter((p) => p.id !== id), events: s.events.map((e) => (e.people?.includes(id) ? { ...e, people: e.people.filter((x) => x !== id) } : e)) }));
     return gone;
@@ -245,7 +273,7 @@ export const actions = {
   },
   /** Verschieben: new day and time, Rückgängig puts it back. */
   moveEvent(id: string, w: { date: string; start?: string; end?: string; endDate?: string }) {
-    const before = state.events.find((e) => e.id === id);
+    const before = app.get().events.find((e) => e.id === id);
     if (!before) return;
     set((s) => ({ events: s.events.map((e) => (e.id === id ? { ...e, date: w.date, endDate: w.endDate, start: w.start ?? '00:00', end: w.end, allDay: !w.start } : e)) }));
     return before;
@@ -261,7 +289,7 @@ export const actions = {
    */
   detachOccurrence(instanceId: string): string | undefined {
     const [sid, date] = instanceId.split('~');
-    const base = state.events.find((e) => e.id === sid);
+    const base = app.get().events.find((e) => e.id === sid);
     if (!base) return;
     const day = date ?? base.date;
     const id = S.newId('e');
@@ -273,7 +301,7 @@ export const actions = {
   /** Deletes one day of a series; Rückgängig puts it back. */
   skipOccurrence(instanceId: string) {
     const [sid, date] = instanceId.split('~');
-    const base = state.events.find((e) => e.id === sid);
+    const base = app.get().events.find((e) => e.id === sid);
     if (!base) return;
     const day = date ?? base.date;
     set((s) => ({ events: s.events.map((e) => (e.id === sid ? { ...e, skipDates: [...new Set([...(e.skipDates ?? []), day])] } : e)) }));
@@ -282,15 +310,15 @@ export const actions = {
   /** Public holidays where the family lives, this year and next; only on this phone, never synced (cal 'feiertage'). */
   ensureHolidays() {
     const y = Number(TODAY.slice(0, 4));
-    const { country, land, city } = state;
+    const { country, land, city } = app.get();
     void holidaysFor(country, land, country === 'DE' ? city : '', y).then((list) => {
-      if (state.country !== country || state.land !== land) return;
+      if (app.get().country !== country || app.get().land !== land) return;
       // A synced holiday calendar already has them: no second copy.
-      const own = new Set(state.events.filter((e) => e.cal !== 'feiertage' && e.allDay).map((e) => `${e.date}|${e.title}`));
+      const own = new Set(app.get().events.filter((e) => e.cal !== 'feiertage' && e.allDay).map((e) => `${e.date}|${e.title}`));
       const days: CalEvent[] = list.filter(([date, title]) => !own.has(`${date}|${title}`)).map(([date, title]) => ({
         id: `fei-${date}-${title.length}`, title, sub: tx('Feiertag', 'Public holiday'), icon: 'kalender', date, start: '00:00', allDay: true, who: null, cal: 'feiertage',
       }));
-      const now = state.events.filter((e) => e.cal === 'feiertage');
+      const now = app.get().events.filter((e) => e.cal === 'feiertage');
       if (now.length === days.length && days.every((d, i) => now[i]?.id === d.id && now[i].title === d.title)) return;
       set((s) => ({ events: [...s.events.filter((e) => e.cal !== 'feiertage'), ...days] }));
     });
@@ -304,7 +332,7 @@ export const actions = {
     set((s) => ({ events: s.events.map((e) => (e.id === eid ? { ...e, bring: t.trim() ? e.bring?.map((b) => (b.id === bid ? { ...b, t: t.trim() } : b)) : e.bring?.filter((b) => b.id !== bid) } : e)) }));
   },
   deleteBring(eid: string, bid: string) {
-    const e = state.events.find((x) => x.id === eid);
+    const e = app.get().events.find((x) => x.id === eid);
     const i = e?.bring?.findIndex((b) => b.id === bid) ?? -1;
     if (!e || i < 0) return;
     const gone = e.bring![i];
@@ -350,8 +378,8 @@ export const actions = {
     return id;
   },
   deleteTask(id: string) {
-    const idx = state.tasks.findIndex((x) => x.id === id);
-    const t = state.tasks[idx];
+    const idx = app.get().tasks.findIndex((x) => x.id === id);
+    const t = app.get().tasks[idx];
     if (!t) return;
     set((s) => ({ tasks: s.tasks.filter((x) => x.id !== id) }));
     // Undo puts back only this task, so changes made meanwhile survive.
@@ -402,7 +430,7 @@ export const actions = {
     }));
   },
   deleteItem(listId: string, itemId: string) {
-    const list = state.lists.find((l) => l.id === listId);
+    const list = app.get().lists.find((l) => l.id === listId);
     let at: { sid: string; idx: number; item: Item } | null = null;
     list?.sections.forEach((sec) => sec.items.forEach((i, idx) => { if (i.id === itemId) at = { sid: sec.id, idx, item: i }; }));
     if (!at) return;
@@ -419,7 +447,7 @@ export const actions = {
     if (!p.name) return;
     // Already open on the list (also as plural, Julian 30.10.: "doppelte Einträge"): the new amount joins it.
     const key = S.sameItemKey(p.name);
-    const twin = state.lists.find((l) => l.id === listId)?.sections.flatMap((sec) => sec.items).find((i) => !i.done && S.sameItemKey(i.name) === key);
+    const twin = app.get().lists.find((l) => l.id === listId)?.sections.flatMap((sec) => sec.items).find((i) => !i.done && S.sameItemKey(i.name) === key);
     if (twin) {
       if (p.qty || p.note) set((s) => ({ lists: mapList(s.lists, listId, (l) => mapItems(l, (i) => (i.id === twin.id ? { ...i, qty: p.qty ?? i.qty, note: p.note ?? i.note } : i))) }));
       return twin.id;
@@ -433,13 +461,13 @@ export const actions = {
       }),
     }));
     // A list that adapts looks up cover and facts for the new entry.
-    const bp = state.lists.find((l) => l.id === listId)?.blueprint;
+    const bp = app.get().lists.find((l) => l.id === listId)?.blueprint;
     if (bp?.source) enrichItem(listId, id, p.name, bp.source);
     return id;
   },
   /** Folds open twins on a list into one (the older one stays). Returns how many went, with an undo. */
   mergeTwins(listId: string): number {
-    const before = state.lists.find((l) => l.id === listId);
+    const before = app.get().lists.find((l) => l.id === listId);
     if (!before) return 0;
     const seen = new Map<string, string>();
     const gone = new Set<string>();
@@ -458,7 +486,7 @@ export const actions = {
   },
   /** Claude's blueprint for a list; entries already on it get looked up too. */
   setBlueprint(listId: string, bp: Blueprint) {
-    const before = state.lists.find((l) => l.id === listId);
+    const before = app.get().lists.find((l) => l.id === listId);
     set((s) => ({ lists: mapList(s.lists, listId, (l) => ({ ...l, kind: 'collection', blueprint: bp })) }));
     if (bp.source && before?.blueprint?.source !== bp.source) {
       before?.sections.flatMap((sec) => sec.items).forEach((i) => { if (!i.data?.cover) enrichItem(listId, i.id, i.name, bp.source!); });
@@ -466,7 +494,7 @@ export const actions = {
   },
   /** Add field: tapping again removes it (Canvas "Einkauf · Hinzufügen"). */
   toggleShopping(name: string) {
-    const l = state.lists.find((x) => x.id === 'einkauf')!;
+    const l = app.get().lists.find((x) => x.id === 'einkauf')!;
     const existing = l.sections.flatMap((s) => s.items).find((i) => i.name.toLowerCase() === name.toLowerCase() && !i.done);
     if (existing) {
       actions.deleteItem('einkauf', existing.id);
@@ -491,9 +519,9 @@ export const actions = {
   },
   /** Removes a whole list; the toast brings it back at the same place. */
   deleteList(id: string) {
-    const i = state.lists.findIndex((l) => l.id === id);
+    const i = app.get().lists.findIndex((l) => l.id === id);
     if (i < 0) return;
-    const gone = state.lists[i];
+    const gone = app.get().lists[i];
     set((s) => ({ lists: s.lists.filter((l) => l.id !== id), activeList: s.activeList === id ? 'aufgaben' : s.activeList }));
     toast(tx(`„${gone.name}“ gelöscht`, `“${gone.name}” deleted`), () => set((s) => ({ lists: [...s.lists.slice(0, i), gone, ...s.lists.slice(i)], activeList: gone.id })));
   },
@@ -503,10 +531,10 @@ export const actions = {
 
   // Inbox
   confirmInbox(id: string, yes: boolean) {
-    const item = state.inbox.find((x) => x.id === id);
+    const item = app.get().inbox.find((x) => x.id === id);
     if (!item) return;
     if (!yes) {
-      const idx = state.inbox.indexOf(item);
+      const idx = app.get().inbox.indexOf(item);
       set((s) => ({ inbox: s.inbox.filter((x) => x.id !== id) }));
       toast(tx('Verworfen', 'Dismissed'), () => set((s) => (s.inbox.some((x) => x.id === id) ? {} : { inbox: [...s.inbox.slice(0, idx), item, ...s.inbox.slice(idx)] })));
       return;

@@ -4,6 +4,11 @@ Alle sichtbaren Änderungen an FamCal. Neueste oben. Agenten und Menschen: Ände
 
 ## Unreleased
 
+### Onboarding zeigt die echte App (02.11.)
+- Der Start zeigt in acht kurzen Kapiteln die echte App mit einer Beispielfamilie: Termin eintragen, Überblick, Verschieben, Partner bekommt Bescheid, Einkauf, Rezept, und noch mehr. Weiter geht es nur per Tipp, Überspringen geht immer.
+- Am Ende räumt die Beispielfamilie den Chat leer, dann tragt ihr euch ein. Eure eigenen Daten berührt das nie.
+- Die Probier-Schritte Termin und Einkauf sind weg, nach der Familie kommen gleich die Kalender.
+
 ### Kalender ruhiger und klarer (31.10. morgens)
 - Der Umschalter gleitet sofort beim Tippen los, auch zwischen Heute und Tage.
 - Tabs und Kalenderansichten bauen sich kurz animiert auf, statt einfach umzuspringen.

@@ -8,15 +8,15 @@ import { View, Share } from 'react-native';
 import { router } from 'expo-router';
 import * as Clipboard from 'expo-clipboard';
 import { isPreview, previewNames } from '../../src/lib/vorschau';
-import { triedEvent } from '../../src/lib/onboardingTry';
-import { short } from '../../src/lib/dates';
+import { movedDentist } from '../../src/components/showcase/chapters';
+import { short, hm } from '../../src/lib/dates';
 import Animated, { useSharedValue, useAnimatedStyle, withDelay, withTiming, withSequence, Easing, useReducedMotion, runOnJS } from 'react-native-reanimated';
 import { Btn, Chip, TextLink } from '../../src/components/ui/kit';
 import Txt from '../../src/components/ui/Txt';
 import LineIcon from '../../src/components/ui/LineIcon';
 import { Avatar } from '../../src/components/ui/Person';
 import { Tile } from '../../src/components/ui/Clay';
-import Step from '../../src/components/onboarding/Step';
+import Step, { stepOf } from '../../src/components/onboarding/Step';
 import Memo from '../../src/components/onboarding/Memo';
 import { toast, useStore } from '../../src/state/store';
 import { haptics } from '../../src/lib/haptics';
@@ -43,7 +43,7 @@ export default function Partner() {
   const done = () => router.push('/onboarding/fertig');
   return (
     <Step
-      step={4}
+      step={stepOf('partner')}
       memo={null}
       title={tx(`Ab jetzt weiß ${names.T || 'ihr beide'} alles sofort`, `From now on ${names.T || 'you both'} know${names.T ? 's' : ''} right away`)}
       lead={tx(`Was du sagst, sieht ${you} sofort, und umgekehrt. Die App läuft auf iPhone und Android.`, `What you say, ${you} sees right away, and the other way round. Works on iPhone and Android.`)}
@@ -101,8 +101,9 @@ function Phones({ me, you }: { me: string; you: string }) {
 }
 
 function Phone({ name, p, show }: { name: string; p: 'J' | 'T'; show: boolean }) {
-  // The Termin just tried in the onboarding, as the partner will see it (collection review 01.11.).
-  const tried = triedEvent();
+  // The Termin the showcase made, where chapter 3 left it, as the partner will see it (v3, 02.11.).
+  // Titled without the demo child's name: this is the real family's screen.
+  const tried = movedDentist();
   return (
     <View style={{ width: PHONE_W, height: 200, borderRadius: 26, borderWidth: 5, borderColor: tokens.ink, backgroundColor: tokens.row, padding: 8, gap: 8 }}>
       <View style={{ alignSelf: 'center', width: 34, height: 6, borderRadius: 3, backgroundColor: tokens.hair }} />
@@ -112,10 +113,10 @@ function Phone({ name, p, show }: { name: string; p: 'J' | 'T'; show: boolean })
       </View>
       {show ? (
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, padding: 5, borderRadius: 10, backgroundColor: tokens.bg }}>
-          <Tile name={tried?.icon ?? 'stethoskop'} size={22} radius={7} />
+          <Tile name={tried.icon} size={22} radius={7} />
           <View style={{ flex: 1 }}>
-            <Txt size={9.5} weight={700} numberOfLines={1}>{tried?.title ?? tx('Kinderarzt', 'Pediatrician')}</Txt>
-            <Txt size={8.5} color={tokens.sub} numberOfLines={1}>{tried ? `${short(tried.date)}${tried.allDay ? '' : ` · ${tried.start}`}` : tx('Do · 10:00', 'Thu · 10am')}</Txt>
+            <Txt size={9.5} weight={700} numberOfLines={1}>{tx('Zahnarzt', 'Dentist')}</Txt>
+            <Txt size={8.5} color={tokens.sub} numberOfLines={1}>{`${short(tried.date)} · ${hm(tried.start)}`}</Txt>
           </View>
         </View>
       ) : <View style={{ height: 34 }} />}

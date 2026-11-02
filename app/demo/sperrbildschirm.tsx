@@ -3,7 +3,7 @@
  * hint a day plus the Sunday preview. Actions answer right on the lock screen.
  */
 import React, { useMemo, useState } from 'react';
-import { View, Pressable, StyleSheet } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import { router } from 'expo-router';
 import { goBack } from '../../src/lib/nav';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -11,42 +11,12 @@ import Animated, { FadeOut, LinearTransition } from 'react-native-reanimated';
 import Svg, { Defs, LinearGradient, Stop, Rect } from 'react-native-svg';
 import Txt from '../../src/components/ui/Txt';
 import { RoundButton } from '../../src/components/ui/kit';
-import { ClayIcon } from '../../src/components/ui/Clay';
 import { useStore, toast } from '../../src/state/store';
 import { addDays, monday, daysBetween, count, TODAY } from '../../src/lib/dates';
 import { haptics } from '../../src/lib/haptics';
-import PressScale from '../../src/components/ui/PressScale';
+import Notif from '../../src/components/showcase/cards/LockNotif';
 
 const WHITE = '#FFFFFF';
-
-function Notif({ title, body, when, actions, onPress }: { title: string; body: string; when: string; actions?: { label: string; onPress: () => void }[]; onPress?: () => void }) {
-  return (
-    <PressScale onPress={onPress} style={{ paddingTop: 12, paddingHorizontal: 14, paddingBottom: actions ? 0 : 12, borderRadius: 22, backgroundColor: 'rgba(245,245,244,0.22)', gap: 4, overflow: 'hidden' }}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-        <View style={{ width: 22, height: 22, borderRadius: 6, backgroundColor: '#F5F5F4', alignItems: 'center', justifyContent: 'center' }}>
-          <ClayIcon name="kalender" size={18} />
-        </View>
-        <Txt size={13} weight={600} color={WHITE} style={{ flex: 1, opacity: 0.85 }}>FAMILIENASSISTENT</Txt>
-        <Txt size={13} color={WHITE} style={{ opacity: 0.7 }}>{when}</Txt>
-      </View>
-      <Txt size={15.5} weight={600} color={WHITE}>{title}</Txt>
-      <Txt size={15} line={21} color={WHITE} style={{ opacity: 0.92 }}>{body}</Txt>
-      {actions ? (
-        <View style={{ flexDirection: 'row', marginTop: 10, marginHorizontal: -14, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: 'rgba(255,255,255,0.25)' }}>
-          {actions.map((a, i) => (
-            <Pressable
-              key={a.label}
-              onPress={a.onPress}
-              style={({ pressed }) => ({ flex: 1, paddingVertical: 11, alignItems: 'center', backgroundColor: pressed ? 'rgba(255,255,255,0.12)' : 'transparent', borderLeftWidth: i ? StyleSheet.hairlineWidth : 0, borderLeftColor: 'rgba(255,255,255,0.25)' })}
-            >
-              <Txt size={14} weight={600} color={WHITE}>{a.label}</Txt>
-            </Pressable>
-          ))}
-        </View>
-      ) : null}
-    </PressScale>
-  );
-}
 
 export default function Sperrbildschirm() {
   const insets = useSafeAreaInsets();

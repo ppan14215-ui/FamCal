@@ -177,9 +177,9 @@ function MiniMap({ lat, lon, h = 120 }: { lat: number; lon: number; h?: number }
 }
 
 /** The small pin on the Termin row: opens the place in Google Maps. */
-export function PinChip({ place }: { place: string }) {
+export function PinChip({ place, still }: { place: string; /** Showcase: same look, opens nothing. */ still?: boolean }) {
   return (
-    <PressScale hitSlop={6} accessibilityLabel={place} onPress={() => { haptics.select(); Linking.openURL(mapsLink(place)).catch(() => {}); }} style={{ width: 32, height: 32, borderRadius: 999, alignItems: 'center', justifyContent: 'center', backgroundColor: tokens.chipBg }}>
+    <PressScale hitSlop={6} accessibilityLabel={place} onPress={still ? () => {} : () => { haptics.select(); Linking.openURL(mapsLink(place)).catch(() => {}); }} style={{ width: 32, height: 32, borderRadius: 999, alignItems: 'center', justifyContent: 'center', backgroundColor: tokens.chipBg }}>
       <LineIcon name="pin" size={16} color={tokens.ink} />
     </PressScale>
   );
