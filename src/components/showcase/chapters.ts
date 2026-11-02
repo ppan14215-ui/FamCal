@@ -24,6 +24,7 @@ import { addDays, weekday, hm, TODAY } from '../../lib/dates';
 import { buildDemoState, demoEvents, demoFeed, madeEvents, madeItems, DEMO } from '../../data/demoFamily';
 import { motion } from '../../theme/motion';
 import { tx } from '../../i18n/lang';
+import { INTRO_CLAIM } from '../onboarding/Intro';
 
 // ─── Timing ────────────────────────────────────────────────────────────────
 
@@ -410,8 +411,8 @@ export function buildChapters(today = TODAY): Chapter[] {
   const claim: Chapter = {
     key: 'claim',
     label: tx('Für euch', 'For you'),
-    // Julian's main claim (01.11.), kept word for word even though it is longer than other headlines.
-    title: tx('Ein digitaler Assistent, mit dem ihr beide sprechen könnt', 'A digital assistant you both can speak to'),
+    // The claim (Julian 02.11.: the calendar first), shared with the film's last beat.
+    title: INTRO_CLAIM(),
     line: tx('Julia und Tom sagen es einmal. Beide wissen es.', 'Julia and Tom say it once. Both of them know.'),
     start: (prev, demo) => {
       const st = demo.get();

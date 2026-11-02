@@ -35,9 +35,12 @@ import { createStore } from '../../state/store';
 import { buildDemoState } from '../../data/demoFamily';
 import { haptics } from '../../lib/haptics';
 import { TODAY } from '../../lib/dates';
-import { tokens, rise, motion, easing } from '../../theme';
+import { tokens, rise, motion, easing, personPalette } from '../../theme';
+import { shade } from '../../theme/tokens';
 import { tx } from '../../i18n/lang';
 
+/** Marks a film caption line whose feature is not built yet. */
+const SOON = '\u0001';
 /** Weiter is there by about one second in (decisions), and its place is held from the start. */
 const T_NEXT = 900;
 /** Below this window height (iPhone SE, small Android) the text and buttons get a little tighter. */
@@ -120,13 +123,25 @@ function FilmRun({ beat, onNext, tap }: { beat: number; onNext: () => void; tap:
   const compact = useCompact();
   const [ts, tl, ls, ll] = compact ? [22, 27, 15, 20] : [26, 31, 16, 22];
   const copy = introCopy(beat);
-  const tsz = copy.title.length > 44 ? Math.round(ts * 0.84) : ts;
+  // The "Bald" tag: warm ink on a warm tint (Sand), read at render time so it follows dark mode.
+  const soonTint = shade(personPalette.find((p) => p.name === 'Sand')!);
+  // A long title, or one that carries the "Bald" tag on its line, sets a little smaller.
+  const tsz = copy.title.length > 44 ? Math.round(ts * 0.84) : copy.soon ? Math.round(ts * 0.88) : ts;
   const [h, setH] = useState(0);
   const scale = h ? Math.min(1, (h - 20) / 390) : 1;
   return (
     <>
       <View style={{ height: tl * 2 + ll * 2 + (compact ? 6 : 8) + (compact ? 20 : 28), paddingHorizontal: 18, paddingTop: compact ? 10 : 14, paddingBottom: compact ? 10 : 14, gap: compact ? 6 : 8 }}>
-        <Swap text={copy.title} i={0}>{(t) => <Txt size={tsz} line={tl} weight={700} tracking={-0.8} numberOfLines={2}>{t}<Dot /></Txt>}</Swap>
+        {/* A feature that is not built yet says so after its title, in a warm tag that follows the title by 120 ms.
+            The mark travels in the swapped text, so it never sits beside the old title. */}
+        <Swap text={(copy.soon ? SOON : '') + copy.title} i={0}>{(raw) => { const soon = raw.startsWith(SOON); const t = soon ? raw.slice(1) : raw; return soon ? (
+          <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', columnGap: 10 }}>
+            <Txt size={tsz} line={tl} weight={700} tracking={-0.8} numberOfLines={2} style={{ flexShrink: 1 }}>{t}<Dot /></Txt>
+            <Animated.View entering={rise(0).delay(120)} style={{ paddingHorizontal: 9, height: Math.round(tsz * 0.82), borderRadius: 7, backgroundColor: soonTint.bg, justifyContent: 'center' }}>
+              <Txt size={Math.round(tsz * 0.5)} line={Math.round(tsz * 0.62)} weight={700} color={soonTint.fg}>{tx('Bald', 'Soon')}</Txt>
+            </Animated.View>
+          </View>
+        ) : <Txt size={tsz} line={tl} weight={700} tracking={-0.8} numberOfLines={2}>{t}<Dot /></Txt>; }}</Swap>
         {/* Title first, the line 120 ms later (motion-skill §6). */}
         <Swap text={copy.lead} i={1} lag={120}>{(t) => <Txt size={ls} line={ll} color={tokens.sub} numberOfLines={2}>{t}</Txt>}</Swap>
       </View>

@@ -4,6 +4,9 @@ Alle sichtbaren Änderungen an FamCal. Neueste oben. Agenten und Menschen: Ände
 
 ## Unreleased
 
+### Längerer Einstiegsfilm (02.11.)
+- Der Film hat jetzt acht Szenen: Foto vom Kita-Brief, weitergeleitete Mail (mit „Bald“ markiert), Memo kennt euren Alltag und merkt sich, was ihr sagt. Am Ende wird das Handy zum Monatskalender: „Der klügste Kalender, mit dem du je gesprochen hast“.
+
 ### 107 neue Clay Icons (02.11.)
 - Kino, Tankstelle, Bus, Hochzeit, Weihnachten, Personen und 100 weitere Icons sind in der App, auch unter „Symbol wählen“. Der Assistent und die Regeln finden sie über deutsche und englische Wörter („Kino“, „cinema“, „tanken“).
 - 51 davon bewegen sich als Ganzes mit ruhigen Federn: Fahrzeuge fahren los und bremsen (jedes mit eigenem Gewicht, ohne über den Text zu fahren), Personen nicken, das Karussell dreht sich, der Kürbis schaukelt. Die übrigen 56 (jetzt auch U-Bahn und Hörbuch) geben beim Antippen nur leicht nach, bis ihre Einzelteile da sind.
