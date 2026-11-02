@@ -53,12 +53,12 @@ const TX = {
     termin: 'Freitag 15 Uhr Zahnarzt mit Ben', karte: 'Freitag 15 Uhr Zahnarzt mit Ben', einkauf: 'Wir brauchen Milch und Windeln', nachfrage: 'Samstag Kindergeburtstag bei Lena', fragen: 'Frag Tom, ob Samstag passt',
     rezept: 'Ich koche heute Abend Bolognese', watch: 'Erstelle eine Watchlist mit Dune, Oppenheimer und Barbie', u7: 'Montag 10 Uhr U7 mit Ben',
     brief: 'Wochenbriefing', u6: 'U6 bei Dr. Weber', wissen: 'Was ich weiß', urlaub: 'Urlaub und Feiertage', gcal: 'Google Kalender', teilen: 'Teilen aus einem Chat', search: 'Suchen', who: 'Dr. Müller',
-    zoo: 'Sonntag 15 Uhr Zoo mit Lena, wir alle', zooT: 'Zoo mit Lena', pick: 'Ich hol Ben morgen um 16 Uhr ab 👍' },
+    zoo: 'Sonntag 15 Uhr Zoo mit Lena, wir alle', zooT: 'Zoo mit Lena', pick: 'Ich hol Ben morgen um 16 Uhr ab 👍', kontext: 'Verschieb Bens Kinderarzt auf Montag', ok: 'Mach ich.' },
   en: { invited: 'I was invited', cal: 'Calendar', lists: 'Lists', settings: /^Settings$/, days: 'Days', week: 'Week', month: 'Month', year: 'Year',
     termin: 'Swimming with Ben on Friday at 3 pm', karte: 'Hairdresser on Friday at 3 pm', einkauf: 'We need milk and nappies', nachfrage: "Kids' birthday party at Lena's on Saturday", fragen: 'Ask Tom if Saturday works',
     rezept: "I'm cooking Bolognese tonight", watch: 'Make a watchlist with Dune, Oppenheimer and Barbie', u7: 'Monday 10am U7 checkup with Ben',
     brief: 'Weekly briefing', u6: 'U6 checkup with Dr. Weber', wissen: 'What I know', urlaub: 'Vacation and holidays', gcal: 'Google Calendar', teilen: 'Teilen aus einem Chat', search: 'Search', who: 'Salon Miller',
-    zoo: 'Sunday 3pm zoo with Lena, all of us', zooT: 'Zoo with Lena', pick: "I'll pick Ben up tomorrow at 4 👍" },
+    zoo: 'Sunday 3pm zoo with Lena, all of us', zooT: 'Zoo with Lena', pick: "I'll pick Ben up tomorrow at 4 👍", kontext: "Move Ben's pediatrician to Monday", ok: 'On it.' },
 };
 
 // Die Beispielfamilie ist auf Deutsch angelegt; für die englischen Screens werden ihre Texte übersetzt.
@@ -92,8 +92,8 @@ const TILE = fs.readFileSync(path.join(__dirname, 'shots-tile.png'));
 const feat = (name, street, housenumber, postcode, city, lon, lat) => ({ type: 'Feature', geometry: { type: 'Point', coordinates: [lon, lat] }, properties: { name, street, housenumber, postcode, city } });
 async function routes(p) {
   await p.route(/photon\.komoot\.io/, (r) => {
-    const salon = /salon/i.test(decodeURIComponent(r.request().url()));
-    const f = salon ? feat('Salon Miller', 'Lindenstraße', '8', '80331', 'München', 11.5702, 48.1371) : feat('Zahnarztpraxis Dr. Müller', 'Lindenstraße', '8', '80331', 'München', 11.5702, 48.1371);
+    const q = decodeURIComponent(r.request().url()), salon = /salon/i.test(q);
+    const f = /weber/i.test(q) ? feat(/pediatrics/i.test(q) ? 'Weber Pediatrics' : 'Kinderarztpraxis Weber', 'Hauptstraße', '12', '80331', 'München', 11.5702, 48.1371) : salon ? feat('Salon Miller', 'Lindenstraße', '8', '80331', 'München', 11.5702, 48.1371) : feat('Zahnarztpraxis Dr. Müller', 'Lindenstraße', '8', '80331', 'München', 11.5702, 48.1371);
     r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ type: 'FeatureCollection', features: [f] }) });
   });
   await p.route(/tile\.openstreetmap\.org/, (r) => r.fulfill({ status: 200, contentType: 'image/png', body: TILE }));
@@ -122,6 +122,16 @@ const SCREENS = [
   ['woche', async ({ tab, view, t }) => { await tab(t.cal); await view(t.week); }],
   ['monat', async ({ tab, view, t }) => { await tab(t.cal); await view(t.month); }],
   ['jahr', async ({ tab, view, t }) => { await tab(t.cal); await view(t.year); }],
+  // Zusammenhang: der Satz nennt weder Termin noch Tag genau; die feste Antwort zeigt auf die echte U6 der Beispielfamilie.
+  ['kontext', async ({ p, say, t }) => {
+    await p.evaluate(({ said, title, ok }) => {
+      const e = globalThis.__fc.get().events.find((x) => x.title === title);
+      const d = new Date(); d.setDate(d.getDate() + ((8 - d.getDay()) % 7 || 7));
+      const iso = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+      globalThis.__canned = { [said]: { text: ok, actions: [{ tool: 'termin_aendern', input: { id: e.id, date: iso } }] } };
+    }, { said: t.kontext, title: t.u6, ok: t.ok });
+    await say(t.kontext);
+  }],
   ['bearbeiten', async ({ p, tab, t }) => { await tab(t.cal); await p.getByText(t.u6).first().click(); }],
   ['listen', async ({ tab, t }) => { await tab(t.lists); }],
   ['watchlist', async ({ p, can, say, tab, t }) => { await can(); await say(t.watch); await tab(t.lists); await p.getByText('Watchlist', { exact: true }).last().click({ timeout: 3000 }).catch(() => {}); }],
