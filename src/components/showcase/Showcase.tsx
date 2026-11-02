@@ -26,6 +26,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Btn, TextLink, RoundButton } from '../ui/kit';
 import Txt, { Dot } from '../ui/Txt';
 import Memo from '../onboarding/Memo';
+import Intro, { INTRO_BEATS, introCopy } from '../onboarding/Intro';
 import { StoryBar } from '../onboarding/Step';
 import DemoStage from './DemoStage';
 import Stage, { type Box } from './Phone';
@@ -48,7 +49,11 @@ export default function Showcase({ onStart, onInvited }: { onStart: () => void; 
   const today = TODAY;
   const chapters = useMemo(() => buildChapters(today), [today]);
   const [i, setI] = useState(0);
-  const last = i === chapters.length - 1;
+  // The opening film runs first (Julian 02.11.: "Zurück holen und verbessern"); null once the chapters play.
+  const [film, setFilm] = useState<number | null>(0);
+  const last = film === null && i === chapters.length - 1;
+  const toChapters = () => { haptics.select(); setFilm(null); setI(0); };
+  const nextFilm = () => { if (film === null) return; if (film >= INTRO_BEATS - 1) toChapters(); else { haptics.select(); setFilm(film + 1); } };
   const go = (n: number) => { haptics.select(); setI(Math.max(0, Math.min(chapters.length - 1, n))); };
   const compact = useCompact();
   const btnH = compact ? 48 : 54;
@@ -67,16 +72,20 @@ export default function Showcase({ onStart, onInvited }: { onStart: () => void; 
     <View style={{ flex: 1, backgroundColor: tokens.bg, paddingTop: insets.top }}>
       <View style={{ paddingHorizontal: 18, paddingTop: 8, gap: 10 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14, minHeight: 40 }}>
-          {i ? <RoundButton icon="back" label={tx('Zurück', 'Back')} onPress={() => go(i - 1)} /> : <View style={{ width: 40 }} />}
-          <StoryBar i={i} n={chapters.length} />
+          {film !== null
+            ? (film ? <RoundButton icon="back" label={tx('Zurück', 'Back')} onPress={() => setFilm(film - 1)} /> : <View style={{ width: 40 }} />)
+            : <RoundButton icon="back" label={tx('Zurück', 'Back')} onPress={() => (i ? go(i - 1) : setFilm(INTRO_BEATS - 1))} />}
+          <StoryBar i={film ?? i} n={film !== null ? INTRO_BEATS : chapters.length} />
           <View style={{ width: 40 }} />
         </View>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
           <Memo act="idle" size={18} shadow={false} alive={false} />
-          <Txt size={13} weight={600} color={tokens.sub}>{tx(`${i + 1} von ${chapters.length} · ${chapters[i].label}`, `${i + 1} of ${chapters.length} · ${chapters[i].label}`)}</Txt>
+          <Txt size={13} weight={600} color={tokens.sub}>{film !== null ? tx('Memo stellt sich vor', 'Meet Memo') : tx(`${i + 1} von ${chapters.length} · ${chapters[i].label}`, `${i + 1} of ${chapters.length} · ${chapters[i].label}`)}</Txt>
         </View>
       </View>
-      <ChapterRun key={i} chapters={chapters} i={i} today={today} box={box} onBox={setBox} />
+      {film !== null
+        ? <FilmRun beat={film} onNext={nextFilm} />
+        : <ChapterRun key={i} chapters={chapters} i={i} today={today} box={box} onBox={setBox} />}
       <Animated.View entering={FadeIn.duration(motion.base).delay(T_NEXT)} style={{ pointerEvents: ready ? 'auto' : 'none', height: footerH + 8, paddingHorizontal: 18, paddingTop: 8, paddingBottom: (compact ? 12 : 18) + insets.bottom, gap: 10 }}>
         {last ? (
           <>
@@ -86,16 +95,44 @@ export default function Showcase({ onStart, onInvited }: { onStart: () => void; 
         ) : (
           <>
             {/* The send arrow in the stage is the screen's one dark element, so Weiter stays light until the end. */}
-            <Btn height={btnH} primary={false} label={tx('Weiter', 'Next')} onPress={() => go(i + 1)} />
+            <Btn height={btnH} primary={false} label={tx('Weiter', 'Next')} onPress={() => (film !== null ? nextFilm() : go(i + 1))} />
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 6 }}>
               <TextLink label={tx('Ich habe eine Einladung', 'I was invited')} weight={400} onPress={onInvited} />
               {/* Skip goes to the last chapter, where Los geht’s sits. It never starts (and never resets) from here. */}
-              <TextLink label={tx('Überspringen', 'Skip')} weight={400} onPress={() => go(chapters.length - 1)} />
+              {/* In the film, Skip goes to the first chapter (the app at work); in the chapters, to the last. */}
+              <TextLink label={tx('Überspringen', 'Skip')} weight={400} onPress={() => (film !== null ? toChapters() : go(chapters.length - 1))} />
             </View>
           </>
         )}
       </Animated.View>
     </View>
+  );
+}
+
+/**
+ * The opening film, in the same grid as the chapters: headline and line first, then the stage plays
+ * (src/components/onboarding/Intro.tsx). A tap on the stage moves on, like Weiter. The stage scales
+ * down on short screens so the film never collides with the footer.
+ */
+function FilmRun({ beat, onNext }: { beat: number; onNext: () => void }) {
+  const compact = useCompact();
+  const [ts, tl, ls, ll] = compact ? [22, 27, 15, 20] : [26, 31, 16, 22];
+  const copy = introCopy(beat);
+  const tsz = copy.title.length > 44 ? Math.round(ts * 0.84) : ts;
+  const [h, setH] = useState(0);
+  const scale = h ? Math.min(1, (h - 8) / 390) : 1;
+  return (
+    <>
+      <View style={{ height: tl * 2 + ll * 2 + (compact ? 6 : 8) + (compact ? 20 : 28), paddingHorizontal: 18, paddingTop: compact ? 10 : 14, paddingBottom: compact ? 10 : 14, gap: compact ? 6 : 8 }}>
+        <Swap text={copy.title} i={0}>{(t) => <Txt size={tsz} line={tl} weight={700} tracking={-0.8} numberOfLines={2}>{t}<Dot /></Txt>}</Swap>
+        <Swap text={copy.lead} i={1}>{(t) => <Txt size={ls} line={ll} color={tokens.sub} numberOfLines={2}>{t}</Txt>}</Swap>
+      </View>
+      <Pressable onPress={onNext} accessibilityRole="button" accessibilityLabel={tx('Weiter', 'Next')} style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }} onLayout={(e) => setH(e.nativeEvent.layout.height)}>
+        <View style={{ transform: [{ scale }] }}>
+          <Intro beat={beat} />
+        </View>
+      </Pressable>
+    </>
   );
 }
 
