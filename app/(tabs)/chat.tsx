@@ -94,7 +94,7 @@ export default function Chat() {
             {/* Memo waits here until the first sentence (onboarding storyboard 01.11., step 8). */}
             {/* After 21 Uhr Memo sleeps in the empty chat (concept 01.11.). */}
             <Memo act={new Date().getHours() >= 21 || new Date().getHours() < 6 ? 'sleep' : 'land'} size={72} delay={200} style={{ marginLeft: -6 }} />
-            <Txt size={22} line={28} weight={700} tracking={-0.5}>{tx('Einmal sagen. Beide wissen’s.', 'Say it once. You both know.')}</Txt>
+            <Txt size={22} line={28} weight={700} tracking={-0.5}>{tx('Sagt mir einfach, was ansteht.', 'Just tell me what’s coming up.')}</Txt>
             {simple ? (
               <>
                 <Txt size={15} line={22} color={tokens.sub}>{tx('Sag oder schreib es einfach. Tippe auf ein Beispiel, um es auszuprobieren.', 'Just say or type it. Tap an example to try it.')}</Txt>

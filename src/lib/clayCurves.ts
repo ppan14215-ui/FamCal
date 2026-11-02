@@ -19,6 +19,8 @@
 export type F = {
   tx?: number; ty?: number; r?: number; sx?: number; sy?: number;
   rx?: number; ry?: number; o?: number;
+  /** Perspective in px for rx / ry (default 500). */
+  p?: number;
   /** 0 to 1: warm light behind the icon (bulb). */
   glow?: number;
   /** 0 to 1: how much of the part is drawn, left to right (a check mark drawing itself). */
@@ -47,12 +49,225 @@ const hop = (p: number) => {
   const q = (p - 0.84) / 0.16; return -0.06 * 4 * q * (1 - q);
 };
 
+// ─── Calm motions for the Codex icons (02.11.2026) ─────────────────────────
+// Built on critically damped springs in closed form (motion-skill §3): no
+// wobble, no overshoot, and every curve is a sum of springs that cancel, so it
+// starts and ends exactly at rest. Time is in seconds here (a = x * duration).
+// The only underdamped bit is the ceramic contact `clack` (A <= 0.10, k 10,
+// w 22), used only where a heavy thing really lands.
+
+/** Critically damped step 0 to 1 that starts at a = 0. w = sqrt(stiffness / mass). */
+const crit = (a: number, w: number) => { 'worklet'; return a <= 0 ? 0 : 1 - (1 + w * a) * Math.exp(-w * a); };
+/** Out and home again on a critical spring (its velocity shape), peak 1 at a = 1 / w. */
+const hump = (a: number, w: number) => { 'worklet'; return a <= 0 ? 0 : w * a * Math.exp(1 - w * a); };
+/** A later, wider hump, peak 1 at a = 2 / w: weight that follows a move (a nose dips as the bus brakes). */
+const lag = (a: number, w: number) => { 'worklet'; const q = w * a; return a <= 0 ? 0 : (q * q * Math.exp(2 - q)) / 4; };
+/** A hard thing touches down: squash, one short rebound, gone in about 250 ms. Peak A. */
+const clack = (a: number, A: number) => { 'worklet'; return a <= 0 ? 0 : 1.85 * A * Math.exp(-10 * a) * Math.sin(22 * a); };
+/** Out to 1 on one spring, home on another that starts at b. */
+const there = (a: number, w1: number, b: number, w2: number) => { 'worklet'; return crit(a, w1) - crit(a - b, w2); };
+
+/** Length of a calm motion in ms, 0 for the older kinds. */
+export function calmDur(kind: string): number {
+  'worklet';
+  switch (kind) {
+    case 'wait': return 450;
+    case 'sail': return 1200;
+    case 'arrive': case 'leaf': return 1100;
+    case 'lift': case 'offer': case 'carousel': case 'serve': return 1000;
+    case 'dive': case 'heavy': case 'flute': case 'showcard': case 'bloom': case 'hop': case 'nod': case 'place': case 'grow': case 'roll': case 'sway': return 900;
+    case 'steer': case 'strum': case 'spring': case 'unfold': return 800;
+    case 'keys': case 'sink': case 'stretch': case 'sew': case 'snap': return 700;
+  }
+  return 0;
+}
+
+/** The calm kinds; null for every other kind. v is the icon's variant (direction, person, weight). */
+export function calmF(kind: string, x: number, s: number, v?: string): F | null {
+  'worklet';
+  const D = calmDur(kind);
+  if (!D) return null;
+  if (x <= 0 || x >= 1) return {};
+  const a = (x * D) / 1000;
+  const has = (k: string) => !!v && v.indexOf(k) >= 0;
+  switch (kind) {
+    case 'wait': {
+      // WAITS FOR PARTS: this icon is several separate things baked into one
+      // picture (Icon-Teile-Prompts.md, "Neu 02.11.2026"). Until its parts are
+      // rendered it must not act out anything: a marked stopgap, the press
+      // grammar at half amplitude (dips into its feet, never scale-only).
+      const h = hump(a, 22);
+      return { ty: 0.02 * s * h, sy: 1 - 0.03 * h };
+    }
+    case 'arrive': {
+      // A vehicle pulls away (squats on its rear axle), fades while still near
+      // its tile, and drives back in from behind; its nose dips as it brakes.
+      // Travel stays small (0.30 out, 0.22 back) so it never covers a row's text.
+      // v starts with 'L' when the front points left; the rest names its weight,
+      // so no two kinds of vehicle move alike (motion-skill §2.7).
+      const d = v && v.charAt(0) === 'L' ? -1 : 1;
+      // T pull-off time, w return spring, dip nose dip in degrees, sq pull-off squat in degrees
+      let T = 0.34, w = 13, dip = 3, sq = 2.5;
+      if (has('heavy')) { T = 0.42; w = 10; dip = 2; sq = 1.5; } // camper: long, slow, little pitch
+      else if (has('moto')) { T = 0.26; w = 14; dip = 2.5; sq = 4; } // motorbike: quick, front lifts
+      else if (has('light')) { T = 0.3; w = 14; dip = 1.5; sq = 1.5; } // scooter, cargo bike
+      else if (has('rail')) { T = 0.38; w = 12; dip = 0.8; sq = 0; } // tram on rails barely pitches
+      else if (has('car')) { T = 0.3; w = 14; dip = 2.5; sq = 2.5; }
+      else if (has('school')) { T = 0.36; w = 13; dip = 3.4; sq = 2.2; }
+      if (a < T) { const q = a / T; return { tx: d * 0.3 * s * q * q, r: -d * sq * hump(a, 12), o: 1 - clamp((a - 0.35 * T) / (0.5 * T)) }; }
+      if (a < T + 0.05) return { o: 0 };
+      const b = a - T - 0.05;
+      return { tx: -d * 0.22 * s * (1 - crit(b, w)), r: d * dip * lag(b, w), sy: 1 - 0.015 * lag(b, w), o: clamp(b / 0.08) };
+    }
+    case 'sail': {
+      // A heavy ship: slow to leave (bow lifts), slow to arrive, sinks in a touch as it stops.
+      if (a < 0.45) { const q = a / 0.45; return { tx: 0.3 * s * q * q, r: -2.5 * hump(a, 7), o: 1 - clamp((a - 0.16) / 0.24) }; }
+      if (a < 0.5) return { o: 0 };
+      const b = a - 0.5;
+      return { tx: -0.22 * s * (1 - crit(b, 9)), r: 2 * lag(b, 10), ty: 0.015 * s * lag(b, 10), o: clamp(b / 0.12) };
+    }
+    case 'place': {
+      // A building is set down like a game piece: lifted a touch, lowered on a
+      // critical spring, one small jolt where it touches. Stone never squashes.
+      const h = has('museum') ? 0.075 : has('garage') ? 0.055 : 0.065, dl = has('museum') ? 0.03 : 0;
+      return { ty: -h * s * there(a - dl, 24, 0.12, 16) + s * clack(a - dl - 0.3, 0.012) };
+    }
+    case 'carousel': {
+      // The carousel turns a little and back: one turning impression, no squash.
+      return { ry: -25 * there(a, 10, 0.25, 10), ty: -0.02 * s * hump(a, 8) };
+    }
+    case 'grow': {
+      // The rainbow sinks into the horizon (fades like light) and rises from its feet.
+      const c = there(a, 22, 0.1, 12);
+      return { ty: 0.1 * s * c, sy: 1 - 0.05 * c, o: 1 - 0.5 * c };
+    }
+    case 'nod': {
+      // People greet with a nod, each in their own way (no twinning): the head
+      // dips towards you, a forward tilt from the shoulders, no squash.
+      const nod = (k: number, r = 0): F => ({ ty: 0.045 * s * k, rx: -10 * k, r, p: 300 });
+      if (v === 'baby') return { r: 9 * hump(a, 8), ty: 0.02 * s * hump(a, 8) };
+      if (v === 'kind') return nod(hump(a, 15) + 0.7 * hump(a - 0.28, 15));
+      if (v === 'senior') return nod(0.9 * hump(a, 8));
+      if (v === 'frau') { const k = hump(a, 10); return nod(k, -4 * hump(a, 9)); }
+      return nod(hump(a - 0.03, 11));
+    }
+    case 'serve': {
+      // A dish is lifted a little and set down again, softly. Each dish its own
+      // way: bowls tilt, flat things (pizza slice, a tray, a pencil case) stay level.
+      let R = -3, dl = 0, h = 0.07;
+      if (v === 'flat') { R = 0; dl = 0.02; h = 0.065; }
+      else if (v === 'pizza') { R = 0; h = 0.075; }
+      else if (v === 'case') { R = 0; dl = 0.04; h = 0.06; }
+      else if (v === 'salat') { R = -1.5; dl = 0.03; }
+      else if (v === 'pasta') R = -2.5;
+      else if (v === 'morgen') { R = -3.5; dl = 0.05; h = 0.065; }
+      else if (v === 'mittag') { R = -2; dl = 0.06; h = 0.075; }
+      const b = a - dl, c = there(b, 16, 0.26, 13);
+      return { ty: -h * s * c, r: R * c, sy: 1 - 0.02 * hump(b - 0.48, 25), sx: 1 + 0.012 * hump(b - 0.48, 25) };
+    }
+    case 'offer': {
+      // Held up to show (a cone tips towards you, a cup is raised).
+      if (v === 'eis') { const c = there(a, 14, 0.36, 13); return { ty: -0.08 * s * c, r: 7 * c }; }
+      const c = there(a, 13, 0.38, 13);
+      return { ty: -0.1 * s * c, r: 3 * hump(a - 0.1, 11) - 3 * hump(a - 0.42, 11) };
+    }
+    case 'lift': {
+      // Picked up by the handle: the body hangs behind, swings home, is set down.
+      // A soft bag swings more, a stiff folder less.
+      const k = v === 'soft' ? 1.3 : v === 'stiff' ? 0.6 : 1;
+      return { ty: -0.08 * s * there(a, 15, 0.32, 14), r: k * (5 * hump(a - 0.06, 9) - 3 * hump(a - 0.38, 11)) };
+    }
+    case 'heavy': {
+      // Slowly heaved up, falls with gravity, lands hard: cast iron barely gives,
+      // its weight shows in how little it bounces.
+      const top = -0.1 * s * crit(0.42, 10);
+      const ty = a < 0.42 ? -0.1 * s * crit(a, 10) : a < 0.56 ? top * (1 - Math.pow((a - 0.42) / 0.14, 2)) : 0;
+      const c = clack(a - 0.56, 0.025);
+      return { ty, sy: 1 - c, sx: 1 + 0.5 * c };
+    }
+    case 'strum': return { r: -4 * hump(a, 16) - 2.5 * hump(a - 0.28, 16) };
+    case 'flute': return { r: -9 * hump(a, 9), ty: -0.03 * s * hump(a, 9) };
+    case 'keys': {
+      // Two chords: the piano rocks down onto its feet twice. Wood does not squash.
+      return { ty: 0.028 * s * (hump(a, 24) + 0.8 * hump(a - 0.24, 24)) };
+    }
+    case 'sink': {
+      // Someone sits or lies down in it: it gives, then holds them.
+      const k = 0.07 * hump(a, 12);
+      return { sy: 1 - k, sx: 1 + 0.5 * k };
+    }
+    case 'sway': {
+      // Someone climbs into the hammock: the frame rocks on its feet and settles.
+      return { r: 2.5 * hump(a, 7) - 1.5 * hump(a - 0.4, 9), ty: 0.01 * s * hump(a, 7) };
+    }
+    case 'spring': {
+      // The mat gives and flings back; the feet stay planted (origin at the mat).
+      return { sy: 1 - 0.05 * hump(a, 16) + 0.02 * hump(a - 0.16, 12), sx: 1 + 0.02 * hump(a, 16) };
+    }
+    case 'showcard': {
+      // A card is shown and tips towards the light. v 'cal': a day on the calendar, a smaller turn.
+      if (v === 'cal') return { ry: -20 * hump(a, 9), ty: -0.03 * s * hump(a, 9) };
+      if (v === 'id') return { ry: -26 * hump(a - 0.03, 9), ty: -0.025 * s * hump(a - 0.03, 9) };
+      return { ry: -30 * hump(a, 9), ty: -0.03 * s * hump(a, 9) };
+    }
+    case 'unfold': {
+      const c = there(a, 22, 0.1, 12);
+      return { sx: 1 - 0.2 * c, sy: 1 + 0.02 * c };
+    }
+    case 'bloom': {
+      // The flower closes a little and opens again with a turn.
+      const c = there(a, 20, 0.1, 10), k = 1 - 0.16 * c;
+      return { sx: k, sy: k, r: -20 * c };
+    }
+    case 'leaf': {
+      // The wind lifts the leaf, it sails down swinging once each way.
+      return { ty: -0.09 * s * there(a, 14, 0.18, 8), tx: 0.05 * s * (hump(a - 0.05, 7) - 0.6 * hump(a - 0.45, 9)), r: 16 * hump(a - 0.05, 7) - 10 * hump(a - 0.45, 9) };
+    }
+    case 'hop': {
+      // The wind lifts the hat: a crouch, a hop on a real parabola, a soft landing.
+      const h = 0.11, T = 0.34, A = 0.05;
+      const q = clamp((a - 0.08) / T), fly = a > 0.08 && a < 0.08 + T;
+      const crouch = 0.05 * hump(a, 25), c = clack(a - 0.08 - T, A);
+      return { ty: fly ? -h * s * 4 * q * (1 - q) : 0, r: fly ? -8 * Math.sin(Math.PI * q) : 0, sy: 1 - crouch - c, sx: 1 + 0.6 * (crouch + c) };
+    }
+    case 'snap': {
+      // The wallet is pressed shut: it closes a touch from the sides and opens back.
+      const c = there(a, 20, 0.12, 13);
+      return { sx: 1 - 0.05 * c, sy: 1 + 0.01 * c, ty: 0.01 * s * c };
+    }
+    case 'roll': {
+      // A pumpkin rocks on its round bottom: it rolls as it tilts, no hop.
+      const r = 4 * hump(a, 9) - 2.5 * hump(a - 0.3, 9);
+      return { r, tx: 0.008 * s * r };
+    }
+    case 'steer': return { r: -9 * hump(a, 12) + 7 * hump(a - 0.3, 12) };
+    case 'sew': {
+      // The needle runs: fast short stitches (the needle goes down 10 times a second) that start and stop smoothly.
+      const e = Math.sin(Math.PI * clamp((a - 0.05) / 0.38));
+      return { ty: 0.02 * s * (0.5 - 0.5 * Math.cos(Math.PI * 2 * 10 * (a - 0.05))) * e, r: 1.2 * Math.sin(Math.PI * 2 * 5 * (a - 0.05)) * e };
+    }
+    case 'stretch': {
+      // The strap is pulled wide and snaps back; lenses keep their shape (5 % at most).
+      const c = there(a, 10, 0.25, 22);
+      return { sx: 1 + 0.05 * c, sy: 1 - 0.01 * c, ty: -0.013 * s * hump(a - 0.25, 22) };
+    }
+    case 'dive': return { ty: 0.08 * s * there(a, 10, 0.3, 10), r: 4 * hump(a, 8) };
+  }
+  return {};
+}
+
 /** How long a kind takes; quiet ones are shorter. */
-export const durOf = (kind?: string) => (kind === 'press' ? 700 : kind === 'blink' ? 1000 : kind ? DUR : 900);
+export const durOf = (kind?: string) => {
+  'worklet';
+  const c = kind ? calmDur(kind) : 0;
+  return c || (kind === 'press' ? 700 : kind === 'blink' ? 1000 : kind ? DUR : 900);
+};
 
 /** One-piece icons: the whole picture is the thing that moves. */
-export function wholeF(kind: string, x: number, s: number): F {
+export function wholeF(kind: string, x: number, s: number, v?: string): F {
   'worklet';
+  const c = calmF(kind, x, s, v);
+  if (c) return c;
   switch (kind) {
     case 'press': {
       // The quiet answer to a tap: dip into the knees, spring up a touch, settle. No travel.
@@ -243,12 +458,13 @@ export function wholeF(kind: string, x: number, s: number): F {
       return { r: x >= 0.999 ? 0 : 360 * inOut(seg(x, 0.06, 0.82)) + 5 * wob(seg(x, 0.82, 1), 1) };
     }
     case 'drive': {
-      // Rock back, race off to the right, come back in from the left and brake.
+      // Rock back, pull off to the right, come back in from the left and brake.
+      // Travel stays near the tile and it fades early, so it never drives over a row's text.
       let tx = 0, r = 0, o = 1;
       if (x < 0.14) { const e = out(x / 0.14); tx = -0.06 * s * e; r = 4 * e; }
-      else if (x < 0.42) { const e = Math.pow(seg(x, 0.14, 0.42), 2); tx = -0.06 * s + 1.1 * s * e; r = 4 - 8 * bump(seg(x, 0.14, 0.3)); o = 1 - seg(x, 0.32, 0.42); }
-      else if (x < 0.5) { o = 0; tx = -s; }
-      else { const e = out(seg(x, 0.5, 0.86)); tx = -0.9 * s * (1 - e); o = seg(x, 0.5, 0.6); r = -5 * bump(seg(x, 0.78, 0.96)); }
+      else if (x < 0.42) { const e = Math.pow(seg(x, 0.14, 0.42), 2); tx = -0.06 * s + 0.4 * s * e; r = 4 - 8 * bump(seg(x, 0.14, 0.3)); o = 1 - seg(x, 0.2, 0.36); }
+      else if (x < 0.5) { o = 0; tx = -0.25 * s; }
+      else { const e = out(seg(x, 0.5, 0.86)); tx = -0.25 * s * (1 - e); o = seg(x, 0.5, 0.6); r = -5 * bump(seg(x, 0.78, 0.96)); }
       return { tx, r, o };
     }
     case 'fly': {
@@ -467,7 +683,7 @@ export function baseF(kind: string, t: number, u: number, variant?: string): F {
 export function toRN(f: F): any {
   'worklet';
   const tr: any[] = [];
-  if (f.rx !== undefined || f.ry !== undefined) tr.push({ perspective: 500 });
+  if (f.rx !== undefined || f.ry !== undefined) tr.push({ perspective: f.p ?? 500 });
   if (f.tx) tr.push({ translateX: f.tx });
   if (f.ty) tr.push({ translateY: f.ty });
   if (f.r) tr.push({ rotate: `${f.r}deg` });
@@ -481,7 +697,7 @@ export function toRN(f: F): any {
 /** The same frame as CSS, for the review page. */
 export function toCSS(f: F): string {
   let s = '';
-  if (f.rx !== undefined || f.ry !== undefined) s += 'perspective(500px) ';
+  if (f.rx !== undefined || f.ry !== undefined) s += `perspective(${f.p ?? 500}px) `;
   if (f.tx) s += `translateX(${f.tx}px) `;
   if (f.ty) s += `translateY(${f.ty}px) `;
   if (f.r) s += `rotate(${f.r}deg) `;
@@ -491,3 +707,4 @@ export function toCSS(f: F): string {
   if (f.sy !== undefined) s += `scaleY(${f.sy}) `;
   return s;
 }
+

@@ -9,6 +9,8 @@ import type { PersonId } from '../theme/tokens';
 import { persons } from '../theme/tokens';
 import { parseWhen, When } from './when';
 import { iconFor } from './iconWords';
+import { clayWhole, CODEX_HAD } from './clayWhole';
+import { calmDur } from './clayCurves';
 import { TODAY, NOW, addDays, weekday, minutes, long, short, hm, count } from './dates';
 import { byTime } from './selectors';
 import { ruleOf } from './repeat';
@@ -320,8 +322,15 @@ export type Understood = {
   more?: { title: string; sub: string | null; date: string; end_date: string | null; start: string | null; end: string | null; who: Who | 'none'; place: string | null; repeat: string | null; icon?: string | null; work?: boolean }[];
 };
 
-/** Icons a Termin can carry: the whole ones, not their animated parts. */
-export const TERMIN_ICON_NAMES = (Object.keys(clayIcons) as ClayName[]).filter((k) => !k.includes('__'));
+/**
+ * Icons a Termin can carry: the whole ones, not their animated parts. The
+ * Codex icons of 02.11. go last: the deployed functions read only the first 300
+ * names (now raised to 500 in supabase/functions, live after the next deploy),
+ * so until then a cut costs only new icons, and iconFor still finds those by keyword.
+ */
+const CODEX_NEW = new Set<string>((Object.keys(clayWhole) as ClayName[]).filter((n) => calmDur(clayWhole[n]!.kind) > 0 && !CODEX_HAD.includes(n)));
+const ALL_NAMES = (Object.keys(clayIcons) as ClayName[]).filter((k) => !k.includes('__'));
+export const TERMIN_ICON_NAMES = [...ALL_NAMES.filter((n) => !CODEX_NEW.has(n)), ...ALL_NAMES.filter((n) => CODEX_NEW.has(n))];
 const isIcon = (v: unknown): v is ClayName => typeof v === 'string' && !v.includes('__') && v in clayIcons;
 
 const NO_TIME = () => tx('Keine Uhrzeit genannt, ich trage den Tag ein und frage nach.', "No time given, I'll add the day and ask.");

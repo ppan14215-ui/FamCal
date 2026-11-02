@@ -154,7 +154,7 @@ Deno.serve(async (req) => {
     .filter((l) => l && typeof l.id === 'string' && typeof l.name === 'string')
     .map((l) => `${String(l.id).slice(0, 60)}: ${String(l.name).slice(0, 60).replace(/[\n\r]/g, ' ')}`).join('; ') || 'einkauf: Einkauf';
   // The app sends the icon names it has, so new icons need no change here.
-  const icons = (Array.isArray(input.icons) ? input.icons : []).filter((x) => typeof x === 'string' && /^[a-z0-9-]{2,30}$/.test(x)).slice(0, 300).join(', ') || 'kalender';
+  const icons = (Array.isArray(input.icons) ? input.icons : []).filter((x) => typeof x === 'string' && /^[a-z0-9-]{2,30}$/.test(x)).slice(0, 500).join(', ') || 'kalender';
 
   const params = {
     model: 'claude-haiku-5-5',

@@ -14,6 +14,7 @@ import { useStore, actions } from '../state/store';
 import { haptics } from '../lib/haptics';
 import { placeKind, lastPlace, placeName, looksVerified, findPlace, foundText, tileXY, mapsLink, type Found } from '../lib/orte';
 import type { EventSnap } from '../lib/feed';
+import { tx } from '../i18n/lang';
 
 /** Termine whose place question is finished on this phone (answered, skipped or filled in). */
 const handled = new Set<string>();
@@ -30,7 +31,8 @@ type Step =
 export default function PlaceAsk({ e }: { e: EventSnap }) {
   const events = useStore((s) => s.events);
   const kind = placeKind(e.title);
-  const L = (de: string, en: string) => (kind?.de === false ? en : de);
+  // UI text follows the app language (Julian 28.10.); only the place itself keeps the spoken words.
+  const L = (de: string, en: string) => tx(de, en);
   const [step, setStep] = useState<Step>({ s: 'off' });
   const [text, setText] = useState('');
 

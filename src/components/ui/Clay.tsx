@@ -65,7 +65,7 @@ function ClayMotion({ name, size, style }: { name: ClayName; size: number; style
   const u = size / 1024;
 
   const outer = useAnimatedStyle((): any => {
-    if (!spec) return toRN(wholeF(kind, t.value, size));
+    if (!spec) return toRN(wholeF(kind, t.value, size, whole!.variant));
     if (ride) return toRN(wholeF('drive', t.value, size));
     // A second picture rides with the whole icon, so the icon itself moves.
     if (kind === 'state') return toRN(baseF(kind, t.value, u, variant));

@@ -17,7 +17,7 @@
 - **rise(i):** Inhalte steigen 12 pt hoch und blenden ein, 240 ms, versetzt um 50 ms (höchstens 6 Stufen).
 - **rowIn, rowOut, rowLayout:** Zeilen blenden ein und aus, Nachbarn rutschen in die Lücke.
 - **swapIn:** Inhalt wechselt an Ort und Stelle (Tab, Ansicht, Schritt).
-- **Icon Motion beim Erledigen:** Clay-Icons mit Teil-Ebene erzählen ihre Geschichte (Ordner schließt, Spritze leert sich, Münze springt). Ohne Teil-Ebene: Ducken, Hüpfen, Setzen. Daten in `src/lib/clayMotion.ts`, erzeugt von `scripts/gen-motion.js`.
+- **Icon Motion beim Erledigen:** Clay-Icons mit Teil-Ebene erzählen ihre Geschichte (Ordner schließt, Spritze leert sich, Münze springt). Ohne Teil-Ebene: Ducken, Hüpfen, Setzen. Daten in `src/lib/clayMotion.ts`, erzeugt von `scripts/gen-motion.js`. Ganze Icons: `src/lib/clayWhole.ts`; die ruhigen Bewegungen der Codex Icons (02.11.) sind `calmF` in `src/lib/clayCurves.ts`, nur kritisch gedämpfte Federn. Icons, die auf Teile warten, stehen in `WAITS_FOR_PARTS` und geben nur leicht nach. Galerie zum Prüfen (nur Dev): `/demo/icons`, Kontaktbogen `/demo/icons?strip=1`.
 
 ## Dauer
 press 120 · micro 180 · base 240 · sheet 320 · reveal 520. UI-Chrom bleibt unter 300 ms. Nur `transform` und `opacity` animieren.

@@ -4,11 +4,18 @@ Alle sichtbaren Änderungen an FamCal. Neueste oben. Agenten und Menschen: Ände
 
 ## Unreleased
 
+### 107 neue Clay Icons (02.11.)
+- Kino, Tankstelle, Bus, Hochzeit, Weihnachten, Personen und 100 weitere Icons sind in der App, auch unter „Symbol wählen“. Der Assistent und die Regeln finden sie über deutsche und englische Wörter („Kino“, „cinema“, „tanken“).
+- 51 davon bewegen sich als Ganzes mit ruhigen Federn: Fahrzeuge fahren los und bremsen (jedes mit eigenem Gewicht, ohne über den Text zu fahren), Personen nicken, das Karussell dreht sich, der Kürbis schaukelt. Die übrigen 56 (jetzt auch U-Bahn und Hörbuch) geben beim Antippen nur leicht nach, bis ihre Einzelteile da sind.
+- Bessere Icons aus Wörtern: „Flug buchen“ ist kein Buch mehr, Laternenumzug und Sankt Martin bekommen das Herbstblatt, Schulbus, Busfahrkarte, Rollerfahren, Weihnachtsmarkt, Oma und Opa, Parkausweis, Fasching, Halloween und Babyparty passen jetzt.
+- Briefkasten, Brotdose, Federmappe, Frühstück, Mittagessen, Prüfung und Schulbus haben die neuen Bilder.
+
 ### Onboarding zeigt die echte App (02.11.)
 - Der Start zeigt in acht kurzen Kapiteln die echte App mit einer Beispielfamilie: Termin eintragen, Überblick, Verschieben, Partner bekommt Bescheid, Einkauf, Rezept, und noch mehr. Weiter geht es nur per Tipp, Überspringen geht immer.
 - Am Ende räumt die Beispielfamilie den Chat leer, dann tragt ihr euch ein. Eure eigenen Daten berührt das nie.
 - Die Probier-Schritte Termin und Einkauf sind weg, nach der Familie kommen gleich die Kalender.
 - Der Vorfilm mit Memo ist neu animiert: ruhiger, jede Szene spielt einmal und bleibt dann stehen, bis ihr auf Weiter tippt. Die Kühlschranktür wird zum Handy, Zettel fliegen zu Karten, Memo blinzelt bei jedem Blickwechsel.
+- Der Vorfilm ist länger und zeigt, was FamCal kann: ein Foto vom Kita-Brief wird Termin und Mitbring-Liste, eine weitergeleitete Mail wird ein Termin (mit „Bald“ markiert), Memo ergänzt Arzt, Adresse und Uhrzeit von selbst und merkt sich, was ihr sagt. Neuer Claim: „Der klügste Kalender, mit dem ihr je gesprochen habt“.
 
 ### Kalender ruhiger und klarer (31.10. morgens)
 - Der Umschalter gleitet sofort beim Tippen los, auch zwischen Heute und Tage.

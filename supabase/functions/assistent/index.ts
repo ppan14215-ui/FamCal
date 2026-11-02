@@ -208,7 +208,7 @@ Deno.serve(async (req) => {
     .filter(Boolean).join('\n');
   const snapshot = typeof input.snapshot === 'string' ? input.snapshot.slice(0, 16000) : '';
   const screen = typeof input.screen === 'string' ? input.screen.replace(/[\n\r]/g, ' ').slice(0, 200) : '';
-  const icons = (Array.isArray(input.icons) ? input.icons : []).filter((x) => typeof x === 'string' && /^[a-z0-9-]{2,30}$/.test(x)).slice(0, 300).join(', ') || 'kalender';
+  const icons = (Array.isArray(input.icons) ? input.icons : []).filter((x) => typeof x === 'string' && /^[a-z0-9-]{2,30}$/.test(x)).slice(0, 500).join(', ') || 'kalender';
 
   const t0 = Date.now();
   const params = {
