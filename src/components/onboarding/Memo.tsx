@@ -30,6 +30,7 @@ import Animated, {
   useSharedValue, useAnimatedStyle, withTiming, withSequence, withSpring, withRepeat, withDelay,
   Easing, useReducedMotion, cancelAnimation, runOnJS, type SharedValue,
 } from 'react-native-reanimated';
+import { seg } from '../../theme/film';
 import { haptics } from '../../lib/haptics';
 
 const ART = {
@@ -41,8 +42,11 @@ const ART = {
   think: require('../../../assets/memo/memo-think.webp'),
   wink: require('../../../assets/memo/memo-wink.webp'),
   wide: require('../../../assets/memo/memo-wide.webp'),
+  // Looking to the side (film only): made from memo-neutral, the eyes moved on the face.
+  left: require('../../../assets/memo/memo-left.webp'),
+  right: require('../../../assets/memo/memo-right.webp'),
 };
-type Eyes = keyof typeof ART;
+export type Eyes = keyof typeof ART;
 
 export type MemoAct = 'land' | 'blink' | 'wobble' | 'peek' | 'sleep' | 'idle' | 'look' | 'think' | 'happy' | 'cheer' | 'wink' | 'roll' | 'note';
 
@@ -259,4 +263,55 @@ function Over({ v, kind, size, fx }: { v: SharedValue<number>; kind: 'think' | '
       <Text style={{ fontSize: fx, lineHeight: fx * 1.1, fontWeight: '800', color: INK }}>{kind === 'think' ? '?' : 'z'}</Text>
     </Animated.View>
   );
+}
+
+const CLOSE_MS = 70;
+const OPEN_MS = 90;
+
+/** An eye key on a film clock: at time t (s) the eyes become e. `direct` crosses over without closing (wink). */
+export type EyeKey = { t: number; e: Eyes; direct?: boolean };
+
+function eyeAt(t: number, keys: EyeKey[], initial: Eyes): [Eyes, Eyes, number] {
+  'worklet';
+  let prev = initial;
+  for (let i = 0; i < keys.length; i++) {
+    const k = keys[i];
+    if (t < k.t - CLOSE_MS / 1000) return [prev, prev, 0];
+    if (k.direct) {
+      if (t < k.t + 0.03) return [prev, k.e, seg(t, k.t - CLOSE_MS / 1000, k.t + 0.03)];
+    } else {
+      if (t < k.t) return [prev, 'closed', seg(t, k.t - CLOSE_MS / 1000, k.t)];
+      if (t < k.t + OPEN_MS / 1000) return ['closed', k.e, seg(t, k.t, k.t + OPEN_MS / 1000)];
+    }
+    prev = k.e;
+  }
+  return [prev, prev, 0];
+}
+
+/**
+ * Memo's face driven by a film clock (seconds): every frame is a pure function of the clock, so the
+ * film can be scrubbed. All eye arts are stacked; the closed one lies lowest so a crossing never shows
+ * the background through the body.
+ */
+export function MemoFace({ size, clock, keys, initial = 'open' }: { size: number; clock: SharedValue<number>; keys: EyeKey[]; initial?: Eyes }) {
+  const order: Eyes[] = ['closed'];
+  for (const e of [initial, ...keys.map((k) => k.e)]) if (!order.includes(e)) order.push(e);
+  return (
+    <View style={{ width: size, height: size }} accessible accessibilityLabel="Memo" pointerEvents="none">
+      {order.map((e) => <EyeLayer key={e} e={e} order={order} size={size} clock={clock} keys={keys} initial={initial} />)}
+    </View>
+  );
+}
+
+function EyeLayer({ e, order, size, clock, keys, initial }: { e: Eyes; order: Eyes[]; size: number; clock: SharedValue<number>; keys: EyeKey[]; initial: Eyes }) {
+  const st = useAnimatedStyle(() => {
+    const [A, B, a0] = eyeAt(clock.value, keys, initial);
+    const a = a0 * a0 * (3 - 2 * a0);
+    let o = 0;
+    if (A === B) o = e === A ? 1 : 0;
+    else if (order.indexOf(B) > order.indexOf(A)) o = e === A ? 1 : e === B ? a : 0;
+    else o = e === B ? 1 : e === A ? 1 - a : 0;
+    return { opacity: o };
+  });
+  return <Animated.Image source={ART[e]} style={[{ position: 'absolute', left: 0, top: 0, width: size, height: size }, st]} resizeMode="contain" />;
 }

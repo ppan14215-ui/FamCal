@@ -53,7 +53,9 @@ export default function Showcase({ onStart, onInvited }: { onStart: () => void; 
   const [film, setFilm] = useState<number | null>(0);
   const last = film === null && i === chapters.length - 1;
   const toChapters = () => { haptics.select(); setFilm(null); setI(0); };
-  const nextFilm = () => { if (film === null) return; if (film >= INTRO_BEATS - 1) toChapters(); else { haptics.select(); setFilm(film + 1); } };
+  // The film may use a tap itself (a checkpoint inside a beat) before it moves on.
+  const filmTap = useRef<(() => boolean) | null>(null);
+  const nextFilm = () => { if (film === null) return; if (filmTap.current?.()) { haptics.select(); return; } if (film >= INTRO_BEATS - 1) toChapters(); else { haptics.select(); setFilm(film + 1); } };
   const go = (n: number) => { haptics.select(); setI(Math.max(0, Math.min(chapters.length - 1, n))); };
   const compact = useCompact();
   const btnH = compact ? 48 : 54;
@@ -84,7 +86,7 @@ export default function Showcase({ onStart, onInvited }: { onStart: () => void; 
         </View>
       </View>
       {film !== null
-        ? <FilmRun beat={film} onNext={nextFilm} />
+        ? <FilmRun beat={film} onNext={nextFilm} tap={filmTap} />
         : <ChapterRun key={i} chapters={chapters} i={i} today={today} box={box} onBox={setBox} />}
       <Animated.View entering={FadeIn.duration(motion.base).delay(T_NEXT)} style={{ pointerEvents: ready ? 'auto' : 'none', height: footerH + 8, paddingHorizontal: 18, paddingTop: 8, paddingBottom: (compact ? 12 : 18) + insets.bottom, gap: 10 }}>
         {last ? (
@@ -114,22 +116,23 @@ export default function Showcase({ onStart, onInvited }: { onStart: () => void; 
  * (src/components/onboarding/Intro.tsx). A tap on the stage moves on, like Weiter. The stage scales
  * down on short screens so the film never collides with the footer.
  */
-function FilmRun({ beat, onNext }: { beat: number; onNext: () => void }) {
+function FilmRun({ beat, onNext, tap }: { beat: number; onNext: () => void; tap: React.MutableRefObject<(() => boolean) | null> }) {
   const compact = useCompact();
   const [ts, tl, ls, ll] = compact ? [22, 27, 15, 20] : [26, 31, 16, 22];
   const copy = introCopy(beat);
   const tsz = copy.title.length > 44 ? Math.round(ts * 0.84) : ts;
   const [h, setH] = useState(0);
-  const scale = h ? Math.min(1, (h - 8) / 390) : 1;
+  const scale = h ? Math.min(1, (h - 20) / 390) : 1;
   return (
     <>
       <View style={{ height: tl * 2 + ll * 2 + (compact ? 6 : 8) + (compact ? 20 : 28), paddingHorizontal: 18, paddingTop: compact ? 10 : 14, paddingBottom: compact ? 10 : 14, gap: compact ? 6 : 8 }}>
         <Swap text={copy.title} i={0}>{(t) => <Txt size={tsz} line={tl} weight={700} tracking={-0.8} numberOfLines={2}>{t}<Dot /></Txt>}</Swap>
-        <Swap text={copy.lead} i={1}>{(t) => <Txt size={ls} line={ll} color={tokens.sub} numberOfLines={2}>{t}</Txt>}</Swap>
+        {/* Title first, the line 120 ms later (motion-skill §6). */}
+        <Swap text={copy.lead} i={1} lag={120}>{(t) => <Txt size={ls} line={ll} color={tokens.sub} numberOfLines={2}>{t}</Txt>}</Swap>
       </View>
       <Pressable onPress={onNext} accessibilityRole="button" accessibilityLabel={tx('Weiter', 'Next')} style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }} onLayout={(e) => setH(e.nativeEvent.layout.height)}>
         <View style={{ transform: [{ scale }] }}>
-          <Intro beat={beat} />
+          <Intro beat={beat} tap={tap} />
         </View>
       </Pressable>
     </>
@@ -224,7 +227,7 @@ function ChapterRun({ chapters, i, today, box, onBox }: { chapters: Chapter[]; i
  * Text that can change in place (chapter 8: the claim turns into "Jetzt ihr"): the old text fades out
  * (motion.micro), then the new one rises in. On the chapter's first frame it simply rises in.
  */
-function Swap({ text, i, children }: { text: string; i: number; children: (t: string) => React.ReactNode }) {
+function Swap({ text, i, lag, children }: { text: string; i: number; lag?: number; children: (t: string) => React.ReactNode }) {
   const [shown, setShown] = useState(text);
   const o = useSharedValue(1);
   useEffect(() => {
@@ -235,7 +238,7 @@ function Swap({ text, i, children }: { text: string; i: number; children: (t: st
   const st = useAnimatedStyle(() => ({ opacity: o.value }));
   return (
     <Animated.View style={st}>
-      <Animated.View key={shown} entering={rise(i)}>{children(shown)}</Animated.View>
+      <Animated.View key={shown} entering={lag != null ? rise(0).delay(lag) : rise(i)}>{children(shown)}</Animated.View>
     </Animated.View>
   );
 }

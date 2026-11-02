@@ -8,6 +8,7 @@ Alle sichtbaren Änderungen an FamCal. Neueste oben. Agenten und Menschen: Ände
 - Der Start zeigt in acht kurzen Kapiteln die echte App mit einer Beispielfamilie: Termin eintragen, Überblick, Verschieben, Partner bekommt Bescheid, Einkauf, Rezept, und noch mehr. Weiter geht es nur per Tipp, Überspringen geht immer.
 - Am Ende räumt die Beispielfamilie den Chat leer, dann tragt ihr euch ein. Eure eigenen Daten berührt das nie.
 - Die Probier-Schritte Termin und Einkauf sind weg, nach der Familie kommen gleich die Kalender.
+- Der Vorfilm mit Memo ist neu animiert: ruhiger, jede Szene spielt einmal und bleibt dann stehen, bis ihr auf Weiter tippt. Die Kühlschranktür wird zum Handy, Zettel fliegen zu Karten, Memo blinzelt bei jedem Blickwechsel.
 
 ### Kalender ruhiger und klarer (31.10. morgens)
 - Der Umschalter gleitet sofort beim Tippen los, auch zwischen Heute und Tage.
