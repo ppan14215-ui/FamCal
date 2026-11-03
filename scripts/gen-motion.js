@@ -6,8 +6,7 @@
 const fs = require('fs');
 const path = require('path');
 const root = path.join(__dirname, '..');
-// Icons v1 (03.11.): design/icons-v1/selected.json, made by scripts/icons-v1.py, replaces meta.min.json.
-const meta = JSON.parse(fs.readFileSync(path.join(root, 'design/icons-v1/selected.json'), 'utf8'));
+const meta = JSON.parse(fs.readFileSync(path.join(root, 'design/icon-motion/meta.min.json'), 'utf8'));
 const files = new Set(fs.readdirSync(path.join(root, 'assets/icons')));
 
 // Part name → kind of motion. Everything not listed pops.
@@ -22,18 +21,14 @@ const KIND = {
 };
 const out = {};
 for (const [name, m] of Object.entries(meta)) {
-  // Layers travel as one strip per icon (icon-<name>__layers.webp, cells in draw order).
-  const layers = files.has(`icon-${name}__layers.webp`) ? (m.layers || []) : [];
-  const parts = layers.filter((k) => k !== 'base');
-  if (!parts.length || layers.length < 2) continue;
-  // The moving part: one whose name says how it moves, else the top one.
-  const part = parts.find((p) => KIND[p.replace(/-\d+$/, '')] || KIND[p]) ?? parts[parts.length - 1];
+  const parts = Object.keys(m.L || {}).filter((k) => k !== 'whole' && k !== 'base' && !k.startsWith('state'));
+  const part = parts.find((p) => files.has(`icon-${name}__${p}.webp`));
+  if (!part || !files.has(`icon-${name}__base.webp`)) continue;
   const [x0, y0, x1, y1] = m.L[part];
-  const kind = KIND[part] ?? KIND[part.replace(/-\d+$/, '')] ?? 'pop';
+  const kind = KIND[part] ?? 'pop';
   // Lids hinge at their bottom-left, swings and turning pages at their top, the rest at the centre.
   const o = kind === 'lid' ? [x0, y1] : kind === 'swing' || kind === 'flip' ? [(x0 + x1) / 2, y0] : [(x0 + x1) / 2, (y0 + y1) / 2];
-  // Every layer is drawn in the manifest's order; only `part` moves, the rest ride with the base.
-  out[name] = { part, kind, o: o.map((v) => Math.round(v)), under: false, what: m.a, layers };
+  out[name] = { part, kind, o: o.map((v) => Math.round(v)), under: m.o === 'parts-first', what: m.a };
 }
 // Pieces cut out later with scripts/split-part.py (Julian 31.10.: "beim Padel wird kurz der Ball geschlagen").
 // For a hit, o is the grip the racket or stick swings around.
@@ -54,8 +49,7 @@ const EXTRA = {
 };
 for (const [name, spec] of Object.entries(EXTRA)) {
   const base = spec.state ? `icon-${name}.webp` : `icon-${name}__base.webp`;
-  if (out[name]?.layers?.includes(spec.part)) out[name] = { ...spec, layers: out[name].layers };
-  else if (files.has(`icon-${name}__${spec.part}.webp`) && files.has(base)) out[name] = spec;
+  if (files.has(`icon-${name}__${spec.part}.webp`) && files.has(base)) out[name] = spec;
 }
 // Motion designer pass 31.10.: better kinds and pivots for the layered icons.
 const box = (name, part) => meta[name]?.L?.[part];
@@ -88,55 +82,10 @@ for (const [name, f] of Object.entries(OVERRIDE)) {
   Object.assign(out[name], f(box(name, out[name].part) || [0, 0, 1024, 1024]));
   out[name].o = out[name].o.map((v) => Math.round(v));
 }
-// Icons v1 (03.11.): every part its own motion, from scripts/part-moves.js.
-const MOVES = require('./part-moves');
-const { pieceDur } = (() => {
-  // pieceDur lives in src/lib/clayCurves.ts; read the durations from its switch so there is one source.
-  const src = fs.readFileSync(path.join(root, 'src/lib/clayCurves.ts'), 'utf8');
-  const fn = src.slice(src.indexOf('export function pieceDur'), src.indexOf('export function pieceF'));
-  const js = fn.replace('export function pieceDur(k: string, p?: number[]): number', 'function pieceDur(k, p)').replace("'worklet';", '');
-  return { pieceDur: new Function(`${js}; return pieceDur;`)() };
-})();
-const NAMED = { c: [0.5, 0.5], t: [0.5, 0], b: [0.5, 1], l: [0, 0.5], r: [1, 0.5], tl: [0, 0], tr: [1, 0], bl: [0, 1], br: [1, 1] };
-const at = (bb, f) => [bb[0] + (bb[2] - bb[0]) * f[0], bb[1] + (bb[3] - bb[1]) * f[1]];
-const centre = (bb) => at(bb, [0.5, 0.5]);
-let moved = 0;
-for (const [name, lines] of Object.entries(MOVES)) {
-  if (name === 'WRAP') continue;
-  const m = meta[name];
-  const layers = files.has(`icon-${name}__layers.webp`) ? (m?.layers || []) : [];
-  if (layers.length < 2) { console.warn('no layers for', name); continue; }
-  if (!lines.length && !MOVES.WRAP[name]) continue;
-  const moves = {};
-  let T = 0;
-  for (const line of lines) {
-    const [layer, k, piv, d, ...rest] = line.split(/\s+/);
-    if (!layers.includes(layer)) throw new Error(`${name}: no layer ${layer} in ${layers}`);
-    const bb = m.L[layer] || m.L.whole;
-    const pv = NAMED[piv] ? at(bb, NAMED[piv]) : piv.startsWith('@') ? at(m.L.base || m.L.whole, piv.slice(1).split(',').map(Number)) : at(bb, piv.split(',').map(Number));
-    let p = rest.map(Number);
-    if (k === 'go') {
-      const [target, frac, arc = 0, rot = 0] = rest;
-      const tb = m.L[target.slice(1)];
-      if (!tb) throw new Error(`${name}: no target ${target}`);
-      const [x0, y0] = centre(bb), [x1, y1] = centre(tb);
-      p = [(x1 - x0) * +frac, (y1 - y0) * +frac, +arc, +rot].map((v) => Math.round(v));
-    }
-    moves[layer] = { k, o: pv.map((v) => Math.round(v)), d: +d, p };
-    T = Math.max(T, +d + 1000 * pieceDur(k, p));
-  }
-  const wrapLine = MOVES.WRAP[name];
-  let wrap;
-  if (wrapLine) { const [k, ...p] = wrapLine.split(/\s+/); wrap = { k, p: p.map(Number) }; T = Math.max(T, 1000 * pieceDur(k, wrap.p)); }
-  const first = Object.keys(moves)[0] ?? layers[layers.length - 1];
-  out[name] = { part: first, kind: 'parts', o: [512, 512], under: false, what: m.a, layers, moves, T: Math.round(T), ...(wrap ? { wrap } : {}) };
-  moved++;
-}
-console.log(moved, 'icons with a motion for every part');
 const body = `/** Generated by scripts/gen-motion.js from design/icon-motion/meta.min.json. Do not edit. */
 import type { ClayName } from './clayIcons';
 
-export type ClayMotionSpec = { part: string; kind: string; o: [number, number]; under: boolean; what: string; variant?: string; state?: boolean; ride?: boolean; layers?: string[]; moves?: Record<string, { k: string; o: [number, number]; d: number; p: number[] }>; T?: number; wrap?: { k: string; p: number[] } };
+export type ClayMotionSpec = { part: string; kind: string; o: [number, number]; under: boolean; what: string; variant?: string; state?: boolean; ride?: boolean };
 
 export const clayMotion: Partial<Record<ClayName, ClayMotionSpec>> = ${JSON.stringify(out, null, 1)} as any;
 `;
