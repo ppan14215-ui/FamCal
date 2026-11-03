@@ -133,7 +133,7 @@ export default function MonthView() {
         })}
       </Animated.View>
       </GestureDetector>
-      <H2 right={`${list.length} ${list.length === 1 ? tx('Termin', 'event') : tx('Termine', 'events')}`}>{short(day)}</H2>
+      <H2>{short(day)}</H2>
       {list.length ? (
         <Group>
           {list.map((e) => (

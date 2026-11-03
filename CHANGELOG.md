@@ -4,6 +4,15 @@ Alle sichtbaren Änderungen an FamCal. Neueste oben. Agenten und Menschen: Ände
 
 ## Unreleased
 
+### Ruhiger, weniger Text (03.11.)
+- Leerer Chat zeigt nur noch drei Beispielsätze direkt über dem Feld, ohne Memo, Überschrift und Hilfetext.
+- Eigene Nachrichten ohne „Du · Uhrzeit“. Eine Termin Karte fragt nur noch eine Sache auf einmal (erst Uhrzeit, dann wer geht, dann der Ort). Die schwebende zweite Frage über dem Feld ist weg. Karte antippen öffnet den Termin, der Knopf „Ändern“ fällt weg.
+- Heute: kein „Als Nächstes“, kein „Danach“, keine Labels „Mitgedacht“, „Bald“, „Später heute“. Wochenbriefing ist eine Zeile. Leere Bereiche verschwinden statt Hilfetext zu zeigen.
+- Monat: ohne „5 Termine“ über der Tagesliste.
+- Listen: kein Zähler unter dem Titel und an den Abschnitten, kein zweites Eingabefeld. Das Feld unten sagt, welche Liste es füllt („Auf Einkauf …“). Der Abo Vorschlag ist eine Zeile. Der Hilfetext zu Haken und Wischen ist weg. Spielerlisten behalten ihr eigenes Feld.
+- Termin: ohne „Symbol“ Chip und ohne „selbst übernommen“. Ganztägig, Wiederholen, Erinnerung, Countdown und Notiz zeigen sich nur, wenn sie etwas enthalten, sonst hinter „Mehr“.
+- Plus Menü ohne Überschrift und Unterzeilen. Einstellungen: Name links, Wert rechts, nur noch eine Sprache Zeile.
+
 ### Längerer Einstiegsfilm (02.11.)
 - Der Film hat jetzt acht Szenen: Foto vom Kita-Brief, weitergeleitete Mail (mit „Bald“ markiert), Memo kennt euren Alltag und merkt sich, was ihr sagt. Am Ende wird das Handy zum Monatskalender: „Der klügste Kalender, mit dem du je gesprochen hast“.
 

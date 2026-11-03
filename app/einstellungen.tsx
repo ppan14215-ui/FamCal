@@ -29,14 +29,14 @@ import { HIDDEN } from '../src/lib/core';
 import { startPreview } from '../src/lib/vorschau';
 import ColorPicker from '../src/components/ColorPicker';
 
-function SRow({ icon, t, s, right, onPress }: { icon: ClayName; t: string; s: string; right?: React.ReactNode; onPress?: () => void }) {
+/** Name left, value right, like Apple's settings (Julian 03.11.): no second line under every row. */
+function SRow({ icon, t, v, right, onPress }: { icon: ClayName; t: string; v?: string; right?: React.ReactNode; onPress?: () => void }) {
   return (
-    <PressScale onPress={onPress} style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 10, paddingHorizontal: 14, backgroundColor: tokens.row }}>
-      <Tile name={icon} size={38} radius={12} />
-      <View style={{ flex: 1 }}>
-        <Txt size={15.5} weight={600}>{t}</Txt>
-        <Meta>{s}</Meta>
-      </View>
+    <PressScale onPress={onPress} style={{ flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 52, paddingVertical: 8, paddingHorizontal: 14, backgroundColor: tokens.row }}>
+      <Tile name={icon} size={32} radius={10} bg="transparent" />
+      <Txt size={15.5} weight={500} numberOfLines={1} style={{ flexShrink: 0 }}>{t}</Txt>
+      <View style={{ flex: 1 }} />
+      {v ? <Txt size={15} color={tokens.sub} numberOfLines={1} style={{ flexShrink: 1 }}>{v}</Txt> : null}
       {right ?? <Chevron />}
     </PressScale>
   );
@@ -71,14 +71,14 @@ export default function Einstellungen() {
       <H1>{demo ? 'Familie Huber' : [names.J, names.T].filter(Boolean).join(tx(' und ', ' and ')) || tx('Eure Familie', 'Your family')}</H1>
       <Group>
         {LIVE ? (
-          code ? <SRow icon="eingang" t={code} s={tx('Familiencode · damit tritt dein Partner bei', 'Family code · your partner joins with it')} right={<LineIcon name="copy" size={18} color={tokens.sub} />} onPress={async () => { await Clipboard.setStringAsync(code).catch(() => {}); toast(tx('Code kopiert', 'Code copied')); }} /> : null
+          code ? <SRow icon="eingang" t={tx('Familiencode', 'Family code')} v={code} right={<LineIcon name="copy" size={18} color={tokens.sub} />} onPress={async () => { await Clipboard.setStringAsync(code).catch(() => {}); toast(tx('Code kopiert', 'Code copied')); }} /> : null
         ) : (
-          <SRow icon="eingang" t="huber-7q2@familie.app" s={tx('Familienadresse · weiterleiten oder hinterlegen', 'Family address · forward or save')} right={<LineIcon name="copy" size={18} color={tokens.sub} />} onPress={async () => { await Clipboard.setStringAsync('huber-7q2@familie.app').catch(() => {}); toast(tx('Adresse kopiert', 'Address copied')); }} />
+          <SRow icon="eingang" t={tx('Familienadresse', 'Family address')} v="huber-7q2@familie.app" right={<LineIcon name="copy" size={18} color={tokens.sub} />} onPress={async () => { await Clipboard.setStringAsync('huber-7q2@familie.app').catch(() => {}); toast(tx('Adresse kopiert', 'Address copied')); }} />
         )}
         {cals.map((c) => (
-          <SRow key={c.provider} icon={CAL_NAME[c.provider]?.icon ?? 'kalender'} t={CAL_NAME[c.provider]?.t ?? c.provider} s={`${c.ids.length} ${tx('Kalender', c.ids.length === 1 ? 'calendar' : 'calendars')} · ${c.account}`} right={<Dot />} onPress={openCals} />
+          <SRow key={c.provider} icon={CAL_NAME[c.provider]?.icon ?? 'kalender'} t={CAL_NAME[c.provider]?.t ?? c.provider} v={c.account} right={<Dot />} onPress={openCals} />
         ))}
-        <SRow icon="sync" t={cals.length ? tx('Weitere Kalender', 'More calendars') : tx('Kalender verbinden', 'Connect calendars')} s={cals.length ? tx('Auswahl ändern oder hinzufügen', 'Change or add') : tx('Damit nichts doppelt ist', 'So nothing is in two places')} onPress={openCals} />
+        <SRow icon="sync" t={cals.length ? tx('Weitere Kalender', 'More calendars') : tx('Kalender verbinden', 'Connect calendars')} onPress={openCals} />
       </Group>
       <Txt size={13} weight={600} color={tokens.sub} style={{ paddingHorizontal: 4, marginTop: 8 }}>{tx('Eure Farben', 'Your colours')}</Txt>
       <View style={{ backgroundColor: tokens.row, borderRadius: 20, padding: 14, gap: 12 }}>
@@ -105,21 +105,20 @@ export default function Einstellungen() {
         <Seg items={[{ key: 'hell', label: tx('Hell', 'Light') }, { key: 'dunkel', label: tx('Dunkel', 'Dark') }, { key: 'system', label: tx('Wie das Handy', 'Like the phone') }]} value={theme} onChange={(k) => setTheme(k as ThemeChoice)} />
       </View>
       <Group>
-        <SRow icon="notizblock" t={tx('Was ich weiß', 'What I know')} s={tx('Das Familiengedächtnis des Assistenten', 'The assistant\'s family memory')} onPress={() => router.push('/wissen')} />
-        <SRow icon="zuhause" t={tx('Eure Familie', 'Your family')} s={tx('Kinder, Großeltern, Geburtstage', 'Kids, grandparents, birthdays')} onPress={() => router.push('/personen')} />
-        <SRow icon="reise" t={tx('Urlaub und Feiertage', 'Vacation and holidays')} s={vacLine(vac, names, [countryName(country), land && (country === 'DE' ? land : regionName(country, land))].filter(Boolean).join(', '))} onPress={() => router.push('/urlaub')} />
-        {HIDDEN.extras ? null : <SRow icon="glocke" t={tx('Hinweise', 'Notifications')} s={tx('Nur Wichtiges · Ruhe 21–7 Uhr', 'Only what matters · quiet 9pm to 7am')} onPress={() => router.push('/demo/sperrbildschirm')} />}
-        <SRow icon="chat" t={tx('Ich spreche', 'I speak')} s={sl === 'de' ? tx('Deutsch · tippen für Englisch', 'German · tap for English') : tx('Englisch · tippen für Deutsch', 'English · tap for German')} onPress={() => { const v = sl === 'de' ? 'en' : 'de'; setSpeechLang(v); setSl(v); toast(v === 'de' ? tx('Ich höre jetzt auf Deutsch', 'Listening in German now') : tx('Ich höre jetzt auf Englisch', 'Listening in English now')); }} />
-        {HIDDEN.toggles ? null : <SRow icon="chat" t={tx('Mikro Anzeige', 'Mic display')} s={mic === 'ring' ? tx('Ring mit Stopp · tippen für Balken', 'Ring with stop · tap for bars') : tx('Balken im Knopf · tippen für Ring', 'Bars in the button · tap for ring')} onPress={() => { const v = mic === 'ring' ? 'balken' : 'ring'; setMicStyle(v); haptics.select(); toast(v === 'ring' ? tx('Mikro zeigt jetzt den Ring', 'Mic now shows the ring') : tx('Mikro zeigt jetzt die Balken', 'Mic now shows the bars')); }} />}
-        <SRow icon="chat" t={tx('Sprache', 'Language')} s={tx('Deutsch · folgt der Sprache des Handys', 'English · follows the phone language')} onPress={() => toast(tx('Ändern in den Einstellungen des Handys', 'Change it in the phone settings'))} />
-        <SRow icon="zuhause" t={tx('Onboarding ansehen', 'View onboarding')} s={tx('Vorschau, deine Daten bleiben wie sie sind', 'Preview, your data stays as it is')} onPress={() => { startPreview(); router.push('/onboarding'); }} />
-        <SRow icon="kalender" t={tx('Kalender Abo und Export', 'Calendar feed and export')} s={tx('Apple, Google, Outlook oder als Datei', 'Apple, Google, Outlook or as a file')} onPress={() => router.push('/kalender-abo')} />
+        <SRow icon="notizblock" t={tx('Was ich weiß', 'What I know')} onPress={() => router.push('/wissen')} />
+        <SRow icon="zuhause" t={tx('Eure Familie', 'Your family')} onPress={() => router.push('/personen')} />
+        <SRow icon="reise" t={tx('Urlaub und Feiertage', 'Vacation and holidays')} v={(land && (country === 'DE' ? land : regionName(country, land))) || countryName(country)} onPress={() => router.push('/urlaub')} />
+        {HIDDEN.extras ? null : <SRow icon="glocke" t={tx('Hinweise', 'Notifications')} onPress={() => router.push('/demo/sperrbildschirm')} />}
+        <SRow icon="chat" t={tx('Sprache', 'Language')} v={sl === 'de' ? tx('Deutsch', 'German') : tx('Englisch', 'English')} onPress={() => { const v = sl === 'de' ? 'en' : 'de'; setSpeechLang(v); setSl(v); toast(v === 'de' ? tx('Ich höre jetzt auf Deutsch', 'Listening in German now') : tx('Ich höre jetzt auf Englisch', 'Listening in English now')); }} />
+        {HIDDEN.toggles ? null : <SRow icon="chat" t={tx('Mikro Anzeige', 'Mic display')} v={mic === 'ring' ? tx('Ring', 'Ring') : tx('Balken', 'Bars')} onPress={() => { const v = mic === 'ring' ? 'balken' : 'ring'; setMicStyle(v); haptics.select(); toast(v === 'ring' ? tx('Mikro zeigt jetzt den Ring', 'Mic now shows the ring') : tx('Mikro zeigt jetzt die Balken', 'Mic now shows the bars')); }} />}
+        <SRow icon="zuhause" t={tx('Onboarding ansehen', 'View onboarding')} onPress={() => { startPreview(); router.push('/onboarding'); }} />
+        <SRow icon="kalender" t={tx('Kalender Abo und Export', 'Calendar feed and export')} onPress={() => router.push('/kalender-abo')} />
       </Group>
       <PressScale scale={0.985} onPress={() => router.push('/plus')} style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12, paddingHorizontal: 14, borderRadius: 20, backgroundColor: tokens.row }}>
         <ClayIcon name="hand-nimmt" size={44} />
         <View style={{ flex: 1 }}>
           <Txt size={15.5} weight={600}>{tx('Plus testen', 'Try Plus')}</Txt>
-          <Meta>{LIVE ? tx('Claude versteht jeden Satz, auch lange', 'Claude understands every sentence, even long ones') : '7 von 10 Erfassungen diesen Monat genutzt'}</Meta>
+          {LIVE ? null : <Meta>7 von 10 Erfassungen diesen Monat genutzt</Meta>}
         </View>
         <Chevron />
       </PressScale>
@@ -131,11 +130,11 @@ export default function Einstellungen() {
       ) : <>
       <H2>{tx('Prototyp', 'Prototype')}</H2>
       <Group>
-        <SRow icon="glocke" t={tx('Hinweise · Sperrbildschirm', 'Notifications · lock screen')} s={tx('So sehen Push-Hinweise aus', 'How push notices look')} onPress={() => router.push('/demo/sperrbildschirm')} />
-        <SRow icon="chat" t={tx('Teilen aus einem Chat', 'Share from a chat')} s={tx('Nachricht aus WhatsApp übernehmen', 'Take a message from WhatsApp')} onPress={() => router.push('/demo/teilen')} />
-        <SRow icon="kalender" t="Widgets" s={tx('Homescreen, klein und mittel', 'Home screen, small and medium')} onPress={() => router.push('/demo/widgets')} />
-        <SRow icon="u-heft" t={tx('Beispielfamilie laden', 'Load sample family')} s={tx('Julia, Tom und Ben mit vollem Kalender', 'Julia, Tom and Ben with a full calendar')} onPress={() => { actions.loadDemo(); router.dismissAll(); router.replace('/chat'); }} />
-        <SRow icon="zuhause" t={tx('Onboarding neu starten', 'Restart onboarding')} s={tx('Alles leeren, wie beim ersten Öffnen', 'Clear everything, like the first launch')} onPress={() => { actions.reset(); router.dismissAll(); router.replace('/onboarding'); }} />
+        <SRow icon="glocke" t={tx('Hinweise · Sperrbildschirm', 'Notifications · lock screen')} onPress={() => router.push('/demo/sperrbildschirm')} />
+        <SRow icon="chat" t={tx('Teilen aus einem Chat', 'Share from a chat')} onPress={() => router.push('/demo/teilen')} />
+        <SRow icon="kalender" t="Widgets" onPress={() => router.push('/demo/widgets')} />
+        <SRow icon="u-heft" t={tx('Beispielfamilie laden', 'Load sample family')} onPress={() => { actions.loadDemo(); router.dismissAll(); router.replace('/chat'); }} />
+        <SRow icon="zuhause" t={tx('Onboarding neu starten', 'Restart onboarding')} onPress={() => { actions.reset(); router.dismissAll(); router.replace('/onboarding'); }} />
       </Group>
       <Txt size={12.5} line={17} color={tokens.mute} center>{tx('Prototyp ohne Login und ohne echte KI. Alles bleibt auf diesem Gerät und ist nach dem Neuladen wieder wie am Anfang.', 'Prototype without login and without real AI. Everything stays on this device and resets when you reload.')}</Txt>
       </>}
@@ -180,7 +179,7 @@ function QualityTest() {
       <SRow
         icon="checkliste"
         t="Qualitätstest"
-        s={s}
+        v={s}
         onPress={state.busy ? undefined : async () => {
           setState({ busy: true, done: 0, ok: null, total: CASES.length });
           const { results, limit } = await runQualityTest((done, total) => setState((x) => ({ ...x, done, total })));

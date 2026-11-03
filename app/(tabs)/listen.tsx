@@ -54,7 +54,7 @@ export default function Listen() {
   }, [active, tasks, list]);
 
   return (
-    <Screen tab gap={12} head={<><H1 sub={sub} right={<HeaderRight />}>{tx('Listen', 'Lists')}</H1><ClayTabs lists={lists} active={active} /></>}>
+    <Screen tab gap={12} head={<><H1 right={<HeaderRight />}>{tx('Listen', 'Lists')}</H1><ClayTabs lists={lists} active={active} /></>}>
       <Animated.View key={active} entering={swapIn} style={{ gap: 12 }}>
         {active === 'aufgaben' ? <Aufgaben tasks={tasks} /> : list?.kind === 'shopping' ? <Einkauf list={list} /> : list ? <Packliste list={list} /> : null}
       </Animated.View>
@@ -223,21 +223,9 @@ function Einkauf({ list }: { list: List }) {
   useEffect(() => { actions.mergeTwins(list.id); }, [list.id]);
   return (
     <>
-      <AddInline placeholder={tx('Hinzufügen …', 'Add …')} mic onPress={() => router.push('/einkauf-neu')} />
-      {hints.abo ? (
-        <HintCard
-          icon="windeln"
-          kicker={tx('Aufgefallen', 'Noticed')}
-          title={tx('Windeln und Feuchttücher kauft ihr etwa alle 12 Tage.', 'You buy diapers and wipes about every 12 days.')}
-          body={tx('Soll ich ein Abo für euch aufsetzen? Dann kommen sie von selbst, meist etwas günstiger. Ihr bestätigt vorher.', 'Should I set up a subscription? Then they arrive on their own, usually a bit cheaper. You confirm first.')}
-          yes={tx('Ja, aufsetzen', 'Yes, set it up')}
-          no={tx('Nein, danke', 'No, thanks')}
-          onYes={() => router.push('/abo')}
-          onNo={() => actions.dismissHint('abo')}
-        />
-      ) : null}
+      {/* One field for the whole app (Julian 03.11.): the field below adds to the open list. */}
+      {hints.abo ? <AboRow /> : null}
       <Sections list={list} />
-      <Txt size={13.5} line={19} color={tokens.sub}>{tx('Haken antippen: erledigt. Text antippen: bearbeiten. Nach links wischen: löschen.', 'Tap the check: done. Tap the text: edit. Swipe left: delete.')}</Txt>
     </>
   );
 }
@@ -255,7 +243,8 @@ function Packliste({ list }: { list: List }) {
       ) : null}
       {isPoints(list) ? <Scoreboard list={list} /> : null}
       <Sections list={list} counts={!plain} />
-      <AddInline placeholder={isPoints(list) ? tx('Spieler hinzufügen …', 'Add player …') : tx('Hinzufügen …', 'Add …')} onAdd={(t) => actions.addItem(list.id, t)} />
+      {/* Players keep their plain field (Julian 01.11.); every other list fills from the field below. */}
+      {isPoints(list) ? <AddInline placeholder={tx('Spieler hinzufügen …', 'Add player …')} onAdd={(t) => actions.addItem(list.id, t)} /> : null}
       <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 28 }}>
         <PressScale
           accessibilityLabel={tx(`Liste ${list.name} bearbeiten`, `Edit list ${list.name}`)}
@@ -319,12 +308,11 @@ function Sections({ list, counts }: { list: List; counts?: boolean }) {
         if (!sec.items.length && list.kind === 'shopping') return null;
         const plain = list.kind === 'collection' || !!list.blueprint;
         const bp = list.blueprint;
-        const right = plain ? String(sec.items.length) : counts ? tx(`${done.length} von ${sec.items.length}`, `${done.length} of ${sec.items.length}`) : String(open.length);
         // The shop's own order: vegetables together, then bread, fridge, meat, shelves (Julian 30.10.).
         const ordered = list.kind === 'shopping' ? [...open.map((i, k) => ({ i, k, a: aisleOf(i.name) })).sort((x, y) => x.a - y.a || x.k - y.k).map((x) => x.i), ...done] : sec.items;
         return (
           <View key={sec.id} style={{ gap: 12 }}>
-            {plain && list.sections.length === 1 ? null : <H2 right={right}>{sec.title}</H2>}
+            {plain && list.sections.length === 1 ? null : <H2>{sec.title}</H2>}
             {ordered.length ? (
               <Group>
                 {ordered.map((i) => (
@@ -368,4 +356,19 @@ function BlockBelow({ listId, bp, item }: { listId: string; bp: Blueprint; item:
   const chips = <FactChips bp={bp} data={item.data} note={item.note} />;
   if (!stars && !chips) return null;
   return <View style={{ gap: 6 }}>{stars}{chips}</View>;
+}
+
+/** The subscription idea as one quiet row (Julian 03.11.: was a card with three sentences and two buttons). */
+function AboRow() {
+  return (
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 8, paddingLeft: 14, paddingRight: 8, borderRadius: 18, backgroundColor: tokens.doneSoft }}>
+      <Txt size={15} line={20} color={tokens.done} style={{ flex: 1 }}>{tx('Windeln alle 12 Tage nachbestellen?', 'Reorder diapers every 12 days?')}</Txt>
+      <PressScale onPress={() => { haptics.select(); router.push('/abo'); }} style={{ height: 36, paddingHorizontal: 14, borderRadius: 999, backgroundColor: tokens.row, justifyContent: 'center' }}>
+        <Txt size={14} weight={600} color={tokens.done}>{tx('Ja', 'Yes')}</Txt>
+      </PressScale>
+      <PressScale onPress={() => { haptics.select(); actions.dismissHint('abo'); }} hitSlop={6} accessibilityLabel={tx('Nein, danke', 'No, thanks')} style={{ width: 36, height: 36, alignItems: 'center', justifyContent: 'center' }}>
+        <View style={{ transform: [{ rotate: '45deg' }] }}><LineIcon name="plus" size={16} color={tokens.done} stroke={2} /></View>
+      </PressScale>
+    </View>
+  );
 }
