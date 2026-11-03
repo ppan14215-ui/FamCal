@@ -1627,7 +1627,11 @@ export const clayMotion: Partial<Record<ClayName, ClayMotionSpec>> = {
    400
   ],
   "under": false,
-  "what": "Mond wiegt sich, der Stern funkelt"
+  "what": "Mond wiegt sich, der Stern funkelt",
+  "layers": [
+   "base",
+   "stern"
+  ]
  },
  "muell": {
   "part": "deckel",
@@ -2229,7 +2233,11 @@ export const clayMotion: Partial<Record<ClayName, ClayMotionSpec>> = {
    506
   ],
   "under": false,
-  "what": "Strahlen drehen sich und leuchten nach außen"
+  "what": "Strahlen drehen sich und leuchten nach außen",
+  "layers": [
+   "base",
+   "strahlen"
+  ]
  },
  "spaeter": {
   "part": "sand",

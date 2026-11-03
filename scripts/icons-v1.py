@@ -91,6 +91,8 @@ for name, v in sorted(man.items()):
         files, order = vr[-1]['files'], vr[-1].get('layerOrder')
     else:
         files, order = v['files'], v.get('layerOrder')
+        if name in KEEP_V01:  # the plain list also names the rejected v02 files
+            files = [f for f in files if not re.search(r'_v\d+\.png$', f['file'])]
     have = [f for f in files if os.path.exists(os.path.join(SRC, f['file'][:-4] + '.webp'))]
     if len(have) < len(files):
         missing += [f['file'] for f in files if f not in have]
@@ -112,7 +114,8 @@ for name, v in sorted(man.items()):
         imgs[k] = load(f)
         if imgs[k] is None:
             raise SystemExit(f'{f}: layer without alpha')
-        imgs[k].save(os.path.join(DST, f'icon-{name}__{k}.webp'), 'WEBP', quality=88, method=4)
+        if k.startswith('state'):  # a second picture of the whole icon, laid over it
+            imgs[k].save(os.path.join(DST, f'icon-{name}__{k}.webp'), 'WEBP', quality=88, method=4)
     w = load(whole) if whole else None
     if w is not None:
         pass
@@ -126,7 +129,16 @@ for name, v in sorted(man.items()):
     w.save(os.path.join(DST, f'icon-{name}.webp'), 'WEBP', quality=88, method=4)
     # Old layer files of this icon that the chosen version no longer has.
     # (Icons without layers here keep pieces cut by scripts/split-part.py: padel, tennis, squash, eishockey.)
-    keep = {f'icon-{name}__{k}.webp' for k in layers}
+    # EAS sends at most 1000 assets per update (03.11.: 1062 failed), so the layers of one icon
+    # travel as one strip, left to right in draw order, each cell the full canvas.
+    strip = draw if (len(draw) > 1 or (draw and draw != ['base'])) else []
+    if strip:
+        cell = imgs[strip[0]].size[0]
+        sheet = Image.new('RGBA', (cell * len(strip), cell), (0, 0, 0, 0))
+        for i, k in enumerate(strip):
+            sheet.paste(imgs[k], (i * cell, 0))
+        sheet.save(os.path.join(DST, f'icon-{name}__layers.webp'), 'WEBP', quality=88, method=4)
+    keep = {f'icon-{name}__{k}.webp' for k in states} | ({f'icon-{name}__layers.webp'} if strip else set())
     for old in glob.glob(os.path.join(DST, f'icon-{name}__*.webp')) if layers else []:
         if os.path.basename(old) not in keep:
             os.remove(old)

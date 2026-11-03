@@ -98,9 +98,21 @@ function ClayMotion({ name, size, style }: { name: ClayName; size: number; style
     ? <Animated.View key="p" style={[{ position: 'absolute', left: 0, top: 0, height: size, overflow: 'hidden' }, reveal]}>{partImg}</Animated.View>
     : partImg;
   // Icons v1 (03.11.): every layer in the manifest's order, all on the same 1024 canvas at (0, 0).
-  // Only the named part moves; the other layers ride with the base.
-  const layered = spec.layers && spec.layers.length > 1 && !spec.state
-    ? spec.layers.map((k) => (k === spec.part ? partEl : k === 'base' ? baseEl : <Animated.Image key={k} source={clayIcons[`${name}__${k}` as ClayName]} style={[box, { transformOrigin: baseO } as any, base]} resizeMode="contain" />))
+  // They come as one strip per icon (EAS takes at most 1000 assets per update): each layer is a
+  // canvas-sized window onto its cell. Only the named part moves; the others ride with the base.
+  const n = spec.layers?.length ?? 0;
+  const strip = n > 1 && !spec.state ? clayIcons[`${name}__layers` as ClayName] : undefined;
+  const cell = (k: string, i: number, anim: any, origin: string) => (
+    <Animated.View key={k} style={[box, { overflow: 'hidden', transformOrigin: origin } as any, anim]}>
+      <Image source={strip} style={{ position: 'absolute', left: -i * size, top: 0, width: size * n, height: size }} resizeMode="stretch" />
+    </Animated.View>
+  );
+  const layered = strip
+    ? spec.layers!.map((k, i) => {
+        if (k !== spec.part) return cell(k, i, base, baseO);
+        const p = cell(k, i, part, kind === 'orbit' ? '50% 50%' : o);
+        return kind === 'draw' ? <Animated.View key={k} style={[{ position: 'absolute', left: 0, top: 0, height: size, overflow: 'hidden' }, reveal]}>{p}</Animated.View> : p;
+      })
     : null;
   return (
     <Animated.View style={[{ width: size, height: size, transformOrigin: kind === 'state' ? o : '50% 90%' } as any, style, outer]}>

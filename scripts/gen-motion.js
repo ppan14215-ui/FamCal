@@ -22,7 +22,8 @@ const KIND = {
 };
 const out = {};
 for (const [name, m] of Object.entries(meta)) {
-  const layers = (m.layers || []).filter((k) => files.has(`icon-${name}__${k}.webp`));
+  // Layers travel as one strip per icon (icon-<name>__layers.webp, cells in draw order).
+  const layers = files.has(`icon-${name}__layers.webp`) ? (m.layers || []) : [];
   const parts = layers.filter((k) => k !== 'base');
   if (!parts.length || layers.length < 2) continue;
   // The moving part: one whose name says how it moves, else the top one.
@@ -53,7 +54,8 @@ const EXTRA = {
 };
 for (const [name, spec] of Object.entries(EXTRA)) {
   const base = spec.state ? `icon-${name}.webp` : `icon-${name}__base.webp`;
-  if (files.has(`icon-${name}__${spec.part}.webp`) && files.has(base)) out[name] = spec;
+  if (out[name]?.layers?.includes(spec.part)) out[name] = { ...spec, layers: out[name].layers };
+  else if (files.has(`icon-${name}__${spec.part}.webp`) && files.has(base)) out[name] = spec;
 }
 // Motion designer pass 31.10.: better kinds and pivots for the layered icons.
 const box = (name, part) => meta[name]?.L?.[part];

@@ -775,38 +775,15 @@
 },
 "basteln": {
 "L": {
-"base": [
-0,
-0,
-293,
-1024
-],
-"papier": [
-555,
-0,
-1024,
-1024
-],
-"schere-griff-b": [
-288,
-0,
-549,
-1024
-],
 "whole": [
-0,
-0,
-1024,
-1024
+192,
+229,
+832,
+795
 ]
 },
 "a": "Gesamtmotiv sanft bewegen",
-"cat": "leisure-culture",
-"layers": [
-"base",
-"schere-griff-b",
-"papier"
-]
+"cat": "leisure-culture"
 },
 "bat": {
 "L": {
@@ -1013,31 +990,15 @@
 },
 "bier": {
 "L": {
-"base": [
-229,
-389,
-885,
-949
-],
-"schaum": [
-0,
-0,
-1024,
-395
-],
 "whole": [
-0,
-0,
-1024,
-949
+219,
+197,
+811,
+832
 ]
 },
 "a": "Gesamtmotiv sanft bewegen",
-"cat": "food-social",
-"layers": [
-"base",
-"schaum"
-]
+"cat": "food-social"
 },
 "blossom": {
 "L": {
@@ -1135,31 +1096,15 @@
 },
 "bogenschiessen": {
 "L": {
-"base": [
-219,
-80,
-539,
-912
-],
-"pfeil": [
-581,
-0,
-1024,
-1024
-],
 "whole": [
 219,
-0,
-1024,
-1024
+192,
+805,
+832
 ]
 },
 "a": "Gesamtmotiv sanft bewegen",
-"cat": "sport-outdoors",
-"layers": [
-"base",
-"pfeil"
-]
+"cat": "sport-outdoors"
 },
 "bohrmaschine": {
 "L": {
