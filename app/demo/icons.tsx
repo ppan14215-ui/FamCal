@@ -3,6 +3,7 @@
  * /demo/icons                 every whole-moving icon as a Tile; each plays once on appear, again on tap
  * /demo/icons?set=wait        the icons that wait for their parts (tap gives the small press)
  * /demo/icons?set=all         every clay icon
+ * /demo/icons?set=parts       Icons v1 (03.11.): every icon with moving parts; ?set=layered only those with 3+ layers
  * /demo/icons?strip=1         contact sheet: one row per icon, frames of its motion side by side,
  *                             drawn from the same curves as the app (a frame is a pure function of time)
  *   &n=14                     frames per row,   &only=bus,taxi   just these icons,   &kind=arrive   just one kind
@@ -109,7 +110,7 @@ export default function IconGallery() {
       </ScrollView>
     );
   }
-  const names = only ?? (q.set === 'wait' ? [...WAITING_FOR_PARTS] : q.set === 'codex' ? [...CODEX_WHOLE, ...WAITING_FOR_PARTS].sort() : q.set === 'all' ? (Object.keys(clayIcons).filter((k) => !k.includes('__')) as ClayName[]) : CODEX_WHOLE);
+  const names = only ?? (q.set === 'wait' ? [...WAITING_FOR_PARTS] : q.set === 'codex' ? [...CODEX_WHOLE, ...WAITING_FOR_PARTS].sort() : q.set === 'layered' ? (Object.keys(clayMotion).filter((k) => (clayMotion as any)[k].layers?.length > 2) as ClayName[]) : q.set === 'parts' ? (Object.keys(clayMotion) as ClayName[]) : q.set === 'emoji' ? (Object.keys(clayIcons).filter((k) => /^[a-z]+(-[a-z]+)*$/.test(k) && !k.includes('__') && !clayWhole[k as ClayName] && !clayMotion[k as ClayName]) as ClayName[]) : q.set === 'all' ? (Object.keys(clayIcons).filter((k) => !k.includes('__')) as ClayName[]) : CODEX_WHOLE);
   return (
     <ScrollView style={{ flex: 1, backgroundColor: tokens.bg }} contentContainerStyle={{ padding: 16, paddingTop: 48 }}>
       <Txt size={20} weight={700}>Icons · Bewegung</Txt>

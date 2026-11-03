@@ -78,6 +78,18 @@ const ICONS: [RegExp, ClayName][] = [
   [/backen|baking|plätzchen|kuchen/, 'backen'],
   // Essen (Frühstück, Mittag- und Abendessen kommen weiter unten)
   [/familienessen|family dinner|familienfeier/, 'familienessen'], [/grill|bbq|barbecue/, 'grillen'], [/picknick|picnic/, 'picknick'],
+  // Icons v1 emoji extension 03.11.: what is eaten names the food ("Sushi essen", "Erdbeeren pflücken").
+  [/erdbeer|strawberr/, 'strawberry'], [/kirsch|cherr/, 'cherries'], [/heidelbeer|blaubeer|blueberr/, 'blueberries'],
+  [/banane|banana/, 'banana'], [/zitrone|lemon/, 'lemon'], [/wassermelone|watermelon|melone/, 'watermelon'], [/pfirsich|peach/, 'peach'],
+  [/\bbirnen?\b|\bpears?\b/, 'pear'], [/ananas|pineapple/, 'pineapple'], [/kokos|coconut/, 'coconut'], [/avocado/, 'avocado'],
+  [/\bmais\b|maiskolben|\bcorn\b/, 'corn'], [/gurke|cucumber/, 'cucumber'], [/karotte|möhre|moehre|carrot/, 'carrot'], [/brokkoli|broccoli/, 'broccoli'],
+  [/pilze|pilz sammeln|champignon|mushroom/, 'mushroom'], [/süßkartoffel|suesskartoffel|sweet potato/, 'sweet-potato'],
+  [/croissant/, 'croissant'], [/brezel|breze|pretzel/, 'pretzel'], [/bäcker|baecker|bakery|\bbrot\b|\bbread\b/, 'bread'], [/käse|kaese|cheese|raclette|fondue/, 'cheese'],
+  [/dumpling|gyoza|dim sum/, 'dumpling'], [/sushi/, 'sushi'], [/ramen|pho\b/, 'ramen'], [/popcorn/, 'popcorn'], [/\b(cheese)?burgers?\b/, 'hamburger'],
+  [/pommes|\bfries\b/, 'french-fries'], [/\btacos?\b/, 'taco'], [/burrito/, 'burrito'], [/hot ?dog/, 'hotdog'],
+  [/pfannkuchen|pancake|crêpe|crepe/, 'pancakes'], [/waffel|waffle/, 'waffle'], [/\bkekse?\b|cookie/, 'cookie'], [/schokolade|chocolate/, 'chocolate-bar'],
+  [/süßigkeit|suessigkeit|candy|sweets/, 'candy'], [/lolli|lollipop/, 'lollipop'], [/honig|honey|imker/, 'honey'], [/bagel/, 'bagel'],
+  [/\breis\b|\brice\b/, 'rice-bowl'], [/curry/, 'curry'], [/bento/, 'bento'], [/donut|doughnut/, 'doughnut'], [/\beier\b|\beggs?\b/, 'egg'],
   [/pizza/, 'pizza'], [/pasta|nudel|spaghetti|lasagne/, 'pasta'], [/salat|salad/, 'salat'],
   [/eisdiele|eiscafé|eiscafe|eis essen|ice ?cream|gelato/, 'eisdiele'],
   [/\bobst|fruit|äpfel|\bapfel|\bbirnen?\b|banane/, 'obst'], [/gemüse|gemuese|vegetable|veggie|karotte|möhre|brokkoli|zucchini/, 'gemuese'],
@@ -162,6 +174,18 @@ const ICONS: [RegExp, ClayName][] = [
   [/urlaub|reise|ferien|vacation|holiday|trip/, 'reise'],
   [/spazier|kinderwagen|walk|stroller/, 'kinderwagen'], [/auto|werkstatt|tüv|reifen|car\b|garage|mot\b/, 'auto'],
   [/strand|beach|sonnencreme|sunscreen/, 'sonnencreme'],
+  // Icons v1 emoji extension 03.11.: animals, plants, people and things, before the seasons.
+  [/elefant|elephant/, 'elephant'], [/giraffe/, 'giraffe'], [/zebra/, 'zebra'], [/löwe|loewe|\blions?\b/, 'lion'], [/panda/, 'panda'], [/koala/, 'koala'],
+  [/affe\b|affen|monkey/, 'monkey'], [/delfin|delphin|dolphin/, 'dolphin'], [/\bwal\b|wale\b|whale/, 'whale'], [/schildkröte|turtle/, 'turtle'],
+  [/hamster/, 'hamster'], [/kaninchen|\bhasen?\b|rabbit|bunny/, 'rabbit'], [/\bigel|hedgehog/, 'hedgehog'], [/schmetterling|butterfl/, 'butterfly'],
+  [/biene|bienen|\bbees?\b/, 'bee'], [/frosch|frog/, 'frog'],
+  [/feuerwehr|firefighter|fire station/, 'person-firefighter'], [/polizei|police/, 'person-police'], [/lehrer|lehrerin|teacher/, 'person-teacher'],
+  [/sonnenblume|sunflower/, 'sunflower'], [/tulpe|tulip/, 'tulip'], [/\brosen?\b|\broses?\b/, 'rose'], [/blumen|flower|blumenstrauß/, 'flower'],
+  [/zimmerpflanze|umtopfen|houseplant|potted plant/, 'potted-plant'], [/kräuter|kraeuter|\bherbs?\b/, 'herb'], [/kaktus|cactus/, 'cactus'],
+  [/lagerfeuer|campfire|bonfire|osterfeuer/, 'fire'], [/feuerwerk|fireworks/, 'fireworks'], [/sternschnuppe|shooting star|meteor/, 'shooting-star'],
+  [/luftballon|ballon|balloon/, 'balloon'], [/verlobung|engagement|heiratsantrag/, 'ring'], [/valentinstag|valentine/, 'heart-with-arrow'],
+  [/parfum|parfüm|perfume/, 'perfume'], [/nagellack|nail polish/, 'nail-polish'], [/gewitter|thunderstorm|\bblitz/, 'lightning-bolt'],
+  [/siegerehrung|first place|1\. platz|erster platz/, 'medal-first'], [/geldsack|money bag/, 'money-bag'],
   // Codex 02.11.: holidays, seasons and weather last. They are often only the
   // time ("Kita ab Herbst", "bis Weihnachten"), so any real activity wins.
   // \bwind: no Windeln; no "laub": Urlaub.

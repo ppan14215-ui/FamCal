@@ -5,6 +5,7 @@
  */
 import type { CalEvent, Who } from '../state/types';
 import { clayIcons, type ClayName } from './clayIcons';
+import { SYMBOL_GROUPS } from '../data/symbols';
 import type { PersonId } from '../theme/tokens';
 import { persons } from '../theme/tokens';
 import { parseWhen, When } from './when';
@@ -330,7 +331,12 @@ export type Understood = {
  */
 const CODEX_NEW = new Set<string>((Object.keys(clayWhole) as ClayName[]).filter((n) => calmDur(clayWhole[n]!.kind) > 0 && !CODEX_HAD.includes(n)));
 const ALL_NAMES = (Object.keys(clayIcons) as ClayName[]).filter((k) => !k.includes('__'));
-export const TERMIN_ICON_NAMES = [...ALL_NAMES.filter((n) => !CODEX_NEW.has(n)), ...ALL_NAMES.filter((n) => CODEX_NEW.has(n))];
+// Icons v1 emoji extension 03.11.: faces and hands never name a Termin, so they stay out of the
+// list Claude gets (keeps it under the functions' 500 names); the rest of the 200 go last.
+const MOODS = new Set<string>(SYMBOL_GROUPS.filter((g) => g.title === 'Stimmung' || g.title === 'Hände').flatMap((g) => g.icons));
+const EMOJI = new Set<string>(SYMBOL_GROUPS.slice(SYMBOL_GROUPS.findIndex((g) => g.title === 'Stimmung')).flatMap((g) => g.icons));
+const OLD = ALL_NAMES.filter((n) => !EMOJI.has(n));
+export const TERMIN_ICON_NAMES = [...OLD.filter((n) => !CODEX_NEW.has(n)), ...OLD.filter((n) => CODEX_NEW.has(n)), ...ALL_NAMES.filter((n) => EMOJI.has(n) && !MOODS.has(n))];
 const isIcon = (v: unknown): v is ClayName => typeof v === 'string' && !v.includes('__') && v in clayIcons;
 
 const NO_TIME = () => tx('Keine Uhrzeit genannt, ich trage den Tag ein und frage nach.', "No time given, I'll add the day and ask.");

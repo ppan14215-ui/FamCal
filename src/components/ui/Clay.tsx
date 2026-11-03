@@ -90,15 +90,21 @@ function ClayMotion({ name, size, style }: { name: ClayName; size: number; style
   }
   const o = `${(spec.o[0] / 10.24).toFixed(2)}% ${(spec.o[1] / 10.24).toFixed(2)}%`;
   const baseSrc = spec.state ? clayIcons[name] : clayIcons[`${name}__base` as ClayName];
+  // No base picture in some v02 exports (all layers are parts): the base element is then just not drawn.
   const baseO = kind === 'hit' || kind === 'hitslide' || kind === 'clapper' || kind === 'state' ? o : kind === 'twinkle' ? '50% 90%' : kind === 'rays' ? o : '50% 85%';
   const baseEl = <Animated.Image key="b" source={baseSrc} style={[box, { transformOrigin: baseO } as any, base]} resizeMode="contain" />;
   const partImg = <Animated.Image key="p" source={clayIcons[`${name}__${spec.part}` as ClayName]} style={[box, { transformOrigin: kind === 'orbit' ? '50% 50%' : o } as any, part]} resizeMode="contain" />;
   const partEl = kind === 'draw'
     ? <Animated.View key="p" style={[{ position: 'absolute', left: 0, top: 0, height: size, overflow: 'hidden' }, reveal]}>{partImg}</Animated.View>
     : partImg;
+  // Icons v1 (03.11.): every layer in the manifest's order, all on the same 1024 canvas at (0, 0).
+  // Only the named part moves; the other layers ride with the base.
+  const layered = spec.layers && spec.layers.length > 1 && !spec.state
+    ? spec.layers.map((k) => (k === spec.part ? partEl : k === 'base' ? baseEl : <Animated.Image key={k} source={clayIcons[`${name}__${k}` as ClayName]} style={[box, { transformOrigin: baseO } as any, base]} resizeMode="contain" />))
+    : null;
   return (
     <Animated.View style={[{ width: size, height: size, transformOrigin: kind === 'state' ? o : '50% 90%' } as any, style, outer]}>
-      {spec.under ? [partEl, baseEl] : [baseEl, partEl]}
+      {layered ?? (spec.under ? [partEl, baseEl] : [baseEl, partEl])}
     </Animated.View>
   );
 }
