@@ -708,3 +708,219 @@ export function toCSS(f: F): string {
   return s;
 }
 
+
+// ─── Every part its own motion (Icons v1, Julian 03.11.2026) ───────────────
+// "Alles was mit Einzelteilen animiert werden kann": each layer of a layered
+// icon gets its own kind, pivot, delay and amounts (scripts/part-moves.js).
+// Same grammar as the calm kinds above: critically damped springs in closed
+// form, real gravity for falls, one short ceramic `clack` only where a hard
+// thing lands, parts staggered so nothing moves as a twin. a is in seconds
+// since this part starts (its delay is already taken off), p are the amounts
+// (distances on the 1024 canvas, angles in degrees), u = drawn px per canvas unit.
+// Every kind returns {} for a <= 0 and comes back exactly to rest.
+
+/** How long a part kind runs, in seconds. */
+export function pieceDur(k: string, p?: number[]): number {
+  'worklet';
+  switch (k) {
+    case 'squash': return 0.35;
+    case 'zap': return 0.5;
+    case 'press': return 0.6;
+    case 'jab': return 0.65;
+    case 'pop': case 'scrub': return 0.75;
+    case 'snip': case 'lift': case 'hop': case 'coin': return 0.8;
+    case 'draw': case 'flicker': case 'unroll': case 'grow': case 'appear': case 'nod': case 'unfold': case 'thunk': case 'stir': case 'blink': return 0.8;
+    case 'beat': case 'fall': return 0.85;
+    case 'strike': case 'wave': case 'twinkle': case 'drill': case 'fold': return 0.9;
+    case 'tip': case 'slide': case 'rx': case 'ry': case 'insert': return 0.95;
+    case 'spin': case 'flipx': case 'flipy': case 'rise': case 'puff': return 1.0;
+    case 'path': return 1.05;
+    case 'pend': case 'seek': case 'flut': case 'weigh': return 1.1;
+    case 'float': case 'roll': return 1.15;
+    case 'go': return 1.2;
+    case 'rollby': return 1.3;
+    case 'struck': return (p && p[2] ? p[2] : 0.3) + 0.9;
+    case 'charge': return (p && p[0] ? p[0] : 0.3) + 0.45;
+  }
+  return 0.8;
+}
+
+export function pieceF(k: string, a: number, u: number, p?: number[]): F {
+  'worklet';
+  if (a <= 0) return {};
+  const P = (i: number, d: number) => (p && p.length > i ? p[i] : d);
+  switch (k) {
+    case 'squash': { const c = clack(a, P(0, 0.05)); return { sy: 1 - c, sx: 1 + 0.5 * c }; }
+    case 'lift': case 'hop': case 'coin': {
+      // lift: picked up, held a beat, falls with gravity, one clack where it lands (lids, stamps, coins, blocks).
+      // hop: crouch, a jump on a real parabola, the same landing. Both touch down at 0.42 s.
+      const h = P(0, 60) * u, tilt = P(1, 0);
+      let ty = 0, sq = 0, r = 0, ry = 0;
+      if (k === 'lift') {
+        const top = -h * crit(0.26, 14);
+        ty = a < 0.26 ? -h * crit(a, 14) : a < 0.42 ? top * (1 - Math.pow((a - 0.26) / 0.16, 2)) : 0;
+        r = a < 0.42 ? tilt * Math.sin(Math.PI * a / 0.42) : 0;
+      } else {
+        const q = seg(a, 0.08, 0.42), fly = a > 0.08 && a < 0.42;
+        sq = 0.06 * hump(a, 26);
+        ty = fly ? -h * 4 * q * (1 - q) : 0;
+        r = fly ? tilt * Math.sin(Math.PI * q) : 0;
+        if (k === 'coin') ry = fly ? 360 * inOut(q) : 0;
+      }
+      const c = clack(a - 0.42, P(2, 0.06));
+      const f: F = { ty, r, sy: 1 - sq - c, sx: 1 + 0.6 * (sq + c) };
+      if (ry) { f.ry = ry; f.p = 600; }
+      return f;
+    }
+    case 'pend': {
+      // Hangs from its pivot and swings out, back, out a little, still.
+      const w = P(1, 10);
+      return { r: P(0, 10) * (hump(a, w) - 0.55 * hump(a - 0.33, w) + 0.22 * hump(a - 0.66, w)) };
+    }
+    case 'seek': {
+      // A needle or a pan looks for its place: overshoots twice, smaller each time.
+      return { r: P(0, 30) * (hump(a, 10) - 0.7 * hump(a - 0.3, 10) + 0.35 * hump(a - 0.6, 10)) };
+    }
+    case 'weigh': {
+      const k2 = hump(a, 10) - 0.5 * hump(a - 0.3, 10) + 0.2 * hump(a - 0.6, 10);
+      return { ty: P(0, 22) * u * k2, r: P(1, 4) * k2 };
+    }
+    case 'strike': {
+      // A tool around its grip: wind back (anticipation), snap through, home.
+      return { r: P(0, 14) * hump(a, 9) + P(1, -24) * hump(a - 0.28, 20) };
+    }
+    case 'drum': case 'snip': {
+      return { r: P(0, 14) * (hump(a, 16) + 0.9 * hump(a - 0.3, 16)) };
+    }
+    case 'struck': {
+      // A ball waits for the hit at t0, flies off and fades, then drops back into its place.
+      const t0 = P(2, 0.3), b = a - t0;
+      if (b <= 0) return {};
+      if (b < 0.3) { const f = 1 - Math.pow(1 - b / 0.3, 3); return { tx: P(0, 300) * u * f, ty: P(1, -200) * u * f, o: 1 - seg(b, 0.12, 0.3) }; }
+      if (b < 0.38) return { o: 0 };
+      const c = b - 0.38, q = seg(c, 0, 0.22);
+      if (c < 0.22) return { ty: -110 * u * (1 - q * q), o: seg(c, 0, 0.1) };
+      const s2 = clack(c - 0.22, 0.07);
+      return { sy: 1 - s2, sx: 1 + 0.5 * s2 };
+    }
+    case 'spin': return { r: a >= 0.98 * pieceDur('spin') ? 0 : P(0, 360) * crit(a, P(1, 7)) };
+    case 'tip': { const c = there(a, 13, 0.32, 11); return { r: P(0, 10) * c, ty: -P(1, 0) * u * c }; }
+    case 'slide': { const c = there(a, 14, 0.3, 11); return { tx: P(0, 0) * u * c, ty: P(1, 0) * u * c }; }
+    case 'go': {
+      // A loose part travels part of the way to where it belongs, on an arc, and back.
+      const c = there(a, 10, 0.42, 9);
+      return { tx: P(0, 0) * u * c, ty: (P(1, 0) - P(2, 0) * 4 * (1 - c)) * u * c, r: P(3, 0) * c };
+    }
+    case 'roll': { const c = there(a, 10, 0.4, 9); return { tx: P(0, 60) * u * c, ty: P(1, 0) * u * c, r: P(2, 1) * 0.9 * (P(0, 60) + P(1, 0)) * c }; }
+    case 'rx': return { rx: P(0, 40) * there(a, 13, 0.32, 11), p: 400 };
+    case 'ry': return { ry: P(0, 40) * there(a, 13, 0.32, 11), p: 400 };
+    case 'flut': return { ry: P(0, 30) * (hump(a, 10) - 0.7 * hump(a - 0.3, 10) + 0.4 * hump(a - 0.6, 10)), p: 400 };
+    case 'flipx': case 'flipy': {
+      // A page turns over at its edge and is gone, then the next one settles in.
+      const ang = k === 'flipx' ? -95 : -100;
+      let v = 0, o = 1;
+      if (a < 0.45) { v = ang * inOut(a / 0.45); o = 1 - seg(a, 0.33, 0.45); }
+      else if (a < 0.55) o = 0;
+      else { v = 0.4 * ang * (1 - out(seg(a, 0.55, 0.95))); o = seg(a, 0.55, 0.7); }
+      return k === 'flipx' ? { rx: v, o, p: 500 } : { ry: v, o, p: 500 };
+    }
+    case 'pop': {
+      // Gathers a touch, then grows past its size and settles. Never from nothing.
+      const s = 1 - 0.1 * hump(a, 24) + P(0, 0.15) * hump(a - 0.07, 13);
+      return { sx: s, sy: s, r: P(1, 0) * (a >= 0.7 ? 0 : crit(a - 0.07, 10)) };
+    }
+    case 'beat': { const s = 1 + P(0, 0.08) * (hump(a, 14) + 0.7 * hump(a - 0.32, 14)); return { sx: s, sy: s }; }
+    case 'draw': {
+      // A check or a line is drawn left to right, then gives a small pop.
+      if (a < 0.06) return { o: 1 - a / 0.06 };
+      if (a < 0.1) return { o: 0, reveal: 0 };
+      const s = 1 + 0.08 * hump(a - 0.45, 16);
+      return { reveal: out(seg(a, 0.1, 0.45)), sx: s, sy: s };
+    }
+    case 'twinkle': { const s = 1 + 0.25 * hump(a, 10) - 0.08 * hump(a - 0.3, 12); return { r: a >= 0.85 ? 0 : P(0, 72) * crit(a, 8), sx: s, sy: s }; }
+    case 'flicker': {
+      return { sy: 1 + 0.2 * hump(a, 14) - 0.1 * hump(a - 0.18, 18) + 0.06 * hump(a - 0.34, 18), sx: 1 - 0.08 * hump(a, 14) + 0.05 * hump(a - 0.18, 18), r: 5 * (hump(a, 16) - hump(a - 0.2, 16)) };
+    }
+    case 'rise': {
+      // Steam rises, thins out and comes back where it was.
+      if (a < 0.55) return { ty: -P(0, 70) * u * crit(a, 6), tx: 8 * u * Math.sin(Math.PI * 3 * a), o: 1 - seg(a, 0.15, 0.5), sx: 1 + 0.12 * seg(a, 0, 0.5) };
+      if (a < 0.6) return { o: 0 };
+      return { o: seg(a, 0.6, 0.9), sy: 0.85 + 0.15 * crit(a - 0.6, 12) };
+    }
+    case 'wave': { const q = hump(a, 12) + 0.8 * hump(a - 0.3, 12); return { sx: 1 + 0.15 * q, sy: 1 + 0.15 * q, o: 1 - 0.35 * q }; }
+    case 'fall': {
+      // A drop falls with gravity and fades, a new one forms in its place.
+      const h = P(0, 120) * u;
+      if (a < 0.35) { const q = a / 0.35; return { ty: h * q * q, o: 1 - seg(a, 0.2, 0.35) }; }
+      if (a < 0.42) return { o: 0 };
+      const c = a - 0.42;
+      return { o: seg(c, 0, 0.12), sy: 0.8 + 0.2 * crit(c, 14) };
+    }
+    case 'float': {
+      return { tx: P(0, 20) * u * (hump(a, 7) - 0.8 * hump(a - 0.45, 8)), ty: P(1, -30) * u * there(a, 8, 0.45, 7), r: P(2, 12) * (hump(a, 7) - hump(a - 0.45, 8)) };
+    }
+    case 'scrub': {
+      // Back and forth (a brush, a squeegee, a bow), starting and stopping smoothly.
+      const env = Math.sin(Math.PI * clamp(a / 0.7)), s = Math.sin(2 * Math.PI * P(2, 2) * clamp(a / 0.7));
+      return { tx: P(0, 30) * u * s * env, ty: P(1, 0) * u * s * env };
+    }
+    case 'press': { const q = hump(a, 24) + 0.8 * hump(a - 0.24, 24); return { ty: P(0, 14) * u * q, sy: 1 - 0.04 * q }; }
+    case 'unroll': { const c = there(a, 22, 0.1, 9); return { sx: 1 - P(0, 0.4) * c }; }
+    case 'grow': { const c = there(a, 22, 0.1, 10); return { sy: 1 - P(0, 0.5) * c }; }
+    case 'blink': { const q = Math.max(hump(a, 22), 0.8 * hump(a - 0.28, 22)); return { sy: 1 - P(0, 0.6) * q }; }
+    case 'charge': {
+      // All segments dim at once, then light up one by one (p0 = when this one comes on).
+      const on = P(0, 0.2);
+      const s = 1 + 0.08 * hump(a - on, 18);
+      return { o: 1 - 0.75 * seg(a, 0, 0.08) + 0.75 * seg(a, on, on + 0.08), sx: s, sy: s };
+    }
+    case 'jab': { const c = crit(a, 26) - crit(a - 0.14, 12); return { tx: P(0, -60) * u * c, ty: P(1, 0) * u * c }; }
+    case 'thunk': {
+      // Pulled back, flies in, quivers where it sticks.
+      const c = crit(a, 12) - crit(a - 0.3, 40);
+      return { tx: P(0, 40) * u * c, ty: P(1, -40) * u * c, r: 4 * clack(a - 0.34, 1) };
+    }
+    case 'zap': {
+      const o = a < 0.06 ? 1 - 0.8 * a / 0.06 : a < 0.12 ? 0.2 + 0.8 * (a - 0.06) / 0.06 : a < 0.2 ? 1 : a < 0.26 ? 0.3 : 1;
+      const s = 1 + 0.1 * hump(a - 0.12, 20);
+      return { o, sx: s, sy: s };
+    }
+    case 'stir': {
+      const env = Math.sin(Math.PI * clamp(a / 0.75)), th = 2 * Math.PI * 2 * clamp(a / 0.75);
+      return { tx: 14 * u * Math.sin(th) * env, ty: 6 * u * (1 - Math.cos(th)) * env };
+    }
+    case 'appear': {
+      if (a < 0.08) return { o: 1 - a / 0.08 };
+      if (a < 0.15) return { o: 0 };
+      const s = 0.9 + 0.1 * crit(a - 0.15, 10);
+      return { o: seg(a, 0.15, 0.6), sx: s, sy: s };
+    }
+    case 'insert': case 'path': {
+      // Goes in (a coin into a slot, a ballot into a box, a ball down a slide), fades, a new one appears.
+      const T = k === 'insert' ? 0.4 : 0.55;
+      if (a < T) { const q = k === 'insert' ? crit(a, 10) : Math.pow(a / T, 2); return { tx: P(0, 0) * u * q, ty: P(1, 100) * u * q, o: 1 - seg(a, T * 0.65, T) }; }
+      if (a < T + 0.08) return { o: 0 };
+      const c = a - T - 0.08;
+      return { o: seg(c, 0, 0.15), ty: -25 * u * (1 - crit(c, 12)) };
+    }
+    case 'puff': {
+      if (a < 0.5) { const s = 1 + 0.4 * crit(a, 8); return { sx: s, sy: s, o: 1 - seg(a, 0.15, 0.5) }; }
+      if (a < 0.6) return { o: 0 };
+      const s = 0.85 + 0.15 * crit(a - 0.6, 12);
+      return { o: seg(a, 0.6, 0.85), sx: s, sy: s };
+    }
+    case 'nod': { const q = hump(a, 11); return { ty: 40 * u * q, rx: -10 * q, p: 300 }; }
+    case 'unfold': { const c = there(a, 22, 0.1, 12); return { sx: 1 - 0.2 * c, sy: 1 + 0.03 * c }; }
+    case 'fold': { const c = there(a, 16, 0.3, 12); return { sx: 1 - 0.5 * c, sy: 1 - 0.5 * c }; }
+    case 'drill': {
+      const env = Math.sin(Math.PI * clamp(a / 0.55));
+      return { tx: (P(0, 20) * there(a, 14, 0.45, 12) + 3 * Math.sin(2 * Math.PI * 18 * a) * env) * u };
+    }
+    case 'rollby': {
+      // The whole thing rolls a little way forward and back; its wheels turn with it.
+      const c = there(a, 8, 0.5, 8);
+      return { tx: P(0, 40) * u * c, r: -1.5 * hump(a, 10) + 1.5 * hump(a - 0.5, 10) };
+    }
+  }
+  return {};
+}

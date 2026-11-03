@@ -10,7 +10,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Image, View, ViewStyle, StyleProp } from 'react-native';
 import Animated, { useSharedValue, useAnimatedStyle, withTiming, Easing, useReducedMotion } from 'react-native-reanimated';
-import { wholeF, wrapF, partF, baseF, toRN, durOf } from '../../lib/clayCurves';
+import { wholeF, wrapF, partF, baseF, toRN, durOf, pieceF } from '../../lib/clayCurves';
 import { clayIcons, ClayName } from '../../lib/clayIcons';
 import { clayMotion, ClayMotionSpec } from '../../lib/clayMotion';
 import { clayWhole, PRESS } from '../../lib/clayWhole';
@@ -32,7 +32,7 @@ export function ClayIcon({ name, size = 40, style, celebrate }: { name: ClayName
   const big = Math.round(size * FILL);
   return (
     <View style={[{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }, style]}>
-      {n ? <ClayMotion key={n} name={name} size={big} /> : <Image source={clayIcons[name]} style={{ width: big, height: big }} resizeMode="contain" accessibilityIgnoresInvertColors />}
+      {n ? (clayMotion[name]?.moves ? <ClayParts key={n} name={name} size={big} /> : <ClayMotion key={n} name={name} size={big} />) : <Image source={clayIcons[name]} style={{ width: big, height: big }} resizeMode="contain" accessibilityIgnoresInvertColors />}
     </View>
   );
 }
@@ -47,6 +47,46 @@ export function Tile({ name, size = 52, radius, ratio = 0.9, bg, style, celebrat
     >
       <ClayIcon name={name} size={Math.round(size * ratio)} celebrate={celebrate} />
     </View>
+  );
+}
+
+// ─── Every part its own motion (Icons v1, 03.11.) ──────────────────────────
+// Each layer is a canvas-sized window onto its cell of the icon's strip, all at
+// (0, 0) and scaled together. A layer named in spec.moves runs its own kind
+// around its own pivot after its own delay; the others stay put.
+
+type Move = { k: string; o: [number, number]; d: number; p: number[] };
+
+function Piece({ strip, i, n, size, mv, t, T }: { strip: any; i: number; n: number; size: number; mv?: Move; t: any; T: number }) {
+  const u = size / 1024;
+  const st = useAnimatedStyle((): any => (mv ? toRN(pieceF(mv.k, (t.value * T - mv.d) / 1000, u, mv.p)) : {}));
+  // A check mark draws itself: the layer sits in a box that grows from the left.
+  const rv = useAnimatedStyle((): any => (mv && mv.k === 'draw' ? { width: size * (pieceF('draw', (t.value * T - mv.d) / 1000, u, mv.p).reveal ?? 1) } : {}));
+  const origin = mv ? `${(mv.o[0] / 10.24).toFixed(2)}% ${(mv.o[1] / 10.24).toFixed(2)}%` : '50% 50%';
+  const cell = (
+    <Animated.View style={[{ position: 'absolute', left: 0, top: 0, width: size, height: size, overflow: 'hidden', transformOrigin: origin } as any, st]}>
+      <Image source={strip} style={{ position: 'absolute', left: -i * size, top: 0, width: size * n, height: size }} resizeMode="stretch" />
+    </Animated.View>
+  );
+  if (mv?.k !== 'draw') return cell;
+  return <Animated.View style={[{ position: 'absolute', left: 0, top: 0, height: size, overflow: 'hidden' }, rv]}>{cell}</Animated.View>;
+}
+
+function ClayParts({ name, size }: { name: ClayName; size: number }) {
+  const spec = clayMotion[name] as ClayMotionSpec;
+  const T = spec.T ?? 1000;
+  const t = useSharedValue(0);
+  const reduced = useReducedMotion();
+  useEffect(() => { if (!reduced) t.value = withTiming(1, { duration: T, easing: Easing.linear }); }, []);
+  const u = size / 1024;
+  const wrap = spec.wrap;
+  const outer = useAnimatedStyle((): any => (wrap ? toRN(pieceF(wrap.k, (t.value * T) / 1000, u, wrap.p)) : {}));
+  const layers = spec.layers ?? [];
+  const strip = clayIcons[`${name}__layers` as ClayName];
+  return (
+    <Animated.View style={[{ width: size, height: size, transformOrigin: '50% 90%' } as any, outer]}>
+      {layers.map((k, i) => <Piece key={k} strip={strip} i={i} n={layers.length} size={size} mv={spec.moves?.[k]} t={t} T={T} />)}
+    </Animated.View>
   );
 }
 
