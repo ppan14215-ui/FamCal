@@ -348,7 +348,7 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, o
         selectionColor={tokens.select} cursorColor={tokens.ink}
         returnKeyType={TOUCH ? 'default' : 'send'}
         accessibilityLabel={tx('Was steht an?', 'What\'s on?')}
-        style={[{ width: '100%', height: boxH, marginBottom: 2, fontFamily: fonts[400], fontSize: split ? 16 : 16.5, lineHeight: LINE, color: tokens.ink, paddingVertical: PAD, paddingHorizontal: split ? 3 : 8, textAlignVertical: 'top', includeFontPadding: false }, Platform.OS === 'web' ? ({ outlineStyle: 'none' } as any) : null]}
+        style={[{ width: '100%', height: boxH, marginBottom: card && !text ? 0 : 2, fontFamily: fonts[400], fontSize: split ? 16 : 16.5, lineHeight: LINE, color: tokens.ink, paddingVertical: PAD, paddingHorizontal: split ? 3 : 8, textAlignVertical: 'top', includeFontPadding: false }, Platform.OS === 'web' ? ({ outlineStyle: 'none' } as any) : null]}
       />
       {listening && wavy ? (
         <View pointerEvents="none" style={{ position: 'absolute', left: split ? 3 : 8, right: 6, top: 0, bottom: 2, justifyContent: 'center' }}>
@@ -358,21 +358,42 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, o
       </View>
   );
 
+  // Julian 04.11.: like the Claude app. At rest (and while the waves run) one line: plus, field, mic, send.
+  // With text it grows into the card with the buttons below. The check sits where the mic was, in the same style.
+  const one = !text;
+  const cardPlus = (
+    <PressScale accessibilityLabel={tx('Foto, Termin, Aufgabe', 'Photo, event, task')} onPress={() => { if (listening) { typed.current = true; timers.current.forEach(clearTimeout); setDemo(false); toKeys.current?.(); setText(''); } onPlus?.(); }} style={{ width: 34, height: 34, borderRadius: 999, borderWidth: 1, borderColor: tokens.hair, alignItems: 'center', justifyContent: 'center' }}>
+      <LineIcon name="plus" size={18} color={tokens.ink} stroke={2} />
+    </PressScale>
+  );
+  const cardMic = (
+    <PressScale accessibilityLabel={listening ? tx('Fertig gesprochen', 'Done speaking') : tx('Sprechen', 'Speak')} onPress={listen} style={{ width: 34, height: 34, borderRadius: 999, alignItems: 'center', justifyContent: 'center' }}>
+      {listening ? <LineIcon name="check" size={21} color={tokens.ink} stroke={2.4} /> : <LineIcon name="mic" size={20} color={tokens.ink} />}
+    </PressScale>
+  );
+  const cardSend = (
+    <PressScale accessibilityLabel={tx('Senden', 'Send')} disabled={!text.trim() && !listening} onPress={finishAndSend} style={{ width: 34, height: 34, borderRadius: 999, alignItems: 'center', justifyContent: 'center', backgroundColor: text.trim() || listening ? tokens.ink : tokens.chipBg }}>
+      <LineIcon name="send" size={17} color={text.trim() || listening ? tokens.onInk : tokens.mute} />
+    </PressScale>
+  );
+  // One parent with keyed children, so the field is not remounted (and the keyboard stays) when the first letter turns the line into the card.
   const cardInput = (
-    <View style={[{ borderRadius: 24, backgroundColor: tokens.row, borderWidth: 1, borderColor: listening ? tokens.ink : tokens.hair, paddingTop: 6, paddingHorizontal: 10, paddingBottom: 8, gap: 4 }, lift]}>
-      {fieldBox}
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-        <PressScale accessibilityLabel={tx('Foto, Termin, Aufgabe', 'Photo, event, task')} onPress={() => { if (listening) { typed.current = true; timers.current.forEach(clearTimeout); setDemo(false); toKeys.current?.(); setText(''); } onPlus?.(); }} style={{ width: 34, height: 34, borderRadius: 999, borderWidth: 1, borderColor: tokens.hair, alignItems: 'center', justifyContent: 'center' }}>
-          <LineIcon name="plus" size={18} color={tokens.ink} stroke={2} />
-        </PressScale>
-        <View style={{ flex: 1 }} />
-        <PressScale accessibilityLabel={listening ? tx('Fertig gesprochen', 'Done speaking') : tx('Sprechen', 'Speak')} onPress={listen} style={{ width: 34, height: 34, borderRadius: 999, alignItems: 'center', justifyContent: 'center', backgroundColor: listening ? tokens.ink : 'transparent' }}>
-          {listening ? <LineIcon name="check" size={17} color={tokens.onInk} stroke={2.4} /> : <LineIcon name="mic" size={20} color={tokens.ink} />}
-        </PressScale>
-        <PressScale accessibilityLabel={tx('Senden', 'Send')} disabled={!text.trim() && !listening} onPress={finishAndSend} style={{ width: 34, height: 34, borderRadius: 999, alignItems: 'center', justifyContent: 'center', backgroundColor: text.trim() || listening ? tokens.ink : tokens.chipBg }}>
-          <LineIcon name="send" size={17} color={text.trim() || listening ? tokens.onInk : tokens.mute} />
-        </PressScale>
-      </View>
+    <View style={[one
+      ? { flexDirection: 'row', alignItems: 'center', gap: 6, borderRadius: 26, paddingVertical: 4, paddingHorizontal: 8 }
+      : { flexDirection: 'column', borderRadius: 24, paddingTop: 6, paddingHorizontal: 10, paddingBottom: 8, gap: 4 },
+      { backgroundColor: tokens.row, borderWidth: 1, borderColor: listening ? tokens.ink : tokens.hair }, lift]}>
+      {one ? <React.Fragment key="p">{cardPlus}</React.Fragment> : null}
+      <View key="f" style={one ? { flex: 1, minWidth: 0 } : { alignSelf: 'stretch' }}>{fieldBox}</View>
+      {one ? <React.Fragment key="m">{cardMic}</React.Fragment> : null}
+      {one ? <React.Fragment key="s">{cardSend}</React.Fragment> : null}
+      {one ? null : (
+        <View key="r" style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+          {cardPlus}
+          <View style={{ flex: 1 }} />
+          {cardMic}
+          {cardSend}
+        </View>
+      )}
     </View>
   );
 
