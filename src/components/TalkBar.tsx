@@ -80,9 +80,11 @@ type Props = {
   split?: boolean;
   /** Julian 04.11.: laid out like the Claude app input, text on top, plus left, mic and send right. */
   card?: boolean;
+  /** Julian 04.11.: sits inside the dark one bar at rest; turns into the light block once you type. */
+  dark?: boolean;
 };
 
-export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, onClose, split, card, placeholder = tx('Sag oder schreib, was ansteht …', 'Say or type what\'s coming up …') }: Props) {
+export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, onClose, split, card, dark, placeholder = tx('Sag oder schreib, was ansteht …', 'Say or type what\'s coming up …') }: Props) {
   const [text, setText] = useState('');
   const [listening, setListening] = useState(false);
   /** How loud the voice is right now, 0 to 1; drives the bars in the mic. */
@@ -320,7 +322,7 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, o
   const plus = (
     <PressScale accessibilityLabel={tx('Foto, Termin, Aufgabe', 'Photo, event, task')} onPress={() => { if (listening) { typed.current = true; timers.current.forEach(clearTimeout); setDemo(false); toKeys.current?.(); setText(''); } onPlus?.(); }} style={{ width: split ? 36 : 44, height: split ? 36 : 44, marginBottom: split ? 6 : 2, marginLeft: split ? 4 : 0, borderRadius: 999, alignItems: 'center', justifyContent: 'center' }}>
       {/* Julian 30.10. 22:15: not black, a plain line icon like the mic; the dark bar below is the one dark thing. */}
-      <LineIcon name="plus" size={24} color={tokens.ink} stroke={2} />
+      <LineIcon name="plus" size={24} color={dark && !text && !listening ? tokens.onInk : tokens.ink} stroke={2} />
     </PressScale>
   );
 
@@ -348,7 +350,7 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, o
         scrollEnabled={boxH >= MAX_H}
         editable={!demo}
         placeholder={writing ? tx('Schreibe auf …', 'Writing it down …') : listening && wavy ? '' : listening ? tx('Ich höre zu … Tippe ✓ wenn fertig', 'Listening … Tap ✓ when done') : placeholder}
-        placeholderTextColor={tokens.mute}
+        placeholderTextColor={dark ? 'rgba(255,255,255,0.62)' : tokens.mute}
         selectionColor={tokens.select} cursorColor={tokens.ink}
         returnKeyType={TOUCH ? 'default' : 'send'}
         accessibilityLabel={tx('Was steht an?', 'What\'s on?')}
@@ -401,12 +403,12 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, o
   );
 
   const input = (
-    <View style={[{ flexDirection: 'row', alignItems: 'flex-end', gap: 4, padding: 6, paddingLeft: 6, borderRadius: boxH > MIN_H ? 26 : 30, backgroundColor: tokens.row, borderWidth: 1, borderColor: listening ? tokens.ink : tokens.hair }, lift]}>
+    <View style={[{ flexDirection: 'row', alignItems: 'flex-end', gap: 4, padding: 6, paddingLeft: 6, borderRadius: boxH > MIN_H ? 26 : 30, backgroundColor: dark && !text && !listening ? 'transparent' : tokens.row, borderWidth: 1, borderColor: dark && !text && !listening ? 'transparent' : listening ? tokens.ink : tokens.hair }, dark && !text && !listening ? null : lift]}>
       {onClose ? (
         <PressScale accessibilityLabel={tx('Schließen, zurück zu den Tabs', 'Close, back to the tabs')} hitSlop={6} onPress={() => { if (listening) { typed.current = true; timers.current.forEach(clearTimeout); setDemo(false); toKeys.current?.(); } setText(''); field.current?.blur(); haptics.select(); onClose(); }} style={{ width: 44, height: 44, marginBottom: 2, borderRadius: 999, alignItems: 'center', justifyContent: 'center', backgroundColor: tokens.chipBg }}>
           <LineIcon name="x" size={20} color={tokens.ink} stroke={2} />
         </PressScale>
-      ) : plus}
+      ) : <View style={dark && !text && !listening ? { width: 0, overflow: 'hidden' } : null}>{plus}</View>}
       {fieldBox}
       {/* Plus stays reachable while the mic listens (Julian 28.10.: "wie komme ich an das + Menü?"). */}
       {onClose && (!text || listening) ? plus : null}
@@ -418,7 +420,7 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, o
             style={{ width: 36, height: 44, marginBottom: 2, borderRadius: 999, alignItems: 'center', justifyContent: 'center' }}
           >
             {/* Julian 31.10. 12:55: a clear button to finish, like Claude. 01.11.: a check, not a stop square, since it keeps what was said. */}
-            {listening ? <View style={{ width: 34, height: 34, borderRadius: 999, backgroundColor: tokens.ink, alignItems: 'center', justifyContent: 'center' }}><LineIcon name="check" size={19} color={tokens.onInk} stroke={2.4} /></View> : <LineIcon name="mic" size={22} color={tokens.ink} />}
+            {listening ? <View style={{ width: 34, height: 34, borderRadius: 999, backgroundColor: tokens.ink, alignItems: 'center', justifyContent: 'center' }}><LineIcon name="check" size={19} color={tokens.onInk} stroke={2.4} /></View> : <LineIcon name="mic" size={22} color={dark && !text ? tokens.onInk : tokens.ink} />}
           </PressScale>
           {(text && !listening) || listening ? (
             <PressScale accessibilityLabel={tx('Senden', 'Send')} onPress={finishAndSend} style={{ width: 44, height: 44, marginBottom: 2, borderRadius: 999, alignItems: 'center', justifyContent: 'center', backgroundColor: tokens.ink }}>

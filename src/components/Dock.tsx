@@ -920,6 +920,7 @@ export default function Dock() {
         key={onTabs ? 'tabs' : kind}
         split={onTabs}
         card={onTabs && navStyle() === 'strip'}
+        dark={onTabs && navStyle() === 'bar' && !typing}
         onSend={hear}
         onPlus={() => router.push('/neu')}
         spoken={SPOKEN[kind]}

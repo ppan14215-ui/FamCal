@@ -37,9 +37,11 @@ const TABS: { name: string; key: string; icon: LineName }[] = [
 ];
 
 /** Height of the bar; Dock.tsx puts the field right above it. */
-export const navH = () => (navStyle() === 'pill' ? 54 : navStyle() === 'bar' ? 52 : 50);
+export const navH = () => (navStyle() === 'pill' ? 54 : navStyle() === 'bar' ? 58 : 50);
 /** Width of the icon pill in the one-bar navigation. */
-export const BAR_TABS_W = 3 * 46 + 8;
+// One bar (Julian 04.11.): the old dark pill's look, the light block sits on the active tab with its word.
+const BAR_ON_W = 100;
+export const BAR_TABS_W = BAR_ON_W + 40 * 2 + 8;
 /** The open tab always has the same width, so the bar never changes size and recenters while the pill moves (Julian 31.10.: Listen overshot). */
 const ON_W = 128;
 /** Where the pill's top edge sits above the screen bottom. */
@@ -319,20 +321,30 @@ function BarNav({ state, navigation }: BottomTabBarProps) {
           <Rect x="0" y="0" width="100%" height="100%" fill="url(#barground)" />
         </Svg>
       </View>
+      {/* The dark bar runs under tabs and field; while typing the field becomes the light block across it. */}
+      <View pointerEvents="none" style={{ position: 'absolute', left: 14, right: 14, bottom: Math.max(insets.bottom, 8) + 4, height: navH(), borderRadius: navH() / 2, backgroundColor: tokens.ink, ...floatShadow }} />
       <Animated.View accessibilityRole="tablist" pointerEvents={typing ? 'none' : 'auto'}
-        style={[{ position: 'absolute', left: 14, bottom: Math.max(insets.bottom, 8) + 4, width: BAR_TABS_W, height: navH(), borderRadius: navH() / 2, backgroundColor: tokens.row, borderWidth: 1, borderColor: tokens.hair, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 4 }, hide]}>
-        {TABS.map((tab) => {
-          const on = current === tab.name;
-          return (
-            <PressScale key={tab.name} scale={0.9} accessibilityRole="tab" accessibilityLabel={t(tab.key)} accessibilityState={{ selected: on }}
-              onPress={() => { if (!on) { haptics.select(); navigation.navigate(tab.name); } }}
-              style={{ width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: on ? tokens.chipBg : 'transparent' }}>
-              <LineIcon name={tab.icon} size={21} color={on ? tokens.ink : tokens.mute} />
-            </PressScale>
-          );
-        })}
+        style={[{ position: 'absolute', left: 14 + 5, bottom: Math.max(insets.bottom, 8) + 4 + 5, width: BAR_TABS_W, height: navH() - 10, flexDirection: 'row', alignItems: 'center', gap: 4 }, hide]}>
+        {TABS.map((tab) => (
+          <BarTab key={tab.name} on={current === tab.name} icon={tab.icon} label={t(tab.key)} onPress={() => { if (current !== tab.name) { haptics.select(); navigation.navigate(tab.name); } }} />
+        ))}
       </Animated.View>
     </View>
+  );
+}
+
+function BarTab({ on, icon, label, onPress }: { on: boolean; icon: LineName; label: string; onPress: () => void }) {
+  const w = useSharedValue(on ? BAR_ON_W : 40);
+  useEffect(() => { w.value = withTiming(on ? BAR_ON_W : 40, SWITCH); }, [on]);
+  const size = useAnimatedStyle(() => ({ width: w.value }));
+  return (
+    <Animated.View style={[{ overflow: 'hidden', borderRadius: 999, backgroundColor: on ? tokens.onInk : 'transparent' }, size]}>
+      <PressScale scale={0.92} accessibilityRole="tab" accessibilityLabel={label} accessibilityState={{ selected: on }} onPress={onPress}
+        style={{ height: navH() - 10, paddingHorizontal: on ? 12 : 0, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+        <LineIcon name={icon} size={20} color={on ? tokens.ink : 'rgba(255,255,255,0.66)'} />
+        {on ? <Animated.View entering={FadeIn.duration(180).delay(90)}><Txt size={13.5} weight={600} color={tokens.ink} numberOfLines={1}>{label}</Txt></Animated.View> : null}
+      </PressScale>
+    </Animated.View>
   );
 }
 
