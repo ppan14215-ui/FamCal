@@ -26,7 +26,6 @@ import { haptics } from '../src/lib/haptics';
 import { countryName, regionName } from '../src/lib/holidays';
 import { HIDDEN } from '../src/lib/core';
 import { startPreview } from '../src/lib/vorschau';
-import ColorPicker from '../src/components/ColorPicker';
 import { THEMES } from '../src/theme/tokens';
 import { usePalette } from '../src/theme/mode';
 import { NAV_STYLE, setNavStyle } from '../src/lib/navStyle';
@@ -62,7 +61,6 @@ export default function Einstellungen() {
   const cals = useStore((s) => s.calendars);
   const demo = useStore((s) => s.demo);
   const names = useStore((s) => s.names);
-  const colors = useStore((s) => s.colors);
   const vac = useStore((s) => s.vacation);
   const land = useStore((s) => s.land);
   const country = useStore((s) => s.country);
@@ -83,12 +81,6 @@ export default function Einstellungen() {
         ))}
         <SRow icon="sync" t={cals.length ? tx('Weitere Kalender', 'More calendars') : tx('Kalender verbinden', 'Connect calendars')} onPress={openCals} />
       </Group>
-      <Txt size={13} weight={600} color={tokens.sub} style={{ paddingHorizontal: 4, marginTop: 8 }}>{tx('Eure Farben', 'Your colours')}</Txt>
-      <View style={{ backgroundColor: tokens.row, borderRadius: 20, padding: 14, gap: 12 }}>
-        <ColorPicker p="J" name={names.J || tx('Du', 'You')} sel={colors.J} taken={colors.T} onSel={(i) => actions.setColor('J', i)} />
-        <View style={{ height: 1, backgroundColor: tokens.hair }} />
-        <ColorPicker p="T" name={names.T || tx('Partner', 'Partner')} sel={colors.T} taken={colors.J} onSel={(i) => actions.setColor('T', i)} />
-      </View>
       {HIDDEN.toggles ? null : <>
       <View style={{ gap: 8 }}>
         {/* Julian 30.10.: both versions side by side, to compare. */}
@@ -107,14 +99,18 @@ export default function Einstellungen() {
         <SRow icon="notizblock" t={tx('Was ich weiß', 'What I know')} onPress={() => router.push('/wissen')} />
         <SRow icon="zuhause" t={tx('Eure Familie', 'Your family')} onPress={() => router.push('/personen')} />
         <SRow icon="malen" t={tx('Farbthema', 'Colour theme')} v={themeName} onPress={() => router.push('/design')} />
-        <SRow icon="sync" t={tx('Navigation', 'Navigation')} v={NAV_STYLE === 'bar' ? tx('Ein Balken', 'One bar') : tx('Unter der Eingabe', 'Under the field')} onPress={() => { haptics.select(); setNavStyle(NAV_STYLE === 'bar' ? 'strip' : 'bar'); toast(tx('Navigation geändert, startet neu', 'Navigation changed, restarting')); }} />
         <SRow icon="reise" t={tx('Urlaub und Feiertage', 'Vacation and holidays')} v={(land && (country === 'DE' ? land : regionName(country, land))) || countryName(country)} onPress={() => router.push('/urlaub')} />
         {HIDDEN.extras ? null : <SRow icon="glocke" t={tx('Hinweise', 'Notifications')} onPress={() => router.push('/demo/sperrbildschirm')} />}
         <SRow icon="chat" t={tx('Sprache', 'Language')} v={sl === 'de' ? tx('Deutsch', 'German') : tx('Englisch', 'English')} onPress={() => { const v = sl === 'de' ? 'en' : 'de'; setSpeechLang(v); setSl(v); toast(v === 'de' ? tx('Ich höre jetzt auf Deutsch', 'Listening in German now') : tx('Ich höre jetzt auf Englisch', 'Listening in English now')); }} />
         {HIDDEN.toggles ? null : <SRow icon="chat" t={tx('Mikro Anzeige', 'Mic display')} v={mic === 'ring' ? tx('Ring', 'Ring') : tx('Balken', 'Bars')} onPress={() => { const v = mic === 'ring' ? 'balken' : 'ring'; setMicStyle(v); haptics.select(); toast(v === 'ring' ? tx('Mikro zeigt jetzt den Ring', 'Mic now shows the ring') : tx('Mikro zeigt jetzt die Balken', 'Mic now shows the bars')); }} />}
+        <SRow icon="kalender" t={tx('Kalender Abo und Export', 'Calendar feed and export')} onPress={() => router.push('/kalender-abo')} />
+      </Group>
+      {/* Julian 04.11.: the real settings apart from what is only there to try things out. */}
+      <H2>{tx('Zum Testen', 'For testing')}</H2>
+      <Group>
+        <SRow icon="sync" t={tx('Navigation', 'Navigation')} v={NAV_STYLE === 'bar' ? tx('Ein Balken', 'One bar') : tx('Unter der Eingabe', 'Under the field')} onPress={() => { haptics.select(); setNavStyle(NAV_STYLE === 'bar' ? 'strip' : 'bar'); toast(tx('Navigation geändert, startet neu', 'Navigation changed, restarting')); }} />
         <SRow icon="zuhause" t={tx('Neues Onboarding ansehen', 'View new onboarding')} onPress={() => router.push('/onboarding/flow')} />
         <SRow icon="zuhause" t={tx('Onboarding ansehen', 'View onboarding')} onPress={() => { startPreview(); router.push('/onboarding'); }} />
-        <SRow icon="kalender" t={tx('Kalender Abo und Export', 'Calendar feed and export')} onPress={() => router.push('/kalender-abo')} />
       </Group>
       <PressScale scale={0.985} onPress={() => router.push('/plus')} style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12, paddingHorizontal: 14, borderRadius: 20, backgroundColor: tokens.row }}>
         <ClayIcon name="hand-nimmt" size={44} />

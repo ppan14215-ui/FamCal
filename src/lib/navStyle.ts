@@ -6,6 +6,7 @@
  * Chosen per device in the settings while Julian compares; read once at start, switching reloads.
  */
 import { Platform } from 'react-native';
+import * as Updates from 'expo-updates';
 import { getPref, setPref } from './prefs';
 
 export type NavStyle = 'strip' | 'bar' | 'pill';
@@ -14,5 +15,7 @@ export const NAV_STYLE: NavStyle = saved === 'bar' || saved === 'pill' ? saved :
 
 export function setNavStyle(v: NavStyle) {
   setPref('nav', v);
-  if (Platform.OS === 'web') { try { (globalThis as any).location?.reload(); } catch {} }
+  if (Platform.OS === 'web') { try { (globalThis as any).location?.reload(); } catch {} return; }
+  // Native (Julian 04.11.: tapping did nothing): restart the JS right away so the new nav shows.
+  setTimeout(() => { Updates.reloadAsync().catch(() => {}); }, 600);
 }

@@ -115,8 +115,6 @@ export const THEMES: { id: ThemeId; de: string; en: string; colors: Pal[] }[] = 
     { name: 'Mint', bg: '#B5E3D9', fg: '#0A5048' }, { name: 'Sand', bg: '#FAD1A0', fg: '#7A3D00' },
     { name: 'Salbei', bg: '#BFE0B4', fg: '#1F5426' }, { name: 'Flieder', bg: '#E0CAF3', fg: '#592886' },
     { name: 'Koralle', bg: '#FBC9B6', fg: '#8F2D12' }, { name: 'Gelb', bg: '#F5DE7E', fg: '#5A4500' },
-    { name: 'Limette', bg: '#D9EA94', fg: '#3B5000' }, { name: 'Türkis', bg: '#B0DDEC', fg: '#0A4C62' },
-    { name: 'Indigo', bg: '#CDCBF7', fg: '#33269A' }, { name: 'Pflaume', bg: '#EBC3E2', fg: '#74195F' },
   ] },
   { id: 'kraeftig', de: 'Kräftig', en: 'Bold', colors: [
     { name: 'Pink', bg: '#FF9FCB', fg: '#7A0F45' }, { name: 'Royal', bg: '#8AB4FF', fg: '#0B2E73' },
@@ -146,7 +144,12 @@ export const THEMES: { id: ThemeId; de: string; en: string; colors: Pal[] }[] = 
 /** The active theme's colours. Mutable: swapped in place by applyColorTheme. */
 export const personPalette: Pal[] = [...THEMES[0].colors];
 /** Every colour of every theme, so a colour name saved for a kid still resolves after a switch. */
-export const allColors: Pal[] = THEMES.flatMap((t) => t.colors);
+// Julian 04.11.: every theme has the same 8 colours. These four left Klassisch and stay only so old entries still find their colour by name.
+const RETIRED: Pal[] = [
+  { name: 'Limette', bg: '#D9EA94', fg: '#3B5000' }, { name: 'Türkis', bg: '#B0DDEC', fg: '#0A4C62' },
+  { name: 'Indigo', bg: '#CDCBF7', fg: '#33269A' }, { name: 'Pflaume', bg: '#EBC3E2', fg: '#74195F' },
+];
+export const allColors: Pal[] = [...THEMES.flatMap((t) => t.colors), ...RETIRED];
 let themeId: ThemeId = 'klassisch';
 export const currentTheme = () => themeId;
 export function applyColorTheme(id: ThemeId) {
