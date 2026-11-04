@@ -432,6 +432,9 @@ function EntryBody({ f, mine: own, me, answer, side }: Omit<EntryProps, 'showcas
   const mine = side ? side === 'right' : own;
   const asks = own && !still;
   const p = persons[f.by];
+  // Deleted later (Julian 04.11.): the card says so once, the footer no longer claims "Im Kalender".
+  const allEvents = useStore((st) => st.events);
+  const gone = !!f.events?.length && allEvents.length > 0 && !f.events.some((id) => allEvents.some((e) => e.id === id));
   const name = mine ? tx('Du', 'You') : p.name || f.by;
   const bubble = f.kind === 'msg'
     ? { backgroundColor: tokens.row, borderWidth: 1, borderColor: tokens.hair }
@@ -457,7 +460,7 @@ function EntryBody({ f, mine: own, me, answer, side }: Omit<EntryProps, 'showcas
             {f.undone ? null : f.items ? <Items list={f.items.list} ids={f.items.ids} name={f.snap?.list} names={f.snap?.items} /> : null}
             {f.undone ? null : f.tasks ? <Tasks ids={f.tasks} titles={f.snap?.tasks} /> : null}
             {open && !f.events && !f.items && !f.tasks && f.why ? <Why why={f.why} /> : null}
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 8, paddingHorizontal: 14, borderTopWidth: f.undone ? 0 : 1, borderTopColor: tokens.hair }}>
+            {gone && !f.undone ? null : <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 8, paddingHorizontal: 14, borderTopWidth: f.undone ? 0 : 1, borderTopColor: tokens.hair }}>
               <Txt size={13} weight={600} color={f.undone || f.changed ? tokens.sub : tokens.done}>{f.undone ? tx('Rückgängig gemacht', 'Undone') : f.changed ? tx('Geändert', 'Changed') : `✓ ${f.events ? tx('Im Kalender', 'In the calendar') : f.tasks ? tx('Bei den Aufgaben', 'On your tasks') : tx('Auf der Liste', 'On the list')}`}</Txt>
               <View style={{ flex: 1 }} />
               {(f.why && !f.events && !f.items && !f.tasks) || (f.events?.length === 1 && !f.undone) ? (
@@ -469,7 +472,7 @@ function EntryBody({ f, mine: own, me, answer, side }: Omit<EntryProps, 'showcas
               {!still && !f.undone && canUndo(f.id) ? (
                 <PressScale hitSlop={8} onPress={() => undoEntry(f.id)}><Txt size={13} color={tokens.sub}>{tx('Rückgängig', 'Undo')}</Txt></PressScale>
               ) : null}
-            </View>
+            </View>}
           </Animated.View>
         ) : null}
       </View>
