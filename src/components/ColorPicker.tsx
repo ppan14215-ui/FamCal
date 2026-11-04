@@ -23,7 +23,7 @@ export default function ColorPicker({ p, name, sel: rawSel, taken: rawTaken, onS
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
         <Avatar p={p} size={28} />
         <Txt size={15} weight={600} style={{ flex: 1 }}>{name}</Txt>
-        <Meta>{personPalette[sel]?.name}</Meta>
+        <Meta>{personPalette[sel]?.name.replace(/^[A-Z]-/, '')}</Meta>
       </View>
       <View style={{ flexDirection: 'row', gap: 10, paddingLeft: 2, flexWrap: 'wrap' }}>
         <PressScale onPress={() => toast(tx('Fotoauswahl kommt später', 'Photo picker comes later'))} style={{ width: 30, height: 30, borderRadius: 999, borderWidth: 1.5, borderColor: tokens.circleLine, alignItems: 'center', justifyContent: 'center' }}>
@@ -32,7 +32,7 @@ export default function ColorPicker({ p, name, sel: rawSel, taken: rawTaken, onS
         {personPalette.map(shade).map((c, i) => (
           <PressScale
             key={c.name}
-            accessibilityLabel={c.name}
+            accessibilityLabel={c.name.replace(/^[A-Z]-/, '')}
             accessibilityState={{ selected: i === sel, disabled: i === taken }}
             disabled={i === taken}
             scale={0.88}

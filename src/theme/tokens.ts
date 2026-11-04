@@ -108,47 +108,50 @@ type Pal = { name: string; bg: string; fg: string };
  * One theme for the whole family; each person picks a colour from it. The app's own colours never change.
  * Saved choices are an index; a theme with fewer colours wraps around. `name` stays the colour's id.
  */
-export type ThemeId = 'klassisch' | 'kraeftig' | 'erde' | 'meer' | 'retro';
+export type ThemeId = 'klassisch' | 'notion' | 'stundenplan' | 'kontrast';
+// Julian 04.11. (second round): themes from his saved app designs and big apps, plus a Klassisch made from the app's own UI colours.
+// Every theme has 8 colours. Names are unique across themes, since a kid's colour is saved by name.
 export const THEMES: { id: ThemeId; de: string; en: string; colors: Pal[] }[] = [
   { id: 'klassisch', de: 'Klassisch', en: 'Classic', colors: [
-    { name: 'Rosa', bg: '#F7C6D2', fg: '#8A1538' }, { name: 'Blau', bg: '#C2D6F7', fg: '#173E88' },
-    { name: 'Mint', bg: '#B5E3D9', fg: '#0A5048' }, { name: 'Sand', bg: '#FAD1A0', fg: '#7A3D00' },
-    { name: 'Salbei', bg: '#BFE0B4', fg: '#1F5426' }, { name: 'Flieder', bg: '#E0CAF3', fg: '#592886' },
-    { name: 'Koralle', bg: '#FBC9B6', fg: '#8F2D12' }, { name: 'Gelb', bg: '#F5DE7E', fg: '#5A4500' },
+    { name: 'Blau', bg: '#D2DCE7', fg: '#1F4E89' }, { name: 'Rose', bg: '#EBD5DA', fg: '#9D2B48' },
+    { name: 'Petrol', bg: '#CDDCDD', fg: '#075056' }, { name: 'Orange', bg: '#F3D9CE', fg: '#AF3A0B' },
+    { name: 'Grün', bg: '#D5ECE2', fg: '#237551' }, { name: 'Sonne', bg: '#F4EBD2', fg: '#856614' },
+    { name: 'Rot', bg: '#F4D7D5', fg: '#B3312A' }, { name: 'Tinte', bg: '#D0D3D4', fg: '#16232A' },
   ] },
-  { id: 'kraeftig', de: 'Kräftig', en: 'Bold', colors: [
-    { name: 'Pink', bg: '#FF9FCB', fg: '#7A0F45' }, { name: 'Royal', bg: '#8AB4FF', fg: '#0B2E73' },
-    { name: 'Grün', bg: '#8EDB8A', fg: '#0F4D12' }, { name: 'Orange', bg: '#FFB46B', fg: '#6B3300' },
-    { name: 'Violett', bg: '#C3A2FF', fg: '#3D1A85' }, { name: 'Zitrone', bg: '#FFD84D', fg: '#4D3B00' },
-    { name: 'Rot', bg: '#FF8A80', fg: '#7A0E0E' }, { name: 'Lagune', bg: '#6FD6CF', fg: '#00474A' },
+  // Notion's tag colours, a little stronger so they carry a calendar block, text darkened to stay readable.
+  { id: 'notion', de: 'Notion', en: 'Notion', colors: [
+    { name: 'N-Blau', bg: '#C6DBE7', fg: '#286284' }, { name: 'N-Pink', bg: '#EECDDE', fg: '#973B6C' },
+    { name: 'N-Grün', bg: '#CBDCD3', fg: '#35664C' }, { name: 'N-Orange', bg: '#F4D9C1', fg: '#935016' },
+    { name: 'N-Gelb', bg: '#F0E0C5', fg: '#825D1E' }, { name: 'N-Rot', bg: '#F3CDCB', fg: '#A13A36' },
+    { name: 'N-Lila', bg: '#E0D4E9', fg: '#704F89' }, { name: 'N-Braun', bg: '#E4D6CF', fg: '#7C5341' },
   ] },
-  { id: 'erde', de: 'Erde', en: 'Earth', colors: [
-    { name: 'Terrakotta', bg: '#E9B29B', fg: '#7A2E14' }, { name: 'Schiefer', bg: '#BAC4CC', fg: '#2B3A45' },
-    { name: 'Salbeigrün', bg: '#B9CDBB', fg: '#2F4A35' }, { name: 'Ocker', bg: '#EBCB8B', fg: '#6B4A00' },
-    { name: 'Petrol', bg: '#A9CBCC', fg: '#0B4A50' }, { name: 'Beere', bg: '#D2B4C4', fg: '#5A2442' },
-    { name: 'Oliv', bg: '#CBD3A0', fg: '#3E4A12' }, { name: 'Lehm', bg: '#E3D3BD', fg: '#5C4426' },
+  // From Julian's saved school timetable design: soft, like a real Stundenplan.
+  { id: 'stundenplan', de: 'Stundenplan', en: 'Timetable', colors: [
+    { name: 'S-Mint', bg: '#C9F8E6', fg: '#0F5A43' }, { name: 'S-Sand', bg: '#F3E2CD', fg: '#7A4E1A' },
+    { name: 'S-Lavendel', bg: '#CFD1F8', fg: '#353A9A' }, { name: 'S-Flieder', bg: '#E1D0F3', fg: '#5D2E8F' },
+    { name: 'S-Vanille', bg: '#FDEFD0', fg: '#7A5A0E' }, { name: 'S-Salbei', bg: '#D3EEE0', fg: '#2C5F45' },
+    { name: 'S-Pfirsich', bg: '#FCD9C9', fg: '#8E3B17' }, { name: 'S-Himmel', bg: '#CDE6F6', fg: '#1D5480' },
   ] },
-  { id: 'meer', de: 'Meer', en: 'Sea', colors: [
-    { name: 'Koralle', bg: '#F4A891', fg: '#7A2A12' }, { name: 'Marine', bg: '#A9B9D6', fg: '#011C39' },
-    { name: 'Teal', bg: '#8FD0D9', fg: '#00505C' }, { name: 'Strand', bg: '#F1D96E', fg: '#3B3000' },
-    { name: 'Seegras', bg: '#B5D1A8', fg: '#2B4A20' }, { name: 'Lavendel', bg: '#C9C3E6', fg: '#3A2E7A' },
-    { name: 'Aqua', bg: '#B6E3E3', fg: '#0E5555' }, { name: 'Möwe', bg: '#D3D8DE', fg: '#3A4450' },
-  ] },
-  { id: 'retro', de: 'Retro', en: 'Retro', colors: [
-    { name: 'Tomate', bg: '#F09A87', fg: '#7D1D0B' }, { name: 'Himmel', bg: '#A8C8E8', fg: '#18406B' },
-    { name: 'Seegrün', bg: '#7FC1BE', fg: '#0C4744' }, { name: 'Senf', bg: '#EBC24D', fg: '#4A3500' },
-    { name: 'Moos', bg: '#C5C98A', fg: '#41450F' }, { name: 'Pflaume', bg: '#CFA2C0', fg: '#5C1E4A' },
-    { name: 'Mandarine', bg: '#F5B27A', fg: '#6E3500' }, { name: 'Rosé', bg: '#F4C2C2', fg: '#7D2638' },
+  // From his saved typelabo and MindfulPalettes posts, two colours added to reach 8.
+  { id: 'kontrast', de: 'Kontrast', en: 'Contrast', colors: [
+    { name: 'K-Orange', bg: '#FFDBC8', fg: '#AD3E03' }, { name: 'K-Petrol', bg: '#C8D8DA', fg: '#075056' },
+    { name: 'K-Türkis', bg: '#C7ECF1', fg: '#00707F' }, { name: 'K-Marine', bg: '#C7CDD3', fg: '#011C39' },
+    { name: 'K-Gelb', bg: '#FCF7DF', fg: '#7D7139' }, { name: 'K-Rot', bg: '#F1D1D1', fg: '#AF2B29' },
+    { name: 'K-Lila', bg: '#DCD3EC', fg: '#5B3E8C' }, { name: 'K-Grün', bg: '#D3E6CF', fg: '#2E6326' },
   ] },
 ];
 /** The active theme's colours. Mutable: swapped in place by applyColorTheme. */
 export const personPalette: Pal[] = [...THEMES[0].colors];
-/** Every colour of every theme, so a colour name saved for a kid still resolves after a switch. */
-// Julian 04.11.: every theme has the same 8 colours. These four left Klassisch and stay only so old entries still find their colour by name.
+// Colours of earlier themes, kept only so a colour saved by name (e.g. for a kid) still resolves.
 const RETIRED: Pal[] = [
-  { name: 'Limette', bg: '#D9EA94', fg: '#3B5000' }, { name: 'Türkis', bg: '#B0DDEC', fg: '#0A4C62' },
-  { name: 'Indigo', bg: '#CDCBF7', fg: '#33269A' }, { name: 'Pflaume', bg: '#EBC3E2', fg: '#74195F' },
+  { name: 'Rosa', bg: '#F7C6D2', fg: '#8A1538' }, { name: 'Mint', bg: '#B5E3D9', fg: '#0A5048' },
+  { name: 'Sand', bg: '#FAD1A0', fg: '#7A3D00' }, { name: 'Salbei', bg: '#BFE0B4', fg: '#1F5426' },
+  { name: 'Flieder', bg: '#E0CAF3', fg: '#592886' }, { name: 'Koralle', bg: '#FBC9B6', fg: '#8F2D12' },
+  { name: 'Gelb', bg: '#F5DE7E', fg: '#5A4500' }, { name: 'Limette', bg: '#D9EA94', fg: '#3B5000' },
+  { name: 'Türkis', bg: '#B0DDEC', fg: '#0A4C62' }, { name: 'Indigo', bg: '#CDCBF7', fg: '#33269A' },
+  { name: 'Pflaume', bg: '#EBC3E2', fg: '#74195F' },
 ];
+/** Every colour of every theme, so a colour name saved for a kid still resolves after a switch. */
 export const allColors: Pal[] = [...THEMES.flatMap((t) => t.colors), ...RETIRED];
 let themeId: ThemeId = 'klassisch';
 export const currentTheme = () => themeId;
