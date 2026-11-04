@@ -39,20 +39,3 @@ export default function ExampleCards({ onPick }: { onPick?: () => void }) {
     </View>
   );
 }
-
-/**
- * The empty chat (Julian 03.11., Linear/Apple Notes pass): three sentences, no labels, no headline. They sit
- * right above the field, so a tap and the field it fills are next to each other.
- */
-export function ExampleLines() {
-  const xs = examples();
-  return (
-    <View style={{ gap: 2 }}>
-      {[xs[0], xs[1], xs[3]].map((x) => (
-        <PressScale key={x.t} scale={0.98} accessibilityLabel={x.say} onPress={() => { haptics.select(); fillField(x.say); }} style={{ paddingVertical: 10, paddingHorizontal: 4, alignSelf: 'flex-start' }}>
-          <Txt size={18} line={24} color={tokens.sub}>„{x.say}“</Txt>
-        </PressScale>
-      ))}
-    </View>
-  );
-}

@@ -74,9 +74,11 @@ type Props = {
    * the text, a grey mic, and a send arrow only once there is text.
    */
   split?: boolean;
+  /** Julian 04.11.: laid out like the Claude app input, text on top, plus left, mic and send right. */
+  card?: boolean;
 };
 
-export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, onClose, split, placeholder = tx('Sag oder schreib, was ansteht …', 'Say or type what\'s coming up …') }: Props) {
+export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, onClose, split, card, placeholder = tx('Sag oder schreib, was ansteht …', 'Say or type what\'s coming up …') }: Props) {
   const [text, setText] = useState('');
   const [listening, setListening] = useState(false);
   /** How loud the voice is right now, 0 to 1; drives the bars in the mic. */
@@ -318,14 +320,8 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, o
     </PressScale>
   );
 
-  const input = (
-    <View style={[{ flexDirection: 'row', alignItems: 'flex-end', gap: 4, padding: 6, paddingLeft: 6, borderRadius: boxH > MIN_H ? 26 : 30, backgroundColor: tokens.row, borderWidth: 1, borderColor: listening ? tokens.ink : tokens.hair }, lift]}>
-      {onClose ? (
-        <PressScale accessibilityLabel={tx('Schließen, zurück zu den Tabs', 'Close, back to the tabs')} hitSlop={6} onPress={() => { if (listening) { typed.current = true; timers.current.forEach(clearTimeout); setDemo(false); toKeys.current?.(); } setText(''); field.current?.blur(); haptics.select(); onClose(); }} style={{ width: 44, height: 44, marginBottom: 2, borderRadius: 999, alignItems: 'center', justifyContent: 'center', backgroundColor: tokens.chipBg }}>
-          <LineIcon name="x" size={20} color={tokens.ink} stroke={2} />
-        </PressScale>
-      ) : plus}
-      <View style={{ flex: 1, minWidth: 0 }}>
+  const fieldBox = (
+      <View style={card ? { alignSelf: 'stretch' } : { flex: 1, minWidth: 0 }}>
       <TextInput
         ref={field}
         onFocus={() => {
@@ -360,6 +356,34 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, o
         </View>
       ) : null}
       </View>
+  );
+
+  const cardInput = (
+    <View style={[{ borderRadius: 24, backgroundColor: tokens.row, borderWidth: 1, borderColor: listening ? tokens.ink : tokens.hair, paddingTop: 6, paddingHorizontal: 10, paddingBottom: 8, gap: 4 }, lift]}>
+      {fieldBox}
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+        <PressScale accessibilityLabel={tx('Foto, Termin, Aufgabe', 'Photo, event, task')} onPress={() => { if (listening) { typed.current = true; timers.current.forEach(clearTimeout); setDemo(false); toKeys.current?.(); setText(''); } onPlus?.(); }} style={{ width: 34, height: 34, borderRadius: 999, borderWidth: 1, borderColor: tokens.hair, alignItems: 'center', justifyContent: 'center' }}>
+          <LineIcon name="plus" size={18} color={tokens.ink} stroke={2} />
+        </PressScale>
+        <View style={{ flex: 1 }} />
+        <PressScale accessibilityLabel={listening ? tx('Fertig gesprochen', 'Done speaking') : tx('Sprechen', 'Speak')} onPress={listen} style={{ width: 34, height: 34, borderRadius: 999, alignItems: 'center', justifyContent: 'center', backgroundColor: listening ? tokens.ink : 'transparent' }}>
+          {listening ? <LineIcon name="check" size={17} color={tokens.onInk} stroke={2.4} /> : <LineIcon name="mic" size={20} color={tokens.ink} />}
+        </PressScale>
+        <PressScale accessibilityLabel={tx('Senden', 'Send')} disabled={!text.trim() && !listening} onPress={finishAndSend} style={{ width: 34, height: 34, borderRadius: 999, alignItems: 'center', justifyContent: 'center', backgroundColor: text.trim() || listening ? tokens.ink : tokens.chipBg }}>
+          <LineIcon name="send" size={17} color={text.trim() || listening ? tokens.onInk : tokens.mute} />
+        </PressScale>
+      </View>
+    </View>
+  );
+
+  const input = (
+    <View style={[{ flexDirection: 'row', alignItems: 'flex-end', gap: 4, padding: 6, paddingLeft: 6, borderRadius: boxH > MIN_H ? 26 : 30, backgroundColor: tokens.row, borderWidth: 1, borderColor: listening ? tokens.ink : tokens.hair }, lift]}>
+      {onClose ? (
+        <PressScale accessibilityLabel={tx('Schließen, zurück zu den Tabs', 'Close, back to the tabs')} hitSlop={6} onPress={() => { if (listening) { typed.current = true; timers.current.forEach(clearTimeout); setDemo(false); toKeys.current?.(); } setText(''); field.current?.blur(); haptics.select(); onClose(); }} style={{ width: 44, height: 44, marginBottom: 2, borderRadius: 999, alignItems: 'center', justifyContent: 'center', backgroundColor: tokens.chipBg }}>
+          <LineIcon name="x" size={20} color={tokens.ink} stroke={2} />
+        </PressScale>
+      ) : plus}
+      {fieldBox}
       {/* Plus stays reachable while the mic listens (Julian 28.10.: "wie komme ich an das + Menü?"). */}
       {onClose && (!text || listening) ? plus : null}
       {split ? (
@@ -405,7 +429,7 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, o
       {demo ? (
         <Txt size={12.5} line={17} color={tokens.sub} style={{ paddingHorizontal: 10 }}>{tx('Im Testlink ist das Mikro gesperrt, darum spreche ich einen Beispielsatz. In der App hört es euch zu.', 'The test link can\'t use the microphone, so I say a sample sentence. The app listens to you.')}</Txt>
       ) : null}
-      {input}
+      {card ? cardInput : input}
     </View>
   );
 }

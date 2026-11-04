@@ -57,24 +57,17 @@ type Open = 'repeat' | 'remind' | null;
 
 export default function TerminDetails({ e, onPatch }: { e: CalEvent; onPatch: (p: Partial<CalEvent>) => void }) {
   const [open, setOpen] = useState<Open>(null);
-  // Only rows that hold something show (Julian 03.11.: no "Ganztägig aus, Wiederholen Nie, Erinnerung Keine").
-  // The rest waits behind "Mehr"; talking still sets all of it.
-  const [more, setMore] = useState(false);
-  const has = { allDay: !!e.allDay, repeat: !!e.repeat, remind: !!reminderKey(e.reminder), countdown: !!e.countdown, note: !!e.note };
-  const all = more || open !== null;
   const [note, setNote] = useState(e.note ?? '');
   const toggle = (k: Open) => { haptics.select(); setOpen(open === k ? null : k); };
   const rep = repeats(e.date);
   const untilText = (d: string) => (year(d) === year(TODAY) ? dayMonth(d) : `${dayMonth(d)} ${year(d)}`);
-  if (!all && !has.allDay && !has.repeat && !has.remind && !has.countdown && !has.note) {
-    return <Card pad={0} gap={0}><Row icon="plus" label={tx('Mehr', 'More')} onPress={() => { haptics.select(); setMore(true); }} /></Card>;
-  }
   return (
     <Card pad={0} gap={0}>
-      {all || has.allDay ? <Row icon="clock" label={tx('Ganztägig', 'All day')} right={<Toggle value={!!e.allDay} onChange={(v) => onPatch(v ? { allDay: true, start: '00:00', end: undefined } : { allDay: undefined, start: '09:00', end: '10:00' })} />} /> : null}
+      <Row icon="clock" label={tx('Ganztägig', 'All day')} right={<Toggle value={!!e.allDay} onChange={(v) => onPatch(v ? { allDay: true, start: '00:00', end: undefined } : { allDay: undefined, start: '09:00', end: '10:00' })} />} />
       {/* Work days are single entries; their repeat text is only a note, so no series, reminder or countdown here. */}
       {e.work ? null : <>
-      {all || has.repeat ? <><Line /><Row icon="sync" label={tx('Wiederholen', 'Repeat')} value={e.repeat || tx('Nie', 'Never')} onPress={() => toggle('repeat')} /></> : null}
+      <Line />
+      <Row icon="sync" label={tx('Wiederholen', 'Repeat')} value={e.repeat || tx('Nie', 'Never')} onPress={() => toggle('repeat')} />
       {open === 'repeat' ? (
         <Chips items={rep} value={rep.find((r) => r.key === e.repeat)?.key ?? (e.repeat ? null : '')} extra={e.repeat && !rep.some((r) => r.key === e.repeat) ? e.repeat : undefined} onPick={(k) => { onPatch({ repeat: k || undefined, ...(k ? {} : { repeatUntil: undefined }) }); setOpen(null); }} />
       ) : null}
@@ -89,11 +82,13 @@ export default function TerminDetails({ e, onPatch }: { e: CalEvent; onPatch: (p
           />
         </View>
       ) : null}
-      {all || has.remind ? <><Line /><Row icon="flash" label={tx('Erinnerung', 'Reminder')} value={reminderLabel(e.reminder) || tx('Keine', 'None')} onPress={() => toggle('remind')} /></> : null}
+      <Line />
+      <Row icon="flash" label={tx('Erinnerung', 'Reminder')} value={reminderLabel(e.reminder) || tx('Keine', 'None')} onPress={() => toggle('remind')} />
       {open === 'remind' ? <Chips items={REMINDERS.filter((r) => !e.allDay || !/m$|h$/.test(r.key) || r.key === '')} value={reminderKey(e.reminder)} onPick={(k) => { onPatch({ reminder: k || undefined }); setOpen(null); }} /> : null}
-      {all || has.countdown ? <><Line /><Row icon="cal" label={tx('Tage bis zum Termin zeigen', 'Show days to go')} sub={e.countdown ? daysTo(e.date) : undefined} right={<Toggle value={!!e.countdown} onChange={(v) => onPatch({ countdown: v || undefined })} />} /></> : null}
+      <Line />
+      <Row icon="cal" label={tx('Tage bis zum Termin zeigen', 'Show days to go')} sub={e.countdown ? daysTo(e.date) : undefined} right={<Toggle value={!!e.countdown} onChange={(v) => onPatch({ countdown: v || undefined })} />} />
       </>}
-      {all || has.note ? <><Line />
+      <Line />
       <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 12, paddingHorizontal: 16, paddingVertical: 12 }}>
         <View style={{ paddingTop: 2 }}><LineIcon name="papier" size={20} color={tokens.sub} /></View>
         <TextInput
@@ -107,8 +102,7 @@ export default function TerminDetails({ e, onPatch }: { e: CalEvent; onPatch: (p
           maxLength={2000}
           style={[{ flex: 1, minHeight: 24, fontFamily: fonts[400], fontSize: 16, lineHeight: 22, color: tokens.ink, padding: 0 }, noOutline]}
         />
-      </View></> : null}
-      {all ? null : <><Line /><Row icon="plus" label={tx('Mehr', 'More')} onPress={() => { haptics.select(); setMore(true); }} /></>}
+      </View>
     </Card>
   );
 }

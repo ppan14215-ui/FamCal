@@ -54,13 +54,11 @@ const noop = () => {};
 export function Termine({ ids, snap, changed, ask, timeQ, fresh, placeQ }: { ids: string[]; snap?: EventSnap[]; changed?: boolean; ask?: 'J' | 'T'; timeQ?: string; fresh?: boolean; placeQ?: boolean }) {
   const events = useStore((s) => s.events);
   const still = useStill();
-  useSettled(); // the next question shows once "Ganztägig" settles the time
   // A card that just appeared plays its icon once (Julian 31.10.: "das icon kurz animieren").
   const [play, setPlay] = useState(false);
   useEffect(() => { if (!fresh) return; const t = setTimeout(() => setPlay(true), 220); return () => clearTimeout(t); }, []);
   // Live from the calendar; the snapshot only if the Termin never reached this phone.
   const live = ids.map((id) => events.find((e) => e.id === id) ?? (events.length ? undefined : snap?.find((x) => x.id === id))).filter(Boolean) as (EventSnap & { who?: typeof events[number]['who'] })[];
-  const timePending = !!timeQ && live.length === 1 && !!live[0].allDay && !settled.has(live[0].id);
   if (!live.length) return <Txt size={13.5} color={tokens.mute} style={{ padding: 14 }}>{changed ? tx('Mit der nächsten Nachricht geändert, siehe unten.', 'Changed by the next message, see below.') : tx('Nicht mehr im Kalender.', 'No longer in the calendar.')}</Txt>;
   return (
     <>
@@ -75,12 +73,11 @@ export function Termine({ ids, snap, changed, ask, timeQ, fresh, placeQ }: { ids
           {e.who === 'J' || e.who === 'T' ? <Avatar p={e.who} size={26} /> : e.who === 'both' ? <Pair size={22} ring={tokens.row} /> : null}
         </PressScale>
       ))}
-      {/* One question per card (Julian 03.11.): time first, then who goes, then the place. */}
       {!still && timeQ && live.length === 1 ? <TimeAsk e={live[0]} q={timeQ} /> : null}
-      {/* Once someone is picked the question is answered and goes away (Julian 31.10.). */}
-      {!still && !timePending && ask && live.length === 1 && !live[0].who ? <WhoGoes e={live[0]} me={ask} /> : null}
       {/* Julian 31.10.: "Welcher Kinderarzt ist das?", then remembered for next time. */}
-      {!still && !timePending && placeQ && live.length === 1 && (live[0].who || !ask) ? <PlaceAsk e={live[0]} /> : null}
+      {!still && placeQ && live.length === 1 ? <PlaceAsk e={live[0]} /> : null}
+      {/* Once someone is picked the question is answered and goes away (Julian 31.10.). */}
+      {!still && ask && live.length === 1 && !live[0].who ? <WhoGoes e={live[0]} me={ask} /> : null}
     </>
   );
 }
@@ -443,8 +440,7 @@ function EntryBody({ f, mine: own, me, answer, side }: Omit<EntryProps, 'showcas
     <View style={{ flexDirection: 'row', gap: 8, alignItems: 'flex-start', justifyContent: mine ? 'flex-end' : 'flex-start' }}>
       {mine ? null : <View style={{ marginTop: 20 }}><Avatar p={f.by} size={28} /></View>}
       <View style={{ flex: 1, minWidth: 0, gap: 6, alignItems: mine ? 'flex-end' : 'flex-start' }}>
-        {/* Own sentences need no "Du · 20:32" (Julian 03.11.); the partner's keep who and when. */}
-        {mine && f.kind !== 'msg' ? null : <Txt size={12.5} color={tokens.sub}>{[name, f.kind === 'msg' ? tx('Nachricht', 'Message') : null, at(f.at)].filter(Boolean).join(' · ')}</Txt>}
+        <Txt size={12.5} color={tokens.sub}>{[name, f.kind === 'msg' ? tx('Nachricht', 'Message') : null, at(f.at)].filter(Boolean).join(' · ')}</Txt>
         <View style={[{ maxWidth: '86%', borderRadius: 18, paddingVertical: 9, paddingHorizontal: 13 }, mine ? { borderBottomRightRadius: 6 } : { borderBottomLeftRadius: 6 }, bubble]}>
           {f.ask ? <Txt size={12} weight={600} tracking={0.6} color={tokens.done}>{tx(`FRAGE AN ${persons[f.ask.to].name.toUpperCase()}`, `QUESTION FOR ${persons[f.ask.to].name.toUpperCase()}`)}</Txt> : null}
           <Txt size={15} line={21}>{f.ask ? f.ask.q : shortSaid(f.said)}</Txt>
@@ -464,8 +460,7 @@ function EntryBody({ f, mine: own, me, answer, side }: Omit<EntryProps, 'showcas
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 8, paddingHorizontal: 14, borderTopWidth: f.undone ? 0 : 1, borderTopColor: tokens.hair }}>
               <Txt size={13} weight={600} color={f.undone || f.changed ? tokens.sub : tokens.done}>{f.undone ? tx('Rückgängig gemacht', 'Undone') : f.changed ? tx('Geändert', 'Changed') : `✓ ${f.events ? tx('Im Kalender', 'In the calendar') : f.tasks ? tx('Bei den Aufgaben', 'On your tasks') : tx('Auf der Liste', 'On the list')}`}</Txt>
               <View style={{ flex: 1 }} />
-              {/* A Termin card opens on tap, so it needs no "Ändern" (Julian 03.11.). */}
-              {f.why && !f.events && !f.items && !f.tasks ? (
+              {(f.why && !f.events && !f.items && !f.tasks) || (f.events?.length === 1 && !f.undone) ? (
                 <PressScale hitSlop={8} accessibilityLabel={open ? tx('Zuklappen', 'Close') : f.events ? tx('Ändern', 'Change') : tx('Schritte zeigen', 'Show steps')} onPress={still ? noop : () => { if (f.events && !f.undone) { haptics.select(); router.push(`/termin/${f.events[0]}`); } else setOpen((o) => !o); }} style={{ flexDirection: 'row', alignItems: 'center', gap: 2, marginRight: !still && canUndo(f.id) && !f.undone ? 14 : 0 }}>
                   <Txt size={13} color={f.events ? tokens.ink : tokens.sub} weight={f.events ? 600 : 400}>{f.events ? tx('Ändern', 'Change') : tx('Details', 'Details')}</Txt>
                   <View style={{ transform: [{ rotate: f.events ? '0deg' : open ? '-90deg' : '90deg' }] }}><LineIcon name="chev" size={14} color={tokens.sub} /></View>
@@ -491,6 +486,7 @@ export function Thinking({ by }: { by: 'J' | 'T' }) {
     <View style={{ gap: 6, alignItems: 'flex-end' }}>
       {v.said ? (
         <>
+          <Txt size={12.5} color={tokens.sub}>{tx('Du', 'You')} · {at(new Date().toISOString())}</Txt>
           <View style={{ maxWidth: '86%', borderRadius: 18, borderBottomRightRadius: 6, paddingVertical: 9, paddingHorizontal: 13, backgroundColor: persons[by].tint }}>
             <Txt size={15} line={21}>{shortSaid(v.said)}</Txt>
           </View>

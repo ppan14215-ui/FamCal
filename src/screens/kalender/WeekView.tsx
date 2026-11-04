@@ -14,7 +14,7 @@ import { scheduleOnRN } from 'react-native-worklets';
 import LineIcon from '../../components/ui/LineIcon';
 import { haptics } from '../../lib/haptics';
 import { springs } from '../../theme';
-import { evTint } from '../../lib/evColor';
+import { evTint, evShared, sharedBorder } from '../../lib/evColor';
 import { router } from 'expo-router';
 import Txt from '../../components/ui/Txt';
 import Stripes from '../../components/Stripes';
@@ -179,7 +179,7 @@ export default function WeekView() {
                   paddingHorizontal: 2,
                 }}
               >
-                <View style={{ flex: 1, justifyContent: 'center', paddingHorizontal: 6, backgroundColor: isInfoDay(e) ? 'transparent' : evTint(e), borderTopLeftRadius: cutL ? 0 : 7, borderBottomLeftRadius: cutL ? 0 : 7, borderTopRightRadius: cutR ? 0 : 7, borderBottomRightRadius: cutR ? 0 : 7 }}>
+                <View style={{ flex: 1, justifyContent: 'center', paddingHorizontal: 6, backgroundColor: isInfoDay(e) ? 'transparent' : evTint(e), ...(!isInfoDay(e) && evShared(e) ? sharedBorder() : null), borderTopLeftRadius: cutL ? 0 : 7, borderBottomLeftRadius: cutL ? 0 : 7, borderTopRightRadius: cutR ? 0 : 7, borderBottomRightRadius: cutR ? 0 : 7 }}>
                   <Txt size={11} line={14} weight={isInfoDay(e) ? 500 : 700} color={isInfoDay(e) ? tokens.mute : undefined} numberOfLines={1}>{e.title}</Txt>
                 </View>
               </PressScale>
@@ -213,7 +213,7 @@ export default function WeekView() {
                   {list.filter((e) => !e.work).map((e) => {
                     const h = Math.max(28, (e.end && top(e.end) > top(e.start) ? top(e.end) - top(e.start) : HP * 0.8) - 4);
                     return (
-                      <Drag key={e.id} e={e} days={days} col={days.indexOf(d)} step={(colsW + 3) / n} HP={HP} dragging={dragging} onLift={setLiftCol} style={{ top: top(e.start) + 2, height: h, backgroundColor: evTint(e) }}>
+                      <Drag key={e.id} e={e} days={days} col={days.indexOf(d)} step={(colsW + 3) / n} HP={HP} dragging={dragging} onLift={setLiftCol} style={{ top: top(e.start) + 2, height: h, backgroundColor: evTint(e), ...(evShared(e) ? sharedBorder() : null) }}>
                         {/* Narrow columns clip one line like Apple and Google; a word is never broken into single letters (Julian 30.10.). */}
                         <Txt size={wide ? 12.5 : 10.5} line={wide ? 16 : 13} weight={700} numberOfLines={wide ? Math.max(1, Math.floor(h / 17) - 1) : 1} ellipsizeMode="clip" textBreakStrategy="simple" android_hyphenationFrequency="none">{wide ? e.title : SHORT[e.title] ?? e.title.split(' ')[0]}</Txt>
                         {big && h >= 44 && !e.allDay ? <Txt size={wide ? 12 : 10} line={wide ? 15 : 12} color={tokens.sub} numberOfLines={1}>{wide && e.end ? `${hm(e.start)} ${tx('bis', 'to')} ${hm(e.end)}` : hm(e.start)}</Txt> : null}

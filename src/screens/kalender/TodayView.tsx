@@ -91,7 +91,7 @@ function Pulse({ on }: { on: boolean }) {
 const span = (e: CalEvent) => (e.allDay ? tx('ganztägig', 'all day') : e.end ? tx(`${hm(e.start)} bis ${hm(e.end)}`, `${hm(e.start)} to ${hm(e.end)}`) : hm(e.start));
 
 /** The one thing to look at: the next Termin, big. */
-function Next({ e }: { e: CalEvent }) {
+function Next({ e, after }: { e: CalEvent; after?: CalEvent }) {
   const now = useNowMin();
   const open = (e.bring ?? []).filter((b) => !b.done);
   const today = e.date === TODAY && !e.allDay;
@@ -100,7 +100,7 @@ function Next({ e }: { e: CalEvent }) {
   // A trip that already started is going on, not coming up (Julian 31.10.: "sollte eher heißen currently on").
   const on = !!e.endDate && e.endDate > e.date && e.date <= TODAY && TODAY <= e.endDate;
   const head = on ? tx(`Gerade · Tag ${daysBetween(e.date, TODAY) + 1} von ${daysBetween(e.date, e.endDate!) + 1}`, `Currently on · day ${daysBetween(e.date, TODAY) + 1} of ${daysBetween(e.date, e.endDate!) + 1}`)
-    : when(e, now); // "in 40 Min" says it is next; no "Als Nächstes" label (Julian 03.11.)
+    : `${running ? tx('Jetzt', 'Now') : tx('Als Nächstes', 'Up next')} · ${when(e, now)}`;
   // While it runs a thin bar fills up to its end.
   const done = running ? Math.min(1, (now - minutes(e.start)) / Math.max(1, minutes(e.end!) - minutes(e.start))) : 0;
   const who = e.who === 'both' ? tx('Beide', 'Both') : e.who ? persons[e.who].name : null;
@@ -132,6 +132,13 @@ function Next({ e }: { e: CalEvent }) {
         {running ? (
           <View style={{ height: 4, borderRadius: 2, backgroundColor: tokens.doneSoft, overflow: 'hidden' }}>
             <View style={{ width: `${Math.round(done * 100)}%`, height: 4, backgroundColor: tokens.done }} />
+          </View>
+        ) : null}
+        {after ? (
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingTop: 12, borderTopWidth: 1, borderTopColor: tokens.hair }}>
+            <Txt size={13} color={tokens.mute}>{tx('Danach', 'Then')}</Txt>
+            <Txt size={14} weight={600} numberOfLines={1} style={{ flex: 1 }}>{after.title}</Txt>
+            <Txt size={13} color={tokens.sub}>{when(after, now)}</Txt>
           </View>
         ) : null}
       </PressScale>
@@ -201,6 +208,8 @@ export default function TodayView({ header }: { header: React.ReactNode }) {
     };
   }, [events, tasks, docs]);
 
+  // The one after next sits in the card as "Danach" and leaves the rows below.
+  const after = later.find((x) => !x.allDay) ?? (later.length ? undefined : week[0]);
   const all = () => { haptics.select(); actions.setCalDay(TODAY); actions.setCalView('tag'); };
 
   return (
@@ -213,34 +222,38 @@ export default function TodayView({ header }: { header: React.ReactNode }) {
       contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 8, paddingBottom: 110 + insets.bottom + dock, gap: 28 }}
     >
       {header}
-      {next ? <Next e={next} /> : (
+      {next ? <Next e={next} after={after} /> : (
         <View style={{ backgroundColor: tokens.row, borderRadius: 24, padding: 20, gap: 6 }}>
           <Txt size={20} weight={600}>{tx('Nichts geplant', 'Nothing planned')}</Txt>
+          <Meta>{tx('Die nächsten Tage sind frei. Sag unten einfach, was ansteht.', 'The next days are free. Just say below what\'s coming up.')}</Meta>
         </View>
       )}
 
       {brief ? (
-        <PressScale scale={0.985} onPress={() => { haptics.select(); router.push('/woche'); }} style={{ backgroundColor: tokens.doneSoft, borderRadius: 20, paddingVertical: 14, paddingHorizontal: 18 }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-          <Txt size={16} line={22} weight={600} style={{ flex: 1 }}>
-            {[tx(`Diese Woche ${brief.count} ${brief.count === 1 ? 'Termin' : 'Termine'}`, `This week ${brief.count} ${brief.count === 1 ? 'event' : 'events'}`),
+        <PressScale scale={0.985} onPress={() => { haptics.select(); router.push('/woche'); }} style={{ backgroundColor: tokens.doneSoft, borderRadius: 24, padding: 18, gap: 6 }}>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Txt size={13} weight={600} color={tokens.done}>{tx('Wochenbriefing', 'Weekly briefing')}</Txt>
+            <LineIcon name="chev" size={14} color={tokens.done} stroke={2.2} />
+          </View>
+          <Txt size={18} line={24} weight={600}>
+            {[tx(`${brief.count} ${brief.count === 1 ? 'Termin' : 'Termine'}`, `${brief.count} ${brief.count === 1 ? 'event' : 'events'}`),
               brief.clashes.length ? tx(`${brief.clashes.length} ${brief.clashes.length === 1 ? 'Überschneidung' : 'Überschneidungen'}`, `${brief.clashes.length} ${brief.clashes.length === 1 ? 'clash' : 'clashes'}`) : '',
               brief.unassigned.length ? tx(`${brief.unassigned.length} ohne Zuständigen`, `${brief.unassigned.length} unassigned`) : ''].filter(Boolean).join(', ')}
           </Txt>
-          <LineIcon name="chev" size={14} color={tokens.done} stroke={2.2} />
-          </View>
+          <Meta>{tx('Tippen für die ganze Woche', 'Tap for the whole week')}</Meta>
         </PressScale>
       ) : null}
 
       {due.length ? (
-        // Thought ahead shows by its soft teal, not by a label (Julian 03.11.).
-        <View style={{ gap: 2, paddingHorizontal: 14, paddingVertical: 6, borderRadius: 20, backgroundColor: tokens.doneSoft }}>
+        <View style={{ gap: 2, paddingHorizontal: 4 }}>
+          <Label>{tx('Mitgedacht', 'Thought ahead')}</Label>
           {due.slice(0, 3).map((d) => <DueOffer key={d.key} d={d} />)}
         </View>
       ) : null}
 
       {soon.length ? (
         <View style={{ gap: 6, paddingHorizontal: 4 }}>
+          <Label>{tx('Bald', 'Coming up')}</Label>
           {soon.map((e) => (
             <PressScale key={e.id} onPress={() => { haptics.select(); router.push(`/termin/${e.id}`); }} style={{ flexDirection: 'row', alignItems: 'center', gap: 14, minHeight: 44 }}>
               <View style={{ width: 56 }}><Tile name={e.icon} bg="transparent" size={36} /></View>
@@ -251,9 +264,10 @@ export default function TodayView({ header }: { header: React.ReactNode }) {
         </View>
       ) : null}
 
-      {later.length || todo.length ? (
+      {later.some((e) => e !== after) || todo.length ? (
         <View style={{ gap: 6, paddingHorizontal: 4 }}>
-          {later.map((e) => <Row key={e.id} e={e} lead={e.allDay ? tx('Tag', 'Day') : hm(e.start)} />)}
+          <Label>{tx('Später heute', 'Later today')}</Label>
+          {later.filter((e) => e !== after).map((e) => <Row key={e.id} e={e} lead={e.allDay ? tx('Tag', 'Day') : hm(e.start)} />)}
           {todo.map((t) => (
             <Fresh key={t.id} id={t.id} radius={14} bleed={12}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14, minHeight: 44 }}>
@@ -267,7 +281,7 @@ export default function TodayView({ header }: { header: React.ReactNode }) {
         </View>
       ) : null}
 
-      {todoList && open.length ? (
+      {todoList ? (
         <View style={{ gap: 6, paddingHorizontal: 4 }}>
           <Label right={
             <PressScale onPress={() => { haptics.select(); actions.setActiveList(todoList.id); router.navigate('/listen'); }} hitSlop={10} scale={0.94} accessibilityLabel={tx('Ganze Liste zeigen', 'Show the whole list')}>
@@ -282,7 +296,7 @@ export default function TodayView({ header }: { header: React.ReactNode }) {
                 {i.who ? <Owner who={i.who} size={22} /> : null}
               </View>
             </Fresh>
-          )) : null}
+          )) : <Meta>{tx('Nichts offen. Sag unten einfach "Erinnere mich …".', 'Nothing open. Just say "Remind me …" below.')}</Meta>}
         </View>
       ) : null}
 
@@ -292,7 +306,9 @@ export default function TodayView({ header }: { header: React.ReactNode }) {
             <Txt size={14} weight={600} color={tokens.done}>{tx('Alles zeigen', 'Show all')}</Txt>
           </PressScale>
         }>{tx('Diese Woche', 'This week')}</Label>
-        {week.map((e) => <Row key={e.id} e={e} showTime lead={daysBetween(TODAY, e.date) === 1 ? tx('Morgen', 'Tmrw') : WD_SHORT[weekday(e.date)]} />)}
+        {week.filter((e) => e !== after).length ? week.filter((e) => e !== after).map((e) => <Row key={e.id} e={e} showTime lead={daysBetween(TODAY, e.date) === 1 ? tx('Morgen', 'Tmrw') : WD_SHORT[weekday(e.date)]} />) : (
+          <Meta>{tx('Sonst ist die Woche frei.', 'The rest of the week is free.')}</Meta>
+        )}
         {info.map((e) => (
           <View key={e.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 14, minHeight: 32 }}>
             <Txt size={14} color={tokens.mute} style={{ width: 56 }}>{e.date === TODAY ? tx('Heute', 'Today') : daysBetween(TODAY, e.date) === 1 ? tx('Morgen', 'Tmrw') : WD_SHORT[weekday(e.date)]}</Txt>

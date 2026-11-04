@@ -5,7 +5,7 @@
  */
 import React, { useEffect, useSyncExternalStore } from 'react';
 import { Appearance } from 'react-native';
-import { applyPalette, isDark } from './tokens';
+import { applyPalette, isDark, currentTheme, type ThemeId } from './tokens';
 import { getPref, setPref } from '../lib/prefs';
 import { get, actions } from '../state/store';
 
@@ -16,12 +16,15 @@ const subs = new Set<() => void>();
 let gen = 0;
 const sub = (l: () => void) => { subs.add(l); return () => { subs.delete(l); }; };
 
-const wantDark = () => (choice === 'system' ? Appearance.getColorScheme() === 'dark' : choice === 'dunkel');
+// Julian 04.11.: light design only for now, the appearance choice is hidden. Flip to bring dark back.
+const LIGHT_ONLY = true;
+const wantDark = () => (LIGHT_ONLY ? false : choice === 'system' ? Appearance.getColorScheme() === 'dark' : choice === 'dunkel');
 
-function apply() {
+let palette = (getPref('palette') as ThemeId | undefined) ?? 'ruhe';
+function apply(force = false) {
   const d = wantDark();
-  if (d === isDark() && gen > 0) return false;
-  applyPalette(d);
+  if (!force && d === isDark() && gen > 0) return false;
+  applyPalette(d, palette);
   // Person colours are derived from the palette too.
   const c = get().colors;
   actions.setColor('J', c.J);
@@ -37,6 +40,14 @@ export function setTheme(v: ThemeChoice) {
   if (apply()) subs.forEach((l) => l());
 }
 export const themeChoice = () => choice;
+
+/** The family's theme (Julian 04.11.). Kept per device until the family table carries it. */
+export function setPalette(id: ThemeId) {
+  palette = id;
+  setPref('palette', id);
+  if (apply(true)) subs.forEach((l) => l());
+}
+export const usePalette = () => useSyncExternalStore(sub, currentTheme, currentTheme);
 
 /** Root only: a number that changes whenever the palette did, used as the tree's key. */
 export function useThemeGen(): number {

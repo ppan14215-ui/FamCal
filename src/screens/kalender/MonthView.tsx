@@ -14,7 +14,7 @@ import Txt from '../../components/ui/Txt';
 import { ClayIcon } from '../../components/ui/Clay';
 import { Owner } from '../../components/ui/Person';
 import { tokens, tint, persons } from '../../theme';
-import { evTint } from '../../lib/evColor';
+import { evTint, evShared, sharedBorder } from '../../lib/evColor';
 import { useStore, actions } from '../../state/store';
 import { eventsOn } from '../../lib/selectors';
 import { addDays, monday, dayNum, monthIdx, year, parse, iso, WD_SHORT, weekday, MONTHS_SHORT, hm, TODAY, MONTHS, short } from '../../lib/dates';
@@ -133,7 +133,7 @@ export default function MonthView() {
         })}
       </Animated.View>
       </GestureDetector>
-      <H2>{short(day)}</H2>
+      <H2 right={`${list.length} ${list.length === 1 ? tx('Termin', 'event') : tx('Termine', 'events')}`}>{short(day)}</H2>
       {list.length ? (
         <Group>
           {list.map((e) => (
@@ -176,7 +176,7 @@ function DayTitles({ evs, lines }: { evs: CalEvent[]; lines: number }) {
   return (
     <View style={{ flex: 1, alignSelf: 'stretch', gap: 2, paddingTop: 2, paddingHorizontal: 2 }}>
       {sorted.slice(0, Math.max(0, room)).map((e) => (
-        <View key={e.id} style={{ height: 13, borderRadius: 4, paddingHorizontal: 3, justifyContent: 'center', backgroundColor: isVacation(e) ? tokens.vac : e.who === 'J' || e.who === 'T' ? persons[e.who].tint : evTint(e) }}>
+        <View key={e.id} style={{ height: 13, borderRadius: 4, paddingHorizontal: 3, justifyContent: 'center', backgroundColor: isVacation(e) ? tokens.vac : e.who === 'J' || e.who === 'T' ? persons[e.who].tint : evTint(e), ...(!isVacation(e) && evShared(e) ? { ...sharedBorder(), borderWidth: 1 } : null) }}>
           <Txt size={9.5} line={12} weight={600} numberOfLines={1} ellipsizeMode="clip" color={isVacation(e) ? tokens.vacInk : e.who === 'J' || e.who === 'T' ? persons[e.who].ink : tokens.ink}>{e.title}</Txt>
         </View>
       ))}

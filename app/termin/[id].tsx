@@ -135,6 +135,10 @@ export default function Termin() {
         <View style={{ paddingHorizontal: 18 }}><BackBar /></View>
         <PressScale scale={0.97} accessibilityLabel={tx('Symbol ändern', 'Change icon')} onPress={pickIcon} style={{ height: 200, alignItems: 'center', justifyContent: 'center' }}>
           <ClayIcon key={e.icon} name={e.icon} size={160} />
+          <View style={{ position: 'absolute', right: 18, bottom: 14, flexDirection: 'row', alignItems: 'center', gap: 5, height: 30, paddingHorizontal: 11, borderRadius: 999, backgroundColor: tokens.glass }}>
+            <LineIcon name="sparkle" size={13} color={tokens.ink} />
+            <Txt size={13} weight={600}>{tx('Symbol', 'Icon')}</Txt>
+          </View>
         </PressScale>
       </View>
       <View style={{ paddingHorizontal: 18, paddingTop: 16, gap: 14 }}>
@@ -154,6 +158,7 @@ export default function Termin() {
         {series ? (
           <View style={{ gap: 6 }}>
             <Seg items={[{ key: 'one', label: tx('Nur dieser Termin', 'Only this one') }, { key: 'all', label: tx('Ganze Serie', 'Whole series') }]} value={scope} onChange={(k) => setScope(k as 'one' | 'all')} />
+            <Meta>{scope === 'one' ? tx('Änderungen gelten nur für diesen Tag.', 'Changes apply to this day only.') : tx('Änderungen gelten für jeden Termin der Serie.', 'Changes apply to every date in the series.')}</Meta>
           </View>
         ) : null}
         <Fresh id={`${e.id}:when`} radius={22}>
@@ -166,6 +171,7 @@ export default function Termin() {
             <View style={{ flex: 1 }}>
               {/* Work is just whose work it is (Julian 30.10.: "Coming along? Auf Arbeit?"). */}
               <Txt size={15} weight={600}>{e.work ? (e.who === 'T' ? persons.T.name : persons.J.name) : w.t}</Txt>
+              {e.work ? null : <Meta>{w.s}</Meta>}
             </View>
             <Chip onPress={() => { haptics.select(); actions.setEventWho(target(), NEXT[String(e.who)]); }}>{tx('Ändern', 'Change')}</Chip>
           </View>

@@ -31,8 +31,9 @@ import { light, lightOneByOne } from '../lib/landing';
 import { setDockTop, setDockSpace } from '../lib/dockSpace';
 import { useKeyboardInset, useTyping, useInlineEditing } from '../lib/keyboard';
 import { setTalkOpen, useTalkOpen } from '../lib/talkOpen';
-import { NAV_H, navTop } from './NavBar';
+import { NAV_H, navTop, BAR_TABS_W } from './NavBar';
 import { useNavFolded } from '../lib/navFold';
+import { NAV_STYLE } from '../lib/navStyle';
 import { addMade, addMessage, addAsk, addSay, recentMade, markChanged } from '../lib/feed';
 import { useSimple, messageOf } from '../lib/simple';
 import { hm, short } from '../lib/dates';
@@ -440,9 +441,9 @@ export default function Dock() {
 
   // Examples only while the calendar is still empty; after that they are clutter (Julian 27.10.).
   const onTabs = !!where && (where.tab || !!where.chat);
-  // On Listen the field says which list it fills, since the list has no field of its own (Julian 03.11.).
-  const openList = useStore((s) => (where?.ctx.kind === 'liste' ? (s.lists.find((l) => l.id === (where.ctx as { id: string }).id) ?? s.lists[0])?.name : undefined));
-  const above = folded && onTabs ? Math.max(insets.bottom, 12) + 10 : navTop(insets.bottom) + 10;
+  const above = NAV_STYLE === 'bar' && onTabs ? Math.max(insets.bottom, 8) + 4 : folded && onTabs ? Math.max(insets.bottom, 12) + 10 : navTop(insets.bottom) + (NAV_STYLE === 'strip' && onTabs ? 4 : 10);
+  // One bar: the field sits beside the tab pill and takes the whole width while typing.
+  const tabsW = onTabs ? (NAV_STYLE === 'bar' && !typing ? W - 28 - BAR_TABS_W - 8 : W - 28) : full;
   // Typing hides the tabs, so the field drops into their place right above the keyboard.
   const bottom = !where ? 0 : kb > 0 ? kb + 8 : onTabs ? (typing && Platform.OS === 'web' ? Math.max(insets.bottom, 12) + 10 : above) : insets.bottom + 12 + where.lift;
   useEffect(() => { setDockTop(where ? bottom + (shown ? h : 0) : 0); }, [bottom, h, !!where, shown]);
@@ -906,18 +907,19 @@ export default function Dock() {
           ))}
         </View>
       ) : null}
-      <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 8 }}>
-      <Animated.View style={[{ alignSelf: 'flex-end', alignItems: 'flex-end', overflow: 'hidden', borderRadius: 30 }, { width: onTabs ? W - 28 : full }]}>
-      <Animated.View style={{ width: onTabs ? W - 28 : full }}>
+      <View pointerEvents="box-none" style={{ flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'flex-end', gap: 8 }}>
+      <Animated.View style={[{ alignSelf: 'flex-end', alignItems: 'flex-end', overflow: 'hidden', borderRadius: onTabs && NAV_STYLE === 'strip' ? 24 : 30 }, { width: tabsW }]}>
+      <Animated.View style={{ width: tabsW }}>
       <TalkBar
         key={onTabs ? 'tabs' : kind}
         split={onTabs}
+        card={onTabs && NAV_STYLE === 'strip'}
         onSend={hear}
         onPlus={() => router.push('/neu')}
         spoken={SPOKEN[kind]}
         listenKey={listenKey}
         focusKey={focusKey}
-        placeholder={where.chat && mode === 'msg' ? tx('Nachricht an die Familie …', 'Message to the family …') : turn?.result.kind === 'cut' ? tx('Sprich einfach weiter …', 'Just keep talking …') : onTabs && !turn && openList ? tx(`Auf ${openList} …`, `Add to ${openList} …`) : onTabs && !turn ? tx('Sprich oder schreib einfach …', 'Just say or type it …') : turn && kind === 'kalender' ? tx('Antworten oder ergänzen …', 'Reply or add …') : PLACEHOLDER[kind]}
+        placeholder={where.chat && mode === 'msg' ? tx('Nachricht an die Familie …', 'Message to the family …') : turn?.result.kind === 'cut' ? tx('Sprich einfach weiter …', 'Just keep talking …') : onTabs && !turn ? (NAV_STYLE === 'bar' && !typing ? tx('Was steht an?', 'What’s up?') : tx('Sprich oder schreib einfach …', 'Just say or type it …')) : turn && kind === 'kalender' ? tx('Antworten oder ergänzen …', 'Reply or add …') : PLACEHOLDER[kind]}
       />
       </Animated.View>
       </Animated.View>

@@ -60,7 +60,7 @@ export default function Neu() {
   const opts = all.filter((o) => !(HIDDEN.extras && o.extra));
   return (
     <Sheet>
-      {/* No headline, no second lines (Julian 03.11.): the icon and one word say it. */}
+      <Txt size={24} weight={700} tracking={-0.5}>{tx('Was kommt dazu', 'What\'s new')}<Dot char="?" /></Txt>
       {HIDDEN.extras ? null : <View style={{ flexDirection: 'row', gap: 8 }}>
         {attach.map((a, i) => (
           <Animated.View key={a.t} entering={fall(i)} style={{ flex: 1 }}>
@@ -77,6 +77,7 @@ export default function Neu() {
             <PressScale onPress={o.onPress} style={{ gap: 8, padding: 14, borderRadius: 22, backgroundColor: tokens.row, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 10, shadowOffset: { width: 0, height: 3 }, elevation: 2 }}>
               <ClayIcon name={o.icon} size={58} />
               <Txt size={16} weight={600}>{o.t}</Txt>
+              <Meta>{o.s}</Meta>
             </PressScale>
           </Animated.View>
         ))}

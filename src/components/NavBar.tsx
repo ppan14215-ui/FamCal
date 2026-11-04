@@ -28,6 +28,7 @@ import { haptics } from '../lib/haptics';
 import { useTyping as useFocus, useKeyboardInset } from '../lib/keyboard';
 import { useDockTop } from '../lib/dockSpace';
 import Svg, { Defs, LinearGradient, Stop, Rect } from 'react-native-svg';
+import { NAV_STYLE } from '../lib/navStyle';
 
 const TABS: { name: string; key: string; icon: LineName }[] = [
   { name: 'chat', key: 'nav.chat', icon: 'chat' },
@@ -35,12 +36,14 @@ const TABS: { name: string; key: string; icon: LineName }[] = [
   { name: 'listen', key: 'nav.listen', icon: 'list' },
 ];
 
-/** Height of the pill; Dock.tsx puts the field right above it. */
-export const NAV_H = 54;
+/** Height of the bar; Dock.tsx puts the field right above it. */
+export const NAV_H = NAV_STYLE === 'pill' ? 54 : NAV_STYLE === 'bar' ? 52 : 50;
+/** Width of the icon pill in the one-bar navigation. */
+export const BAR_TABS_W = 3 * 46 + 8;
 /** The open tab always has the same width, so the bar never changes size and recenters while the pill moves (Julian 31.10.: Listen overshot). */
 const ON_W = 128;
 /** Where the pill's top edge sits above the screen bottom. */
-export const navTop = (insetBottom: number) => Math.max(insetBottom, 12) + 10 + NAV_H;
+export const navTop = (insetBottom: number) => (NAV_STYLE === 'pill' ? Math.max(insetBottom, 12) + 10 + NAV_H : NAV_STYLE === 'bar' ? Math.max(insetBottom, 8) + 4 + NAV_H : Math.max(insetBottom, 4) + NAV_H);
 
 /** The pill's width before it is measured: one open tab and two icons. */
 const PILL_W = ON_W + 56 * 2 + 4 + 10;
@@ -54,7 +57,8 @@ const FADE_H = 22;
 
 const floatShadow = { boxShadow: '0 12px 28px rgba(22,35,42,0.28)' } as any;
 
-export default function NavBar({ state, navigation }: BottomTabBarProps) {
+/** The dark swipeable pill (Julian 30.10. to 03.11.), kept behind NAV_STYLE. */
+function PillNav({ state, navigation }: BottomTabBarProps) {
   const insets = useSafeAreaInsets();
   const { t } = useTranslation();
   const current = state.routes[state.index]?.name;
@@ -234,4 +238,101 @@ function Tab({ on, icon, label, onPress }: { on: boolean; icon: LineName; label:
       </PressScale>
     </Animated.View>
   );
+}
+
+/**
+ * Julian 04.11. (option 2): the talk card sits at the bottom like in the Claude app,
+ * and under it small icons with their names. No gestures; the open tab is ink, the others mute.
+ */
+function StripNav({ state, navigation }: BottomTabBarProps) {
+  const insets = useSafeAreaInsets();
+  const { t } = useTranslation();
+  const current = state.routes[state.index]?.name;
+  const focus = useFocus();
+  const kb = useKeyboardInset();
+  const typing = focus && (Platform.OS === 'web' || kb > 0);
+  const away = useSharedValue(0);
+  useEffect(() => { away.value = withTiming(typing ? 1 : 0, { duration: typing ? 160 : 240, easing: Easing.bezier(0.22, 1, 0.36, 1) }); }, [typing]);
+  const hide = useAnimatedStyle(() => ({ opacity: 1 - away.value }));
+  const dockTop = useDockTop();
+  const groundTo = Math.max(dockTop, navTop(insets.bottom)) + 6;
+  return (
+    <Animated.View pointerEvents={typing ? 'none' : 'box-none'} style={[{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0 }, hide]}>
+      <View pointerEvents="none" style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: groundTo, backgroundColor: tokens.bg }} />
+      <View pointerEvents="none" style={{ position: 'absolute', left: 0, right: 0, bottom: groundTo - 0.5, height: FADE_H }}>
+        <Svg width="100%" height="100%" preserveAspectRatio="none">
+          <Defs>
+            <LinearGradient id="stripground" x1="0" y1="0" x2="0" y2="1">
+              <Stop offset="0" stopColor={tokens.bg} stopOpacity={0} />
+              <Stop offset="0.55" stopColor={tokens.bg} stopOpacity={0.75} />
+              <Stop offset="1" stopColor={tokens.bg} stopOpacity={1} />
+            </LinearGradient>
+          </Defs>
+          <Rect x="0" y="0" width="100%" height="100%" fill="url(#stripground)" />
+        </Svg>
+      </View>
+      <View accessibilityRole="tablist" style={{ position: 'absolute', left: 0, right: 0, bottom: Math.max(insets.bottom, 4), height: NAV_H, flexDirection: 'row', justifyContent: 'space-around', paddingHorizontal: 40 }}>
+        {TABS.map((tab) => {
+          const on = current === tab.name;
+          return (
+            <PressScale key={tab.name} scale={0.9} accessibilityRole="tab" accessibilityLabel={t(tab.key)} accessibilityState={{ selected: on }}
+              onPress={() => { if (!on) { haptics.select(); navigation.navigate(tab.name); } }}
+              style={{ minWidth: 72, alignItems: 'center', justifyContent: 'center', gap: 3 }}>
+              <LineIcon name={tab.icon} size={22} color={on ? tokens.ink : tokens.mute} />
+              <Txt size={11} weight={on ? 600 : 500} color={on ? tokens.ink : tokens.mute} numberOfLines={1}>{t(tab.key)}</Txt>
+            </PressScale>
+          );
+        })}
+      </View>
+    </Animated.View>
+  );
+}
+
+/** One bar (Julian 04.11.): the tabs as icons in a small pill on the left, the field beside them (Dock). */
+function BarNav({ state, navigation }: BottomTabBarProps) {
+  const insets = useSafeAreaInsets();
+  const { t } = useTranslation();
+  const current = state.routes[state.index]?.name;
+  const focus = useFocus();
+  const kb = useKeyboardInset();
+  const typing = focus && (Platform.OS === 'web' || kb > 0);
+  const away = useSharedValue(0);
+  useEffect(() => { away.value = withTiming(typing ? 1 : 0, { duration: typing ? 160 : 240, easing: Easing.bezier(0.22, 1, 0.36, 1) }); }, [typing]);
+  const hide = useAnimatedStyle(() => ({ opacity: 1 - away.value, transform: [{ translateX: -12 * away.value }] }));
+  const dockTop = useDockTop();
+  const groundTo = Math.max(dockTop, navTop(insets.bottom)) + 6;
+  return (
+    <View pointerEvents="box-none" style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0 }}>
+      <View pointerEvents="none" style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: groundTo, backgroundColor: tokens.bg }} />
+      <View pointerEvents="none" style={{ position: 'absolute', left: 0, right: 0, bottom: groundTo - 0.5, height: FADE_H }}>
+        <Svg width="100%" height="100%" preserveAspectRatio="none">
+          <Defs>
+            <LinearGradient id="barground" x1="0" y1="0" x2="0" y2="1">
+              <Stop offset="0" stopColor={tokens.bg} stopOpacity={0} />
+              <Stop offset="0.55" stopColor={tokens.bg} stopOpacity={0.75} />
+              <Stop offset="1" stopColor={tokens.bg} stopOpacity={1} />
+            </LinearGradient>
+          </Defs>
+          <Rect x="0" y="0" width="100%" height="100%" fill="url(#barground)" />
+        </Svg>
+      </View>
+      <Animated.View accessibilityRole="tablist" pointerEvents={typing ? 'none' : 'auto'}
+        style={[{ position: 'absolute', left: 14, bottom: Math.max(insets.bottom, 8) + 4, width: BAR_TABS_W, height: NAV_H, borderRadius: NAV_H / 2, backgroundColor: tokens.row, borderWidth: 1, borderColor: tokens.hair, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 4 }, hide]}>
+        {TABS.map((tab) => {
+          const on = current === tab.name;
+          return (
+            <PressScale key={tab.name} scale={0.9} accessibilityRole="tab" accessibilityLabel={t(tab.key)} accessibilityState={{ selected: on }}
+              onPress={() => { if (!on) { haptics.select(); navigation.navigate(tab.name); } }}
+              style={{ width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: on ? tokens.chipBg : 'transparent' }}>
+              <LineIcon name={tab.icon} size={21} color={on ? tokens.ink : tokens.mute} />
+            </PressScale>
+          );
+        })}
+      </Animated.View>
+    </View>
+  );
+}
+
+export default function NavBar(props: BottomTabBarProps) {
+  return NAV_STYLE === 'pill' ? <PillNav {...props} /> : NAV_STYLE === 'bar' ? <BarNav {...props} /> : <StripNav {...props} />;
 }

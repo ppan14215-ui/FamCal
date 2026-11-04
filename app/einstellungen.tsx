@@ -19,7 +19,6 @@ import { tx } from '../src/i18n/lang';
 import { speechLang, setSpeechLang } from '../src/lib/speechLang';
 import * as Updates from 'expo-updates';
 import { useMicStyle, setMicStyle } from '../src/lib/micStyle';
-import { useThemeChoice, setTheme, type ThemeChoice } from '../src/theme/mode';
 import { useSimple, setSimple } from '../src/lib/simple';
 import { useAgent, setAgent } from '../src/lib/assistent';
 import { Seg } from '../src/components/ui/kit';
@@ -28,6 +27,9 @@ import { countryName, regionName } from '../src/lib/holidays';
 import { HIDDEN } from '../src/lib/core';
 import { startPreview } from '../src/lib/vorschau';
 import ColorPicker from '../src/components/ColorPicker';
+import { THEMES } from '../src/theme/tokens';
+import { usePalette } from '../src/theme/mode';
+import { NAV_STYLE, setNavStyle } from '../src/lib/navStyle';
 
 /** Name left, value right, like Apple's settings (Julian 03.11.): no second line under every row. */
 function SRow({ icon, t, v, right, onPress }: { icon: ClayName; t: string; v?: string; right?: React.ReactNode; onPress?: () => void }) {
@@ -53,7 +55,8 @@ const CAL_NAME: Record<string, { t: string; icon: ClayName }> = {
 export default function Einstellungen() {
   const [sl, setSl] = React.useState(speechLang());
   const mic = useMicStyle();
-  const theme = useThemeChoice();
+  const pal = usePalette();
+  const themeName = (() => { const t = THEMES.find((x) => x.id === pal); return t ? tx(t.de, t.en) : ''; })();
   const simple = useSimple();
   const agent = useAgent();
   const cals = useStore((s) => s.calendars);
@@ -100,17 +103,16 @@ export default function Einstellungen() {
         <Txt size={12.5} line={17} color={tokens.mute} style={{ paddingHorizontal: 4 }}>{tx('Neu: Claude kennt alles, was die App kann. Er ändert und löscht Termine, hakt ab, beantwortet Fragen und fragt nach, wenn etwas unklar ist.', 'New: Claude knows everything the app can do. It changes and deletes events, ticks things off, answers questions and asks when something is unclear.')}</Txt>
       </View>
       </>}
-      <View style={{ gap: 8 }}>
-        <Txt size={13} weight={600} color={tokens.sub} style={{ paddingHorizontal: 4 }}>{tx('Darstellung', 'Appearance')}</Txt>
-        <Seg items={[{ key: 'hell', label: tx('Hell', 'Light') }, { key: 'dunkel', label: tx('Dunkel', 'Dark') }, { key: 'system', label: tx('Wie das Handy', 'Like the phone') }]} value={theme} onChange={(k) => setTheme(k as ThemeChoice)} />
-      </View>
       <Group>
         <SRow icon="notizblock" t={tx('Was ich weiß', 'What I know')} onPress={() => router.push('/wissen')} />
         <SRow icon="zuhause" t={tx('Eure Familie', 'Your family')} onPress={() => router.push('/personen')} />
+        <SRow icon="malen" t={tx('Design', 'Theme')} v={themeName} onPress={() => router.push('/design')} />
+        <SRow icon="sync" t={tx('Navigation', 'Navigation')} v={NAV_STYLE === 'bar' ? tx('Ein Balken', 'One bar') : tx('Unter der Eingabe', 'Under the field')} onPress={() => { haptics.select(); setNavStyle(NAV_STYLE === 'bar' ? 'strip' : 'bar'); toast(tx('Navigation geändert, startet neu', 'Navigation changed, restarting')); }} />
         <SRow icon="reise" t={tx('Urlaub und Feiertage', 'Vacation and holidays')} v={(land && (country === 'DE' ? land : regionName(country, land))) || countryName(country)} onPress={() => router.push('/urlaub')} />
         {HIDDEN.extras ? null : <SRow icon="glocke" t={tx('Hinweise', 'Notifications')} onPress={() => router.push('/demo/sperrbildschirm')} />}
         <SRow icon="chat" t={tx('Sprache', 'Language')} v={sl === 'de' ? tx('Deutsch', 'German') : tx('Englisch', 'English')} onPress={() => { const v = sl === 'de' ? 'en' : 'de'; setSpeechLang(v); setSl(v); toast(v === 'de' ? tx('Ich höre jetzt auf Deutsch', 'Listening in German now') : tx('Ich höre jetzt auf Englisch', 'Listening in English now')); }} />
         {HIDDEN.toggles ? null : <SRow icon="chat" t={tx('Mikro Anzeige', 'Mic display')} v={mic === 'ring' ? tx('Ring', 'Ring') : tx('Balken', 'Bars')} onPress={() => { const v = mic === 'ring' ? 'balken' : 'ring'; setMicStyle(v); haptics.select(); toast(v === 'ring' ? tx('Mikro zeigt jetzt den Ring', 'Mic now shows the ring') : tx('Mikro zeigt jetzt die Balken', 'Mic now shows the bars')); }} />}
+        {LIVE ? null : <SRow icon="zuhause" t={tx('Onboarding Schritt testen', 'Test onboarding step')} onPress={() => router.push('/onboarding/probe')} />}
         <SRow icon="zuhause" t={tx('Onboarding ansehen', 'View onboarding')} onPress={() => { startPreview(); router.push('/onboarding'); }} />
         <SRow icon="kalender" t={tx('Kalender Abo und Export', 'Calendar feed and export')} onPress={() => router.push('/kalender-abo')} />
       </Group>

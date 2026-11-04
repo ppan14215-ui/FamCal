@@ -76,9 +76,51 @@ export const nightFg = (c: string) => (dark ? blend(c, '#FFFFFF', 0.45) : c);
 /** At night a person's tint comes from their strong colour, so pink stays pink (a pale pastel turned grey, Julian 28.10.). */
 export const shade = (c: { name: string; bg: string; fg: string }) => ({ name: c.name, bg: dark ? blend(c.fg, '#0F1518', 0.45) : c.bg, fg: nightFg(c.fg) });
 
-export function applyPalette(isDark: boolean) {
+/**
+ * Themes (Julian 04.11.: "Palette gefällt, aber zu soft"). One theme for the
+ * whole family; Hell or Dunkel stays per phone. Each theme only overrides the
+ * ground, text and the one accent (`done`), so every screen keeps its roles.
+ */
+export type ThemeId = 'ruhe' | 'schiefer' | 'cashmere' | 'papier' | 'taxi' | 'marine';
+type Over = Partial<Tokens>;
+/**
+ * Six looks from Julian's saved palettes (vault, 04.11.): Ruhe from @typelabo (FamCal's ink and teal already are
+ * #16232A and #075056), Schiefer, Cashmere, Taxi and Marine from MindfulPalettes (MP020, MP061, MP167, MP100),
+ * Papier from the "Cream Paper" prompt. Greys lean towards each theme's colour (@chalaska), the loud colour
+ * is the rarest one (@itsolelehmann), the ground stays still (@leomeethewoo).
+ */
+const darkBase = (bg: string, row: string, ink: string, sub: string, mute: string, hair: string, done: string, doneSoft: string, seg: string, on: string, chip: string): Over => ({
+  bg, row, ink, sub, mute, hair, done, doneSoft, segBg: seg, segOn: on, pillOn: on, chipBg: chip, circleLine: hair, dotOff: hair,
+  select: `${done}55`, noteBg: chip, paper: row, onInk: bg, glass: `${row}B8`, veil: `${bg}F2`,
+});
+export const THEMES: { id: ThemeId; de: string; en: string; light: Over; dark: Over }[] = [
+  { id: 'ruhe', de: 'Ruhe', en: 'Calm',
+    light: { bg: '#EDF2F2', row: '#FFFFFF', ink: '#16232A', sub: '#4A5A61', mute: '#7B898F', hair: '#DCE4E5', done: '#075056', doneSoft: '#CDE5E2', frist: '#E04E00', segBg: '#E0E8E9', pillOn: '#E6EDEE', chipBg: '#E6EDEE', circleLine: '#C4D0D2', dotOff: '#CDD7D9', noteBg: '#E6EDEE', paper: '#F4F7F7' },
+    dark: darkBase('#0D1619', '#17232A', '#EEF4F5', '#A7B6BB', '#7A8B91', '#283840', '#5FC1B6', '#1B4C47', '#111C20', '#33474F', '#22323A') },
+  { id: 'schiefer', de: 'Schiefer', en: 'Slate',
+    light: { bg: '#E4E3DC', row: '#FAF9F5', ink: '#1F282E', sub: '#414E58', mute: '#77807F', hair: '#D3D1C7', done: '#B83312', doneSoft: '#F1D3C6', frist: '#B83312', segBg: '#D9D7CE', segOn: '#FAF9F5', pillOn: '#DCDAD1', chipBg: '#DCDAD1', circleLine: '#BDBAAE', dotOff: '#C8C5BA', noteBg: '#DCDAD1', paper: '#EEEDE7', select: 'rgba(184,51,18,0.2)' },
+    dark: darkBase('#1A2126', '#242E35', '#EFEEE8', '#B3B8B6', '#848B8B', '#36424B', '#FF4E20', '#5A2414', '#151B1F', '#414E58', '#2E3941') },
+  { id: 'cashmere', de: 'Cashmere', en: 'Cashmere',
+    light: { bg: '#E8DFD5', row: '#FBF7F2', ink: '#202124', sub: '#55504B', mute: '#8A8178', hair: '#DACFC2', done: '#384883', doneSoft: '#D8DCF0', frist: '#E25A10', segBg: '#DDD2C5', segOn: '#FBF7F2', pillOn: '#E0D6CA', chipBg: '#E0D6CA', circleLine: '#C7B9A9', dotOff: '#D0C3B4', noteBg: '#E0D6CA', paper: '#F2ECE5', select: 'rgba(56,72,131,0.2)' },
+    dark: darkBase('#17151C', '#221F28', '#F3EEE8', '#BDB4AB', '#8C847C', '#36313D', '#9AA9F0', '#27204E', '#131118', '#423C4C', '#2C2833') },
+  { id: 'papier', de: 'Papier', en: 'Paper',
+    light: { bg: '#EBE7E1', row: '#FBFAF8', ink: '#1E1C1A', sub: '#57534E', mute: '#8A857E', hair: '#DBD6CE', done: '#D7372C', doneSoft: '#F5D4D0', frist: '#D7372C', segBg: '#E0DBD3', segOn: '#FBFAF8', pillOn: '#E3DED7', chipBg: '#E3DED7', circleLine: '#B5AFA7', dotOff: '#C9C3BA', noteBg: '#E3DED7', paper: '#F3F0EC', select: 'rgba(215,55,44,0.18)' },
+    dark: darkBase('#151413', '#1F1D1B', '#F4F1EC', '#B5AFA7', '#8A857E', '#33302D', '#F06A5F', '#55211C', '#111010', '#403C38', '#2A2825') },
+  { id: 'taxi', de: 'Taxi', en: 'Taxi',
+    light: { bg: '#F9F7F6', row: '#FFFFFF', ink: '#16110D', sub: '#726259', mute: '#9A8C83', hair: '#EAE3DE', done: '#840804', doneSoft: '#F2D3CF', frist: '#840804', vac: '#F7B732', vacInk: '#3D2A00', segBg: '#EFE9E5', pillOn: '#F2EDE9', chipBg: '#F2EDE9', circleLine: '#D5CBC4', dotOff: '#DFD3CA', noteBg: '#F2EDE9', paper: '#FBFAF9', select: 'rgba(132,8,4,0.16)' },
+    dark: darkBase('#120D0A', '#1E1713', '#F9F4F1', '#C0B1A7', '#8E7F75', '#352B25', '#F7B732', '#5A3F08', '#0E0A08', '#463A32', '#2A211C') },
+  { id: 'marine', de: 'Marine', en: 'Navy',
+    light: { bg: '#E3DCCA', row: '#FBF8F1', ink: '#011C39', sub: '#3D4B5E', mute: '#7C8288', hair: '#D3CBB6', done: '#00788A', doneSoft: '#C7E7EB', frist: '#B9461A', vac: '#F1D96E', vacInk: '#3B3000', segBg: '#D8D0BC', segOn: '#FBF8F1', pillOn: '#DBD3C0', chipBg: '#DBD3C0', circleLine: '#BFB59C', dotOff: '#C9C0A9', noteBg: '#DBD3C0', paper: '#EEE9DD', select: 'rgba(0,120,138,0.2)' },
+    dark: darkBase('#010B16', '#0B1C2E', '#F3EFE4', '#A9B4C2', '#7A8696', '#1C3048', '#00AAC1', '#06404A', '#020F1C', '#25405C', '#132840') },
+];
+let themeId: ThemeId = 'ruhe';
+export const currentTheme = () => themeId;
+
+export function applyPalette(isDark: boolean, theme: ThemeId = themeId) {
   dark = isDark;
-  Object.assign(tokens, isDark ? DARK : LIGHT);
+  themeId = THEMES.some((t) => t.id === theme) ? theme : 'ruhe';
+  const t = THEMES.find((x) => x.id === themeId)!;
+  Object.assign(tokens, isDark ? DARK : LIGHT, isDark ? t.dark : t.light);
 }
 
 export type PersonId = 'J' | 'T';
@@ -103,13 +145,23 @@ const TINT: Record<string, string> = {
 export const tint = (n: string) => nightBg(TINT[n] ?? '#EEF0F2');
 
 /** The six colours a parent can pick in onboarding (Canvas "Zu zweit"). */
+/**
+ * Each person's colour (Julian 04.11.: stronger, more to pick). The first six
+ * keep their names and places, so saved choices stay; six more follow.
+ */
 export const personPalette = [
-  { name: 'Rosa', bg: '#F6DDE2', fg: '#9D2B48' },
-  { name: 'Blau', bg: '#DCE7F4', fg: '#1F4E89' },
-  { name: 'Mint', bg: '#E2EEEC', fg: '#075056' },
-  { name: 'Sand', bg: '#F7EDE1', fg: '#9A5B13' },
-  { name: 'Salbei', bg: '#E7EDE4', fg: '#3F6B36' },
-  { name: 'Flieder', bg: '#ECE6F4', fg: '#5B3F8C' },
+  { name: 'Rosa', bg: '#F7C6D2', fg: '#8A1538' },
+  { name: 'Blau', bg: '#C2D6F7', fg: '#173E88' },
+  { name: 'Mint', bg: '#B5E3D9', fg: '#0A5048' },
+  { name: 'Sand', bg: '#FAD1A0', fg: '#7A3D00' },
+  { name: 'Salbei', bg: '#BFE0B4', fg: '#1F5426' },
+  { name: 'Flieder', bg: '#E0CAF3', fg: '#592886' },
+  { name: 'Koralle', bg: '#FBC9B6', fg: '#8F2D12' },
+  { name: 'Gelb', bg: '#F5DE7E', fg: '#5A4500' },
+  { name: 'Limette', bg: '#D9EA94', fg: '#3B5000' },
+  { name: 'Türkis', bg: '#B0DDEC', fg: '#0A4C62' },
+  { name: 'Indigo', bg: '#CDCBF7', fg: '#33269A' },
+  { name: 'Pflaume', bg: '#EBC3E2', fg: '#74195F' },
 ];
 
 export const radii = { tile: 16, row: 20, card: 24, sheet: 32, pill: 999 } as const;
