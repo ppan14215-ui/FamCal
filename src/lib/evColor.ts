@@ -3,7 +3,7 @@
  * the icon still tells what it is. Both parents or nobody get a quiet family
  * tone; a Termin only for a child or grandparent takes that person's colour.
  */
-import { persons, personPalette, shade, tokens } from '../theme';
+import { persons, personPalette, allColors, shade, tokens } from '../theme';
 import { get } from '../state/store';
 import type { CalEvent } from '../state/types';
 
@@ -12,7 +12,7 @@ export function evTint(e: Pick<CalEvent, 'who' | 'people'>): string {
   if (e.who === 'J' || e.who === 'T') return persons[e.who].tint;
   if (!e.who && e.people?.length === 1) {
     const p = get().people.find((x) => x.id === e.people![0]);
-    const c = p && personPalette.find((x) => x.name === p.color);
+    const c = p && allColors.find((x) => x.name === p.color);
     if (c) return shade(c).bg;
   }
   return tokens.row;
@@ -26,7 +26,7 @@ export function evShared(e: Pick<CalEvent, 'who' | 'people'>): boolean {
   if (e.who === 'J' || e.who === 'T') return false;
   if (!e.who && e.people?.length === 1) {
     const p = get().people.find((x) => x.id === e.people![0]);
-    if (p && personPalette.some((x) => x.name === p.color)) return false;
+    if (p && allColors.some((x) => x.name === p.color)) return false;
   }
   return true;
 }

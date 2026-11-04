@@ -5,7 +5,7 @@
  */
 import React, { useEffect, useSyncExternalStore } from 'react';
 import { Appearance } from 'react-native';
-import { applyPalette, isDark, currentTheme, type ThemeId } from './tokens';
+import { applyPalette, applyColorTheme, isDark, currentTheme, THEMES, type ThemeId } from './tokens';
 import { getPref, setPref } from '../lib/prefs';
 import { get, actions } from '../state/store';
 
@@ -20,15 +20,20 @@ const sub = (l: () => void) => { subs.add(l); return () => { subs.delete(l); }; 
 const LIGHT_ONLY = true;
 const wantDark = () => (LIGHT_ONLY ? false : choice === 'system' ? Appearance.getColorScheme() === 'dark' : choice === 'dunkel');
 
-let palette = (getPref('palette') as ThemeId | undefined) ?? 'ruhe';
+// The family's colour theme for person colours (Julian 04.11.); the app's own colours never change.
+const savedPal = getPref('palette') as ThemeId | undefined;
+let palette: ThemeId = THEMES.some((t) => t.id === savedPal) ? savedPal! : 'klassisch';
 function apply(force = false) {
   const d = wantDark();
   if (!force && d === isDark() && gen > 0) return false;
-  applyPalette(d, palette);
+  applyPalette(d);
+  applyColorTheme(palette);
   // Person colours are derived from the palette too.
   const c = get().colors;
-  actions.setColor('J', c.J);
-  actions.setColor('T', c.T);
+  const n = THEMES.find((t) => t.id === palette)!.colors.length;
+  actions.setColor('J', c.J % n);
+  // A smaller theme can put both on the same colour: the partner moves one on.
+  actions.setColor('T', c.T % n === c.J % n ? (c.J + 1) % n : c.T % n);
   gen++;
   return true;
 }
@@ -41,7 +46,7 @@ export function setTheme(v: ThemeChoice) {
 }
 export const themeChoice = () => choice;
 
-/** The family's theme (Julian 04.11.). Kept per device until the family table carries it. */
+/** The family's colour theme (Julian 04.11.). Kept per device until the family table carries it. */
 export function setPalette(id: ThemeId) {
   palette = id;
   setPref('palette', id);

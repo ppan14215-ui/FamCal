@@ -66,7 +66,7 @@ import Txt from '../ui/Txt';
 import { Tile } from '../ui/Clay';
 import LineIcon from '../ui/LineIcon';
 import { MemoFace, type EyeKey } from './Memo';
-import { tokens, persons, personPalette } from '../../theme';
+import { tokens, persons, personPalette, allColors } from '../../theme';
 import { isDark, nightBg, nightFg } from '../../theme/tokens';
 import { tx } from '../../i18n/lang';
 import { haptics } from '../../lib/haptics';
@@ -158,8 +158,8 @@ const NEW = [
 const LEAD = 0.12;
 const landOf = (k: number) => NEW[k].t + FLY;
 
-const BEN = personPalette.find((p) => p.name === 'Sand')!;
-const MIA = personPalette.find((p) => p.name === 'Mint')!;
+const BEN = allColors.find((p) => p.name === 'Sand')!;
+const MIA = allColors.find((p) => p.name === 'Mint')!;
 type Kind = 'card' | 'todo' | 'tall';
 /** What each new card shows (JS only, never read in a worklet). */
 const NEWC: { kind: Kind; icon?: ClayName; ink: string; title: () => string; sub: () => string }[] = [

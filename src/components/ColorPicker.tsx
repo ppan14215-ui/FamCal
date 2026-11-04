@@ -15,13 +15,15 @@ import { toast } from '../state/store';
 import { haptics } from '../lib/haptics';
 import { tx } from '../i18n/lang';
 
-export default function ColorPicker({ p, name, sel, taken, onSel }: { p: PersonId; name: string; sel: number; taken: number; onSel: (i: number) => void }) {
+export default function ColorPicker({ p, name, sel: rawSel, taken: rawTaken, onSel }: { p: PersonId; name: string; sel: number; taken: number; onSel: (i: number) => void }) {
+  const sel = rawSel % personPalette.length;
+  const taken = rawTaken % personPalette.length;
   return (
     <View style={{ gap: 10 }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
         <Avatar p={p} size={28} />
         <Txt size={15} weight={600} style={{ flex: 1 }}>{name}</Txt>
-        <Meta>{personPalette[sel].name}</Meta>
+        <Meta>{personPalette[sel]?.name}</Meta>
       </View>
       <View style={{ flexDirection: 'row', gap: 10, paddingLeft: 2, flexWrap: 'wrap' }}>
         <PressScale onPress={() => toast(tx('Fotoauswahl kommt später', 'Photo picker comes later'))} style={{ width: 30, height: 30, borderRadius: 999, borderWidth: 1.5, borderColor: tokens.circleLine, alignItems: 'center', justifyContent: 'center' }}>

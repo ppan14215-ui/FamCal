@@ -76,51 +76,9 @@ export const nightFg = (c: string) => (dark ? blend(c, '#FFFFFF', 0.45) : c);
 /** At night a person's tint comes from their strong colour, so pink stays pink (a pale pastel turned grey, Julian 28.10.). */
 export const shade = (c: { name: string; bg: string; fg: string }) => ({ name: c.name, bg: dark ? blend(c.fg, '#0F1518', 0.45) : c.bg, fg: nightFg(c.fg) });
 
-/**
- * Themes (Julian 04.11.: "Palette gefällt, aber zu soft"). One theme for the
- * whole family; Hell or Dunkel stays per phone. Each theme only overrides the
- * ground, text and the one accent (`done`), so every screen keeps its roles.
- */
-export type ThemeId = 'ruhe' | 'schiefer' | 'cashmere' | 'papier' | 'taxi' | 'marine';
-type Over = Partial<Tokens>;
-/**
- * Six looks from Julian's saved palettes (vault, 04.11.): Ruhe from @typelabo (FamCal's ink and teal already are
- * #16232A and #075056), Schiefer, Cashmere, Taxi and Marine from MindfulPalettes (MP020, MP061, MP167, MP100),
- * Papier from the "Cream Paper" prompt. Greys lean towards each theme's colour (@chalaska), the loud colour
- * is the rarest one (@itsolelehmann), the ground stays still (@leomeethewoo).
- */
-const darkBase = (bg: string, row: string, ink: string, sub: string, mute: string, hair: string, done: string, doneSoft: string, seg: string, on: string, chip: string): Over => ({
-  bg, row, ink, sub, mute, hair, done, doneSoft, segBg: seg, segOn: on, pillOn: on, chipBg: chip, circleLine: hair, dotOff: hair,
-  select: `${done}55`, noteBg: chip, paper: row, onInk: bg, glass: `${row}B8`, veil: `${bg}F2`,
-});
-export const THEMES: { id: ThemeId; de: string; en: string; light: Over; dark: Over }[] = [
-  { id: 'ruhe', de: 'Ruhe', en: 'Calm',
-    light: { bg: '#EDF2F2', row: '#FFFFFF', ink: '#16232A', sub: '#4A5A61', mute: '#7B898F', hair: '#DCE4E5', done: '#075056', doneSoft: '#CDE5E2', frist: '#E04E00', segBg: '#E0E8E9', pillOn: '#E6EDEE', chipBg: '#E6EDEE', circleLine: '#C4D0D2', dotOff: '#CDD7D9', noteBg: '#E6EDEE', paper: '#F4F7F7' },
-    dark: darkBase('#0D1619', '#17232A', '#EEF4F5', '#A7B6BB', '#7A8B91', '#283840', '#5FC1B6', '#1B4C47', '#111C20', '#33474F', '#22323A') },
-  { id: 'schiefer', de: 'Schiefer', en: 'Slate',
-    light: { bg: '#E4E3DC', row: '#FAF9F5', ink: '#1F282E', sub: '#414E58', mute: '#77807F', hair: '#D3D1C7', done: '#B83312', doneSoft: '#F1D3C6', frist: '#B83312', segBg: '#D9D7CE', segOn: '#FAF9F5', pillOn: '#DCDAD1', chipBg: '#DCDAD1', circleLine: '#BDBAAE', dotOff: '#C8C5BA', noteBg: '#DCDAD1', paper: '#EEEDE7', select: 'rgba(184,51,18,0.2)' },
-    dark: darkBase('#1A2126', '#242E35', '#EFEEE8', '#B3B8B6', '#848B8B', '#36424B', '#FF4E20', '#5A2414', '#151B1F', '#414E58', '#2E3941') },
-  { id: 'cashmere', de: 'Cashmere', en: 'Cashmere',
-    light: { bg: '#E8DFD5', row: '#FBF7F2', ink: '#202124', sub: '#55504B', mute: '#8A8178', hair: '#DACFC2', done: '#384883', doneSoft: '#D8DCF0', frist: '#E25A10', segBg: '#DDD2C5', segOn: '#FBF7F2', pillOn: '#E0D6CA', chipBg: '#E0D6CA', circleLine: '#C7B9A9', dotOff: '#D0C3B4', noteBg: '#E0D6CA', paper: '#F2ECE5', select: 'rgba(56,72,131,0.2)' },
-    dark: darkBase('#17151C', '#221F28', '#F3EEE8', '#BDB4AB', '#8C847C', '#36313D', '#9AA9F0', '#27204E', '#131118', '#423C4C', '#2C2833') },
-  { id: 'papier', de: 'Papier', en: 'Paper',
-    light: { bg: '#EBE7E1', row: '#FBFAF8', ink: '#1E1C1A', sub: '#57534E', mute: '#8A857E', hair: '#DBD6CE', done: '#D7372C', doneSoft: '#F5D4D0', frist: '#D7372C', segBg: '#E0DBD3', segOn: '#FBFAF8', pillOn: '#E3DED7', chipBg: '#E3DED7', circleLine: '#B5AFA7', dotOff: '#C9C3BA', noteBg: '#E3DED7', paper: '#F3F0EC', select: 'rgba(215,55,44,0.18)' },
-    dark: darkBase('#151413', '#1F1D1B', '#F4F1EC', '#B5AFA7', '#8A857E', '#33302D', '#F06A5F', '#55211C', '#111010', '#403C38', '#2A2825') },
-  { id: 'taxi', de: 'Taxi', en: 'Taxi',
-    light: { bg: '#F9F7F6', row: '#FFFFFF', ink: '#16110D', sub: '#726259', mute: '#9A8C83', hair: '#EAE3DE', done: '#840804', doneSoft: '#F2D3CF', frist: '#840804', vac: '#F7B732', vacInk: '#3D2A00', segBg: '#EFE9E5', pillOn: '#F2EDE9', chipBg: '#F2EDE9', circleLine: '#D5CBC4', dotOff: '#DFD3CA', noteBg: '#F2EDE9', paper: '#FBFAF9', select: 'rgba(132,8,4,0.16)' },
-    dark: darkBase('#120D0A', '#1E1713', '#F9F4F1', '#C0B1A7', '#8E7F75', '#352B25', '#F7B732', '#5A3F08', '#0E0A08', '#463A32', '#2A211C') },
-  { id: 'marine', de: 'Marine', en: 'Navy',
-    light: { bg: '#E3DCCA', row: '#FBF8F1', ink: '#011C39', sub: '#3D4B5E', mute: '#7C8288', hair: '#D3CBB6', done: '#00788A', doneSoft: '#C7E7EB', frist: '#B9461A', vac: '#F1D96E', vacInk: '#3B3000', segBg: '#D8D0BC', segOn: '#FBF8F1', pillOn: '#DBD3C0', chipBg: '#DBD3C0', circleLine: '#BFB59C', dotOff: '#C9C0A9', noteBg: '#DBD3C0', paper: '#EEE9DD', select: 'rgba(0,120,138,0.2)' },
-    dark: darkBase('#010B16', '#0B1C2E', '#F3EFE4', '#A9B4C2', '#7A8696', '#1C3048', '#00AAC1', '#06404A', '#020F1C', '#25405C', '#132840') },
-];
-let themeId: ThemeId = 'ruhe';
-export const currentTheme = () => themeId;
-
-export function applyPalette(isDark: boolean, theme: ThemeId = themeId) {
+export function applyPalette(isDark: boolean) {
   dark = isDark;
-  themeId = THEMES.some((t) => t.id === theme) ? theme : 'ruhe';
-  const t = THEMES.find((x) => x.id === themeId)!;
-  Object.assign(tokens, isDark ? DARK : LIGHT, isDark ? t.dark : t.light);
+  Object.assign(tokens, isDark ? DARK : LIGHT);
 }
 
 export type PersonId = 'J' | 'T';
@@ -144,25 +102,58 @@ const TINT: Record<string, string> = {
 };
 export const tint = (n: string) => nightBg(TINT[n] ?? '#EEF0F2');
 
-/** The six colours a parent can pick in onboarding (Canvas "Zu zweit"). */
+type Pal = { name: string; bg: string; fg: string };
 /**
- * Each person's colour (Julian 04.11.: stronger, more to pick). The first six
- * keep their names and places, so saved choices stay; six more follow.
+ * Colour themes (Julian 04.11.: "Es ging um die Farben der Personen und verschiedene Themes dafür, nicht die App UI").
+ * One theme for the whole family; each person picks a colour from it. The app's own colours never change.
+ * Saved choices are an index; a theme with fewer colours wraps around. `name` stays the colour's id.
  */
-export const personPalette = [
-  { name: 'Rosa', bg: '#F7C6D2', fg: '#8A1538' },
-  { name: 'Blau', bg: '#C2D6F7', fg: '#173E88' },
-  { name: 'Mint', bg: '#B5E3D9', fg: '#0A5048' },
-  { name: 'Sand', bg: '#FAD1A0', fg: '#7A3D00' },
-  { name: 'Salbei', bg: '#BFE0B4', fg: '#1F5426' },
-  { name: 'Flieder', bg: '#E0CAF3', fg: '#592886' },
-  { name: 'Koralle', bg: '#FBC9B6', fg: '#8F2D12' },
-  { name: 'Gelb', bg: '#F5DE7E', fg: '#5A4500' },
-  { name: 'Limette', bg: '#D9EA94', fg: '#3B5000' },
-  { name: 'Türkis', bg: '#B0DDEC', fg: '#0A4C62' },
-  { name: 'Indigo', bg: '#CDCBF7', fg: '#33269A' },
-  { name: 'Pflaume', bg: '#EBC3E2', fg: '#74195F' },
+export type ThemeId = 'klassisch' | 'kraeftig' | 'erde' | 'meer' | 'retro';
+export const THEMES: { id: ThemeId; de: string; en: string; colors: Pal[] }[] = [
+  { id: 'klassisch', de: 'Klassisch', en: 'Classic', colors: [
+    { name: 'Rosa', bg: '#F7C6D2', fg: '#8A1538' }, { name: 'Blau', bg: '#C2D6F7', fg: '#173E88' },
+    { name: 'Mint', bg: '#B5E3D9', fg: '#0A5048' }, { name: 'Sand', bg: '#FAD1A0', fg: '#7A3D00' },
+    { name: 'Salbei', bg: '#BFE0B4', fg: '#1F5426' }, { name: 'Flieder', bg: '#E0CAF3', fg: '#592886' },
+    { name: 'Koralle', bg: '#FBC9B6', fg: '#8F2D12' }, { name: 'Gelb', bg: '#F5DE7E', fg: '#5A4500' },
+    { name: 'Limette', bg: '#D9EA94', fg: '#3B5000' }, { name: 'Türkis', bg: '#B0DDEC', fg: '#0A4C62' },
+    { name: 'Indigo', bg: '#CDCBF7', fg: '#33269A' }, { name: 'Pflaume', bg: '#EBC3E2', fg: '#74195F' },
+  ] },
+  { id: 'kraeftig', de: 'Kräftig', en: 'Bold', colors: [
+    { name: 'Pink', bg: '#FF9FCB', fg: '#7A0F45' }, { name: 'Royal', bg: '#8AB4FF', fg: '#0B2E73' },
+    { name: 'Grün', bg: '#8EDB8A', fg: '#0F4D12' }, { name: 'Orange', bg: '#FFB46B', fg: '#6B3300' },
+    { name: 'Violett', bg: '#C3A2FF', fg: '#3D1A85' }, { name: 'Zitrone', bg: '#FFD84D', fg: '#4D3B00' },
+    { name: 'Rot', bg: '#FF8A80', fg: '#7A0E0E' }, { name: 'Lagune', bg: '#6FD6CF', fg: '#00474A' },
+  ] },
+  { id: 'erde', de: 'Erde', en: 'Earth', colors: [
+    { name: 'Terrakotta', bg: '#E9B29B', fg: '#7A2E14' }, { name: 'Schiefer', bg: '#BAC4CC', fg: '#2B3A45' },
+    { name: 'Salbeigrün', bg: '#B9CDBB', fg: '#2F4A35' }, { name: 'Ocker', bg: '#EBCB8B', fg: '#6B4A00' },
+    { name: 'Petrol', bg: '#A9CBCC', fg: '#0B4A50' }, { name: 'Beere', bg: '#D2B4C4', fg: '#5A2442' },
+    { name: 'Oliv', bg: '#CBD3A0', fg: '#3E4A12' }, { name: 'Lehm', bg: '#E3D3BD', fg: '#5C4426' },
+  ] },
+  { id: 'meer', de: 'Meer', en: 'Sea', colors: [
+    { name: 'Koralle', bg: '#F4A891', fg: '#7A2A12' }, { name: 'Marine', bg: '#A9B9D6', fg: '#011C39' },
+    { name: 'Teal', bg: '#8FD0D9', fg: '#00505C' }, { name: 'Strand', bg: '#F1D96E', fg: '#3B3000' },
+    { name: 'Seegras', bg: '#B5D1A8', fg: '#2B4A20' }, { name: 'Lavendel', bg: '#C9C3E6', fg: '#3A2E7A' },
+    { name: 'Aqua', bg: '#B6E3E3', fg: '#0E5555' }, { name: 'Möwe', bg: '#D3D8DE', fg: '#3A4450' },
+  ] },
+  { id: 'retro', de: 'Retro', en: 'Retro', colors: [
+    { name: 'Tomate', bg: '#F09A87', fg: '#7D1D0B' }, { name: 'Himmel', bg: '#A8C8E8', fg: '#18406B' },
+    { name: 'Seegrün', bg: '#7FC1BE', fg: '#0C4744' }, { name: 'Senf', bg: '#EBC24D', fg: '#4A3500' },
+    { name: 'Moos', bg: '#C5C98A', fg: '#41450F' }, { name: 'Pflaume', bg: '#CFA2C0', fg: '#5C1E4A' },
+    { name: 'Mandarine', bg: '#F5B27A', fg: '#6E3500' }, { name: 'Rosé', bg: '#F4C2C2', fg: '#7D2638' },
+  ] },
 ];
+/** The active theme's colours. Mutable: swapped in place by applyColorTheme. */
+export const personPalette: Pal[] = [...THEMES[0].colors];
+/** Every colour of every theme, so a colour name saved for a kid still resolves after a switch. */
+export const allColors: Pal[] = THEMES.flatMap((t) => t.colors);
+let themeId: ThemeId = 'klassisch';
+export const currentTheme = () => themeId;
+export function applyColorTheme(id: ThemeId) {
+  const t = THEMES.find((x) => x.id === id) ?? THEMES[0];
+  themeId = t.id;
+  personPalette.splice(0, personPalette.length, ...t.colors);
+}
 
 export const radii = { tile: 16, row: 20, card: 24, sheet: 32, pill: 999 } as const;
 

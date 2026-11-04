@@ -106,13 +106,13 @@ export default function Einstellungen() {
       <Group>
         <SRow icon="notizblock" t={tx('Was ich weiß', 'What I know')} onPress={() => router.push('/wissen')} />
         <SRow icon="zuhause" t={tx('Eure Familie', 'Your family')} onPress={() => router.push('/personen')} />
-        <SRow icon="malen" t={tx('Design', 'Theme')} v={themeName} onPress={() => router.push('/design')} />
+        <SRow icon="malen" t={tx('Farbthema', 'Colour theme')} v={themeName} onPress={() => router.push('/design')} />
         <SRow icon="sync" t={tx('Navigation', 'Navigation')} v={NAV_STYLE === 'bar' ? tx('Ein Balken', 'One bar') : tx('Unter der Eingabe', 'Under the field')} onPress={() => { haptics.select(); setNavStyle(NAV_STYLE === 'bar' ? 'strip' : 'bar'); toast(tx('Navigation geändert, startet neu', 'Navigation changed, restarting')); }} />
         <SRow icon="reise" t={tx('Urlaub und Feiertage', 'Vacation and holidays')} v={(land && (country === 'DE' ? land : regionName(country, land))) || countryName(country)} onPress={() => router.push('/urlaub')} />
         {HIDDEN.extras ? null : <SRow icon="glocke" t={tx('Hinweise', 'Notifications')} onPress={() => router.push('/demo/sperrbildschirm')} />}
         <SRow icon="chat" t={tx('Sprache', 'Language')} v={sl === 'de' ? tx('Deutsch', 'German') : tx('Englisch', 'English')} onPress={() => { const v = sl === 'de' ? 'en' : 'de'; setSpeechLang(v); setSl(v); toast(v === 'de' ? tx('Ich höre jetzt auf Deutsch', 'Listening in German now') : tx('Ich höre jetzt auf Englisch', 'Listening in English now')); }} />
         {HIDDEN.toggles ? null : <SRow icon="chat" t={tx('Mikro Anzeige', 'Mic display')} v={mic === 'ring' ? tx('Ring', 'Ring') : tx('Balken', 'Bars')} onPress={() => { const v = mic === 'ring' ? 'balken' : 'ring'; setMicStyle(v); haptics.select(); toast(v === 'ring' ? tx('Mikro zeigt jetzt den Ring', 'Mic now shows the ring') : tx('Mikro zeigt jetzt die Balken', 'Mic now shows the bars')); }} />}
-        {LIVE ? null : <SRow icon="zuhause" t={tx('Onboarding Schritt testen', 'Test onboarding step')} onPress={() => router.push('/onboarding/probe')} />}
+        <SRow icon="zuhause" t={tx('Neues Onboarding ansehen', 'View new onboarding')} onPress={() => router.push('/onboarding/flow')} />
         <SRow icon="zuhause" t={tx('Onboarding ansehen', 'View onboarding')} onPress={() => { startPreview(); router.push('/onboarding'); }} />
         <SRow icon="kalender" t={tx('Kalender Abo und Export', 'Calendar feed and export')} onPress={() => router.push('/kalender-abo')} />
       </Group>

@@ -219,7 +219,7 @@ export const actions = {
   },
   /** A person's colour shows everywhere they appear, so `persons` changes with it. */
   setColor(p: PersonId, i: number) {
-    const c = shade(personPalette[i]);
+    const c = shade(personPalette[((i % personPalette.length) + personPalette.length) % personPalette.length] ?? personPalette[0]);
     Object.assign(persons[p], { tint: c.bg, ink: c.fg, stripe: mix(c.bg, c.fg, 0.14), colorName: c.name });
     set((s) => ({ colors: { ...s.colors, [p]: i } }));
     AsyncStorage.setItem(COLORS_KEY, JSON.stringify(app.get().colors)).catch(() => {});
@@ -567,5 +567,5 @@ const COLORS_KEY = 'famcal.colors';
 AsyncStorage.getItem(COLORS_KEY).then((v) => {
   const c = v ? JSON.parse(v) : null;
   if (!c) return;
-  (['J', 'T'] as PersonId[]).forEach((p) => { if (Number.isInteger(c[p]) && personPalette[c[p]]) actions.setColor(p, c[p]); });
+  (['J', 'T'] as PersonId[]).forEach((p) => { if (Number.isInteger(c[p]) && c[p] >= 0) actions.setColor(p, c[p]); });
 }).catch(() => {});

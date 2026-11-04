@@ -35,7 +35,7 @@ import { createStore } from '../../state/store';
 import { buildDemoState } from '../../data/demoFamily';
 import { haptics } from '../../lib/haptics';
 import { TODAY } from '../../lib/dates';
-import { tokens, rise, motion, easing, personPalette } from '../../theme';
+import { tokens, rise, motion, easing, personPalette, allColors } from '../../theme';
 import { shade } from '../../theme/tokens';
 import { tx } from '../../i18n/lang';
 
@@ -124,7 +124,7 @@ function FilmRun({ beat, onNext, tap }: { beat: number; onNext: () => void; tap:
   const [ts, tl, ls, ll] = compact ? [22, 27, 15, 20] : [26, 31, 16, 22];
   const copy = introCopy(beat);
   // The "Bald" tag: warm ink on a warm tint (Sand), read at render time so it follows dark mode.
-  const soonTint = shade(personPalette.find((p) => p.name === 'Sand')!);
+  const soonTint = shade(allColors.find((p) => p.name === 'Sand')!);
   // A long title, or one that carries the "Bald" tag on its line, sets a little smaller.
   const tsz = copy.title.length > 44 ? Math.round(ts * 0.84) : copy.soon ? Math.round(ts * 0.88) : ts;
   const [h, setH] = useState(0);
