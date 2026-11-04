@@ -53,7 +53,7 @@ const EDGE = 16;
 
 /** Tab switch: the white pill glides and the tabs resize on the same curve, so the two stay together. */
 const SWITCH = { duration: 300, easing: Easing.bezier(0.22, 1, 0.36, 1) };
-const FADE_H = 22;
+const FADE_H = 36;
 
 const floatShadow = { boxShadow: '0 12px 28px rgba(22,35,42,0.28)' } as any;
 
@@ -184,7 +184,8 @@ function PillNav({ state, navigation }: BottomTabBarProps) {
           <Defs>
             <LinearGradient id="navground" x1="0" y1="0" x2="0" y2="1">
               <Stop offset="0" stopColor={tokens.bg} stopOpacity={0} />
-              <Stop offset="0.55" stopColor={tokens.bg} stopOpacity={0.75} />
+              <Stop offset="0.35" stopColor={tokens.bg} stopOpacity={0.35} />
+              <Stop offset="0.7" stopColor={tokens.bg} stopOpacity={0.8} />
               <Stop offset="1" stopColor={tokens.bg} stopOpacity={1} />
             </LinearGradient>
           </Defs>
@@ -264,7 +265,8 @@ function StripNav({ state, navigation }: BottomTabBarProps) {
           <Defs>
             <LinearGradient id="stripground" x1="0" y1="0" x2="0" y2="1">
               <Stop offset="0" stopColor={tokens.bg} stopOpacity={0} />
-              <Stop offset="0.55" stopColor={tokens.bg} stopOpacity={0.75} />
+              <Stop offset="0.35" stopColor={tokens.bg} stopOpacity={0.35} />
+              <Stop offset="0.7" stopColor={tokens.bg} stopOpacity={0.8} />
               <Stop offset="1" stopColor={tokens.bg} stopOpacity={1} />
             </LinearGradient>
           </Defs>
@@ -309,7 +311,8 @@ function BarNav({ state, navigation }: BottomTabBarProps) {
           <Defs>
             <LinearGradient id="barground" x1="0" y1="0" x2="0" y2="1">
               <Stop offset="0" stopColor={tokens.bg} stopOpacity={0} />
-              <Stop offset="0.55" stopColor={tokens.bg} stopOpacity={0.75} />
+              <Stop offset="0.35" stopColor={tokens.bg} stopOpacity={0.35} />
+              <Stop offset="0.7" stopColor={tokens.bg} stopOpacity={0.8} />
               <Stop offset="1" stopColor={tokens.bg} stopOpacity={1} />
             </LinearGradient>
           </Defs>

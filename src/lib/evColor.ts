@@ -45,3 +45,19 @@ export function evShared(e: Ev): boolean {
   return true;
 }
 export const sharedBorder = () => ({ borderWidth: 1.5, borderColor: tokens.ink });
+
+/** The strong colour of a Termin, for dots in the month (Julian 04.11.: the simple month with dots). */
+export function evInk(e: Ev): string {
+  if (colorBy() === 'kategorie') {
+    const c = categoryOf(e.icon);
+    const pal = c ? personPalette[categoryIndex(c) % personPalette.length] : undefined;
+    return pal ? shade(pal).fg : tokens.sub;
+  }
+  if (e.who === 'J' || e.who === 'T') return persons[e.who].ink;
+  if (!e.who && e.people?.length === 1) {
+    const p = get().people.find((x) => x.id === e.people![0]);
+    const c = p && allColors.find((x) => x.name === p.color);
+    if (c) return shade(c).fg;
+  }
+  return tokens.sub;
+}

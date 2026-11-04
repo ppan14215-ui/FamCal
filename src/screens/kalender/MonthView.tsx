@@ -14,7 +14,7 @@ import Txt from '../../components/ui/Txt';
 import { ClayIcon } from '../../components/ui/Clay';
 import { Owner } from '../../components/ui/Person';
 import { tokens, tint, persons } from '../../theme';
-import { evTint, evShared, sharedBorder } from '../../lib/evColor';
+import { evTint, evShared, sharedBorder, evInk } from '../../lib/evColor';
 import { useStore, actions } from '../../state/store';
 import { eventsOn } from '../../lib/selectors';
 import { addDays, monday, dayNum, monthIdx, year, parse, iso, WD_SHORT, weekday, MONTHS_SHORT, hm, TODAY, MONTHS, short } from '../../lib/dates';
@@ -60,7 +60,7 @@ export default function MonthView() {
   // Title, switch and weekday row take about 290, the talk field and tabs about 200.
   const { height: H } = useWindowDimensions();
   const rows = cells.length / 7;
-  const cellH = Math.round(Math.max(70, Math.min(110, (H - 490) / rows)));
+  const cellH = Math.round(Math.max(52, Math.min(64, (H - 490) / rows)));
   const icon = Math.round(Math.min(40, cellH * 0.4));
 
   // Swipe left or right for the next or previous month (Julian 30.10.), like in the week.
@@ -121,7 +121,8 @@ export default function MonthView() {
                 }}
               >
                 <Txt size={14} line={18} weight={isToday ? 700 : 500} color={isToday ? tokens.done : hol ? tokens.frist : inMonth ? tokens.ink : tokens.circleLine}>{String(dayNum(d))}</Txt>
-                <DayTitles evs={evs} lines={Math.max(1, Math.floor((cellH - 24 - (shifts.length ? 10 : 4)) / 15))} />
+                {/* Julian 04.11.: titles cannot be read without zooming; back to the simple month with dots, the day's list sits below. */}
+                <DayIcons evs={evs} size={0} delay={0} />
                 {shifts.length ? (
                   <View style={{ position: 'absolute', left: 4, right: 4, bottom: 4, gap: 2 }}>
                     {shifts.map((p) => <Stripes key={p} p={p} radius={3} style={{ height: 5 }} />)}
@@ -198,7 +199,7 @@ function DayIcons({ evs, size, delay }: { evs: CalEvent[]; size: number; delay: 
   if (!SHOW_ICONS) {
     return (
       <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 3, paddingBottom: 6 }}>
-        {evs.slice(0, 3).map((e, i) => <View key={i} style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: e.who === 'J' || e.who === 'T' ? persons[e.who].ink : tokens.sub }} />)}
+        {evs.slice(0, 3).map((e, i) => <View key={i} style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: isVacation(e) ? tokens.vacInk : evInk(e) }} />)}
         {evs.length > 3 ? <Txt size={9} line={9} weight={700} color={tokens.sub}>+</Txt> : null}
       </View>
     );

@@ -6,6 +6,7 @@
  * what it understood (shown under the orb) and where the result lands.
  * Rules everywhere; in the real app Claude reads calendar sentences first (planOnline).
  */
+import { noteMade } from './session';
 import type { CalEvent, Who, List } from '../state/types';
 import { get, actions, toast } from '../state/store';
 import { persons } from '../theme/tokens';
@@ -203,7 +204,7 @@ export function replyPlan(reply: Reply, replacing?: Set<string>): Plan {
   return {
     head: tx('Ich trage in den Kalender ein', 'Adding to the calendar'),
     steps: reply.steps,
-    run: () => { actions.addEvent(reply.event); return { land: reply.event.id, result: { kind: 'event', event: reply.event, needsTime: reply.needsTime, suggest: reply.suggest, ask: reply.ask } }; },
+    run: () => { actions.addEvent(reply.event); noteMade([reply.event.id]); return { land: reply.event.id, result: { kind: 'event', event: reply.event, needsTime: reply.needsTime, suggest: reply.suggest, ask: reply.ask } }; },
   };
 }
 
@@ -226,6 +227,7 @@ export function clashLine(old: CalEvent[]) {
 export function settleWork(incoming: CalEvent[], old: CalEvent[], replace: boolean): Extract<Result, { kind: 'done' }> & { lit: string[] } {
   if (replace) old.forEach((e) => actions.removeEvent(e.id));
   incoming.forEach((e) => actions.addEvent(e));
+  noteMade(incoming.map((e) => e.id));
   const text = replace
     ? (incoming.length === 1 ? tx(`Arbeit am ${short(incoming[0].date)} ist jetzt ${span(incoming[0])}.`, `Work on ${short(incoming[0].date)} is now ${span(incoming[0])}.`) : tx(`${old.length} Arbeitstage ersetzt, ${incoming.length} eingetragen.`, `${old.length} work days replaced, ${incoming.length} added.`))
     : tx(`${incoming.length} dazu eingetragen, die alten bleiben.`, `${incoming.length} added, the old ones stay.`);
@@ -244,6 +246,7 @@ function manyPlan(first: CalEvent, more: CalEvent[], steps: string[]): Plan {
     steps,
     run: () => {
       all.forEach((e) => actions.addEvent(e));
+      noteMade(all.map((e) => e.id));
       const text = tx(`${joinAnd(names.map((x) => `„${x}“`))} ${names.length === 1 ? 'steht' : 'stehen'} im Kalender.`, `${joinAnd(names.map((x) => `“${x}”`))} ${names.length === 1 ? 'is' : 'are'} in the calendar.`);
       return { land: first.id, lit: all.map((e) => e.id), result: { kind: 'done', text, sub: `${tx(`${all.length} Einträge.`, `${all.length} entries.`)} ${otherSees()}`, undo: () => all.forEach((e) => actions.removeEvent(e.id)), events: all.map((e) => e.id) } };
     },
