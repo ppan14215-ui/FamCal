@@ -39,16 +39,15 @@ import { eventById } from '../../src/lib/useEvents';
 import { seriesId, ruleOf } from '../../src/lib/repeat';
 import { addDays, daysBetween } from '../../src/lib/dates';
 
-const NEXT: Record<string, Who> = { T: 'J', J: 'both', both: null, null: 'T' };
 
 function whoLine(who: Who, title: string): { t: string; s: string } {
   const kid = get().kid?.name;
   const withKid = !!kid && /U\d|Impf|Pass|Arzt|Dr\./.test(title);
   const go = (p: 'J' | 'T') => (withKid ? tx(`${persons[p].name} bringt ${kid}`, `${persons[p].name} takes ${kid}`) : tx(`${persons[p].name} geht hin`, `${persons[p].name} is going`));
-  if (who === 'T') return { t: go('T'), s: tx('selbst übernommen', 'took it') };
-  if (who === 'J') return { t: go('J'), s: tx('selbst übernommen', 'took it') };
-  if (who === 'both') return { t: tx('Ihr geht beide', 'You both go'), s: tx('zusammen', 'together') };
-  return { t: tx('Noch niemand', 'Nobody yet'), s: tx('Wer geht hin?', "Who's going?") };
+  if (who === 'T') return { t: go('T'), s: tx('Wer geht hin', "Who's going") };
+  if (who === 'J') return { t: go('J'), s: tx('Wer geht hin', "Who's going") };
+  if (who === 'both') return { t: tx('Ihr geht beide', 'You both go'), s: tx('Wer geht hin', "Who's going") };
+  return { t: tx('Noch niemand', 'Nobody yet'), s: tx('Wer geht hin', "Who's going") };
 }
 
 const noOutline = Platform.OS === 'web' ? ({ outlineStyle: 'none' } as any) : null;
@@ -173,8 +172,17 @@ export default function Termin() {
               <Txt size={15} weight={600}>{e.work ? (e.who === 'T' ? persons.T.name : persons.J.name) : w.t}</Txt>
               {e.work ? null : <Meta>{w.s}</Meta>}
             </View>
-            <Chip onPress={() => { haptics.select(); actions.setEventWho(target(), NEXT[String(e.who)]); }}>{tx('Ändern', 'Change')}</Chip>
           </View>
+          {/* Julian 04.11.: every choice in sight instead of a button that silently cycles. */}
+          {e.work ? null : (
+            <View style={{ marginTop: 12 }}>
+              <Seg
+                items={[{ key: 'J', label: persons.J.name || tx('Ich', 'Me') }, { key: 'T', label: persons.T.name || tx('Partner', 'Partner') }, { key: 'both', label: tx('Beide', 'Both') }, { key: 'null', label: tx('Offen', 'Open') }]}
+                value={String(e.who)}
+                onChange={(k) => { haptics.select(); actions.setEventWho(target(), (k === 'null' ? null : k) as Who); }}
+              />
+            </View>
+          )}
           {e.work ? null : <View style={{ height: 1, backgroundColor: tokens.hair, marginVertical: 12 }} />}
           {e.work ? null : <TerminPeople ids={e.people ?? []} onToggle={(pid) => actions.toggleEventPerson(target(), pid)} />}
         </Card>
