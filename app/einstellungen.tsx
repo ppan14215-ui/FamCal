@@ -28,7 +28,7 @@ import { HIDDEN } from '../src/lib/core';
 import { startPreview } from '../src/lib/vorschau';
 import { THEMES } from '../src/theme/tokens';
 import { usePalette } from '../src/theme/mode';
-import { NAV_STYLE, setNavStyle } from '../src/lib/navStyle';
+import { navStyle, setNavStyle } from '../src/lib/navStyle';
 
 /** Name left, value right, like Apple's settings (Julian 03.11.): no second line under every row. */
 function SRow({ icon, t, v, right, onPress }: { icon: ClayName; t: string; v?: string; right?: React.ReactNode; onPress?: () => void }) {
@@ -108,7 +108,7 @@ export default function Einstellungen() {
       {/* Julian 04.11.: the real settings apart from what is only there to try things out. */}
       <H2>{tx('Zum Testen', 'For testing')}</H2>
       <Group>
-        <SRow icon="sync" t={tx('Navigation', 'Navigation')} v={NAV_STYLE === 'bar' ? tx('Ein Balken', 'One bar') : tx('Unter der Eingabe', 'Under the field')} onPress={() => { haptics.select(); setNavStyle(NAV_STYLE === 'bar' ? 'strip' : 'bar'); toast(tx('Navigation geändert, startet neu', 'Navigation changed, restarting')); }} />
+        <SRow icon="sync" t={tx('Navigation', 'Navigation')} v={navStyle() === 'bar' ? tx('Ein Balken', 'One bar') : tx('Unter der Eingabe', 'Under the field')} onPress={() => { haptics.select(); setNavStyle(navStyle() === 'bar' ? 'strip' : 'bar'); toast(tx('Navigation geändert', 'Navigation changed')); }} />
         <SRow icon="zuhause" t={tx('Neues Onboarding ansehen', 'View new onboarding')} onPress={() => router.push('/onboarding/flow')} />
         <SRow icon="zuhause" t={tx('Onboarding ansehen', 'View onboarding')} onPress={() => { startPreview(); router.push('/onboarding'); }} />
       </Group>

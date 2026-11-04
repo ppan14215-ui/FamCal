@@ -9,7 +9,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { View, ScrollView, Platform, BackHandler, useWindowDimensions, TextInput } from 'react-native';
 import { router, usePathname } from 'expo-router';
-import Animated, { FadeIn, FadeInDown, FadeOut, useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
+import Animated, { FadeIn, FadeInDown, FadeOut, useSharedValue, useAnimatedStyle, withSpring, withTiming, Easing } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Defs, LinearGradient, Stop, Rect } from 'react-native-svg';
 import { Chip } from './ui/kit';
@@ -31,9 +31,9 @@ import { light, lightOneByOne } from '../lib/landing';
 import { setDockTop, setDockSpace } from '../lib/dockSpace';
 import { useKeyboardInset, useTyping, useInlineEditing } from '../lib/keyboard';
 import { setTalkOpen, useTalkOpen } from '../lib/talkOpen';
-import { NAV_H, navTop, BAR_TABS_W } from './NavBar';
+import { navH, navTop, BAR_TABS_W } from './NavBar';
 import { useNavFolded } from '../lib/navFold';
-import { NAV_STYLE } from '../lib/navStyle';
+import { navStyle } from '../lib/navStyle';
 import { addMade, addMessage, addAsk, addSay, recentMade, markChanged } from '../lib/feed';
 import { useSimple, messageOf } from '../lib/simple';
 import { hm, short } from '../lib/dates';
@@ -431,7 +431,7 @@ export default function Dock() {
   // Tab screens already leave room for the tabs; the chat scrolls past both.
   // Julian 31.10. 15:40: with the tabs folded into the handle, the field drops into their place.
   const folded = useNavFolded();
-  useEffect(() => { setDockSpace(where && shown ? h + (where.chat ? (folded ? 0 : NAV_H + 10) : where.tab ? 0 : 8) : 0); }, [h, !!where, shown, folded]);
+  useEffect(() => { setDockSpace(where && shown ? h + (where.chat ? (folded ? 0 : navH() + 10) : where.tab ? 0 : 8) : 0); }, [h, !!where, shown, folded]);
   useEffect(() => () => timers.current.forEach(clearTimeout), []);
   // Shared to FamCal from the browser or another app (Julian 28.10.): as if typed into the field.
   const hearRef = useRef<(raw: string) => void>(() => {});
@@ -441,9 +441,13 @@ export default function Dock() {
 
   // Examples only while the calendar is still empty; after that they are clutter (Julian 27.10.).
   const onTabs = !!where && (where.tab || !!where.chat);
-  const above = NAV_STYLE === 'bar' && onTabs ? Math.max(insets.bottom, 8) + 4 : folded && onTabs ? Math.max(insets.bottom, 12) + 10 : navTop(insets.bottom) + (NAV_STYLE === 'strip' && onTabs ? 4 : 10);
+  const above = navStyle() === 'bar' && onTabs ? Math.max(insets.bottom, 8) + 4 : folded && onTabs ? Math.max(insets.bottom, 12) + 10 : navTop(insets.bottom) + (navStyle() === 'strip' && onTabs ? 4 : 10);
   // One bar: the field sits beside the tab pill and takes the whole width while typing.
-  const tabsW = onTabs ? (NAV_STYLE === 'bar' && !typing ? W - 28 - BAR_TABS_W - 8 : W - 28) : full;
+  const tabsW = onTabs ? (navStyle() === 'bar' && !typing ? W - 28 - BAR_TABS_W - 8 : W - 28) : full;
+  // Julian 04.11.: in the one bar the field slides over the tabs while they fold away, and back (ease-out 240 ms).
+  const wAnim = useSharedValue(tabsW);
+  useEffect(() => { wAnim.value = withTiming(tabsW, { duration: 240, easing: Easing.bezier(0.23, 1, 0.32, 1) }); }, [tabsW]);
+  const wStyle = useAnimatedStyle(() => ({ width: wAnim.value }));
   // Typing hides the tabs, so the field drops into their place right above the keyboard.
   const bottom = !where ? 0 : kb > 0 ? kb + 8 : onTabs ? (typing && Platform.OS === 'web' ? Math.max(insets.bottom, 12) + 10 : above) : insets.bottom + 12 + where.lift;
   useEffect(() => { setDockTop(where ? bottom + (shown ? h : 0) : 0); }, [bottom, h, !!where, shown]);
@@ -908,18 +912,18 @@ export default function Dock() {
         </View>
       ) : null}
       <View pointerEvents="box-none" style={{ flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'flex-end', gap: 8 }}>
-      <Animated.View style={[{ alignSelf: 'flex-end', alignItems: 'flex-end', overflow: 'hidden', borderRadius: onTabs && NAV_STYLE === 'strip' ? 24 : 30 }, { width: tabsW }]}>
-      <Animated.View style={{ width: tabsW }}>
+      <Animated.View style={[{ alignSelf: 'flex-end', alignItems: 'flex-end', overflow: 'hidden', borderRadius: onTabs && navStyle() === 'strip' ? 24 : 30 }, wStyle]}>
+      <Animated.View style={wStyle}>
       <TalkBar
         key={onTabs ? 'tabs' : kind}
         split={onTabs}
-        card={onTabs && NAV_STYLE === 'strip'}
+        card={onTabs && navStyle() === 'strip'}
         onSend={hear}
         onPlus={() => router.push('/neu')}
         spoken={SPOKEN[kind]}
         listenKey={listenKey}
         focusKey={focusKey}
-        placeholder={where.chat && mode === 'msg' ? tx('Nachricht an die Familie …', 'Message to the family …') : turn?.result.kind === 'cut' ? tx('Sprich einfach weiter …', 'Just keep talking …') : onTabs && !turn ? (NAV_STYLE === 'bar' && !typing ? tx('Was steht an?', 'What’s up?') : tx('Sprich oder schreib einfach …', 'Just say or type it …')) : turn && kind === 'kalender' ? tx('Antworten oder ergänzen …', 'Reply or add …') : PLACEHOLDER[kind]}
+        placeholder={where.chat && mode === 'msg' ? tx('Nachricht an die Familie …', 'Message to the family …') : turn?.result.kind === 'cut' ? tx('Sprich einfach weiter …', 'Just keep talking …') : onTabs && !turn ? (navStyle() === 'bar' && !typing ? tx('Was steht an?', 'What’s up?') : tx('Sprich oder schreib einfach …', 'Just say or type it …')) : turn && kind === 'kalender' ? tx('Antworten oder ergänzen …', 'Reply or add …') : PLACEHOLDER[kind]}
       />
       </Animated.View>
       </Animated.View>

@@ -6,12 +6,13 @@
 import React, { useEffect, useSyncExternalStore } from 'react';
 import { Appearance } from 'react-native';
 import { applyPalette, applyColorTheme, isDark, currentTheme, THEMES, type ThemeId } from './tokens';
-import { getPref, setPref } from '../lib/prefs';
+import { getPref, setPref, onPrefsReady } from '../lib/prefs';
 import { get, actions } from '../state/store';
 
 export type ThemeChoice = 'system' | 'hell' | 'dunkel';
 // Hell is the default (Julian 29.10.); dark only when chosen, or "wie das Handy" on a dark phone.
-let choice: ThemeChoice = ((): ThemeChoice => { const v = getPref('theme'); return v === 'dunkel' || v === 'system' ? v : 'hell'; })();
+const readChoice = (): ThemeChoice => { const v = getPref('theme'); return v === 'dunkel' || v === 'system' ? v : 'hell'; };
+let choice: ThemeChoice = readChoice();
 const subs = new Set<() => void>();
 let gen = 0;
 const sub = (l: () => void) => { subs.add(l); return () => { subs.delete(l); }; };
@@ -21,8 +22,8 @@ const LIGHT_ONLY = true;
 const wantDark = () => (LIGHT_ONLY ? false : choice === 'system' ? Appearance.getColorScheme() === 'dark' : choice === 'dunkel');
 
 // The family's colour theme for person colours (Julian 04.11.); the app's own colours never change.
-const savedPal = getPref('palette') as ThemeId | undefined;
-let palette: ThemeId = THEMES.some((t) => t.id === savedPal) ? savedPal! : 'klassisch';
+const readPal = (): ThemeId => { const v = getPref('palette') as ThemeId | undefined; return THEMES.some((t) => t.id === v) ? v! : 'klassisch'; };
+let palette: ThemeId = readPal();
 function apply(force = false) {
   const d = wantDark();
   if (!force && d === isDark() && gen > 0) return false;
@@ -63,6 +64,16 @@ export function setColorBy(v: ColorBy) {
   subs.forEach((l) => l());
 }
 export const useColorBy = () => useSyncExternalStore(sub, colorBy, colorBy);
+/** Remount the tree once, e.g. after the navigation style changed. */
+export function bumpGen() { gen++; subs.forEach((l) => l()); }
+// On the phone the saved choices arrive a moment after start: take them and redraw once.
+onPrefsReady(() => {
+  const c = readChoice(), p = readPal(), b: ColorBy = getPref('colorBy') === 'kategorie' ? 'kategorie' : 'person';
+  if (c === choice && p === palette && b === by) return;
+  choice = c; palette = p; by = b;
+  apply(true);
+  subs.forEach((l) => l());
+});
 export const usePalette = () => useSyncExternalStore(sub, currentTheme, currentTheme);
 
 /** Root only: a number that changes whenever the palette did, used as the tree's key. */

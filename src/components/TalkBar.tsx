@@ -17,7 +17,11 @@ import VoiceBars from './VoiceBars';
 import VoiceRing from './VoiceRing';
 import VoiceWaves from './VoiceWaves';
 import { useMicStyle } from '../lib/micStyle';
-import { useSharedValue, withTiming } from 'react-native-reanimated';
+import Animated, { useSharedValue, withTiming, LinearTransition, FadeIn, FadeOut, Easing } from 'react-native-reanimated';
+// Julian 04.11.: the input moves between its states like the Claude app (ease-out, under 300 ms).
+const MORPH = LinearTransition.duration(240).easing(Easing.bezier(0.23, 1, 0.32, 1));
+const SHOW = FadeIn.duration(180);
+const HIDE = FadeOut.duration(120);
 import { tokens, fonts } from '../theme';
 import { haptics } from '../lib/haptics';
 import { setTyping } from '../lib/keyboard';
@@ -378,23 +382,22 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, o
   );
   // One parent with keyed children, so the field is not remounted (and the keyboard stays) when the first letter turns the line into the card.
   const cardInput = (
-    <View style={[one
+    <Animated.View layout={MORPH} style={[one
       ? { flexDirection: 'row', alignItems: 'center', gap: 6, borderRadius: 26, paddingVertical: 4, paddingHorizontal: 8 }
       : { flexDirection: 'column', borderRadius: 24, paddingTop: 6, paddingHorizontal: 10, paddingBottom: 8, gap: 4 },
       { backgroundColor: tokens.row, borderWidth: 1, borderColor: listening ? tokens.ink : tokens.hair }, lift]}>
-      {one ? <React.Fragment key="p">{cardPlus}</React.Fragment> : null}
-      <View key="f" style={one ? { flex: 1, minWidth: 0 } : { alignSelf: 'stretch' }}>{fieldBox}</View>
-      {one ? <React.Fragment key="m">{cardMic}</React.Fragment> : null}
-      {one ? <React.Fragment key="s">{cardSend}</React.Fragment> : null}
+      {one ? <Animated.View key="p" layout={MORPH} entering={SHOW} exiting={HIDE}>{cardPlus}</Animated.View> : null}
+      <Animated.View key="f" layout={MORPH} style={one ? { flex: 1, minWidth: 0 } : { alignSelf: 'stretch' }}>{fieldBox}</Animated.View>
+      {one ? <Animated.View key="m" layout={MORPH} entering={SHOW} exiting={HIDE} style={{ flexDirection: 'row', gap: 6 }}>{cardMic}{cardSend}</Animated.View> : null}
       {one ? null : (
-        <View key="r" style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+        <Animated.View key="r" layout={MORPH} entering={SHOW} exiting={HIDE} style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
           {cardPlus}
           <View style={{ flex: 1 }} />
           {cardMic}
           {cardSend}
-        </View>
+        </Animated.View>
       )}
-    </View>
+    </Animated.View>
   );
 
   const input = (

@@ -28,7 +28,7 @@ import { haptics } from '../lib/haptics';
 import { useTyping as useFocus, useKeyboardInset } from '../lib/keyboard';
 import { useDockTop } from '../lib/dockSpace';
 import Svg, { Defs, LinearGradient, Stop, Rect } from 'react-native-svg';
-import { NAV_STYLE } from '../lib/navStyle';
+import { navStyle } from '../lib/navStyle';
 
 const TABS: { name: string; key: string; icon: LineName }[] = [
   { name: 'chat', key: 'nav.chat', icon: 'chat' },
@@ -37,13 +37,13 @@ const TABS: { name: string; key: string; icon: LineName }[] = [
 ];
 
 /** Height of the bar; Dock.tsx puts the field right above it. */
-export const NAV_H = NAV_STYLE === 'pill' ? 54 : NAV_STYLE === 'bar' ? 52 : 50;
+export const navH = () => (navStyle() === 'pill' ? 54 : navStyle() === 'bar' ? 52 : 50);
 /** Width of the icon pill in the one-bar navigation. */
 export const BAR_TABS_W = 3 * 46 + 8;
 /** The open tab always has the same width, so the bar never changes size and recenters while the pill moves (Julian 31.10.: Listen overshot). */
 const ON_W = 128;
 /** Where the pill's top edge sits above the screen bottom. */
-export const navTop = (insetBottom: number) => (NAV_STYLE === 'pill' ? Math.max(insetBottom, 12) + 10 + NAV_H : NAV_STYLE === 'bar' ? Math.max(insetBottom, 8) + 4 + NAV_H : Math.max(insetBottom, 4) + NAV_H);
+export const navTop = (insetBottom: number) => (navStyle() === 'pill' ? Math.max(insetBottom, 12) + 10 + navH() : navStyle() === 'bar' ? Math.max(insetBottom, 8) + 4 + navH() : Math.max(insetBottom, 4) + navH());
 
 /** The pill's width before it is measured: one open tab and two icons. */
 const PILL_W = ON_W + 56 * 2 + 4 + 10;
@@ -57,7 +57,7 @@ const FADE_H = 22;
 
 const floatShadow = { boxShadow: '0 12px 28px rgba(22,35,42,0.28)' } as any;
 
-/** The dark swipeable pill (Julian 30.10. to 03.11.), kept behind NAV_STYLE. */
+/** The dark swipeable pill (Julian 30.10. to 03.11.), kept behind navStyle(). */
 function PillNav({ state, navigation }: BottomTabBarProps) {
   const insets = useSafeAreaInsets();
   const { t } = useTranslation();
@@ -69,7 +69,7 @@ function PillNav({ state, navigation }: BottomTabBarProps) {
   const typing = focus && (Platform.OS === 'web' || kb > 0);
   const away = useSharedValue(0);
   useEffect(() => { away.value = withTiming(typing ? 1 : 0, { duration: typing ? 180 : 260, easing: Easing.bezier(0.22, 1, 0.36, 1) }); }, [typing]);
-  const hide = useAnimatedStyle(() => ({ opacity: 1 - away.value, transform: [{ translateY: away.value * 40 }] }));
+  const hide = useAnimatedStyle((): any => ({ opacity: 1 - away.value, transform: [{ translateY: away.value * 40 }] }));
 
   const folded = useNavFolded();
   const reduced = useReducedMotion();
@@ -78,9 +78,9 @@ function PillNav({ state, navigation }: BottomTabBarProps) {
   const [pw, setPw] = useState(PILL_W);
   const foot = Math.max(insets.bottom, 12) + 10;
   // The two boxes: the pill at the bottom, and the handle on the right edge.
-  const dock = { x: (W - pw) / 2, y: H - foot - NAV_H, w: pw, h: NAV_H, r: NAV_H / 2 };
+  const dock = { x: (W - pw) / 2, y: H - foot - navH(), w: pw, h: navH(), r: navH() / 2 };
   const handle = (fy = getHandleY()) => ({ x: W - EDGE - HANDLE_W, y: fy * H - HANDLE_H / 2, w: HANDLE_W, h: HANDLE_H, r: HANDLE_W / 2 });
-  const bx = useSharedValue(0), by = useSharedValue(0), bw = useSharedValue(PILL_W), bh = useSharedValue(NAV_H), br = useSharedValue(NAV_H / 2);
+  const bx = useSharedValue(0), by = useSharedValue(0), bw = useSharedValue(PILL_W), bh = useSharedValue(navH()), br = useSharedValue(navH() / 2);
   const ready = useSharedValue(0);
 
   const go = (b: { x: number; y: number; w: number; h: number; r: number }, open: boolean, vx = 0, vy = 0) => {
@@ -194,7 +194,7 @@ function PillNav({ state, navigation }: BottomTabBarProps) {
       <GestureDetector gesture={pillPan}>
         <Animated.View accessibilityRole="tablist" pointerEvents={folded ? 'none' : 'auto'} style={[{ position: 'absolute', overflow: 'hidden', backgroundColor: tokens.ink, alignItems: 'center', justifyContent: 'center' }, floatShadow, box]}>
           <Animated.View onLayout={(e) => { const w = Math.round(e.nativeEvent.layout.width); if (w && w !== pw) setPw(w); }} style={[{ position: 'absolute', flexDirection: 'row', gap: 2, padding: 5 }, inner]}>
-            <Animated.View pointerEvents="none" style={[{ position: 'absolute', left: 0, top: 5, width: ON_W, height: NAV_H - 10, borderRadius: 999, backgroundColor: tokens.onInk }, marker]} />
+            <Animated.View pointerEvents="none" style={[{ position: 'absolute', left: 0, top: 5, width: ON_W, height: navH() - 10, borderRadius: 999, backgroundColor: tokens.onInk }, marker]} />
             {TABS.map((tab) => {
               const on = current === tab.name;
               return <Tab key={tab.name} on={on} icon={tab.icon} label={t(tab.key)} onPress={() => { if (!on) { haptics.select(); navigation.navigate(tab.name); } }} />;
@@ -231,7 +231,7 @@ function Tab({ on, icon, label, onPress }: { on: boolean; icon: LineName; label:
         accessibilityLabel={label}
         accessibilityState={{ selected: on }}
         onPress={onPress}
-        style={{ height: NAV_H - 10, paddingHorizontal: on ? 12 : 0, borderRadius: 999, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7 }}
+        style={{ height: navH() - 10, paddingHorizontal: on ? 12 : 0, borderRadius: 999, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7 }}
       >
         <LineIcon name={icon} size={21} color={on ? tokens.ink : tokens.mute} />
         {on ? <Animated.View entering={FadeIn.duration(180).delay(90)}><Txt size={14} weight={600} color={tokens.ink} numberOfLines={1}>{label}</Txt></Animated.View> : null}
@@ -252,8 +252,8 @@ function StripNav({ state, navigation }: BottomTabBarProps) {
   const kb = useKeyboardInset();
   const typing = focus && (Platform.OS === 'web' || kb > 0);
   const away = useSharedValue(0);
-  useEffect(() => { away.value = withTiming(typing ? 1 : 0, { duration: typing ? 160 : 240, easing: Easing.bezier(0.22, 1, 0.36, 1) }); }, [typing]);
-  const hide = useAnimatedStyle(() => ({ opacity: 1 - away.value }));
+  useEffect(() => { away.value = withTiming(typing ? 1 : 0, { duration: 240, easing: Easing.bezier(0.23, 1, 0.32, 1) }); }, [typing]);
+  const hide = useAnimatedStyle((): any => ({ opacity: 1 - away.value }));
   const dockTop = useDockTop();
   const groundTo = Math.max(dockTop, navTop(insets.bottom)) + 6;
   return (
@@ -271,7 +271,7 @@ function StripNav({ state, navigation }: BottomTabBarProps) {
           <Rect x="0" y="0" width="100%" height="100%" fill="url(#stripground)" />
         </Svg>
       </View>
-      <View accessibilityRole="tablist" style={{ position: 'absolute', left: 0, right: 0, bottom: Math.max(insets.bottom, 4), height: NAV_H, flexDirection: 'row', justifyContent: 'space-around', paddingHorizontal: 40 }}>
+      <View accessibilityRole="tablist" style={{ position: 'absolute', left: 0, right: 0, bottom: Math.max(insets.bottom, 4), height: navH(), flexDirection: 'row', justifyContent: 'space-around', paddingHorizontal: 40 }}>
         {TABS.map((tab) => {
           const on = current === tab.name;
           return (
@@ -297,8 +297,8 @@ function BarNav({ state, navigation }: BottomTabBarProps) {
   const kb = useKeyboardInset();
   const typing = focus && (Platform.OS === 'web' || kb > 0);
   const away = useSharedValue(0);
-  useEffect(() => { away.value = withTiming(typing ? 1 : 0, { duration: typing ? 160 : 240, easing: Easing.bezier(0.22, 1, 0.36, 1) }); }, [typing]);
-  const hide = useAnimatedStyle(() => ({ opacity: 1 - away.value, transform: [{ translateX: -12 * away.value }] }));
+  useEffect(() => { away.value = withTiming(typing ? 1 : 0, { duration: 240, easing: Easing.bezier(0.23, 1, 0.32, 1) }); }, [typing]);
+  const hide = useAnimatedStyle((): any => ({ opacity: 1 - away.value, transform: [{ translateX: -BAR_TABS_W * 0.35 * away.value }, { scale: 1 - 0.1 * away.value }] }));
   const dockTop = useDockTop();
   const groundTo = Math.max(dockTop, navTop(insets.bottom)) + 6;
   return (
@@ -317,7 +317,7 @@ function BarNav({ state, navigation }: BottomTabBarProps) {
         </Svg>
       </View>
       <Animated.View accessibilityRole="tablist" pointerEvents={typing ? 'none' : 'auto'}
-        style={[{ position: 'absolute', left: 14, bottom: Math.max(insets.bottom, 8) + 4, width: BAR_TABS_W, height: NAV_H, borderRadius: NAV_H / 2, backgroundColor: tokens.row, borderWidth: 1, borderColor: tokens.hair, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 4 }, hide]}>
+        style={[{ position: 'absolute', left: 14, bottom: Math.max(insets.bottom, 8) + 4, width: BAR_TABS_W, height: navH(), borderRadius: navH() / 2, backgroundColor: tokens.row, borderWidth: 1, borderColor: tokens.hair, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 4 }, hide]}>
         {TABS.map((tab) => {
           const on = current === tab.name;
           return (
@@ -334,5 +334,5 @@ function BarNav({ state, navigation }: BottomTabBarProps) {
 }
 
 export default function NavBar(props: BottomTabBarProps) {
-  return NAV_STYLE === 'pill' ? <PillNav {...props} /> : NAV_STYLE === 'bar' ? <BarNav {...props} /> : <StripNav {...props} />;
+  return navStyle() === 'pill' ? <PillNav {...props} /> : navStyle() === 'bar' ? <BarNav {...props} /> : <StripNav {...props} />;
 }
