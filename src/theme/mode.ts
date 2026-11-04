@@ -52,6 +52,17 @@ export function setPalette(id: ThemeId) {
   setPref('palette', id);
   if (apply(true)) subs.forEach((l) => l());
 }
+/** Termine coloured by person (default) or by category (Julian 04.11.: "eine Einstellung, ob Kategorie oder Farbe"). */
+export type ColorBy = 'person' | 'kategorie';
+let by: ColorBy = getPref('colorBy') === 'kategorie' ? 'kategorie' : 'person';
+export const colorBy = () => by;
+export function setColorBy(v: ColorBy) {
+  by = v;
+  setPref('colorBy', v);
+  gen++;
+  subs.forEach((l) => l());
+}
+export const useColorBy = () => useSyncExternalStore(sub, colorBy, colorBy);
 export const usePalette = () => useSyncExternalStore(sub, currentTheme, currentTheme);
 
 /** Root only: a number that changes whenever the palette did, used as the tree's key. */

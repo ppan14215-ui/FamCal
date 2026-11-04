@@ -176,7 +176,7 @@ function DayTitles({ evs, lines }: { evs: CalEvent[]; lines: number }) {
   return (
     <View style={{ flex: 1, alignSelf: 'stretch', gap: 2, paddingTop: 2, paddingHorizontal: 2 }}>
       {sorted.slice(0, Math.max(0, room)).map((e) => (
-        <View key={e.id} style={{ height: 13, borderRadius: 4, paddingHorizontal: 3, justifyContent: 'center', backgroundColor: isVacation(e) ? tokens.vac : e.who === 'J' || e.who === 'T' ? persons[e.who].tint : evTint(e), ...(!isVacation(e) && evShared(e) ? { ...sharedBorder(), borderWidth: 1 } : null) }}>
+        <View key={e.id} style={{ height: 13, borderRadius: 4, paddingHorizontal: 3, justifyContent: 'center', backgroundColor: isVacation(e) ? tokens.vac : evTint(e), ...(!isVacation(e) && evShared(e) ? { ...sharedBorder(), borderWidth: 1 } : null) }}>
           <Txt size={9.5} line={12} weight={600} numberOfLines={1} ellipsizeMode="clip" color={isVacation(e) ? tokens.vacInk : e.who === 'J' || e.who === 'T' ? persons[e.who].ink : tokens.ink}>{e.title}</Txt>
         </View>
       ))}

@@ -4,7 +4,11 @@
  */
 import React from 'react';
 import { View } from 'react-native';
-import { Screen, BackBar, H1 } from '../src/components/ui/kit';
+import { Screen, BackBar, H1, Seg } from '../src/components/ui/kit';
+import { useColorBy, setColorBy, usePalette } from '../src/theme/mode';
+import { CATEGORIES } from '../src/lib/iconCategory';
+import { personPalette, shade } from '../src/theme';
+import { haptics } from '../src/lib/haptics';
 import Txt from '../src/components/ui/Txt';
 import ThemePicker from '../src/components/ThemePicker';
 import ColorPicker from '../src/components/ColorPicker';
@@ -15,6 +19,8 @@ import { tx } from '../src/i18n/lang';
 export default function Design() {
   const names = useStore((s) => s.names);
   const colors = useStore((s) => s.colors);
+  const by = useColorBy();
+  usePalette();
   return (
     <Screen gap={12}>
       <BackBar />
@@ -26,6 +32,21 @@ export default function Design() {
       </View>
       <Txt size={13} weight={600} color={tokens.sub} style={{ paddingHorizontal: 4, marginTop: 8 }}>{tx('Farbthema für die ganze Familie', 'Colour theme for the whole family')}</Txt>
       <ThemePicker />
+      {/* Julian 04.11.: a setting, colour by person or by category. */}
+      <Txt size={13} weight={600} color={tokens.sub} style={{ paddingHorizontal: 4, marginTop: 8 }}>{tx('Termine färben nach', 'Colour events by')}</Txt>
+      <Seg items={[{ key: 'person', label: tx('Person', 'Person') }, { key: 'kategorie', label: tx('Kategorie', 'Category') }]} value={by} onChange={(k) => { haptics.select(); setColorBy(k as 'person' | 'kategorie'); }} />
+      {by === 'kategorie' ? (
+        <View style={{ backgroundColor: tokens.row, borderRadius: 20, padding: 14, flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+          {CATEGORIES.map((c, i) => {
+            const p = shade(personPalette[i % personPalette.length]);
+            return (
+              <View key={c.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 5, paddingHorizontal: 10, borderRadius: 999, backgroundColor: p.bg }}>
+                <Txt size={13} weight={600} color={p.fg}>{tx(c.de, c.en)}</Txt>
+              </View>
+            );
+          })}
+        </View>
+      ) : null}
     </Screen>
   );
 }
