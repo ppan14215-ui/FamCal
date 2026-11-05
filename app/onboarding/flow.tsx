@@ -62,12 +62,14 @@ import { parseWhen } from '../../src/lib/when';
 import { fillField } from '../../src/lib/simple';
 import { navStyle } from '../../src/lib/navStyle';
 import { useKeyboardInset } from '../../src/lib/keyboard';
-import { TODAY, addDays, weekday, WD_LONG, hm } from '../../src/lib/dates';
+import { TODAY, addDays, weekday, WD_LONG, hm, daysBetween, MONTHS_SHORT, monthIdx } from '../../src/lib/dates';
 import { haptics } from '../../src/lib/haptics';
-import { tx } from '../../src/i18n/lang';
+import { tx, isEn } from '../../src/i18n/lang';
+import NavChoice from '../../src/components/NavChoice';
+import { stepViewed, onboardingDone } from '../../src/lib/funnel';
 
-type Step = 'hallo' | 'namen' | 'termin' | 'verschieben' | 'kochen' | 'spielen' | 'filme' | 'baby' | 'fertig';
-const STEPS: Step[] = ['hallo', 'namen', 'termin', 'verschieben', 'kochen', 'spielen', 'filme', 'baby', 'fertig'];
+type Step = 'hallo' | 'namen' | 'leiste' | 'termin' | 'verschieben' | 'kochen' | 'spielen' | 'filme' | 'baby' | 'fertig';
+const STEPS: Step[] = ['hallo', 'namen', 'leiste', 'termin', 'verschieben', 'kochen', 'spielen', 'filme', 'baby', 'fertig'];
 const TRY = new Set<Step>(['termin', 'verschieben', 'kochen', 'spielen', 'filme', 'baby']);
 /**
  * What the chat shows: the app's own items, plus two live cards of the flow (Julian 05.11. 22:04 CET):
@@ -228,7 +230,7 @@ export default function Flow() {
     if (reduced) { t.value = dur; return; }
     t.value = withTiming(dur, { duration: dur * 1000, easing: Easing.linear });
   };
-  useEffect(() => { play('land', 3.2); }, []);
+  useEffect(() => { play('land', 3.2); stepViewed('hallo', 'flow', 0); }, []);
   useEffect(() => {
     const s = q.step as Step | undefined;
     if (!s || !STEPS.includes(s) || s === 'hallo') return;
@@ -312,16 +314,16 @@ export default function Flow() {
     timers.current = [];
     setPhase('wait'); setReply(null); setNotif(null); setPops([]);
     setStep(s);
+    stepViewed(s, 'flow', STEPS.indexOf(s));
     // Julian 05.11. 21:58 CET: too much going on in the real screens. Each step starts empty and shows only what you just did.
     setAsk(null); setPick(null);
     if (s === 'termin' || s === 'kochen' || s === 'spielen' || s === 'filme' || s === 'baby') setItems([]);
     // Memo writes first here: it remembers the baby and sends the first year on its own.
     if (s === 'baby') {
-      setPhase('think');
       later(700, () => {
         setItems([{ id: 'plan', type: 'plan' }]);
         haptics.success();
-        later(900, () => { setReply(tx('Soll ich daraus eine Aufgabenliste machen? Sag einfach „Ja“.', 'Shall I turn it into a task list? Just say “Yes”.')); setAsk('liste'); setPhase('wait'); });
+        later(1800, () => { setReply(tx('Soll ich daraus Aufgaben für euch machen? Sag einfach „Ja“.', 'Shall I turn it into tasks for you? Just say “Yes”.')); setAsk('liste'); });
       });
     }
     if (s === 'verschieben' && ev) { demo.set(() => ({ calDay: ev.date })); setCalKey((k) => k + 1); }
@@ -420,7 +422,7 @@ export default function Flow() {
         if (no) { finish(tx('Okay, das könnt ihr später aufteilen.', 'Okay, you can split it later.')); return; }
         setItems((its) => [...its.filter((x) => x.id !== 'tasks'), { id: 'tasks', type: 'tasks', split: true }]);
         later(240, () => haptics.success());
-        finish(tx(`Vorschlag: Ämter macht ${A}, Ärzte und Hebamme ${Bn}. Sagt einfach, wenn ihr tauschen wollt.`, `Suggestion: ${A} does the paperwork, ${Bn} the doctors and midwife. Just say if you want to swap.`));
+        finish(tx(`Vorschlag: Ämter macht ${A}, Ärzte und Hebamme ${Bn}. Sagt einfach, wenn ihr tauschen wollt.`, `Suggestion: ${A} takes paperwork, ${Bn} the doctors. Say if you’d swap.`));
       });
       return;
     }
@@ -577,16 +579,17 @@ export default function Flow() {
     if (reply) return reply;
     if (phase === 'think') return null;
     switch (step) {
-      case 'hallo': return tx('Hallo, ich bin Memo. Euer Kalender, mit dem ihr einfach sprecht.', 'Hi, I’m Memo. Your calendar you simply talk to.');
+      case 'hallo': return tx('Hallo, ich bin Memo. Ab jetzt muss niemand mehr alles im Kopf behalten.', 'Hi, I’m Memo. From now on, nobody has to keep it all in their head.');
       case 'namen': return magA ? (magB ? tx(`Schön, ${A} und ${B}!`, `Nice to meet you, ${A} and ${B}!`) : tx(`Hallo ${A}! Und mit wem teilst du den Kalender?`, `Hi ${A}! Who do you share the calendar with?`)) : tx('Wer seid ihr?', 'Who are you?');
       // Julian 05.11. 22:05 CET: no tiles to tap; Memo says what you could say, anything else works too.
-      case 'termin': return tx(`Sag mir einen Termin, ${A}. Zum Beispiel „Freitag 15 Uhr Zahnarzt“.`, `Tell me an appointment, ${A}. For example “Friday 3pm dentist”.`);
-      case 'verschieben': return tx(`Etwas ändert sich? Sag zum Beispiel „Verschieb das auf ${wdLong(nextDay)} 10 Uhr“.`, `Plans changed? Say for example “Move it to ${wdLong(nextDay)} at 10”.`);
-      case 'kochen': return tx('Was kocht ihr? Sag zum Beispiel „Wir kochen heute Lasagne“.', 'What are you cooking? Say for example “We’re cooking lasagna tonight”.');
-      case 'baby': return null;
-      case 'filme': return tx('Und eure Filmliste? Sag zum Beispiel „Den Film Dune müssen wir sehen“.', 'And your watchlist? Say for example “We have to watch Dune”.');
-      case 'spielen': return tx('Spielt ihr was? Sag zum Beispiel „Wir spielen Rommé“.', 'Playing a game? Say for example “We’re playing Rummy”.');
-      case 'fertig': return tx('Das war’s schon. Jetzt seid ihr dran.', 'That’s it. Your turn.');
+      case 'termin': return tx(`Einmal sagen, ${Bn} weiß es auch. Zum Beispiel „Freitag 15 Uhr Zahnarzt“.`, `Say it once, ${Bn} knows too. For example “Friday 3pm dentist”.`);
+      case 'verschieben': return tx(`Pläne ändern sich, keiner muss rumtelefonieren. Sag zum Beispiel „Verschieb das auf ${wdLong(nextDay)} 10 Uhr“.`, `Plans change, nobody has to call around. Say for example “Move it to ${wdLong(nextDay)} at 10”.`);
+      case 'kochen': return tx('Nie mehr im Laden stehen und raten. Zum Beispiel „Wir kochen heute Lasagne“.', 'No more guessing in the shop. For example “We’re cooking lasagna tonight”.');
+      case 'baby': return tx('Nicht mehr allein an alles denken. Ich denke mit.', 'No longer the only one who remembers everything. I think ahead.');
+      case 'filme': return tx('Abends nicht mehr ewig suchen, was ihr schaut. Zum Beispiel „Den Film Dune müssen wir sehen“.', 'No more endless scrolling at night. For example “We have to watch Dune”.');
+      case 'spielen': return tx('Keiner muss mehr mitschreiben. Zum Beispiel „Wir spielen Rommé“.', 'Nobody has to keep score on paper. For example “We’re playing Rummy”.');
+      case 'leiste': return tx('Wie magst du unten durch die App? Du siehst es gleich im nächsten Schritt.', 'How do you like to get around? You’ll see it in the next step.');
+      case 'fertig': return tx('Abends ist der Kopf frei, weil alles drinsteht.', 'Evenings feel lighter, because it’s all in there.');
     }
   })();
   const examples: Record<string, string[]> = {
@@ -605,7 +608,7 @@ export default function Flow() {
     filme: tx('Weiter', 'Continue'),
     baby: tx('Fertig', 'Done'),
   };
-  const next: Record<Step, Step> = { hallo: 'namen', namen: 'termin', termin: 'verschieben', verschieben: 'kochen', kochen: 'spielen', spielen: 'filme', filme: 'baby', baby: 'fertig', fertig: 'fertig' };
+  const next: Record<Step, Step> = { hallo: 'namen', namen: 'leiste', leiste: 'termin', termin: 'verschieben', verschieben: 'kochen', kochen: 'spielen', spielen: 'filme', filme: 'baby', baby: 'fertig', fertig: 'fertig' };
 
   return (
     <View style={{ flex: 1, backgroundColor: tokens.bg, paddingTop: corner ? stageTop : 0, paddingBottom: bottom }}>
@@ -693,8 +696,9 @@ export default function Flow() {
         ) : null}
         {TRY.has(step) && phase === 'done' ? <View style={{ paddingHorizontal: 4 }}><Btn label={nextLabel[step]} onPress={() => go(next[step])} /></View> : null}
         {step === 'hallo' ? <Late key="b-hallo" ms={ringEnd(HALLO.length) + 250} style={{ paddingHorizontal: 4 }}><Btn label={tx('Hallo Memo!', 'Hi Memo!')} onPress={() => go('namen')} /></Late> : null}
-        {step === 'namen' ? <View style={{ paddingHorizontal: 4 }}><Btn label={tx('Weiter', 'Continue')} disabled={!magA} onPress={() => go('termin')} /></View> : null}
-        {step === 'fertig' ? <Late key="b-fertig" ms={500 + (FERTIG.length - 1) * 190 + 700} style={{ paddingHorizontal: 4 }}><Btn label={tx('Los geht’s', 'Let’s go')} onPress={() => { haptics.success(); router.back(); }} /></Late> : null}
+        {step === 'leiste' ? <View style={{ gap: 14, paddingHorizontal: 4 }}><NavChoice /><Txt size={13.5} color={tokens.mute} center>{tx('Später jederzeit in den Einstellungen änderbar.', 'You can change it any time in Settings.')}</Txt><Btn label={tx('Weiter', 'Continue')} onPress={() => go('termin')} /></View> : null}
+        {step === 'namen' ? <View style={{ paddingHorizontal: 4 }}><Btn label={tx('Weiter', 'Continue')} disabled={!magA} onPress={() => go('leiste')} /></View> : null}
+        {step === 'fertig' ? <Late key="b-fertig" ms={500 + (FERTIG.length - 1) * 190 + 700} style={{ paddingHorizontal: 4 }}><View style={{ gap: 6 }}><Btn label={tx('14 Tage Plus gratis testen', 'Try Plus free for 14 days')} onPress={() => { haptics.success(); onboardingDone('flow'); router.replace('/plus'); }} /><Pressable onPress={() => { onboardingDone('flow'); router.back(); }} hitSlop={8} style={{ alignSelf: 'center', paddingVertical: 8 }}><Txt size={14.5} weight={600} color={tokens.sub}>{tx('Erst mal ohne', 'Not now')}</Txt></Pressable></View></Late> : null}
       </View>
     </View>
   );
@@ -810,11 +814,41 @@ function ScoreCard({ id }: { id: string }) {
 }
 
 /** The first year for a baby due in ten weeks, from the app's own plan (firstYear.ts). */
+/** English words for the first year (firstYear.ts is German only). Keyed by the plan's key. */
+const FY_EN: Record<string, [string, string?]> = {
+  hebamme: ['Find a midwife', 'as early as possible'], kurs: ['Antenatal class', 'weeks 28 to 30'], kinderarzt: ['Find a paediatrician', 'before the birth'],
+  elternzeit: ['Register parental leave', 'seven weeks before'], mutterschutz: ['Maternity leave starts', 'six weeks before the due date'], klinik: ['Pack the hospital bag', 'from week 34'],
+  geburt: ['Due date'], standesamt: ['Register the birth', 'within a week'], u3: ['U3 check-up', 'weeks 4 to 5'], kk: ['Register with health insurance', 'after the birth certificate'],
+  impf1: ['First vaccinations', 'from week 8'], eg: ['Apply for parental allowance', 'only three months back'], u4: ['U4 check-up', 'months 3 to 4'], impf2: ['Second vaccinations', 'at 4 months'],
+  kg: ['Apply for child benefit', 'six months back'], u5: ['U5 check-up', 'months 6 to 7'], kita: ['Ask for a daycare place', 'to start at about one'], u6: ['U6 check-up', 'months 10 to 12'],
+  impf3: ['Third vaccinations', 'at 11 months'], bday: ['First birthday'],
+};
+const TASK_EN: Record<string, string> = {
+  hebamme: 'Find a midwife', kurs: 'Book an antenatal class', kinderarzt: 'Find a paediatrician', elternzeit: 'Register parental leave', klinik: 'Pack the hospital bag',
+  standesamt: 'Get the birth certificate', kk: 'Health insurance for your baby', impf1: 'First vaccinations', eg: 'Apply for parental allowance', u4: 'Book the U4', kg: 'Apply for child benefit', kita: 'Ask for a daycare place',
+};
+const keyOf = (id: string) => id.replace(/^[mo]-/, '');
+const dayMonth = (iso: string) => (isEn() ? `${MONTHS_SHORT[monthIdx(iso)]} ${Number(iso.slice(8))}` : `${Number(iso.slice(8))}. ${MONTHS_SHORT[monthIdx(iso)]}`);
+/** "Frist 19. Nov · noch 3 Wochen" in the app's language. */
+function dueLabel(due: string, frist?: boolean) {
+  const d = daysBetween(TODAY, due);
+  if (d <= 0) return tx('heute', 'today');
+  if (d < 14) return tx(`${dayMonth(due)} · in ${d} Tagen`, `${dayMonth(due)} · in ${d} days`);
+  const w = Math.floor(d / 7);
+  return tx(`${frist ? 'Frist ' : ''}${dayMonth(due)} · noch ${w} Wochen`, `${frist ? 'Due ' : ''}${dayMonth(due)} · ${w} weeks left`);
+}
+
+/** The first year for a baby due in ten weeks, from the app's own plan (firstYear.ts). */
 function babyOf() {
   const { milestones, cards } = firstYear({ name: '', due: DUE });
   const next = milestones.filter((m) => m.date >= TODAY).sort((a, b) => (a.date < b.date ? -1 : 1));
-  const plan = next.slice(0, 5).map((m) => ({ id: m.id, icon: m.icon, title: m.title, sub: m.sub ?? '', frist: m.frist }));
-  const tasks = cards.slice(0, 7).map((c) => ({ id: c.id, icon: c.icon, title: c.title, due: c.dueLabel ?? '', who: (AMT.test(c.title) ? 'J' : 'T') as 'J' | 'T' }));
+  const en = isEn();
+  const plan = next.slice(0, 5).map((m) => {
+    const e = FY_EN[keyOf(m.id)];
+    const sub = m.frist ? tx(`Frist ${dayMonth(m.date)}`, `Due ${dayMonth(m.date)}`) : en ? (e?.[1] ?? dayMonth(m.date)) : (m.sub ?? '');
+    return { id: m.id, icon: m.icon, title: en && e ? e[0] : m.title, sub, frist: m.frist };
+  });
+  const tasks = cards.slice(0, 7).map((c) => ({ id: c.id, icon: c.icon, title: en ? (TASK_EN[keyOf(c.id)] ?? c.title) : c.title, due: c.due ? dueLabel(c.due, c.frist) : '', who: (AMT.test(c.title) ? 'J' : 'T') as 'J' | 'T' }));
   const weeks = Math.round(70 / 7);
   return {
     plan, tasks, more: Math.max(0, next.length - plan.length),
