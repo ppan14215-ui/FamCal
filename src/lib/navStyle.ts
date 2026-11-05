@@ -21,8 +21,16 @@ export function setNavStyle(v: NavStyle) {
   bumpGen();
 }
 
-/** One bar (Julian 05.11.): at rest the tabs take the bar and the input is one icon; open, the input card takes it. */
-let open = false;
+/**
+ * One bar (Julian 05.11. 08:10, "like the Dynamic Island"): one shape with three states.
+ * 'rest':  one dark circle with the current tab's icon, the one-line input beside it.
+ * 'tabs':  the circle grows into the dark bar with all tabs and labels; the input shrinks to a mic.
+ * 'input': the circle shrinks away and the input takes the whole width, growing into the card.
+ */
+export type BarMode = 'rest' | 'tabs' | 'input';
+let mode: BarMode = 'rest';
 const subs = new Set<() => void>();
-export function setBarOpen(v: boolean) { if (open !== v) { open = v; subs.forEach((l) => l()); } }
-export const useBarOpen = () => useSyncExternalStore((l) => { subs.add(l); return () => { subs.delete(l); }; }, () => open, () => open);
+export function setBarMode(v: BarMode) { if (mode !== v) { mode = v; subs.forEach((l) => l()); } }
+export const useBarMode = () => useSyncExternalStore((l) => { subs.add(l); return () => { subs.delete(l); }; }, () => mode, () => mode);
+/** Both halves move on the same spring, so their widths always add up and the gap between them never jumps. */
+export const BAR_SPRING = { damping: 24, stiffness: 260, mass: 1 };

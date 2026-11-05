@@ -34,7 +34,7 @@ import { useKeyboardInset, useTyping, useInlineEditing } from '../lib/keyboard';
 import { setTalkOpen, useTalkOpen } from '../lib/talkOpen';
 import { navH, navTop } from './NavBar';
 import { useNavFolded } from '../lib/navFold';
-import { navStyle, useBarOpen, setBarOpen } from '../lib/navStyle';
+import { navStyle, useBarMode, setBarMode, BAR_SPRING } from '../lib/navStyle';
 import { addMade, addMessage, addAsk, addSay, recentMade, markChanged } from '../lib/feed';
 import { useSimple, messageOf } from '../lib/simple';
 import { hm, short } from '../lib/dates';
@@ -396,7 +396,7 @@ export default function Dock() {
   const insets = useSafeAreaInsets();
   const kb = useKeyboardInset();
   const typing = useTyping();
-  const barOpenRaw = useBarOpen();
+  const barRaw = useBarMode();
   const inlineEditing = useInlineEditing();
   const { width: W, height: H } = useWindowDimensions();
   const [turn, setTurn] = useState<Turn | null>(null);
@@ -444,15 +444,19 @@ export default function Dock() {
   // Examples only while the calendar is still empty; after that they are clutter (Julian 27.10.).
   const onTabs = !!where && (where.tab || !!where.chat);
   const above = navStyle() === 'bar' && onTabs ? Math.max(insets.bottom, 8) + 4 : folded && onTabs ? Math.max(insets.bottom, 12) + 10 : navTop(insets.bottom) + (navStyle() === 'strip' && onTabs ? 4 : 10);
-  // One bar: the field sits beside the tab pill and takes the whole width while typing.
-  // Julian 05.11.: at rest the tabs take the whole bar and the input is a single icon; touching it grows the input card over the bar.
+  // One bar (Julian 05.11. 08:10, like the Dynamic Island): at rest the field sits beside the tab circle;
+  // the open tabs squeeze it into a mic; using it pushes the circle away and it takes the whole width.
   const bar = onTabs && navStyle() === 'bar';
-  const barOpen = bar && (barOpenRaw || typing);
-  const tabsW = onTabs ? (bar && !barOpen ? 48 : W - 28) : full;
-  // Julian 04.11.: in the one bar the field slides over the tabs while they fold away, and back (ease-out 240 ms).
+  const barMode = !bar ? null : typing || barRaw === 'input' ? 'input' : barRaw;
+  const D = navH();
+  const restW = W - 28 - D - 8;
+  const tabsW = !onTabs ? full : barMode === 'rest' ? restW : barMode === 'tabs' ? D : W - 28;
+  // The field keeps at least its resting width inside, so growing back reveals it instead of squeezing it.
+  const minW = bar ? restW : 0;
   const wAnim = useSharedValue(tabsW);
-  useEffect(() => { wAnim.value = withTiming(tabsW, { duration: 240, easing: Easing.bezier(0.23, 1, 0.32, 1) }); }, [tabsW]);
+  useEffect(() => { wAnim.value = bar ? withSpring(tabsW, BAR_SPRING) : withTiming(tabsW, { duration: 240, easing: Easing.bezier(0.23, 1, 0.32, 1) }); }, [tabsW]);
   const wStyle = useAnimatedStyle(() => ({ width: wAnim.value }));
+  const wInner = useAnimatedStyle(() => ({ width: Math.max(wAnim.value, minW) }));
   // Typing hides the tabs, so the field drops into their place right above the keyboard.
   const bottom = !where ? 0 : kb > 0 ? kb + 8 : onTabs ? (typing && Platform.OS === 'web' ? Math.max(insets.bottom, 12) + 10 : above) : insets.bottom + 12 + where.lift;
   useEffect(() => { setDockTop(where ? bottom + (shown ? h : 0) : 0); }, [bottom, h, !!where, shown]);
@@ -918,32 +922,31 @@ export default function Dock() {
         </View>
       ) : null}
       <View pointerEvents="box-none" style={{ flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'flex-end', gap: 8 }}>
-      <Animated.View style={[{ alignSelf: 'flex-end', alignItems: 'flex-end', overflow: 'hidden', borderRadius: onTabs && (navStyle() === 'strip' || barOpen) ? 24 : 30 }, wStyle]}>
-      <Animated.View style={wStyle}>
-      {bar && !barOpen ? (
-        <Animated.View key="icon" entering={FadeIn.duration(180)} exiting={FadeOut.duration(120)} style={{ height: navH(), alignItems: 'center', justifyContent: 'center' }}>
-          <PressScale scale={0.9} accessibilityLabel={tx('Sprechen oder schreiben', 'Speak or type')} onPress={() => { haptics.select(); setBarOpen(true); setListenKey((k) => k + 1); }}
-            style={{ width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.12)' }}>
-            <LineIcon name="mic" size={21} color={tokens.onInk} />
+      <Animated.View style={[{ alignSelf: 'flex-end', alignItems: 'flex-end', overflow: 'hidden', borderRadius: bar ? (barMode === 'tabs' ? D / 2 : 26) : onTabs && navStyle() === 'strip' ? 24 : 30 }, wStyle]}>
+      {barMode === 'tabs' ? (
+        <Animated.View key="icon" entering={FadeIn.duration(180).delay(80)} exiting={FadeOut.duration(100)}>
+          <PressScale scale={0.9} accessibilityLabel={tx('Sprechen', 'Speak')} onPress={() => { haptics.select(); setBarMode('input'); setListenKey((k) => k + 1); }}
+            style={{ width: D, height: D, borderRadius: D / 2, alignItems: 'center', justifyContent: 'center', backgroundColor: tokens.row, borderWidth: 1, borderColor: tokens.hair }}>
+            <LineIcon name="mic" size={21} color={tokens.ink} />
           </PressScale>
         </Animated.View>
       ) : (
-      <Animated.View key="field" entering={FadeIn.duration(200)} exiting={FadeOut.duration(120)}>
+      <Animated.View key="field" entering={FadeIn.duration(200).delay(bar ? 60 : 0)} exiting={FadeOut.duration(100)} style={wInner}>
       <TalkBar
         key={onTabs ? 'tabs' : kind}
         split={onTabs}
         card={onTabs && (navStyle() === 'strip' || bar)}
-        onIdle={bar ? () => setBarOpen(false) : undefined}
+        onIdle={bar ? () => setBarMode('rest') : undefined}
+        onBusy={bar ? () => setBarMode('input') : undefined}
         onSend={hear}
         onPlus={() => router.push('/neu')}
         spoken={SPOKEN[kind]}
         listenKey={listenKey}
         focusKey={focusKey}
-        placeholder={where.chat && mode === 'msg' ? tx('Nachricht an die Familie …', 'Message to the family …') : turn?.result.kind === 'cut' ? tx('Sprich einfach weiter …', 'Just keep talking …') : onTabs && !turn ? tx('Sprich oder schreib einfach …', 'Just say or type it …') : turn && kind === 'kalender' ? tx('Antworten oder ergänzen …', 'Reply or add …') : PLACEHOLDER[kind]}
+        placeholder={where.chat && mode === 'msg' ? tx('Nachricht an die Familie …', 'Message to the family …') : turn?.result.kind === 'cut' ? tx('Sprich einfach weiter …', 'Just keep talking …') : bar && barMode === 'rest' && !turn ? tx('Sag es einfach …', 'Just say it …') : onTabs && !turn ? tx('Sprich oder schreib einfach …', 'Just say or type it …') : turn && kind === 'kalender' ? tx('Antworten oder ergänzen …', 'Reply or add …') : PLACEHOLDER[kind]}
       />
       </Animated.View>
       )}
-      </Animated.View>
       </Animated.View>
       </View>
     </Animated.View>

@@ -84,9 +84,11 @@ type Props = {
   dark?: boolean;
   /** Called when the field is left empty and nothing is listening (one bar folds back to its icon). */
   onIdle?: () => void;
+  /** Called when the mic starts or text arrives (one bar: the input takes the whole width). */
+  onBusy?: () => void;
 };
 
-export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, onClose, split, card, dark, onIdle, placeholder = tx('Sag oder schreib, was ansteht …', 'Say or type what\'s coming up …') }: Props) {
+export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, onClose, split, card, dark, onIdle, onBusy, placeholder = tx('Sag oder schreib, was ansteht …', 'Say or type what\'s coming up …') }: Props) {
   const [text, setText] = useState('');
   const [listening, setListening] = useState(false);
   const textRef = useRef(''); textRef.current = text;
@@ -162,6 +164,15 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, o
   };
   const finishAndSend = () => { if (!listening) return send(); sendAfter.current = true; listen(); };
 
+  // One bar: speaking or text makes the input the whole bar; a mic that stops with nothing said folds it back.
+  const busy = listening || !!text;
+  const wasBusy = useRef(busy);
+  useEffect(() => {
+    if (wasBusy.current === busy) return;
+    wasBusy.current = busy;
+    if (busy) onBusy?.();
+    else if (onIdle && !field.current?.isFocused()) onIdle();
+  }, [busy]);
   const listen = () => {
     if (listening) { haptics.tap(); stopNative.current?.(); return; }
     typed.current = false;
