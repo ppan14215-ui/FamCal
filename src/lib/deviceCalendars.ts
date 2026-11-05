@@ -33,7 +33,10 @@ export async function listCalendars(): Promise<DeviceCal[]> {
   return all
     .filter((c) => c.isVisible !== false)
     .map((c) => {
-      const account = c.source?.name || c.ownerAccount || tx('Dieses Gerät', 'This device');
+      const name = c.source?.name || c.ownerAccount || tx('Dieses Gerät', 'This device');
+      // Android names a Google account only by its address; say Google so it is recognised (Julian 05.11.).
+      const google = c.source?.type === 'com.google' || /@gmail\.com$|@googlemail\.com$/i.test(name);
+      const account = google && !/google/i.test(name) ? `Google · ${name}` : name;
       const work = WORK.test(c.title) || c.source?.type === Calendar.SourceType.EXCHANGE;
       return { id: c.id, title: c.title, account, color: c.color, work, on: !SKIP.test(c.title) };
     })
