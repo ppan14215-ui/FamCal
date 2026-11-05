@@ -89,6 +89,8 @@ async function english(p) {
   }, EN_DATA);
 }
 const TILE = fs.readFileSync(path.join(__dirname, 'shots-tile.png'));
+// Echte wirkende Karte rund um den Pin (make-map-tiles.py), Mitte = Kachel 16/34874/22743.
+const mapTile = (u) => { const m = /\/16\/(\d+)\/(\d+)\.png/.exec(u); if (!m) return TILE; const f = path.join(__dirname, 'maptiles', `${m[1] - 34874}_${m[2] - 22743}.png`); return fs.existsSync(f) ? fs.readFileSync(f) : TILE; };
 const feat = (name, street, housenumber, postcode, city, lon, lat) => ({ type: 'Feature', geometry: { type: 'Point', coordinates: [lon, lat] }, properties: { name, street, housenumber, postcode, city } });
 async function routes(p) {
   await p.route(/photon\.komoot\.io/, (r) => {
@@ -96,7 +98,7 @@ async function routes(p) {
     const f = /weber/i.test(q) ? feat(/pediatrics/i.test(q) ? 'Weber Pediatrics' : 'Kinderarztpraxis Weber', 'Hauptstraße', '12', '80331', 'München', 11.5702, 48.1371) : salon ? feat('Salon Miller', 'Lindenstraße', '8', '80331', 'München', 11.5702, 48.1371) : feat('Zahnarztpraxis Dr. Müller', 'Lindenstraße', '8', '80331', 'München', 11.5702, 48.1371);
     r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ type: 'FeatureCollection', features: [f] }) });
   });
-  await p.route(/tile\.openstreetmap\.org/, (r) => r.fulfill({ status: 200, contentType: 'image/png', body: TILE }));
+  await p.route(/tile\.openstreetmap\.org/, (r) => r.fulfill({ status: 200, contentType: 'image/png', body: mapTile(r.request().url()) }));
 }
 
 // Jeder Screen: Name in landing/shots und der Weg dorthin, ausgehend vom Chat der Beispielfamilie.
@@ -138,7 +140,7 @@ const SCREENS = [
   ['personen', async ({ p }) => { await p.evaluate(() => { history.pushState({}, '', '/personen'); dispatchEvent(new PopStateEvent('popstate')); }); await p.waitForTimeout(1800); }],
   ['bearbeiten', async ({ p, tab, t }) => { await tab(t.cal); await p.getByText(t.u6).first().click(); }],
   ['listen', async ({ tab, t }) => { await tab(t.lists); }],
-  ['watchlist', async ({ p, can, say, tab, t }) => { await can(); await say(t.watch); await tab(t.lists); await p.getByText('Watchlist', { exact: true }).last().click({ timeout: 3000 }).catch(() => {}); }],
+  ['watchlist', async ({ p, can, say, t }) => { await can(); await say(t.watch); await p.evaluate(() => { history.pushState({}, '', '/listen'); dispatchEvent(new PopStateEvent('popstate')); }); await p.waitForTimeout(1800); await p.getByText('Watchlist', { exact: true }).last().click({ timeout: 3000 }).catch(() => {}); }],
   ['wissen', async ({ can, say, setting, t, l }) => { await can(); for (const [fact] of FACTS[l]) await say((l === 'de' ? 'Merk dir, ' : 'Remember, ') + fact); await setting(t.wissen); }],
   ['wieder', async ({ say, t }) => { await say(t.u7); }],
   ['karte', async ({ p, say, t }) => { await say(t.karte); await p.getByPlaceholder(/Dr\.|Salon|e\.g\./).first().fill(t.who); await p.getByText(t.search, { exact: true }).click(); }],
