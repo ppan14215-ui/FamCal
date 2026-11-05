@@ -6,7 +6,7 @@
  */
 import type { RealtimeChannel } from '@supabase/supabase-js';
 import { setFamily } from './analytics';
-import { supabase } from './cloud';
+import { supabase, allRows } from './cloud';
 import { get, set, subscribe, actions, setMeRole } from '../state/store';
 import type { CalEvent, Bring, Person } from '../state/types';
 import { watchComments, stopComments } from './comments';
@@ -72,7 +72,7 @@ export async function startSync(name?: string): Promise<{ family?: Family; error
 
   const [members, events, people] = await Promise.all([
     supabase.from('family_members').select('user_id, role, display_name').eq('family_id', family.id),
-    supabase.from('events').select('*').eq('family_id', family.id),
+    allRows<Row>((a, b) => supabase!.from('events').select('*').eq('family_id', family!.id).order('id').range(a, b)),
     supabase.from('family_people').select('id, name, kind, color, birthday').eq('family_id', family.id),
   ]);
   if (members.error) return { error: members.error.message };
@@ -140,11 +140,14 @@ export async function startSync(name?: string): Promise<{ family?: Family; error
         const id = (p.old as { id: string }).id;
         known.delete(id);
         set((s) => ({ events: s.events.filter((e) => e.id !== id) }));
+        // A Termin from this phone's calendar deleted by the partner leaves the phone calendar too (Julian 05.11.).
+        if (id.startsWith('imp-')) void import('./phoneSync').then((m) => m.notePhoneChange(id, true)).catch(() => {});
       } else {
         const e = fromRow(p.new as Row);
         if (known.get(e.id) === key(e)) return;
         known.set(e.id, key(e));
         set((s) => ({ events: [...s.events.filter((x) => x.id !== e.id), e] }));
+        if (e.id.startsWith('imp-')) void import('./phoneSync').then((m) => m.notePhoneChange(e.id, false)).catch(() => {});
       }
       lastEvents = get().events;
     })

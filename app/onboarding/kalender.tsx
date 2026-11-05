@@ -260,8 +260,9 @@ function DeviceCard({ conn }: { conn?: { account: string; ids: string[] } }) {
               </PressScale>
             ))}
           </View>
+          {/* Datenschutz (Infra 05.11.): who sees what; two-way sync since 8bd2141, so the old "liest nur" line is gone. */}
+          <Txt size={12.5} line={17} color={tokens.mute} center>{tx('Dein Partner sieht diese Termine mit Titel und Ort. Arbeit nur als Block. Änderungen in FamCal landen auch in diesem Kalender.', 'Your partner sees these events with title and place. Work only as a block. Changes in FamCal also go into this calendar.')}</Txt>
           <Btn label={busy ? tx('Liest Termine …', 'Reading events …') : tx('Übernehmen', 'Add')} height={46} disabled={busy} onPress={save} />
-          <Txt size={12.5} color={tokens.mute} center>{tx('Bleibt auf dem Handy. FamCal liest nur, schreibt nichts zurück.', 'Stays on the phone. FamCal only reads, it never writes back.')}</Txt>
         </Animated.View>
       ) : null}
     </View>

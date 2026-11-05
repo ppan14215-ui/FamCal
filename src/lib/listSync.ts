@@ -7,7 +7,7 @@
  * one, which keeps whatever this phone has not sent yet.
  */
 import type { RealtimeChannel } from '@supabase/supabase-js';
-import { supabase } from './cloud';
+import { supabase, allRows } from './cloud';
 import { get, set, subscribe } from '../state/store';
 import type { List, Item, Task } from '../state/types';
 
@@ -108,7 +108,7 @@ export async function startListSync(familyId: string) {
   stopListSync();
   if (!supabase) return;
   fam = familyId;
-  const { data, error } = await supabase.from('family_docs').select('type, id, parent, section, pos, data').eq('family_id', familyId);
+  const { data, error } = await allRows<any>((a, b) => supabase!.from('family_docs').select('type, id, parent, section, pos, data').eq('family_id', familyId).order('type').order('id').range(a, b));
   if (error || !data) { console.warn('[listen] load', error?.message); return; }
   const remote = data as Doc[];
   known = new Map(remote.map((d) => [k(d), sig(d)]));

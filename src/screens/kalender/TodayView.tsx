@@ -5,6 +5,7 @@
  * coming week as short rows. Free days are left out. "Alles zeigen" opens
  * the endless list of days.
  */
+import Origin from '../../components/ui/Origin';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import Animated, { useAnimatedStyle, useSharedValue, withRepeat, withSequence, withTiming } from 'react-native-reanimated';
 import { View, ScrollView } from 'react-native';
@@ -117,6 +118,7 @@ function Next({ e }: { e: CalEvent }) {
             <Txt size={24} line={29} weight={600} tracking={-0.4} numberOfLines={2}>{e.title}</Txt>
             <Meta numberOfLines={1}>{[on ? tx(`bis ${WD_SHORT[weekday(e.endDate!)]} ${dmShort(e.endDate!)}`, `until ${WD_SHORT[weekday(e.endDate!)]} ${dmShort(e.endDate!)}`) : span(e), e.place ?? e.sub].filter(Boolean).join(' · ')}</Meta>
           </View>
+          <Origin e={e} size={16} />
           <Tile name={e.icon} bg="transparent" size={56} radius={16} />
         </View>
         {who || open.length ? (
@@ -148,6 +150,7 @@ function Row({ e, lead, showTime }: { e: CalEvent; lead: string; showTime?: bool
         <Txt size={14} color={tokens.sub} style={{ width: 56 }}>{lead}</Txt>
         <Txt size={16} weight={500} numberOfLines={1} style={{ flex: 1 }}>{e.title}</Txt>
         {showTime && !e.allDay ? <Txt size={13} color={tokens.mute}>{hm(e.start)}</Txt> : null}
+        <Origin e={e} />
         <Owner who={e.who} size={22} />
       </PressScale>
     </Fresh>
@@ -247,6 +250,7 @@ export default function TodayView({ header }: { header: React.ReactNode }) {
             <PressScale key={e.id} onPress={() => { haptics.select(); router.push(`/termin/${e.id}`); }} style={{ flexDirection: 'row', alignItems: 'center', gap: 14, minHeight: 44 }}>
               <View style={{ width: 56 }}><Tile name={e.icon} bg="transparent" size={36} /></View>
               <Txt size={16} weight={500} numberOfLines={1} style={{ flex: 1 }}>{e.title}</Txt>
+              <Origin e={e} />
               <Txt size={14} weight={600} color={tokens.done}>{daysTo(e.date)}</Txt>
             </PressScale>
           ))}

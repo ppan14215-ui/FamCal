@@ -8,6 +8,7 @@
  * under them, then the day's tasks and deadlines. Everything a spoken change
  * touches can light up (Fresh).
  */
+import Origin from '../../components/ui/Origin';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { View, ScrollView } from 'react-native';
 import Animated, { useSharedValue, useAnimatedStyle, withSpring, withTiming, Easing } from 'react-native-reanimated';
@@ -145,6 +146,7 @@ function Item({ e, last, date }: { e: CalEvent; last: boolean; date: string }) {
             {/* The day count says how far along it is (Julian 30.10.: "until macht keinen Sinn"); the last day says so. */}
             {span && date === e.endDate ? <Meta numberOfLines={1}>{tx('letzter Tag', 'last day')}{e.place || e.sub ? ` · ${e.place ?? e.sub}` : ''}</Meta> : e.place || e.sub ? <Meta numberOfLines={1}>{e.place ?? e.sub}</Meta> : null}
           </View>
+          <Origin e={e} />
           <Owner who={e.who} />
         </View>
         {bring.length ? (
