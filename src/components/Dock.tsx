@@ -833,19 +833,8 @@ export default function Dock() {
     {/* The screen fades out under the field, so prompts never sit on text. */}
     {/* Julian 31.10. 17:02: a short, tight fade (the long soft one covered too much of small screens), solid from just above the card down, so nothing shines through. */}
     {/* On the tabs the nav bar paints the ground under field and pill (NavBar.tsx); here only while typing, when the bar is away. */}
-    {onTabs && !kb && !(typing && Platform.OS === 'web') ? null : <View pointerEvents="none" style={{ position: 'absolute', left: 0, right: 0, bottom: fadeFrom, height: bottom - fadeFrom + h + 22 }}>
-      <Svg width="100%" height="100%" preserveAspectRatio="none">
-        <Defs>
-          <LinearGradient id="dockfade" x1="0" y1="0" x2="0" y2="1">
-            <Stop offset="0" stopColor={tokens.bg} stopOpacity={0} />
-            <Stop offset={String(Math.min(0.4, 12 / (bottom - fadeFrom + h + 22)))} stopColor={tokens.bg} stopOpacity={0.7} />
-            <Stop offset={String(Math.min(0.6, 20 / (bottom - fadeFrom + h + 22)))} stopColor={tokens.bg} stopOpacity={1} />
-            <Stop offset="1" stopColor={tokens.bg} stopOpacity={1} />
-          </LinearGradient>
-        </Defs>
-        <Rect x="0" y="0" width="100%" height="100%" fill="url(#dockfade)" />
-      </Svg>
-    </View>}
+    {/* Julian 05.11.: no soft fade above the field; a solid ground up to the middle of the field, which hides its edge. */}
+    {onTabs && !kb && !(typing && Platform.OS === 'web') ? null : <View pointerEvents="none" style={{ position: 'absolute', left: 0, right: 0, bottom: fadeFrom, height: bottom - fadeFrom + 27, backgroundColor: tokens.bg }} />}
     <Animated.View pointerEvents="box-none" onLayout={(e) => setH(e.nativeEvent.layout.height)} style={[{ position: 'absolute', left: onTabs ? 14 : 18, right: onTabs ? 14 : 18, gap: 10 }, bStyle]}>
       {where.chat || turn ? null : <Peek />}
       {turn || !onTabs ? null : <SessionPill />}

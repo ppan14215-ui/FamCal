@@ -6,7 +6,7 @@
  */
 import React, { useEffect, useMemo, useState } from 'react';
 import { View, TextInput, Platform } from 'react-native';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { goBack } from '../src/lib/nav';
 import { Screen, CancelBar, Btn, Group, LineRow, Meta, Chevron, TextLink } from '../src/components/ui/kit';
 import Txt from '../src/components/ui/Txt';
@@ -48,7 +48,10 @@ export default function TerminNeu() {
   const [icon, setIcon] = useState<ClayName>(LIVE ? 'kalender' : 'stethoskop');
   const [title, setTitle] = useState(LIVE ? '' : 'U5 bei Dr. Weber');
   const [touched, setTouched] = useState(false);
-  const [when, setWhen] = useState<When>(LIVE ? { date: TODAY } : { date: '2026-11-12', start: '09:30', end: '10:15' });
+  // Tapping an empty slot in the calendar hands over its day and hour (Julian 05.11.).
+  const slot = useLocalSearchParams<{ date?: string; start?: string }>();
+  const plusHour = (t: string) => { const [h, m] = t.split(':').map(Number); return `${String(Math.min(23, h + 1)).padStart(2, '0')}:${String(m).padStart(2, '0')}`; };
+  const [when, setWhen] = useState<When>(slot.date ? { date: slot.date, ...(slot.start ? { start: slot.start, end: plusHour(slot.start) } : {}) } : LIVE ? { date: TODAY } : { date: '2026-11-12', start: '09:30', end: '10:15' });
   const [place, setPlace] = useState(LIVE ? '' : 'Kinderarztpraxis Weber');
   const kid = useStore((s) => s.kid);
   const [forWhom, setForWhom] = useState(kid?.name ? tx(`Für ${kid.name}`, `For ${kid.name}`) : tx('Für euch', 'For you'));

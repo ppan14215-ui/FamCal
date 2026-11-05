@@ -258,24 +258,11 @@ function StripNav({ state, navigation }: BottomTabBarProps) {
   const away = useSharedValue(0);
   useEffect(() => { away.value = withTiming(typing ? 1 : 0, { duration: 240, easing: Easing.bezier(0.23, 1, 0.32, 1) }); }, [typing]);
   const hide = useAnimatedStyle((): any => ({ opacity: 1 - away.value }));
-  const dockTop = useDockTop();
-  const groundTo = Math.max(dockTop, navTop(insets.bottom)) + 6;
+  // Julian 05.11.: no soft fade; a solid ground up to the middle of the field, which hides the edge.
+  const groundTo = navTop(insets.bottom) + 4 + 27;
   return (
     <Animated.View pointerEvents={typing ? 'none' : 'box-none'} style={[{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0 }, hide]}>
       <View pointerEvents="none" style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: groundTo, backgroundColor: tokens.bg }} />
-      <View pointerEvents="none" style={{ position: 'absolute', left: 0, right: 0, bottom: groundTo - 0.5, height: FADE_H }}>
-        <Svg width="100%" height="100%" preserveAspectRatio="none">
-          <Defs>
-            <LinearGradient id="stripground" x1="0" y1="0" x2="0" y2="1">
-              <Stop offset="0" stopColor={tokens.bg} stopOpacity={0} />
-              <Stop offset="0.35" stopColor={tokens.bg} stopOpacity={0.35} />
-              <Stop offset="0.7" stopColor={tokens.bg} stopOpacity={0.8} />
-              <Stop offset="1" stopColor={tokens.bg} stopOpacity={1} />
-            </LinearGradient>
-          </Defs>
-          <Rect x="0" y="0" width="100%" height="100%" fill="url(#stripground)" />
-        </Svg>
-      </View>
       <View accessibilityRole="tablist" style={{ position: 'absolute', left: 0, right: 0, bottom: Math.max(insets.bottom, 4), height: navH(), flexDirection: 'row', justifyContent: 'space-around', paddingHorizontal: 40 }}>
         {TABS.map((tab) => {
           const on = current === tab.name;
@@ -311,24 +298,11 @@ function BarNav({ state, navigation }: BottomTabBarProps) {
     const sub = BackHandler.addEventListener('hardwareBackPress', () => { setBarMode('rest'); return true; });
     return () => sub.remove();
   }, [m]);
-  const dockTop = useDockTop();
-  const groundTo = Math.max(dockTop, navTop(insets.bottom)) + 6;
+  // Julian 05.11.: no soft fade; a solid ground up to the middle of the bar, which hides the edge.
+  const groundTo = Math.max(insets.bottom, 8) + 4 + navH() / 2;
   return (
     <View pointerEvents="box-none" style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0 }}>
       <View pointerEvents="none" style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: groundTo, backgroundColor: tokens.bg }} />
-      <View pointerEvents="none" style={{ position: 'absolute', left: 0, right: 0, bottom: groundTo - 0.5, height: FADE_H }}>
-        <Svg width="100%" height="100%" preserveAspectRatio="none">
-          <Defs>
-            <LinearGradient id="barground" x1="0" y1="0" x2="0" y2="1">
-              <Stop offset="0" stopColor={tokens.bg} stopOpacity={0} />
-              <Stop offset="0.35" stopColor={tokens.bg} stopOpacity={0.35} />
-              <Stop offset="0.7" stopColor={tokens.bg} stopOpacity={0.8} />
-              <Stop offset="1" stopColor={tokens.bg} stopOpacity={1} />
-            </LinearGradient>
-          </Defs>
-          <Rect x="0" y="0" width="100%" height="100%" fill="url(#barground)" />
-        </Svg>
-      </View>
       {/* Open, a tap anywhere else folds the tabs back into the icon. */}
       {m === 'tabs' ? <Pressable accessibilityLabel={tx('Tabs schließen', 'Close tabs')} onPress={() => setBarMode('rest')} style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0 }} /> : null}
     </View>
