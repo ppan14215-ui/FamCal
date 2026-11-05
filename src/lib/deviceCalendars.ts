@@ -43,6 +43,7 @@ export async function listCalendars(): Promise<DeviceCal[]> {
 
 const pad = (n: number) => String(n).padStart(2, '0');
 const day = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+const utcDay = (d: Date) => `${d.getUTCFullYear()}-${pad(d.getUTCMonth() + 1)}-${pad(d.getUTCDate())}`;
 const hm = (d: Date) => `${pad(d.getHours())}:${pad(d.getMinutes())}`;
 
 /** Events of the chosen calendars, one week back and three months ahead (a move takes a year). */
@@ -55,16 +56,22 @@ export async function importDeviceEvents(cals: DeviceCal[], who: PersonId, ahead
   return events.map((e): CalEvent => {
     const cal = on.find((c) => c.id === e.calendarId);
     const s = new Date(e.startDate);
-    // All-day events end at midnight of the following day.
+    // All-day events end at midnight of the following day (the end is exclusive).
     const en = new Date(new Date(e.endDate).getTime() - (e.allDay ? 1 : 0));
-    const multi = day(en) !== day(s);
+    // Android stores all-day events at midnight UTC, so in Germany a one-day
+    // holiday runs 01:00 to 01:00 local time and showed on two days (Julian
+    // 05.11.). Read their dates in UTC there; iOS keeps them in local time.
+    const utc = e.allDay && Platform.OS === 'android';
+    const sd = utc ? utcDay(s) : day(s);
+    const ed = utc ? utcDay(en) : day(en);
+    const multi = ed !== sd;
     const work = !!cal?.work;
     return {
-      id: `dev-${e.id}-${day(s)}`,
+      id: `dev-${e.id}-${sd}`,
       title: work ? tx('Arbeit', 'Work') : e.title || tx('Termin', 'Event'),
       icon: work ? 'kalender' : iconFor(e.title ?? ''),
-      date: day(s),
-      endDate: multi ? day(en) : undefined,
+      date: sd,
+      endDate: multi ? ed : undefined,
       start: e.allDay ? '00:00' : hm(s),
       end: e.allDay || multi ? undefined : hm(en),
       allDay: e.allDay,

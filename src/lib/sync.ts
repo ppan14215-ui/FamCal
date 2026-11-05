@@ -11,8 +11,9 @@ import { get, set, subscribe, actions, setMeRole } from '../state/store';
 import type { CalEvent, Bring, Person } from '../state/types';
 import { watchComments, stopComments } from './comments';
 import type { ClayName } from './clayIcons';
+import { applyFamilyKi, onSaveOhneKi } from './privat';
 
-export type Family = { id: string; name: string; invite_code: string; partner_name?: string | null; ics_token?: string | null; vacation?: Partial<Record<'J' | 'T', number>> | null; land?: string | null; country?: string | null; ort?: string | null };
+export type Family = { id: string; name: string; invite_code: string; ohne_ki?: boolean | null; partner_name?: string | null; ics_token?: string | null; vacation?: Partial<Record<'J' | 'T', number>> | null; land?: string | null; country?: string | null; ort?: string | null };
 type Row = {
   id: string; family_id: string; title: string; sub: string | null; icon: string; date: string; end_date: string | null;
   start_time: string; end_time: string | null; all_day: boolean; who: 'J' | 'T' | 'both' | null; place: string | null;
@@ -66,6 +67,8 @@ export async function startSync(name?: string): Promise<{ family?: Family; error
   const fam = await supabase.rpc('my_family', { name: name ?? '' });
   if (fam.error) return { error: fam.error.message };
   family = fam.data as Family;
+  // Ohne KI holds for the whole family (Julian 05.11.): the partner's switch reaches this phone here.
+  applyFamilyKi(family.ohne_ki);
 
   const [members, events, people] = await Promise.all([
     supabase.from('family_members').select('user_id, role, display_name').eq('family_id', family.id),
@@ -218,6 +221,15 @@ export async function setMyName(name: string) {
   const uid = (await supabase.auth.getUser()).data.user?.id;
   if (uid) await supabase.from('family_members').update({ display_name: name }).eq('family_id', family.id).eq('user_id', uid);
 }
+
+// Ohne KI is written on the family, so the server refuses the AI for every phone of it (Julian 05.11.).
+onSaveOhneKi(async (v) => {
+  if (!supabase || !family) return true;
+  const { error } = await supabase.from('families').update({ ohne_ki: v }).eq('id', family.id);
+  if (error) { console.warn('[sync] ohne_ki', error.message); return false; }
+  family = { ...family, ohne_ki: v };
+  return true;
+});
 
 /** The partner's name before they join (Julian 28.10.). */
 export async function setPartnerName(name: string) {

@@ -21,6 +21,13 @@ const cors = {
 // 16 kHz mono 16 bit is 32 KB a second: 3 MB is about 90 seconds, far more than a sentence.
 const MAX_BYTES = 3 * 1024 * 1024;
 
+/** Ohne KI (Julian 05.11.): the family switched the AI off; nothing of theirs goes out. Before the column exists: off. */
+// deno-lint-ignore no-explicit-any
+async function ohneKi(db: { from: (t: string) => any }): Promise<boolean> {
+  const { data, error } = await db.from('families').select('ohne_ki').limit(1);
+  return !error && !!(data?.[0] as { ohne_ki?: boolean } | undefined)?.ohne_ki;
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors });
   const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { ...cors, 'Content-Type': 'application/json' } });
@@ -35,6 +42,7 @@ Deno.serve(async (req) => {
   const db = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_ANON_KEY') ?? req.headers.get('apikey') ?? '', {
     global: { headers: { Authorization: req.headers.get('Authorization') ?? '' } },
   });
+  if (await ohneKi(db)) return json({ error: 'ohne_ki' }, 403);
   const { data: allowed, error: countError } = await db.rpc('use_hear_call');
   if (countError) return json({ error: 'not_signed_in' }, 401);
   if (!allowed?.ok) return json({ error: 'limit' }, 429);

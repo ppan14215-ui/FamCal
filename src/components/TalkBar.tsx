@@ -29,9 +29,12 @@ import { LIVE } from '../lib/live';
 import { usePrefill, takeFill } from '../lib/simple';
 import { tx } from '../i18n/lang';
 import { toast } from '../state/store';
-import { hearInCloud, cloudOn } from '../lib/hoeren';
+import { hearInCloud, cloudOn, cloudCapped } from '../lib/hoeren';
 import { track } from '../lib/analytics';
 import { speechLocale } from '../lib/speechLang';
+
+/** The cloud ears' day cap is said once per app launch. */
+let toldCap = false;
 
 // Phones and tablets: Enter on the screen keyboard adds a line.
 const TOUCH = Platform.OS !== 'web' || (typeof window !== 'undefined' && !!window.matchMedia?.('(pointer: coarse)').matches);
@@ -89,6 +92,10 @@ type Props = {
   onBusy?: () => void;
 };
 
+// Listeners of the last recording, shared by every TalkBar: the phone has one recognizer, and a bar that was swapped
+// for a new one (the onboarding makes a new one per sentence) must not leave its listeners on it (Julian 05.11. 23:28).
+const lastSubs = { current: [] as { remove: () => void }[] };
+
 export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, onClose, split, card, dark, onIdle, onBusy, placeholder = tx('Sag oder schreib, was ansteht …', 'Say or type what\'s coming up …') }: Props) {
   const [text, setText] = useState('');
   const [listening, setListening] = useState(false);
@@ -106,8 +113,6 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, o
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
   /** Ends listening on the phone early: a second tap on the orb sends what was heard. */
   const stopNative = useRef<(() => void) | null>(null);
-  // Listeners of the last recording; removed before the next one starts.
-  const lastSubs = useRef<{ remove: () => void }[]>([]);
   /** Tapping into the field while the mic listens switches to typing (Julian 28.10.): what was heard stays, nothing is sent. */
   const toKeys = useRef<(() => void) | null>(null);
   const typed = useRef(false);
@@ -118,7 +123,8 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, o
   // Julian 31.10. 15:42: that grey guess was the phone's English and jumped to German at the end. With the cloud ears on
   // the field shows only a wave while listening (like Claude); the text appears once, correct.
   const [wavy, setWavy] = useState(false);
-  useEffect(() => () => { timers.current.forEach(clearTimeout); clearTimeout(blurT.current); setTyping(false); }, []);
+  // A bar that goes away while it still listens frees the recognizer, so the next bar starts on an idle one.
+  useEffect(() => () => { timers.current.forEach(clearTimeout); clearTimeout(blurT.current); setTyping(false); if (listeningRef.current) toKeys.current?.(); }, []);
 
   // On the web the textarea never shrinks by itself, so measure it fresh.
   useEffect(() => {
@@ -270,6 +276,11 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, o
         if (cloud) {
           track('voice_transcribed', { ok: !!better, engine: 'cloud', ms });
           if (better) land(better);
+          else if (cloudCapped() && heard()) {
+            // Day cap of the cloud ears: the phone's own words land, said once (Julian 05.11. 22:15).
+            land(heard());
+            if (!toldCap) { toldCap = true; toast(tx('Für heute nutze ich die Spracherkennung vom Handy. Bitte kurz prüfen, was ankommt.', 'For today I use the phone’s own speech recognition. Please check what comes through.'), undefined, { kind: 'info' }); }
+          }
           else { sendAfter.current = false; setText(''); haptics.tap(); toast(tx('Die Aufnahme kam nicht an. Tipp aufs Mikro und sag es bitte nochmal.', 'The recording didn\'t come through. Tap the mic and say it again.'), undefined, { kind: 'warn' }); }
           return;
         }

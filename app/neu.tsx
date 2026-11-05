@@ -22,6 +22,7 @@ import { canRead, pickImage, readLines } from '../src/lib/screenshot';
 import { sayInApp } from '../src/lib/shared';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { HIDDEN } from '../src/lib/core';
+import { ohneKi } from '../src/lib/privat';
 
 // Quick and calm (Julian 30.10.: the falling, tilted cards were too playful and too slow).
 const fall = (i: number) => FadeInDown.duration(160).delay(i * 20);
@@ -57,11 +58,13 @@ export default function Neu() {
     // A letter is longer than a sentence; the server allows photo text up to 2500 characters.
     sayInApp(`${tx('Vom Foto', 'From a photo')}: ${lines.join(' / ')}`.slice(0, 2500));
   };
-  const opts = all.filter((o) => !(HIDDEN.extras && o.extra));
+  // Ohne KI (Julian 05.11.): only what works by hand; the photo of a letter needs the assistant.
+  const ohne = ohneKi();
+  const opts = all.filter((o) => !(HIDDEN.extras && o.extra) && !(ohne && (o.icon === 'kamera-scan' || o.icon === 'papier-stift')));
   return (
     <Sheet>
       <Txt size={24} weight={700} tracking={-0.5}>{tx('Was kommt dazu', 'What\'s new')}<Dot char="?" /></Txt>
-      {HIDDEN.extras ? null : <View style={{ flexDirection: 'row', gap: 8 }}>
+      {HIDDEN.extras || ohne ? null : <View style={{ flexDirection: 'row', gap: 8 }}>
         {attach.map((a, i) => (
           <Animated.View key={a.t} entering={fall(i)} style={{ flex: 1 }}>
             <PressScale accessibilityLabel={a.t} onPress={a.onPress} style={{ alignItems: 'center', gap: 6, paddingVertical: 14, borderRadius: 20, backgroundColor: tokens.row }}>
@@ -82,7 +85,7 @@ export default function Neu() {
           </Animated.View>
         ))}
       </View>
-      {HIDDEN.extras ? null : <>
+      {HIDDEN.extras || ohne ? null : <>
       <PressScale scale={0.985} onPress={() => go(() => router.push('/assistent'))} style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 10, paddingLeft: 10, paddingRight: 14, borderRadius: 20, backgroundColor: tokens.row }}>
         <ClayIcon name="chat" size={48} />
         <Txt size={15.5} weight={600} style={{ flex: 1 }}>{tx('Frag den Assistenten', 'Ask the assistant')}</Txt>

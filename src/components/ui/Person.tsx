@@ -3,6 +3,7 @@ import React, { createContext, useContext } from 'react';
 import { View } from 'react-native';
 import Txt from './Txt';
 import { persons, PersonId, tokens, personPalette, allColors, shade } from '../../theme';
+import { useStore } from '../../state/store';
 
 export type Persons = typeof persons;
 /**
@@ -53,6 +54,38 @@ export function PersonDot({ name, color, size = 24 }: { name: string; color: str
   return (
     <View style={{ width: size, height: size, borderRadius: 999, backgroundColor: c.bg, alignItems: 'center', justifyContent: 'center' }}>
       <Txt size={Math.round(size * 0.42)} line={Math.round(size * 0.5)} weight={600} color={c.fg}>{name.trim()[0]?.toUpperCase() ?? '?'}</Txt>
+    </View>
+  );
+}
+
+/**
+ * The whole family on top of every tab (Julian 05.11.): the parents and every child or
+ * grandparent, each in exactly the colour their Termine have in the calendar.
+ * Overlapping; from five people on the rest shows as +N.
+ */
+export function Family({ size = 28, ring = tokens.bg, max = 4 }: { size?: number; ring?: string; max?: number }) {
+  const stored = useStore((s) => s.people);
+  // In the onboarding showcase the parents are demo people; the real children stay out of it.
+  const people = usePersons() === persons ? stored : [];
+  const all: React.ReactNode[] = [
+    <Avatar key="J" p="J" size={size} />,
+    <Avatar key="T" p="T" size={size} />,
+    ...people.map((p) => <PersonDot key={p.id} name={p.name} color={p.color} size={size} />),
+  ];
+  const shown = all.length > max ? all.slice(0, max - 1) : all;
+  const rest = all.length - shown.length;
+  return (
+    <View style={{ flexDirection: 'row' }}>
+      {shown.map((n, i) => (
+        <View key={i} style={i ? { marginLeft: -8, marginVertical: -2, borderRadius: 999, borderWidth: 2, borderColor: ring } : undefined}>{n}</View>
+      ))}
+      {rest > 0 ? (
+        <View style={{ marginLeft: -8, marginVertical: -2, borderRadius: 999, borderWidth: 2, borderColor: ring }}>
+          <View style={{ width: size, height: size, borderRadius: 999, backgroundColor: tokens.row, alignItems: 'center', justifyContent: 'center' }}>
+            <Txt size={Math.round(size * 0.38)} line={Math.round(size * 0.5)} weight={600} color={tokens.sub}>+{rest}</Txt>
+          </View>
+        </View>
+      ) : null}
     </View>
   );
 }

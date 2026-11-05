@@ -11,6 +11,7 @@ import { persons } from '../theme/tokens';
 import { TERMIN_ICON_NAMES, type Understood } from './talk';
 import { LANG, tx } from '../i18n/lang';
 import { toast, get } from '../state/store';
+import { kiErlaubt } from './privat';
 
 /** The family's own lists, so Claude can put things on the Watchlist or the Ostsee packing list (Julian 29.10.). */
 const myLists = () => get().lists.filter((l) => l.id !== 'wissen').map((l) => ({ id: l.id, name: l.name })).slice(0, 40);
@@ -18,26 +19,36 @@ const myLists = () => get().lists.filter((l) => l.id !== 'wissen').map((l) => ({
 /** The rules have answered already; Claude may take longer for a sentence with many Termine (Julian 28.10.). */
 const WAIT_MS = 15000;
 
-export const canUnderstand = () => !!supabase && !!getAuth().session;
-
-/** The free month is used up (Julian 27.10.: 14 Tage Plus, dann 30 Sätze im Monat). Said once, then the rules answer quietly. */
-let toldLimit = false;
+/** Until when a cap holds (day: tomorrow, month: the 1st). Meanwhile the rules answer without asking the server. */
+let cappedUntil = '';
+export const capped = () => !!cappedUntil && new Date().toISOString().slice(0, 10) < cappedUntil;
+// Ohne KI or no consent yet (Julian 05.11.): nothing goes to Claude; the rules answer on the phone.
+export const canUnderstand = () => !!supabase && !!getAuth().session && !capped() && kiErlaubt();
 
 /** Claude did not answer (server error, no key): said once, so nobody wonders why the rules guessed. */
 let toldDown = false;
 
-async function limitHint(error: unknown) {
+/** A cap was hit (Julian 05.11. 22:13: cap AI use). One calm line, once per app launch and reason; the rules keep answering. */
+const told = new Set<string>();
+export async function limitHint(error: unknown) {
   const res = (error as { context?: Response } | null)?.context;
   if (res && res.status >= 500 && !toldDown) {
     toldDown = true;
     toast(tx('Claude ist gerade nicht erreichbar', "Claude can't be reached right now"), undefined, { kind: 'warn', sub: tx('Ich nehme solange einfache Regeln. Bitte prüf die Einträge.', "I'll use simple rules meanwhile. Please check what I add.") });
     return;
   }
-  if (!res || res.status !== 429 || toldLimit) return;
+  if (!res || res.status !== 429) return;
   const body = await res.json().catch(() => null);
-  if (body?.reason !== 'month') return;
-  toldLimit = true;
-  toast(tx('Die 30 Sätze für diesen Monat sind verbraucht', 'Your 30 sentences for this month are used up'), undefined, { kind: 'warn', sub: tx('Ich verstehe dich weiter mit einfachen Regeln, mit Plus wieder unbegrenzt.', 'I keep understanding you with simple rules; Plus makes it unlimited again.') });
+  const why = body?.reason === 'month' && body?.tier === 'gratis' ? 'free' : body?.reason === 'month' ? 'month' : body?.reason === 'day' ? 'day' : '';
+  if (!why) return;
+  const d = new Date();
+  cappedUntil = (why === 'day' ? new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1, 12) : new Date(d.getFullYear(), d.getMonth() + 1, 1, 12)).toISOString().slice(0, 10);
+  if (told.has(why)) return;
+  told.add(why);
+  const sub = tx('Bis dahin verstehe ich dich mit einfachen Regeln. Bitte prüf die Einträge kurz.', 'Until then I use simple rules. Please check what I add.');
+  if (why === 'free') toast(tx('Die 30 Sätze für diesen Monat sind verbraucht', 'Your 30 sentences for this month are used up'), undefined, { kind: 'warn', sub: tx('Ich verstehe dich weiter mit einfachen Regeln, mit Plus wieder mit Claude.', 'I keep understanding you with simple rules; Plus brings Claude back.') });
+  else if (why === 'day') toast(tx('Für heute habt ihr viel erledigt. Ab morgen bin ich wieder ganz da.', 'You got a lot done today. I’m fully back tomorrow.'), undefined, { kind: 'info', sub });
+  else toast(tx('Euer Monat mit Claude ist voll. Am Monatsersten geht es weiter.', 'Your month with Claude is full. It continues on the 1st.'), undefined, { kind: 'info', sub });
 }
 
 /** The open card's conversation (Julian 28.10.: weitersprechen statt Sackgasse): what was said, what the app asked, and the card as JSON. */

@@ -25,7 +25,8 @@ const DROPPED = 'famcal.phoneDropped';
 /** Synced Termine changed in FamCal: from then on FamCal's version wins (Julian 30.10.: work blocks like normal Termine). */
 const EDITED = 'famcal.phoneEdited';
 const EVERY_MS = 5 * 60 * 1000;
-const AHEAD = 92;
+// A year, like the move in, so a fix to imported Termine reaches all of them (05.11.).
+const AHEAD = 365;
 
 const read = async (k: string): Promise<string[]> => {
   try { const v = JSON.parse((await AsyncStorage.getItem(k)) ?? '[]'); return Array.isArray(v) ? v.filter((x) => typeof x === 'string') : []; } catch { return []; }

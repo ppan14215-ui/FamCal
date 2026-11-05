@@ -47,6 +47,7 @@ import type { CalEvent, Who } from '../state/types';
 import { tx, quote, inLang, spokenLang, type Lang } from '../i18n/lang';
 import { HIDDEN } from '../lib/core';
 import Peek, { openPeek } from './Peek';
+import { usePrivat } from '../lib/privat';
 
 const STEP_MS = 850;
 /** How long the family waits for Claude before the rules answer instead. */
@@ -392,8 +393,23 @@ function RecipeCard({ r, onVariant, onAdd, onSkip, onKept }: { r: Extract<Result
 
 type Turn = { id: number; said: string; result: Result; lines: Line[] };
 
+/**
+ * Ohne KI (Julian 05.11.: "der Input fällt weg und nur noch manuell geht"): in place of the talk field
+ * one calm button that opens the plus sheet; nothing is heard or sent.
+ */
+function ManualField({ dark, h }: { dark?: boolean; h: number }) {
+  return (
+    <PressScale scale={0.97} accessibilityRole="button" accessibilityLabel={tx('Von Hand eintragen', 'Add by hand')} onPress={() => { haptics.select(); router.push('/neu'); }}
+      style={{ height: h, flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 18, borderRadius: 999, backgroundColor: dark ? 'transparent' : tokens.row }}>
+      <LineIcon name="plus" size={20} color={dark ? tokens.onInk : tokens.ink} stroke={2} />
+      <Txt size={15.5} weight={600} color={dark ? tokens.onInk : tokens.ink}>{tx('Eintragen', 'Add')}</Txt>
+    </PressScale>
+  );
+}
+
 export default function Dock() {
   const where = useWhere();
+  const priv = usePrivat();
   // Einfache Version (Julian 30.10.: wanted, only not its tab row): no pills, no Eintragen/Nachricht switch.
   const simple = useSimple();
   const insets = useSafeAreaInsets();
@@ -514,6 +530,8 @@ export default function Dock() {
   };
 
   const hear = (raw: string, how?: { voice?: boolean }) => {
+    // Before the very first sentence leaves the phone: Mit KI or Ohne KI (Julian 05.11.).
+    if (!priv.ohneKi && !priv.zugestimmt && !(where.chat && mode === 'msg')) { router.push({ pathname: '/ki-zustimmung', params: { said: raw } }); return; }
     // Funnel "Voice" and the core action (analytics.ts): how the sentence came in, never what it said.
     const via: Input = viaRef.current ?? (how?.voice ? 'voice' : 'text');
     viaRef.current = null;
@@ -565,7 +583,8 @@ export default function Dock() {
     if (agent) {
       const talk = open && open.result.kind !== 'cut' && !gone ? [...open.lines, { said }] : [{ said }];
       // Julian 30.10.: no half guess by the old rules when the assistant cannot answer. Say so; the card still offers Termin or Einkauf.
-      return thinkAgent(said, n, talk, () => hold(said, { kind: 'unclear', text: tx('Ich komme gerade nicht an den Assistenten. Sag es gleich nochmal oder tipp an, wohin es gehört.', "I can't reach the assistant right now. Say it again in a moment or tap where it belongs.") }, talk));
+      // Julian 05.11. 22:15: at a cap nobody types by hand; the rules add it as without the assistant (the limit line was shown once).
+      return thinkAgent(said, n, talk, () => !canUnderstand() ? play(plan(ctx, said, null), said, false, undefined, lines) : hold(said, { kind: 'unclear', text: tx('Ich komme gerade nicht an den Assistenten. Sag es gleich nochmal oder tipp an, wohin es gehört.', "I can't reach the assistant right now. Say it again in a moment or tap where it belongs.") }, talk));
     }
 
     // A card is still open: the sentence answers or changes it (Julian 28.10.).
@@ -664,8 +683,9 @@ export default function Dock() {
     setVeil({ phase: 'think', inline: chat, origin, target: null, lines: chat ? [] : [tx('Ich verstehe …', 'Understanding …')], shown: 0, said, head: undefined, onCancel: stop, typing: chat, reply: undefined });
     const onSay = (say: string) => { if (heard.current !== n) return; if (chat) setVeil({ reply: say }); else setVeil({ lines: [say], shown: 0 }); };
     const asked = Date.now();
-    askAgent(said, talk, screenOf(where.ctx), onSay)
-      .then((r) => (promisesOnly(r, said) ? askAgent(said, [...talk.slice(0, -1), { said, app: `${String(r!.actions[0]?.input?.text ?? "")} (${RETRY_NOTE})` }, { said }], screenOf(where.ctx)).then((r2) => r2 ?? r) : r))
+    const onList = where.ctx.kind === 'liste' ? where.ctx.id : undefined;
+    askAgent(said, talk, screenOf(where.ctx), onSay, onList)
+      .then((r) => (promisesOnly(r, said) ? askAgent(said, [...talk.slice(0, -1), { said, app: `${String(r!.actions[0]?.input?.text ?? "")} (${RETRY_NOTE})` }, { said }], screenOf(where.ctx), undefined, onList).then((r2) => r2 ?? r) : r))
       .then((r) => {
       if (heard.current !== n) return;
       const plan0 = r ? agentPlan(r, said) : null;
@@ -976,7 +996,7 @@ export default function Dock() {
           </Animated.View>
         </Animated.View>
         <View style={{ flex: 1, minWidth: 0, alignItems: 'flex-end', overflow: 'hidden' }}>
-          {barMode === 'tabs' ? (
+          {barMode === 'tabs' && !priv.ohneKi ? (
             <Animated.View key="mic" entering={FadeIn.duration(180).delay(80)} exiting={FadeOut.duration(100)}>
               <PressScale scale={0.9} accessibilityLabel={tx('Sprechen', 'Speak')} onPress={() => { haptics.select(); setBarMode('input'); setListenKey((k) => k + 1); }}
                 style={{ width: D, height: D, alignItems: 'center', justifyContent: 'center' }}>
@@ -985,7 +1005,7 @@ export default function Dock() {
             </Animated.View>
           ) : (
             <Animated.View key="field" entering={FadeIn.duration(200).delay(60)} exiting={FadeOut.duration(100)} style={fieldInner}>
-              <TalkBar
+              {priv.ohneKi ? <ManualField dark h={D} /> : <TalkBar
                 key={onTabs ? 'tabs' : kind}
                 split={onTabs}
                 card
@@ -998,7 +1018,7 @@ export default function Dock() {
                 listenKey={listenKey}
                 focusKey={focusKey}
                 placeholder={resumed ? tx(`Weiter zu „${resumed.said.slice(0, 24)}“ …`, `More on “${resumed.said.slice(0, 24)}” …`) : where.chat && mode === 'msg' ? tx('Nachricht an die Familie …', 'Message to the family …') : turn?.result.kind === 'cut' ? tx('Sprich einfach weiter …', 'Just keep talking …') : bar && barMode === 'rest' && !turn ? tx('Sag es einfach …', 'Just say it …') : onTabs && !turn ? tx('Sprich oder schreib einfach …', 'Just say or type it …') : turn && kind === 'kalender' ? tx('Antworten oder ergänzen …', 'Reply or add …') : PLACEHOLDER[kind]}
-              />
+              />}
             </Animated.View>
           )}
         </View>
@@ -1007,7 +1027,7 @@ export default function Dock() {
       ) : (
       <Animated.View style={[{ alignSelf: 'flex-end', alignItems: 'flex-end', overflow: 'hidden', borderRadius: onTabs && navStyle() === 'strip' ? 24 : 30 }, wStyle]}>
       <Animated.View style={wStyle}>
-      <TalkBar
+      {priv.ohneKi ? <ManualField h={52} /> : <TalkBar
         key={onTabs ? 'tabs' : kind}
         split={onTabs}
         card={onTabs && (navStyle() === 'strip' || bar)}
@@ -1017,7 +1037,7 @@ export default function Dock() {
         listenKey={listenKey}
         focusKey={focusKey}
         placeholder={resumed ? tx(`Weiter zu „${resumed.said.slice(0, 24)}“ …`, `More on “${resumed.said.slice(0, 24)}” …`) : where.chat && mode === 'msg' ? tx('Nachricht an die Familie …', 'Message to the family …') : turn?.result.kind === 'cut' ? tx('Sprich einfach weiter …', 'Just keep talking …') : bar && barMode === 'rest' && !turn ? tx('Sag es einfach …', 'Just say it …') : onTabs && !turn ? tx('Sprich oder schreib einfach …', 'Just say or type it …') : turn && kind === 'kalender' ? tx('Antworten oder ergänzen …', 'Reply or add …') : PLACEHOLDER[kind]}
-      />
+      />}
       </Animated.View>
       </Animated.View>
       )}

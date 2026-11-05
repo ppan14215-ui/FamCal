@@ -9,6 +9,7 @@ import { requireOptionalNativeModule } from 'expo-modules-core';
 import { supabase } from './cloud';
 import { getAuth } from './auth';
 import { LANG } from '../i18n/lang';
+import { kiErlaubt } from './privat';
 
 /** Builds before the picker and text reader simply say "kommt mit dem nächsten Update". */
 export const canRead = () => !!requireOptionalNativeModule('ExponentImagePicker') && !!requireOptionalNativeModule('ExpoTextExtractor');
@@ -45,7 +46,7 @@ export async function readLines(uri: string): Promise<string[]> {
 
 /** Claude reads the lines and says what list this is; null when it is not a list. */
 export async function understandLines(lines: string[]): Promise<ReadList | null> {
-  if (!supabase || !getAuth().session || !lines.length) return null;
+  if (!supabase || !kiErlaubt() || !getAuth().session || !lines.length) return null;
   const { data, error } = await supabase.functions.invoke<{ list: ReadList | null }>('liste', { body: { action: 'bildliste', lines: lines.map((l) => l.slice(0, 160)), lang: LANG } });
   return error || !data?.list?.items?.length ? null : data.list;
 }

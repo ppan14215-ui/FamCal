@@ -20,6 +20,15 @@
  *
  * Same plan and cost guard as verstehen (use_ai_call): one call per sentence.
  * The API key lives only here, as the secret ANTHROPIC_API_KEY.
+ *
+ * Julian 05.11. (privacy, lean context): the app sends only two weeks plus what
+ * matches the sentence, with the family's names as Fam1, Fam2 …. When Claude
+ * needs more it calls a lookup (termine_suchen, liste_lesen, gedaechtnis_suchen).
+ * Those never run here: the answer is { need, turn, ticket }, the phone looks it
+ * up in what it already has (at most 20 rows) and sends it back with steps. At
+ * most three rounds per sentence. The ticket (HMAC of user, sentence and time)
+ * lets those rounds pass without counting as new sentences, for one minute only.
+ * A family with Ohne KI (families.ohne_ki) gets nothing from here.
  */
 import Anthropic from 'npm:@anthropic-ai/sdk@0.137.0';
 import { createClient } from 'npm:@supabase/supabase-js@2';
@@ -46,6 +55,14 @@ const TERMIN = {
   work: { type: 'boolean', description: 'true für Arbeitszeiten.' },
 };
 
+// Julian 05.11.: for many Termine at once a description, resolved by the app, instead of a long list of ids.
+const AUSWAHL = { type: 'object', description: 'Statt vieler ids: welche Termine gemeint sind ("alle Arbeitstage im Dezember", "jeden Mittwoch bis Weihnachten"). Die App sucht alle passenden in eurem ganzen Kalender, auch die, die du nicht siehst.', properties: {
+  von: str('Erster Tag, YYYY-MM-DD.'), bis: str('Letzter Tag, YYYY-MM-DD.'),
+  wochentage: strs('Nur diese Wochentage: Mo, Di, Mi, Do, Fr, Sa, So.'),
+  arbeit: { type: 'boolean', description: 'true nur Arbeitstage, false keine Arbeitstage.' },
+  suche: str('Wörter im Titel oder Ort ("Fußball", "Büro").'),
+} };
+
 const TOOLS: Tool[] = [
   { name: 'termin_neu', ...obj('Legt einen Termin im geteilten Kalender an. Für mehrere Termine mehrmals aufrufen.', {
     ...TERMIN,
@@ -53,17 +70,19 @@ const TOOLS: Tool[] = [
   }, ['title', 'date']) },
   { name: 'termin_aendern', ...obj('Ändert einen oder mehrere bestehende Termine auf dieselbe Weise. Nur die Felder angeben, die sich ändern.', {
     id: str('id des Termins aus dem Kalender.'),
-    ids: strs('Weitere ids, wenn dieselbe Änderung für mehrere Termine gilt ("jeden Mittwoch", "alle Arbeitstage im Dezember"). Immer ALLE passenden ids aus dem Stand.'),
+    ids: strs('Weitere ids, wenn dieselbe Änderung für mehrere Termine gilt und du sie alle siehst.'),
+    auswahl: AUSWAHL,
     ...TERMIN,
     all_day: { type: 'boolean', description: 'true macht ihn ganztägig.' },
     add_bring: strs('Dinge, die zusätzlich mitgenommen werden sollen.'),
     reminder: { type: 'string', enum: ['', '0m', '10m', '30m', '1h', '1d', '1w', 'vorabend'], description: 'Erinnerung vorher, "" für keine.' },
-  }, ['id']) },
+  }, []) },
   { name: 'termin_loeschen', ...obj('Löscht einen oder mehrere Termine. Bei einer Serie mit date nur diesen einen Tag, ohne date die ganze Serie.', {
     id: str('id des Termins.'),
-    ids: strs('Weitere ids, wenn mehrere Termine wegfallen. Immer ALLE passenden ids aus dem Stand.'),
+    ids: strs('Weitere ids, wenn mehrere Termine wegfallen und du sie alle siehst.'),
+    auswahl: AUSWAHL,
     date: str('Nur bei Serien: der eine Tag, der wegfällt, YYYY-MM-DD.'),
-  }, ['id']) },
+  }, []) },
   { name: 'liste_eintragen', ...obj('Setzt Einträge auf eine bestehende Liste (Einkauf oder eine eigene Liste der Familie).', {
     list: str('id der Liste.'),
     items: strs('Jedes Ding einzeln, kurz und groß geschrieben ("Nudeln", "2 Hafermilch").'),
@@ -108,6 +127,19 @@ const TOOLS: Tool[] = [
   { name: 'vergessen', ...obj('Löscht Fakten aus dem Familiengedächtnis, wenn jemand sagt, dass etwas nicht mehr stimmt oder vergessen werden soll.', {
     ids: strs('ids der Fakten aus dem Familiengedächtnis.'),
   }, ['ids']) },
+  // Lookups: answered by the phone from what it already has, at most 20 rows each.
+  { name: 'termine_suchen', ...obj('Sucht Termine, die du im Stand nicht siehst (früher, weiter weg). Nur aufrufen, wenn der Stand nicht reicht. Höchstens 20 Treffer.', {
+    suche: str('Wörter aus Titel oder Ort ("Zahnarzt", "Fam3"), sonst weglassen.'),
+    von: str('YYYY-MM-DD'), bis: str('YYYY-MM-DD'),
+    wochentage: strs('Mo, Di, Mi, Do, Fr, Sa, So'),
+    arbeit: { type: 'boolean', description: 'true nur Arbeitstage.' },
+  }, []) },
+  { name: 'liste_lesen', ...obj('Liest offene Einträge einer Liste, die im Stand nicht ganz gezeigt ist. Höchstens 20.', {
+    list: str('id der Liste.'), suche: str('Nur Einträge mit diesen Wörtern, sonst weglassen.'),
+  }, ['list']) },
+  { name: 'gedaechtnis_suchen', ...obj('Sucht im Familiengedächtnis, wenn der passende Fakt nicht im Stand steht. Höchstens 20.', {
+    suche: str('Wörter ("Schuhgröße", "Klempner", "Fam3").'),
+  }, ['suche']) },
   { name: 'antworten', ...obj('Dein Satz an die Person, immer als erstes Werkzeug: die Antwort auf eine Frage zum Kalender oder zu Listen, oder kurz, was du jetzt machst.', {
     text: str('Kurz, natürlich, höchstens drei Sätze, in der Sprache des neuen Satzes (auf einen englischen Satz antwortest du englisch).'),
     events: strs('ids der Termine, um die es geht; die App zeigt sie.'),
@@ -122,6 +154,11 @@ const WD = ['Sonntag (Sunday)', 'Montag (Monday)', 'Dienstag (Tuesday)', 'Mittwo
 const SYSTEM = `Du bist der Assistent in FamCal, einer Familien-App mit geteiltem Kalender, geteilten Listen (Einkauf und eigene Listen wie Zu erledigen, Watchlist oder Packliste) und einem Familienchat der beiden Eltern.
 Du bekommst einen gesprochenen oder getippten Satz, oft aus der Spracherkennung des Handys, und den aktuellen Stand der Familie. Du handelst über die Werkzeuge; die App führt sie aus und zeigt jede Änderung als Karte mit Rückgängig.
 
+Datenschutz (Julian):
+- Die Namen der Familie sind Platzhalter: Fam1 ist J, Fam2 ist T, Fam3 und weiter sind Kinder und Großeltern. Schreib sie in Titeln, Fakten und Antworten genau so ("Kinderarzt" mit sub "mit Fam3", "Fam3 hat Schuhgröße 28", "Okay, ich frage Fam2."); die App setzt die echten Namen ein. Andere Namen (Freunde, Ärzte) stehen normal da.
+- Der Stand zeigt nur einen Ausschnitt: die nächsten zwei Wochen, laufende Serien, was zum Satz passt und wie viel es sonst noch gibt. Fehlt dir etwas (ein früherer Termin, ein Fakt, eine lange Liste), rufe termine_suchen, gedaechtnis_suchen oder liste_lesen auf, ohne andere Werkzeuge; du bekommst das Ergebnis und handelst dann wie gewohnt. Höchstens drei Suchen pro Satz, und nur, wenn der Stand nicht reicht. Sag nie, dass es etwas nicht gibt, bevor du gesucht hast.
+- Termine aus privaten Kalendern stehen nur als "Belegt" oder "Arbeit" da. Frag nicht nach ihrem Inhalt.
+
 Grundregel (Julian):
 - Ist klar, was gemeint ist, und geht es mit den Werkzeugen, führe es sofort aus, ohne nachzufragen. Auch Löschen und Ändern.
 - Ist etwas unklar oder mehrdeutig (welcher Termin, welche Liste, fehlt das Datum), oder geht es so nicht, rufe nur nachfragen auf, mit einer kurzen Frage oder dem nächstmöglichen Vorschlag. Dann nichts anderes. Ausnahme: Stehen Datum und Uhrzeit da, ist ein knapper Satz nie unklar. Ein Name oder Stichwort mit Datum und Uhrzeit ("Parvis, 13.11. gegen 19 Uhr", "Friseur Dienstag 15 Uhr") ist immer sofort termin_neu mit diesem Wort als Titel; frag nicht, was es ist oder für wen.
@@ -134,7 +171,7 @@ Grundregel (Julian):
 Verstehen:
 - Sätze aus der Spracherkennung haben halbe Sätze und falsch erkannte Wörter. Lies sinngemäß ("Schatte Island" ist "Shutter Island"). Bekannte Namen schreibst du richtig. Namen von Menschen übernimmst du buchstabengetreu, wie sie im Satz stehen ("Parvis" bleibt "Parvis"), und änderst nie die Schreibweise. Ein Name mit Datum und Uhrzeit ohne weiteres Wort ("Parvis, 13.11. gegen 19 Uhr") ist ein Treffen: termin_neu mit dem Namen als Titel, nicht nachfragen. Bricht ein Satz mitten im Gedanken ab ("Am Freitag haben wir"), frag mit nachfragen, wie es weitergeht; "Ich hole Karlo um 5 ab" ist dagegen vollständig.
 - Bezieht sich ein Satz auf etwas Bestehendes ("verschieb den Zahnarzt auf Freitag", "Milch ist gekauft", "lösch das Training am Montag"), finde es im Stand unten und nimm dessen id. Passen mehrere gleich gut, frag nach.
-- Meint ein Satz mehrere Termine ("jeden Mittwoch", "alle", "im Dezember", "die ganze Woche"), gehe den Stand Zeile für Zeile durch und nimm JEDEN passenden Termin: ein termin_aendern oder termin_loeschen mit id und allen übrigen in ids. Nie nur den ersten. Arbeitstage stehen als einzelne Einträge pro Tag im Stand ("Arbeitstag, einzelner Eintrag"), keine Serie. Ein Wochentag steht hinter jedem Datum (Mi = Mittwoch).
+- Meint ein Satz mehrere Termine ("jeden Mittwoch", "alle", "im Dezember", "die ganze Woche", "bis Weihnachten"), nimm EIN termin_aendern oder termin_loeschen mit auswahl (von, bis, wochentage, arbeit, suche), die App findet alle passenden im ganzen Kalender. Ohne genanntes Ende reicht auswahl ohne bis. Nie nur den ersten. Arbeitstage stehen als einzelne Einträge pro Tag ("Arbeitstag, einzelner Eintrag"), keine Serie. Ein Wochentag steht hinter jedem Datum (Mi = Mittwoch).
 - Beginnt der Satz mit "Vom Foto:" oder "From a photo:", ist es der vom Handy gelesene Text eines Briefs, einer Einladung oder eines Zettels, Zeilen mit " / " getrennt, mit Lesefehlern. Trage jeden Termin daraus ein (mit Uhrzeit, Ort und Mitbringen, wenn sie dastehen), Fristen ("bis 15.11. zahlen", "Anmeldung bis Freitag") kurz auf "Zu erledigen" mit Tag. Briefkopf, Anrede, Grüße, Werbung und Bankdaten ignorierst du. Titel kurz und in der Sprache des Briefs. In antworten sagst du in einem Satz, was du aus dem Brief eingetragen hast. Steht nichts zum Eintragen drin, sag das mit antworten. "···" sind geschwärzte Nummern, nie nachfragen.
 - Sagt die Person, dass etwas nicht geklappt hat ("du hast nur einen geändert"), prüfe den Stand und hole genau das Fehlende nach.
 - Steht ein Verlauf dabei, gehört der neue Satz meist dazu: eine Antwort auf deine Rückfrage, eine Korrektur oder Ergänzung des zuletzt Eingetragenen ("nein, um 16 Uhr", "Tom kommt auch mit", "jeden Mittwoch davon im Büro"). Dann änderst du das zuletzt Eingetragene mit termin_aendern oder löschst und legst neu an, statt etwas doppelt einzutragen.
@@ -150,9 +187,9 @@ Termine:
 - who: J oder T, wenn einer der Eltern genannt ist oder "ich" sagt (wer spricht, steht unten), both für "wir", "beide", "zusammen". Kinder und Begleitung kommen in sub ("mit Ben").
 - Fehlt das Datum ganz, frag mit nachfragen.
 - Was im Kalender steht, muss den Tag unterscheiden. Mehrere Tage mit demselben Anlass (Weihnachten, Ostern, Urlaub) bekommen nie denselben Titel: der Titel sagt, wo ihr seid oder was passiert ("Bei Mama", "Bei Sophias Eltern", "Zu Oma"), der Anlass steht höchstens in sub. Den Anlass selbst ("Weihnachten") nur als Titel, wenn sonst nichts gesagt ist. Jeder Tag mit eigenem Ziel ist ein eigener termin_neu.
-- Gab es so einen Termin schon (gleicher Titel oder gleiche Art, z.B. Kinderarzt, Friseur, unter Termine oder Frühere Termine), übernimm Ort, who und Dauer vom letzten (den Titel nie, der bleibt in der Sprache des neuen Satzes) und sag es kurz in antworten ("Wie beim letzten Mal bei Dr. Weber."). Ein genannter Ort oder eine genannte Person geht vor.
+- Gab es so einen Termin schon (gleicher Titel oder gleiche Art, z.B. Kinderarzt, Friseur, im Stand, unter "Passend zum Satz" oder per termine_suchen), übernimm Ort, who und Dauer vom letzten (den Titel nie, der bleibt in der Sprache des neuen Satzes) und sag es kurz in antworten ("Wie beim letzten Mal bei Dr. Weber."). Ein genannter Ort oder eine genannte Person geht vor.
 - Arbeit ("Arbeit", "Schicht", "im Büro"): work true, who die sprechende Person. Mit genanntem Ende ("bis Weihnachten"): EIN termin_neu mit date = erster Arbeitstag, end_date = letzter Arbeitstag ("bis Weihnachten" ist der 24.12.), repeat "Montag bis Freitag" oder die genannten Tage; die App legt jeden Tag an. Einzelne Wochentage ohne Ende ("jeden Mittwoch im Büro"): EIN termin_neu am nächsten dieser Tage mit repeat "Jeden Mittwoch", work false. Ohne Uhrzeit bei Arbeit: start weglassen und ask_time "Von wann bis wann arbeitest du?". Erfinde nie eine Uhrzeit.
-- Bestehende Arbeitstage: Sagt jemand etwas über Tage, an denen schon Arbeit im Stand steht ("jeden Mittwoch bin ich im Büro", "freitags Homeoffice", "am Montag arbeite ich nur bis 12"), lege nichts neu an. Ändere diese Arbeitstage mit EINEM termin_aendern (id plus alle übrigen in ids), z.B. title "Büro" oder place "Büro". Nur ein Ende ("nur bis 15:39") auf einem ganztägigen Arbeitstag: termin_aendern mit end, ohne start; die App nimmt den üblichen Beginn. Nicht nachfragen.
+- Bestehende Arbeitstage: Sagt jemand etwas über Tage, an denen schon Arbeit steht (im Stand oder unter "Arbeitstage weiter weg") ("jeden Mittwoch bin ich im Büro", "freitags Homeoffice", "am Montag arbeite ich nur bis 12"), lege nichts neu an. Ändere diese Arbeitstage mit EINEM termin_aendern: ein einzelner Tag mit id, mehrere mit auswahl (arbeit true, wochentage, von, bis), z.B. title "Büro" oder place "Büro". Nur ein Ende ("nur bis 15:39") auf einem ganztägigen Arbeitstag: termin_aendern mit end, ohne start; die App nimmt den üblichen Beginn. Nicht nachfragen.
 - "Nach der Arbeit", "nach der Kita": Steht im Stand an dem Tag eine Uhrzeit für das Ende, beginnt der Termin danach. Sonst trotzdem termin_neu ohne start, mit ask_time; nie nur nachfragen.
 - icon: der passendste Name aus der Icon-Liste, sonst kalender.
 
@@ -168,7 +205,7 @@ Listen:
 Familiengedächtnis (Julian 31.10.: der Assistent vergisst nie):
 - Erzählt jemand einen bleibenden Fakt ("Karlo hat Schuhgröße 28", "Der Klempner heißt Herr Maier, 0911 123", "Sophia ist allergisch gegen Nüsse", "Oma hat zum Geburtstag einen Schal bekommen", "Merk dir, dass …"), rufe zuerst antworten ("Gemerkt.", "Okay, merke ich mir.") und dann merken. Ein Satz, der einen Termin oder einen Einkauf meint, ist kein Fakt. Steht derselbe Fakt in neuer Form schon im Familiengedächtnis (andere Größe, neue Nummer), setze replaces auf dessen id.
 - Nie merken: Passwörter, PINs, Zugangsdaten, Kontonummern, IBAN, Ausweis- oder Kartennummern. Dann mit antworten sagen, dass du so etwas aus Sicherheitsgründen nicht speicherst.
-- Fragen ("Welche Schuhgröße hat Karlo?", "Wie hieß der Klempner?", "Was haben wir Oma letztes Jahr geschenkt?", "Wann war Karlo zuletzt beim Zahnarzt?") beantwortest du mit antworten aus Familiengedächtnis, Terminen, Früheren und Älteren Terminen und Listen. Nenne die Quelle kurz, wenn sie dasteht ("Laut Sophia vom 12. September: Größe 27."). Steht es nirgends, sag ehrlich, dass du es noch nicht weißt, und dass man es dir sagen kann. Nie raten.
+- Fragen ("Welche Schuhgröße hat Karlo?", "Wie hieß der Klempner?", "Was haben wir Oma letztes Jahr geschenkt?", "Wann war Karlo zuletzt beim Zahnarzt?") beantwortest du mit antworten aus Familiengedächtnis, Terminen und Listen; steht es nicht im Stand, suche zuerst (gedaechtnis_suchen, termine_suchen). Nenne die Quelle kurz, wenn sie dasteht ("Laut Sophia vom 12. September: Größe 27."). Steht es nirgends, sag ehrlich, dass du es noch nicht weißt, und dass man es dir sagen kann. Nie raten.
 - "Vergiss …" oder "das stimmt nicht mehr": vergessen mit den passenden ids, zuerst antworten.`;
 
 const cors = {
@@ -178,12 +215,80 @@ const cors = {
 
 const client = new Anthropic({ apiKey: Deno.env.get('ANTHROPIC_API_KEY') });
 const NAMES = new Set(TOOLS.map((t) => t.name));
+const LOOKUPS = new Set(['termine_suchen', 'liste_lesen', 'gedaechtnis_suchen']);
+const MAX_LOOKUPS = 3;
+
+/** The signed-in user: Supabase already checked the JWT (verify_jwt), here only its subject is read. */
+function userOf(req: Request): string | null {
+  try {
+    const part = (req.headers.get('Authorization') ?? '').replace(/^Bearer\s+/i, '').split('.')[1];
+    const sub = JSON.parse(atob(part.replace(/-/g, '+').replace(/_/g, '/'))).sub;
+    return typeof sub === 'string' && sub.length > 10 ? sub : null;
+  } catch { return null; }
+}
+
+/** Ohne KI is the family's switch; before the column exists everything stays as it was. */
+// deno-lint-ignore no-explicit-any
+async function ohneKi(db: { from: (t: string) => any }): Promise<boolean> {
+  const { data, error } = await db.from('families').select('ohne_ki').limit(1);
+  return !error && !!(data?.[0] as { ohne_ki?: boolean } | undefined)?.ohne_ki;
+}
+
+const enc8 = new TextEncoder();
+const hex = (b: ArrayBuffer) => [...new Uint8Array(b)].map((x) => x.toString(16).padStart(2, '0')).join('');
+let hmacKey: CryptoKey | null = null;
+async function sign(msg: string) {
+  hmacKey ??= await crypto.subtle.importKey('raw', enc8.encode(`assistent-ticket:${Deno.env.get('ANTHROPIC_API_KEY') ?? ''}`), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
+  return hex(await crypto.subtle.sign('HMAC', hmacKey, enc8.encode(msg)));
+}
+const textHash = async (t: string) => hex(await crypto.subtle.digest('SHA-256', enc8.encode(t)));
+/** Tickets already used on this instance: a round can't be replayed to get free calls. */
+const used = new Map<string, number>();
+async function makeTicket(uid: string, text: string, round: number) {
+  const exp = Date.now() + 60000;
+  const nonce = crypto.randomUUID();
+  return `${exp}.${nonce}.${await sign(`${uid}|${await textHash(text)}|${round}|${exp}|${nonce}`)}`;
+}
+async function ticketOk(ticket: unknown, uid: string, text: string, round: number) {
+  if (typeof ticket !== 'string') return false;
+  const [exp, nonce, mac] = ticket.split('.');
+  if (!exp || !nonce || !mac || Number(exp) < Date.now() || used.has(nonce)) return false;
+  const want = await sign(`${uid}|${await textHash(text)}|${round}|${exp}|${nonce}`);
+  let diff = want.length ^ mac.length;
+  for (let i = 0; i < want.length; i++) diff |= want.charCodeAt(i) ^ (mac.charCodeAt(i) || 0);
+  if (diff) return false;
+  const now = Date.now();
+  for (const [k, t] of used) if (t < now) used.delete(k);
+  used.set(nonce, Number(exp));
+  return true;
+}
+
+/**
+ * Earlier lookup rounds of this sentence: Claude's turn as it was (thinking included, the API needs it unchanged)
+ * and the phone's answers. Every tool call of that turn gets a result; only lookups carry data.
+ */
+function lookupTurns(steps: { turn?: unknown[]; results?: { id?: string; text?: string }[] }[]): Anthropic.Messages.MessageParam[] {
+  return steps.flatMap((st, i) => {
+    const turn = (Array.isArray(st.turn) ? st.turn : []).filter((b) => b && typeof b === 'object' && ['thinking', 'redacted_thinking', 'text', 'tool_use'].includes((b as { type?: string }).type ?? '')) as Anthropic.Messages.ContentBlockParam[];
+    const uses = turn.filter((b) => b.type === 'tool_use') as Anthropic.Messages.ToolUseBlockParam[];
+    if (!uses.length) return [];
+    const res = new Map((Array.isArray(st.results) ? st.results : []).map((r) => [String(r?.id ?? ''), String(r?.text ?? '').slice(0, 6000)]));
+    const last = i === steps.length - 1 && steps.length >= MAX_LOOKUPS;
+    return [
+      { role: 'assistant' as const, content: turn },
+      { role: 'user' as const, content: uses.map((u) => ({
+        type: 'tool_result' as const, tool_use_id: u.id,
+        content: LOOKUPS.has(u.name) ? `${res.get(u.id) ?? '(nichts gefunden)'}${last ? '\n(Das war die letzte Suche. Handle jetzt mit dem, was du hast.)' : ''}` : 'Noch nicht ausgeführt. Rufe es nach dem Nachschlagen nochmal auf, wenn es noch passt.',
+      })) },
+    ];
+  });
+}
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors });
   const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { ...cors, 'Content-Type': 'application/json' } });
 
-  let input: { text?: string; today?: string; now?: string; names?: { J?: string; T?: string }; me?: string; lang?: string; icons?: string[]; snapshot?: string; screen?: string; stream?: boolean; history?: { said?: string; app?: string }[] };
+  let input: { text?: string; today?: string; now?: string; names?: { J?: string; T?: string }; me?: string; lang?: string; icons?: string[]; snapshot?: string; screen?: string; stream?: boolean; history?: { said?: string; app?: string }[]; steps?: { turn?: unknown[]; results?: { id?: string; text?: string }[] }[]; ticket?: string };
   try { input = await req.json(); } catch { return json({ error: 'bad_json' }, 400); }
   // Text read from a photo of a letter is longer than a spoken sentence (Julian 31.10.: "Brief, Foto, Mail rein").
   const raw = (input.text ?? '').trim();
@@ -195,7 +300,15 @@ Deno.serve(async (req) => {
   const db = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_ANON_KEY') ?? req.headers.get('apikey') ?? '', {
     global: { headers: { Authorization: req.headers.get('Authorization') ?? '' } },
   });
-  const { data: allowed, error: countError } = await db.rpc('use_ai_call');
+  const uid = userOf(req);
+  if (!uid) return json({ error: 'not_signed_in' }, 401);
+  // Ohne KI (Julian 05.11.): the family switched the AI off, so no phone of theirs may send anything here.
+  if (await ohneKi(db)) return json({ error: 'ohne_ki' }, 403);
+  const steps = Array.isArray(input.steps) ? input.steps.slice(0, 4) : [];
+  // A lookup round of the same sentence is not a new sentence, but only with a fresh ticket from the round before.
+  const cont = steps.length > 0;
+  if (cont && (steps.length > MAX_LOOKUPS || !(await ticketOk(input.ticket, uid, text, steps.length)))) return json({ error: 'bad_ticket' }, 400);
+  const { data: allowed, error: countError } = cont ? { data: { ok: true, left: null }, error: null } : await db.rpc('use_ai_call');
   if (countError) return json({ error: 'not_signed_in' }, 401);
   if (!allowed.ok) return json({ error: 'limit', reason: allowed.reason, tier: allowed.tier }, 429);
 
@@ -225,14 +338,20 @@ Deno.serve(async (req) => {
     messages: [{
       role: 'user',
       content: `Heute ist ${wd}, ${today}, ${input.now ?? ''} Uhr. Eltern: ${names}. Es spricht: ${me}.\n\nStand der Familie:\n${snapshot || '(leer)'}${screen ? `\n\nBildschirm: ${screen}` : ''}${history ? `\n\nVerlauf:\n${history}` : ''}\n\nNeuer Satz (antworte in genau dieser Sprache): ${text}`,
-    }],
+    }, ...lookupTurns(steps)],
   } satisfies Anthropic.Messages.MessageCreateParamsNonStreaming;
-  const outcome = (res: Anthropic.Messages.Message, first?: number) => {
+  const outcome = async (res: Anthropic.Messages.Message, first?: number) => {
     const actions = res.content.flatMap((b) => (b.type === 'tool_use' && NAMES.has(b.name) ? [{ tool: b.name, input: b.input }] : []));
     const said = res.content.map((b) => (b.type === 'text' ? b.text : '')).join('').trim();
-    // Only timing and the tools used, never what was said.
-    console.log(JSON.stringify({ ms: Date.now() - t0, first: first ?? null, tools: actions.map((a) => a.tool), follow: !!history, snap: snapshot.length, stop: res.stop_reason, out: res.usage.output_tokens, cached: res.usage.cache_read_input_tokens ?? 0 }));
-    return res.stop_reason === 'refusal' || (!actions.length && !said) ? null : { actions, text: said, left: allowed.left ?? null };
+    const usage = { in: res.usage.input_tokens + (res.usage.cache_read_input_tokens ?? 0) + (res.usage.cache_creation_input_tokens ?? 0), out: res.usage.output_tokens, cached: res.usage.cache_read_input_tokens ?? 0 };
+    // Only timing, sizes and the tools used, never what was said or looked up.
+    console.log(JSON.stringify({ ms: Date.now() - t0, first: first ?? null, tools: actions.map((a) => a.tool), follow: !!history, round: steps.length, snap: snapshot.length, looked: steps.flatMap((x) => x.results ?? []).map((r) => String(r?.text ?? '').split('\n').length), stop: res.stop_reason, in: usage.in, out: usage.out, cached: usage.cached }));
+    if (res.stop_reason === 'refusal') return null;
+    const need = res.content.flatMap((b) => (b.type === 'tool_use' && LOOKUPS.has(b.name) ? [{ id: b.id, tool: b.name, input: b.input }] : []));
+    // Claude wants to look something up first: the phone answers, the sentence goes on in the next round.
+    if (need.length && steps.length < MAX_LOOKUPS) return { need: { need, turn: res.content, ticket: await makeTicket(uid, text, steps.length + 1) }, usage };
+    const done = actions.filter((a) => !LOOKUPS.has(a.tool));
+    return !done.length && !said ? null : { actions: done, text: said, left: allowed.left ?? null, usage };
   };
 
   if (input.stream) {
@@ -254,8 +373,8 @@ Deno.serve(async (req) => {
               try { const v = JSON.parse(b.json); const t = String(v.text ?? v.question ?? '').trim(); if (t) { first ??= Date.now() - t0; send({ say: t }); } } catch { /* the done event carries it anyway */ }
             }
           });
-          const out = outcome(await stream.finalMessage(), first);
-          send(out ? { done: out } : { error: 'not_understood' });
+          const out = await outcome(await stream.finalMessage(), first);
+          send(!out ? { error: 'not_understood' } : 'need' in out ? { need: out.need } : { done: out });
         } catch (e) {
           console.error('assistent', Date.now() - t0, e);
           send({ error: 'model_failed' });
@@ -267,8 +386,8 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const out = outcome(await client.messages.create(params));
-    return out ? json(out) : json({ error: 'not_understood' }, 422);
+    const out = await outcome(await client.messages.create(params));
+    return !out ? json({ error: 'not_understood' }, 422) : 'need' in out ? json({ ...out.need, usage: out.usage }) : json(out);
   } catch (e) {
     const status = e instanceof Anthropic.RateLimitError ? 429 : e instanceof Anthropic.APIError ? 502 : 500;
     console.error('assistent', Date.now() - t0, e);
