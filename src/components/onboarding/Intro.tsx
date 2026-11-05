@@ -77,7 +77,7 @@ import { seg, mix, kf, eOut, eMove, eTail, eIn, crit, recoil, quad, rrect, rrect
  * The claim, in one place (Julian 02.11.: the calendar first, not a family assistant). The film's
  * last beat and the showcase's last chapter both read it.
  */
-export const INTRO_CLAIM = () => tx('Der klügste Kalender, mit dem ihr je gesprochen habt', 'The smartest calendar you’ve ever talked to');
+export const INTRO_CLAIM = () => tx('Der klügste gemeinsame Familienkalender, mit dem ihr je gesprochen habt', 'The smartest shared family calendar you’ve ever spoken to');
 
 export const INTRO_BEATS = 8;
 const W = 300;

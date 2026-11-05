@@ -195,7 +195,8 @@ export default function TodayView({ header }: { header: React.ReactNode }) {
       fristen: upcomingFristen(docs, 14),
       // Countdown (Julian 28.10.): the next three Termine that asked for "Tage bis".
       // A series counts once, with its next date.
-      soon: real.filter((e) => e.countdown && e.date > TODAY && daysBetween(TODAY, e.date) <= 365)
+      // Never repeat the Termin already shown big on top (Julian 05.11.).
+      soon: real.filter((e) => e.countdown && e.date > TODAY && daysBetween(TODAY, e.date) <= 365 && e.id !== next?.id)
         .sort((a, b) => a.date.localeCompare(b.date))
         .filter((e, i, l) => l.findIndex((x) => x.id.split('~')[0] === e.id.split('~')[0]) === i)
         .slice(0, 3),

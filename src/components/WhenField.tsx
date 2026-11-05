@@ -270,16 +270,40 @@ function StartStrip({ start, onPick, onAllDay }: { start?: string; onPick: (t: s
   );
 }
 
-/** Julian 05.11.: the length as its own row of pills under Start. */
-const LENGTHS = [[tx('15 Min', '15 min'), 15], [tx('30 Min', '30 min'), 30], [tx('45 Min', '45 min'), 45], [tx('1 Std', '1 h'), 60], [tx('1,5 Std', '1.5 h'), 90], [tx('2 Std', '2 h'), 120], [tx('3 Std', '3 h'), 180]] as const;
+/** Julian 05.11.: the length as its own row of pills under Start, up to 6 hours, plus a custom end time. */
+const LENGTHS = [[tx('15 Min', '15 min'), 15], [tx('30 Min', '30 min'), 30], [tx('45 Min', '45 min'), 45], [tx('1 Std', '1 h'), 60], [tx('1,5 Std', '1.5 h'), 90], [tx('2 Std', '2 h'), 120], [tx('3 Std', '3 h'), 180], [tx('4 Std', '4 h'), 240], [tx('5 Std', '5 h'), 300], [tx('6 Std', '6 h'), 360]] as const;
+const ENDS = Array.from({ length: 96 }, (_, i) => `${String(Math.floor(i / 4)).padStart(2, '0')}:${String((i % 4) * 15).padStart(2, '0')}`);
 function LengthStrip({ start, end, onPick }: { start: string; end?: string; onPick: (m: number) => void }) {
   const len = end ? minutes(end) - minutes(start) : 0;
+  const preset = LENGTHS.some(([, m]) => m === len);
+  const [own, setOwn] = useState(!!end && !preset);
+  const ref = useRef<ScrollView>(null);
+  const jumped = useRef(false);
+  // Every quarter hour after the start until the end of the day; a typed odd end stays visible too.
+  const ends = ENDS.filter((t) => minutes(t) > minutes(start));
+  if (end && minutes(end) > minutes(start) && !ends.includes(end)) { ends.push(end); ends.sort(); }
+  if (!ends.length) ends.push('23:59');
   return (
     <View style={{ gap: 6, paddingTop: 8 }}>
       <Txt size={13} weight={600} color={tokens.sub} style={{ paddingHorizontal: 4 }}>{tx('Dauer', 'Duration')}</Txt>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="handled" contentContainerStyle={{ gap: 6, paddingRight: 16 }} style={{ marginRight: -16 }}>
-        {LENGTHS.map(([l, m]) => <WChip key={m} label={l} on={len === m} onPress={() => onPick(m)} />)}
+        {LENGTHS.map(([l, m]) => <WChip key={m} label={l} on={!own && len === m} onPress={() => { setOwn(false); onPick(m); }} />)}
+        <WChip label={own && end ? tx(`Bis ${hm(end)}`, `Until ${hm(end)}`) : tx('Eigene', 'Custom')} icon="clock" on={own} onPress={() => { jumped.current = false; setOwn((o) => !o); }} />
       </ScrollView>
+      {own ? (
+        <ScrollView ref={ref} horizontal showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="handled" contentContainerStyle={{ gap: 6, paddingRight: 16 }} style={{ marginRight: -16 }}>
+          {ends.map((t) => (
+            <View
+              key={t}
+              onLayout={(e) => {
+                if (!jumped.current && t === (end && ends.includes(end) ? end : ends[0])) { jumped.current = true; ref.current?.scrollTo({ x: Math.max(0, e.nativeEvent.layout.x - 80), animated: false }); }
+              }}
+            >
+              <WChip label={tx(`bis ${hm(t)}`, `until ${hm(t)}`)} on={t === end} onPress={() => onPick(minutes(t) - minutes(start))} />
+            </View>
+          ))}
+        </ScrollView>
+      ) : null}
     </View>
   );
 }
