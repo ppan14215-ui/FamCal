@@ -365,15 +365,15 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, o
         scrollEnabled={boxH >= MAX_H}
         editable={!demo}
         placeholder={writing ? tx('Schreibe auf …', 'Writing it down …') : listening && wavy ? '' : listening ? tx('Ich höre zu … Tippe ✓ wenn fertig', 'Listening … Tap ✓ when done') : placeholder}
-        placeholderTextColor={dark ? 'rgba(255,255,255,0.62)' : tokens.mute}
-        selectionColor={tokens.select} cursorColor={tokens.ink}
+        placeholderTextColor={dark ? 'rgba(255,255,255,0.55)' : tokens.mute}
+        selectionColor={tokens.select} cursorColor={card && dark ? tokens.onInk : tokens.ink}
         returnKeyType={TOUCH ? 'default' : 'send'}
         accessibilityLabel={tx('Was steht an?', 'What\'s on?')}
-        style={[{ width: '100%', height: boxH, marginBottom: card && !text ? 0 : 2, fontFamily: fonts[400], fontSize: split ? 16 : 16.5, lineHeight: LINE, color: tokens.ink, paddingVertical: PAD, paddingHorizontal: split ? 3 : 8, textAlignVertical: 'top', includeFontPadding: false }, Platform.OS === 'web' ? ({ outlineStyle: 'none' } as any) : null]}
+        style={[{ width: '100%', height: boxH, marginBottom: card && !text ? 0 : 2, fontFamily: fonts[400], fontSize: split ? 16 : 16.5, lineHeight: LINE, color: card && dark ? tokens.onInk : tokens.ink, paddingVertical: PAD, paddingHorizontal: split ? 3 : 8, textAlignVertical: 'top', includeFontPadding: false }, Platform.OS === 'web' ? ({ outlineStyle: 'none' } as any) : null]}
       />
       {listening && wavy ? (
         <View pointerEvents="none" style={{ position: 'absolute', left: split ? 3 : 8, right: 6, top: 0, bottom: 2, justifyContent: 'center' }}>
-          <VoiceWaves level={level} />
+          <VoiceWaves level={level} color={card && dark ? tokens.onInk : undefined} />
         </View>
       ) : null}
       </View>
@@ -382,19 +382,23 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, o
   // Julian 04.11.: like the Claude app. At rest (and while the waves run) one line: plus, field, mic, send.
   // With text it grows into the card with the buttons below. The check sits where the mic was, in the same style.
   const one = !text;
+  // Julian 05.11.: in the one bar the card sits inside the dark shape, so it draws light on dark and no box of its own.
+  const dk = !!dark;
+  const cInk = dk ? tokens.onInk : tokens.ink;
   const cardPlus = (
-    <PressScale accessibilityLabel={tx('Foto, Termin, Aufgabe', 'Photo, event, task')} onPress={() => { if (listening) { typed.current = true; timers.current.forEach(clearTimeout); setDemo(false); toKeys.current?.(); setText(''); } onPlus?.(); }} style={{ width: 34, height: 34, borderRadius: 999, borderWidth: 1, borderColor: tokens.hair, alignItems: 'center', justifyContent: 'center' }}>
-      <LineIcon name="plus" size={18} color={tokens.ink} stroke={2} />
+    <PressScale accessibilityLabel={tx('Foto, Termin, Aufgabe', 'Photo, event, task')} onPress={() => { if (listening) { typed.current = true; timers.current.forEach(clearTimeout); setDemo(false); toKeys.current?.(); setText(''); } onPlus?.(); }} style={{ width: 34, height: 34, borderRadius: 999, borderWidth: 1, borderColor: dk ? 'rgba(255,255,255,0.22)' : tokens.hair, alignItems: 'center', justifyContent: 'center' }}>
+      <LineIcon name="plus" size={18} color={cInk} stroke={2} />
     </PressScale>
   );
   const cardMic = (
     <PressScale accessibilityLabel={listening ? tx('Fertig gesprochen', 'Done speaking') : tx('Sprechen', 'Speak')} onPress={listen} style={{ width: 34, height: 34, borderRadius: 999, alignItems: 'center', justifyContent: 'center' }}>
-      {listening ? <LineIcon name="check" size={21} color={tokens.ink} stroke={2.4} /> : <LineIcon name="mic" size={20} color={tokens.ink} />}
+      {listening ? <LineIcon name="check" size={21} color={cInk} stroke={2.4} /> : <LineIcon name="mic" size={20} color={cInk} />}
     </PressScale>
   );
+  const live = !!text.trim() || listening;
   const cardSend = (
-    <PressScale accessibilityLabel={tx('Senden', 'Send')} disabled={!text.trim() && !listening} onPress={finishAndSend} style={{ width: 34, height: 34, borderRadius: 999, alignItems: 'center', justifyContent: 'center', backgroundColor: text.trim() || listening ? tokens.ink : tokens.chipBg }}>
-      <LineIcon name="send" size={17} color={text.trim() || listening ? tokens.onInk : tokens.mute} />
+    <PressScale accessibilityLabel={tx('Senden', 'Send')} disabled={!live} onPress={finishAndSend} style={{ width: 34, height: 34, borderRadius: 999, alignItems: 'center', justifyContent: 'center', backgroundColor: live ? (dk ? tokens.onInk : tokens.ink) : dk ? 'rgba(255,255,255,0.12)' : tokens.chipBg }}>
+      <LineIcon name="send" size={17} color={live ? (dk ? tokens.ink : tokens.onInk) : dk ? 'rgba(255,255,255,0.5)' : tokens.mute} />
     </PressScale>
   );
   // One parent with keyed children, so the field is not remounted (and the keyboard stays) when the first letter turns the line into the card.
@@ -402,7 +406,7 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, o
     <Animated.View layout={MORPH} style={[one
       ? { flexDirection: 'row', alignItems: 'center', gap: 6, borderRadius: 26, paddingVertical: 4, paddingHorizontal: 8 }
       : { flexDirection: 'column', borderRadius: 24, paddingTop: 6, paddingHorizontal: 10, paddingBottom: 8, gap: 4 },
-      { backgroundColor: tokens.row, borderWidth: 1, borderColor: listening ? tokens.ink : tokens.hair }, lift]}>
+      dk ? { borderWidth: 1, borderColor: 'transparent' } : [{ backgroundColor: tokens.row, borderWidth: 1, borderColor: listening ? tokens.ink : tokens.hair }, lift]]}>
       {one ? <Animated.View key="p" layout={MORPH} entering={SHOW} exiting={HIDE}>{cardPlus}</Animated.View> : null}
       <Animated.View key="f" layout={MORPH} style={one ? { flex: 1, minWidth: 0 } : { alignSelf: 'stretch' }}>{fieldBox}</Animated.View>
       {one ? <Animated.View key="m" layout={MORPH} entering={SHOW} exiting={HIDE} style={{ flexDirection: 'row', gap: 6 }}>{cardMic}{cardSend}</Animated.View> : null}

@@ -10,7 +10,7 @@ import SessionPill from './SessionPill';
 import React, { useEffect, useRef, useState } from 'react';
 import { View, ScrollView, Platform, BackHandler, useWindowDimensions, TextInput } from 'react-native';
 import { router, usePathname } from 'expo-router';
-import Animated, { FadeIn, FadeInDown, FadeOut, useSharedValue, useAnimatedStyle, withSpring, withTiming, Easing } from 'react-native-reanimated';
+import Animated, { FadeIn, FadeInDown, FadeOut, useSharedValue, useAnimatedStyle, withSpring, withTiming, withDelay, Easing } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Defs, LinearGradient, Stop, Rect } from 'react-native-svg';
 import { Chip } from './ui/kit';
@@ -32,9 +32,10 @@ import { light, lightOneByOne } from '../lib/landing';
 import { setDockTop, setDockSpace } from '../lib/dockSpace';
 import { useKeyboardInset, useTyping, useInlineEditing } from '../lib/keyboard';
 import { setTalkOpen, useTalkOpen } from '../lib/talkOpen';
-import { navH, navTop } from './NavBar';
+import { navH, navTop, TABS, BarTab, floatShadow } from './NavBar';
 import { useNavFolded } from '../lib/navFold';
-import { navStyle, useBarMode, setBarMode, BAR_SPRING } from '../lib/navStyle';
+import { navStyle, useBarMode, setBarMode, useBarNav, BAR_SPRING } from '../lib/navStyle';
+import { useTranslation } from 'react-i18next';
 import { addMade, addMessage, addAsk, addSay, recentMade, markChanged } from '../lib/feed';
 import { useSimple, messageOf } from '../lib/simple';
 import { hm, short } from '../lib/dates';
@@ -449,14 +450,30 @@ export default function Dock() {
   const bar = onTabs && navStyle() === 'bar';
   const barMode = !bar ? null : typing || barRaw === 'input' ? 'input' : barRaw;
   const D = navH();
-  const restW = W - 28 - D - 8;
-  const tabsW = !onTabs ? full : barMode === 'rest' ? restW : barMode === 'tabs' ? D : W - 28;
+  // One dark shape (Julian 05.11. 08:48): the tab part on the left morphs, the field takes what is left.
+  const openW = W - 28 - D;
+  const navTarget = barMode === 'tabs' ? openW : barMode === 'input' ? 0 : D;
+  const navW = useSharedValue(navTarget);
+  const iconA = useSharedValue(barMode === 'rest' ? 1 : 0);
+  const tabsA = useSharedValue(barMode === 'tabs' ? 1 : 0);
+  useEffect(() => {
+    navW.value = withSpring(navTarget, BAR_SPRING);
+    // The content crossfades inside the moving shape: what leaves goes fast, what arrives waits a beat.
+    iconA.value = barMode === 'rest' ? withDelay(90, withTiming(1, { duration: 200, easing: Easing.bezier(0.23, 1, 0.32, 1) })) : withTiming(0, { duration: 90 });
+    tabsA.value = barMode === 'tabs' ? withDelay(70, withTiming(1, { duration: 220, easing: Easing.bezier(0.23, 1, 0.32, 1) })) : withTiming(0, { duration: 110 });
+  }, [navTarget, barMode]);
+  const navStyleA = useAnimatedStyle(() => ({ width: navW.value }));
+  const iconStyle = useAnimatedStyle((): any => ({ opacity: iconA.value, transform: [{ scale: 0.8 + 0.2 * iconA.value }] }));
+  const tabsStyle = useAnimatedStyle((): any => ({ opacity: tabsA.value, transform: [{ translateX: -12 * (1 - tabsA.value) }] }));
   // The field keeps at least its resting width inside, so growing back reveals it instead of squeezing it.
-  const minW = bar ? restW : 0;
+  const fieldInner = useAnimatedStyle(() => ({ width: Math.max(W - 28 - navW.value, W - 28 - D) }));
+  const barNav = useBarNav();
+  const { t } = useTranslation();
+  const curTab = TABS.find((x) => x.name === barNav.current) ?? TABS[0];
+  const tabsW = !onTabs ? full : W - 28;
   const wAnim = useSharedValue(tabsW);
-  useEffect(() => { wAnim.value = bar ? withSpring(tabsW, BAR_SPRING) : withTiming(tabsW, { duration: 240, easing: Easing.bezier(0.23, 1, 0.32, 1) }); }, [tabsW]);
+  useEffect(() => { wAnim.value = withTiming(tabsW, { duration: 240, easing: Easing.bezier(0.23, 1, 0.32, 1) }); }, [tabsW]);
   const wStyle = useAnimatedStyle(() => ({ width: wAnim.value }));
-  const wInner = useAnimatedStyle(() => ({ width: Math.max(wAnim.value, minW) }));
   // Typing hides the tabs, so the field drops into their place right above the keyboard.
   const bottom = !where ? 0 : kb > 0 ? kb + 8 : onTabs ? (typing && Platform.OS === 'web' ? Math.max(insets.bottom, 12) + 10 : above) : insets.bottom + 12 + where.lift;
   useEffect(() => { setDockTop(where ? bottom + (shown ? h : 0) : 0); }, [bottom, h, !!where, shown]);
@@ -921,23 +938,62 @@ export default function Dock() {
           ))}
         </View>
       ) : null}
-      <View pointerEvents="box-none" style={{ flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'flex-end', gap: 8 }}>
-      <Animated.View style={[{ alignSelf: 'flex-end', alignItems: 'flex-end', overflow: 'hidden', borderRadius: bar ? (barMode === 'tabs' ? D / 2 : 26) : onTabs && navStyle() === 'strip' ? 24 : 30 }, wStyle]}>
-      {barMode === 'tabs' ? (
-        <Animated.View key="icon" entering={FadeIn.duration(180).delay(80)} exiting={FadeOut.duration(100)}>
-          <PressScale scale={0.9} accessibilityLabel={tx('Sprechen', 'Speak')} onPress={() => { haptics.select(); setBarMode('input'); setListenKey((k) => k + 1); }}
-            style={{ width: D, height: D, borderRadius: D / 2, alignItems: 'center', justifyContent: 'center', backgroundColor: tokens.row, borderWidth: 1, borderColor: tokens.hair }}>
-            <LineIcon name="mic" size={21} color={tokens.ink} />
-          </PressScale>
+      {bar ? (
+      // Julian 05.11. 08:48: one dark shape at the bottom; tab icon and field share it and it morphs as one piece.
+      <View style={[{ alignSelf: 'flex-end', width: W - 28, borderRadius: 27, backgroundColor: tokens.ink }, floatShadow]}>
+      <View style={{ flexDirection: 'row', alignItems: 'flex-end', borderRadius: 27, overflow: 'hidden' }}>
+        <Animated.View style={[{ height: D, overflow: 'hidden' }, navStyleA]}>
+          <Animated.View pointerEvents={barMode === 'rest' ? 'auto' : 'none'} style={[{ position: 'absolute', left: 0, top: 0, width: D, height: D }, iconStyle]}>
+            <PressScale scale={0.88} accessibilityRole="button" accessibilityLabel={tx('Tabs zeigen', 'Show tabs') + ', ' + t(curTab.key)}
+              onPress={() => { haptics.select(); setBarMode('tabs'); }}
+              style={{ width: D, height: D, alignItems: 'center', justifyContent: 'center' }}>
+              <LineIcon name={curTab.icon} size={22} color={tokens.onInk} />
+            </PressScale>
+          </Animated.View>
+          <Animated.View accessibilityRole="tablist" pointerEvents={barMode === 'tabs' ? 'auto' : 'none'}
+            style={[{ position: 'absolute', left: 5, top: 5, width: openW - 10, height: D - 10, flexDirection: 'row', alignItems: 'center', gap: 4 }, tabsStyle]}>
+            {TABS.map((x) => (
+              <BarTab key={x.name} onW={openW - 10 - 56 * 2 - 8} offW={56} on={barNav.current === x.name} icon={x.icon} label={t(x.key)}
+                onPress={() => { haptics.select(); if (barNav.current !== x.name) barNav.go(x.name); setBarMode('rest'); }} />
+            ))}
+          </Animated.View>
         </Animated.View>
+        <View style={{ flex: 1, minWidth: 0, alignItems: 'flex-end', overflow: 'hidden' }}>
+          {barMode === 'tabs' ? (
+            <Animated.View key="mic" entering={FadeIn.duration(180).delay(80)} exiting={FadeOut.duration(100)}>
+              <PressScale scale={0.9} accessibilityLabel={tx('Sprechen', 'Speak')} onPress={() => { haptics.select(); setBarMode('input'); setListenKey((k) => k + 1); }}
+                style={{ width: D, height: D, alignItems: 'center', justifyContent: 'center' }}>
+                <LineIcon name="mic" size={21} color={tokens.onInk} />
+              </PressScale>
+            </Animated.View>
+          ) : (
+            <Animated.View key="field" entering={FadeIn.duration(200).delay(60)} exiting={FadeOut.duration(100)} style={fieldInner}>
+              <TalkBar
+                key={onTabs ? 'tabs' : kind}
+                split={onTabs}
+                card
+                dark
+                onIdle={bar ? () => setBarMode('rest') : undefined}
+                onBusy={bar ? () => setBarMode('input') : undefined}
+                onSend={hear}
+                onPlus={() => router.push('/neu')}
+                spoken={SPOKEN[kind]}
+                listenKey={listenKey}
+                focusKey={focusKey}
+                placeholder={where.chat && mode === 'msg' ? tx('Nachricht an die Familie …', 'Message to the family …') : turn?.result.kind === 'cut' ? tx('Sprich einfach weiter …', 'Just keep talking …') : bar && barMode === 'rest' && !turn ? tx('Sag es einfach …', 'Just say it …') : onTabs && !turn ? tx('Sprich oder schreib einfach …', 'Just say or type it …') : turn && kind === 'kalender' ? tx('Antworten oder ergänzen …', 'Reply or add …') : PLACEHOLDER[kind]}
+              />
+            </Animated.View>
+          )}
+        </View>
+      </View>
+      </View>
       ) : (
-      <Animated.View key="field" entering={FadeIn.duration(200).delay(bar ? 60 : 0)} exiting={FadeOut.duration(100)} style={wInner}>
+      <Animated.View style={[{ alignSelf: 'flex-end', alignItems: 'flex-end', overflow: 'hidden', borderRadius: onTabs && navStyle() === 'strip' ? 24 : 30 }, wStyle]}>
+      <Animated.View style={wStyle}>
       <TalkBar
         key={onTabs ? 'tabs' : kind}
         split={onTabs}
         card={onTabs && (navStyle() === 'strip' || bar)}
-        onIdle={bar ? () => setBarMode('rest') : undefined}
-        onBusy={bar ? () => setBarMode('input') : undefined}
         onSend={hear}
         onPlus={() => router.push('/neu')}
         spoken={SPOKEN[kind]}
@@ -946,9 +1002,8 @@ export default function Dock() {
         placeholder={where.chat && mode === 'msg' ? tx('Nachricht an die Familie …', 'Message to the family …') : turn?.result.kind === 'cut' ? tx('Sprich einfach weiter …', 'Just keep talking …') : bar && barMode === 'rest' && !turn ? tx('Sag es einfach …', 'Just say it …') : onTabs && !turn ? tx('Sprich oder schreib einfach …', 'Just say or type it …') : turn && kind === 'kalender' ? tx('Antworten oder ergänzen …', 'Reply or add …') : PLACEHOLDER[kind]}
       />
       </Animated.View>
-      )}
       </Animated.View>
-      </View>
+      )}
     </Animated.View>
     </Other.Provider>
   );

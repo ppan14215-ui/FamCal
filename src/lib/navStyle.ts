@@ -34,3 +34,10 @@ export function setBarMode(v: BarMode) { if (mode !== v) { mode = v; subs.forEac
 export const useBarMode = () => useSyncExternalStore((l) => { subs.add(l); return () => { subs.delete(l); }; }, () => mode, () => mode);
 /** Both halves move on the same spring, so their widths always add up and the gap between them never jumps. */
 export const BAR_SPRING = { damping: 24, stiffness: 260, mass: 1 };
+
+/** The one bar is drawn by the Dock (one dark shape with the field); the tab bar hands it the current tab and how to switch. */
+type BarNav = { current: string; go: (name: string) => void };
+let nav: BarNav = { current: 'chat', go: () => {} };
+const navSubs = new Set<() => void>();
+export function setBarNav(v: BarNav) { if (nav.current !== v.current || nav.go !== v.go) { nav = v; navSubs.forEach((l) => l()); } }
+export const useBarNav = () => useSyncExternalStore((l) => { navSubs.add(l); return () => { navSubs.delete(l); }; }, () => nav, () => nav);

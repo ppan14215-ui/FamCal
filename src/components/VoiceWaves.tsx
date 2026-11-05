@@ -12,7 +12,7 @@ const BAR = 3;
 const GAP = 3;
 const TICK = 90;
 
-export default function VoiceWaves({ level, height = 26 }: { level: SharedValue<number>; height?: number }) {
+export default function VoiceWaves({ level, height = 26, color }: { level: SharedValue<number>; height?: number; color?: string }) {
   const [w, setW] = useState(0);
   const n = Math.max(0, Math.floor((w + GAP) / (BAR + GAP)));
   const [vals, setVals] = useState<number[]>([]);
@@ -35,7 +35,7 @@ export default function VoiceWaves({ level, height = 26 }: { level: SharedValue<
     <View onLayout={(e) => setW(e.nativeEvent.layout.width)} style={{ height, flexDirection: 'row', alignItems: 'center', gap: GAP, overflow: 'hidden' }}>
       {Array.from({ length: pad }, (_, i) => <View key={`p${i}`} style={{ width: BAR, height: BAR, borderRadius: BAR, backgroundColor: tokens.hair }} />)}
       {vals.map((v, i) => (
-        <View key={i} style={{ width: BAR, height: Math.max(BAR, Math.round(v * height)), borderRadius: BAR, backgroundColor: tokens.ink, opacity: 0.35 + 0.65 * ((i + 1) / vals.length) }} />
+        <View key={i} style={{ width: BAR, height: Math.max(BAR, Math.round(v * height)), borderRadius: BAR, backgroundColor: color ?? tokens.ink, opacity: 0.35 + 0.65 * ((i + 1) / vals.length) }} />
       ))}
     </View>
   );
