@@ -112,6 +112,17 @@ const COVERS = { Dune: ['dune', '2021', 'Denis Villeneuve'], Oppenheimer: ['oppe
 const films = (p) => p.evaluate((m) => globalThis.__fc.set((st) => ({ lists: st.lists.map((l) => ({ ...l, sections: l.sections.map((sec) => ({ ...sec, items: sec.items.map((i) => (m[i.name] ? { ...i, data: { ...(i.data || {}), kind: 'film', cover: m[i.name][0], year: m[i.name][1], by: m[i.name][2] } } : i)) })) })) })),
   Object.fromEntries(Object.entries(COVERS).map(([k, [f, y, b]]) => [k, ['data:image/png;base64,' + fs.readFileSync(path.join(__dirname, 'covers', f + '.png')).toString('base64'), y, b]])));
 
+const week = (p, l) => p.evaluate((en) => globalThis.__fc.set((st) => ({ events: [...st.events, ...[
+  ['w1', '2026-10-26', '16:15', '17:45', en ? 'Family dinner' : 'Familienessen', 'familienessen', 'both'],
+  ['w2', '2026-10-27', '16:30', '17:30', en ? 'Baby swim' : 'Babyschwimmen', 'schwimmen', null, 'p_ben'],
+  ['w3', '2026-10-28', '14:00', '17:00', en ? 'Grandma Gisela has Ben' : 'Oma Gisela hat Ben', 'zuhause', null, 'p_oma'],
+  ['w4', '2026-10-30', '15:00', '17:00', en ? 'Playground' : 'Spielplatz', 'spielplatz', 'both'],
+  ['w5', '2026-10-31', '10:00', '12:00', en ? 'Market' : 'Wochenmarkt', 'einkauf', 'both'],
+  ['w6', '2026-10-31', '15:00', '18:00', en ? 'Halloween party' : 'Halloween', 'halloween', 'both'],
+  ['w7', '2026-11-01', '10:00', '12:00', en ? 'Brunch at Grandma’s' : 'Brunch bei Oma', 'fruehstueck', null, 'p_oma'],
+  ['w8', '2026-10-29', '17:00', '18:00', en ? 'PEKiP' : 'PEKiP', 'kuscheltier', null, 'p_ben'],
+].map(([id, date, start, end, title, icon, who, pp]) => ({ id, date, start, end, title, icon, who, ...(pp ? { people: [pp] } : {}) }))] })), l === 'en');
+
 // Jeder Screen: Name in landing/shots und der Weg dorthin, ausgehend vom Chat der Beispielfamilie.
 const SCREENS = [
   ['chat', async () => {}],
@@ -145,7 +156,8 @@ const SCREENS = [
   // Die Karte auf Heute ist ausgeblendet (HIDDEN.briefing); die Seite /woche gibt es weiter, darum In-App Navigation ohne Neuladen.
   ['briefing', async ({ p }) => { await p.evaluate(() => { history.pushState({}, '', '/woche'); dispatchEvent(new PopStateEvent('popstate')); }); await p.waitForTimeout(1500); }],
   ['tage', async ({ tab, view, t }) => { await tab(t.cal); await view(t.days); }],
-  ['woche', async ({ tab, view, t }) => { await tab(t.cal); await view(t.week); }],
+  // Woche (Julian 05.11.): mehr gemeinsame Termine (Rahmen) und eine dritte Farbe (Ben in Mint, Oma Gisela in Sand).
+  ['woche', async ({ p, tab, view, t, l }) => { await week(p, l); await tab(t.cal); await view(t.week); }],
   ['monat', async ({ tab, view, t }) => { await tab(t.cal); await view(t.month); }],
   // Zusammenhang: der Satz nennt weder Termin noch Tag genau; die feste Antwort zeigt auf die echte U6 der Beispielfamilie.
   ['kontext', async ({ p, say, t }) => {
