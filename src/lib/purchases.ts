@@ -1,5 +1,6 @@
 /**
- * Plus (RevenueCat; Julian 05.11.2026 "Revenue Cat properly placed"). Pricing proposal: 49 € a year per family,
+ * Plus (RevenueCat; Julian 05.11.2026 "Revenue Cat properly placed"). Pricing (Julian 27.10.2026): 79 € a year or 8,99 € a month per family,
+ * founder price 49 € in the first year for the first 1.000 families,
  * 14 days trial (see project memory famcal-business).
  *
  * How it is built, from what Namore learned:
