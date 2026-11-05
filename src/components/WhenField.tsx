@@ -52,7 +52,8 @@ const plusMin = (t: string, m: number) => {
 
 export default function WhenField({ value, onChange, kind = 'termin', past, icon = 'clock', label, placeholder = tx('Wann? Zum Beispiel morgen 15 Uhr', 'When? For example tomorrow 3pm'), right, extra, card, closeOnPick, onDone }: Props) {
   const [open, setOpen] = useState(false);
-  const [mode, setMode] = useState<Mode>('text');
+  // Julian 05.11.: the open calendar is the default; typing stays as the other way (pref 'wann': 'cal' | 'text').
+  const [mode, setMode] = useState<Mode>('cal');
   const [text, setText] = useState('');
   const [month, setMonth] = useState(firstOf(value?.date ?? TODAY));
   const anchor = useRef<string | null>(null);
@@ -76,7 +77,7 @@ export default function WhenField({ value, onChange, kind = 'termin', past, icon
 
   const begin = () => {
     haptics.select();
-    const m: Mode = getPref('wann') === 'cal' ? 'cal' : 'text';
+    const m: Mode = getPref('wann') === 'text' ? 'text' : 'cal';
     setMode(m);
     setText(value ? whenText(value) : '');
     setMonth(firstOf(value?.date ?? TODAY));
@@ -130,11 +131,6 @@ export default function WhenField({ value, onChange, kind = 'termin', past, icon
       chips.push({ label: tx(`Heute · ${WD_SHORT[weekday(TODAY)]}`, `Today · ${WD_SHORT[weekday(TODAY)]}`), run: () => apply({ date: TODAY }) });
       chips.push({ label: tx(`Morgen · ${WD_SHORT[weekday(addDays(TODAY, 1))]}`, `Tomorrow · ${WD_SHORT[weekday(addDays(TODAY, 1))]}`), run: () => apply({ date: addDays(TODAY, 1) }) });
       for (let i = 2; i < 7; i++) { const d = addDays(TODAY, i); chips.push({ label: `${WD_SHORT[weekday(d)]} ${dayNum(d)}${EN ? '' : '.'}`, run: () => apply({ date: d }) }); }
-    }
-  } else if (kind === 'termin' && value?.start && !value.endDate) {
-    for (const [l, m] of [[tx('30 Min', '30 min'), 30], [tx('45 Min', '45 min'), 45], [tx('1 Std', '1 h'), 60], [tx('1,5 Std', '1.5 h'), 90], [tx('2 Std', '2 h'), 120]] as const) {
-      const on = !!value.end && minutes(value.end) - minutes(value.start) === m;
-      chips.push({ label: l, on, run: () => onChange({ ...value, end: plusMin(value.start!, m) }) });
     }
   } else if (kind === 'tag') {
     for (let i = 0; i < 4; i++) {
@@ -196,19 +192,26 @@ export default function WhenField({ value, onChange, kind = 'termin', past, icon
             {chips.map((c) => <WChip key={c.label} label={c.label} on={c.on} onPress={() => { haptics.select(); c.run(); }} />)}
           </ScrollView>
           {mode === 'cal' ? (
-            <Animated.View entering={swapIn} style={{ marginLeft: label || card ? 0 : -32 }}>
-              <MonthGrid month={month} onMonth={setMonth} date={value?.date} endDate={value?.endDate} dots={dots} max={past ? TODAY : undefined} onPick={pick} />
+            <Animated.View entering={swapIn} style={{ marginLeft: label || card ? 0 : -32, gap: 4 }}>
+              {/* Julian 05.11.: Start and Dauer as two rows of pills on top, the month below. */}
               {kind === 'termin' && value && !value.endDate ? (
-                <StartStrip
-                  start={value.start}
-                  onPick={(t) => {
-                    haptics.select();
-                    // The length stays (Julian 31.10.: moving a Termin to the evening keeps its hour).
-                    const len = value.start && value.end ? minutes(value.end) - minutes(value.start) : 60;
-                    onChange({ ...value, start: t, end: plusMin(t, Math.max(15, len)) });
-                  }}
-                />
+                <>
+                  <StartStrip
+                    start={value.start}
+                    onAllDay={() => { haptics.select(); onChange({ ...value, start: undefined, end: undefined }); }}
+                    onPick={(t) => {
+                      haptics.select();
+                      // The length stays (Julian 31.10.: moving a Termin to the evening keeps its hour).
+                      const len = value.start && value.end ? minutes(value.end) - minutes(value.start) : 60;
+                      onChange({ ...value, start: t, end: plusMin(t, Math.max(15, len)) });
+                    }}
+                  />
+                  {value.start ? <LengthStrip start={value.start} end={value.end} onPick={(m) => { haptics.select(); onChange({ ...value, end: plusMin(value.start!, m) }); }} /> : null}
+                </>
               ) : null}
+              <View style={{ paddingTop: 8 }}>
+                <MonthGrid month={month} onMonth={setMonth} date={value?.date} endDate={value?.endDate} dots={dots} max={past ? TODAY : undefined} onPick={pick} />
+              </View>
             </Animated.View>
           ) : null}
         </Animated.View>
@@ -238,16 +241,17 @@ const SLOTS = Array.from({ length: 36 }, (_, i) => {
   const m = 6 * 60 + i * 30;
   return `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`;
 });
-function StartStrip({ start, onPick }: { start?: string; onPick: (t: string) => void }) {
+function StartStrip({ start, onPick, onAllDay }: { start?: string; onPick: (t: string) => void; onAllDay?: () => void }) {
   const ref = useRef<ScrollView>(null);
   const xs = useRef<Record<string, number>>({});
   const near = start ? SLOTS.reduce((a, b) => (Math.abs(minutes(b) - minutes(start)) < Math.abs(minutes(a) - minutes(start)) ? b : a)) : '09:00';
   const slots = start && !SLOTS.includes(start) ? [...SLOTS, start].sort() : SLOTS;
   const jumped = useRef(false);
   return (
-    <View style={{ gap: 8, paddingTop: 12 }}>
-      <Txt size={13} weight={600} color={tokens.sub} style={{ paddingHorizontal: 4 }}>{tx('Beginn', 'Starts at')}</Txt>
+    <View style={{ gap: 6, paddingTop: 4 }}>
+      <Txt size={13} weight={600} color={tokens.sub} style={{ paddingHorizontal: 4 }}>{tx('Start', 'Start')}</Txt>
       <ScrollView ref={ref} horizontal showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="handled" contentContainerStyle={{ gap: 6, paddingRight: 16 }} style={{ marginRight: -16 }}>
+        {onAllDay ? <WChip label={tx('Ganztägig', 'All day')} on={!start} onPress={onAllDay} /> : null}
         {slots.map((t) => (
           <View
             key={t}
@@ -259,6 +263,20 @@ function StartStrip({ start, onPick }: { start?: string; onPick: (t: string) => 
             <WChip label={hm(t)} on={t === start} onPress={() => onPick(t)} />
           </View>
         ))}
+      </ScrollView>
+    </View>
+  );
+}
+
+/** Julian 05.11.: the length as its own row of pills under Start. */
+const LENGTHS = [[tx('15 Min', '15 min'), 15], [tx('30 Min', '30 min'), 30], [tx('45 Min', '45 min'), 45], [tx('1 Std', '1 h'), 60], [tx('1,5 Std', '1.5 h'), 90], [tx('2 Std', '2 h'), 120], [tx('3 Std', '3 h'), 180]] as const;
+function LengthStrip({ start, end, onPick }: { start: string; end?: string; onPick: (m: number) => void }) {
+  const len = end ? minutes(end) - minutes(start) : 0;
+  return (
+    <View style={{ gap: 6, paddingTop: 8 }}>
+      <Txt size={13} weight={600} color={tokens.sub} style={{ paddingHorizontal: 4 }}>{tx('Dauer', 'Duration')}</Txt>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="handled" contentContainerStyle={{ gap: 6, paddingRight: 16 }} style={{ marginRight: -16 }}>
+        {LENGTHS.map(([l, m]) => <WChip key={m} label={l} on={len === m} onPress={() => onPick(m)} />)}
       </ScrollView>
     </View>
   );
