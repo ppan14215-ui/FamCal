@@ -11,6 +11,7 @@ import { LANG, tx } from '../i18n/lang';
 import { get, actions } from '../state/store';
 import { newId } from '../data/sample';
 import type { CalEvent, List } from '../state/types';
+import { kiErlaubt } from './privat';
 
 const TRIP = /urlaub|reise|ferien|ostsee|nordsee|meer|strand|berge|ski|camping|wochenende in|trip|holiday|vacation|travel/i;
 
@@ -54,7 +55,7 @@ function byRules(e: CalEvent, kids: { name: string; months: number }[]): Section
 }
 
 async function byClaude(e: CalEvent, kids: { name: string; months: number }[]): Promise<Sections | null> {
-  if (!supabase || !getAuth().session) return null;
+  if (!supabase || !kiErlaubt() || !getAuth().session) return null;
   const { data, error } = await supabase.functions.invoke<{ sections: Sections | null }>('liste', {
     body: { action: 'packliste', trip: e.title, place: e.place ?? '', from: e.date, to: e.endDate ?? e.date, kids, lang: LANG },
   });

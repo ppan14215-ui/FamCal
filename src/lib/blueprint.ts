@@ -8,6 +8,7 @@ import { supabase } from './cloud';
 import { getAuth } from './auth';
 import { LANG, tx } from '../i18n/lang';
 import type { Block, Blueprint } from '../state/types';
+import { kiErlaubt } from './privat';
 
 const BLOCKS: Block[] = ['cover', 'stars', 'seen', 'year', 'by', 'link', 'date', 'price', 'place', 'note', 'points'];
 
@@ -37,7 +38,7 @@ export function blueprintFor(name: string): Blueprint | null {
 
 /** Claude's blueprint for any list name; null offline or when a plain list fits. */
 export async function blueprintOnline(name: string): Promise<Blueprint | null> {
-  if (!supabase || !getAuth().session) return null;
+  if (!supabase || !kiErlaubt() || !getAuth().session) return null;
   const { data, error } = await supabase.functions.invoke<{ blueprint: Blueprint | null }>('liste', { body: { action: 'bauplan', name, lang: LANG } });
   const bp = error ? null : data?.blueprint;
   if (!bp?.blocks?.length) return null;

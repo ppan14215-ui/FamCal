@@ -4,13 +4,14 @@
  * offline, too slow, day cap) returns null and the phone's own text is used.
  */
 import { getAuth } from './auth';
+import { spracheCloud } from './privat';
 
 const WAIT_MS = 7000;
 // Once the server says it has no key, stop trying until the app restarts.
 let off = false;
 
 /** False once the server said it has no key: then the phone's own words show live again. */
-export const cloudOn = () => !off && !hearCapped;
+export const cloudOn = () => !off && !hearCapped && spracheCloud();
 /** Day cap of cloud ears reached (Julian 05.11.: 40 a person a day): the phone's own words are used until the app restarts. */
 let hearCapped = false;
 export const cloudCapped = () => hearCapped;
@@ -18,7 +19,8 @@ export const cloudCapped = () => hearCapped;
 export async function hearInCloud(uri: string): Promise<string | null> {
   const session = getAuth().session;
   const url = process.env.EXPO_PUBLIC_SUPABASE_URL;
-  if (off || !session || !url || !uri) return null;
+  // Sprache nur auf dem Handy or Ohne KI (Julian 05.11.): the recording never leaves the phone.
+  if (off || !session || !url || !uri || !spracheCloud()) return null;
   const form = new FormData();
   // React Native sends a local file this way; the bytes never pass through JavaScript.
   form.append('audio', { uri, name: 'satz.wav', type: 'audio/wav' } as any);

@@ -31,6 +31,8 @@ import { sendAsk, feedTail } from './feed';
 import { facts, remember, forget, isWissen } from './wissen';
 import { newId, itemText } from '../data/sample';
 import { isInfoDay } from './feiertage';
+import { applyFamilyKi } from './privat';
+import { aliases, showDeep, leanSnapshot, lookup, select, LOOKUPS, MAX_LOOKUPS, type Alias } from './kontext';
 
 // ─── Switch ────────────────────────────────────────────────────────────────
 
@@ -71,11 +73,11 @@ function eventLine(e: CalEvent) {
 }
 
 /**
- * The family's state as short lines with ids, so Claude can find "den
- * Zahnarzt am Freitag" and change it. Bounded: about two weeks back and four
- * months ahead, series that still run, open entries of every list.
+ * BEFORE 05.11. (kept only for scripts/eval/tokens.ts, never sent): the family's
+ * state as short lines with ids, about two weeks back and four months ahead,
+ * 200 older titles, every fact and list. Now src/lib/kontext.ts leanSnapshot.
  */
-export function snapshot(): string {
+export function snapshotAlt(): string {
   const { events, lists, tasks, people } = get();
   const from = addDays(TODAY, -14);
   const to = addDays(TODAY, 120);
@@ -145,17 +147,60 @@ export function screenOf(ctx: { kind: string; id?: string }): string {
   return '';
 }
 
-/** What the app sends for one sentence; the test list (scripts/eval-assistent) sends exactly this too. */
-export function agentBody(said: string, history: { said: string; app?: string }[], screen = '') {
-  return { text: said, today: TODAY, now: NOW, names: { J: persons.J.name, T: persons.T.name }, me: myRole(), lang: LANG, icons: TERMIN_ICON_NAMES, snapshot: snapshot(), history, screen };
+/**
+ * What the app sends for one sentence; the test list (scripts/eval) sends exactly this too.
+ * Julian 05.11.: no names (Fam1, Fam2 … instead), only what the sentence needs (src/lib/kontext.ts).
+ */
+export function agentBody(said: string, history: { said: string; app?: string }[], screen = '', A: Alias = aliases(), screenList?: string) {
+  const text = A.hide(said);
+  const scr = A.hide(screen);
+  return {
+    text, today: TODAY, now: NOW, names: { J: 'Fam1', T: 'Fam2' }, me: myRole(), lang: LANG, icons: TERMIN_ICON_NAMES,
+    snapshot: leanSnapshot(text, scr, A, screenList), history: history.map((h) => ({ said: A.hide(h.said), app: h.app ? A.hide(h.app) : undefined })), screen: scr,
+  };
 }
 
-export async function askAgent(said: string, lines: { said: string; app?: string }[], screen = '', onSay?: (say: string) => void): Promise<AgentAnswer | null> {
+/** One answer from the server: what to do, or which lookups it needs first. */
+export type Reply = (AgentAnswer & { left?: number | null }) | { need: { id: string; tool: string; input: Record<string, any> }[]; turn: unknown[]; ticket?: string };
+export type Usage = { in: number; out: number; cached: number; lookups: number };
+
+/**
+ * One sentence, start to end: the body goes out, lookups Claude asks for are
+ * answered here on the phone (at most three rounds, 20 rows each), and the
+ * final answer gets the real names back. `send` is the app's stream or the test's fetch.
+ */
+export async function converse(said: string, history: { said: string; app?: string }[], screen: string, send: (body: object) => Promise<(Reply & { usage?: Partial<Usage> }) | null>, screenList?: string, usage?: Usage): Promise<AgentAnswer | null> {
+  const A = aliases();
+  const body = agentBody(said, history, screen, A, screenList);
+  const steps: { turn: unknown[]; results: { id: string; text: string }[] }[] = [];
+  let ticket: string | undefined;
+  for (let round = 0; round <= MAX_LOOKUPS; round++) {
+    const r = await send(steps.length ? { ...body, steps, ticket } : body);
+    if (usage && r?.usage) { usage.in += r.usage.in ?? 0; usage.out += r.usage.out ?? 0; usage.cached += r.usage.cached ?? 0; }
+    if (!r) return null;
+    if ('need' in r) {
+      if (round >= MAX_LOOKUPS || !Array.isArray(r.need)) return null;
+      if (usage) usage.lookups += r.need.length;
+      steps.push({ turn: r.turn, results: r.need.map((n) => ({ id: n.id, text: LOOKUPS.has(n.tool) ? lookup(n.tool, n.input, A) : '(nicht erlaubt)' })) });
+      ticket = r.ticket;
+      continue;
+    }
+    if (!Array.isArray(r.actions)) return null;
+    return { actions: showDeep(r.actions, A), text: A.show(r.text ?? '') };
+  }
+  return null;
+}
+
+export async function askAgent(said: string, lines: { said: string; app?: string }[], screen = '', onSay?: (say: string) => void, screenList?: string): Promise<AgentAnswer | null> {
   const session = getAuth().session;
   const url = process.env.EXPO_PUBLIC_SUPABASE_URL;
   if (!supabase || !session || !url) return null;
   const history = [...chatHistory(), ...lines.slice(0, -1)].slice(-6);
-  const body = { ...agentBody(said, history, screen), stream: true };
+  const A = aliases();
+  return converse(said, history, screen, (b) => post(url, session.access_token, b, (t) => onSay?.(A.show(t))), screenList);
+}
+
+async function post(url: string, token: string, b: object, onSay: (say: string) => void): Promise<Reply | null> {
   const ctrl = new AbortController();
   const late = setTimeout(() => ctrl.abort(), WAIT_MS);
   try {
@@ -163,14 +208,16 @@ export async function askAgent(said: string, lines: { said: string; app?: string
     const res = await streamFetch(`${url}/functions/v1/assistent`, {
       method: 'POST',
       signal: ctrl.signal,
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}`, apikey: process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? '' },
-      body: JSON.stringify(body),
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}`, apikey: process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? '' },
+      body: JSON.stringify({ ...b, stream: true }),
     });
+    // The partner switched to Ohne KI meanwhile: this phone follows at once (Julian 05.11.).
+    if (res.status === 403) { const e = await res.json().catch(() => ({})) as { error?: string }; if (e.error === 'ohne_ki') applyFamilyKi(true); return null; }
     if (!res.ok || !res.body) { await limitHint({ context: res as unknown as Response }); return null; }
     const reader = res.body.getReader();
     const dec = new TextDecoder();
     let buf = '';
-    let done: AgentAnswer | null = null;
+    let out: Reply | null = null;
     for (;;) {
       const { value, done: end } = await reader.read();
       if (end) break;
@@ -179,14 +226,15 @@ export async function askAgent(said: string, lines: { said: string; app?: string
       while ((cut = buf.indexOf('\n\n')) >= 0) {
         const line = buf.slice(0, cut).replace(/^data:\s*/, '');
         buf = buf.slice(cut + 2);
-        let ev: { say?: string; done?: AgentAnswer; error?: string };
+        let ev: { say?: string; done?: AgentAnswer; need?: Extract<Reply, { need: unknown }>; error?: string };
         try { ev = JSON.parse(line); } catch { continue; }
-        if (ev.say) onSay?.(ev.say);
-        if (ev.done && Array.isArray(ev.done.actions)) done = ev.done;
+        if (ev.say) onSay(ev.say);
+        if (ev.done && Array.isArray(ev.done.actions)) out = ev.done;
+        if (ev.need && Array.isArray(ev.need.need)) out = ev.need;
         if (ev.error) return null;
       }
     }
-    return done;
+    return out;
   } catch {
     return null;
   } finally {
@@ -205,7 +253,12 @@ const q = (t: string) => tx(`„${t}“`, `“${t}”`);
 const listOf = (id: string) => get().lists.find((l) => l.id === id) ?? get().lists.find((l) => l.name.toLowerCase() === id.toLowerCase());
 const findItem = (l: List, id: string) => l.sections.flatMap((x) => x.items).find((i) => i.id === id || i.name.toLowerCase() === id.toLowerCase());
 /** The Termine an action names, by id or ids; read-only calendars are left out. */
-const eventsOf = (i: Record<string, any>) => [...new Set([s(i.id), ...arr(i.ids)].filter(Boolean).map((x) => x.split('~')[0]))].map((id) => get().events.find((e) => e.id === id)).filter((e): e is CalEvent => !!e && !e.cal).slice(0, 200);
+const eventsOf = (i: Record<string, any>) => {
+  const named = [...new Set([s(i.id), ...arr(i.ids)].filter(Boolean).map((x) => x.split('~')[0]))].map((id) => get().events.find((e) => e.id === id));
+  // Julian 05.11.: Claude sees only two weeks; "alle Arbeitstage im Dezember" is a description the app resolves.
+  const picked = i.auswahl && typeof i.auswahl === 'object' ? select(i.auswahl, aliases(), true).filter((e) => e.cal !== 'feiertage') : [];
+  return [...new Map([...named, ...picked].filter((e): e is CalEvent => !!e && !e.cal).map((e) => [e.id, e])).values()].slice(0, 200);
+};
 const whenOf = (e: CalEvent) => `${long(e.date)}${e.allDay ? '' : `, ${hm(e.start)}`}`;
 
 /** What Claude said as a Termin, read the way the old path reads it, so work days, series and icons stay the same. */

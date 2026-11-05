@@ -8,6 +8,7 @@ import { supabase } from './cloud';
 import { getAuth } from './auth';
 import { getFamily } from './sync';
 import { LANG } from '../i18n/lang';
+import { kiErlaubt } from './privat';
 
 export type Recipe = { id?: string; name: string; url?: string; host?: string; servings?: string; image?: string; ingredients: string[] };
 
@@ -30,7 +31,7 @@ export type FromLink = { recipe: Recipe } | { error: 'offline' | 'bad_url' | 'un
 
 /** The server reads the page; null fields mean it found no recipe there. */
 export async function recipeFromLink(url: string): Promise<FromLink> {
-  if (!supabase || !getAuth().session) return { error: 'offline' };
+  if (!supabase || !kiErlaubt() || !getAuth().session) return { error: 'offline' };
   const { data, error } = await supabase.functions.invoke<{ recipe: Recipe | null; reason?: string }>('liste', { body: { action: 'rezept', url, lang: LANG } });
   if (error) return { error: (error as { context?: Response }).context?.status === 429 ? 'limit' : 'unreachable' };
   if (!data?.recipe) return { error: (data?.reason as 'bad_url' | 'unreachable' | 'no_recipe') ?? 'no_recipe' };

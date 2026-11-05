@@ -7,10 +7,11 @@
  *
  * Neuer Fehler auf dem Handy = neuer Fall hier, bevor er behoben wird.
  */
-import type { CalEvent, List, Task } from '../../src/state/types';
+import type { CalEvent, List, Task, Person } from '../../src/state/types';
 import { weekday } from './familie';
+import { grossTermine, grossListen, LEUTE } from './grossfamilie';
 
-export type Stand = { events: CalEvent[]; lists: List[]; tasks: Task[] };
+export type Stand = { events: CalEvent[]; lists: List[]; tasks: Task[]; people?: Person[] };
 export type Ergebnis = {
   /** Was die App nach allen Sätzen zeigt. */
   stand: Stand;
@@ -37,6 +38,9 @@ export type Fall = {
 
 /** Familie mit einem gemerkten Fakt (Familiengedächtnis). */
 const mitFakt = (s: Stand): Stand => ({ ...s, lists: [...s.lists, { id: 'wissen', name: 'Familiengedächtnis', icon: 'notizblock', kind: 'collection', sections: [{ id: 'main', title: '', items: [{ id: 'f1', name: 'Karlo hat Schuhgröße 27', note: 'Karlo', who: 'T', done: false, data: { date: '2026-09-12' } }] }] } as List] });
+
+/** Große Familie nach viel Nutzung (Julian 05.11.): 5 Personen, ~1000 Termine, 20 Listen, 200 Fakten. */
+const gross = (s: Stand): Stand => ({ ...s, events: grossTermine(), lists: grossListen(), people: LEUTE });
 
 const work = (s: Stand) => s.events.filter((e) => e.work);
 const byId = (s: Stand, id: string) => s.events.find((e) => e.id === id);
@@ -326,4 +330,43 @@ export const FAELLE: Fall[] = [
       const n = neu(e)[0];
       return [...(n ? [] : ['kein Termin']), ...(n && n.allDay ? [] : [`Uhrzeit erfunden: ${n?.start}`]), ...(e.frage ? [] : ['keine Frage nach der Uhrzeit']), ...deutsch(e)];
     } },
+
+  // ─── Große Familie (Julian 05.11.: sauber auch nach viel Nutzung und viel Kontext) ───
+  { id: 'gross-zahnarzt-zuletzt', start: gross, saetze: ['Wann war Karlo zuletzt beim Zahnarzt?'],
+    pruefe: (e) => [...nichtsGeaendert(e), ...(/12\.?\s*(3\.|märz)|march 12|12th of march|2026-03-12/i.test(e.antwort) ? [] : [`nicht 12. März: "${e.antwort}"`]), ...(/fam\d/i.test(e.antwort) ? ['Platzhalter in der Antwort'] : []), ...deutsch(e)] },
+  { id: 'gross-schuhgroesse', start: gross, saetze: ['Welche Schuhgröße hat Mia?'],
+    pruefe: (e) => [...nichtsGeaendert(e), ...(/31/.test(e.antwort) ? [] : [`Antwort ohne 31: ${e.antwort}`]), ...deutsch(e)] },
+  { id: 'gross-dezember-homeoffice', start: gross, saetze: ['Im Dezember bin ich freitags im Homeoffice'],
+    pruefe: (e) => {
+      const w = work(e.stand).filter((x) => x.who === 'J' && x.date.startsWith('2026-12'));
+      const fr = w.filter((x) => weekday(x.date) === 5);
+      const bad: string[] = [];
+      if (fr.length < 3 || fr.some((x) => !homeoffice(x))) bad.push(`${fr.filter((x) => !homeoffice(x)).length} von ${fr.length} Dezember-Freitagen nicht Homeoffice`);
+      if (work(e.stand).some((x) => !(x.who === 'J' && x.date.startsWith('2026-12') && weekday(x.date) === 5) && homeoffice(x))) bad.push('auch andere Tage Homeoffice');
+      return [...bad, ...keineNeuen(e), ...deutsch(e)];
+    } },
+  { id: 'gross-baumarkt-abhaken', start: gross, saetze: ['Die Schrauben vom Baumarkt hab ich'],
+    pruefe: (e) => {
+      const it = items(e.stand, 'gl0').find((i) => /schrauben/i.test(i.name));
+      return [...(it?.done ? [] : ['Schrauben nicht abgehakt']), ...keineNeuen(e), ...deutsch(e)];
+    } },
+  { id: 'gross-kinderarzt-ort', start: gross, saetze: ['Nächsten Dienstag um 9 Kinderarzt mit Mia'],
+    pruefe: (e) => {
+      const k = neu(e).find((x) => /kinderarzt/i.test(x.title));
+      return [...(k?.date === '2026-11-03' && k.start === '09:00' ? [] : [`Kinderarzt: ${k ? `${k.date} ${k.start}` : 'fehlt'}`]), ...(k && /weber/i.test(k.place ?? '') ? [] : [`Ort nicht vom letzten Mal: ${k?.place ?? 'leer'}`]), ...(k && /fam\d/i.test(`${k.title} ${k.sub ?? ''}`) ? ['Platzhalter im Termin'] : []), ...deutsch(e)];
+    } },
+  { id: 'gross-oma-geburtstag', start: gross, saetze: ['Wann hat Oma Inge Geburtstag?'],
+    pruefe: (e) => [...nichtsGeaendert(e), ...(/8\.?\s*(3\.|märz)|march 8|8th of march|03-08/i.test(e.antwort) ? [] : [`nicht 8. März: "${e.antwort}"`]), ...deutsch(e)] },
+  { id: 'gross-neuer-termin', start: gross, saetze: ['Morgen um 15 Uhr Elternabend in der Schule von Mia'],
+    pruefe: (e) => {
+      const n = neu(e).find((x) => /elternabend/i.test(x.title));
+      return [...(n?.date === '2026-10-30' && n.start === '15:00' ? [] : [`Elternabend: ${n ? `${n.date} ${n.start}` : 'fehlt'}`]), ...(n && /fam\d/i.test(`${n.title} ${n.sub ?? ''} ${n.place ?? ''}`) ? ['Platzhalter im Termin'] : []), ...deutsch(e)];
+    } },
+  { id: 'gross-merken-name', start: gross, saetze: ['Karlo hat jetzt Schuhgröße 26'],
+    pruefe: (e) => {
+      const f = items(e.stand, 'wissen').filter((i) => /26/.test(i.text));
+      return [...(f.some((i) => /karlo/i.test(`${i.text} ${i.note ?? ''}`)) ? [] : [`nicht mit Karlo gemerkt: ${f.map((i) => i.text).join(' | ') || 'nichts'}`]), ...(f.some((i) => /fam\d/i.test(`${i.text} ${i.note ?? ''}`)) ? ['Platzhalter im Gedächtnis'] : []), ...keineNeuen(e), ...deutsch(e)];
+    } },
+  { id: 'gross-sophia-arbeit-privat', start: gross, saetze: ['Was macht Sophia am Montag?'],
+    pruefe: (e) => [...nichtsGeaendert(e), ...(/falke|siemens|quartal/i.test(e.antwort) ? ['Inhalt aus privatem Kalender in der Antwort'] : []), ...(e.antwort || e.frage ? [] : ['keine Antwort']), ...deutsch(e)] },
 ];

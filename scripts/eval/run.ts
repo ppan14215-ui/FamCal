@@ -15,7 +15,7 @@
  */
 import fs from 'node:fs';
 import path from 'node:path';
-import { agentBody, agentPlan, withReply, promisesOnly, RETRY_NOTE, type AgentAnswer } from '../../src/lib/assistent';
+import { converse, agentBody, snapshotAlt, agentPlan, withReply, promisesOnly, RETRY_NOTE, type AgentAnswer, type Usage } from '../../src/lib/assistent';
 import { get, set } from '../../src/state/store';
 import { persons } from '../../src/theme/tokens';
 import { termine, listen, aufgaben } from '../../eval/assistent/familie';
@@ -27,6 +27,38 @@ const args = process.argv.slice(2);
 const vi = args.indexOf('--variant');
 const variant = vi >= 0 ? args[vi + 1] : 'haiku';
 const only = args.filter((a, i) => !a.startsWith('--') && i !== vi + 1 || (vi < 0 && !a.startsWith('--')));
+
+/**
+ * --tokens: no server, only what would be sent per sentence, before (snapshotAlt) and now (agentBody),
+ * for every case. Characters / 3.3 is close to Haiku's tokens for German text with ids and dates.
+ */
+if (args.includes('--tokens')) {
+  persons.J.name = 'Julian';
+  persons.T.name = 'Sophia';
+  const rows: string[] = [];
+  const sum = { alt: 0, neu: 0, n: 0 };
+  const groups: Record<string, { alt: number; neu: number; n: number }> = {};
+  for (const c of FAELLE) {
+    const base: Stand = { events: termine(), lists: listen(), tasks: aufgaben() };
+    const start = c.start ? c.start(base) : base;
+    set(() => ({ ...JSON.parse(JSON.stringify(start)), people: (start.people ?? [{ id: 'p_karlo', name: 'Karlo', kind: 'kind', color: 'Mint' }]) as never }));
+    const alt = Math.min(16000, snapshotAlt().length);
+    const neuS = agentBody(c.saetze[0], []).snapshot;
+    if (process.env.PEEK === c.id) console.log(neuS);
+    const neu = neuS.length;
+    const g = c.id.startsWith('gross-') ? 'Große Familie (5 Personen, ~1000 Termine, 20 Listen, 200 Fakten)' : 'Julians Familie (Testliste)';
+    groups[g] ??= { alt: 0, neu: 0, n: 0 };
+    groups[g].alt += alt; groups[g].neu += neu; groups[g].n++;
+    sum.alt += alt; sum.neu += neu; sum.n++;
+    rows.push(`| ${c.id} | ${Math.round(alt / 3.3)} | ${Math.round(neu / 3.3)} |`);
+  }
+  const t = (n: number) => Math.round(n / 3.3);
+  const lines = Object.entries(groups).map(([g, v]) => `- ${g}: vorher ~${t(v.alt / v.n)} Tokens Stand pro Satz, jetzt ~${t(v.neu / v.n)} (${Math.round(100 - (100 * v.neu) / v.alt)} % weniger)`);
+  const md = `# Tokens pro Satz: Stand der Familie vorher und jetzt\n\nNur der Teil, der sich je Familie ändert (Regeln, Werkzeuge und Icons sind gleich und kommen aus dem Cache). Vorher wurde ab 16.000 Zeichen abgeschnitten.\n\n${lines.join('\n')}\n\n| Fall | vorher | jetzt |\n|---|---|---|\n${rows.join('\n')}\n`;
+  fs.writeFileSync(path.join(process.cwd(), 'eval/assistent/tokens.md'), md);
+  console.log(lines.join('\n'));
+  process.exit(0);
+}
 if (TOKEN.length < 32) throw new Error('EVAL_TOKEN fehlt');
 
 persons.J.name = 'Julian';
@@ -34,15 +66,26 @@ persons.T.name = 'Sophia';
 const clone = <T,>(x: T): T => JSON.parse(JSON.stringify(x));
 const stand = (): Stand => clone({ events: get().events, lists: get().lists, tasks: get().tasks });
 
+/** Tokens per sentence, to compare before and after the lean context (Julian 05.11.). */
+const usage: Usage = { in: 0, out: 0, cached: 0, lookups: 0 };
+let sentences = 0;
+
+/** Same as the app: the lean body, lookups answered from the family copy, names set back (converse). */
 async function ask(said: string, history: { said: string; app?: string }[]): Promise<{ r: AgentAnswer | null; ms: number; error?: string }> {
   const t0 = Date.now();
-  for (let tries = 0; ; tries++) {
-    const res = await fetch(URL, { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-eval-token': TOKEN, 'x-eval-variant': variant }, body: JSON.stringify(agentBody(said, history)) });
-    const body = await res.json().catch(() => ({}));
-    if (res.ok) return { r: body as AgentAnswer, ms: Date.now() - t0 };
-    if (tries < 2 && (res.status === 429 || res.status >= 500)) { await new Promise((r) => setTimeout(r, 3000 * (tries + 1))); continue; }
-    return { r: null, ms: Date.now() - t0, error: `${res.status} ${body.error ?? ''}` };
-  }
+  let error: string | undefined;
+  sentences++;
+  const r = await converse(said, history, '', async (body) => {
+    for (let tries = 0; ; tries++) {
+      const res = await fetch(URL, { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-eval-token': TOKEN, 'x-eval-variant': variant }, body: JSON.stringify(body) });
+      const out = await res.json().catch(() => ({}));
+      if (res.ok) return out;
+      if (tries < 2 && (res.status === 429 || res.status >= 500)) { await new Promise((w) => setTimeout(w, 3000 * (tries + 1))); continue; }
+      error = `${res.status} ${out.error ?? ''}`;
+      return null;
+    }
+  }, undefined, usage);
+  return { r, ms: Date.now() - t0, error: r ? undefined : error ?? 'keine Antwort' };
 }
 
 (async () => {
@@ -53,7 +96,7 @@ async function ask(said: string, history: { said: string; app?: string }[]): Pro
   for (const c of cases) {
     const base: Stand = { events: termine(), lists: listen(), tasks: aufgaben() };
     const start = c.start ? c.start(base) : base;
-    set(() => ({ ...clone(start), people: [{ id: 'p_karlo', name: 'Karlo', kind: 'kind', color: 'Mint' }] as never }));
+    set(() => ({ ...clone(start), people: (start.people ?? [{ id: 'p_karlo', name: 'Karlo', kind: 'kind', color: 'Mint' }]) as never }));
     const vorher = stand();
     const history: { said: string; app?: string }[] = [];
     let last: Omit<Ergebnis, 'stand' | 'vorher'> = { antwort: '', frage: null, tools: [], aktionen: [], karte: null };
@@ -81,7 +124,10 @@ async function ask(said: string, history: { said: string; app?: string }[]): Pro
       last = { antwort, frage, tools: r.actions.map((a) => a.tool), aktionen: r.actions.map((a) => ({ tool: a.tool, input: (a.input ?? {}) as Record<string, any> })), karte };
       history.push({ said, app: frage ?? (antwort || undefined) });
     }
-    const bad = fail ? [fail] : c.pruefe({ ...last, stand: stand(), vorher });
+    const nachher = stand();
+    // Julian 05.11.: a placeholder (Fam1, Fam3 …) must never land in the calendar, a list, the memory or an answer.
+    const leak = JSON.stringify([nachher.events.filter((x) => !vorher.events.some((y) => JSON.stringify(y) === JSON.stringify(x))), nachher.lists, last.antwort, last.frage]).match(/Fam\d+/);
+    const bad = fail ? [fail] : [...c.pruefe({ ...last, stand: nachher, vorher }), ...(leak ? [`Platzhalter ${leak[0]} ist sichtbar`] : [])];
     if (!bad.length) ok++;
     const line = `${bad.length ? '✗' : '✓'} ${c.id}${bad.length ? `: ${bad.join('; ')}` : ''}`;
     console.log(line);
@@ -89,7 +135,8 @@ async function ask(said: string, history: { said: string; app?: string }[]): Pro
   }
   times.sort((a, b) => a - b);
   const median = times[Math.floor(times.length / 2)] ?? 0;
-  const summary = `${ok} von ${cases.length} bestanden (${variant}), Antwortzeit Median ${(median / 1000).toFixed(1)} s, langsamster ${((times[times.length - 1] ?? 0) / 1000).toFixed(1)} s`;
+  const per = (n: number) => Math.round(n / Math.max(1, sentences));
+  const summary = `${ok} von ${cases.length} bestanden (${variant}), Antwortzeit Median ${(median / 1000).toFixed(1)} s, langsamster ${((times[times.length - 1] ?? 0) / 1000).toFixed(1)} s, Tokens pro Satz ${per(usage.in)} rein (${per(usage.cached)} aus dem Cache), ${per(usage.out)} raus, ${usage.lookups} Suchen`;
   console.log(`\n${summary}`);
   const out = path.join(process.cwd(), `eval/assistent/ergebnis-${variant}.md`);
   fs.writeFileSync(out, `# Testliste Assistent: ${summary}\n\nStand ${new Date().toISOString().slice(0, 16).replace('T', ' ')} UTC\n\n| | Fall | Satz | Fehler oder Antwort |\n|---|---|---|---|\n${rows.join('\n')}\n`);

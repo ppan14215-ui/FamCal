@@ -4,6 +4,13 @@ Alle sichtbaren Änderungen an FamCal. Neueste oben. Agenten und Menschen: Ände
 
 ## Unreleased
 
+### Datenschutz (05.11.)
+- Der Assistent bekommt pro Satz nur noch die nächsten zwei Wochen und was zum Satz passt, statt bis zu 220 Termine, alle Fakten und alle Listen. Braucht er mehr, sucht die App auf dem Handy nach (höchstens 20 Zeilen, höchstens 3 Suchen pro Satz). Etwa halb so viel Text pro Satz, bei großen Familien 60 % weniger.
+- Eure Namen gehen nur noch als Platzhalter raus, die App setzt sie wieder ein. Private Kalender gehen nur als „Belegt“ oder „Arbeit“ raus, ohne Titel und Ort.
+- Neu in den Einstellungen unter Datenschutz: „Ohne KI“ für die ganze Familie (das Sprechfeld fällt weg, ihr tragt alles mit dem Plus ein), „Sprache nur auf dem Handy“ und „Alle Daten löschen“.
+- Vor dem ersten Satz fragt die App einmal: Mit KI oder ohne. Sie sagt dabei klar, was an wen geht.
+- Viele Termine auf einmal („alle Arbeitstage im Dezember“) ändert der Assistent jetzt über eine Beschreibung, die App findet alle passenden selbst.
+
 ### Ruhiger, weniger Text (03.11.)
 - Leerer Chat zeigt nur noch drei Beispielsätze direkt über dem Feld, ohne Memo, Überschrift und Hilfetext.
 - Eigene Nachrichten ohne „Du · Uhrzeit“. Eine Termin Karte fragt nur noch eine Sache auf einmal (erst Uhrzeit, dann wer geht, dann der Ort). Die schwebende zweite Frage über dem Feld ist weg. Karte antippen öffnet den Termin, der Knopf „Ändern“ fällt weg.

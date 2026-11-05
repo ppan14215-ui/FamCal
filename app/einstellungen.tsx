@@ -23,6 +23,7 @@ import * as Updates from 'expo-updates';
 import { useMicStyle, setMicStyle } from '../src/lib/micStyle';
 import { useSimple, setSimple } from '../src/lib/simple';
 import { useAgent, setAgent } from '../src/lib/assistent';
+import { usePrivat } from '../src/lib/privat';
 import { Seg } from '../src/components/ui/kit';
 import { haptics } from '../src/lib/haptics';
 import { countryName, regionName } from '../src/lib/holidays';
@@ -61,6 +62,7 @@ export default function Einstellungen() {
   const themeName = (() => { const t = THEMES.find((x) => x.id === pal); return t ? tx(t.de, t.en) : ''; })();
   const simple = useSimple();
   const agent = useAgent();
+  const ohneKiNow = usePrivat().ohneKi;
   const cals = useStore((s) => s.calendars);
   const demo = useStore((s) => s.demo);
   const names = useStore((s) => s.names);
@@ -107,6 +109,8 @@ export default function Einstellungen() {
         <SRow icon="chat" t={tx('Sprache', 'Language')} v={sl === 'de' ? tx('Deutsch', 'German') : tx('Englisch', 'English')} onPress={() => { const v = sl === 'de' ? 'en' : 'de'; setSpeechLang(v); setSl(v); toast(v === 'de' ? tx('Ich höre jetzt auf Deutsch', 'Listening in German now') : tx('Ich höre jetzt auf Englisch', 'Listening in English now')); }} />
         {HIDDEN.toggles ? null : <SRow icon="chat" t={tx('Mikro Anzeige', 'Mic display')} v={mic === 'ring' ? tx('Ring', 'Ring') : tx('Balken', 'Bars')} onPress={() => { const v = mic === 'ring' ? 'balken' : 'ring'; setMicStyle(v); haptics.select(); toast(v === 'ring' ? tx('Mikro zeigt jetzt den Ring', 'Mic now shows the ring') : tx('Mikro zeigt jetzt die Balken', 'Mic now shows the bars')); }} />}
         <SRow icon="kalender" t={tx('Kalender Abo und Export', 'Calendar feed and export')} onPress={() => router.push('/kalender-abo')} />
+        {/* Julian 05.11.: Ohne KI, Sprache nur auf dem Handy, Alle Daten löschen. */}
+        <SRow icon="schloss" t={tx('Datenschutz', 'Privacy')} v={ohneKiNow ? tx('Ohne KI', 'Without AI') : undefined} onPress={() => router.push('/datenschutz')} />
       </Group>
       {/* Julian 04.11.: the real settings apart from what is only there to try things out. */}
       <H2>{tx('Zum Testen', 'For testing')}</H2>

@@ -58,6 +58,10 @@ export type Events = {
   /** Reached the app at the end of the first-run flow. */
   onboarding_completed: { flow: 'v3' | 'flow'; nav_style: string; time_picker: 'calendar' | 'keyboard'; ms_total?: number };
 
+  /** Julian 05.11.: only the choice, never what was said. */
+  ai_choice: { choice: 'mit_ki' | 'ohne_ki'; source: 'zustimmung' | 'onboarding' | 'settings' };
+  voice_choice: { choice: 'cloud' | 'handy' };
+  account_deleted: Record<string, never>;
   signin_started: { provider: 'apple' | 'google' | 'test' };
   signin_completed: { provider: 'apple' | 'google' | 'test' };
   signin_failed: { provider: 'apple' | 'google' | 'test'; reason: string };

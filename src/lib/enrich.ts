@@ -8,13 +8,14 @@ import { supabase } from './cloud';
 import { getAuth } from './auth';
 import { LANG } from '../i18n/lang';
 import type { Blueprint, ItemData } from '../state/types';
+import { kiErlaubt } from './privat';
 
 type Found = Pick<ItemData, 'cover' | 'year' | 'by' | 'link' | 'about' | 'kind'>;
 /** Raised when the server finds more (29.10.: posters from iTunes; 31.10.: a Wikipedia sentence), so old rows look once more. */
 const LOOKUP = 4;
 
 async function lookUp(source: NonNullable<Blueprint['source']>, q: string): Promise<Found | null> {
-  if (!supabase || !getAuth().session) return null;
+  if (!supabase || !kiErlaubt() || !getAuth().session) return null;
   const { data, error } = await supabase.functions.invoke<{ found: Found | null }>('liste', { body: { action: 'anreichern', source, q, lang: LANG } });
   return error || !data ? null : data.found;
 }

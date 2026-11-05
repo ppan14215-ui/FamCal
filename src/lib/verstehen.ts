@@ -11,6 +11,7 @@ import { persons } from '../theme/tokens';
 import { TERMIN_ICON_NAMES, type Understood } from './talk';
 import { LANG, tx } from '../i18n/lang';
 import { toast, get } from '../state/store';
+import { kiErlaubt } from './privat';
 
 /** The family's own lists, so Claude can put things on the Watchlist or the Ostsee packing list (Julian 29.10.). */
 const myLists = () => get().lists.filter((l) => l.id !== 'wissen').map((l) => ({ id: l.id, name: l.name })).slice(0, 40);
@@ -21,7 +22,8 @@ const WAIT_MS = 15000;
 /** Until when a cap holds (day: tomorrow, month: the 1st). Meanwhile the rules answer without asking the server. */
 let cappedUntil = '';
 export const capped = () => !!cappedUntil && new Date().toISOString().slice(0, 10) < cappedUntil;
-export const canUnderstand = () => !!supabase && !!getAuth().session && !capped();
+// Ohne KI or no consent yet (Julian 05.11.): nothing goes to Claude; the rules answer on the phone.
+export const canUnderstand = () => !!supabase && !!getAuth().session && !capped() && kiErlaubt();
 
 /** Claude did not answer (server error, no key): said once, so nobody wonders why the rules guessed. */
 let toldDown = false;

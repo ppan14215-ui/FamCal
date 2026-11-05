@@ -35,9 +35,10 @@ out = swap(out,
   const db = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_ANON_KEY') ?? req.headers.get('apikey') ?? '', {
     global: { headers: { Authorization: req.headers.get('Authorization') ?? '' } },
   });
-  const { data: allowed, error: countError } = await db.rpc('use_ai_call');
-  if (countError) return json({ error: 'not_signed_in' }, 401);
-  if (!allowed.ok) return json({ error: 'limit', reason: allowed.reason, tier: allowed.tier }, 429);
+  const uid = userOf(req);
+  if (!uid) return json({ error: 'not_signed_in' }, 401);
+  // Ohne KI (Julian 05.11.): the family switched the AI off, so no phone of theirs may send anything here.
+  if (await ohneKi(db)) return json({ error: 'ohne_ki' }, 403);
 `,
   `  // Only the test runner knows the token; the code holds just its SHA-256, so reading it gives nothing away.
   const given = new TextEncoder().encode(req.headers.get('x-eval-token') ?? '');
@@ -45,9 +46,16 @@ out = swap(out,
   let diff = 0;
   for (let i = 0; i < EVAL_HASH.length; i++) diff |= EVAL_HASH.charCodeAt(i) ^ hash.charCodeAt(i);
   if (diff || given.length < 32) return json({ error: 'forbidden' }, 403);
-  const allowed = { left: null as number | null };
+  const uid = 'eval-runner';
   const variant = VARIANTS[req.headers.get('x-eval-variant') ?? 'haiku'];
   if (!variant) return json({ error: 'bad_variant' }, 400);
+`);
+out = swap(out,
+  `  const { data: allowed, error: countError } = cont ? { data: { ok: true, left: null }, error: null } : await db.rpc('use_ai_call');
+  if (countError) return json({ error: 'not_signed_in' }, 401);
+  if (!allowed.ok) return json({ error: 'limit', reason: allowed.reason, tier: allowed.tier }, 429);
+`,
+  `  const allowed = { left: null as number | null };
 `);
 out = swap(out,
   `const client = new Anthropic({ apiKey: Deno.env.get('ANTHROPIC_API_KEY') });`,
