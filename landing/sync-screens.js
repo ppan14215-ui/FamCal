@@ -133,6 +133,9 @@ const SCREENS = [
     }, { said: t.kontext, title: t.u6, ok: t.ok });
     await say(t.kontext);
   }],
+  // Aufteilen: der Kartenstapel „Wer kümmert sich?“; Eure Familie: Personen mit Großeltern. Beide per In-App Navigation.
+  ['aufteilen', async ({ p }) => { await p.evaluate(() => { history.pushState({}, '', '/aufteilen'); dispatchEvent(new PopStateEvent('popstate')); }); await p.waitForTimeout(1800); }],
+  ['personen', async ({ p }) => { await p.evaluate(() => { history.pushState({}, '', '/personen'); dispatchEvent(new PopStateEvent('popstate')); }); await p.waitForTimeout(1800); }],
   ['bearbeiten', async ({ p, tab, t }) => { await tab(t.cal); await p.getByText(t.u6).first().click(); }],
   ['listen', async ({ tab, t }) => { await tab(t.lists); }],
   ['watchlist', async ({ p, can, say, tab, t }) => { await can(); await say(t.watch); await tab(t.lists); await p.getByText('Watchlist', { exact: true }).last().click({ timeout: 3000 }).catch(() => {}); }],
