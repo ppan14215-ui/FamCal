@@ -10,9 +10,9 @@
  * passes 78 % of the width or faster than 700 px/s; open from the handle after 24 px inwards, 64 px from the
  * edge or a flick faster than 300 px/s. The keyboard still pushes the bar away while typing.
  */
-import React, { useEffect, useState } from 'react';
-import { View, Platform } from 'react-native';
-import Animated, { useAnimatedStyle, useSharedValue, withTiming, withSpring, Easing, useReducedMotion, interpolate, Extrapolation, FadeIn } from 'react-native-reanimated';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { View, Platform, Pressable, BackHandler, useWindowDimensions } from 'react-native';
+import Animated, { useAnimatedStyle, useSharedValue, withTiming, withSpring, withDelay, Easing, useReducedMotion, interpolate, Extrapolation, FadeIn } from 'react-native-reanimated';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { scheduleOnRN } from 'react-native-worklets';
 import { tx } from '../i18n/lang';
@@ -28,16 +28,17 @@ import { haptics } from '../lib/haptics';
 import { useTyping as useFocus, useKeyboardInset } from '../lib/keyboard';
 import { useDockTop } from '../lib/dockSpace';
 import Svg, { Defs, LinearGradient, Stop, Rect } from 'react-native-svg';
-import { navStyle } from '../lib/navStyle';
+import { navStyle, useBarMode, setBarMode, setBarNav } from '../lib/navStyle';
+const EASE_OUT = Easing.bezier(0.23, 1, 0.32, 1);
 
-const TABS: { name: string; key: string; icon: LineName }[] = [
+export const TABS: { name: string; key: string; icon: LineName }[] = [
   { name: 'chat', key: 'nav.chat', icon: 'chat' },
   { name: 'kalender', key: 'nav.kalender', icon: 'cal' },
   { name: 'listen', key: 'nav.listen', icon: 'list' },
 ];
 
 /** Height of the bar; Dock.tsx puts the field right above it. */
-export const navH = () => (navStyle() === 'pill' ? 54 : navStyle() === 'bar' ? 58 : 50);
+export const navH = () => (navStyle() === 'pill' ? 54 : navStyle() === 'bar' ? 54 : 50);
 /** Width of the icon pill in the one-bar navigation. */
 // One bar (Julian 04.11.): the old dark pill's look, the light block sits on the active tab with its word.
 const BAR_ON_W = 100;
@@ -57,7 +58,7 @@ const EDGE = 16;
 const SWITCH = { duration: 300, easing: Easing.bezier(0.22, 1, 0.36, 1) };
 const FADE_H = 36;
 
-const floatShadow = { boxShadow: '0 12px 28px rgba(22,35,42,0.28)' } as any;
+export const floatShadow = { boxShadow: '0 12px 28px rgba(22,35,42,0.28)' } as any;
 
 /** The dark swipeable pill (Julian 30.10. to 03.11.), kept behind navStyle(). */
 function PillNav({ state, navigation }: BottomTabBarProps) {
@@ -257,24 +258,11 @@ function StripNav({ state, navigation }: BottomTabBarProps) {
   const away = useSharedValue(0);
   useEffect(() => { away.value = withTiming(typing ? 1 : 0, { duration: 240, easing: Easing.bezier(0.23, 1, 0.32, 1) }); }, [typing]);
   const hide = useAnimatedStyle((): any => ({ opacity: 1 - away.value }));
-  const dockTop = useDockTop();
-  const groundTo = Math.max(dockTop, navTop(insets.bottom)) + 6;
+  // Julian 05.11.: no soft fade; a solid ground up to the middle of the field, which hides the edge.
+  const groundTo = navTop(insets.bottom) + 4 + 27;
   return (
     <Animated.View pointerEvents={typing ? 'none' : 'box-none'} style={[{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0 }, hide]}>
       <View pointerEvents="none" style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: groundTo, backgroundColor: tokens.bg }} />
-      <View pointerEvents="none" style={{ position: 'absolute', left: 0, right: 0, bottom: groundTo - 0.5, height: FADE_H }}>
-        <Svg width="100%" height="100%" preserveAspectRatio="none">
-          <Defs>
-            <LinearGradient id="stripground" x1="0" y1="0" x2="0" y2="1">
-              <Stop offset="0" stopColor={tokens.bg} stopOpacity={0} />
-              <Stop offset="0.35" stopColor={tokens.bg} stopOpacity={0.35} />
-              <Stop offset="0.7" stopColor={tokens.bg} stopOpacity={0.8} />
-              <Stop offset="1" stopColor={tokens.bg} stopOpacity={1} />
-            </LinearGradient>
-          </Defs>
-          <Rect x="0" y="0" width="100%" height="100%" fill="url(#stripground)" />
-        </Svg>
-      </View>
       <View accessibilityRole="tablist" style={{ position: 'absolute', left: 0, right: 0, bottom: Math.max(insets.bottom, 4), height: navH(), flexDirection: 'row', justifyContent: 'space-around', paddingHorizontal: 40 }}>
         {TABS.map((tab) => {
           const on = current === tab.name;
@@ -292,50 +280,38 @@ function StripNav({ state, navigation }: BottomTabBarProps) {
   );
 }
 
-/** One bar (Julian 04.11.): the tabs as icons in a small pill on the left, the field beside them (Dock). */
+/**
+ * One bar (Julian 05.11. 08:48: "the one shared component in dark mode, at the bottom").
+ * Tabs and field live in one dark shape the Dock draws; here only the calm ground under it,
+ * the tap-outside that folds the open tabs, and the hand-over of the current tab.
+ */
 function BarNav({ state, navigation }: BottomTabBarProps) {
   const insets = useSafeAreaInsets();
-  const { t } = useTranslation();
-  const current = state.routes[state.index]?.name;
-  const focus = useFocus();
-  const kb = useKeyboardInset();
-  const typing = focus && (Platform.OS === 'web' || kb > 0);
-  const away = useSharedValue(0);
-  useEffect(() => { away.value = withTiming(typing ? 1 : 0, { duration: 240, easing: Easing.bezier(0.23, 1, 0.32, 1) }); }, [typing]);
-  const hide = useAnimatedStyle((): any => ({ opacity: 1 - away.value, transform: [{ translateX: -BAR_TABS_W * 0.35 * away.value }, { scale: 1 - 0.1 * away.value }] }));
-  const dockTop = useDockTop();
-  const groundTo = Math.max(dockTop, navTop(insets.bottom)) + 6;
+  const current = state.routes[state.index]?.name ?? 'chat';
+  const m = useBarMode();
+  const nav = useRef(navigation);
+  nav.current = navigation;
+  const go = useCallback((name: string) => { nav.current.navigate(name as never); }, []);
+  useEffect(() => { setBarNav({ current, go }); }, [current, go]);
+  useEffect(() => {
+    if (m !== 'tabs') return;
+    const sub = BackHandler.addEventListener('hardwareBackPress', () => { setBarMode('rest'); return true; });
+    return () => sub.remove();
+  }, [m]);
+  // Julian 05.11.: no soft fade; a solid ground up to the middle of the bar, which hides the edge.
+  const groundTo = Math.max(insets.bottom, 8) + 4 + navH() / 2;
   return (
     <View pointerEvents="box-none" style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0 }}>
       <View pointerEvents="none" style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: groundTo, backgroundColor: tokens.bg }} />
-      <View pointerEvents="none" style={{ position: 'absolute', left: 0, right: 0, bottom: groundTo - 0.5, height: FADE_H }}>
-        <Svg width="100%" height="100%" preserveAspectRatio="none">
-          <Defs>
-            <LinearGradient id="barground" x1="0" y1="0" x2="0" y2="1">
-              <Stop offset="0" stopColor={tokens.bg} stopOpacity={0} />
-              <Stop offset="0.35" stopColor={tokens.bg} stopOpacity={0.35} />
-              <Stop offset="0.7" stopColor={tokens.bg} stopOpacity={0.8} />
-              <Stop offset="1" stopColor={tokens.bg} stopOpacity={1} />
-            </LinearGradient>
-          </Defs>
-          <Rect x="0" y="0" width="100%" height="100%" fill="url(#barground)" />
-        </Svg>
-      </View>
-      {/* The dark bar runs under tabs and field; while typing the field becomes the light block across it. */}
-      <View pointerEvents="none" style={{ position: 'absolute', left: 14, right: 14, bottom: Math.max(insets.bottom, 8) + 4, height: navH(), borderRadius: navH() / 2, backgroundColor: tokens.ink, ...floatShadow }} />
-      <Animated.View accessibilityRole="tablist" pointerEvents={typing ? 'none' : 'auto'}
-        style={[{ position: 'absolute', left: 14 + 5, bottom: Math.max(insets.bottom, 8) + 4 + 5, width: BAR_TABS_W, height: navH() - 10, flexDirection: 'row', alignItems: 'center', gap: 4 }, hide]}>
-        {TABS.map((tab) => (
-          <BarTab key={tab.name} on={current === tab.name} icon={tab.icon} label={t(tab.key)} onPress={() => { if (current !== tab.name) { haptics.select(); navigation.navigate(tab.name); } }} />
-        ))}
-      </Animated.View>
+      {/* Open, a tap anywhere else folds the tabs back into the icon. */}
+      {m === 'tabs' ? <Pressable accessibilityLabel={tx('Tabs schließen', 'Close tabs')} onPress={() => setBarMode('rest')} style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0 }} /> : null}
     </View>
   );
 }
 
-function BarTab({ on, icon, label, onPress }: { on: boolean; icon: LineName; label: string; onPress: () => void }) {
-  const w = useSharedValue(on ? BAR_ON_W : 40);
-  useEffect(() => { w.value = withTiming(on ? BAR_ON_W : 40, SWITCH); }, [on]);
+export function BarTab({ on, icon, label, onPress, onW, offW }: { on: boolean; icon: LineName; label: string; onPress: () => void; onW: number; offW: number }) {
+  const w = useSharedValue(on ? onW : offW);
+  useEffect(() => { w.value = withTiming(on ? onW : offW, SWITCH); }, [on, onW]);
   const size = useAnimatedStyle(() => ({ width: w.value }));
   return (
     <Animated.View style={[{ overflow: 'hidden', borderRadius: 999, backgroundColor: on ? tokens.onInk : 'transparent' }, size]}>

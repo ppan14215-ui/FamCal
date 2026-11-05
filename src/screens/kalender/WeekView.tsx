@@ -7,7 +7,7 @@
  * it to another time or day, like in the Apple calendar (Julian 30.10.).
  */
 import React, { useMemo, useState, useRef } from 'react';
-import { View, LayoutChangeEvent } from 'react-native';
+import { View, Pressable, LayoutChangeEvent } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring, withTiming } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
@@ -139,6 +139,14 @@ export default function WeekView() {
   // Times outside the grid sit at its edge instead of disappearing.
   const top = (t: string) => ((Math.max(FROM * 60, Math.min(TO * 60 - 30, minutes(t))) - FROM * 60) / 60) * HP;
 
+  // Julian 05.11.: tapping an empty spot adds a Termin there, on the half hour under the finger.
+  const slotAt = (d: string, y: number) => {
+    if (!Number.isFinite(y)) y = 0;
+    const m = Math.max(FROM * 60, Math.min(TO * 60 - 30, FROM * 60 + Math.floor((y / HP) * 2) * 30));
+    const start = `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`;
+    haptics.select();
+    router.push({ pathname: '/termin-neu', params: { date: d, start } });
+  };
   const round = { width: 36, height: 36, borderRadius: 999, backgroundColor: tokens.row, alignItems: 'center' as const, justifyContent: 'center' as const };
   return (
     <>
@@ -198,12 +206,13 @@ export default function WeekView() {
               const list = events.filter((e) => e.date === d && !isSpan(e));
               return (
                 <View key={d} style={{ flex: 1, position: 'relative', zIndex: liftCol === days.indexOf(d) ? 5 : 0 }}>
+                  <Pressable accessibilityLabel={tx('Termin hier eintragen', 'Add an event here')} onPress={(ev: any) => slotAt(d, ev.nativeEvent.locationY ?? ev.nativeEvent.offsetY)} style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0 }} />
                   {list.filter((e) => e.work).map((e) => {
                     // Work without hours ("Arbeit bis Weihnachten") fills a usual working day, so it never vanishes (Julian 30.10.).
                     const [from, to] = e.allDay || !e.end || e.end <= e.start ? ['08:00', '17:00'] : [e.start, e.end];
                     return (
                       // Work blocks open like any Termin (Julian 29.10.: they could not be seen or deleted).
-                      <PressScale key={e.id} scale={0.98} onPress={() => router.push(`/termin/${e.id}`)} accessibilityLabel={`${e.title}, ${tx('ansehen', 'view')}`} style={{ position: 'absolute', left: 1, right: 1, top: top(from), height: Math.max(HP * 0.6, top(to) - top(from)) }}>
+                      <PressScale key={e.id} scale={0.99} onPress={(ev: any) => { const y = ev?.nativeEvent?.locationY ?? ev?.nativeEvent?.offsetY ?? 0; if (y < 20) router.push(`/termin/${e.id}`); else slotAt(d, top(from) + y); }} accessibilityLabel={`${e.title}, ${tx('ansehen oder Termin darin eintragen', 'view or add an event inside')}`} style={{ position: 'absolute', left: 1, right: 1, top: top(from), height: Math.max(HP * 0.6, top(to) - top(from)) }}>
                         <Stripes p={(e.who === 'J' ? 'J' : 'T') as PersonId} radius={8} style={{ flex: 1, opacity: 0.9, padding: 3 }}>
                           {wide || e.title !== tx('Arbeit', 'Work') ? <Txt size={10} line={12} weight={700} numberOfLines={1} ellipsizeMode="clip" color={persons[e.who === 'J' ? 'J' : 'T'].ink}>{wide ? e.title : SHORT[e.title] ?? e.title.split(' ')[0]}</Txt> : null}
                         </Stripes>

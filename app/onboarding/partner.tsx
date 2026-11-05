@@ -22,6 +22,7 @@ import { toast, useStore } from '../../src/state/store';
 import { haptics } from '../../src/lib/haptics';
 import { getFamily } from '../../src/lib/sync';
 import { tokens } from '../../src/theme';
+import { stepViewed, onboardingDone, inviteSent, calendarConnected } from '../../src/lib/funnel';
 import { tx } from '../../src/i18n/lang';
 
 const LINK = 'familie.app/j/huber-7Q2';
@@ -34,6 +35,7 @@ const invite = () => {
 };
 
 export default function Partner() {
+  stepViewed('partner');
   const stored = useStore((s) => s.names);
   const preview = isPreview();
   const names = preview ? previewNames() : stored;
@@ -48,14 +50,14 @@ export default function Partner() {
       title={tx(`Ab jetzt weiß ${names.T || 'ihr beide'} alles sofort`, `From now on ${names.T || 'you both'} know${names.T ? 's' : ''} right away`)}
       lead={tx(`Was du sagst, sieht ${you} sofort, und umgekehrt. Die App läuft auf iPhone und Android.`, `What you say, ${you} sees right away, and the other way round. Works on iPhone and Android.`)}
       footer={<>
-        <Btn label={tx('Einladung senden', 'Send invite')} icon="send" onPress={async () => { if (!preview) await Share.share({ message: invite().message(names.J) }).catch(() => {}); done(); }} />
+        <Btn label={tx('Einladung senden', 'Send invite')} icon="send" onPress={async () => { if (!preview) { const r = await Share.share({ message: invite().message(names.J) }).catch(() => null); if (r && r.action !== Share.dismissedAction) inviteSent('share', 'onboarding'); } done(); }} />
         <TextLink label={tx('Später einladen', 'Invite later')} weight={400} onPress={done} />
       </>}
     >
       <Phones me={names.J} you={names.T} />
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 10, paddingLeft: 16, paddingRight: 10, borderRadius: 18, backgroundColor: tokens.row }}>
         <Txt size={15} color={tokens.sub} style={{ flex: 1 }} numberOfLines={1}>{invite().shown}</Txt>
-        <Chip icon={<LineIcon name="copy" size={16} />} onPress={async () => { if (preview) return toast(tx('Vorschau: nichts kopiert', 'Preview: nothing copied')); await Clipboard.setStringAsync(invite().copy).catch(() => {}); haptics.select(); toast(getFamily() ? tx('Code kopiert', 'Code copied') : tx('Link kopiert', 'Link copied')); }}>{tx('Kopieren', 'Copy')}</Chip>
+        <Chip icon={<LineIcon name="copy" size={16} />} onPress={async () => { if (preview) return toast(tx('Vorschau: nichts kopiert', 'Preview: nothing copied')); await Clipboard.setStringAsync(invite().copy).catch(() => {}); inviteSent('copy', 'onboarding'); haptics.select(); toast(getFamily() ? tx('Code kopiert', 'Code copied') : tx('Link kopiert', 'Link copied')); }}>{tx('Kopieren', 'Copy')}</Chip>
       </View>
     </Step>
   );

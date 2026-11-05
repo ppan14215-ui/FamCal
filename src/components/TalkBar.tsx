@@ -30,6 +30,7 @@ import { usePrefill, takeFill } from '../lib/simple';
 import { tx } from '../i18n/lang';
 import { toast } from '../state/store';
 import { hearInCloud, cloudOn } from '../lib/hoeren';
+import { track } from '../lib/analytics';
 import { speechLocale } from '../lib/speechLang';
 
 // Phones and tablets: Enter on the screen keyboard adds a line.
@@ -82,11 +83,18 @@ type Props = {
   card?: boolean;
   /** Julian 04.11.: sits inside the dark one bar at rest; turns into the light block once you type. */
   dark?: boolean;
+  /** Called when the field is left empty and nothing is listening (one bar folds back to its icon). */
+  onIdle?: () => void;
+  /** Called when the mic starts or text arrives (one bar: the input takes the whole width). */
+  onBusy?: () => void;
 };
 
-export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, onClose, split, card, dark, placeholder = tx('Sag oder schreib, was ansteht …', 'Say or type what\'s coming up …') }: Props) {
+export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, onClose, split, card, dark, onIdle, onBusy, placeholder = tx('Sag oder schreib, was ansteht …', 'Say or type what\'s coming up …') }: Props) {
   const [text, setText] = useState('');
   const [listening, setListening] = useState(false);
+  const textRef = useRef(''); textRef.current = text;
+  const listeningRef = useRef(false); listeningRef.current = listening;
+  const listenAt = useRef(0);
   /** How loud the voice is right now, 0 to 1; drives the bars in the mic. */
   const level = useSharedValue(0);
   const micStyle = useMicStyle();
@@ -158,12 +166,23 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, o
   };
   const finishAndSend = () => { if (!listening) return send(); sendAfter.current = true; listen(); };
 
+  // One bar: speaking or text makes the input the whole bar; a mic that stops with nothing said folds it back.
+  const busy = listening || !!text;
+  const wasBusy = useRef(busy);
+  useEffect(() => {
+    if (wasBusy.current === busy) return;
+    wasBusy.current = busy;
+    if (busy) onBusy?.();
+    else if (onIdle && !field.current?.isFocused()) onIdle();
+  }, [busy]);
   const listen = () => {
     if (listening) { haptics.tap(); stopNative.current?.(); return; }
     typed.current = false;
     sendAfter.current = false;
     haptics.select();
     setListening(true);
+    listenAt.current = Date.now();
+    track('voice_started', { screen: 'talkbar' });
     const sentence = spoken[turn.current++ % spoken.length];
     if (Platform.OS !== 'web') return listenNative(sentence);
     const SR = (globalThis as any).SpeechRecognition ?? (globalThis as any).webkitSpeechRecognition;
@@ -247,12 +266,15 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, o
         if (typed.current) return;
         // Julian 31.10. 15:20: "Lokale Handy-Erkennung ist offensichtlich nicht gut genug". With the cloud ears on, the
         // phone's guess (one language, often wrong English) never lands; a miss says so and asks to speak again.
+        const ms = listenAt.current ? Date.now() - listenAt.current : undefined;
         if (cloud) {
+          track('voice_transcribed', { ok: !!better, engine: 'cloud', ms });
           if (better) land(better);
           else { sendAfter.current = false; setText(''); haptics.tap(); toast(tx('Die Aufnahme kam nicht an. Tipp aufs Mikro und sag es bitte nochmal.', 'The recording didn\'t come through. Tap the mic and say it again.'), undefined, { kind: 'warn' }); }
           return;
         }
         const t = heard();
+        track('voice_transcribed', { ok: !!t, engine: 'phone', ms });
         if (t) land(t); else fail();
       };
       const hush = (ms: number) => { clearTimeout(quiet); quiet = setTimeout(() => SR.stop(), ms); };
@@ -335,7 +357,7 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, o
           if (listening) { typed.current = true; timers.current.forEach(clearTimeout); setDemo(false); toKeys.current?.(); }
         }}
         // Tapping send blurs the field first; wait so the button does not move away under the finger.
-        onBlur={() => { blurT.current = setTimeout(() => setTyping(false), 350); }}
+        onBlur={() => { blurT.current = setTimeout(() => { setTyping(false); if (onIdle && !textRef.current.trim() && !listeningRef.current) onIdle(); }, 350); }}
         multiline
         value={text}
         onChangeText={setText}
@@ -350,15 +372,15 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, o
         scrollEnabled={boxH >= MAX_H}
         editable={!demo}
         placeholder={writing ? tx('Schreibe auf …', 'Writing it down …') : listening && wavy ? '' : listening ? tx('Ich höre zu … Tippe ✓ wenn fertig', 'Listening … Tap ✓ when done') : placeholder}
-        placeholderTextColor={dark ? 'rgba(255,255,255,0.62)' : tokens.mute}
-        selectionColor={tokens.select} cursorColor={tokens.ink}
+        placeholderTextColor={dark ? 'rgba(255,255,255,0.55)' : tokens.mute}
+        selectionColor={tokens.select} cursorColor={card && dark ? tokens.onInk : tokens.ink}
         returnKeyType={TOUCH ? 'default' : 'send'}
         accessibilityLabel={tx('Was steht an?', 'What\'s on?')}
-        style={[{ width: '100%', height: boxH, marginBottom: card && !text ? 0 : 2, fontFamily: fonts[400], fontSize: split ? 16 : 16.5, lineHeight: LINE, color: tokens.ink, paddingVertical: PAD, paddingHorizontal: split ? 3 : 8, textAlignVertical: 'top', includeFontPadding: false }, Platform.OS === 'web' ? ({ outlineStyle: 'none' } as any) : null]}
+        style={[{ width: '100%', height: boxH, marginBottom: card && !text ? 0 : 2, fontFamily: fonts[400], fontSize: split ? 16 : 16.5, lineHeight: LINE, color: card && dark ? tokens.onInk : tokens.ink, paddingVertical: PAD, paddingHorizontal: split ? 3 : 8, textAlignVertical: 'top', includeFontPadding: false }, Platform.OS === 'web' ? ({ outlineStyle: 'none' } as any) : null]}
       />
       {listening && wavy ? (
         <View pointerEvents="none" style={{ position: 'absolute', left: split ? 3 : 8, right: 6, top: 0, bottom: 2, justifyContent: 'center' }}>
-          <VoiceWaves level={level} />
+          <VoiceWaves level={level} color={card && dark ? tokens.onInk : undefined} />
         </View>
       ) : null}
       </View>
@@ -367,19 +389,23 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, o
   // Julian 04.11.: like the Claude app. At rest (and while the waves run) one line: plus, field, mic, send.
   // With text it grows into the card with the buttons below. The check sits where the mic was, in the same style.
   const one = !text;
+  // Julian 05.11.: in the one bar the card sits inside the dark shape, so it draws light on dark and no box of its own.
+  const dk = !!dark;
+  const cInk = dk ? tokens.onInk : tokens.ink;
   const cardPlus = (
-    <PressScale accessibilityLabel={tx('Foto, Termin, Aufgabe', 'Photo, event, task')} onPress={() => { if (listening) { typed.current = true; timers.current.forEach(clearTimeout); setDemo(false); toKeys.current?.(); setText(''); } onPlus?.(); }} style={{ width: 34, height: 34, borderRadius: 999, borderWidth: 1, borderColor: tokens.hair, alignItems: 'center', justifyContent: 'center' }}>
-      <LineIcon name="plus" size={18} color={tokens.ink} stroke={2} />
+    <PressScale accessibilityLabel={tx('Foto, Termin, Aufgabe', 'Photo, event, task')} onPress={() => { if (listening) { typed.current = true; timers.current.forEach(clearTimeout); setDemo(false); toKeys.current?.(); setText(''); } onPlus?.(); }} style={{ width: 34, height: 34, borderRadius: 999, borderWidth: 1, borderColor: dk ? 'rgba(255,255,255,0.22)' : tokens.hair, alignItems: 'center', justifyContent: 'center' }}>
+      <LineIcon name="plus" size={18} color={cInk} stroke={2} />
     </PressScale>
   );
   const cardMic = (
     <PressScale accessibilityLabel={listening ? tx('Fertig gesprochen', 'Done speaking') : tx('Sprechen', 'Speak')} onPress={listen} style={{ width: 34, height: 34, borderRadius: 999, alignItems: 'center', justifyContent: 'center' }}>
-      {listening ? <LineIcon name="check" size={21} color={tokens.ink} stroke={2.4} /> : <LineIcon name="mic" size={20} color={tokens.ink} />}
+      {listening ? <LineIcon name="check" size={21} color={cInk} stroke={2.4} /> : <LineIcon name="mic" size={20} color={cInk} />}
     </PressScale>
   );
+  const live = !!text.trim() || listening;
   const cardSend = (
-    <PressScale accessibilityLabel={tx('Senden', 'Send')} disabled={!text.trim() && !listening} onPress={finishAndSend} style={{ width: 34, height: 34, borderRadius: 999, alignItems: 'center', justifyContent: 'center', backgroundColor: text.trim() || listening ? tokens.ink : tokens.chipBg }}>
-      <LineIcon name="send" size={17} color={text.trim() || listening ? tokens.onInk : tokens.mute} />
+    <PressScale accessibilityLabel={tx('Senden', 'Send')} disabled={!live} onPress={finishAndSend} style={{ width: 34, height: 34, borderRadius: 999, alignItems: 'center', justifyContent: 'center', backgroundColor: live ? (dk ? tokens.onInk : tokens.ink) : dk ? 'rgba(255,255,255,0.12)' : tokens.chipBg }}>
+      <LineIcon name="send" size={17} color={live ? (dk ? tokens.ink : tokens.onInk) : dk ? 'rgba(255,255,255,0.5)' : tokens.mute} />
     </PressScale>
   );
   // One parent with keyed children, so the field is not remounted (and the keyboard stays) when the first letter turns the line into the card.
@@ -387,7 +413,7 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, o
     <Animated.View layout={MORPH} style={[one
       ? { flexDirection: 'row', alignItems: 'center', gap: 6, borderRadius: 26, paddingVertical: 4, paddingHorizontal: 8 }
       : { flexDirection: 'column', borderRadius: 24, paddingTop: 6, paddingHorizontal: 10, paddingBottom: 8, gap: 4 },
-      { backgroundColor: tokens.row, borderWidth: 1, borderColor: listening ? tokens.ink : tokens.hair }, lift]}>
+      dk ? { borderWidth: 1, borderColor: 'transparent' } : [{ backgroundColor: tokens.row, borderWidth: 1, borderColor: listening ? tokens.ink : tokens.hair }, lift]]}>
       {one ? <Animated.View key="p" layout={MORPH} entering={SHOW} exiting={HIDE}>{cardPlus}</Animated.View> : null}
       <Animated.View key="f" layout={MORPH} style={one ? { flex: 1, minWidth: 0 } : { alignSelf: 'stretch' }}>{fieldBox}</Animated.View>
       {one ? <Animated.View key="m" layout={MORPH} entering={SHOW} exiting={HIDE} style={{ flexDirection: 'row', gap: 6 }}>{cardMic}{cardSend}</Animated.View> : null}

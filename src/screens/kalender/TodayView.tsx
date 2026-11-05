@@ -32,6 +32,7 @@ import { useCalEvents } from '../../lib/useEvents';
 import { isInfoDay } from '../../lib/feiertage';
 import DueOffer from '../../components/DueOffer';
 import { weekBriefing } from '../../lib/briefing';
+import { HIDDEN } from '../../lib/core';
 import { dueItems, kidsOf, useHandled } from '../../lib/mitdenken';
 
 /** The family's to-do list, whatever it was called ("Zu erledigen", "Aufgaben", "Task"). */
@@ -194,7 +195,8 @@ export default function TodayView({ header }: { header: React.ReactNode }) {
       fristen: upcomingFristen(docs, 14),
       // Countdown (Julian 28.10.): the next three Termine that asked for "Tage bis".
       // A series counts once, with its next date.
-      soon: real.filter((e) => e.countdown && e.date > TODAY && daysBetween(TODAY, e.date) <= 365)
+      // Never repeat the Termin already shown big on top (Julian 05.11.).
+      soon: real.filter((e) => e.countdown && e.date > TODAY && daysBetween(TODAY, e.date) <= 365 && e.id !== next?.id)
         .sort((a, b) => a.date.localeCompare(b.date))
         .filter((e, i, l) => l.findIndex((x) => x.id.split('~')[0] === e.id.split('~')[0]) === i)
         .slice(0, 3),
@@ -219,7 +221,7 @@ export default function TodayView({ header }: { header: React.ReactNode }) {
         </View>
       )}
 
-      {brief ? (
+      {brief && !HIDDEN.briefing ? (
         <PressScale scale={0.985} onPress={() => { haptics.select(); router.push('/woche'); }} style={{ backgroundColor: tokens.doneSoft, borderRadius: 20, paddingVertical: 14, paddingHorizontal: 18 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
           <Txt size={16} line={22} weight={600} style={{ flex: 1 }}>

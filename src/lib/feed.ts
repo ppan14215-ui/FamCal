@@ -164,11 +164,12 @@ export const addSay = (said: string, say: string) => addMade(said, [], undefined
 const TOGETHER_MS = 10 * 60 * 1000;
 
 /** My last card in the chat, if it is fresh and its Termine are still there: the next sentence may change it. */
-export function recentMade(): { entry: FeedEntry; ids: string[] } | null {
+export function recentMade(pick?: string): { entry: FeedEntry; ids: string[] } | null {
   const mine = me();
-  const last = [...feed].reverse().find((f) => f.by === mine);
+  // Julian 05.11.: a thread picked up from the session sheet counts however old it is.
+  const last = pick ? feed.find((f) => f.id === pick) : [...feed].reverse().find((f) => f.by === mine);
   if (!last || last.kind !== 'made' || last.undone || last.changed || !last.events?.length) return null;
-  if (Date.now() - new Date(last.at).getTime() > TOGETHER_MS) return null;
+  if (!pick && Date.now() - new Date(last.at).getTime() > TOGETHER_MS) return null;
   const ids = last.events.filter((id) => get().events.some((e) => e.id === id));
   return ids.length ? { entry: last, ids } : null;
 }

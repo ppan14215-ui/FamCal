@@ -6,11 +6,12 @@
  * loud, the change happens behind the veil, and a drop flies to the spot
  * that changed. Questions and new Termine leave a small card above the field.
  */
+import { track, firstTime, type EntryKind, type Input } from '../lib/analytics';
 import SessionPill from './SessionPill';
 import React, { useEffect, useRef, useState } from 'react';
 import { View, ScrollView, Platform, BackHandler, useWindowDimensions, TextInput } from 'react-native';
 import { router, usePathname } from 'expo-router';
-import Animated, { FadeIn, FadeInDown, FadeOut, useSharedValue, useAnimatedStyle, withSpring, withTiming, Easing } from 'react-native-reanimated';
+import Animated, { FadeIn, FadeInDown, FadeOut, useSharedValue, useAnimatedStyle, withSpring, withTiming, withDelay, Easing } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Defs, LinearGradient, Stop, Rect } from 'react-native-svg';
 import { Chip } from './ui/kit';
@@ -32,9 +33,11 @@ import { light, lightOneByOne } from '../lib/landing';
 import { setDockTop, setDockSpace } from '../lib/dockSpace';
 import { useKeyboardInset, useTyping, useInlineEditing } from '../lib/keyboard';
 import { setTalkOpen, useTalkOpen } from '../lib/talkOpen';
-import { navH, navTop, BAR_TABS_W } from './NavBar';
+import { navH, navTop, TABS, BarTab, floatShadow } from './NavBar';
 import { useNavFolded } from '../lib/navFold';
-import { navStyle } from '../lib/navStyle';
+import { getResume, setResume, useResume } from '../lib/session';
+import { navStyle, useBarMode, setBarMode, useBarNav, BAR_SPRING } from '../lib/navStyle';
+import { useTranslation } from 'react-i18next';
 import { addMade, addMessage, addAsk, addSay, recentMade, markChanged } from '../lib/feed';
 import { useSimple, messageOf } from '../lib/simple';
 import { hm, short } from '../lib/dates';
@@ -396,6 +399,7 @@ export default function Dock() {
   const insets = useSafeAreaInsets();
   const kb = useKeyboardInset();
   const typing = useTyping();
+  const barRaw = useBarMode();
   const inlineEditing = useInlineEditing();
   const { width: W, height: H } = useWindowDimensions();
   const [turn, setTurn] = useState<Turn | null>(null);
@@ -405,6 +409,9 @@ export default function Dock() {
   const [listenKey, setListenKey] = useState(0);
   const [focusKey, setFocusKey] = useState(0);
   const other = React.useCallback(() => { haptics.select(); setFocusKey((k) => k + 1); }, []);
+  // Picking up a thread from the session sheet puts the cursor in the field.
+  const resumed = useResume();
+  useEffect(() => { if (resumed) { setFocusKey((k) => k + 1); if (navStyle() === 'bar') setBarMode('input'); } }, [resumed]);
   const spoke = useRef(false);
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
   /** Counts sentences, so a slow answer for an older one never lands. */
@@ -436,16 +443,42 @@ export default function Dock() {
   useEffect(() => () => timers.current.forEach(clearTimeout), []);
   // Shared to FamCal from the browser or another app (Julian 28.10.): as if typed into the field.
   const hearRef = useRef<(raw: string) => void>(() => {});
+  /** Where the next sentence comes from when it is not the field (share sheet). */
+  const viaRef = useRef<Input | null>(null);
+  const lastVia = useRef<Input>('text');
   // A shared screenshot becomes a list offer (Julian 29.10.), never a list by itself.
-  useEffect(() => onShared((text) => hearRef.current(text), (uri) => router.push({ pathname: '/bild-liste', params: { uri } })), []);
+  useEffect(() => onShared((text) => { viaRef.current = 'share'; hearRef.current(text); }, (uri) => router.push({ pathname: '/bild-liste', params: { uri } })), []);
   useEffect(() => onSayInApp((text) => hearRef.current(text)), []);
 
   // Examples only while the calendar is still empty; after that they are clutter (Julian 27.10.).
   const onTabs = !!where && (where.tab || !!where.chat);
   const above = navStyle() === 'bar' && onTabs ? Math.max(insets.bottom, 8) + 4 : folded && onTabs ? Math.max(insets.bottom, 12) + 10 : navTop(insets.bottom) + (navStyle() === 'strip' && onTabs ? 4 : 10);
-  // One bar: the field sits beside the tab pill and takes the whole width while typing.
-  const tabsW = onTabs ? (navStyle() === 'bar' && !typing ? W - 28 - BAR_TABS_W - 8 : W - 28) : full;
-  // Julian 04.11.: in the one bar the field slides over the tabs while they fold away, and back (ease-out 240 ms).
+  // One bar (Julian 05.11. 08:10, like the Dynamic Island): at rest the field sits beside the tab circle;
+  // the open tabs squeeze it into a mic; using it pushes the circle away and it takes the whole width.
+  const bar = onTabs && navStyle() === 'bar';
+  const barMode = !bar ? null : typing || barRaw === 'input' ? 'input' : barRaw;
+  const D = navH();
+  // One dark shape (Julian 05.11. 08:48): the tab part on the left morphs, the field takes what is left.
+  const openW = W - 28 - D;
+  const navTarget = barMode === 'tabs' ? openW : barMode === 'input' ? 0 : D;
+  const navW = useSharedValue(navTarget);
+  const iconA = useSharedValue(barMode === 'rest' ? 1 : 0);
+  const tabsA = useSharedValue(barMode === 'tabs' ? 1 : 0);
+  useEffect(() => {
+    navW.value = withSpring(navTarget, BAR_SPRING);
+    // The content crossfades inside the moving shape: what leaves goes fast, what arrives waits a beat.
+    iconA.value = barMode === 'rest' ? withDelay(90, withTiming(1, { duration: 200, easing: Easing.bezier(0.23, 1, 0.32, 1) })) : withTiming(0, { duration: 90 });
+    tabsA.value = barMode === 'tabs' ? withDelay(70, withTiming(1, { duration: 220, easing: Easing.bezier(0.23, 1, 0.32, 1) })) : withTiming(0, { duration: 110 });
+  }, [navTarget, barMode]);
+  const navStyleA = useAnimatedStyle(() => ({ width: navW.value }));
+  const iconStyle = useAnimatedStyle((): any => ({ opacity: iconA.value, transform: [{ scale: 0.8 + 0.2 * iconA.value }] }));
+  const tabsStyle = useAnimatedStyle((): any => ({ opacity: tabsA.value, transform: [{ translateX: -12 * (1 - tabsA.value) }] }));
+  // The field keeps at least its resting width inside, so growing back reveals it instead of squeezing it.
+  const fieldInner = useAnimatedStyle(() => ({ width: Math.max(W - 28 - navW.value, W - 28 - D) }));
+  const barNav = useBarNav();
+  const { t } = useTranslation();
+  const curTab = TABS.find((x) => x.name === barNav.current) ?? TABS[0];
+  const tabsW = !onTabs ? full : W - 28;
   const wAnim = useSharedValue(tabsW);
   useEffect(() => { wAnim.value = withTiming(tabsW, { duration: 240, easing: Easing.bezier(0.23, 1, 0.32, 1) }); }, [tabsW]);
   const wStyle = useAnimatedStyle(() => ({ width: wAnim.value }));
@@ -481,6 +514,11 @@ export default function Dock() {
   };
 
   const hear = (raw: string, how?: { voice?: boolean }) => {
+    // Funnel "Voice" and the core action (analytics.ts): how the sentence came in, never what it said.
+    const via: Input = viaRef.current ?? (how?.voice ? 'voice' : 'text');
+    viaRef.current = null;
+    lastVia.current = via;
+    track('message_sent', { input: via, screen: where.ctx.kind, follow_up: !!turn });
     // One message, then back to Eintragen, so the next sentence is never lost as a plain message (Julian 29.10.).
     if (where.chat && mode === 'msg') { haptics.success(); addMessage(raw.trim()); setMode('card'); return; }
     // Simple: no switch; "Sag Sophia, ich komme später" is a message by itself.
@@ -562,7 +600,10 @@ export default function Dock() {
 
     const pending = r0?.kind === 'answer' && r0.reply.kind === 'ask' ? { title: r0.reply.title, who: r0.reply.who } : null;
     // Julian 30.10.: a sentence right after the last one may belong to it ("Jeden Mittwoch davon bin ich im Büro"). Claude decides.
-    const recent = where.chat && !follow && !pending && thinksOnline(ctx, said, pending) ? recentMade() : null;
+    // Julian 05.11.: a thread picked up from the session sheet is continued on any tab, then let go.
+    const picked = getResume();
+    if (picked) setResume(null);
+    const recent = (where.chat || picked) && !follow && !pending && thinksOnline(ctx, said, pending) ? recentMade(picked?.id) : null;
     if (recent) {
       const offline = () => play(plan(ctx, said, pending), said, false, undefined, lines);
       think(said, n, (r) => {
@@ -593,6 +634,13 @@ export default function Dock() {
     play(plan(ctx, said, pending), said, true, undefined, lines);
   };
   hearRef.current = hear;
+  /** One entry_created per landed card, with what it was and how it came in. */
+  const counted = (r0: ReturnType<Plan['run']>['result'], n: number) => {
+    if (!r0) return;
+    const kind: EntryKind = r0.kind === 'event' ? 'event' : r0.kind === 'done' ? (r0.events?.length ? (r0.events.length > 1 ? 'events' : 'event') : 'list_item') : r0.kind === 'recipe' ? 'recipe' : r0.kind === 'answer' ? 'answer' : 'other';
+    if (kind === 'answer') return;
+    track('entry_created', { kind, input: lastVia.current, count: Math.max(1, n), is_first: firstTime('entry') });
+  };
 
   /**
    * "Ich verstehe …" while Claude reads, with Halt. Only offline or after
@@ -615,13 +663,16 @@ export default function Dock() {
     const chat = true;
     setVeil({ phase: 'think', inline: chat, origin, target: null, lines: chat ? [] : [tx('Ich verstehe …', 'Understanding …')], shown: 0, said, head: undefined, onCancel: stop, typing: chat, reply: undefined });
     const onSay = (say: string) => { if (heard.current !== n) return; if (chat) setVeil({ reply: say }); else setVeil({ lines: [say], shown: 0 }); };
+    const asked = Date.now();
     askAgent(said, talk, screenOf(where.ctx), onSay)
       .then((r) => (promisesOnly(r, said) ? askAgent(said, [...talk.slice(0, -1), { said, app: `${String(r!.actions[0]?.input?.text ?? "")} (${RETRY_NOTE})` }, { said }], screenOf(where.ctx)).then((r2) => r2 ?? r) : r))
       .then((r) => {
       if (heard.current !== n) return;
+      const plan0 = r ? agentPlan(r, said) : null;
+      track('assistant_answered', { ok: !!r, ms: Date.now() - asked, asked_back: !!plan0 && 'ask' in plan0, actions: r?.actions.length ?? 0 });
       inLang(talkLang.current, () => {
         if (!r) { setVeil({ typing: false, reply: undefined }); return fallback(); }
-        const p = agentPlan(r, said);
+        const p = plan0;
         if (!p) { setVeil({ typing: false }); return hold(said, { kind: 'unclear', text: tx('Das habe ich nicht verstanden.', "I didn't get that.") }, talk); }
         if ('ask' in p) {
           if (chat) addSay(said, p.ask);
@@ -675,6 +726,7 @@ export default function Dock() {
       const out = p.run();
       // In the chat the card lands in the log and we stay (Julian 29.10.).
       const r0 = out.result;
+      counted(r0, out.lit?.length ?? (out.land ? 1 : 0));
       // Every sentence lands in the chat log, wherever it was said (Julian 31.10.: "dass der log vollständig bleibt").
       if (r0?.kind === 'event') addMade(said, [r0.event.id], undefined, () => actions.removeEvent(r0.event.id), undefined, { head: p.head, steps: p.steps }, r0.say, r0.needsTime && r0.event.allDay ? r0.ask || tx('Um wie viel Uhr? Oder ganztägig?', 'What time? Or all day?') : undefined);
       else if (r0?.kind === 'done' && (!r0.note || r0.say)) addMade(said, out.lit ?? (out.land ? [out.land] : []), r0.text, r0.undo, r0.events, { head: p.head, steps: p.steps }, r0.say);
@@ -711,6 +763,7 @@ export default function Dock() {
   };
 
   const undo = () => {
+    if (turn) track('entry_undone', { kind: turn.result.kind === 'event' ? 'event' : 'other' });
     if (turn?.result.kind === 'event') actions.removeEvent(turn.result.event.id);
     if (turn?.result.kind === 'done') turn.result.undo?.();
     haptics.select();
@@ -808,19 +861,8 @@ export default function Dock() {
     {/* The screen fades out under the field, so prompts never sit on text. */}
     {/* Julian 31.10. 17:02: a short, tight fade (the long soft one covered too much of small screens), solid from just above the card down, so nothing shines through. */}
     {/* On the tabs the nav bar paints the ground under field and pill (NavBar.tsx); here only while typing, when the bar is away. */}
-    {onTabs && !kb && !(typing && Platform.OS === 'web') ? null : <View pointerEvents="none" style={{ position: 'absolute', left: 0, right: 0, bottom: fadeFrom, height: bottom - fadeFrom + h + 22 }}>
-      <Svg width="100%" height="100%" preserveAspectRatio="none">
-        <Defs>
-          <LinearGradient id="dockfade" x1="0" y1="0" x2="0" y2="1">
-            <Stop offset="0" stopColor={tokens.bg} stopOpacity={0} />
-            <Stop offset={String(Math.min(0.4, 12 / (bottom - fadeFrom + h + 22)))} stopColor={tokens.bg} stopOpacity={0.7} />
-            <Stop offset={String(Math.min(0.6, 20 / (bottom - fadeFrom + h + 22)))} stopColor={tokens.bg} stopOpacity={1} />
-            <Stop offset="1" stopColor={tokens.bg} stopOpacity={1} />
-          </LinearGradient>
-        </Defs>
-        <Rect x="0" y="0" width="100%" height="100%" fill="url(#dockfade)" />
-      </Svg>
-    </View>}
+    {/* Julian 05.11.: no soft fade above the field; a solid ground up to the middle of the field, which hides its edge. */}
+    {onTabs && !kb && !(typing && Platform.OS === 'web') ? null : <View pointerEvents="none" style={{ position: 'absolute', left: 0, right: 0, bottom: fadeFrom, height: bottom - fadeFrom + 27, backgroundColor: tokens.bg }} />}
     <Animated.View pointerEvents="box-none" onLayout={(e) => setH(e.nativeEvent.layout.height)} style={[{ position: 'absolute', left: onTabs ? 14 : 18, right: onTabs ? 14 : 18, gap: 10 }, bStyle]}>
       {where.chat || turn ? null : <Peek />}
       {turn || !onTabs ? null : <SessionPill />}
@@ -913,24 +955,72 @@ export default function Dock() {
           ))}
         </View>
       ) : null}
-      <View pointerEvents="box-none" style={{ flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'flex-end', gap: 8 }}>
+      {bar ? (
+      // Julian 05.11. 08:48: one dark shape at the bottom; tab icon and field share it and it morphs as one piece.
+      <View style={[{ alignSelf: 'flex-end', width: W - 28, borderRadius: 27, backgroundColor: tokens.ink }, floatShadow]}>
+      <View style={{ flexDirection: 'row', alignItems: 'flex-end', borderRadius: 27, overflow: 'hidden' }}>
+        <Animated.View style={[{ height: D, overflow: 'hidden' }, navStyleA]}>
+          <Animated.View pointerEvents={barMode === 'rest' ? 'auto' : 'none'} style={[{ position: 'absolute', left: 0, top: 0, width: D, height: D }, iconStyle]}>
+            <PressScale scale={0.88} accessibilityRole="button" accessibilityLabel={tx('Tabs zeigen', 'Show tabs') + ', ' + t(curTab.key)}
+              onPress={() => { haptics.select(); setBarMode('tabs'); }}
+              style={{ width: D, height: D, alignItems: 'center', justifyContent: 'center' }}>
+              <LineIcon name={curTab.icon} size={22} color={tokens.onInk} />
+            </PressScale>
+          </Animated.View>
+          <Animated.View accessibilityRole="tablist" pointerEvents={barMode === 'tabs' ? 'auto' : 'none'}
+            style={[{ position: 'absolute', left: 5, top: 5, width: openW - 10, height: D - 10, flexDirection: 'row', alignItems: 'center', gap: 4 }, tabsStyle]}>
+            {TABS.map((x) => (
+              <BarTab key={x.name} onW={openW - 10 - 56 * 2 - 8} offW={56} on={barNav.current === x.name} icon={x.icon} label={t(x.key)}
+                onPress={() => { haptics.select(); if (barNav.current !== x.name) barNav.go(x.name); setBarMode('rest'); }} />
+            ))}
+          </Animated.View>
+        </Animated.View>
+        <View style={{ flex: 1, minWidth: 0, alignItems: 'flex-end', overflow: 'hidden' }}>
+          {barMode === 'tabs' ? (
+            <Animated.View key="mic" entering={FadeIn.duration(180).delay(80)} exiting={FadeOut.duration(100)}>
+              <PressScale scale={0.9} accessibilityLabel={tx('Sprechen', 'Speak')} onPress={() => { haptics.select(); setBarMode('input'); setListenKey((k) => k + 1); }}
+                style={{ width: D, height: D, alignItems: 'center', justifyContent: 'center' }}>
+                <LineIcon name="mic" size={21} color={tokens.onInk} />
+              </PressScale>
+            </Animated.View>
+          ) : (
+            <Animated.View key="field" entering={FadeIn.duration(200).delay(60)} exiting={FadeOut.duration(100)} style={fieldInner}>
+              <TalkBar
+                key={onTabs ? 'tabs' : kind}
+                split={onTabs}
+                card
+                dark
+                onIdle={bar ? () => setBarMode('rest') : undefined}
+                onBusy={bar ? () => setBarMode('input') : undefined}
+                onSend={hear}
+                onPlus={() => router.push('/neu')}
+                spoken={SPOKEN[kind]}
+                listenKey={listenKey}
+                focusKey={focusKey}
+                placeholder={resumed ? tx(`Weiter zu „${resumed.said.slice(0, 24)}“ …`, `More on “${resumed.said.slice(0, 24)}” …`) : where.chat && mode === 'msg' ? tx('Nachricht an die Familie …', 'Message to the family …') : turn?.result.kind === 'cut' ? tx('Sprich einfach weiter …', 'Just keep talking …') : bar && barMode === 'rest' && !turn ? tx('Sag es einfach …', 'Just say it …') : onTabs && !turn ? tx('Sprich oder schreib einfach …', 'Just say or type it …') : turn && kind === 'kalender' ? tx('Antworten oder ergänzen …', 'Reply or add …') : PLACEHOLDER[kind]}
+              />
+            </Animated.View>
+          )}
+        </View>
+      </View>
+      </View>
+      ) : (
       <Animated.View style={[{ alignSelf: 'flex-end', alignItems: 'flex-end', overflow: 'hidden', borderRadius: onTabs && navStyle() === 'strip' ? 24 : 30 }, wStyle]}>
       <Animated.View style={wStyle}>
       <TalkBar
         key={onTabs ? 'tabs' : kind}
         split={onTabs}
-        card={onTabs && navStyle() === 'strip'}
-        dark={onTabs && navStyle() === 'bar' && !typing}
+        card={onTabs && (navStyle() === 'strip' || bar)}
         onSend={hear}
         onPlus={() => router.push('/neu')}
         spoken={SPOKEN[kind]}
         listenKey={listenKey}
         focusKey={focusKey}
-        placeholder={where.chat && mode === 'msg' ? tx('Nachricht an die Familie …', 'Message to the family …') : turn?.result.kind === 'cut' ? tx('Sprich einfach weiter …', 'Just keep talking …') : onTabs && !turn ? (navStyle() === 'bar' && !typing ? tx('Was steht an?', 'What’s up?') : tx('Sprich oder schreib einfach …', 'Just say or type it …')) : turn && kind === 'kalender' ? tx('Antworten oder ergänzen …', 'Reply or add …') : PLACEHOLDER[kind]}
+        placeholder={resumed ? tx(`Weiter zu „${resumed.said.slice(0, 24)}“ …`, `More on “${resumed.said.slice(0, 24)}” …`) : where.chat && mode === 'msg' ? tx('Nachricht an die Familie …', 'Message to the family …') : turn?.result.kind === 'cut' ? tx('Sprich einfach weiter …', 'Just keep talking …') : bar && barMode === 'rest' && !turn ? tx('Sag es einfach …', 'Just say it …') : onTabs && !turn ? tx('Sprich oder schreib einfach …', 'Just say or type it …') : turn && kind === 'kalender' ? tx('Antworten oder ergänzen …', 'Reply or add …') : PLACEHOLDER[kind]}
       />
       </Animated.View>
       </Animated.View>
-      </View>
+      )}
     </Animated.View>
     </Other.Provider>
   );

@@ -16,12 +16,14 @@ import { isPreview, endPreview } from '../../src/lib/vorschau';
 import { haptics } from '../../src/lib/haptics';
 import { toast } from '../../src/state/store';
 import { tokens } from '../../src/theme';
+import { stepViewed, onboardingDone, inviteSent, calendarConnected } from '../../src/lib/funnel';
 import { tx } from '../../src/i18n/lang';
 
 const HOLD_MS = 900;
 const SIZE = 150;
 
 export default function Fertig() {
+  stepViewed('fertig');
   const [stuck, setStuck] = useState(false);
   const [winked, setWinked] = useState(false);
   const p = useSharedValue(0);
@@ -39,6 +41,7 @@ export default function Fertig() {
 
   const go = () => {
     if (isPreview()) { endPreview(); router.dismissTo('/einstellungen'); toast(tx('Vorschau beendet, nichts geändert', 'Preview ended, nothing changed')); return; }
+    onboardingDone();
     router.replace('/chat');
   };
   return (

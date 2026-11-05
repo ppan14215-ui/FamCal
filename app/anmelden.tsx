@@ -14,12 +14,14 @@ import { get } from '../src/state/store';
 import { tokens } from '../src/theme';
 import { haptics } from '../src/lib/haptics';
 import { tx } from '../src/i18n/lang';
+import { track, trackOnce } from '../src/lib/analytics';
 
 /** After any sign-in: load the family, then the calendar or, for a new family, onboarding. */
 export async function afterSignIn(name?: string): Promise<string | null> {
   const res = await startSync(name);
   if (res.error) return tx('Die Verbindung hat nicht geklappt. Bitte noch einmal versuchen.', 'Could not connect. Please try again.');
   const s = get();
+  // A new account (no Termine, no partner) goes on to make or join a family.
   router.replace(s.events.length || s.names.T ? '/chat' : '/familie');
   return null;
 }
@@ -33,7 +35,10 @@ export default function Anmelden() {
     haptics.tap();
     setBusy(which);
     setError(null);
+    track('signin_started', { provider: which });
     const r = await fn();
+    if (r.error) track('signin_failed', { provider: which, reason: r.error.slice(0, 80) });
+    else if (Platform.OS !== 'web') track('signin_completed', { provider: which });
     // Web leaves the page for the provider; the app comes back signed in (see index).
     if (Platform.OS === 'web' && !r.error) return;
     if (r.error) { setBusy(null); return setError(tx('Anmelden hat nicht geklappt. Bitte noch einmal.', 'Sign-in did not work. Please try again.')); }
@@ -42,6 +47,7 @@ export default function Anmelden() {
     if (failed) setError(failed);
   };
 
+  trackOnce('signin', 'onboarding_step_viewed', { step: 'signin', flow: 'v3' });
   const apple = Platform.OS === 'ios' || Platform.OS === 'web';
   return (
     <Screen

@@ -25,7 +25,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { View, TextInput, Pressable, ScrollView, useWindowDimensions, Platform } from 'react-native';
 import Animated, { useSharedValue, useAnimatedStyle, withTiming, withSpring, withDelay, Easing, useReducedMotion, cancelAnimation, FadeIn, FadeOut } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import Txt from '../../src/components/ui/Txt';
 import { Btn, H1 } from '../../src/components/ui/kit';
 import LineIcon from '../../src/components/ui/LineIcon';
@@ -48,6 +48,16 @@ import { tokens, persons as appPersons } from '../../src/theme';
 import { build, rise, rowOut, rowLayout } from '../../src/theme/motion';
 import { seg, mix, kf, crit, recoil } from '../../src/theme/film';
 import { understand } from '../../src/lib/talk';
+import { placeKind, placeName } from '../../src/lib/orte';
+import { parseRound, matchPlayer } from '../../src/lib/points';
+import { GAME_RULES } from '../../src/lib/games';
+import RecipePick from '../../src/components/showcase/cards/RecipePick';
+import Scoreboard from '../../src/components/showcase/cards/Scoreboard';
+import { cardFrame } from '../../src/components/ChatCards';
+import { CoverArt } from '../../src/components/Blocks';
+import { useStore } from '../../src/state/store';
+import { PlanCard, TaskCard } from '../../src/components/onboarding/BabyCards';
+import { firstYear } from '../../src/data/firstYear';
 import { parseWhen } from '../../src/lib/when';
 import { fillField } from '../../src/lib/simple';
 import { navStyle } from '../../src/lib/navStyle';
@@ -56,9 +66,53 @@ import { TODAY, addDays, weekday, WD_LONG, hm } from '../../src/lib/dates';
 import { haptics } from '../../src/lib/haptics';
 import { tx } from '../../src/i18n/lang';
 
-type Step = 'hallo' | 'namen' | 'termin' | 'verschieben' | 'einkauf' | 'fertig';
-const STEPS: Step[] = ['hallo', 'namen', 'termin', 'verschieben', 'einkauf', 'fertig'];
-const TRY = new Set<Step>(['termin', 'verschieben', 'einkauf']);
+type Step = 'hallo' | 'namen' | 'termin' | 'verschieben' | 'kochen' | 'spielen' | 'filme' | 'baby' | 'fertig';
+const STEPS: Step[] = ['hallo', 'namen', 'termin', 'verschieben', 'kochen', 'spielen', 'filme', 'baby', 'fertig'];
+const TRY = new Set<Step>(['termin', 'verschieben', 'kochen', 'spielen', 'filme', 'baby']);
+/**
+ * What the chat shows: the app's own items, plus two live cards of the flow (Julian 05.11. 22:04 CET):
+ * the recipe you tick through for real, and the game score read from the demo list.
+ */
+type Bit = StageItem
+  | { id: string; type: 'pick' }
+  | { id: string; type: 'score'; list: string }
+  | { id: string; type: 'plan' }
+  | { id: string; type: 'films'; say: string }
+  | { id: string; type: 'tasks'; split: boolean };
+
+/** "Den Film Dune müssen wir sehen" → "Dune" (Julian 05.11.: the watchlist in the onboarding). */
+function filmOf(said: string) {
+  const q = said.match(/[„“"»«']([^„“"»«']+)[„“"»«']/);
+  if (q) return cap(q[1].trim());
+  const t = said
+    .replace(/\b(den|die|das|the|a)\s+(film|serie|movie|show)\b/gi, ' ')
+    .replace(/\b(film|serie|movie|show|filmliste|watchlist)\b/gi, ' ')
+    .replace(/\b(wir|we|ich|i|lass|let'?s|uns|us)\b/gi, ' ')
+    .replace(/\b(wollen|müssen|muss|sollten|möchten|want|need|should|have)\b/gi, ' ')
+    .replace(/\b(unbedingt|mal|endlich|noch|auch|bitte|to|really|auf die liste|on the list)\b/gi, ' ')
+    .replace(/\b(sehen|schauen|gucken|anschauen|ansehen|watch|see)\b/gi, ' ')
+    .replace(/[.!?,]+/g, ' ').replace(/\s+/g, ' ').trim();
+  return cap(t || said.trim());
+}
+
+/** The baby is due in ten weeks (Julian 05.11.: "remember baby is due soon"). */
+const DUE = addDays(TODAY, 70);
+const NO = /\b(nein|nö|no|nope|nicht|später|later|lieber nicht)\b/i;
+/** Who does what: paperwork to you, doctors and midwife to your partner. A suggestion, said as one. */
+const AMT = /elternzeit|elterngeld|kindergeld|standesamt|geburtsurkunde|krankenkasse|kita/i;
+
+/**
+ * Dishes Memo knows offline (no assistant without an account). Anything else you name goes straight
+ * on the shopping list. Julian 05.11.: "we are cooking lasagna tonight", tick off what is at home.
+ */
+const DISHES: { re: RegExp; dish: [string, string]; picks: [string, string][]; have: [string, string][] }[] = [
+  { re: /lasagne|lasagna/i, dish: ['Lasagne', 'Lasagna'], picks: [['Hackfleisch', 'Minced beef'], ['Lasagneplatten', 'Lasagna sheets'], ['Passata', 'Passata'], ['Mozzarella', 'Mozzarella'], ['Milch', 'Milk'], ['Butter', 'Butter'], ['Zwiebeln', 'Onions']], have: [['Mehl', 'Flour'], ['Olivenöl', 'Olive oil'], ['Salz', 'Salt']] },
+  { re: /bolognese|spaghetti/i, dish: ['Bolognese', 'Bolognese'], picks: [['Hackfleisch', 'Minced beef'], ['Passata', 'Passata'], ['Spaghetti', 'Spaghetti'], ['Zwiebeln', 'Onions'], ['Parmesan', 'Parmesan']], have: [['Olivenöl', 'Olive oil'], ['Salz', 'Salt']] },
+  { re: /pfannkuchen|pancake|cr[eê]pe/i, dish: ['Pfannkuchen', 'Pancakes'], picks: [['Eier', 'Eggs'], ['Milch', 'Milk'], ['Mehl', 'Flour'], ['Apfelmus', 'Apple sauce']], have: [['Zucker', 'Sugar'], ['Salz', 'Salt']] },
+  { re: /curry/i, dish: ['Curry', 'Curry'], picks: [['Hähnchen', 'Chicken'], ['Kokosmilch', 'Coconut milk'], ['Currypaste', 'Curry paste'], ['Reis', 'Rice'], ['Paprika', 'Peppers']], have: [['Öl', 'Oil'], ['Salz', 'Salt']] },
+  { re: /pizza/i, dish: ['Pizza', 'Pizza'], picks: [['Pizzateig', 'Pizza dough'], ['Passata', 'Passata'], ['Mozzarella', 'Mozzarella'], ['Basilikum', 'Basil']], have: [['Olivenöl', 'Olive oil'], ['Salz', 'Salt']] },
+];
+const GAME_ID = 'g_mine';
 type Act = 'land' | 'name' | 'answer' | 'idle' | 'fertig';
 const MEMO = 104;
 /** Memo in its corner while the real app is on screen. */
@@ -135,10 +189,15 @@ export default function Flow() {
   const { width: W, height: H } = useWindowDimensions();
   const reduced = useReducedMotion();
   const kb = useKeyboardInset();
+  // Screens for the landing page: /onboarding/flow?step=baby&a=Julia&b=Tom opens a step directly.
+  const q = useLocalSearchParams<{ step?: string; a?: string; b?: string }>();
   const [step, setStep] = useState<Step>('hallo');
   const [nameA, setNameA] = useState('');
   const [nameB, setNameB] = useState('');
-  const [phase, setPhase] = useState<'wait' | 'think' | 'done'>('wait');
+  const [phase, setPhase] = useState<'wait' | 'think' | 'pick' | 'done'>('wait');
+  /** A follow-up Memo asked: which dentist (ort), the next round of the game (runde). */
+  const [ask, setAsk] = useState<'ort' | 'runde' | 'liste' | 'split' | null>(null);
+  const [pick, setPick] = useState<{ dish: string; picks: string[]; have: string[]; off: string[]; said: string } | null>(null);
   const [reply, setReply] = useState<string | null>(null);
   const [act, setAct] = useState<{ kind: Act; n: number }>({ kind: 'land', n: 0 });
   const t = useSharedValue(0);
@@ -154,7 +213,7 @@ export default function Flow() {
   const demo: Store = useMemo(() => createStore(startState()), []);
   const people: Persons = useMemo(() => ({ J: { ...appPersons.J, name: nameA.trim() || tx('Du', 'You') }, T: { ...appPersons.T, name: B || tx('Partner', 'Partner') } }), [nameA, B]);
   useEffect(() => { demo.set(() => ({ names: { J: people.J.name, T: people.T.name } })); }, [people]);
-  const [items, setItems] = useState<StageItem[]>([]);
+  const [items, setItems] = useState<Bit[]>([]);
   const [ev, setEv] = useState<CalEvent | null>(null);
   const [calKey, setCalKey] = useState(0);
   const [notif, setNotif] = useState<{ title: string; body: string } | null>(null);
@@ -170,6 +229,14 @@ export default function Flow() {
     t.value = withTiming(dur, { duration: dur * 1000, easing: Easing.linear });
   };
   useEffect(() => { play('land', 3.2); }, []);
+  useEffect(() => {
+    const s = q.step as Step | undefined;
+    if (!s || !STEPS.includes(s) || s === 'hallo') return;
+    if (q.a) setNameA(String(q.a));
+    if (q.b) setNameB(String(q.b));
+    go(s);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const corner = TRY.has(step);
   const isHero = step === 'hallo' || step === 'fertig';
   const pos = useSharedValue(0);
@@ -246,15 +313,66 @@ export default function Flow() {
     setPhase('wait'); setReply(null); setNotif(null); setPops([]);
     setStep(s);
     // Julian 05.11. 21:58 CET: too much going on in the real screens. Each step starts empty and shows only what you just did.
-    if (s === 'termin' || s === 'einkauf') setItems([]);
+    setAsk(null); setPick(null);
+    if (s === 'termin' || s === 'kochen' || s === 'spielen' || s === 'filme' || s === 'baby') setItems([]);
+    // Memo writes first here: it remembers the baby and sends the first year on its own.
+    if (s === 'baby') {
+      setPhase('think');
+      later(700, () => {
+        setItems([{ id: 'plan', type: 'plan' }]);
+        haptics.success();
+        later(900, () => { setReply(tx('Soll ich daraus eine Aufgabenliste machen? Sag einfach „Ja“.', 'Shall I turn it into a task list? Just say “Yes”.')); setAsk('liste'); setPhase('wait'); });
+      });
+    }
     if (s === 'verschieben' && ev) { demo.set(() => ({ calDay: ev.date })); setCalKey((k) => k + 1); }
     if (s === 'fertig') play('fertig', 2.4); else { cancelAnimation(t); t.value = 0; setAct((a) => ({ kind: 'idle', n: a.n + 1 })); }
   };
 
-  const land = (it: StageItem) => setItems((its) => (its.some((x) => x.id === it.id) ? its.map((x) => (x.id === it.id ? it : x)) : [...its, it]));
+  const land = (it: Bit) => setItems((its) => (its.some((x) => x.id === it.id) ? its.map((x) => (x.id === it.id ? it : x)) : [...its, it]));
   const finish = (line: string) => {
     setReply(line);
     later(T_DONE, () => setPhase('done'));
+  };
+
+  /** Things onto the shopping list; the partner, at the shop, ticks the first one off. */
+  const toList = (id: string, said: string, at: string, names: string[]) => {
+    const add: Item[] = names.map((name, k) => ({ id: `i_mine${k}`, name, who: 'J', done: false }));
+    demo.set((st) => ({ lists: st.lists.map((l) => (l.id !== DEMO.einkauf ? l : { ...l, sections: l.sections.map((sec) => (sec.id !== 'supermarkt' ? sec : { ...sec, items: [...sec.items, ...add] })) })) }));
+    const list = demo.get().lists.find((l) => l.id === DEMO.einkauf)!;
+    land({ id, type: 'entry', side: 'right', f: madeItems({ id, by: 'J', said, at, say: add.length > 1 ? tx(`${add.length} Sachen stehen auf der Einkaufsliste.`, `${add.length} things are on the shopping list.`) : tx('Steht auf der Einkaufsliste.', 'It’s on the shopping list.'), list, items: add }) });
+    later(240, () => haptics.success());
+    setReply(tx('Steht auf der Einkaufsliste.', 'It’s on the shopping list.'));
+    later(1800, () => {
+      demo.set((st) => ({ lists: st.lists.map((l) => (l.id !== DEMO.einkauf ? l : { ...l, sections: l.sections.map((sec) => ({ ...sec, items: sec.items.map((i) => (i.id === add[0].id ? { ...i, done: true, who: 'T' as const } : i)) })) })) }));
+      haptics.select();
+    });
+    later(2400, () => {
+      haptics.success();
+      finish(tx(`${Bn} ist im Laden und hakt ab.`, `${Bn} is at the shop, ticking things off.`));
+    });
+  };
+  const addPick = () => {
+    if (!pick) return;
+    const take = pick.picks.filter((x) => !pick.off.includes(x));
+    haptics.commit();
+    setPhase('think');
+    setItems((its) => its.filter((x) => x.id !== 'k1' && !x.id.startsWith('m')));
+    later(380, () => toList('k1', pick.said, now(), take));
+  };
+  const skipPick = () => {
+    haptics.select();
+    setItems((its) => its.filter((x) => x.id !== 'k1'));
+    finish(tx('Alles da, dann kommt nichts auf die Liste.', 'All there, nothing goes on the list.'));
+  };
+  /** One round of the game: each spoken name gets its points, whoever wasn't named gets 0. */
+  const addRound = (round: { who: string; points: number }[]) => {
+    demo.set((st) => ({ lists: st.lists.map((l) => {
+      if (l.id !== GAME_ID) return l;
+      const ps = l.sections[0].items;
+      const got = new Map<string, number>();
+      round.forEach((r) => { const p = matchPlayer(ps, r.who); if (p) got.set(p.id, (got.get(p.id) ?? 0) + r.points); });
+      return { ...l, sections: [{ ...l.sections[0], items: ps.map((p) => ({ ...p, data: { ...p.data, rounds: [...(p.data?.rounds ?? []), got.get(p.id) ?? 0] } })) }] };
+    }) }));
   };
 
   const send = (raw: string) => {
@@ -266,6 +384,130 @@ export default function Flow() {
     play('answer', 2.8);
     const id = `u${Date.now()}`;
     const at = now();
+
+    const mine = (bit?: Bit) => setItems((its) => [...its, { id: `m${id}`, type: 'entry', side: 'right', f: message({ id: `m${id}`, by: 'J', said, at }) } as Bit, ...(bit ? [bit] : [])]);
+
+    if (step === 'termin' && ask === 'ort' && ev) {
+      setItems((its) => [...its, { id, type: 'think', by: 'J', said, at, side: 'right' }]);
+      later(T_LAND, () => {
+        const place = said.replace(/^(bei|beim|zu|zum|at|the)\s+/i, '').replace(/[.!]+$/, '');
+        const name = placeName(place);
+        const e: CalEvent = { ...ev, place };
+        demo.set((st) => ({ events: st.events.map((x) => (x.id === e.id ? e : x)) }));
+        setEv(e);
+        land({ id, type: 'entry', side: 'right', f: madeEvents({ id, by: 'J', said, at, say: tx(`Gemerkt. Nächstes Mal trage ich ${name} direkt ein.`, `Saved. Next time I’ll add ${name} right away.`), events: [e] }) });
+        later(240, () => haptics.success());
+        setAsk(null);
+        finish(tx(`Gemerkt. Sagt ihr nächstes Mal nur „${e.title}“, trage ich ${name} direkt ein.`, `Saved. Next time you just say “${e.title}” and I add ${name}.`));
+      });
+      return;
+    }
+
+    if (step === 'baby') {
+      const no = NO.test(said);
+      mine();
+      later(T_LAND, () => {
+        if (ask === 'liste') {
+          if (no) { setAsk(null); finish(tx('Okay. Die Liste bleibt hier, wenn ihr sie braucht.', 'Okay. The list stays here when you need it.')); return; }
+          land({ id: 'tasks', type: 'tasks', split: false });
+          later(240, () => haptics.success());
+          setReply(tx('Steht in euren Aufgaben. Wollt ihr aufteilen, wer was macht? Sag „Ja“.', 'It’s in your tasks. Want to split who does what? Say “Yes”.'));
+          setAsk('split');
+          setPhase('wait');
+          return;
+        }
+        setAsk(null);
+        if (no) { finish(tx('Okay, das könnt ihr später aufteilen.', 'Okay, you can split it later.')); return; }
+        setItems((its) => [...its.filter((x) => x.id !== 'tasks'), { id: 'tasks', type: 'tasks', split: true }]);
+        later(240, () => haptics.success());
+        finish(tx(`Vorschlag: Ämter macht ${A}, Ärzte und Hebamme ${Bn}. Sagt einfach, wenn ihr tauschen wollt.`, `Suggestion: ${A} does the paperwork, ${Bn} the doctors and midwife. Just say if you want to swap.`));
+      });
+      return;
+    }
+
+    if (step === 'filme') {
+      mine();
+      later(T_LAND, () => {
+        const name = filmOf(said);
+        demo.set((st) => ({ lists: st.lists.map((l) => (l.id !== DEMO.filme ? l : { ...l, sections: l.sections.map((sec, k) => (k ? sec : { ...sec, items: [...sec.items, { id: 'i_film_mine', name, who: 'J', done: false, data: { kind: 'film' } } as Item] })) })) }));
+        land({ id: 'films', type: 'films', say: tx(`„${name}“ steht auf eurer Filmliste.`, `“${name}” is on your watchlist.`) });
+        later(240, () => haptics.success());
+        finish(tx(`Steht drauf. ${Bn} sieht die Liste auch, und abends wisst ihr, was ihr schauen wollt.`, `It’s on. ${Bn} sees the list too, so tonight you know what to watch.`));
+      });
+      return;
+    }
+
+    if (step === 'kochen') {
+      const d = DISHES.find((x) => x.re.test(said));
+      if (d) {
+        mine();
+        later(T_LAND, () => {
+          const tr = ([de, en]: [string, string]) => tx(de, en);
+          setPick({ dish: tr(d.dish), picks: d.picks.map(tr), have: d.have.map(tr), off: [], said });
+          land({ id: 'k1', type: 'pick' });
+          later(240, () => haptics.success());
+          setReply(tx('Das braucht ihr. Tipp weg, was ihr schon zu Hause habt.', 'Here’s what you need. Tap away what’s already at home.'));
+          setPhase('pick');
+        });
+        return;
+      }
+      // No dish Memo knows: the words themselves go on the list.
+      const names = itemsOf(said);
+      setItems((its) => [...its, { id, type: 'think', by: 'J', said, at, side: 'right' }]);
+      later(T_LAND, () => toList(id, said, at, names.length ? names : [cap(said)]));
+      return;
+    }
+
+    if (step === 'spielen') {
+      const rule = GAME_RULES.find((g) => g.re.test(said));
+      const round = parseRound(rule?.spoken ? rule.spoken(said) : said);
+      const has = !!demo.get().lists.find((l) => l.id === GAME_ID);
+      if (!has && !rule) {
+        setPhase('wait');
+        setReply(tx('Welches Spiel? Sag zum Beispiel „Wir spielen Rommé“.', 'Which game? Say for example “We’re playing Rummy”.'));
+        return;
+      }
+      mine();
+      later(T_LAND, () => {
+        if (!has) {
+          const r = rule!;
+          demo.set((st) => ({ lists: [...st.lists, {
+            id: GAME_ID, name: r.name, icon: 'gesellschaftsspiel', kind: 'collection',
+            blueprint: { blocks: ['points'], source: null, points: { lowWins: !!r.lowWins, doubleWord: /romm|rummy/i.test(r.name) } },
+            sections: [{ id: 'main', title: '', items: [
+              { id: 'p_a', name: people.J.name, who: 'J', done: false, data: { rounds: [] } },
+              { id: 'p_b', name: people.T.name, who: 'T', done: false, data: { rounds: [] } },
+            ] }],
+          } as any] }));
+          land({ id: 'score', type: 'score', list: GAME_ID });
+        }
+        if (round) {
+          addRound(round.round);
+          setItems((its) => [...its.filter((x) => x.id !== 'score'), { id: 'score', type: 'score', list: GAME_ID }]);
+        }
+        later(240, () => haptics.success());
+        if (!round) {
+          setReply(tx(`Ich zähle mit. Sag nach der Runde die Punkte, zum Beispiel „${people.J.name} 20, ${people.T.name} 35“.`, `I’ll keep score. After a round say the points, for example “${people.J.name} 20, ${people.T.name} 35”.`));
+          setAsk('runde');
+          setPhase('wait');
+          return;
+        }
+        // The partner says the next round on their phone; it lands in the same board.
+        later(1900, () => {
+          const r2 = [{ who: people.J.name, points: 5 }, { who: people.T.name, points: 10 }];
+          setItems((its) => [...its.filter((x) => x.id !== 'score'), { id: 'p2', type: 'entry', side: 'left', f: message({ id: 'p2', by: 'T', said: `${people.T.name} 10, ${people.J.name} 5`, at: now() }) } as Bit, { id: 'score', type: 'score', list: GAME_ID }]);
+          addRound(r2);
+          haptics.select();
+          const l = demo.get().lists.find((x) => x.id === GAME_ID)!;
+          const ps = l.sections[0].items;
+          const tot = (i: Item) => (i.data?.rounds ?? []).reduce((a: number, b: number) => a + b, 0);
+          const low = !!l.blueprint?.points?.lowWins;
+          const lead = [...ps].sort((a, b) => (low ? tot(a) - tot(b) : tot(b) - tot(a)))[0];
+          finish(tx(`${lead.name} führt. Ihr spielt, ich zähle.`, `${lead.name} leads. You play, I count.`));
+        });
+      });
+      return;
+    }
 
     if (step === 'termin') {
       setItems((its) => [...its, { id, type: 'think', by: 'J', said, at, side: 'right' }]);
@@ -287,6 +529,14 @@ export default function Flow() {
         const when = `${wdLong(e.date)}${e.allDay ? '' : `, ${hm(e.start)}`}`;
         land({ id, type: 'entry', side: 'right', f: madeEvents({ id, by: 'J', said, at, say: tx(`Steht drin. ${when}.`, `Done. ${when}.`), events: [e] }) });
         later(240, () => haptics.success());
+        // Julian 05.11. 22:04 CET: the dentist asks which one and where, so it remembers next time.
+        const kind = placeKind(e.title);
+        if (kind) {
+          setReply(tx(`Steht drin. ${kind.q} Sag zum Beispiel „Dr. Weber, Lindenstraße 4“.`, `It’s in. ${kind.q} Say for example “Dr. Weber, 4 Linden Street”.`));
+          setAsk('ort');
+          setPhase('wait');
+          return;
+        }
         finish(e.allDay
           ? tx(`Steht drin, ${wdLong(e.date)}. ${Bn} sieht es auch. Die Uhrzeit sagst du einfach dazu.`, `It’s in, ${wdLong(e.date)}. ${Bn} sees it too. Just add the time when you know it.`)
           : tx(`Steht drin. ${Bn} sieht es auch.`, `It’s in. ${Bn} sees it too.`));
@@ -317,29 +567,11 @@ export default function Flow() {
           finish(tx(`${Bn} weiß es sofort.`, `${Bn} knows right away.`));
         });
       });
-    } else if (step === 'einkauf') {
-      const names = itemsOf(said);
-      setItems((its) => [...its, { id, type: 'think', by: 'J', said, at, side: 'right' }]);
-      later(T_LAND, () => {
-        const add: Item[] = (names.length ? names : [cap(said)]).map((name, k) => ({ id: `i_mine${k}`, name, who: 'J', done: false }));
-        demo.set((st) => ({ lists: st.lists.map((l) => (l.id !== DEMO.einkauf ? l : { ...l, sections: l.sections.map((sec) => (sec.id !== 'supermarkt' ? sec : { ...sec, items: [...sec.items, ...add] })) })) }));
-        const list = demo.get().lists.find((l) => l.id === DEMO.einkauf)!;
-        land({ id, type: 'entry', side: 'right', f: madeItems({ id, by: 'J', said, at, say: add.length > 1 ? tx(`${add.length} Sachen stehen auf der Einkaufsliste.`, `${add.length} things are on the shopping list.`) : tx('Steht auf der Einkaufsliste.', 'It’s on the shopping list.'), list, items: add }) });
-        later(240, () => haptics.success());
-        setReply(tx('Steht auf der Einkaufsliste.', 'It’s on the shopping list.'));
-        // The partner is at the shop: the tick lands in your card first, then the quiet line below.
-        later(1800, () => {
-          demo.set((st) => ({ lists: st.lists.map((l) => (l.id !== DEMO.einkauf ? l : { ...l, sections: l.sections.map((sec) => ({ ...sec, items: sec.items.map((i) => (i.id === add[0].id ? { ...i, done: true, who: 'T' as const } : i)) })) })) }));
-          haptics.select();
-        });
-        later(2400, () => {
-          haptics.success();
-          finish(tx(`${Bn} ist im Laden und hakt ab.`, `${Bn} is at the shop, ticking things off.`));
-        });
-      });
     }
   };
 
+  const baby = useMemo(() => babyOf(), []);
+  const nextDay = ev ? addDays(ev.date, weekday(ev.date) === 5 ? 3 : 1) : addDays(TODAY, 2);
   // ── Copy ───────────────────────────────────────────────────────────────
   const line: string | null = (() => {
     if (reply) return reply;
@@ -347,24 +579,33 @@ export default function Flow() {
     switch (step) {
       case 'hallo': return tx('Hallo, ich bin Memo. Euer Kalender, mit dem ihr einfach sprecht.', 'Hi, I’m Memo. Your calendar you simply talk to.');
       case 'namen': return magA ? (magB ? tx(`Schön, ${A} und ${B}!`, `Nice to meet you, ${A} and ${B}!`) : tx(`Hallo ${A}! Und mit wem teilst du den Kalender?`, `Hi ${A}! Who do you share the calendar with?`)) : tx('Wer seid ihr?', 'Who are you?');
-      case 'termin': return tx(`Sag mir einen Termin, ${A}. So wie du es ${Bn} sagen würdest.`, `Tell me an appointment, ${A}. Like you’d tell ${Bn}.`);
-      case 'verschieben': return tx('Hier ist er im Kalender. Etwas ändert sich? Sag es einfach.', 'Here it is in the calendar. Plans changed? Just say so.');
-      case 'einkauf': return tx('Ich schreibe auch eure Einkaufsliste. Was fehlt?', 'I keep your shopping list too. What’s missing?');
+      // Julian 05.11. 22:05 CET: no tiles to tap; Memo says what you could say, anything else works too.
+      case 'termin': return tx(`Sag mir einen Termin, ${A}. Zum Beispiel „Freitag 15 Uhr Zahnarzt“.`, `Tell me an appointment, ${A}. For example “Friday 3pm dentist”.`);
+      case 'verschieben': return tx(`Etwas ändert sich? Sag zum Beispiel „Verschieb das auf ${wdLong(nextDay)} 10 Uhr“.`, `Plans changed? Say for example “Move it to ${wdLong(nextDay)} at 10”.`);
+      case 'kochen': return tx('Was kocht ihr? Sag zum Beispiel „Wir kochen heute Lasagne“.', 'What are you cooking? Say for example “We’re cooking lasagna tonight”.');
+      case 'baby': return null;
+      case 'filme': return tx('Und eure Filmliste? Sag zum Beispiel „Den Film Dune müssen wir sehen“.', 'And your watchlist? Say for example “We have to watch Dune”.');
+      case 'spielen': return tx('Spielt ihr was? Sag zum Beispiel „Wir spielen Rommé“.', 'Playing a game? Say for example “We’re playing Rummy”.');
       case 'fertig': return tx('Das war’s schon. Jetzt seid ihr dran.', 'That’s it. Your turn.');
     }
   })();
-  const nextDay = ev ? addDays(ev.date, weekday(ev.date) === 5 ? 3 : 1) : addDays(TODAY, 2);
   const examples: Record<string, string[]> = {
-    termin: [tx('Freitag 15 Uhr Zahnarzt', 'Friday 3pm dentist'), tx('Samstag 10 Uhr Schwimmen', 'Saturday 10am swimming')],
+    termin: [ask === 'ort' ? tx('Dr. Weber, Lindenstraße 4', 'Dr. Weber, 4 Linden Street') : tx('Freitag 15 Uhr Zahnarzt', 'Friday 3pm dentist')],
     verschieben: [tx(`Verschieb das auf ${wdLong(nextDay)} 10 Uhr`, `Move it to ${wdLong(nextDay)} at 10`), tx('Lieber einen Tag später', 'Make it a day later')],
-    einkauf: [tx('Milch, Eier und Bananen', 'Milk, eggs and bananas'), tx('Wir brauchen Kaffee', 'We need coffee')],
+    kochen: [tx('Wir kochen heute Lasagne', 'We’re cooking lasagna tonight')],
+    baby: [tx('Ja', 'Yes')],
+    filme: [tx('Den Film Dune müssen wir sehen', 'We have to watch Dune')],
+    spielen: [ask === 'runde' ? `${people.J.name} 20, ${people.T.name} 35` : tx('Wir spielen Rommé', 'We’re playing Rummy')],
   };
   const nextLabel: Record<string, string> = {
     termin: tx('Im Kalender ansehen', 'See it in the calendar'),
-    verschieben: tx('Weiter zur Einkaufsliste', 'On to the shopping list'),
-    einkauf: tx('Fertig', 'Done'),
+    verschieben: tx('Weiter', 'Continue'),
+    kochen: tx('Weiter', 'Continue'),
+    spielen: tx('Weiter', 'Continue'),
+    filme: tx('Weiter', 'Continue'),
+    baby: tx('Fertig', 'Done'),
   };
-  const next: Record<Step, Step> = { hallo: 'namen', namen: 'termin', termin: 'verschieben', verschieben: 'einkauf', einkauf: 'fertig', fertig: 'fertig' };
+  const next: Record<Step, Step> = { hallo: 'namen', namen: 'termin', termin: 'verschieben', verschieben: 'kochen', kochen: 'spielen', spielen: 'filme', filme: 'baby', baby: 'fertig', fertig: 'fertig' };
 
   return (
     <View style={{ flex: 1, backgroundColor: tokens.bg, paddingTop: corner ? stageTop : 0, paddingBottom: bottom }}>
@@ -374,10 +615,10 @@ export default function Flow() {
           <StoreContext.Provider value={demo}>
             <PersonsContext.Provider value={people}>
               <StillContext.Provider value>
-                <View style={{ flex: 1, pointerEvents: 'none' } as any}>
+                <View pointerEvents={phase === 'pick' ? 'box-none' : 'none'} style={{ flex: 1 }}>
                   {step === 'verschieben'
                     ? <CalendarStage key={calKey} />
-                    : <ChatStage items={items} />}
+                    : <ChatStage items={items} baby={baby} pick={pick} onToggle={(x) => { haptics.select(); setPick((p) => (p ? { ...p, off: p.off.includes(x) ? p.off.filter((y) => y !== x) : [...p.off, x] } : p)); }} onAdd={addPick} onSkip={skipPick} />}
                 </View>
               </StillContext.Provider>
             </PersonsContext.Provider>
@@ -445,20 +686,9 @@ export default function Flow() {
             <Txt size={13.5} color={tokens.mute} center>{tx('Kinder und Großeltern kommen später dazu.', 'Kids and grandparents can join later.')}</Txt>
           </View>
         ) : null}
-        {TRY.has(step) && phase === 'wait' ? (
-          <View key={`ex-${step}`} style={{ height: 36 }}>
-            <ScrollView horizontal style={{ flexGrow: 0, height: 36 }} showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="handled" contentContainerStyle={{ gap: 8, paddingHorizontal: 4 }}>
-            {examples[step].map((ex) => (
-              <PressScale key={ex} onPress={() => { haptics.select(); fillField(ex); }} style={{ paddingHorizontal: 14, height: 36, borderRadius: 18, backgroundColor: tokens.row, borderWidth: 1, borderColor: tokens.hair, justifyContent: 'center' }}>
-                <Txt size={14.5} weight={500}>{ex}</Txt>
-              </PressScale>
-            ))}
-            </ScrollView>
-          </View>
-        ) : null}
-        {TRY.has(step) && phase !== 'done' ? (
+        {TRY.has(step) && phase !== 'done' && phase !== 'pick' ? (
           <View style={{ opacity: phase === 'think' ? 0.5 : 1 }} pointerEvents={phase === 'think' ? 'none' : 'auto'}>
-            <TalkBar key={step} split card={navStyle() === 'strip'} onSend={send} spoken={examples[step]} placeholder={tx('Sprich oder schreib einfach …', 'Just say or type it …')} />
+            <TalkBar key={`${step}-${ask}`} split card={navStyle() === 'strip'} onSend={send} spoken={examples[step]} placeholder={ask === 'ort' ? tx('Name und Straße …', 'Name and street …') : tx('Sprich oder schreib einfach …', 'Just say or type it …')} />
           </View>
         ) : null}
         {TRY.has(step) && phase === 'done' ? <View style={{ paddingHorizontal: 4 }}><Btn label={nextLabel[step]} onPress={() => go(next[step])} /></View> : null}
@@ -471,7 +701,7 @@ export default function Flow() {
 }
 
 /** The real chat page: its title, the day pill, the app's own cards and thinking card, newest at the bottom. */
-function ChatStage({ items }: { items: StageItem[] }) {
+function ChatStage({ items, pick, onToggle, onAdd, onSkip, baby }: { baby: ReturnType<typeof babyOf>; items: Bit[]; pick: { dish: string; picks: string[]; have: string[]; off: string[] } | null; onToggle: (x: string) => void; onAdd: () => void; onSkip: () => void }) {
   const started = useRef(new Set(items.map((x) => x.id))).current;
   return (
     <View style={{ flex: 1 }}>
@@ -479,7 +709,13 @@ function ChatStage({ items }: { items: StageItem[] }) {
         <View style={{ flex: 1, justifyContent: 'flex-end', paddingHorizontal: 14, paddingBottom: 8, gap: 12 }}>
           {items.map((it) => (
             <Animated.View key={it.id} entering={started.has(it.id) ? undefined : rise()} exiting={rowOut} layout={rowLayout}>
-              <Landing it={it} owner="J" today={TODAY} />
+              {it.type === 'pick'
+                ? (pick ? <RecipePick dish={pick.dish} picks={pick.picks} have={pick.have} off={pick.off} onToggle={onToggle} onAdd={onAdd} onSkip={onSkip} /> : null)
+                : it.type === 'score' ? <ScoreCard id={it.list} />
+                : it.type === 'films' ? <FilmCard say={it.say} />
+                : it.type === 'plan' ? <PlanCard say={baby.say} rows={baby.plan} more={baby.more} />
+                : it.type === 'tasks' ? <TaskCard title={tx('Erstes Jahr', 'First year')} rows={baby.tasks} split={it.split} />
+                : <Landing it={it} owner="J" today={TODAY} />}
             </Animated.View>
           ))}
         </View>
@@ -559,4 +795,52 @@ function Late({ ms, style, children }: { ms: number; style?: any; children: Reac
   }, []);
   const st = useAnimatedStyle((): any => ({ opacity: a.value, transform: [{ translateY: (1 - a.value) * 10 }] }));
   return <Animated.View pointerEvents={on ? 'box-none' : 'none'} style={[style, st]}>{children}</Animated.View>;
+}
+
+/** The game, live from the demo list: the app's own scoreboard. */
+function ScoreCard({ id }: { id: string }) {
+  const list = useStore((s) => s.lists.find((l) => l.id === id));
+  if (!list) return null;
+  return (
+    <View style={[cardFrame, { gap: 0 }]}>
+      <Txt size={15} weight={600} style={{ paddingHorizontal: 16, paddingTop: 12 }}>{list.name}</Txt>
+      <Scoreboard list={list} hint={false} />
+    </View>
+  );
+}
+
+/** The first year for a baby due in ten weeks, from the app's own plan (firstYear.ts). */
+function babyOf() {
+  const { milestones, cards } = firstYear({ name: '', due: DUE });
+  const next = milestones.filter((m) => m.date >= TODAY).sort((a, b) => (a.date < b.date ? -1 : 1));
+  const plan = next.slice(0, 5).map((m) => ({ id: m.id, icon: m.icon, title: m.title, sub: m.sub ?? '', frist: m.frist }));
+  const tasks = cards.slice(0, 7).map((c) => ({ id: c.id, icon: c.icon, title: c.title, due: c.dueLabel ?? '', who: (AMT.test(c.title) ? 'J' : 'T') as 'J' | 'T' }));
+  const weeks = Math.round(70 / 7);
+  return {
+    plan, tasks, more: Math.max(0, next.length - plan.length),
+    say: tx(`Euer Baby kommt in ${weeks} Wochen. Ich habe euch das erste Jahr zusammengestellt, mit allen Fristen:`, `Your baby is due in ${weeks} weeks. I put together the first year for you, with every deadline:`),
+  };
+}
+
+/** The watchlist, live from the demo list, newest first, with the app's own designed covers. */
+function FilmCard({ say }: { say: string }) {
+  const list = useStore((s) => s.lists.find((l) => l.id === DEMO.filme));
+  if (!list) return null;
+  const its = [...list.sections.flatMap((x) => x.items)].reverse();
+  return (
+    <View style={cardFrame}>
+      <Txt size={15.5} line={21} style={{ paddingHorizontal: 14, paddingTop: 12, paddingBottom: 4 }}>{say}</Txt>
+      {its.map((i, k) => (
+        <View key={i.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 14, paddingVertical: 6 }}>
+          <CoverArt title={i.name} data={i.data} w={40} h={58} radius={8} fallback="designed" />
+          <View style={{ flex: 1, minWidth: 0, gap: 1 }}>
+            <Txt size={16} weight={600} numberOfLines={1} color={i.data?.seen ? tokens.sub : tokens.ink}>{i.name}</Txt>
+            <Txt size={13.5} color={tokens.sub} numberOfLines={1}>{k === 0 ? tx('Neu, von dir', 'New, from you') : [i.data?.year, i.data?.by].filter(Boolean).join(' · ')}</Txt>
+          </View>
+          {i.data?.seen ? <Txt size={12.5} weight={600} color={tokens.done}>{tx('Gesehen', 'Seen')}</Txt> : null}
+        </View>
+      ))}
+      <View style={{ height: 8 }} />
+    </View>
+  );
 }

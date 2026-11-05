@@ -5,6 +5,7 @@
  * store as before, sync only watches it.
  */
 import type { RealtimeChannel } from '@supabase/supabase-js';
+import { setFamily } from './analytics';
 import { supabase } from './cloud';
 import { get, set, subscribe, actions, setMeRole } from '../state/store';
 import type { CalEvent, Bring, Person } from '../state/types';
@@ -89,6 +90,7 @@ export async function startSync(name?: string): Promise<{ family?: Family; error
     else if (typed && !get().demo) { names[other] = typed; void setPartnerName(typed); }
   }
   actions.setNames(names);
+  setFamily(family.id, { members: members.data.length });
   // Urlaubstage and Bundesland are the family's: what this phone set before signing in goes up once.
   const vac = { ...get().vacation, ...(family.vacation ?? {}) };
   set(() => ({ vacation: vac }));

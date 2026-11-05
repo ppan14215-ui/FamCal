@@ -13,11 +13,13 @@ import { get } from '../src/state/store';
 import { tokens } from '../src/theme';
 import { haptics } from '../src/lib/haptics';
 import { tx } from '../src/i18n/lang';
+import { track, trackOnce } from '../src/lib/analytics';
 
 export default function Familie() {
   const [code, setCode] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  trackOnce('familie', 'onboarding_step_viewed', { step: 'familie', flow: 'v3' });
   const clean = code.replace(/\s/g, '').toUpperCase();
 
   const join = async () => {
@@ -25,8 +27,11 @@ export default function Familie() {
     haptics.tap();
     setBusy(true);
     setError(null);
+    track('family_join_started');
     const r = await joinFamily(clean, get().names.J || undefined);
     setBusy(false);
+    if (r.error) track('family_join_failed', { reason: /unbekannt/i.test(r.error) ? 'unknown_code' : /vollständig/i.test(r.error) ? 'family_full' : 'other' });
+    else track('family_joined');
     if (r.error) return setError(/unbekannt/i.test(r.error) ? tx('Diesen Code kennen wir nicht. Bitte noch einmal prüfen.', 'We do not know this code. Please check it again.') : /vollständig/i.test(r.error) ? tx('In dieser Familie sind schon zwei.', 'This family already has two members.') : tx('Das hat nicht geklappt. Bitte noch einmal.', 'That did not work. Please try again.'));
     haptics.success();
     router.replace('/chat');
@@ -37,7 +42,7 @@ export default function Familie() {
       footer={
         <View style={{ gap: 10 }}>
           <Btn label={busy ? tx('Einen Moment …', 'One moment …') : tx('Beitreten', 'Join')} disabled={clean.length !== 6} onPress={join} />
-          <TextLink label={tx('Ich starte unsere Familie', 'I am starting our family')} onPress={() => router.replace('/onboarding/eltern')} />
+          <TextLink label={tx('Ich starte unsere Familie', 'I am starting our family')} onPress={() => { track('family_created'); router.replace('/onboarding/eltern'); }} />
         </View>
       }
     >
