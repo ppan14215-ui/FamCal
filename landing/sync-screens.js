@@ -105,6 +105,11 @@ const vac = (p, l) => p.evaluate((en) => globalThis.__fc.set((st) => ({ events: 
   { id: 'e-vac1', title: en ? 'Vacation at Lake Garda' : 'Urlaub am Gardasee', icon: 'strand', date: '2026-08-03', endDate: '2026-08-14', start: '', allDay: true, who: 'both' },
   { id: 'e-vac2', title: en ? 'Vacation' : 'Urlaub', icon: 'urlaub', date: '2026-12-28', endDate: '2026-12-30', start: '', allDay: true, who: 'J' }] })), l === 'en');
 
+// Eigene Cover (make-covers.py, keine Studio-Poster) plus Jahr und Regie, wie die App sie sonst online nachschlägt.
+const COVERS = { Dune: ['dune', '2021', 'Denis Villeneuve'], Oppenheimer: ['oppenheimer', '2023', 'Christopher Nolan'], Barbie: ['barbie', '2023', 'Greta Gerwig'] };
+const films = (p) => p.evaluate((m) => globalThis.__fc.set((st) => ({ lists: st.lists.map((l) => ({ ...l, sections: l.sections.map((sec) => ({ ...sec, items: sec.items.map((i) => (m[i.name] ? { ...i, data: { ...(i.data || {}), kind: 'film', cover: m[i.name][0], year: m[i.name][1], by: m[i.name][2] } } : i)) })) })) })),
+  Object.fromEntries(Object.entries(COVERS).map(([k, [f, y, b]]) => [k, ['data:image/png;base64,' + fs.readFileSync(path.join(__dirname, 'covers', f + '.png')).toString('base64'), y, b]])));
+
 // Jeder Screen: Name in landing/shots und der Weg dorthin, ausgehend vom Chat der Beispielfamilie.
 const SCREENS = [
   ['chat', async () => {}],
@@ -143,9 +148,10 @@ const SCREENS = [
   ['personen', async ({ p }) => { await p.evaluate(() => { history.pushState({}, '', '/personen'); dispatchEvent(new PopStateEvent('popstate')); }); await p.waitForTimeout(1800); }],
   ['bearbeiten', async ({ p, tab, t }) => { await tab(t.cal); await p.getByText(t.u6).first().click(); }],
   ['listen', async ({ tab, t }) => { await tab(t.lists); }],
-  ['watchlist', async ({ p, can, say, t }) => { await can(); await say(t.watch); await p.evaluate(() => { history.pushState({}, '', '/listen'); dispatchEvent(new PopStateEvent('popstate')); }); await p.waitForTimeout(1800); await p.getByText('Watchlist', { exact: true }).last().click({ timeout: 3000 }).catch(() => {}); }],
+  ['watchlist', async ({ p, can, say, t }) => { await can(); await say(t.watch); await films(p); await p.evaluate(() => { history.pushState({}, '', '/listen'); dispatchEvent(new PopStateEvent('popstate')); }); await p.waitForTimeout(1800); await p.getByText('Watchlist', { exact: true }).last().click({ timeout: 3000 }).catch(() => {}); }],
   ['wissen', async ({ can, say, setting, t, l }) => { await can(); for (const [fact] of FACTS[l]) await say((l === 'de' ? 'Merk dir, ' : 'Remember, ') + fact); await setting(t.wissen); }],
-  ['wieder', async ({ say, t }) => { await say(t.u7); }],
+  // Wieder: nur die Karte im Chat (Julian 05.11.: zu voll). Entwurf mit Passt schließen, „Wer geht?“ mit Tom beantworten.
+  ['wieder', async ({ p, say, t }) => { await say(t.u7); await p.getByText(/^(Passt|Done)$/).last().click({ timeout: 3000 }).catch(() => {}); await p.waitForTimeout(1200); await p.getByText(/^Tom$/).first().click({ timeout: 3000 }).catch(() => {}); await p.waitForTimeout(1500); }],
   ['karte', async ({ p, say, t }) => { await say(t.karte); await p.getByPlaceholder(/Dr\.|Salon|e\.g\./).first().fill(t.who); await p.getByText(t.search, { exact: true }).click(); }],
   // Urlaub: zwei Urlaube der Beispielfamilie, damit Jahr und Urlaubskonto etwas zeigen.
   ['urlaub', async ({ p, setting, t, l }) => { await vac(p, l); await setting(t.urlaub); }],

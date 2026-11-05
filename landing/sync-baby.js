@@ -2,7 +2,7 @@
  * Fotografiert den Onboarding-Schritt „Memo denkt mit“ (Baby kommt, erstes Jahr, Aufgaben, Aufteilen)
  * für die Landing Page. App als Web-Demo exportieren (LIGHT_ONLY lokal auf false für Dunkel, nie committen):
  *   EXPO_PUBLIC_DEMO=1 EXPO_OFFLINE=1 CI=1 npx expo export -p web --output-dir dist-ob
- *   node landing/sync-baby.js <app>/dist-ob [varianten]
+ *   node landing/sync-baby.js <app>/dist-ob [varianten] [filme]   (filme: Filmliste mit eigenen Covern)
  */
 const { chromium } = require('playwright');
 const http = require('http'), fs = require('fs'), path = require('path'), { execFileSync } = require('child_process');
@@ -24,6 +24,11 @@ const MIME = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css
     await p.goto(URL + q); await p.reload(); await p.waitForTimeout(3500);
     const yes = async () => { const box = p.locator('textarea').first(); await box.fill(l === 'en' ? 'Yes' : 'Ja'); await p.waitForTimeout(300); await p.getByLabel(/^(Senden|Send)$/).first().click(); };
     const shot = async (name) => { const png = `/tmp/baby-${v}-${name}.png`; await p.screenshot({ path: png }); execFileSync('python3', ['-c', `from PIL import Image; Image.open('${png}').convert('RGB').save('${path.join(__dirname, 'shots', v, name + '.webp')}', 'WEBP', quality=78)`]); };
+    if (process.argv[4] === 'filme') {
+      await p.goto(URL + `/onboarding/flow?step=filme&a=Julia&b=Tom${l === 'en' ? '#en' : ''}`); await p.reload(); await p.waitForTimeout(3000);
+      const box = p.locator('textarea').first(); await box.fill(l === 'en' ? 'We have to watch Dune' : 'Den Film Dune müssen wir sehen'); await p.waitForTimeout(300);
+      await p.getByLabel(/^(Senden|Send)$/).first().click(); await p.waitForTimeout(4500); await shot('filme'); console.log('ok', v, 'filme'); await p.close(); continue;
+    }
     try {
       await shot('baby1');
       await yes(); await p.waitForTimeout(3500); await shot('baby2');
