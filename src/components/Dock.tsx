@@ -565,7 +565,8 @@ export default function Dock() {
     if (agent) {
       const talk = open && open.result.kind !== 'cut' && !gone ? [...open.lines, { said }] : [{ said }];
       // Julian 30.10.: no half guess by the old rules when the assistant cannot answer. Say so; the card still offers Termin or Einkauf.
-      return thinkAgent(said, n, talk, () => hold(said, { kind: 'unclear', text: tx('Ich komme gerade nicht an den Assistenten. Sag es gleich nochmal oder tipp an, wohin es gehört.', "I can't reach the assistant right now. Say it again in a moment or tap where it belongs.") }, talk));
+      // Julian 05.11. 22:15: at a cap nobody types by hand; the rules add it as without the assistant (the limit line was shown once).
+      return thinkAgent(said, n, talk, () => !canUnderstand() ? play(plan(ctx, said, null), said, false, undefined, lines) : hold(said, { kind: 'unclear', text: tx('Ich komme gerade nicht an den Assistenten. Sag es gleich nochmal oder tipp an, wohin es gehört.', "I can't reach the assistant right now. Say it again in a moment or tap where it belongs.") }, talk));
     }
 
     // A card is still open: the sentence answers or changes it (Julian 28.10.).

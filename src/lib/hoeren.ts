@@ -10,7 +10,10 @@ const WAIT_MS = 7000;
 let off = false;
 
 /** False once the server said it has no key: then the phone's own words show live again. */
-export const cloudOn = () => !off;
+export const cloudOn = () => !off && !hearCapped;
+/** Day cap of cloud ears reached (Julian 05.11.: 40 a person a day): the phone's own words are used until the app restarts. */
+let hearCapped = false;
+export const cloudCapped = () => hearCapped;
 
 export async function hearInCloud(uri: string): Promise<string | null> {
   const session = getAuth().session;
@@ -28,6 +31,7 @@ export async function hearInCloud(uri: string): Promise<string | null> {
     });
     const r = await res.json().catch(() => ({})) as { text?: string; error?: string };
     if (r.error === 'no_key' || res.status === 404) off = true;
+    if (res.status === 429) hearCapped = true;
     return res.ok && r.text ? r.text : null;
   } catch {
     return null;

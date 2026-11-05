@@ -18,7 +18,10 @@ const myLists = () => get().lists.filter((l) => l.id !== 'wissen').map((l) => ({
 /** The rules have answered already; Claude may take longer for a sentence with many Termine (Julian 28.10.). */
 const WAIT_MS = 15000;
 
-export const canUnderstand = () => !!supabase && !!getAuth().session;
+/** Until when a cap holds (day: tomorrow, month: the 1st). Meanwhile the rules answer without asking the server. */
+let cappedUntil = '';
+export const capped = () => !!cappedUntil && new Date().toISOString().slice(0, 10) < cappedUntil;
+export const canUnderstand = () => !!supabase && !!getAuth().session && !capped();
 
 /** Claude did not answer (server error, no key): said once, so nobody wonders why the rules guessed. */
 let toldDown = false;
@@ -35,7 +38,10 @@ export async function limitHint(error: unknown) {
   if (!res || res.status !== 429) return;
   const body = await res.json().catch(() => null);
   const why = body?.reason === 'month' && body?.tier === 'gratis' ? 'free' : body?.reason === 'month' ? 'month' : body?.reason === 'day' ? 'day' : '';
-  if (!why || told.has(why)) return;
+  if (!why) return;
+  const d = new Date();
+  cappedUntil = (why === 'day' ? new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1, 12) : new Date(d.getFullYear(), d.getMonth() + 1, 1, 12)).toISOString().slice(0, 10);
+  if (told.has(why)) return;
   told.add(why);
   const sub = tx('Bis dahin verstehe ich dich mit einfachen Regeln. Bitte prüf die Einträge kurz.', 'Until then I use simple rules. Please check what I add.');
   if (why === 'free') toast(tx('Die 30 Sätze für diesen Monat sind verbraucht', 'Your 30 sentences for this month are used up'), undefined, { kind: 'warn', sub: tx('Ich verstehe dich weiter mit einfachen Regeln, mit Plus wieder mit Claude.', 'I keep understanding you with simple rules; Plus brings Claude back.') });

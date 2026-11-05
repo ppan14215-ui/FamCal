@@ -29,9 +29,12 @@ import { LIVE } from '../lib/live';
 import { usePrefill, takeFill } from '../lib/simple';
 import { tx } from '../i18n/lang';
 import { toast } from '../state/store';
-import { hearInCloud, cloudOn } from '../lib/hoeren';
+import { hearInCloud, cloudOn, cloudCapped } from '../lib/hoeren';
 import { track } from '../lib/analytics';
 import { speechLocale } from '../lib/speechLang';
+
+/** The cloud ears' day cap is said once per app launch. */
+let toldCap = false;
 
 // Phones and tablets: Enter on the screen keyboard adds a line.
 const TOUCH = Platform.OS !== 'web' || (typeof window !== 'undefined' && !!window.matchMedia?.('(pointer: coarse)').matches);
@@ -270,6 +273,11 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, o
         if (cloud) {
           track('voice_transcribed', { ok: !!better, engine: 'cloud', ms });
           if (better) land(better);
+          else if (cloudCapped() && heard()) {
+            // Day cap of the cloud ears: the phone's own words land, said once (Julian 05.11. 22:15).
+            land(heard());
+            if (!toldCap) { toldCap = true; toast(tx('Für heute nutze ich die Spracherkennung vom Handy. Bitte kurz prüfen, was ankommt.', 'For today I use the phone’s own speech recognition. Please check what comes through.'), undefined, { kind: 'info' }); }
+          }
           else { sendAfter.current = false; setText(''); haptics.tap(); toast(tx('Die Aufnahme kam nicht an. Tipp aufs Mikro und sag es bitte nochmal.', 'The recording didn\'t come through. Tap the mic and say it again.'), undefined, { kind: 'warn' }); }
           return;
         }
