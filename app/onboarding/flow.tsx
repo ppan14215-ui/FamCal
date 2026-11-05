@@ -122,14 +122,13 @@ function itemsOf(text: string) {
 
 /** The isolated world of the flow: a few calm entries of a family week, the shopping list, no kids. */
 function startState() {
-  const keep = new Set(['ev_arbeit_t', 'ev_fussball', 'ev_markt', 'ev_oma']);
+  const keep = new Set<string>([]);
   const s = buildDemoState(TODAY);
   return { ...s, people: [], events: demoEvents(TODAY).filter((e) => keep.has(e.id)).map((e) => ({ ...e, people: undefined })), calView: 'tag' as const };
 }
 
 const now = () => new Date().toISOString();
 const agoIso = (min: number) => new Date(Date.now() - min * 60000).toISOString();
-const aged = (items: StageItem[]) => items.map((it) => (it.type === 'entry' ? { ...it, f: { ...it.f, at: agoIso(4) } } : it));
 
 export default function Flow() {
   const insets = useSafeAreaInsets();
@@ -238,8 +237,6 @@ export default function Flow() {
     }
     return { opacity: 1, transform: [] };
   }, [act]);
-  const qSt = useAnimatedStyle((): any => { const a = answering ? crit(t.value - 0.5, 20) * (1 - seg(t.value, 1.2, 1.32)) : 0; return { opacity: a, transform: [{ scale: 0.8 + 0.2 * a }, { translateY: -6 * a }] }; }, [answering]);
-  const okSt = useAnimatedStyle((): any => { const a = answering ? crit(t.value - 1.6, 20) : 0; return { opacity: a, transform: [{ scale: 0.8 + 0.2 * a }, { rotate: `${(1 - a) * -12}deg` }] }; }, [answering]);
 
   // ── Moving on ──────────────────────────────────────────────────────────
   const go = (s: Step) => {
@@ -248,9 +245,9 @@ export default function Flow() {
     timers.current = [];
     setPhase('wait'); setReply(null); setNotif(null); setPops([]);
     setStep(s);
-    if (s === 'termin') setItems([message({ id: 'seed_b', by: 'T', said: tx('Bin heute um sechs zuhause.', 'Home at six today.'), at: agoIso(35) })].map((f) => ({ id: f.id, type: 'entry', f, side: 'left' } as StageItem)));
+    // Julian 05.11. 21:58 CET: too much going on in the real screens. Each step starts empty and shows only what you just did.
+    if (s === 'termin' || s === 'einkauf') setItems([]);
     if (s === 'verschieben' && ev) { demo.set(() => ({ calDay: ev.date })); setCalKey((k) => k + 1); }
-    if (s === 'einkauf') setItems((its) => aged(its));
     if (s === 'fertig') play('fertig', 2.4); else { cancelAnimation(t); t.value = 0; setAct((a) => ({ kind: 'idle', n: a.n + 1 })); }
   };
 
@@ -290,8 +287,6 @@ export default function Flow() {
         const when = `${wdLong(e.date)}${e.allDay ? '' : `, ${hm(e.start)}`}`;
         land({ id, type: 'entry', side: 'right', f: madeEvents({ id, by: 'J', said, at, say: tx(`Steht drin. ${when}.`, `Done. ${when}.`), events: [e] }) });
         later(240, () => haptics.success());
-        // Its icon pops out of the card into the empty corner of the page.
-        later(380, () => setPops([{ name: clay(e.icon), x: W - 140, y: 40, size: 62, rot: 8, fromY: 320 }]));
         finish(e.allDay
           ? tx(`Steht drin, ${wdLong(e.date)}. ${Bn} sieht es auch. Die Uhrzeit sagst du einfach dazu.`, `It’s in, ${wdLong(e.date)}. ${Bn} sees it too. Just add the time when you know it.`)
           : tx(`Steht drin. ${Bn} sieht es auch.`, `It’s in. ${Bn} sees it too.`));
@@ -319,7 +314,6 @@ export default function Flow() {
         later(1500, () => {
           setNotif({ title: people.J.name, body: tx(`hat „${moved.title}“ auf ${when} verschoben`, `moved “${moved.title}” to ${when}`) });
           haptics.select();
-          later(320, () => setPops([{ name: 'glocke', x: W - 44, y: 26, size: 50, rot: 10, fromY: 90 }]));
           finish(tx(`${Bn} weiß es sofort.`, `${Bn} knows right away.`));
         });
       });
@@ -332,7 +326,6 @@ export default function Flow() {
         const list = demo.get().lists.find((l) => l.id === DEMO.einkauf)!;
         land({ id, type: 'entry', side: 'right', f: madeItems({ id, by: 'J', said, at, say: add.length > 1 ? tx(`${add.length} Sachen stehen auf der Einkaufsliste.`, `${add.length} things are on the shopping list.`) : tx('Steht auf der Einkaufsliste.', 'It’s on the shopping list.'), list, items: add }) });
         later(240, () => haptics.success());
-        later(380, () => setPops([{ name: 'einkauf', x: W - 140, y: 40, size: 62, rot: -6, fromY: 320 }]));
         setReply(tx('Steht auf der Einkaufsliste.', 'It’s on the shopping list.'));
         // The partner is at the shop: the tick lands in your card first, then the quiet line below.
         later(1800, () => {
@@ -340,9 +333,7 @@ export default function Flow() {
           haptics.select();
         });
         later(2400, () => {
-          setItems((its) => [...its, { id: 'tick', type: 'status', by: 'T', text: tx(`${people.T.name} hat ${add[0].name} abgehakt`, `${people.T.name} ticked off ${add[0].name}`) }]);
           haptics.success();
-          setPops((p) => [...p, { name: 'erledigt', x: W - 84, y: 58, size: 44, rot: 8, fromY: 320 }]);
           finish(tx(`${Bn} ist im Laden und hakt ab.`, `${Bn} is at the shop, ticking things off.`));
         });
       });
@@ -391,10 +382,6 @@ export default function Flow() {
               </StillContext.Provider>
             </PersonsContext.Provider>
           </StoreContext.Provider>
-          {/* Honest (decisions 02.11.): the rest of the week is an example. */}
-          <View pointerEvents="none" style={{ position: 'absolute', right: 16, top: 6, height: 22, paddingHorizontal: 9, borderRadius: 999, justifyContent: 'center', backgroundColor: tokens.chipBg }}>
-            <Txt size={11.5} weight={600} color={tokens.sub}>{tx('Beispiel', 'Example')}</Txt>
-          </View>
           {notif ? <PartnerPhone owner={Bn} title={notif.title} body={notif.body} /> : null}
           {pops.map((p) => <Sticker key={`${step}-${p.name}`} name={p.name} size={p.size} x={p.x} y={p.y} rot={p.rot} from={{ x: p.x, y: p.fromY }} tap />)}
         </Animated.View>
@@ -422,12 +409,6 @@ export default function Flow() {
       <Animated.View pointerEvents="none" style={[{ position: 'absolute', left: 0, top: 0, width: MEMO, height: MEMO, transformOrigin: 'center' } as any, outer]}>
         <Animated.View style={[{ width: MEMO, height: MEMO }, memoSt]}>
           <MemoFace key={`${act.kind}-${act.n}`} size={MEMO} clock={t} keys={keys[act.kind]} initial="open" />
-          <Animated.View style={[{ position: 'absolute', right: -14, top: -6, width: 34, height: 34, borderRadius: 17, backgroundColor: tokens.row, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: tokens.hair }, qSt]}>
-            <Txt size={20} weight={700} color={tokens.done}>?</Txt>
-          </Animated.View>
-          <Animated.View style={[{ position: 'absolute', right: -10, bottom: 6, width: 34, height: 34, borderRadius: 17, backgroundColor: tokens.done, alignItems: 'center', justifyContent: 'center' }, okSt]}>
-            <LineIcon name="check" size={18} color={tokens.onInk} />
-          </Animated.View>
         </Animated.View>
       </Animated.View>
 
@@ -494,14 +475,8 @@ function ChatStage({ items }: { items: StageItem[] }) {
   const started = useRef(new Set(items.map((x) => x.id))).current;
   return (
     <View style={{ flex: 1 }}>
-      <View style={{ paddingHorizontal: 18, paddingBottom: 6 }}>
-        <H1 size={30} sub={tx('Familie · 2 Personen', 'Family · 2 people')}>Chat</H1>
-      </View>
       <View style={{ flex: 1, overflow: 'hidden' }}>
         <View style={{ flex: 1, justifyContent: 'flex-end', paddingHorizontal: 14, paddingBottom: 8, gap: 12 }}>
-          <View style={{ alignSelf: 'center', backgroundColor: tokens.segBg, borderRadius: 999, paddingVertical: 4, paddingHorizontal: 12 }}>
-            <Txt size={12.5} color={tokens.sub}>{tx('Heute', 'Today')}</Txt>
-          </View>
           {items.map((it) => (
             <Animated.View key={it.id} entering={started.has(it.id) ? undefined : rise()} exiting={rowOut} layout={rowLayout}>
               <Landing it={it} owner="J" today={TODAY} />
