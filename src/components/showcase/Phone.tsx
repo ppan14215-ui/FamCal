@@ -145,7 +145,7 @@ function ChatScreen({ scene, start, today }: { scene: Scene; start: Scene; today
 }
 
 /** Older messages slide under the header, as in the chat. */
-function TopFade() {
+export function TopFade() {
   return (
     <View pointerEvents="none" style={{ position: 'absolute', left: 0, right: 0, top: 0, height: 22 }}>
       <Svg width="100%" height="100%" preserveAspectRatio="none">
@@ -166,7 +166,7 @@ function TopFade() {
  * lands instead of popping in. The row keeps its key, so nothing overlaps; its first kind has no entrance
  * of its own (the row's rise covers it).
  */
-function Landing({ it, owner, today }: { it: StageItem; owner: PersonId; today: string }) {
+export function Landing({ it, owner, today }: { it: StageItem; owner: PersonId; today: string }) {
   const firstType = useRef(it.type);
   return (
     <Animated.View key={it.type} entering={it.type !== firstType.current ? rise(0) : undefined}>
