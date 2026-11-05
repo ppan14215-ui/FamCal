@@ -25,7 +25,7 @@ Stand 05.11.2026. Code: `src/lib/analytics.ts` (Katalog aller Events), `src/lib/
 | Paar | partner_invite_sent > family_joined (Partnerseite, gleiche family Gruppe) > entry_created vom Partner |
 | Sprache | voice_started > voice_transcribed(ok) > message_sent(input voice) > assistant_answered(ok) > entry_created |
 | Bindung | entry_created pro Woche, nach family Gruppe |
-| Bezahlen (später) | paywall_viewed > purchase_started > purchase_completed (Server) oder purchase_failed |
+| Bezahlen | paywall_shown > purchase_started > trial_started (Server) > purchase_completed (Server) oder purchase_failed |
 
 Wahlen: nav_style_chosen {style, source}, time_picker_mode_chosen {mode, source}. Beide auch auf onboarding_completed und nav_style als Personen Eigenschaft.
 
