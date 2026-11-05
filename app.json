@@ -15,7 +15,8 @@
     "android": {
       "package": "com.julian.famcal",
       "adaptiveIcon": {
-        "backgroundColor": "#F5F5F4"
+        "backgroundColor": "#F5F5F4",
+        "foregroundImage": "./assets/app-icon/adaptive-foreground-A.png"
       }
     },
     "web": {
@@ -109,6 +110,7 @@
     "owner": "123dermensch",
     "updates": {
       "url": "https://u.expo.dev/8e6b21e8-8233-4246-b477-94244b55771f"
-    }
+    },
+    "icon": "./assets/app-icon/icon.png"
   }
 }
