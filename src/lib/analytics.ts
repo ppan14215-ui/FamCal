@@ -48,7 +48,7 @@ export type EntryKind = 'event' | 'events' | 'list_item' | 'list' | 'recipe' | '
  * 2 Couple      partner_invite_sent > family_joined (partner side, same family group) > entry_created by the partner
  * 3 Voice       voice_started > voice_transcribed(ok) > message_sent(input voice) > assistant_answered(ok) > entry_created
  * 4 Retention   Application Opened / entry_created, weekly, by family group
- * 5 Paywall     paywall_viewed > purchase_started > purchase_completed (server) | purchase_failed
+ * 5 Paywall     paywall_shown > purchase_started > trial_started (server) > purchase_completed (server) | purchase_failed
  */
 export type Events = {
   /** A step of the first-run flow became visible. step: hallo, signin, familie, eltern, kalender, navigation, partner, fertig, or a flow.tsx step. flow: which onboarding build. */
@@ -89,7 +89,8 @@ export type Events = {
   /** Rückgängig on what just landed (a "wrong understanding" signal). */
   entry_undone: { kind: EntryKind };
 
-  paywall_viewed: { trigger: string };
+  /** The Plus paywall is visible (app/plus.tsx). trigger: onboarding (last step of first run) or settings. */
+  paywall_shown: { trigger: string };
   purchase_started: { product: string; trigger: string };
   purchase_failed: { product: string; reason: string; cancelled: boolean };
   restore_tapped: Record<string, never>;
