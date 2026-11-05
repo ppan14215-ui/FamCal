@@ -23,7 +23,7 @@
  */
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { View, TextInput, Pressable, ScrollView, useWindowDimensions, Platform } from 'react-native';
-import Animated, { useSharedValue, useAnimatedStyle, withTiming, withSpring, Easing, useReducedMotion, cancelAnimation, FadeIn, FadeOut } from 'react-native-reanimated';
+import Animated, { useSharedValue, useAnimatedStyle, withTiming, withSpring, withDelay, Easing, useReducedMotion, cancelAnimation, FadeIn, FadeOut } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import Txt from '../../src/components/ui/Txt';
@@ -31,6 +31,8 @@ import { Btn, H1 } from '../../src/components/ui/kit';
 import LineIcon from '../../src/components/ui/LineIcon';
 import PressScale from '../../src/components/ui/PressScale';
 import { MemoFace, type EyeKey, type Eyes } from '../../src/components/onboarding/Memo';
+import { Sticker, StickerRing } from '../../src/components/onboarding/Sticker';
+import { clayIcons, type ClayName } from '../../src/lib/clayIcons';
 import TalkBar from '../../src/components/TalkBar';
 import DayView from '../../src/screens/kalender/DayView';
 import { monthTitle } from '../../src/screens/kalender/MonthView';
@@ -70,6 +72,34 @@ const T_LAND = 1300;
 /** Then a readable hold before the button that names the next thing. */
 const T_DONE = 1100;
 
+/**
+ * Stickers around Memo (Airbnb reference, Julian 05.11.). Only icons whose own motion Julian passed
+ * in the review (icon-motion/codex-redo.md: freigegeben), offsets from Memo's centre.
+ * Hallo: what a family calendar holds. Fertig: the week that is now yours, kept clear of the magnets.
+ */
+type Stk = { name: ClayName; dx: number; dy: number; size: number; rot?: number };
+const HALLO: Stk[] = [
+  { name: 'geburtstag', dx: -101, dy: -60, size: 76, rot: -8 },
+  { name: 'tennis', dx: 98, dy: -72, size: 68, rot: 10 },
+  { name: 'kochtopf', dx: 108, dy: 41, size: 66, rot: 6 },
+  { name: 'zahn', dx: -108, dy: 46, size: 60, rot: -6 },
+  { name: 'glocke', dx: -5, dy: -110, size: 60, rot: 5 },
+];
+const FERTIG: Stk[] = [
+  { name: 'sonne', dx: -103, dy: -64, size: 70, rot: -6 },
+  { name: 'erledigt', dx: -36, dy: -110, size: 58, rot: 4 },
+  { name: 'chat', dx: 46, dy: -108, size: 64, rot: -5 },
+  { name: 'geburtstag', dx: 108, dy: -52, size: 70, rot: 8 },
+  { name: 'papier-stift', dx: -115, dy: 38, size: 56, rot: -4 },
+  { name: 'kochtopf', dx: 115, dy: 41, size: 58, rot: 6 },
+];
+/** Memo as the hero of hallo and fertig: this much bigger, in the upper middle of the screen. */
+const HERO = 1.45;
+/** Stickers start once Memo has landed; the line and the button wait for the last one. */
+const T_RING = 900;
+const ringEnd = (n: number) => T_RING + (n - 1) * 190 + 450;
+const clay = (n?: string): ClayName => (n && n in clayIcons ? (n as ClayName) : 'kalender');
+
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 const wdLong = (d: string) => WD_LONG[weekday(d)];
 /** "10 Uhr", "10:30", "3pm": the time in a sentence, when the date reader left it out. */
@@ -103,7 +133,7 @@ const aged = (items: StageItem[]) => items.map((it) => (it.type === 'entry' ? { 
 
 export default function Flow() {
   const insets = useSafeAreaInsets();
-  const { width: W } = useWindowDimensions();
+  const { width: W, height: H } = useWindowDimensions();
   const reduced = useReducedMotion();
   const kb = useKeyboardInset();
   const [step, setStep] = useState<Step>('hallo');
@@ -129,6 +159,8 @@ export default function Flow() {
   const [ev, setEv] = useState<CalEvent | null>(null);
   const [calKey, setCalKey] = useState(0);
   const [notif, setNotif] = useState<{ title: string; body: string } | null>(null);
+  /** Stickers that pop out over the real app when something lands. */
+  const [pops, setPops] = useState<{ name: ClayName; x: number; y: number; size: number; rot: number; fromY: number }[]>([]);
 
   // ── Memo ───────────────────────────────────────────────────────────────
   const play = (kind: Act, dur: number) => {
@@ -140,8 +172,11 @@ export default function Flow() {
   };
   useEffect(() => { play('land', 3.2); }, []);
   const corner = TRY.has(step);
+  const isHero = step === 'hallo' || step === 'fertig';
   const pos = useSharedValue(0);
   useEffect(() => { pos.value = reduced ? (corner ? 1 : 0) : withSpring(corner ? 1 : 0, { stiffness: 170, damping: 26 }); }, [corner]);
+  const hero = useSharedValue(1);
+  useEffect(() => { hero.value = reduced ? (isHero ? 1 : 0) : withSpring(isHero ? 1 : 0, { stiffness: 170, damping: 26 }); }, [isHero]);
 
   const [magA, setMagA] = useState(false);
   const [magB, setMagB] = useState(false);
@@ -150,19 +185,25 @@ export default function Flow() {
 
   // ── Geometry ───────────────────────────────────────────────────────────
   const barY = insets.top + 12;
-  const memoY = insets.top + 76;
+  const memoY = insets.top + 96;
   const bubbleY = memoY + MEMO + 18;
   const headY = insets.top + 50;
   const stageTop = headY + SMALL + 12;
   const bottom = kb > 0 ? kb + 8 : insets.bottom + 12;
+  /** The hero's centre and radius (hallo, fertig). */
+  const heroCY = Math.max(memoY + MEMO / 2 + 60, Math.round(H * 0.36));
+  const heroR = (MEMO * HERO) / 2;
+  const cy = isHero ? heroCY : memoY + MEMO / 2;
+  const R = isHero ? heroR : MEMO / 2;
 
   const outer = useAnimatedStyle((): any => {
     const p = pos.value;
-    const k = mix(1, SMALL / MEMO, p);
-    const big = { x: W / 2 - MEMO / 2, y: memoY };
+    const h = hero.value;
+    const k = mix(1, SMALL / MEMO, p) * (1 + (HERO - 1) * h);
+    const big = { x: W / 2 - MEMO / 2, y: memoY + (heroCY - memoY - MEMO / 2) * h };
     const small = { x: 18 - (MEMO - SMALL) / 2, y: headY - (MEMO - SMALL) / 2 };
     return { transform: [{ translateX: mix(big.x, small.x, p) }, { translateY: mix(big.y, small.y, p) }, { scale: k }] };
-  }, [W, memoY, headY]);
+  }, [W, memoY, headY, heroCY]);
   const keys: Record<Act, EyeKey[]> = {
     land: [{ t: 0.75, e: 'happy' }, { t: 1.6, e: 'open' }, { t: 2.2, e: 'wink', direct: true }, { t: 2.75, e: 'open', direct: true }],
     name: [{ t: 0.05, e: 'happy' }, { t: 0.9, e: 'open' }],
@@ -205,7 +246,7 @@ export default function Flow() {
     haptics.select();
     timers.current.forEach(clearTimeout);
     timers.current = [];
-    setPhase('wait'); setReply(null); setNotif(null);
+    setPhase('wait'); setReply(null); setNotif(null); setPops([]);
     setStep(s);
     if (s === 'termin') setItems([message({ id: 'seed_b', by: 'T', said: tx('Bin heute um sechs zuhause.', 'Home at six today.'), at: agoIso(35) })].map((f) => ({ id: f.id, type: 'entry', f, side: 'left' } as StageItem)));
     if (s === 'verschieben' && ev) { demo.set(() => ({ calDay: ev.date })); setCalKey((k) => k + 1); }
@@ -249,6 +290,8 @@ export default function Flow() {
         const when = `${wdLong(e.date)}${e.allDay ? '' : `, ${hm(e.start)}`}`;
         land({ id, type: 'entry', side: 'right', f: madeEvents({ id, by: 'J', said, at, say: tx(`Steht drin. ${when}.`, `Done. ${when}.`), events: [e] }) });
         later(240, () => haptics.success());
+        // Its icon pops out of the card into the empty corner of the page.
+        later(380, () => setPops([{ name: clay(e.icon), x: W - 140, y: 40, size: 62, rot: 8, fromY: 320 }]));
         finish(e.allDay
           ? tx(`Steht drin, ${wdLong(e.date)}. ${Bn} sieht es auch. Die Uhrzeit sagst du einfach dazu.`, `It’s in, ${wdLong(e.date)}. ${Bn} sees it too. Just add the time when you know it.`)
           : tx(`Steht drin. ${Bn} sieht es auch.`, `It’s in. ${Bn} sees it too.`));
@@ -276,6 +319,7 @@ export default function Flow() {
         later(1500, () => {
           setNotif({ title: people.J.name, body: tx(`hat „${moved.title}“ auf ${when} verschoben`, `moved “${moved.title}” to ${when}`) });
           haptics.select();
+          later(320, () => setPops([{ name: 'glocke', x: W - 44, y: 26, size: 50, rot: 10, fromY: 90 }]));
           finish(tx(`${Bn} weiß es sofort.`, `${Bn} knows right away.`));
         });
       });
@@ -288,6 +332,7 @@ export default function Flow() {
         const list = demo.get().lists.find((l) => l.id === DEMO.einkauf)!;
         land({ id, type: 'entry', side: 'right', f: madeItems({ id, by: 'J', said, at, say: add.length > 1 ? tx(`${add.length} Sachen stehen auf der Einkaufsliste.`, `${add.length} things are on the shopping list.`) : tx('Steht auf der Einkaufsliste.', 'It’s on the shopping list.'), list, items: add }) });
         later(240, () => haptics.success());
+        later(380, () => setPops([{ name: 'einkauf', x: W - 140, y: 40, size: 62, rot: -6, fromY: 320 }]));
         setReply(tx('Steht auf der Einkaufsliste.', 'It’s on the shopping list.'));
         // The partner is at the shop: the tick lands in your card first, then the quiet line below.
         later(1800, () => {
@@ -297,6 +342,7 @@ export default function Flow() {
         later(2400, () => {
           setItems((its) => [...its, { id: 'tick', type: 'status', by: 'T', text: tx(`${people.T.name} hat ${add[0].name} abgehakt`, `${people.T.name} ticked off ${add[0].name}`) }]);
           haptics.success();
+          setPops((p) => [...p, { name: 'erledigt', x: W - 84, y: 58, size: 44, rot: 8, fromY: 320 }]);
           finish(tx(`${Bn} ist im Laden und hakt ab.`, `${Bn} is at the shop, ticking things off.`));
         });
       });
@@ -350,6 +396,7 @@ export default function Flow() {
             <Txt size={11.5} weight={600} color={tokens.sub}>{tx('Beispiel', 'Example')}</Txt>
           </View>
           {notif ? <PartnerPhone owner={Bn} title={notif.title} body={notif.body} /> : null}
+          {pops.map((p) => <Sticker key={`${step}-${p.name}`} name={p.name} size={p.size} x={p.x} y={p.y} rot={p.rot} from={{ x: p.x, y: p.fromY }} tap />)}
         </Animated.View>
       ) : <View style={{ flex: 1 }} />}
 
@@ -365,8 +412,9 @@ export default function Flow() {
       {/* Name magnets around Memo */}
       {step === 'namen' || step === 'fertig' ? (
         <>
-          {magA ? <Magnet key="a" x={W / 2 - MEMO / 2 - 46} y={memoY + MEMO * 0.42} letter={A[0]} c={ME} /> : null}
-          {magB ? <Magnet key="b" x={W / 2 + MEMO / 2 + 6} y={memoY + MEMO * 0.42} letter={B[0]} c={YOU} /> : null}
+          {/* Beside Memo while you type; on its lower edge, like stickers, at the end */}
+          {magA ? <Magnet key={`a-${isHero}`} x={isHero ? W / 2 - 66 - 20 : W / 2 - MEMO / 2 - 46} y={isHero ? cy + 52 - 20 : memoY + MEMO * 0.42} letter={A[0]} c={ME} /> : null}
+          {magB ? <Magnet key={`b-${isHero}`} x={isHero ? W / 2 + 66 - 20 : W / 2 + MEMO / 2 + 6} y={isHero ? cy + 52 - 20 : memoY + MEMO * 0.42} letter={B[0]} c={YOU} /> : null}
         </>
       ) : null}
 
@@ -383,6 +431,10 @@ export default function Flow() {
         </Animated.View>
       </Animated.View>
 
+      {/* Stickers pop out of Memo: hallo and fertig (Airbnb reference) */}
+      {step === 'hallo' ? <StickerRing key="r-hallo" cx={W / 2} cy={heroCY} items={HALLO} start={T_RING} /> : null}
+      {step === 'fertig' ? <StickerRing key="r-fertig" cx={W / 2} cy={heroCY} items={FERTIG} start={500} /> : null}
+
       {/* Memo's one line. In the middle as a bubble; in the corner beside Memo, overwritten in place, never stacked. */}
       {corner ? (
         <View pointerEvents="none" style={{ position: 'absolute', left: 18 + SMALL + 12, right: 18, top: headY, height: SMALL, justifyContent: 'center' }}>
@@ -395,12 +447,12 @@ export default function Flow() {
           )}
         </View>
       ) : line ? (
-        <Animated.View key={`${step}-${line}`} entering={build} style={{ position: 'absolute', left: 24, right: 24, top: bubbleY, alignItems: 'center' }} pointerEvents="none">
+        <Late key={`${step}-${line}`} ms={step === 'hallo' ? ringEnd(HALLO.length) - 250 : step === 'fertig' ? 500 + (FERTIG.length - 1) * 190 + 200 : 0} style={{ position: 'absolute', left: 24, right: 24, top: isHero ? heroCY + heroR + 64 : bubbleY, alignItems: 'center' }}>
           <View style={{ width: 14, height: 14, backgroundColor: tokens.row, transform: [{ rotate: '45deg' }], marginBottom: -7, borderLeftWidth: 1, borderTopWidth: 1, borderColor: tokens.hair }} />
           <View style={{ backgroundColor: tokens.row, borderRadius: 18, paddingHorizontal: 18, paddingVertical: 12, borderWidth: 1, borderColor: tokens.hair, maxWidth: 340 }}>
             <Txt size={19} weight={600} line={25} center>{line}</Txt>
           </View>
-        </Animated.View>
+        </Late>
       ) : null}
 
       {/* Bottom: rides on the keyboard, so the field and the examples are never under the keys */}
@@ -429,9 +481,9 @@ export default function Flow() {
           </View>
         ) : null}
         {TRY.has(step) && phase === 'done' ? <View style={{ paddingHorizontal: 4 }}><Btn label={nextLabel[step]} onPress={() => go(next[step])} /></View> : null}
-        {step === 'hallo' ? <View style={{ paddingHorizontal: 4 }}><Btn label={tx('Hallo Memo!', 'Hi Memo!')} onPress={() => go('namen')} /></View> : null}
+        {step === 'hallo' ? <Late key="b-hallo" ms={ringEnd(HALLO.length) + 250} style={{ paddingHorizontal: 4 }}><Btn label={tx('Hallo Memo!', 'Hi Memo!')} onPress={() => go('namen')} /></Late> : null}
         {step === 'namen' ? <View style={{ paddingHorizontal: 4 }}><Btn label={tx('Weiter', 'Continue')} disabled={!magA} onPress={() => go('termin')} /></View> : null}
-        {step === 'fertig' ? <View style={{ paddingHorizontal: 4 }}><Btn label={tx('Los geht’s', 'Let’s go')} onPress={() => { haptics.success(); router.back(); }} /></View> : null}
+        {step === 'fertig' ? <Late key="b-fertig" ms={500 + (FERTIG.length - 1) * 190 + 700} style={{ paddingHorizontal: 4 }}><Btn label={tx('Los geht’s', 'Let’s go')} onPress={() => { haptics.success(); router.back(); }} /></Late> : null}
       </View>
     </View>
   );
@@ -515,3 +567,21 @@ function Magnet({ x, y, letter, c }: { x: number; y: number; letter?: string; c:
   );
 }
 
+
+/**
+ * Comes in after the stickers (content first, then the line, then the button). A plain animated
+ * style, no entering animation: on web an entering View inside the flow column turns absolute.
+ */
+function Late({ ms, style, children }: { ms: number; style?: any; children: React.ReactNode }) {
+  const reduced = useReducedMotion();
+  const a = useSharedValue(reduced ? 1 : 0);
+  const [on, setOn] = useState(reduced || ms <= 0);
+  useEffect(() => {
+    if (reduced) return;
+    a.value = withDelay(ms, withTiming(1, { duration: 300, easing: Easing.bezier(0.22, 1, 0.36, 1) }));
+    const tm = setTimeout(() => setOn(true), ms);
+    return () => clearTimeout(tm);
+  }, []);
+  const st = useAnimatedStyle((): any => ({ opacity: a.value, transform: [{ translateY: (1 - a.value) * 10 }] }));
+  return <Animated.View pointerEvents={on ? 'box-none' : 'none'} style={[style, st]}>{children}</Animated.View>;
+}
