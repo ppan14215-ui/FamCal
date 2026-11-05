@@ -62,9 +62,9 @@ import { parseWhen } from '../../src/lib/when';
 import { fillField } from '../../src/lib/simple';
 import { navStyle } from '../../src/lib/navStyle';
 import { useKeyboardInset } from '../../src/lib/keyboard';
-import { TODAY, addDays, weekday, WD_LONG, hm } from '../../src/lib/dates';
+import { TODAY, addDays, weekday, WD_LONG, hm, daysBetween, MONTHS_SHORT, monthIdx } from '../../src/lib/dates';
 import { haptics } from '../../src/lib/haptics';
-import { tx } from '../../src/i18n/lang';
+import { tx, isEn } from '../../src/i18n/lang';
 
 type Step = 'hallo' | 'namen' | 'termin' | 'verschieben' | 'kochen' | 'spielen' | 'filme' | 'baby' | 'fertig';
 const STEPS: Step[] = ['hallo', 'namen', 'termin', 'verschieben', 'kochen', 'spielen', 'filme', 'baby', 'fertig'];
@@ -420,7 +420,7 @@ export default function Flow() {
         if (no) { finish(tx('Okay, das könnt ihr später aufteilen.', 'Okay, you can split it later.')); return; }
         setItems((its) => [...its.filter((x) => x.id !== 'tasks'), { id: 'tasks', type: 'tasks', split: true }]);
         later(240, () => haptics.success());
-        finish(tx(`Vorschlag: Ämter macht ${A}, Ärzte und Hebamme ${Bn}. Sagt einfach, wenn ihr tauschen wollt.`, `Suggestion: ${A} does the paperwork, ${Bn} the doctors and midwife. Just say if you want to swap.`));
+        finish(tx(`Vorschlag: Ämter macht ${A}, Ärzte und Hebamme ${Bn}. Sagt einfach, wenn ihr tauschen wollt.`, `Suggestion: ${A} takes paperwork, ${Bn} the doctors. Say if you’d swap.`));
       });
       return;
     }
@@ -810,11 +810,41 @@ function ScoreCard({ id }: { id: string }) {
 }
 
 /** The first year for a baby due in ten weeks, from the app's own plan (firstYear.ts). */
+/** English words for the first year (firstYear.ts is German only). Keyed by the plan's key. */
+const FY_EN: Record<string, [string, string?]> = {
+  hebamme: ['Find a midwife', 'as early as possible'], kurs: ['Antenatal class', 'weeks 28 to 30'], kinderarzt: ['Find a paediatrician', 'before the birth'],
+  elternzeit: ['Register parental leave', 'seven weeks before'], mutterschutz: ['Maternity leave starts', 'six weeks before the due date'], klinik: ['Pack the hospital bag', 'from week 34'],
+  geburt: ['Due date'], standesamt: ['Register the birth', 'within a week'], u3: ['U3 check-up', 'weeks 4 to 5'], kk: ['Register with health insurance', 'after the birth certificate'],
+  impf1: ['First vaccinations', 'from week 8'], eg: ['Apply for parental allowance', 'only three months back'], u4: ['U4 check-up', 'months 3 to 4'], impf2: ['Second vaccinations', 'at 4 months'],
+  kg: ['Apply for child benefit', 'six months back'], u5: ['U5 check-up', 'months 6 to 7'], kita: ['Ask for a daycare place', 'to start at about one'], u6: ['U6 check-up', 'months 10 to 12'],
+  impf3: ['Third vaccinations', 'at 11 months'], bday: ['First birthday'],
+};
+const TASK_EN: Record<string, string> = {
+  hebamme: 'Find a midwife', kurs: 'Book an antenatal class', kinderarzt: 'Find a paediatrician', elternzeit: 'Register parental leave', klinik: 'Pack the hospital bag',
+  standesamt: 'Get the birth certificate', kk: 'Health insurance for your baby', impf1: 'First vaccinations', eg: 'Apply for parental allowance', u4: 'Book the U4', kg: 'Apply for child benefit', kita: 'Ask for a daycare place',
+};
+const keyOf = (id: string) => id.replace(/^[mo]-/, '');
+const dayMonth = (iso: string) => (isEn() ? `${MONTHS_SHORT[monthIdx(iso)]} ${Number(iso.slice(8))}` : `${Number(iso.slice(8))}. ${MONTHS_SHORT[monthIdx(iso)]}`);
+/** "Frist 19. Nov · noch 3 Wochen" in the app's language. */
+function dueLabel(due: string, frist?: boolean) {
+  const d = daysBetween(TODAY, due);
+  if (d <= 0) return tx('heute', 'today');
+  if (d < 14) return tx(`${dayMonth(due)} · in ${d} Tagen`, `${dayMonth(due)} · in ${d} days`);
+  const w = Math.floor(d / 7);
+  return tx(`${frist ? 'Frist ' : ''}${dayMonth(due)} · noch ${w} Wochen`, `${frist ? 'Due ' : ''}${dayMonth(due)} · ${w} weeks left`);
+}
+
+/** The first year for a baby due in ten weeks, from the app's own plan (firstYear.ts). */
 function babyOf() {
   const { milestones, cards } = firstYear({ name: '', due: DUE });
   const next = milestones.filter((m) => m.date >= TODAY).sort((a, b) => (a.date < b.date ? -1 : 1));
-  const plan = next.slice(0, 5).map((m) => ({ id: m.id, icon: m.icon, title: m.title, sub: m.sub ?? '', frist: m.frist }));
-  const tasks = cards.slice(0, 7).map((c) => ({ id: c.id, icon: c.icon, title: c.title, due: c.dueLabel ?? '', who: (AMT.test(c.title) ? 'J' : 'T') as 'J' | 'T' }));
+  const en = isEn();
+  const plan = next.slice(0, 5).map((m) => {
+    const e = FY_EN[keyOf(m.id)];
+    const sub = m.frist ? tx(`Frist ${dayMonth(m.date)}`, `Due ${dayMonth(m.date)}`) : en ? (e?.[1] ?? dayMonth(m.date)) : (m.sub ?? '');
+    return { id: m.id, icon: m.icon, title: en && e ? e[0] : m.title, sub, frist: m.frist };
+  });
+  const tasks = cards.slice(0, 7).map((c) => ({ id: c.id, icon: c.icon, title: en ? (TASK_EN[keyOf(c.id)] ?? c.title) : c.title, due: c.due ? dueLabel(c.due, c.frist) : '', who: (AMT.test(c.title) ? 'J' : 'T') as 'J' | 'T' }));
   const weeks = Math.round(70 / 7);
   return {
     plan, tasks, more: Math.max(0, next.length - plan.length),
