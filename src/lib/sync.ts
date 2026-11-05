@@ -6,7 +6,7 @@
  */
 import type { RealtimeChannel } from '@supabase/supabase-js';
 import { setFamily } from './analytics';
-import { supabase } from './cloud';
+import { supabase, allRows } from './cloud';
 import { get, set, subscribe, actions, setMeRole } from '../state/store';
 import type { CalEvent, Bring, Person } from '../state/types';
 import { watchComments, stopComments } from './comments';
@@ -72,7 +72,7 @@ export async function startSync(name?: string): Promise<{ family?: Family; error
 
   const [members, events, people] = await Promise.all([
     supabase.from('family_members').select('user_id, role, display_name').eq('family_id', family.id),
-    supabase.from('events').select('*').eq('family_id', family.id),
+    allRows<Row>((a, b) => supabase!.from('events').select('*').eq('family_id', family!.id).order('id').range(a, b)),
     supabase.from('family_people').select('id, name, kind, color, birthday').eq('family_id', family.id),
   ]);
   if (members.error) return { error: members.error.message };

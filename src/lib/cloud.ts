@@ -36,3 +36,19 @@ export const supabase: SupabaseClient | null = LIVE
       global: { fetch: timeoutFetch },
     })
   : null;
+
+/**
+ * Supabase hands out at most 1000 rows per request. A family that moved a
+ * year of two phone calendars in has more, and a missing Termin would look
+ * deleted to the phone sync, so everything is read page by page (05.11.).
+ */
+export async function allRows<T>(page: (a: number, b: number) => PromiseLike<{ data: T[] | null; error: { message: string } | null }>): Promise<{ data: T[]; error: { message: string } | null }> {
+  const out: T[] = [];
+  for (let a = 0; a < 50000; a += 1000) {
+    const { data, error } = await page(a, a + 999);
+    if (error) return { data: out, error };
+    out.push(...(data ?? []));
+    if (!data || data.length < 1000) break;
+  }
+  return { data: out, error: null };
+}
