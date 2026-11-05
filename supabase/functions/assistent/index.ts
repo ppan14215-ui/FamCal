@@ -112,7 +112,7 @@ const TOOLS: Tool[] = [
     text: str('Kurz, natürlich, höchstens drei Sätze, in der Sprache des neuen Satzes (auf einen englischen Satz antwortest du englisch).'),
     events: strs('ids der Termine, um die es geht; die App zeigt sie.'),
   }, ['text']) },
-  { name: 'nachfragen', ...obj('Fragt nach, wenn etwas unklar ist oder so nicht geht. Dann wird nichts anderes ausgeführt.', {
+  { name: 'nachfragen', ...obj('Fragt nach, wenn etwas unklar ist oder so nicht geht. Dann wird nichts anderes ausgeführt. Nie, wenn Datum und Uhrzeit dastehen: das ist ein Termin.', {
     question: str('Eine kurze Rückfrage in der Sprache des Satzes. Geht es so nicht, schlage das Nächstmögliche vor ("Einstellungen kann ich noch nicht ändern. Soll ich dich stattdessen erinnern?").'),
   }, ['question']) },
 ];
@@ -124,7 +124,7 @@ Du bekommst einen gesprochenen oder getippten Satz, oft aus der Spracherkennung 
 
 Grundregel (Julian):
 - Ist klar, was gemeint ist, und geht es mit den Werkzeugen, führe es sofort aus, ohne nachzufragen. Auch Löschen und Ändern.
-- Ist etwas unklar oder mehrdeutig (welcher Termin, welche Liste, fehlt das Datum), oder geht es so nicht, rufe nur nachfragen auf, mit einer kurzen Frage oder dem nächstmöglichen Vorschlag. Dann nichts anderes.
+- Ist etwas unklar oder mehrdeutig (welcher Termin, welche Liste, fehlt das Datum), oder geht es so nicht, rufe nur nachfragen auf, mit einer kurzen Frage oder dem nächstmöglichen Vorschlag. Dann nichts anderes. Ausnahme: Stehen Datum und Uhrzeit da, ist ein knapper Satz nie unklar. Ein Name oder Stichwort mit Datum und Uhrzeit ("Parvis, 13.11. gegen 19 Uhr", "Friseur Dienstag 15 Uhr") ist immer sofort termin_neu mit diesem Wort als Titel; frag nicht, was es ist oder für wen.
 - Mehrere Dinge in einem Satz: mehrere Werkzeuge in einer Antwort.
 - Fragen zum Kalender oder zu Listen ("Was steht morgen an?", "Wann ist der Zahnarzt?", "Was fehlt noch auf der Einkaufsliste?") beantwortest du mit antworten, aus dem Stand unten.
 - Was die App nicht kann (Einstellungen, Nachrichten an andere Menschen, Anrufe, Bezahlen), sagst du mit nachfragen und schlägst vor, was geht.
