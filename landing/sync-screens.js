@@ -101,6 +101,10 @@ async function routes(p) {
   await p.route(/tile\.openstreetmap\.org/, (r) => r.fulfill({ status: 200, contentType: 'image/png', body: mapTile(r.request().url()) }));
 }
 
+const vac = (p, l) => p.evaluate((en) => globalThis.__fc.set((st) => ({ events: [...st.events,
+  { id: 'e-vac1', title: en ? 'Vacation at Lake Garda' : 'Urlaub am Gardasee', icon: 'strand', date: '2026-08-03', endDate: '2026-08-14', start: '', allDay: true, who: 'both' },
+  { id: 'e-vac2', title: en ? 'Vacation' : 'Urlaub', icon: 'urlaub', date: '2026-12-28', endDate: '2026-12-30', start: '', allDay: true, who: 'J' }] })), l === 'en');
+
 // Jeder Screen: Name in landing/shots und der Weg dorthin, ausgehend vom Chat der Beispielfamilie.
 const SCREENS = [
   ['chat', async () => {}],
@@ -124,7 +128,6 @@ const SCREENS = [
   ['tage', async ({ tab, view, t }) => { await tab(t.cal); await view(t.days); }],
   ['woche', async ({ tab, view, t }) => { await tab(t.cal); await view(t.week); }],
   ['monat', async ({ tab, view, t }) => { await tab(t.cal); await view(t.month); }],
-  ['jahr', async ({ tab, view, t }) => { await tab(t.cal); await view(t.year); }],
   // Zusammenhang: der Satz nennt weder Termin noch Tag genau; die feste Antwort zeigt auf die echte U6 der Beispielfamilie.
   ['kontext', async ({ p, say, t }) => {
     await p.evaluate(({ said, title, ok }) => {
@@ -144,7 +147,11 @@ const SCREENS = [
   ['wissen', async ({ can, say, setting, t, l }) => { await can(); for (const [fact] of FACTS[l]) await say((l === 'de' ? 'Merk dir, ' : 'Remember, ') + fact); await setting(t.wissen); }],
   ['wieder', async ({ say, t }) => { await say(t.u7); }],
   ['karte', async ({ p, say, t }) => { await say(t.karte); await p.getByPlaceholder(/Dr\.|Salon|e\.g\./).first().fill(t.who); await p.getByText(t.search, { exact: true }).click(); }],
-  ['urlaub', async ({ setting, t }) => { await setting(t.urlaub); }],
+  // Urlaub: zwei Urlaube der Beispielfamilie, damit Jahr und Urlaubskonto etwas zeigen.
+  ['urlaub', async ({ p, setting, t, l }) => { await vac(p, l); await setting(t.urlaub); }],
+  ['jahr', async ({ p, tab, view, t, l }) => { await vac(p, l); await tab(t.cal); await view(t.year); }],
+  // Farben: Farbthema der Familie (Personenfarben), Seite /design per In-App Navigation.
+  ['farben', async ({ p }) => { await p.evaluate(() => { history.pushState({}, '', '/design'); dispatchEvent(new PopStateEvent('popstate')); }); await p.waitForTimeout(1800); }],
   ['kalender', async ({ setting, t }) => { await setting(t.gcal); }],
   ['widget', async ({ setting }) => { await setting('Widgets'); }],
   ['teilen', async ({ setting, t }) => { await setting(t.teilen); }],
