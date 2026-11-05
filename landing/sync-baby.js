@@ -32,7 +32,17 @@ const MIME = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css
     try {
       await shot('baby1');
       await yes(); await p.waitForTimeout(3500); await shot('baby2');
-      await yes(); await p.waitForTimeout(4500); await shot('baby');
+      await yes(); await p.waitForTimeout(4500);
+      // Ruhiger für die Landing Page (Julian 05.11.): Fortschrittsleiste, eigene „Ja“-Nachrichten und die abgeschnittene erste Karte ausblenden.
+      await p.evaluate(() => {
+        const leaf = (re) => [...document.querySelectorAll('div')].filter((d) => re.test((d.textContent || '').trim()) && ![...d.children].some((c) => re.test((c.textContent || '').trim())));
+        const box = (el, n) => { for (let i = 0; i < n && el.parentElement; i++) el = el.parentElement; return el; };
+        for (const d of leaf(/^(Du|You) · /)) { const b = d.parentElement; if (b) b.style.display = 'none'; }
+        for (const d of leaf(/(und|and) \d+ (weitere|more)/)) { let el = d; while (el.parentElement && el.getBoundingClientRect().height < 200) el = el.parentElement; el.style.display = 'none'; }
+        for (const d of leaf(/^(Fertig|Done)$/)) { let el = d; while (el.parentElement && el.getBoundingClientRect().height < 40) el = el.parentElement; el.style.visibility = 'hidden'; }
+        const sp = leaf(/^(Später|Later)$/)[0]; if (sp) { let el = sp; while (el.parentElement && el.parentElement.getBoundingClientRect().width < 380) el = el.parentElement; el.style.visibility = 'hidden'; }
+      });
+      await p.waitForTimeout(600); await shot('baby');
       console.log('ok', v);
     } catch (e) { console.log('FEHLT', v, e.message.split('\n')[0]); }
     await p.close();

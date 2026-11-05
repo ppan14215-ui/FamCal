@@ -156,6 +156,8 @@ const SCREENS = [
   // Urlaub: zwei Urlaube der Beispielfamilie, damit Jahr und Urlaubskonto etwas zeigen.
   ['urlaub', async ({ p, setting, t, l }) => { await vac(p, l); await setting(t.urlaub); }],
   ['jahr', async ({ p, tab, view, t, l }) => { await vac(p, l); await tab(t.cal); await view(t.year); }],
+  // Jahr mit Legende (Julian 05.11.): nach unten bis Legende und „Was das Jahr noch bringt“.
+  ['jahrlegende', async ({ p, tab, view, t, l }) => { await vac(p, l); await tab(t.cal); await view(t.year); await p.mouse.move(200, 400); await p.mouse.wheel(0, 520); await p.waitForTimeout(800); }],
   // Farben: Farbthema der Familie (Personenfarben), Seite /design per In-App Navigation.
   ['farben', async ({ p }) => { await p.evaluate(() => { history.pushState({}, '', '/design'); dispatchEvent(new PopStateEvent('popstate')); }); await p.waitForTimeout(1800); }],
   ['kalender', async ({ setting, t }) => { await setting(t.gcal); }],
