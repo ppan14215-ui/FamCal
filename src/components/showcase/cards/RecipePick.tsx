@@ -5,7 +5,7 @@
  * play "one chip toggled off, then add" without the Dock's text fields or the real store.
  */
 import React, { useEffect } from 'react';
-import { View, StyleSheet } from 'react-native';
+import { View, StyleSheet, Pressable } from 'react-native';
 import Animated, { useSharedValue, useAnimatedStyle, withSequence, withTiming } from 'react-native-reanimated';
 import Txt from '../../ui/Txt';
 import LineIcon from '../../ui/LineIcon';
@@ -41,9 +41,13 @@ export type RecipePickProps = {
   pressed?: boolean;
   /** Inside a chat card frame with padding (default), or bare. */
   framed?: boolean;
+  /** Onboarding (Julian 05.11.): the chips can be tapped for real. Without these it stays a still picture. */
+  onToggle?: (label: string) => void;
+  onAdd?: () => void;
+  onSkip?: () => void;
 };
 
-export default function RecipePick({ dish, servings, picks, off = [], have, pressed, framed = true }: RecipePickProps) {
+export default function RecipePick({ dish, servings, picks, off = [], have, pressed, framed = true, onToggle, onAdd, onSkip }: RecipePickProps) {
   const gone = new Set(off);
   const take = picks.filter((x) => !gone.has(x));
   const body = (
@@ -53,7 +57,7 @@ export default function RecipePick({ dish, servings, picks, off = [], have, pres
         sub={tx('Tipp weg, was ihr schon habt. Lang drücken ändert.', 'Tap away what you already have. Long press to change.')}
       />
       <View style={{ flexDirection: 'row', gap: 6, flexWrap: 'wrap', paddingLeft: 36 }}>
-        {picks.map((x) => <PickChip key={x} label={x} on={!gone.has(x)} />)}
+        {picks.map((x) => (onToggle ? <Pressable key={x} onPress={() => onToggle(x)} accessibilityRole="button"><PickChip label={x} on={!gone.has(x)} /></Pressable> : <PickChip key={x} label={x} on={!gone.has(x)} />))}
         <Chip height={36} icon={<LineIcon name="plus" size={13} color={tokens.ink} stroke={2.4} />}>{tx('Ergänzen', 'Add more')}</Chip>
       </View>
       {have?.length ? (
@@ -67,11 +71,13 @@ export default function RecipePick({ dish, servings, picks, off = [], have, pres
         </View>
       ) : null}
       <View style={{ flexDirection: 'row', gap: 8 }}>
-        <View style={{ flex: 1, height: 44, borderRadius: 999, backgroundColor: tokens.chipBg, alignItems: 'center', justifyContent: 'center' }}>
+        <Pressable disabled={!onSkip} onPress={onSkip} style={{ flex: 1, height: 44, borderRadius: 999, backgroundColor: tokens.chipBg, alignItems: 'center', justifyContent: 'center' }}>
           <Txt size={15} weight={600}>{picks.length ? tx('Weglassen', 'Skip') : tx('Passt', 'Done')}</Txt>
-        </View>
+        </Pressable>
         {picks.length ? (
-          <AddButton n={take.length} pressed={!!pressed} />
+          <Pressable disabled={!onAdd || !take.length} onPress={onAdd} style={{ flex: 1 }}>
+            <AddButton n={take.length} pressed={!!pressed} />
+          </Pressable>
         ) : null}
       </View>
     </View>
@@ -110,7 +116,7 @@ function AddButton({ n, pressed }: { n: number; pressed: boolean }) {
   }, [pressed]);
   const st = useAnimatedStyle(() => ({ transform: [{ scale: k.value }] }));
   return (
-    <Animated.View style={[{ flex: 1, height: 44, borderRadius: 999, backgroundColor: n ? tokens.ink : tokens.chipBg, alignItems: 'center', justifyContent: 'center' }, st]}>
+    <Animated.View style={[{ height: 44, borderRadius: 999, backgroundColor: n ? tokens.ink : tokens.chipBg, alignItems: 'center', justifyContent: 'center' }, st]}>
       <Txt size={15} weight={600} color={n ? tokens.onInk : tokens.mute}>{tx(`${n} hinzufügen`, `Add ${n}`)}</Txt>
     </Animated.View>
   );
