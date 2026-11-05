@@ -161,7 +161,12 @@ const SCREENS = [
   ['kalender', async ({ setting, t }) => { await setting(t.gcal); }],
   ['widget', async ({ setting }) => { await setting('Widgets'); }],
   ['teilen', async ({ setting, t }) => { await setting(t.teilen); }],
-  ['mail', async ({ p, t }) => { await p.getByLabel(t.settings).first().click(); }],
+  // Mail: Einstellungen mit der Familienadresse oben; der Bereich „Zum Testen“ gehört nicht auf die Seite.
+  ['mail', async ({ p, t }) => { await p.getByLabel(t.settings).first().click(); await p.waitForTimeout(1500); await p.evaluate(() => {
+    const h = [...document.querySelectorAll('div')].find((d) => /^(Zum Testen|For testing)$/.test(d.textContent.trim()) && d.children.length <= 1);
+    if (!h) return; const y = h.getBoundingClientRect().top - 4;
+    for (const d of document.querySelectorAll('div')) { const r = d.getBoundingClientRect(); if (r.top >= y && r.height < 400 && !/Sprich|Just say/.test(d.textContent)) d.style.visibility = 'hidden'; }
+  }); }],
   ['brief', async ({ p, l }) => { await p.goto(URL + '/foto-verstanden' + (l === 'en' ? '#en' : '')); await p.reload(); }],
   ['brieflesen', async ({ p, l }) => { await p.goto(URL + '/foto-lesen' + (l === 'en' ? '#en' : '')); await p.reload(); }],
 ];
