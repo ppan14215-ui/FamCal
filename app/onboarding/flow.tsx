@@ -66,10 +66,12 @@ import { TODAY, addDays, weekday, WD_LONG, hm, daysBetween, MONTHS_SHORT, monthI
 import { haptics } from '../../src/lib/haptics';
 import { tx, isEn } from '../../src/i18n/lang';
 import NavChoice from '../../src/components/NavChoice';
+import KiWahl from '../../src/components/KiWahl';
+import { ohneKi } from '../../src/lib/privat';
 import { stepViewed, onboardingDone } from '../../src/lib/funnel';
 
-type Step = 'hallo' | 'namen' | 'leiste' | 'termin' | 'verschieben' | 'kochen' | 'spielen' | 'filme' | 'baby' | 'fertig';
-const STEPS: Step[] = ['hallo', 'namen', 'leiste', 'termin', 'verschieben', 'kochen', 'spielen', 'filme', 'baby', 'fertig'];
+type Step = 'hallo' | 'namen' | 'leiste' | 'ki' | 'termin' | 'verschieben' | 'kochen' | 'spielen' | 'filme' | 'baby' | 'fertig';
+const STEPS: Step[] = ['hallo', 'namen', 'leiste', 'ki', 'termin', 'verschieben', 'kochen', 'spielen', 'filme', 'baby', 'fertig'];
 const TRY = new Set<Step>(['termin', 'verschieben', 'kochen', 'spielen', 'filme', 'baby']);
 /**
  * What the chat shows: the app's own items, plus two live cards of the flow (Julian 05.11. 22:04 CET):
@@ -589,7 +591,9 @@ export default function Flow() {
       case 'filme': return tx('Abends nicht mehr ewig suchen, was ihr schaut. Zum Beispiel „Den Film Dune müssen wir sehen“.', 'No more endless scrolling at night. For example “We have to watch Dune”.');
       case 'spielen': return tx('Keiner muss mehr mitschreiben. Zum Beispiel „Wir spielen Rommé“.', 'Nobody has to keep score on paper. For example “We’re playing Rummy”.');
       case 'leiste': return tx('Wie magst du unten durch die App? Du siehst es gleich im nächsten Schritt.', 'How do you like to get around? You’ll see it in the next step.');
-      case 'fertig': return tx('Abends ist der Kopf frei, weil alles drinsteht.', 'Evenings feel lighter, because it’s all in there.');
+      // Datenschutz (Julian 05.11.): the choice comes right before the first real sentence; it holds for the whole family.
+      case 'ki': return tx('Kurz zu euren Daten. Du entscheidest, ob ich mitdenke.', 'A word on your data. You decide whether I think along.');
+      case 'fertig': return ohneKi() ? tx('Alles von Hand, über das Plus unten. Abends ist der Kopf frei, weil alles drinsteht.', 'Everything by hand, with the plus below. Evenings feel lighter, because it’s all in there.') : tx('Abends ist der Kopf frei, weil alles drinsteht.', 'Evenings feel lighter, because it’s all in there.');
     }
   })();
   const examples: Record<string, string[]> = {
@@ -608,7 +612,7 @@ export default function Flow() {
     filme: tx('Weiter', 'Continue'),
     baby: tx('Fertig', 'Done'),
   };
-  const next: Record<Step, Step> = { hallo: 'namen', namen: 'leiste', leiste: 'termin', termin: 'verschieben', verschieben: 'kochen', kochen: 'spielen', spielen: 'filme', filme: 'baby', baby: 'fertig', fertig: 'fertig' };
+  const next: Record<Step, Step> = { hallo: 'namen', namen: 'leiste', leiste: 'ki', ki: 'termin', termin: 'verschieben', verschieben: 'kochen', kochen: 'spielen', spielen: 'filme', filme: 'baby', baby: 'fertig', fertig: 'fertig' };
 
   return (
     <View style={{ flex: 1, backgroundColor: tokens.bg, paddingTop: corner ? stageTop : 0, paddingBottom: bottom }}>
@@ -696,7 +700,9 @@ export default function Flow() {
         ) : null}
         {TRY.has(step) && phase === 'done' ? <View style={{ paddingHorizontal: 4 }}><Btn label={nextLabel[step]} onPress={() => go(next[step])} /></View> : null}
         {step === 'hallo' ? <Late key="b-hallo" ms={ringEnd(HALLO.length) + 250} style={{ paddingHorizontal: 4 }}><Btn label={tx('Hallo Memo!', 'Hi Memo!')} onPress={() => go('namen')} /></Late> : null}
-        {step === 'leiste' ? <View style={{ gap: 14, paddingHorizontal: 4 }}><NavChoice /><Txt size={13.5} color={tokens.mute} center>{tx('Später jederzeit in den Einstellungen änderbar.', 'You can change it any time in Settings.')}</Txt><Btn label={tx('Weiter', 'Continue')} onPress={() => go('termin')} /></View> : null}
+        {step === 'leiste' ? <View style={{ gap: 14, paddingHorizontal: 4 }}><NavChoice /><Txt size={13.5} color={tokens.mute} center>{tx('Später jederzeit in den Einstellungen änderbar.', 'You can change it any time in Settings.')}</Txt><Btn label={tx('Weiter', 'Continue')} onPress={() => go('ki')} /></View> : null}
+        {/* Ohne KI: the speaking steps would show what is switched off, so it goes straight to the end. */}
+        {step === 'ki' ? <ScrollView style={{ maxHeight: H * 0.625 }} contentContainerStyle={{ paddingHorizontal: 4, paddingBottom: 4 }}><KiWahl source="onboarding" onDone={(mitKi) => go(mitKi ? 'termin' : 'fertig')} onMore={() => router.push('/datenschutz')} /></ScrollView> : null}
         {step === 'namen' ? <View style={{ paddingHorizontal: 4 }}><Btn label={tx('Weiter', 'Continue')} disabled={!magA} onPress={() => go('leiste')} /></View> : null}
         {step === 'fertig' ? <Late key="b-fertig" ms={500 + (FERTIG.length - 1) * 190 + 700} style={{ paddingHorizontal: 4 }}><View style={{ gap: 6 }}><Btn label={tx('14 Tage Plus gratis testen', 'Try Plus free for 14 days')} onPress={() => { haptics.success(); onboardingDone('flow'); router.replace('/plus?trigger=onboarding'); }} /></View></Late> : null}
       </View>
