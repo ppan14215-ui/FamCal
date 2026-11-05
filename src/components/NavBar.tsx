@@ -11,7 +11,7 @@
  * edge or a flick faster than 300 px/s. The keyboard still pushes the bar away while typing.
  */
 import React, { useEffect, useState } from 'react';
-import { View, Platform } from 'react-native';
+import { View, Platform, useWindowDimensions } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withTiming, withSpring, Easing, useReducedMotion, interpolate, Extrapolation, FadeIn } from 'react-native-reanimated';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { scheduleOnRN } from 'react-native-worklets';
@@ -28,7 +28,7 @@ import { haptics } from '../lib/haptics';
 import { useTyping as useFocus, useKeyboardInset } from '../lib/keyboard';
 import { useDockTop } from '../lib/dockSpace';
 import Svg, { Defs, LinearGradient, Stop, Rect } from 'react-native-svg';
-import { navStyle } from '../lib/navStyle';
+import { navStyle, useBarOpen } from '../lib/navStyle';
 
 const TABS: { name: string; key: string; icon: LineName }[] = [
   { name: 'chat', key: 'nav.chat', icon: 'chat' },
@@ -299,10 +299,16 @@ function BarNav({ state, navigation }: BottomTabBarProps) {
   const current = state.routes[state.index]?.name;
   const focus = useFocus();
   const kb = useKeyboardInset();
-  const typing = focus && (Platform.OS === 'web' || kb > 0);
+  const barOpen = useBarOpen();
+  const typing = barOpen || (focus && (Platform.OS === 'web' || kb > 0));
+  const { width: W } = useWindowDimensions();
+  // Julian 05.11.: the tabs take the whole bar except the input icon on the right.
+  const tabsW = W - 28 - 10 - 48;
+  const offW = 56, onW = tabsW - offW * 2 - 8;
   const away = useSharedValue(0);
   useEffect(() => { away.value = withTiming(typing ? 1 : 0, { duration: 240, easing: Easing.bezier(0.23, 1, 0.32, 1) }); }, [typing]);
-  const hide = useAnimatedStyle((): any => ({ opacity: 1 - away.value, transform: [{ translateX: -BAR_TABS_W * 0.35 * away.value }, { scale: 1 - 0.1 * away.value }] }));
+  const hide = useAnimatedStyle((): any => ({ opacity: 1 - away.value, transform: [{ scaleX: 1 - 0.25 * away.value }] }));
+  const barHide = useAnimatedStyle(() => ({ opacity: 1 - away.value }));
   const dockTop = useDockTop();
   const groundTo = Math.max(dockTop, navTop(insets.bottom)) + 6;
   return (
@@ -322,20 +328,20 @@ function BarNav({ state, navigation }: BottomTabBarProps) {
         </Svg>
       </View>
       {/* The dark bar runs under tabs and field; while typing the field becomes the light block across it. */}
-      <View pointerEvents="none" style={{ position: 'absolute', left: 14, right: 14, bottom: Math.max(insets.bottom, 8) + 4, height: navH(), borderRadius: navH() / 2, backgroundColor: tokens.ink, ...floatShadow }} />
+      <Animated.View pointerEvents="none" style={[{ position: 'absolute', left: 14, right: 14, bottom: Math.max(insets.bottom, 8) + 4, height: navH(), borderRadius: navH() / 2, backgroundColor: tokens.ink, ...floatShadow }, barHide]} />
       <Animated.View accessibilityRole="tablist" pointerEvents={typing ? 'none' : 'auto'}
-        style={[{ position: 'absolute', left: 14 + 5, bottom: Math.max(insets.bottom, 8) + 4 + 5, width: BAR_TABS_W, height: navH() - 10, flexDirection: 'row', alignItems: 'center', gap: 4 }, hide]}>
+        style={[{ position: 'absolute', left: 14 + 5, bottom: Math.max(insets.bottom, 8) + 4 + 5, width: tabsW, height: navH() - 10, flexDirection: 'row', alignItems: 'center', gap: 4, transformOrigin: 'left' } as any, hide]}>
         {TABS.map((tab) => (
-          <BarTab key={tab.name} on={current === tab.name} icon={tab.icon} label={t(tab.key)} onPress={() => { if (current !== tab.name) { haptics.select(); navigation.navigate(tab.name); } }} />
+          <BarTab key={tab.name} onW={onW} offW={offW} on={current === tab.name} icon={tab.icon} label={t(tab.key)} onPress={() => { if (current !== tab.name) { haptics.select(); navigation.navigate(tab.name); } }} />
         ))}
       </Animated.View>
     </View>
   );
 }
 
-function BarTab({ on, icon, label, onPress }: { on: boolean; icon: LineName; label: string; onPress: () => void }) {
-  const w = useSharedValue(on ? BAR_ON_W : 40);
-  useEffect(() => { w.value = withTiming(on ? BAR_ON_W : 40, SWITCH); }, [on]);
+function BarTab({ on, icon, label, onPress, onW, offW }: { on: boolean; icon: LineName; label: string; onPress: () => void; onW: number; offW: number }) {
+  const w = useSharedValue(on ? onW : offW);
+  useEffect(() => { w.value = withTiming(on ? onW : offW, SWITCH); }, [on, onW]);
   const size = useAnimatedStyle(() => ({ width: w.value }));
   return (
     <Animated.View style={[{ overflow: 'hidden', borderRadius: 999, backgroundColor: on ? tokens.onInk : 'transparent' }, size]}>

@@ -82,11 +82,15 @@ type Props = {
   card?: boolean;
   /** Julian 04.11.: sits inside the dark one bar at rest; turns into the light block once you type. */
   dark?: boolean;
+  /** Called when the field is left empty and nothing is listening (one bar folds back to its icon). */
+  onIdle?: () => void;
 };
 
-export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, onClose, split, card, dark, placeholder = tx('Sag oder schreib, was ansteht …', 'Say or type what\'s coming up …') }: Props) {
+export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, onClose, split, card, dark, onIdle, placeholder = tx('Sag oder schreib, was ansteht …', 'Say or type what\'s coming up …') }: Props) {
   const [text, setText] = useState('');
   const [listening, setListening] = useState(false);
+  const textRef = useRef(''); textRef.current = text;
+  const listeningRef = useRef(false); listeningRef.current = listening;
   /** How loud the voice is right now, 0 to 1; drives the bars in the mic. */
   const level = useSharedValue(0);
   const micStyle = useMicStyle();
@@ -335,7 +339,7 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, o
           if (listening) { typed.current = true; timers.current.forEach(clearTimeout); setDemo(false); toKeys.current?.(); }
         }}
         // Tapping send blurs the field first; wait so the button does not move away under the finger.
-        onBlur={() => { blurT.current = setTimeout(() => setTyping(false), 350); }}
+        onBlur={() => { blurT.current = setTimeout(() => { setTyping(false); if (onIdle && !textRef.current.trim() && !listeningRef.current) onIdle(); }, 350); }}
         multiline
         value={text}
         onChangeText={setText}

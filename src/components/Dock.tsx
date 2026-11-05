@@ -32,9 +32,9 @@ import { light, lightOneByOne } from '../lib/landing';
 import { setDockTop, setDockSpace } from '../lib/dockSpace';
 import { useKeyboardInset, useTyping, useInlineEditing } from '../lib/keyboard';
 import { setTalkOpen, useTalkOpen } from '../lib/talkOpen';
-import { navH, navTop, BAR_TABS_W } from './NavBar';
+import { navH, navTop } from './NavBar';
 import { useNavFolded } from '../lib/navFold';
-import { navStyle } from '../lib/navStyle';
+import { navStyle, useBarOpen, setBarOpen } from '../lib/navStyle';
 import { addMade, addMessage, addAsk, addSay, recentMade, markChanged } from '../lib/feed';
 import { useSimple, messageOf } from '../lib/simple';
 import { hm, short } from '../lib/dates';
@@ -396,6 +396,7 @@ export default function Dock() {
   const insets = useSafeAreaInsets();
   const kb = useKeyboardInset();
   const typing = useTyping();
+  const barOpenRaw = useBarOpen();
   const inlineEditing = useInlineEditing();
   const { width: W, height: H } = useWindowDimensions();
   const [turn, setTurn] = useState<Turn | null>(null);
@@ -444,7 +445,10 @@ export default function Dock() {
   const onTabs = !!where && (where.tab || !!where.chat);
   const above = navStyle() === 'bar' && onTabs ? Math.max(insets.bottom, 8) + 4 : folded && onTabs ? Math.max(insets.bottom, 12) + 10 : navTop(insets.bottom) + (navStyle() === 'strip' && onTabs ? 4 : 10);
   // One bar: the field sits beside the tab pill and takes the whole width while typing.
-  const tabsW = onTabs ? (navStyle() === 'bar' && !typing ? W - 28 - BAR_TABS_W - 8 : W - 28) : full;
+  // Julian 05.11.: at rest the tabs take the whole bar and the input is a single icon; touching it grows the input card over the bar.
+  const bar = onTabs && navStyle() === 'bar';
+  const barOpen = bar && (barOpenRaw || typing);
+  const tabsW = onTabs ? (bar && !barOpen ? 48 : W - 28) : full;
   // Julian 04.11.: in the one bar the field slides over the tabs while they fold away, and back (ease-out 240 ms).
   const wAnim = useSharedValue(tabsW);
   useEffect(() => { wAnim.value = withTiming(tabsW, { duration: 240, easing: Easing.bezier(0.23, 1, 0.32, 1) }); }, [tabsW]);
@@ -914,20 +918,31 @@ export default function Dock() {
         </View>
       ) : null}
       <View pointerEvents="box-none" style={{ flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'flex-end', gap: 8 }}>
-      <Animated.View style={[{ alignSelf: 'flex-end', alignItems: 'flex-end', overflow: 'hidden', borderRadius: onTabs && navStyle() === 'strip' ? 24 : 30 }, wStyle]}>
+      <Animated.View style={[{ alignSelf: 'flex-end', alignItems: 'flex-end', overflow: 'hidden', borderRadius: onTabs && (navStyle() === 'strip' || barOpen) ? 24 : 30 }, wStyle]}>
       <Animated.View style={wStyle}>
+      {bar && !barOpen ? (
+        <Animated.View key="icon" entering={FadeIn.duration(180)} exiting={FadeOut.duration(120)} style={{ height: navH(), alignItems: 'center', justifyContent: 'center' }}>
+          <PressScale scale={0.9} accessibilityLabel={tx('Sprechen oder schreiben', 'Speak or type')} onPress={() => { haptics.select(); setBarOpen(true); setListenKey((k) => k + 1); }}
+            style={{ width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.12)' }}>
+            <LineIcon name="mic" size={21} color={tokens.onInk} />
+          </PressScale>
+        </Animated.View>
+      ) : (
+      <Animated.View key="field" entering={FadeIn.duration(200)} exiting={FadeOut.duration(120)}>
       <TalkBar
         key={onTabs ? 'tabs' : kind}
         split={onTabs}
-        card={onTabs && navStyle() === 'strip'}
-        dark={onTabs && navStyle() === 'bar' && !typing}
+        card={onTabs && (navStyle() === 'strip' || bar)}
+        onIdle={bar ? () => setBarOpen(false) : undefined}
         onSend={hear}
         onPlus={() => router.push('/neu')}
         spoken={SPOKEN[kind]}
         listenKey={listenKey}
         focusKey={focusKey}
-        placeholder={where.chat && mode === 'msg' ? tx('Nachricht an die Familie …', 'Message to the family …') : turn?.result.kind === 'cut' ? tx('Sprich einfach weiter …', 'Just keep talking …') : onTabs && !turn ? (navStyle() === 'bar' && !typing ? tx('Was steht an?', 'What’s up?') : tx('Sprich oder schreib einfach …', 'Just say or type it …')) : turn && kind === 'kalender' ? tx('Antworten oder ergänzen …', 'Reply or add …') : PLACEHOLDER[kind]}
+        placeholder={where.chat && mode === 'msg' ? tx('Nachricht an die Familie …', 'Message to the family …') : turn?.result.kind === 'cut' ? tx('Sprich einfach weiter …', 'Just keep talking …') : onTabs && !turn ? tx('Sprich oder schreib einfach …', 'Just say or type it …') : turn && kind === 'kalender' ? tx('Antworten oder ergänzen …', 'Reply or add …') : PLACEHOLDER[kind]}
       />
+      </Animated.View>
+      )}
       </Animated.View>
       </Animated.View>
       </View>
