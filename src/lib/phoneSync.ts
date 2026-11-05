@@ -33,11 +33,21 @@ const read = async (k: string): Promise<string[]> => {
 };
 const write = (k: string, v: string[]) => AsyncStorage.setItem(k, JSON.stringify(v)).catch(() => {});
 
-/** Called after the calendars were picked: these keep syncing, `ids` of the Termine just moved in count as synced. */
-export function rememberPhoneCalendars(calIds: string[], synced: string[]) {
+/**
+ * Called after the calendars were picked: these keep syncing, `ids` of the
+ * Termine just moved in count as synced. A calendar switched off takes its
+ * Termine out of FamCal again (Julian 05.11.: "toggle it back off"), except
+ * the ones changed in FamCal, which now belong to the family.
+ */
+export async function rememberPhoneCalendars(calIds: string[], synced: string[]) {
   if (Platform.OS === 'web') return;
-  void write(CALS, calIds);
-  void write(SEEN, synced);
+  const before = await read(SEEN);
+  const edited = new Set(await read(EDITED));
+  const keep = new Set(synced);
+  const gone = new Set(before.filter((id) => !keep.has(id) && !edited.has(id)));
+  await write(CALS, calIds);
+  await write(SEEN, synced);
+  if (gone.size) set((s) => ({ events: s.events.filter((e) => !gone.has(e.id)) }));
 }
 
 /** The phone's fields win; what was added in FamCal stays. Same object when nothing changed, so nothing is pushed. */
