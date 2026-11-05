@@ -1,35 +1,41 @@
 /**
- * Julian 04.11.: like the "5/5 tasks" pill in the Claude app. A small pill above the field says what
- * this session put in the calendar; a tap opens the list, a tap on a row opens that Termin.
+ * Julian 04.11.: like the "5/5 tasks" pill in the Claude app, a small pill above the field says what this session made.
+ * Julian 05.11.: a tap opens this session's conversation as an overlay, like the chat; each thread in it can be
+ * picked up again ("Weiterführen"), and the next sentence changes exactly that. A session ends a day after its last entry.
  */
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { View, Modal, Pressable, ScrollView } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Tile } from './ui/Clay';
 import Animated, { FadeInDown, FadeOut, LinearTransition, Easing } from 'react-native-reanimated';
-import { router } from 'expo-router';
 import Txt from './ui/Txt';
 import LineIcon from './ui/LineIcon';
 import PressScale from './ui/PressScale';
 import { tokens } from '../theme';
 import { useStore } from '../state/store';
-import { useSessionMade } from '../lib/session';
-import { short } from '../lib/dates';
+import { useFeed } from '../lib/feed';
+import { sessionOf, setResume } from '../lib/session';
+import { getFamily, myRole } from '../lib/sync';
+import { hm } from '../lib/dates';
 import { haptics } from '../lib/haptics';
 import { tx } from '../i18n/lang';
+import { Entry } from './ChatCards';
 
 const MORPH = LinearTransition.duration(240).easing(Easing.bezier(0.23, 1, 0.32, 1));
 
 export default function SessionPill() {
-  const ids = useSessionMade();
+  const feed = useFeed();
   const events = useStore((s) => s.events);
   const insets = useSafeAreaInsets();
   const [open, setOpen] = useState(false);
-  const list = ids.map((id) => events.find((x) => x.id === id)).filter(Boolean).reverse() as typeof events;
-  if (!list.length) return null;
+  const scroller = useRef<ScrollView>(null);
+  const me = getFamily() ? myRole() : 'J';
+  const session = sessionOf(feed, me);
+  const alive = (ids?: string[]) => (ids ?? []).filter((id) => events.some((e) => e.id === id));
+  const n = session.reduce((k, f) => k + (f.undone ? 0 : alive(f.events).length), 0);
+  if (!n) return null;
   // Julian 04.11.: centred, small, the copy is just "1 recent", no chevron.
-  // A tap opens a sheet from below like the Claude app; the list scrolls, a tap outside or a swipe down closes it.
-  const label = tx(`${list.length} neu`, `${list.length} recent`);
+  const label = tx(`${n} neu`, `${n} recent`);
+  const since = hm(new Date(session[0].at).toTimeString().slice(0, 5));
   return (
     <>
       <Animated.View entering={FadeInDown.duration(220)} exiting={FadeOut.duration(150)} layout={MORPH} style={{ alignSelf: 'center' }}>
@@ -43,18 +49,30 @@ export default function SessionPill() {
       </Animated.View>
       <Modal visible={open} transparent animationType="slide" onRequestClose={() => setOpen(false)} statusBarTranslucent>
         <Pressable style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.25)' }} onPress={() => setOpen(false)} accessibilityLabel={tx('Schließen', 'Close')} />
-        <View style={{ position: 'absolute', left: 0, right: 0, bottom: 0, maxHeight: '70%', backgroundColor: tokens.bg, borderTopLeftRadius: 28, borderTopRightRadius: 28, paddingTop: 8, paddingBottom: insets.bottom + 12 }}>
+        <View style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: '82%', backgroundColor: tokens.bg, borderTopLeftRadius: 28, borderTopRightRadius: 28, paddingTop: 8 }}>
           <View style={{ alignSelf: 'center', width: 36, height: 5, borderRadius: 3, backgroundColor: tokens.hair, marginBottom: 10 }} />
-          <Txt size={17} weight={600} style={{ paddingHorizontal: 20, paddingBottom: 6 }}>{label}</Txt>
-          <ScrollView contentContainerStyle={{ paddingHorizontal: 12, paddingBottom: 8 }}>
-            {list.map((e) => (
-              <PressScale key={e.id} scale={0.98} onPress={() => { haptics.select(); setOpen(false); router.push(`/termin/${e.id}`); }}
-                style={{ flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 52, paddingHorizontal: 8 }}>
-                <Tile name={e.icon} bg="transparent" size={30} />
-                <Txt size={15.5} weight={500} numberOfLines={1} style={{ flex: 1 }}>{e.title}</Txt>
-                <Txt size={13.5} color={tokens.sub}>{short(e.date)}{e.allDay ? '' : ` · ${e.start}`}</Txt>
-              </PressScale>
-            ))}
+          <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 8, paddingHorizontal: 20, paddingBottom: 8 }}>
+            <Txt size={17} weight={600}>{tx('Diese Sitzung', 'This session')}</Txt>
+            <Txt size={13} color={tokens.sub}>{tx(`seit ${since}`, `since ${since}`)}</Txt>
+          </View>
+          <ScrollView ref={scroller} onContentSizeChange={() => scroller.current?.scrollToEnd({ animated: false })}
+            contentContainerStyle={{ paddingHorizontal: 18, paddingTop: 4, paddingBottom: insets.bottom + 24, gap: 12 }} showsVerticalScrollIndicator={false}>
+            {session.map((f) => {
+              const can = !f.undone && !f.changed && alive(f.events).length > 0;
+              return (
+                <View key={f.id} style={{ gap: 6 }}>
+                  <Entry f={f} mine me={me} />
+                  {can ? (
+                    <PressScale scale={0.96} accessibilityLabel={tx('Weiterführen', 'Continue')}
+                      onPress={() => { haptics.select(); setOpen(false); setResume(f); }}
+                      style={{ alignSelf: 'flex-start', flexDirection: 'row', alignItems: 'center', gap: 6, height: 32, paddingHorizontal: 12, borderRadius: 999, backgroundColor: tokens.row, borderWidth: 1, borderColor: tokens.hair }}>
+                      <LineIcon name="chat" size={15} color={tokens.ink} />
+                      <Txt size={13} weight={600}>{tx('Weiterführen', 'Continue')}</Txt>
+                    </PressScale>
+                  ) : null}
+                </View>
+              );
+            })}
           </ScrollView>
         </View>
       </Modal>

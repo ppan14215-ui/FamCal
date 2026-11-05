@@ -34,6 +34,7 @@ import { useKeyboardInset, useTyping, useInlineEditing } from '../lib/keyboard';
 import { setTalkOpen, useTalkOpen } from '../lib/talkOpen';
 import { navH, navTop, TABS, BarTab, floatShadow } from './NavBar';
 import { useNavFolded } from '../lib/navFold';
+import { getResume, setResume, useResume } from '../lib/session';
 import { navStyle, useBarMode, setBarMode, useBarNav, BAR_SPRING } from '../lib/navStyle';
 import { useTranslation } from 'react-i18next';
 import { addMade, addMessage, addAsk, addSay, recentMade, markChanged } from '../lib/feed';
@@ -407,6 +408,9 @@ export default function Dock() {
   const [listenKey, setListenKey] = useState(0);
   const [focusKey, setFocusKey] = useState(0);
   const other = React.useCallback(() => { haptics.select(); setFocusKey((k) => k + 1); }, []);
+  // Picking up a thread from the session sheet puts the cursor in the field.
+  const resumed = useResume();
+  useEffect(() => { if (resumed) { setFocusKey((k) => k + 1); if (navStyle() === 'bar') setBarMode('input'); } }, [resumed]);
   const spoke = useRef(false);
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
   /** Counts sentences, so a slow answer for an older one never lands. */
@@ -587,7 +591,10 @@ export default function Dock() {
 
     const pending = r0?.kind === 'answer' && r0.reply.kind === 'ask' ? { title: r0.reply.title, who: r0.reply.who } : null;
     // Julian 30.10.: a sentence right after the last one may belong to it ("Jeden Mittwoch davon bin ich im Büro"). Claude decides.
-    const recent = where.chat && !follow && !pending && thinksOnline(ctx, said, pending) ? recentMade() : null;
+    // Julian 05.11.: a thread picked up from the session sheet is continued on any tab, then let go.
+    const picked = getResume();
+    if (picked) setResume(null);
+    const recent = (where.chat || picked) && !follow && !pending && thinksOnline(ctx, said, pending) ? recentMade(picked?.id) : null;
     if (recent) {
       const offline = () => play(plan(ctx, said, pending), said, false, undefined, lines);
       think(said, n, (r) => {
@@ -969,7 +976,7 @@ export default function Dock() {
                 spoken={SPOKEN[kind]}
                 listenKey={listenKey}
                 focusKey={focusKey}
-                placeholder={where.chat && mode === 'msg' ? tx('Nachricht an die Familie …', 'Message to the family …') : turn?.result.kind === 'cut' ? tx('Sprich einfach weiter …', 'Just keep talking …') : bar && barMode === 'rest' && !turn ? tx('Sag es einfach …', 'Just say it …') : onTabs && !turn ? tx('Sprich oder schreib einfach …', 'Just say or type it …') : turn && kind === 'kalender' ? tx('Antworten oder ergänzen …', 'Reply or add …') : PLACEHOLDER[kind]}
+                placeholder={resumed ? tx(`Weiter zu „${resumed.said.slice(0, 24)}“ …`, `More on “${resumed.said.slice(0, 24)}” …`) : where.chat && mode === 'msg' ? tx('Nachricht an die Familie …', 'Message to the family …') : turn?.result.kind === 'cut' ? tx('Sprich einfach weiter …', 'Just keep talking …') : bar && barMode === 'rest' && !turn ? tx('Sag es einfach …', 'Just say it …') : onTabs && !turn ? tx('Sprich oder schreib einfach …', 'Just say or type it …') : turn && kind === 'kalender' ? tx('Antworten oder ergänzen …', 'Reply or add …') : PLACEHOLDER[kind]}
               />
             </Animated.View>
           )}
@@ -988,7 +995,7 @@ export default function Dock() {
         spoken={SPOKEN[kind]}
         listenKey={listenKey}
         focusKey={focusKey}
-        placeholder={where.chat && mode === 'msg' ? tx('Nachricht an die Familie …', 'Message to the family …') : turn?.result.kind === 'cut' ? tx('Sprich einfach weiter …', 'Just keep talking …') : bar && barMode === 'rest' && !turn ? tx('Sag es einfach …', 'Just say it …') : onTabs && !turn ? tx('Sprich oder schreib einfach …', 'Just say or type it …') : turn && kind === 'kalender' ? tx('Antworten oder ergänzen …', 'Reply or add …') : PLACEHOLDER[kind]}
+        placeholder={resumed ? tx(`Weiter zu „${resumed.said.slice(0, 24)}“ …`, `More on “${resumed.said.slice(0, 24)}” …`) : where.chat && mode === 'msg' ? tx('Nachricht an die Familie …', 'Message to the family …') : turn?.result.kind === 'cut' ? tx('Sprich einfach weiter …', 'Just keep talking …') : bar && barMode === 'rest' && !turn ? tx('Sag es einfach …', 'Just say it …') : onTabs && !turn ? tx('Sprich oder schreib einfach …', 'Just say or type it …') : turn && kind === 'kalender' ? tx('Antworten oder ergänzen …', 'Reply or add …') : PLACEHOLDER[kind]}
       />
       </Animated.View>
       </Animated.View>
