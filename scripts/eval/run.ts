@@ -23,6 +23,9 @@ import { FAELLE, type Stand, type Ergebnis } from '../../eval/assistent/faelle';
 
 const URL = process.env.EVAL_URL ?? 'https://jzfubxcdpznzxqtvnodm.supabase.co/functions/v1/assistent-eval';
 const TOKEN = process.env.EVAL_TOKEN ?? '';
+// The function keeps Supabase's JWT check on: the public anon key passes the gateway, the eval token opens the door.
+const ANON = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? '';
+const GATE: Record<string, string> = ANON ? { Authorization: `Bearer ${ANON}`, apikey: ANON } : {};
 const args = process.argv.slice(2);
 const vi = args.indexOf('--variant');
 const variant = vi >= 0 ? args[vi + 1] : 'haiku';
@@ -77,7 +80,7 @@ async function ask(said: string, history: { said: string; app?: string }[]): Pro
   sentences++;
   const r = await converse(said, history, '', async (body) => {
     for (let tries = 0; ; tries++) {
-      const res = await fetch(URL, { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-eval-token': TOKEN, 'x-eval-variant': variant }, body: JSON.stringify(body) });
+      const res = await fetch(URL, { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-eval-token': TOKEN, 'x-eval-variant': variant, ...GATE }, body: JSON.stringify(body) });
       const out = await res.json().catch(() => ({}));
       if (res.ok) return out;
       if (tries < 2 && (res.status === 429 || res.status >= 500)) { await new Promise((w) => setTimeout(w, 3000 * (tries + 1))); continue; }
