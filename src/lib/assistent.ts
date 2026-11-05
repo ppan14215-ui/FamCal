@@ -15,6 +15,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { fetch as streamFetch } from 'expo/fetch';
 import { supabase } from './cloud';
 import { getAuth } from './auth';
+import { limitHint } from './verstehen';
 import { getPref, setPref } from './prefs';
 import { TODAY, NOW, addDays, WD_SHORT, weekday, long, hm, short } from './dates';
 import { persons } from '../theme/tokens';
@@ -165,7 +166,7 @@ export async function askAgent(said: string, lines: { said: string; app?: string
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}`, apikey: process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? '' },
       body: JSON.stringify(body),
     });
-    if (!res.ok || !res.body) return null;
+    if (!res.ok || !res.body) { await limitHint({ context: res as unknown as Response }); return null; }
     const reader = res.body.getReader();
     const dec = new TextDecoder();
     let buf = '';
