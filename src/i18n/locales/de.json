@@ -1,0 +1,4 @@
+{
+  "nav": { "chat": "Chat", "heute": "Heute", "kalender": "Kalender", "listen": "Listen", "eingang": "Eingang", "neu": "Neu" },
+  "common": { "back": "Zurück", "cancel": "Abbrechen", "done": "Fertig", "undo": "Rückgängig", "later": "Später", "next": "Weiter", "save": "Speichern" }
+}

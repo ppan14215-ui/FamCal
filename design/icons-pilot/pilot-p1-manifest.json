@@ -1,0 +1,179 @@
+{
+  "pilot-p1": {
+    "ampel": {
+      "layerOrder": [
+        "gehaeuse",
+        "licht-rot",
+        "licht-gelb",
+        "licht-gruen"
+      ],
+      "pivotPointsPx": {
+        "licht-rot": {
+          "x": 484,
+          "y": 314
+        },
+        "licht-gelb": {
+          "x": 484,
+          "y": 450
+        },
+        "licht-gruen": {
+          "x": 484,
+          "y": 589
+        }
+      },
+      "files": [
+        {
+          "file": "icon-ampel_p1.png",
+          "kind": "whole",
+          "canvas": [
+            1024,
+            1024
+          ],
+          "hasAlpha": true,
+          "sha256": "fec3187a7f8087dc1ed9655068a4d15da1bca82fa3b3128d0bc2981471f4808e"
+        },
+        {
+          "file": "icon-ampel__gehaeuse_p1.png",
+          "kind": "part",
+          "canvas": [
+            1024,
+            1024
+          ],
+          "hasAlpha": true,
+          "sha256": "8a43f87e2bbd0f725ea2d144738b839b03827b33e25e2569ecd914393a78a9ad"
+        },
+        {
+          "file": "icon-ampel__licht-rot_p1.png",
+          "kind": "part",
+          "canvas": [
+            1024,
+            1024
+          ],
+          "hasAlpha": true,
+          "sha256": "bb1c2ca4401a2471bf7634fabeaa11496fd261115eed33ed11641fba2fae8e8a"
+        },
+        {
+          "file": "icon-ampel__licht-gelb_p1.png",
+          "kind": "part",
+          "canvas": [
+            1024,
+            1024
+          ],
+          "hasAlpha": true,
+          "sha256": "2e9b2899a9af1244530e80564ba152eca78ee81bdc5bf2ef00240188cfbaeadb"
+        },
+        {
+          "file": "icon-ampel__licht-gruen_p1.png",
+          "kind": "part",
+          "canvas": [
+            1024,
+            1024
+          ],
+          "hasAlpha": true,
+          "sha256": "1292a9dc846b91b9c9f2d3a9b8489d880b4df366609ac831ecfdcfc094ae99c2"
+        }
+      ],
+      "pixelExactRecomposition": true,
+      "maxChannelDelta": 0,
+      "method": "pixel-aligned raster construction from approved reference; manually authored/isolated layers"
+    },
+    "geschenk": {
+      "layerOrder": [
+        "schachtel",
+        "deckel"
+      ],
+      "pivotPointsPx": {
+        "deckelBottomEdgeCenter": {
+          "x": 512,
+          "y": 633
+        }
+      },
+      "files": [
+        {
+          "file": "icon-geschenk_p1.png",
+          "kind": "whole",
+          "canvas": [
+            1024,
+            1024
+          ],
+          "hasAlpha": true,
+          "sha256": "a38c99377a99ce30bbebf658d638a7970dce8ffb2b2f7bbda9a85fed2fd03157"
+        },
+        {
+          "file": "icon-geschenk__schachtel_p1.png",
+          "kind": "part",
+          "canvas": [
+            1024,
+            1024
+          ],
+          "hasAlpha": true,
+          "sha256": "149d6ff09f2ab9aea2a101d3a98a0162b2b08a0c058161c5379cf448020cc19b"
+        },
+        {
+          "file": "icon-geschenk__deckel_p1.png",
+          "kind": "part",
+          "canvas": [
+            1024,
+            1024
+          ],
+          "hasAlpha": true,
+          "sha256": "9ae1d0a60ac02cb3a04b1078eee08a1de5879f1196edc9ce6e478983706f8e10"
+        }
+      ],
+      "pixelExactRecomposition": true,
+      "maxChannelDelta": 0,
+      "method": "pixel-aligned raster construction from approved reference; manually authored/isolated layers"
+    },
+    "glocke": {
+      "layerOrder": [
+        "glocke",
+        "kloeppel"
+      ],
+      "pivotPointsPx": {
+        "glockeLoopCenter": {
+          "x": 555,
+          "y": 247
+        },
+        "kloeppelHangPoint": {
+          "x": 520,
+          "y": 623
+        }
+      },
+      "files": [
+        {
+          "file": "icon-glocke_p1.png",
+          "kind": "whole",
+          "canvas": [
+            1024,
+            1024
+          ],
+          "hasAlpha": true,
+          "sha256": "1330cb74d4beab38425ec10ffb7e00f7ead7133c9db6b2c287cfbff87404c682"
+        },
+        {
+          "file": "icon-glocke__glocke_p1.png",
+          "kind": "part",
+          "canvas": [
+            1024,
+            1024
+          ],
+          "hasAlpha": true,
+          "sha256": "8aba2af5c5f33cfe1cd3ed2a35e342dd906b18e006861845e1dbfb7640261a97"
+        },
+        {
+          "file": "icon-glocke__kloeppel_p1.png",
+          "kind": "part",
+          "canvas": [
+            1024,
+            1024
+          ],
+          "hasAlpha": true,
+          "sha256": "71491e104255030a85fd2bdb3266aeef3a620235c704df5aa7881887343f4d7e"
+        }
+      ],
+      "pixelExactRecomposition": true,
+      "maxChannelDelta": 0,
+      "method": "pixel-aligned raster construction from approved reference; manually authored/isolated layers"
+    }
+  }
+}
