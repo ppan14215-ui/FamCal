@@ -92,6 +92,10 @@ type Props = {
   onBusy?: () => void;
 };
 
+// Listeners of the last recording, shared by every TalkBar: the phone has one recognizer, and a bar that was swapped
+// for a new one (the onboarding makes a new one per sentence) must not leave its listeners on it (Julian 05.11. 23:28).
+const lastSubs = { current: [] as { remove: () => void }[] };
+
 export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, onClose, split, card, dark, onIdle, onBusy, placeholder = tx('Sag oder schreib, was ansteht …', 'Say or type what\'s coming up …') }: Props) {
   const [text, setText] = useState('');
   const [listening, setListening] = useState(false);
@@ -109,8 +113,6 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, o
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
   /** Ends listening on the phone early: a second tap on the orb sends what was heard. */
   const stopNative = useRef<(() => void) | null>(null);
-  // Listeners of the last recording; removed before the next one starts.
-  const lastSubs = useRef<{ remove: () => void }[]>([]);
   /** Tapping into the field while the mic listens switches to typing (Julian 28.10.): what was heard stays, nothing is sent. */
   const toKeys = useRef<(() => void) | null>(null);
   const typed = useRef(false);
@@ -121,7 +123,8 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, o
   // Julian 31.10. 15:42: that grey guess was the phone's English and jumped to German at the end. With the cloud ears on
   // the field shows only a wave while listening (like Claude); the text appears once, correct.
   const [wavy, setWavy] = useState(false);
-  useEffect(() => () => { timers.current.forEach(clearTimeout); clearTimeout(blurT.current); setTyping(false); }, []);
+  // A bar that goes away while it still listens frees the recognizer, so the next bar starts on an idle one.
+  useEffect(() => () => { timers.current.forEach(clearTimeout); clearTimeout(blurT.current); setTyping(false); if (listeningRef.current) toKeys.current?.(); }, []);
 
   // On the web the textarea never shrinks by itself, so measure it fresh.
   useEffect(() => {

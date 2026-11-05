@@ -11,7 +11,9 @@ const WAIT_MS = 7000;
 let off = false;
 
 /** False once the server said it has no key: then the phone's own words show live again. */
-export const cloudOn = () => !off && !hearCapped && spracheCloud();
+// Without a login (onboarding) the cloud can't hear, so the phone's own words must land (Julian 05.11. 23:28: every second
+// recording failed in the onboarding).
+export const cloudOn = () => !off && !hearCapped && spracheCloud() && !!getAuth().session;
 /** Day cap of cloud ears reached (Julian 05.11.: 40 a person a day): the phone's own words are used until the app restarts. */
 let hearCapped = false;
 export const cloudCapped = () => hearCapped;

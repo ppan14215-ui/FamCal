@@ -691,7 +691,7 @@ export default function Flow() {
         ) : null}
         {TRY.has(step) && phase !== 'done' && phase !== 'pick' ? (
           <View style={{ opacity: phase === 'think' ? 0.5 : 1 }} pointerEvents={phase === 'think' ? 'none' : 'auto'}>
-            <TalkBar key={`${step}-${ask}`} split card={navStyle() === 'strip'} onSend={send} spoken={examples[step]} placeholder={ask === 'ort' ? tx('Name und Straße …', 'Name and street …') : tx('Sprich oder schreib einfach …', 'Just say or type it …')} />
+            <TalkBar split card={navStyle() === 'strip'} onSend={send} spoken={examples[step]} placeholder={ask === 'ort' ? tx('Name und Straße …', 'Name and street …') : tx('Sprich oder schreib einfach …', 'Just say or type it …')} />
           </View>
         ) : null}
         {TRY.has(step) && phase === 'done' ? <View style={{ paddingHorizontal: 4 }}><Btn label={nextLabel[step]} onPress={() => go(next[step])} /></View> : null}
