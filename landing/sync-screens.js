@@ -49,7 +49,7 @@ for (const l of ['de', 'en']) for (const [fact, about] of FACTS[l]) CANNED[(l ==
 
 // Was die Steps je Sprache antippen oder sagen
 const TX = {
-  de: { invited: 'Ich wurde eingeladen', cal: 'Kalender', lists: 'Listen', settings: /Einstellungen/, days: 'Tage', week: 'Woche', month: 'Monat', year: 'Jahr',
+  de: { invited: 'Ich habe eine Einladung', cal: 'Kalender', lists: 'Listen', settings: /Einstellungen/, days: 'Tage', week: 'Woche', month: 'Monat', year: 'Jahr',
     termin: 'Freitag 15 Uhr Zahnarzt mit Ben', karte: 'Freitag 15 Uhr Zahnarzt mit Ben', einkauf: 'Wir brauchen Milch und Windeln', nachfrage: 'Samstag Kindergeburtstag bei Lena', fragen: 'Frag Tom, ob Samstag passt',
     rezept: 'Ich koche heute Abend Bolognese', watch: 'Erstelle eine Watchlist mit Dune, Oppenheimer und Barbie', u7: 'Montag 10 Uhr U7 mit Ben',
     brief: 'Wochenbriefing', u6: 'U6 bei Dr. Weber', wissen: 'Was ich weiß', urlaub: 'Urlaub und Feiertage', gcal: 'Google Kalender', teilen: 'Teilen aus einem Chat', search: 'Suchen', who: 'Dr. Müller',
@@ -117,7 +117,8 @@ const SCREENS = [
   }],
   ['heute', async ({ tab, t }) => { await tab(t.cal); }],
   ['mitgedacht', async ({ p, tab, t }) => { await tab(t.cal); await p.mouse.move(200, 400); await p.mouse.wheel(0, 260); }],
-  ['briefing', async ({ p, tab, t }) => { await tab(t.cal); await p.getByText(t.brief).first().click(); }],
+  // Die Karte auf Heute ist ausgeblendet (HIDDEN.briefing); die Seite /woche gibt es weiter, darum In-App Navigation ohne Neuladen.
+  ['briefing', async ({ p }) => { await p.evaluate(() => { history.pushState({}, '', '/woche'); dispatchEvent(new PopStateEvent('popstate')); }); await p.waitForTimeout(1500); }],
   ['tage', async ({ tab, view, t }) => { await tab(t.cal); await view(t.days); }],
   ['woche', async ({ tab, view, t }) => { await tab(t.cal); await view(t.week); }],
   ['monat', async ({ tab, view, t }) => { await tab(t.cal); await view(t.month); }],
@@ -173,7 +174,7 @@ const SCREENS = [
     const fresh = async () => {
       await p.goto(URL); await p.evaluate((d) => { localStorage.clear(); if (d) localStorage.setItem('famcal.theme', 'dunkel'); }, mode === 'dark');
       await p.goto(URL + (l === 'en' ? '/#en' : '/')); await p.reload(); await p.waitForTimeout(2500);
-      await p.getByText(t.invited).click({ timeout: 8000 }); await p.waitForTimeout(2200);
+      await p.getByText(t.invited).first().click({ timeout: 8000 }); await p.waitForTimeout(2200);
       if (l === 'en') { await english(p); await p.waitForTimeout(300); }
     };
     const h = {

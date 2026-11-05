@@ -5,7 +5,8 @@ Quelle: `landing.src.html`. Die Telefone zeigen echte Screens aus der App, je in
 Nach jeder neuen App-Version:
 
     # im App-Repo (Branch claude/project-thread-lc90u5): Web-Demo mit Beispielfamilie bauen
-    git apply <famcal>/landing/screens-harness.patch     # nur für die Fotos, nie committen
+    git apply --3way <famcal>/landing/screens-harness.patch     # nur für die Fotos, nie committen
+    # Dunkel: in src/theme/mode.ts LIGHT_ONLY auf false (App ist seit 04.11. nur hell), nur lokal
     EXPO_PUBLIC_DEMO=1 EXPO_OFFLINE=1 CI=1 npx expo export -p web
     git checkout -- src
     # hier
