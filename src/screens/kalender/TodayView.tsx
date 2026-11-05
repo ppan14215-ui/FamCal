@@ -32,6 +32,7 @@ import { useCalEvents } from '../../lib/useEvents';
 import { isInfoDay } from '../../lib/feiertage';
 import DueOffer from '../../components/DueOffer';
 import { weekBriefing } from '../../lib/briefing';
+import { HIDDEN } from '../../lib/core';
 import { dueItems, kidsOf, useHandled } from '../../lib/mitdenken';
 
 /** The family's to-do list, whatever it was called ("Zu erledigen", "Aufgaben", "Task"). */
@@ -219,7 +220,7 @@ export default function TodayView({ header }: { header: React.ReactNode }) {
         </View>
       )}
 
-      {brief ? (
+      {brief && !HIDDEN.briefing ? (
         <PressScale scale={0.985} onPress={() => { haptics.select(); router.push('/woche'); }} style={{ backgroundColor: tokens.doneSoft, borderRadius: 20, paddingVertical: 14, paddingHorizontal: 18 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
           <Txt size={16} line={22} weight={600} style={{ flex: 1 }}>

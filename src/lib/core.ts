@@ -17,4 +17,6 @@ export const HIDDEN = {
   toggles: true,
   /** Plus sheet extras: photo, file, draft, forwarding by mail. Termin, list item and new list stay. */
   extras: true,
+  /** Julian 05.11.: the "Diese Woche" overview card on Heute, hidden for now (code and /woche stay). */
+  briefing: true,
 } as const;
