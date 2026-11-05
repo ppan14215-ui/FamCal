@@ -24,11 +24,13 @@ import { rememberPhoneCalendars } from '../../src/lib/phoneSync';
 import { LIVE } from '../../src/lib/live';
 import { haptics } from '../../src/lib/haptics';
 import type { PersonId } from '../../src/theme';
+import { stepViewed, onboardingDone, inviteSent, calendarConnected } from '../../src/lib/funnel';
 import { tx } from '../../src/i18n/lang';
 
 type Step = 'login' | 'pick';
 
 export default function Kalender() {
+  stepViewed('kalender');
   const real = useStore((s) => s.calendars);
   const connected = isPreview() ? [] : real;
   const count = useStore((s) => s.events.length);
@@ -100,6 +102,7 @@ function ProviderCard({ p, conn }: { p: (typeof PROVIDERS)[number]; conn?: { acc
     const ids = cals.filter((c) => c.on).map((c) => c.id);
     if (isPreview()) { haptics.success(); toast(tx('Vorschau: nichts verbunden', 'Preview: nothing connected')); return setStep(null); }
     actions.connectCalendar(p.key, mail.trim(), ids, importEvents(p.key as Provider, ids, owner, kid?.land));
+    calendarConnected(p.key, ids.length);
     haptics.success();
     toast(ids.length ? tx(`${ids.length} Kalender verbunden`, `${ids.length} ${ids.length === 1 ? 'calendar' : 'calendars'} connected`) : tx(`${p.title} getrennt`, `${p.title} disconnected`));
     setStep(null);
@@ -196,6 +199,7 @@ function DeviceCard({ conn }: { conn?: { account: string; ids: string[] } }) {
         actions.connectCalendar('device', tx('Dieses Handy', 'This phone'), ids, [...keep, ...holidays]);
         actions.addEvents(copy);
         rememberPhoneCalendars(ids, copy.map((e) => e.id));
+        calendarConnected('device', ids.length);
         haptics.success();
         toast(ids.length ? tx(`${copy.length} Termine übernommen, für euch beide sichtbar`, `${copy.length} events moved in, visible to both of you`) : tx('Kalender getrennt', 'Calendars disconnected'));
       } else {

@@ -6,6 +6,7 @@
  * loud, the change happens behind the veil, and a drop flies to the spot
  * that changed. Questions and new Termine leave a small card above the field.
  */
+import { track, firstTime, type EntryKind, type Input } from '../lib/analytics';
 import SessionPill from './SessionPill';
 import React, { useEffect, useRef, useState } from 'react';
 import { View, ScrollView, Platform, BackHandler, useWindowDimensions, TextInput } from 'react-native';
@@ -442,8 +443,11 @@ export default function Dock() {
   useEffect(() => () => timers.current.forEach(clearTimeout), []);
   // Shared to FamCal from the browser or another app (Julian 28.10.): as if typed into the field.
   const hearRef = useRef<(raw: string) => void>(() => {});
+  /** Where the next sentence comes from when it is not the field (share sheet). */
+  const viaRef = useRef<Input | null>(null);
+  const lastVia = useRef<Input>('text');
   // A shared screenshot becomes a list offer (Julian 29.10.), never a list by itself.
-  useEffect(() => onShared((text) => hearRef.current(text), (uri) => router.push({ pathname: '/bild-liste', params: { uri } })), []);
+  useEffect(() => onShared((text) => { viaRef.current = 'share'; hearRef.current(text); }, (uri) => router.push({ pathname: '/bild-liste', params: { uri } })), []);
   useEffect(() => onSayInApp((text) => hearRef.current(text)), []);
 
   // Examples only while the calendar is still empty; after that they are clutter (Julian 27.10.).
@@ -510,6 +514,11 @@ export default function Dock() {
   };
 
   const hear = (raw: string, how?: { voice?: boolean }) => {
+    // Funnel "Voice" and the core action (analytics.ts): how the sentence came in, never what it said.
+    const via: Input = viaRef.current ?? (how?.voice ? 'voice' : 'text');
+    viaRef.current = null;
+    lastVia.current = via;
+    track('message_sent', { input: via, screen: where.ctx.kind, follow_up: !!turn });
     // One message, then back to Eintragen, so the next sentence is never lost as a plain message (Julian 29.10.).
     if (where.chat && mode === 'msg') { haptics.success(); addMessage(raw.trim()); setMode('card'); return; }
     // Simple: no switch; "Sag Sophia, ich komme später" is a message by itself.
@@ -625,6 +634,13 @@ export default function Dock() {
     play(plan(ctx, said, pending), said, true, undefined, lines);
   };
   hearRef.current = hear;
+  /** One entry_created per landed card, with what it was and how it came in. */
+  const counted = (r0: ReturnType<Plan['run']>['result'], n: number) => {
+    if (!r0) return;
+    const kind: EntryKind = r0.kind === 'event' ? 'event' : r0.kind === 'done' ? (r0.events?.length ? (r0.events.length > 1 ? 'events' : 'event') : 'list_item') : r0.kind === 'recipe' ? 'recipe' : r0.kind === 'answer' ? 'answer' : 'other';
+    if (kind === 'answer') return;
+    track('entry_created', { kind, input: lastVia.current, count: Math.max(1, n), is_first: firstTime('entry') });
+  };
 
   /**
    * "Ich verstehe …" while Claude reads, with Halt. Only offline or after
@@ -647,13 +663,16 @@ export default function Dock() {
     const chat = true;
     setVeil({ phase: 'think', inline: chat, origin, target: null, lines: chat ? [] : [tx('Ich verstehe …', 'Understanding …')], shown: 0, said, head: undefined, onCancel: stop, typing: chat, reply: undefined });
     const onSay = (say: string) => { if (heard.current !== n) return; if (chat) setVeil({ reply: say }); else setVeil({ lines: [say], shown: 0 }); };
+    const asked = Date.now();
     askAgent(said, talk, screenOf(where.ctx), onSay)
       .then((r) => (promisesOnly(r, said) ? askAgent(said, [...talk.slice(0, -1), { said, app: `${String(r!.actions[0]?.input?.text ?? "")} (${RETRY_NOTE})` }, { said }], screenOf(where.ctx)).then((r2) => r2 ?? r) : r))
       .then((r) => {
       if (heard.current !== n) return;
+      const plan0 = r ? agentPlan(r, said) : null;
+      track('assistant_answered', { ok: !!r, ms: Date.now() - asked, asked_back: !!plan0 && 'ask' in plan0, actions: r?.actions.length ?? 0 });
       inLang(talkLang.current, () => {
         if (!r) { setVeil({ typing: false, reply: undefined }); return fallback(); }
-        const p = agentPlan(r, said);
+        const p = plan0;
         if (!p) { setVeil({ typing: false }); return hold(said, { kind: 'unclear', text: tx('Das habe ich nicht verstanden.', "I didn't get that.") }, talk); }
         if ('ask' in p) {
           if (chat) addSay(said, p.ask);
@@ -707,6 +726,7 @@ export default function Dock() {
       const out = p.run();
       // In the chat the card lands in the log and we stay (Julian 29.10.).
       const r0 = out.result;
+      counted(r0, out.lit?.length ?? (out.land ? 1 : 0));
       // Every sentence lands in the chat log, wherever it was said (Julian 31.10.: "dass der log vollständig bleibt").
       if (r0?.kind === 'event') addMade(said, [r0.event.id], undefined, () => actions.removeEvent(r0.event.id), undefined, { head: p.head, steps: p.steps }, r0.say, r0.needsTime && r0.event.allDay ? r0.ask || tx('Um wie viel Uhr? Oder ganztägig?', 'What time? Or all day?') : undefined);
       else if (r0?.kind === 'done' && (!r0.note || r0.say)) addMade(said, out.lit ?? (out.land ? [out.land] : []), r0.text, r0.undo, r0.events, { head: p.head, steps: p.steps }, r0.say);
@@ -743,6 +763,7 @@ export default function Dock() {
   };
 
   const undo = () => {
+    if (turn) track('entry_undone', { kind: turn.result.kind === 'event' ? 'event' : 'other' });
     if (turn?.result.kind === 'event') actions.removeEvent(turn.result.event.id);
     if (turn?.result.kind === 'done') turn.result.undo?.();
     haptics.select();

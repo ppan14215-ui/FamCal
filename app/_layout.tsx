@@ -12,6 +12,8 @@ import { Geist_500Medium } from '@expo-google-fonts/geist/500Medium';
 import { Geist_600SemiBold } from '@expo-google-fonts/geist/600SemiBold';
 import { Geist_700Bold } from '@expo-google-fonts/geist/700Bold';
 import ToastHost from '../src/components/ToastHost';
+import { initSentry, wrapRoot } from '../src/lib/sentry';
+import { initAnalytics } from '../src/lib/analytics';
 import { startNotifications } from '../src/lib/notify';
 import { startWidgetSync } from '../src/widget/snapshot';
 import { actions } from '../src/state/store';
@@ -20,6 +22,10 @@ import Dock from '../src/components/Dock';
 import { tokens } from '../src/theme';
 import { useThemeGen, Keyed } from '../src/theme/mode';
 import { isDark } from '../src/theme/tokens';
+
+// Crashes first, so a crash during start is caught; then analytics (both no-ops on the web link and in dev).
+initSentry();
+initAnalytics();
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
@@ -30,7 +36,7 @@ const WebInsets = ({ children }: { children: React.ReactNode }) =>
 
 const sheet = { presentation: 'transparentModal', animation: 'fade', contentStyle: { backgroundColor: 'transparent' } } as const;
 
-export default function RootLayout() {
+function RootLayout() {
   const [loaded, error] = useFonts({ Geist_400Regular, Geist_500Medium, Geist_600SemiBold, Geist_700Bold });
   // Darkmode: a new palette remounts the tree once; the page that switched opens again.
   // Darkmode: a new palette redraws every screen; where you are stays as it is.
@@ -74,3 +80,5 @@ export default function RootLayout() {
     </GestureHandlerRootView>
   );
 }
+
+export default wrapRoot(RootLayout);

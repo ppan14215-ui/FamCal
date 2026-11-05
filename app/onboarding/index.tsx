@@ -11,9 +11,11 @@ import Showcase from '../../src/components/showcase/Showcase';
 import { actions, get, toast } from '../../src/state/store';
 import { LIVE } from '../../src/lib/live';
 import { isPreview } from '../../src/lib/vorschau';
+import { stepViewed, onboardingDone, inviteSent, calendarConnected } from '../../src/lib/funnel';
 import { tx } from '../../src/i18n/lang';
 
 export default function Hallo() {
+  stepViewed('hallo');
   const start = () => {
     if (isPreview()) return router.push('/onboarding/eltern');
     if (LIVE) return router.push('/anmelden');

@@ -5,6 +5,7 @@
  * month grid, and the device remembers that choice for next time.
  * Rule 8 exception: only date fields show extras under the field.
  */
+import { track } from '../lib/analytics';
 import React, { useMemo, useRef, useState } from 'react';
 import { View, TextInput, Platform, ScrollView } from 'react-native';
 import Animated from 'react-native-reanimated';
@@ -88,6 +89,7 @@ export default function WhenField({ value, onChange, kind = 'termin', past, icon
   const switchTo = (m: Mode) => {
     haptics.select();
     setPref('wann', m);
+    track('time_picker_mode_chosen', { mode: m === 'cal' ? 'calendar' : 'keyboard', source: 'picker' });
     if (m === 'cal' && value) setMonth(firstOf(value.date));
     if (m === 'text') setText(value ? whenText(value) : '');
     setMode(m);

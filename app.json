@@ -84,6 +84,14 @@
             }
           ]
         }
+      ],
+      [
+        "@sentry/react-native/expo",
+        {
+          "url": "https://de.sentry.io/",
+          "organization": "namore",
+          "project": "famcal"
+        }
       ]
     ],
     "experiments": {

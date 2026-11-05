@@ -14,6 +14,8 @@ import type { ClayName } from '../src/lib/clayIcons';
 import { LIVE } from '../src/lib/live';
 import { getFamily, stopSync } from '../src/lib/sync';
 import { signOut, canTestSignIn, useAuth } from '../src/lib/auth';
+import { analyticsOff, setAnalyticsOff } from '../src/lib/analytics';
+import { chooseNav } from '../src/lib/funnel';
 import { runQualityTest, CASES } from '../src/lib/qualitaet';
 import { tx } from '../src/i18n/lang';
 import { speechLang, setSpeechLang } from '../src/lib/speechLang';
@@ -53,6 +55,7 @@ const CAL_NAME: Record<string, { t: string; icon: ClayName }> = {
 
 export default function Einstellungen() {
   const [sl, setSl] = React.useState(speechLang());
+  const [noStats, setNoStats] = React.useState(analyticsOff());
   const mic = useMicStyle();
   const pal = usePalette();
   const themeName = (() => { const t = THEMES.find((x) => x.id === pal); return t ? tx(t.de, t.en) : ''; })();
@@ -108,7 +111,7 @@ export default function Einstellungen() {
       {/* Julian 04.11.: the real settings apart from what is only there to try things out. */}
       <H2>{tx('Zum Testen', 'For testing')}</H2>
       <Group>
-        <SRow icon="sync" t={tx('Navigation', 'Navigation')} v={navStyle() === 'bar' ? tx('Ein Balken', 'One bar') : tx('Unter der Eingabe', 'Under the field')} onPress={() => { haptics.select(); setNavStyle(navStyle() === 'bar' ? 'strip' : 'bar'); toast(tx('Navigation geändert', 'Navigation changed')); }} />
+        <SRow icon="sync" t={tx('Navigation', 'Navigation')} v={navStyle() === 'bar' ? tx('Ein Balken', 'One bar') : tx('Unter der Eingabe', 'Under the field')} onPress={() => { haptics.select(); const prev = navStyle(); const next = prev === 'bar' ? 'strip' : 'bar'; setNavStyle(next); chooseNav(next, 'settings', prev); toast(tx('Navigation geändert', 'Navigation changed')); }} />
         <SRow icon="zuhause" t={tx('Neues Onboarding ansehen', 'View new onboarding')} onPress={() => router.push('/onboarding/flow')} />
         <SRow icon="zuhause" t={tx('Onboarding ansehen', 'View onboarding')} onPress={() => { startPreview(); router.push('/onboarding'); }} />
       </Group>
@@ -122,9 +125,14 @@ export default function Einstellungen() {
       </PressScale>
 
       {LIVE ? (
+        <>
+        <Group>
+          <SRow icon="sync" t={tx('Nutzungsdaten teilen', 'Share usage data')} v={noStats ? tx('Aus', 'Off') : tx('An', 'On')} onPress={() => { haptics.select(); const off = !noStats; setAnalyticsOff(off); setNoStats(off); }} />
+        </Group>
         <PressScale onPress={async () => { stopSync(); await signOut(); router.dismissAll(); router.replace('/anmelden'); }} style={{ alignItems: 'center', paddingVertical: 14 }}>
           <Txt size={15} weight={600} color={tokens.danger}>{tx('Abmelden', 'Sign out')}</Txt>
         </PressScale>
+        </>
       ) : <>
       <H2>{tx('Prototyp', 'Prototype')}</H2>
       <Group>

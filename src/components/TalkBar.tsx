@@ -30,6 +30,7 @@ import { usePrefill, takeFill } from '../lib/simple';
 import { tx } from '../i18n/lang';
 import { toast } from '../state/store';
 import { hearInCloud, cloudOn } from '../lib/hoeren';
+import { track } from '../lib/analytics';
 import { speechLocale } from '../lib/speechLang';
 
 // Phones and tablets: Enter on the screen keyboard adds a line.
@@ -93,6 +94,7 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, o
   const [listening, setListening] = useState(false);
   const textRef = useRef(''); textRef.current = text;
   const listeningRef = useRef(false); listeningRef.current = listening;
+  const listenAt = useRef(0);
   /** How loud the voice is right now, 0 to 1; drives the bars in the mic. */
   const level = useSharedValue(0);
   const micStyle = useMicStyle();
@@ -179,6 +181,8 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, o
     sendAfter.current = false;
     haptics.select();
     setListening(true);
+    listenAt.current = Date.now();
+    track('voice_started', { screen: 'talkbar' });
     const sentence = spoken[turn.current++ % spoken.length];
     if (Platform.OS !== 'web') return listenNative(sentence);
     const SR = (globalThis as any).SpeechRecognition ?? (globalThis as any).webkitSpeechRecognition;
@@ -262,12 +266,15 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, o
         if (typed.current) return;
         // Julian 31.10. 15:20: "Lokale Handy-Erkennung ist offensichtlich nicht gut genug". With the cloud ears on, the
         // phone's guess (one language, often wrong English) never lands; a miss says so and asks to speak again.
+        const ms = listenAt.current ? Date.now() - listenAt.current : undefined;
         if (cloud) {
+          track('voice_transcribed', { ok: !!better, engine: 'cloud', ms });
           if (better) land(better);
           else { sendAfter.current = false; setText(''); haptics.tap(); toast(tx('Die Aufnahme kam nicht an. Tipp aufs Mikro und sag es bitte nochmal.', 'The recording didn\'t come through. Tap the mic and say it again.'), undefined, { kind: 'warn' }); }
           return;
         }
         const t = heard();
+        track('voice_transcribed', { ok: !!t, engine: 'phone', ms });
         if (t) land(t); else fail();
       };
       const hush = (ms: number) => { clearTimeout(quiet); quiet = setTimeout(() => SR.stop(), ms); };

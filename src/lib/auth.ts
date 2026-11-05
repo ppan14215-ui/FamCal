@@ -8,7 +8,10 @@ import { Platform } from 'react-native';
 import { useSyncExternalStore } from 'react';
 import type { Session } from '@supabase/supabase-js';
 import { supabase } from './cloud';
-import { tx } from '../i18n/lang';
+import { tx, LANG } from '../i18n/lang';
+import { identify, resetAnalytics } from './analytics';
+import { setSentryUser } from './sentry';
+import { startPurchases, stopPurchases } from './purchases';
 
 type Auth = { session: Session | null; ready: boolean };
 let auth: Auth = { session: null, ready: !supabase };
@@ -19,7 +22,17 @@ if (supabase) {
   supabase.auth.getSession()
     .then(({ data }) => put({ session: data.session, ready: true }))
     .catch(() => put({ ready: true }));
-  supabase.auth.onAuthStateChange((_e, session) => put({ session, ready: true }));
+  supabase.auth.onAuthStateChange((_e, session) => {
+    const before = auth.session?.user.id;
+    put({ session, ready: true });
+    const uid = session?.user.id;
+    if (uid && uid !== before) {
+      // Only the id leaves the phone (Namore rule): no mail, no name.
+      identify(uid, { test: !!TEST_EMAIL && session?.user.email === TEST_EMAIL, lang: LANG });
+      setSentryUser(uid);
+      void startPurchases(uid);
+    } else if (!uid && before) { resetAnalytics(); setSentryUser(null); void stopPurchases(); }
+  });
 }
 
 export const getAuth = () => auth;

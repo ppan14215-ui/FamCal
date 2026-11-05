@@ -25,6 +25,7 @@ import { setMyName } from '../../src/lib/sync';
 import { isPreview, setPreviewNames } from '../../src/lib/vorschau';
 import { haptics } from '../../src/lib/haptics';
 import { tokens, fonts, personPalette } from '../../src/theme';
+import { stepViewed, onboardingDone, inviteSent, calendarConnected } from '../../src/lib/funnel';
 import { tx } from '../../src/i18n/lang';
 
 type Kind = 'kind' | 'grosseltern' | 'andere';
@@ -50,6 +51,7 @@ function thinksOf(name: string, born: string, country: string) {
 }
 
 export default function Familie() {
+  stepViewed('eltern');
   const names = useStore((s) => s.names);
   const country = useStore((s) => s.country);
   const [j, setJ] = useState(isPreview() ? '' : names.J || '');
