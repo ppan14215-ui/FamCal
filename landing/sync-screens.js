@@ -51,11 +51,13 @@ for (const l of ['de', 'en']) for (const [fact, about] of FACTS[l]) CANNED[(l ==
 const TX = {
   de: { invited: 'Ich habe eine Einladung', cal: 'Kalender', lists: 'Listen', settings: /Einstellungen/, days: 'Tage', week: 'Woche', month: 'Monat', year: 'Jahr',
     termin: 'Freitag 15 Uhr Zahnarzt mit Ben', karte: 'Freitag 15 Uhr Zahnarzt mit Ben', einkauf: 'Wir brauchen Milch und Windeln', nachfrage: 'Samstag Kindergeburtstag bei Lena', fragen: 'Frag Tom, ob Samstag passt',
+    diktat: 'Okay, nächste Woche: Dienstag um zehn hab ich Zahnarzt, Mittwoch um sechs ist Elternabend in der Kita, da gehen wir beide hin, und Samstag so gegen drei kommt Oma Inge zum Kaffee.',
     rezept: 'Ich koche heute Abend Bolognese', watch: 'Erstelle eine Watchlist mit Dune, Oppenheimer und Barbie', u7: 'Montag 10 Uhr U7 mit Ben',
     brief: 'Wochenbriefing', u6: 'U6 bei Dr. Weber', wissen: 'Was ich weiß', urlaub: 'Urlaub und Feiertage', gcal: 'Google Kalender', teilen: 'Teilen aus einem Chat', search: 'Suchen', who: 'Dr. Müller',
     zoo: 'Sonntag 15 Uhr Zoo mit Lena, wir alle', zooT: 'Zoo mit Lena', pick: 'Ich hol Ben morgen um 16 Uhr ab 👍', kontext: 'Verschieb Bens Kinderarzt auf Montag', ok: 'Mach ich.' },
   en: { invited: 'I was invited', cal: 'Calendar', lists: 'Lists', settings: /^Settings$/, days: 'Days', week: 'Week', month: 'Month', year: 'Year',
     termin: 'Swimming with Ben on Friday at 3 pm', karte: 'Hairdresser on Friday at 3 pm', einkauf: 'We need milk and nappies', nachfrage: "Kids' birthday party at Lena's on Saturday", fragen: 'Ask Tom if Saturday works',
+    diktat: "Okay, next week: Tuesday at ten I've got the dentist, Wednesday at six is parents' evening at nursery, we're both going, and Saturday around three Grandma Inge comes over for coffee.",
     rezept: "I'm cooking Bolognese tonight", watch: 'Make a watchlist with Dune, Oppenheimer and Barbie', u7: 'Monday 10am U7 checkup with Ben',
     brief: 'Weekly briefing', u6: 'U6 checkup with Dr. Weber', wissen: 'What I know', urlaub: 'Vacation and holidays', gcal: 'Google Calendar', teilen: 'Teilen aus einem Chat', search: 'Search', who: 'Salon Miller',
     zoo: 'Sunday 3pm zoo with Lena, all of us', zooT: 'Zoo with Lena', pick: "I'll pick Ben up tomorrow at 4 👍", kontext: "Move Ben's pediatrician to Monday", ok: 'On it.' },
@@ -113,6 +115,18 @@ const films = (p) => p.evaluate((m) => globalThis.__fc.set((st) => ({ lists: st.
 // Jeder Screen: Name in landing/shots und der Weg dorthin, ausgehend vom Chat der Beispielfamilie.
 const SCREENS = [
   ['chat', async () => {}],
+  // Diktat (Julian 05.11.): länger gesprochen, drei Termine auf einmal. Feste Antwort mit drei termin_neu, Tage ab heute.
+  ['diktat', async ({ p, say, t, l }) => {
+    await p.evaluate(({ said, en }) => {
+      // Tage der nächsten Woche: Dienstag, Mittwoch, Samstag nach dem kommenden Montag.
+      const d = (wd) => { const x = new Date(); x.setDate(x.getDate() + ((8 - x.getDay()) % 7 || 7) + wd - 1); return `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, '0')}-${String(x.getDate()).padStart(2, '0')}`; };
+      globalThis.__canned = { [said]: { text: en ? 'On it, three events.' : 'Mach ich, drei Termine.', actions: [
+        { tool: 'termin_neu', input: { title: en ? 'Dentist' : 'Zahnarzt', date: d(2), start: '10:00', end: '11:00', who: 'J', icon: 'zahnarzt' } },
+        { tool: 'termin_neu', input: { title: en ? 'Parents’ evening at nursery' : 'Elternabend Kita', date: d(3), start: '18:00', end: '19:30', who: 'both', icon: 'elternabend' } },
+        { tool: 'termin_neu', input: { title: en ? 'Grandma Inge comes for coffee' : 'Oma Inge kommt zum Kaffee', date: d(6), start: '15:00', end: '17:00', who: 'both', icon: 'cafe' } }] } };
+    }, { said: t.diktat, en: l === 'en' });
+    await say(t.diktat); await p.getByText(/^(Done|Passt)$/).last().click({ timeout: 2000 }).catch(() => {}); await p.waitForTimeout(1200);
+  }],
   ['termin', async ({ p, say, t }) => { await say(t.termin); await p.getByText(/^(Done|Passt)$/).first().click({ timeout: 1500 }).catch(() => {}); }],
   ['einkauf', async ({ say, t }) => { await say(t.einkauf); }],
   ['nachfrage', async ({ say, t }) => { await say(t.nachfrage); }],
