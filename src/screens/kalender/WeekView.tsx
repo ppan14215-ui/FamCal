@@ -6,6 +6,7 @@
  * way in, three days fill the width with whole titles. Hold a Termin and drag
  * it to another time or day, like in the Apple calendar (Julian 30.10.).
  */
+import Origin from '../../components/ui/Origin';
 import React, { useMemo, useState, useRef } from 'react';
 import { View, Pressable, LayoutChangeEvent } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
@@ -225,6 +226,7 @@ export default function WeekView() {
                       <Drag key={e.id} e={e} days={days} col={days.indexOf(d)} step={(colsW + 3) / n} HP={HP} dragging={dragging} onLift={setLiftCol} style={{ top: top(e.start) + 2, height: h, backgroundColor: evTint(e), ...(evShared(e) ? sharedBorder() : null) }}>
                         {/* Narrow columns clip one line like Apple and Google; a word is never broken into single letters (Julian 30.10.). */}
                         <Txt size={wide ? 12.5 : 10.5} line={wide ? 16 : 13} weight={700} numberOfLines={wide ? Math.max(1, Math.floor(h / 17) - 1) : 1} ellipsizeMode="clip" textBreakStrategy="simple" android_hyphenationFrequency="none">{wide ? e.title : SHORT[e.title] ?? e.title.split(' ')[0]}</Txt>
+                        <View pointerEvents="none" style={{ position: 'absolute', top: 2, right: 2 }}><Origin e={e} size={wide ? 12 : 10} /></View>
                         {big && h >= 44 && !e.allDay ? <Txt size={wide ? 12 : 10} line={wide ? 15 : 12} color={tokens.sub} numberOfLines={1}>{wide && e.end ? `${hm(e.start)} ${tx('bis', 'to')} ${hm(e.end)}` : hm(e.start)}</Txt> : null}
                       </Drag>
                     );

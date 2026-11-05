@@ -4,6 +4,7 @@
  * middle of its cell and further Termine show as a small count under it.
  * Today is green like in the day strip, the chosen day has the outline.
  */
+import Origin from '../../components/ui/Origin';
 import React, { useMemo } from 'react';
 import { View, useWindowDimensions } from 'react-native';
 import { router } from 'expo-router';
@@ -139,9 +140,9 @@ export default function MonthView() {
         <Group>
           {list.map((e) => (
             // Swipe left deletes, like in Tage (Julian 31.10. 18:21); holidays stay.
-            isInfoDay(e) ? <Row key={e.id} icon={e.icon} title={e.title} sub={e.sub} time={hm(e.start)} right={<Owner who={e.who} />} onPress={() => router.push(`/termin/${e.id}`)} /> : (
+            isInfoDay(e) ? <Row key={e.id} icon={e.icon} title={e.title} sub={e.sub} time={hm(e.start)} right={<View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}><Origin e={e} /><Owner who={e.who} /></View>} onPress={() => router.push(`/termin/${e.id}`)} /> : (
               <SwipeRow key={e.id} onDelete={() => dropEvent(e)}>
-                <Row icon={e.icon} title={e.title} sub={e.sub} time={hm(e.start)} right={<Owner who={e.who} />} onPress={() => { if (!justSwiped()) router.push(`/termin/${e.id}`); }} />
+                <Row icon={e.icon} title={e.title} sub={e.sub} time={hm(e.start)} right={<View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}><Origin e={e} /><Owner who={e.who} /></View>} onPress={() => { if (!justSwiped()) router.push(`/termin/${e.id}`); }} />
               </SwipeRow>
             )
           ))}
