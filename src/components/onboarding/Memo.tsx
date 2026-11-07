@@ -31,6 +31,7 @@ import Animated, {
   Easing, useReducedMotion, cancelAnimation, runOnJS, type SharedValue,
 } from 'react-native-reanimated';
 import { seg } from '../../theme/film';
+import { BlobArt, type ArtEyes } from '../buddy/Blob';
 import { haptics } from '../../lib/haptics';
 
 const ART = {
@@ -198,7 +199,6 @@ export default function Memo({ act = 'idle', size = 88, beat = 0, alive = true, 
     return { opacity: fade.value * (0.25 + 0.75 * h), transform: [{ scaleX: (0.55 + 0.45 * h) * sx.value }] };
   });
 
-  const src = act === 'sleep' ? ART.sleep : ART[eyes];
   const fx = Math.max(10, size * 0.26);
   return (
     <View style={[{ width: size, height: size, alignItems: 'center' }, style]} accessible accessibilityLabel="Memo" pointerEvents="none">
@@ -210,7 +210,8 @@ export default function Memo({ act = 'idle', size = 88, beat = 0, alive = true, 
         </Animated.View>
       ) : null}
       <Animated.View style={[{ width: size, height: size }, body]}>
-        <Image source={src} style={{ width: size, height: size }} resizeMode="contain" />
+        {/* The blob (Julian 07.11.: the new Memo replaces the magnet everywhere); same moves, new body. */}
+        <BlobArt size={size} eyes={act === 'sleep' ? 'sleep' : eyes as ArtEyes} />
       </Animated.View>
       {act === 'think' ? <Over v={extra} kind="think" size={size} fx={fx} /> : null}
       {act === 'sleep' ? <Over v={extra} kind="sleep" size={size} fx={fx} /> : null}
@@ -313,5 +314,5 @@ function EyeLayer({ e, order, size, clock, keys, initial }: { e: Eyes; order: Ey
     else o = e === B ? 1 : e === A ? 1 - a : 0;
     return { opacity: o };
   });
-  return <Animated.Image source={ART[e]} style={[{ position: 'absolute', left: 0, top: 0, width: size, height: size }, st]} resizeMode="contain" />;
+  return <Animated.View style={[{ position: 'absolute', left: 0, top: 0, width: size, height: size }, st]}><BlobArt size={size} eyes={e as ArtEyes} /></Animated.View>;
 }

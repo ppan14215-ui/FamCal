@@ -277,3 +277,51 @@ export default function Blob({ size = 40, mood = 'idle', joy = 0, poke = 0, leve
     </View>
   );
 }
+
+/** Eyes of a still Memo, keyed like the old magnet's art (onboarding films drive them by name). */
+export type ArtEyes = 'open' | 'closed' | 'sleep' | 'happy' | 'up' | 'think' | 'wink' | 'wide' | 'left' | 'right';
+
+/**
+ * A still Memo blob with a named face: the onboarding and its films move it with their own transforms
+ * and swap faces on a clock, so it draws no loop of its own. Same body and gloss as the live Blob.
+ */
+export function BlobArt({ size: S, eyes = 'open' }: { size: number; eyes?: ArtEyes }) {
+  const id = useRef(`blobart${++seq}`).current;
+  const cx = S / 2, cy = S * 0.54, R = S * 0.4;
+  const ew = S * 0.1, eh = S * 0.175, aw = S * 0.15, at = Math.max(1.4, S * 0.042);
+  const ex = S * 0.155, ey = cy + S * 0.02;
+  const [gx, gy] = eyes === 'up' ? [0, -0.6] : eyes === 'think' ? [0.7, -0.6] : eyes === 'left' ? [-0.9, 0] : eyes === 'right' ? [0.9, 0] : [0, 0];
+  const k = eyes === 'wide' ? 1.15 : 1;
+  const eye = (side: number) => {
+    const x = cx + side * ex + gx * S * 0.075, y = ey + gy * S * 0.06;
+    const shut = eyes === 'closed' || eyes === 'sleep' || (eyes === 'wink' && side < 0);
+    if (eyes === 'happy') return (
+      <View key={side} style={{ position: 'absolute', left: x - aw / 2, top: y - aw / 2, width: aw, height: aw / 2 + at / 2, overflow: 'hidden' }}>
+        <View style={{ width: aw, height: aw, borderRadius: aw / 2, borderWidth: at, borderColor: BLOB.eye }} />
+      </View>
+    );
+    const h = shut ? Math.max(1.5, eh * 0.16) : eh * k, w = shut ? ew * 1.25 : ew * k;
+    return <View key={side} style={{ position: 'absolute', left: x - w / 2, top: y - h / 2, width: w, height: h, borderRadius: w / 2, backgroundColor: BLOB.eye }} />;
+  };
+  return (
+    <View style={{ width: S, height: S }} pointerEvents="none">
+      <Svg width={S} height={S}>
+        <Defs>
+          <RadialGradient id={`${id}b`} cx="36%" cy="28%" r="80%" fx="34%" fy="24%">
+            <Stop offset="0" stopColor={BLOB.light} />
+            <Stop offset="0.48" stopColor={BLOB.mid} />
+            <Stop offset="1" stopColor={BLOB.deep} />
+          </RadialGradient>
+          <RadialGradient id={`${id}h`} cx="50%" cy="50%" r="50%">
+            <Stop offset="0" stopColor="#FFFFFF" stopOpacity={0.85} />
+            <Stop offset="0.5" stopColor="#FFFFFF" stopOpacity={0.28} />
+            <Stop offset="1" stopColor="#FFFFFF" stopOpacity={0} />
+          </RadialGradient>
+        </Defs>
+        <Path d={blobPath(cx, cy, R, 1.7, 0.03, 0)} fill={`url(#${id}b)`} />
+        <Ellipse cx={cx - R * 0.32} cy={cy - R * 0.5} rx={R * 0.36} ry={R * 0.24} fill={`url(#${id}h)`} />
+      </Svg>
+      {eye(-1)}{eye(1)}
+    </View>
+  );
+}
