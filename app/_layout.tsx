@@ -19,6 +19,8 @@ import { startWidgetSync } from '../src/widget/snapshot';
 import { actions } from '../src/state/store';
 import { VeilHost } from '../src/components/Veil';
 import Dock from '../src/components/Dock';
+import BuddyHost from '../src/components/buddy/BuddyHost';
+import BuddyIntro from '../src/components/buddy/BuddyIntro';
 import { tokens } from '../src/theme';
 import { useThemeGen, Keyed } from '../src/theme/mode';
 import { isDark } from '../src/theme/tokens';
@@ -73,7 +75,9 @@ function RootLayout() {
           <Keyed>
             <Dock />
             <VeilHost />
+            <BuddyHost />
             <ToastHost />
+            <BuddyIntro />
           </Keyed>
         </WebInsets>
       </SafeAreaProvider>

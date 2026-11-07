@@ -4,6 +4,12 @@ Alle sichtbaren Änderungen an FamCal. Neueste oben. Agenten und Menschen: Ände
 
 ## Unreleased
 
+### Memo als Blob (07.11.)
+- Memo ist jetzt ein weicher, glänzender Tropfen in Teal mit zwei cremefarbenen Augen und sitzt rechts über dem Eingabefeld, auf jedem Screen mit Feld.
+- Memo lebt mit: atmet, blinzelt, schaut sich um, schaut aufs Feld beim Tippen, wird beim Sprechen größer und wackelt mit der Stimme, drückt sich beim Nachdenken flach und hüpft mit ^^ Augen, wenn etwas eingetragen ist. Antippen lässt ihn hüpfen. Nachts (23 bis 6 Uhr) döst er.
+- Beim App Start ist der ganze Bildschirm kurz Memo und schmilzt nach oben weg, dann fliegt Memo an seinen Platz. Tippen überspringt es.
+- Im Chat zeigt jede Antwort den kleinen Blob statt des alten Magneten.
+
 ### Datenschutz (05.11.)
 - Der Assistent bekommt pro Satz nur noch die nächsten zwei Wochen und was zum Satz passt, statt bis zu 220 Termine, alle Fakten und alle Listen. Braucht er mehr, sucht die App auf dem Handy nach (höchstens 20 Zeilen, höchstens 3 Suchen pro Satz). Etwa halb so viel Text pro Satz, bei großen Familien 60 % weniger.
 - Eure Namen gehen nur noch als Platzhalter raus, die App setzt sie wieder ein. Private Kalender gehen nur als „Belegt“ oder „Arbeit“ raus, ohne Titel und Ort.

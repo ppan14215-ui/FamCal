@@ -24,7 +24,7 @@ import { getFamily, myRole } from '../lib/sync';
 import { hm, short, TODAY } from '../lib/dates';
 import HeaderRight from './ui/HeaderRight';
 import { tx } from '../i18n/lang';
-import Memo from './onboarding/Memo';
+import Blob from './buddy/Blob';
 import { useVeil, Step, Dots } from './Veil';
 import { isTrip, makePackList, kidsOn, ageText } from '../lib/pack';
 import { isVacation, leftLine } from '../lib/urlaub';
@@ -388,11 +388,12 @@ export const cardFrame = { alignSelf: 'stretch' as const, borderRadius: 18, over
  * just entered something. Older cards in the log stay still, so a long chat never twitches.
  */
 export function Reply({ text, live, fresh }: { text?: string; live?: boolean; fresh?: boolean }) {
-  const act = live ? (text ? 'happy' : 'think') : fresh ? 'blink' : 'idle';
+  // The blob (Julian 07.11.): squashes while it thinks, ^^ when it has answered; older cards hold still.
+  const mood = live ? (text ? 'happy' : 'think') : 'idle';
   return (
     <View style={{ paddingTop: 10, paddingHorizontal: 14, paddingBottom: 4, gap: 4 }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-        <Memo act={act} size={24} shadow={false} alive={false} delay={0} beat={text ? 1 : 0} />
+        <Blob mood={mood} size={24} shadow={false} still={!live} />
         <Txt size={12} weight={600} tracking={0.6} color={tokens.done}>MEMO</Txt>
       </View>
       {text ? <Animated.View entering={swapIn}><Txt size={15} line={21}>{text}</Txt></Animated.View> : <View style={{ paddingVertical: 4 }}><Dots /></View>}

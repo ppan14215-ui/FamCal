@@ -9,6 +9,7 @@
  * lines, then scrolls inside (Julian 27.10.).
  */
 import React, { useEffect, useRef, useState } from 'react';
+import { voiceLevel, setBuddy } from '../lib/buddy';
 import { View, TextInput, Platform } from 'react-native';
 import Txt from './ui/Txt';
 import LineIcon from './ui/LineIcon';
@@ -101,9 +102,11 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, o
   const [listening, setListening] = useState(false);
   const textRef = useRef(''); textRef.current = text;
   const listeningRef = useRef(false); listeningRef.current = listening;
+  // Memo grows and wobbles with the voice while the mic is on (Julian 07.11.).
+  useEffect(() => { if (listening) { setBuddy({ listening: true }); return () => setBuddy({ listening: false }); } }, [listening]);
   const listenAt = useRef(0);
   /** How loud the voice is right now, 0 to 1; drives the bars in the mic. */
-  const level = useSharedValue(0);
+  const level = voiceLevel;
   const micStyle = useMicStyle();
   const [demo, setDemo] = useState(false);
   const [boxH, setBoxH] = useState(MIN_H);

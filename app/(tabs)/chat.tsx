@@ -12,7 +12,6 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { H1, Check, Head } from '../../src/components/ui/kit';
 import Txt from '../../src/components/ui/Txt';
-import Memo from '../../src/components/onboarding/Memo';
 import { Avatar, Pair } from '../../src/components/ui/Person';
 import { Tile } from '../../src/components/ui/Clay';
 import PressScale from '../../src/components/ui/PressScale';
@@ -91,9 +90,7 @@ export default function Chat() {
           );
         }) : (
           <View style={{ flex: 1, justifyContent: 'center', gap: 8, paddingHorizontal: 8 }}>
-            {/* Memo waits here until the first sentence (onboarding storyboard 01.11., step 8). */}
-            {/* After 21 Uhr Memo sleeps in the empty chat (concept 01.11.). */}
-            <Memo act={new Date().getHours() >= 21 || new Date().getHours() < 6 ? 'sleep' : 'land'} size={72} delay={200} style={{ marginLeft: -6 }} />
+            {/* Memo now lives above the field on every screen (the blob, Julian 07.11.), so the empty chat shows only the words. */}
             <Txt size={22} line={28} weight={700} tracking={-0.5}>{tx('Sagt mir einfach, was ansteht.', 'Just tell me what’s coming up.')}</Txt>
             {simple ? (
               <>
