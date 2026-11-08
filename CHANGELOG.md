@@ -4,6 +4,12 @@ Alle sichtbaren Änderungen an FamCal. Neueste oben. Agenten und Menschen: Ände
 
 ## Unreleased
 
+### Sprechkarte (08.11. abends)
+- Beim Sprechen wächst die Leiste zu einer hellen Karte. Memo sitzt in ihrer Mitte als Sprechknopf: antippen, wenn du fertig bist.
+- Der gesagte Satz steht in der Karte, mit Senden oder Ändern. Er geht nie von selbst raus.
+- Rückfragen kommen in derselben Karte: "Um wie viel Uhr?" mit Stunden zum Antippen oder einfach sagen ("um drei"), andere Fragen mit Antworten zum Antippen. Danach zeigt die Karte kurz, was jetzt im Kalender steht.
+- Memo sitzt nicht mehr auf der Leiste oder auf Karten darüber.
+
 ### Bewegung nach Emil Kowalski (08.11.)
 - Tabs wechseln mit kurzem Einblenden statt Schieben, die Kalenderansichten bauen sich schneller auf.
 - Vibration nur noch einmal pro Aktion: beim Eintragen am Ende, beim Löschen im Moment des Loslassens.

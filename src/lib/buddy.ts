@@ -36,10 +36,12 @@ type State = {
   touch: { x: number; y: number; n: number } | null;
   /** Something waits for my answer (a question in the chat): Memo shows a "?". */
   waiting: boolean;
+  /** A card sits right above the field (a question, a receipt): Memo steps aside so he never covers it. */
+  covered: boolean;
 };
 
 // intro starts true: BuddyIntro says when the screen is free (it always mounts with the root).
-let state: State = { listening: false, joy: 0, poke: 0, from: null, intro: true, talk: 0, touch: null, waiting: false };
+let state: State = { listening: false, joy: 0, poke: 0, from: null, intro: true, talk: 0, touch: null, waiting: false, covered: false };
 const subs = new Set<() => void>();
 const emit = () => subs.forEach((l) => l());
 

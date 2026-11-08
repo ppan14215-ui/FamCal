@@ -85,7 +85,7 @@ export function Termine({ ids, snap, changed, ask, timeQ, fresh, placeQ }: { ids
 /** Time questions answered with "Ganztägig": the Termin stays all day, the question is done. */
 const settled = new Set<string>();
 const settledSubs = new Set<() => void>();
-const settle = (id: string) => { settled.add(id); settledSubs.forEach((l) => l()); };
+export const settle = (id: string) => { settled.add(id); settledSubs.forEach((l) => l()); };
 export const useSettled = () => { const [, bump] = useState(0); useEffect(() => { const l = () => bump((n) => n + 1); settledSubs.add(l); return () => { settledSubs.delete(l); }; }, []); return settled; };
 
 const pad2 = (n: number) => String(n).padStart(2, '0');
@@ -97,7 +97,9 @@ const plusMin = (t: string, min: number) => { const m = Math.min(23 * 60 + 59, N
  */
 function TimeAsk({ e, q }: { e: EventSnap; q: string }) {
   const [step, setStep] = useState<'start' | 'end' | 'done'>(e.allDay && !settled.has(e.id) ? 'start' : 'done');
-  if (step === 'done') return null;
+  // Answered in the Sprechkarte (Julian 08.11.): the question here is done too.
+  const done = useSettled();
+  if (step === 'done' || (step === 'start' && done.has(e.id))) return null;
   const chip = (label: string, on: () => void, key = label) => (
     <PressScale key={key} onPress={() => { haptics.select(); on(); }} style={{ height: 32, paddingHorizontal: 12, borderRadius: 999, alignItems: 'center', justifyContent: 'center', backgroundColor: tokens.chipBg }}>
       <Txt size={13.5}>{label}</Txt>

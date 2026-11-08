@@ -8,7 +8,7 @@
  */
 import { track, firstTime, type EntryKind, type Input } from '../lib/analytics';
 import SessionPill from './SessionPill';
-import { useBuddyTalk } from '../lib/buddy';
+import { useBuddyTalk, setBuddy } from '../lib/buddy';
 import React, { useEffect, useRef, useState } from 'react';
 import { View, ScrollView, Platform, BackHandler, useWindowDimensions, TextInput } from 'react-native';
 import { router, usePathname } from 'expo-router';
@@ -21,6 +21,9 @@ import LineIcon from './ui/LineIcon';
 import { Avatar, Pair, Owner } from './ui/Person';
 import PressScale from './ui/PressScale';
 import TalkBar from './TalkBar';
+import SpeakCard from './SpeakCard';
+import { setSpeak, getSpeak, useSpeak, speakOpen, speakDone, parseHour } from '../lib/speak';
+import { settle as settleTime } from './ChatCards';
 import { setVeil } from './Veil';
 import { tokens, persons, fonts, easing } from '../theme';
 import { useStore, actions, get, toast } from '../state/store';
@@ -69,6 +72,9 @@ const YES = /^\s*(ja|jo|genau|richtig|gerne|passt|yes|yeah|yep|sure|right)\b/i;
 const NO = /^\s*(nein|nee|ne|nö|woanders|no|nope|somewhere else)\b/i;
 /** Answers to "Wann?" to tap; speaking works just as well. */
 const DAYS = () => [tx('Heute', 'Today'), tx('Morgen', 'Tomorrow'), tx('Übermorgen', 'Day after tomorrow'), tx('Nächste Woche', 'Next week')];
+
+const pad2 = (n: number) => String(n).padStart(2, '0');
+const plusMin = (t: string, min: number) => { const m = Math.min(23 * 60 + 59, Number(t.slice(0, 2)) * 60 + Number(t.slice(3)) + min); return `${pad2(Math.floor(m / 60))}:${pad2(m % 60)}`; };
 
 /** "Anders …" on every card (Julian 29.10.: when no choice fits there must be a way to say it). */
 const Other = React.createContext<() => void>(() => {});
@@ -506,8 +512,10 @@ export default function Dock() {
   const bottom = !where ? 0 : kb > 0 ? kb + 8 : onTabs ? (typing && Platform.OS === 'web' ? Math.max(insets.bottom, 12) + 10 : above) : insets.bottom + 12 + where.lift;
   useEffect(() => { setDockTop(where ? bottom + (shown ? h : 0) : 0); }, [bottom, h, !!where, shown]);
   // The field's own top edge (cards and pills above it don't count): Memo sits right on it (Julian 08.11.).
-  const [fieldY, setFieldY] = useState(0);
-  useEffect(() => { setFieldTop(where ? bottom + Math.max(0, h - fieldY) : 0); }, [bottom, h, fieldY, !!where]);
+  // The field is the last row, flush with the bottom, so its top is bottom + its own height. Its y from onLayout went stale
+  // on the web (only size changes report there), and Memo then sat on the bar when a pill appeared above (Julian 08.11.).
+  const [fieldH, setFieldH] = useState(0);
+  useEffect(() => { setFieldTop(where ? bottom + fieldH : 0); }, [bottom, fieldH, !!where]);
   // Folding or opening the tabs moves the field with a soft spring (keep2read: k 250, c 27); the keyboard moves it at once.
   const bAnim = useSharedValue(bottom);
   const wasFolded = useRef(folded);
@@ -517,6 +525,30 @@ export default function Dock() {
     bAnim.value = spring ? withSpring(bottom, { stiffness: 250, damping: 27, mass: 1 }) : bottom;
   }, [bottom, folded]);
   const bStyle = useAnimatedStyle(() => ({ bottom: bAnim.value }));
+
+  // Julian 08.11. ("Ask clarifying questions through inputs"): a question the card asks also stands in the
+  // Sprechkarte, with its answers to tap. The handlers are read at tap time, so they always see the current card.
+  const sp = useSpeak();
+  const cardOpen = speakOpen(sp);
+  const liveQ = useRef<any>({});
+  // Memo never sits on a card above the field (Julian 08.11.: "make sure the mascot doesn't overlap").
+  useEffect(() => { setBuddy({ covered: !!turn && !cardOpen }); return () => setBuddy({ covered: false }); }, [!!turn, cardOpen]);
+  useEffect(() => {
+    if (!onTabs) return;
+    const cur = getSpeak().ask;
+    if (!turn) { if (cur && !cur.hold) setSpeak({ ask: null }); return; }
+    if (cur?.hold) return;
+    const r = turn.result;
+    const L = () => liveQ.current;
+    let text: string | undefined = turn.lines[turn.lines.length - 1]?.app;
+    let picks: { label: string; on: () => void }[] | undefined;
+    if (r.kind === 'answer' && r.reply.kind === 'ask') picks = DAYS().map((d) => ({ label: d, on: () => L().hear(d) }));
+    else if (r.kind === 'workClash') { text = `${clashLine(r.old)} ${tx('Was soll ich machen?', 'What should I do?')}`; picks = [{ label: tx('Ersetzen', 'Replace'), on: () => L().settleClash(true) }, { label: tx('Beide behalten', 'Keep both'), on: () => L().settleClash(false) }]; }
+    else if (r.kind === 'newList') { text = tx(`Eine Liste „${r.name}“ gibt es noch nicht. Soll ich sie anlegen?`, `There is no “${r.name}” list yet. Shall I create it?`); picks = [{ label: tx('Ja, anlegen', 'Yes, create it'), on: () => L().makeList() }, { label: tx('Nein', 'No'), on: () => L().ok() }]; }
+    else if (r.kind === 'unclear') { text = r.text; picks = [{ label: tx('Termin', 'Event'), on: () => L().pickKind(turn.said, 'termin') }, { label: tx('Einkaufsliste', 'Shopping list'), on: () => L().pickKind(turn.said, 'einkauf') }]; }
+    else if (r.kind === 'event' && r.suggest) picks = [{ label: tx('Ja', 'Yes'), on: () => L().answerSuggest(true) }, { label: tx('Nein', 'No'), on: () => L().answerSuggest(false) }];
+    setSpeak({ ask: text ? { text, picks } : null });
+  }, [turn, onTabs]);
 
   // A field on the page is being typed in: one input at a time (Julian 01.11.).
   if (!where || inlineEditing) return null;
@@ -774,6 +806,8 @@ export default function Dock() {
           const asks = res.kind === 'answer' && res.reply.kind === 'ask';
           const offer = res.kind === 'event' ? [res.needsTime && res.event.allDay ? res.ask || tx('Um wie viel Uhr? Oder ganztägig?', 'What time? Or all day?') : '', res.suggest && !res.event.place ? againAt(res.suggest) : ''].filter(Boolean).join(' ') : '';
           const q = asks ? (res as { reply: { text: string } }).reply.text : res.kind === 'recipe' ? (res.kept ? keptLine(res.kept.recipe) : res.question) : offer || undefined;
+          // Said, not typed: the time question comes in the Sprechkarte, with hours to tap (Julian 08.11.).
+          if (onTabs && spoke.current && res.kind === 'event' && res.needsTime && res.event.allDay && !(res.suggest && !res.event.place)) openTimeAsk(res.event, res.ask || tx('Um wie viel Uhr? Oder ganztägig?', 'What time? Or all day?'));
           // The chat already shows the card; only a question stays above the field, for whoever asked.
           // The time question sits in the chat card as options; only a place to confirm still needs the sheet.
           if (res.kind === 'event' && !(res.suggest && !res.event.place)) return;
@@ -788,6 +822,28 @@ export default function Dock() {
         setVeil({ phase: 'land', target: { x: W / 2, y: H - bottom - 110 }, onLanded: finish });
       });
     });
+  };
+
+  /**
+   * "Um wie viel Uhr?" nach einem gesagten Termin: die Sprechkarte bleibt offen, mit Stunden zum Antippen.
+   * Eine gesagte Uhrzeit ("um drei") wird in der Reihe fett und dann gesetzt (Julian 08.11., Konzept Sprechkarte).
+   */
+  const openTimeAsk = (e: CalEvent, q: string) => {
+    const pick = (t: string) => {
+      actions.updateEvent(e.id, { start: t, end: plusMin(t, 60), allDay: false });
+      settleTime(e.id); light(e.id); haptics.success();
+      speakDone(`${e.title} · ${short(e.date)} · ${hm(t)}`);
+    };
+    const allDay = () => { settleTime(e.id); haptics.select(); speakDone(tx(`${e.title} · ${short(e.date)} · ganztägig`, `${e.title} · ${short(e.date)} · all day`)); };
+    setSpeak({ ask: { text: q, hold: true, hours: { pick, allDay }, onSpoken: (said) => {
+      const r = parseHour(said);
+      if (r === 'allday') { allDay(); return true; }
+      if (!r) { toast(tx('Sag einfach eine Uhrzeit, zum Beispiel „um drei“.', 'Just say a time, like “at three”.'), undefined, { kind: 'info' }); return true; }
+      const a = getSpeak().ask;
+      if (a?.hours) setSpeak({ ask: { ...a, hours: { ...a.hours, hit: r } } });
+      setTimeout(() => pick(r), 650);
+      return true;
+    } } });
   };
 
   const undo = () => {
@@ -882,6 +938,10 @@ export default function Dock() {
     play(listFromClaude({ kind: 'liste', list: k, items: k === 'einkauf' ? splitItems(said) : [said] }), said, true);
   };
 
+  liveQ.current = {
+    hear, settleClash, answerSuggest, pickKind, ok,
+    makeList: () => { if (turn?.result.kind !== 'newList') return; const r = turn.result.said; const said = turn.said; haptics.select(); setTurn(null); ++heard.current; play(listFromClaude(r, said), said, true); },
+  };
   if (!shown) return null;
   if (where.chat && !shown) return null;
   return (
@@ -894,7 +954,7 @@ export default function Dock() {
     <Animated.View pointerEvents="box-none" onLayout={(e) => setH(e.nativeEvent.layout.height)} style={[{ position: 'absolute', left: onTabs ? 14 : 18, right: onTabs ? 14 : 18, gap: 10 }, bStyle]}>
       {where.chat || turn ? null : <Peek />}
       {turn || !onTabs ? null : <SessionPill />}
-      {turn ? (
+      {turn && !cardOpen ? (
         <Animated.View key={turn.id} entering={FadeInDown.duration(220).easing(easing.out)} exiting={FadeOut.duration(150).easing(easing.out)} style={[{ maxHeight: 420, borderRadius: 26, backgroundColor: tokens.row }, shadow]}>
           <ScrollView ref={scroller} onContentSizeChange={() => scroller.current?.scrollToEnd({ animated: false })} contentContainerStyle={{ padding: 18, gap: 12 }} showsVerticalScrollIndicator={false}>
             {turn.result.kind === 'cut' ? (
@@ -985,7 +1045,7 @@ export default function Dock() {
       ) : null}
       {bar ? (
       // Julian 05.11. 08:48: one dark shape at the bottom; tab icon and field share it and it morphs as one piece.
-      <View onLayout={(e) => setFieldY(e.nativeEvent.layout.y)} style={[{ alignSelf: 'flex-end', width: W - 28, borderRadius: 27, backgroundColor: tokens.ink }, floatShadow]}>
+      <View onLayout={(e) => setFieldH(e.nativeEvent.layout.height)} style={[{ alignSelf: 'flex-end', width: W - 28, borderRadius: 27, backgroundColor: tokens.ink }, floatShadow]}>
       <View style={{ flexDirection: 'row', alignItems: 'flex-end', borderRadius: 27, overflow: 'hidden' }}>
         <Animated.View style={[{ height: D, overflow: 'hidden' }, navStyleA]}>
           <Animated.View pointerEvents={barMode === 'rest' ? 'auto' : 'none'} style={[{ position: 'absolute', left: 0, top: 0, width: D, height: D }, iconStyle]}>
@@ -1018,6 +1078,7 @@ export default function Dock() {
                 split={onTabs}
                 card
                 dark
+                speakCard
                 onIdle={bar ? () => setBarMode('rest') : undefined}
                 onBusy={bar ? () => setBarMode('input') : undefined}
                 onSend={hear}
@@ -1033,12 +1094,13 @@ export default function Dock() {
       </View>
       </View>
       ) : (
-      <Animated.View onLayout={(e) => setFieldY(e.nativeEvent.layout.y)} style={[{ alignSelf: 'flex-end', alignItems: 'flex-end', overflow: 'hidden', borderRadius: onTabs && navStyle() === 'strip' ? 24 : 30 }, wStyle]}>
+      <Animated.View onLayout={(e) => setFieldH(e.nativeEvent.layout.height)} style={[{ alignSelf: 'flex-end', alignItems: 'flex-end', overflow: 'hidden', borderRadius: onTabs && navStyle() === 'strip' ? 24 : 30 }, wStyle]}>
       <Animated.View style={wStyle}>
       {priv.ohneKi ? <ManualField h={52} /> : <TalkBar
         key={onTabs ? 'tabs' : kind}
         split={onTabs}
         card={onTabs && (navStyle() === 'strip' || bar)}
+        speakCard={onTabs}
         onSend={hear}
         onPlus={() => router.push('/neu')}
         spoken={SPOKEN[kind]}
@@ -1049,6 +1111,7 @@ export default function Dock() {
       </Animated.View>
       </Animated.View>
       )}
+      {onTabs && !priv.ohneKi ? <SpeakCard barH={bar ? D : 52} from={bar ? tokens.ink : tokens.row} /> : null}
     </Animated.View>
     </Other.Provider>
   );

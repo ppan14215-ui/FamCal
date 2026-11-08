@@ -23,6 +23,7 @@ import { useVeil } from '../Veil';
 import { useFeed } from '../../lib/feed';
 import { getFamily, myRole } from '../../lib/sync';
 import { haptics } from '../../lib/haptics';
+import { useSpeak, speakOpen } from '../../lib/speak';
 import { tx } from '../../i18n/lang';
 
 const SIZE = 38;
@@ -99,7 +100,11 @@ export default function BuddyHost() {
     y.value = withTiming(restY, move);
   }, [dockTop, W, H, b.intro]);
 
-  const st = useAnimatedStyle(() => ({ opacity: o.value, transform: [{ translateX: x.value }, { translateY: y.value }] as any }));
+  // The Sprechkarte is open: Memo lives in its middle as the talk button, so this one steps aside (Julian 08.11.: "make sure the mascot doesn't overlap").
+  const inCard = speakOpen(useSpeak()) || b.covered;
+  const away = useSharedValue(1);
+  useEffect(() => { away.value = withTiming(inCard ? 0 : 1, { duration: inCard ? 120 : 220, easing: Easing.bezier(0.23, 1, 0.32, 1) }); }, [inCard]);
+  const st = useAnimatedStyle(() => ({ opacity: o.value * away.value, transform: [{ translateX: x.value }, { translateY: y.value }] as any }));
   // Glance at the last touch, relative to where Memo sits.
   const glance = React.useMemo(() => {
     if (!b.touch) return undefined;
@@ -138,7 +143,7 @@ export default function BuddyHost() {
   };
 
   return (
-    <Animated.View pointerEvents={dockTop ? 'box-none' : 'none'} style={[{ position: 'absolute', left: 0, top: 0 }, st]}>
+    <Animated.View pointerEvents={dockTop && !inCard ? 'box-none' : 'none'} style={[{ position: 'absolute', left: 0, top: 0 }, st]}>
       {hint ? (
         <Animated.View pointerEvents="none" style={[{ position: 'absolute', right: SIZE + 8, top: SIZE / 2 - 15, height: 30, paddingHorizontal: 12, borderRadius: 15, justifyContent: 'center', backgroundColor: tokens.row, boxShadow: `0 0 0 1px ${tokens.hair}, 0 4px 12px rgba(22,35,42,0.08)` } as any, hintStyle]}>
           <Txt size={13} weight={600} color={tokens.sub} numberOfLines={1}>{tx('Tipp mich an und sprich', 'Tap me and talk')}</Txt>

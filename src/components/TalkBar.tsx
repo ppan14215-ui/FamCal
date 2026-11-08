@@ -33,6 +33,7 @@ import { toast } from '../state/store';
 import { hearInCloud, cloudOn, cloudCapped } from '../lib/hoeren';
 import { track } from '../lib/analytics';
 import { speechLocale, speechLang } from '../lib/speechLang';
+import { setSpeak, getSpeak, speakHandlers } from '../lib/speak';
 
 /** The cloud ears' day cap is said once per app launch. */
 let toldCap = false;
@@ -93,13 +94,15 @@ type Props = {
   onIdle?: () => void;
   /** Called when the mic starts or text arrives (one bar: the input takes the whole width). */
   onBusy?: () => void;
+  /** Julian 08.11.: speaking turns the bar into the Sprechkarte (SpeakCard in the Dock) instead of a wave in the field. */
+  speakCard?: boolean;
 };
 
 // Listeners of the last recording, shared by every TalkBar: the phone has one recognizer, and a bar that was swapped
 // for a new one (the onboarding makes a new one per sentence) must not leave its listeners on it (Julian 05.11. 23:28).
 const lastSubs = { current: [] as { remove: () => void }[] };
 
-export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, onClose, split, card, dark, onIdle, onBusy, placeholder = tx('Sag oder schreib, was ansteht …', 'Say or type what\'s coming up …') }: Props) {
+export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, onClose, split, card, dark, onIdle, onBusy, speakCard, placeholder = tx('Sag oder schreib, was ansteht …', 'Say or type what\'s coming up …') }: Props) {
   const [text, setText] = useState('');
   const [listening, setListening] = useState(false);
   const textRef = useRef(''); textRef.current = text;
@@ -170,12 +173,29 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, o
   // Julian 31.10.: spoken words never send by themselves. They land in the field, correct, and only Senden sends.
   // Julian 01.11.: like Claude, a send button next to the check while recording. It finishes and sends what was heard.
   const sendAfter = useRef(false);
+  /** The Sprechkarte holds the spoken sentence until Senden (or Ändern hands it to the field). */
+  const held = useRef(false);
   const land = (t: string) => {
-    if (sendAfter.current && t.trim()) { sendAfter.current = false; send(t, true); return; }
+    // A question in the card may take the answer itself (a time for "Um wie viel Uhr?").
+    const a = speakCard ? getSpeak().ask : null;
+    if (a?.onSpoken && t.trim() && a.onSpoken(t.trim())) { sendAfter.current = false; held.current = false; setText(''); return; }
+    if (sendAfter.current && t.trim()) { sendAfter.current = false; held.current = false; send(t, true); return; }
     sendAfter.current = false;
     setText(t.trim()); spokenText.current = true;
+    if (speakCard) held.current = true;
   };
   const finishAndSend = () => { if (!listening) return send(); sendAfter.current = true; listen(); };
+
+  // The Sprechkarte shows what happens: listening, writing it down, the sentence ready to send.
+  useEffect(() => {
+    if (!speakCard) return;
+    const ph = getSpeak().phase;
+    if (listening) setSpeak({ phase: 'listen', text: '' });
+    else if (writing) setSpeak({ phase: 'write' });
+    else if (held.current && text.trim()) setSpeak({ phase: 'text', text: text.trim() });
+    else if (ph === 'listen' || ph === 'write' || ph === 'text') setSpeak({ phase: 'idle', text: '' });
+  }, [listening, writing, text, speakCard]);
+  useEffect(() => () => { if (speakCard) setSpeak({ phase: 'idle', text: '', ask: null }); }, [speakCard]);
 
   // One bar: speaking or text makes the input the whole bar; a mic that stops with nothing said folds it back.
   const busy = listening || !!text;
@@ -365,6 +385,20 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, o
     if (listening || text.trim()) return;
     listen();
   }, [listenKey]);
+
+  if (speakCard) {
+    speakHandlers.stop = () => { if (listeningRef.current) listen(); };
+    speakHandlers.again = () => { held.current = false; setText(''); listen(); };
+    speakHandlers.send = () => { held.current = false; finishAndSend(); };
+    speakHandlers.cancel = () => {
+      held.current = false; sendAfter.current = false;
+      if (listeningRef.current || writing) { typed.current = true; timers.current.forEach(clearTimeout); setDemo(false); toKeys.current?.(); setWriting(false); }
+      setText('');
+      const a = getSpeak().ask;
+      setSpeak({ phase: 'idle', text: '', ask: a?.hold ? null : a });
+    };
+    speakHandlers.edit = () => { held.current = false; setSpeak({ phase: 'idle' }); setTimeout(() => field.current?.focus(), 300); };
+  }
 
   const plus = (
     <PressScale accessibilityLabel={tx('Foto, Termin, Aufgabe', 'Photo, event, task')} onPress={() => { if (listening) { typed.current = true; timers.current.forEach(clearTimeout); setDemo(false); toKeys.current?.(); setText(''); } onPlus?.(); }} style={{ width: split ? 36 : 44, height: split ? 36 : 44, marginBottom: split ? 6 : 2, marginLeft: split ? 4 : 0, borderRadius: 999, alignItems: 'center', justifyContent: 'center' }}>
