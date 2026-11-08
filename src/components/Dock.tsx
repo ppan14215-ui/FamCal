@@ -422,7 +422,7 @@ export default function Dock() {
   const [turn, setTurn] = useState<Turn | null>(null);
   const [h, setH] = useState(0);
   const scroller = useRef<ScrollView>(null);
-  /** Bumped to open the mic again after the card asks something, only if the last sentence was spoken. */
+  /** Bumped to open the mic (a time, so it only grows, even if the Dock is rebuilt; TalkBar acts on each value once). */
   const [listenKey, setListenKey] = useState(0);
   const [focusKey, setFocusKey] = useState(0);
   const other = React.useCallback(() => { haptics.select(); setFocusKey((k) => k + 1); }, []);
@@ -443,10 +443,10 @@ export default function Dock() {
   /** Chat only: Eintragen makes cards, Nachricht just writes to the family. */
   const [mode, setMode] = useState<'card' | 'msg'>('card');
   // The bubble opened the field: the mic starts right away.
-  useEffect(() => { if (talking) setListenKey((k) => k + 1); }, [talking]);
+  useEffect(() => { if (talking) setListenKey(Date.now()); }, [talking]);
   // Tapping Memo is the same as tapping the mic (Julian 08.11.: Memo needs a purpose).
   const buddyTalkN = useBuddyTalk();
-  useEffect(() => { if (!buddyTalkN) return; if (navStyle() === 'bar') setBarMode('input'); setListenKey((k) => k + 1); }, [buddyTalkN]);
+  useEffect(() => { if (!buddyTalkN) return; if (navStyle() === 'bar') setBarMode('input'); setListenKey(Date.now()); }, [buddyTalkN]);
   useEffect(() => {
     if (!talking) return;
     const sub = BackHandler.addEventListener('hardwareBackPress', () => { setTalkOpen(false); setTurn(null); light(null); return true; });
@@ -527,7 +527,7 @@ export default function Dock() {
   const fadeFrom = kb || (typing && Platform.OS === 'web') ? 0 : onTabs ? (folded ? 0 : above - 10) : where.lift ? bottom - 8 : 0;
   const kind = where.ctx.kind;
 
-  const ask = () => { if (spoke.current) setListenKey((k) => k + 1); };
+  const ask = () => { if (spoke.current) setListenKey(Date.now()); };
   /** Shows a card that waits for the next sentence; nothing changes in the calendar. */
   const hold = (said: string, result: Result, lines: Line[]) => {
     setVeil({ phase: 'off', onCancel: undefined });
@@ -1006,7 +1006,7 @@ export default function Dock() {
         <View style={{ flex: 1, minWidth: 0, alignItems: 'flex-end', overflow: 'hidden' }}>
           {barMode === 'tabs' && !priv.ohneKi ? (
             <Animated.View key="mic" entering={FadeIn.duration(180).delay(80)} exiting={FadeOut.duration(100)}>
-              <PressScale scale={0.9} accessibilityLabel={tx('Sprechen', 'Speak')} onPress={() => { haptics.select(); setBarMode('input'); setListenKey((k) => k + 1); }}
+              <PressScale scale={0.9} accessibilityLabel={tx('Sprechen', 'Speak')} onPress={() => { haptics.select(); setBarMode('input'); setListenKey(Date.now()); }}
                 style={{ width: D, height: D, alignItems: 'center', justifyContent: 'center' }}>
                 <LineIcon name="mic" size={21} color={tokens.onInk} />
               </PressScale>

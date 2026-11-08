@@ -11,7 +11,7 @@
  */
 import React, { useEffect, useRef, useState } from 'react';
 import { Pressable, useWindowDimensions, View } from 'react-native';
-import Animated, { useSharedValue, useAnimatedStyle, withSpring, withTiming, withSequence, withDelay, Easing, useReducedMotion } from 'react-native-reanimated';
+import Animated, { useSharedValue, useAnimatedStyle, withTiming, withSequence, withDelay, Easing, useReducedMotion } from 'react-native-reanimated';
 import Blob from './Blob';
 import { useBuddy, setBuddy, buddyJoy, buddyPoke, buddyTalk, voiceLevel, isNight, type Mood } from '../../lib/buddy';
 import { getPref, setPref, onPrefsReady } from '../../lib/prefs';
@@ -89,13 +89,14 @@ export default function BuddyHost() {
         setBuddy({ from: null });
         return;
       }
-      x.value = restX; y.value = restY + 12;
+      x.value = restX; y.value = restY;
       o.value = withDelay(150, withTiming(1, { duration: 260 }));
-      y.value = withDelay(150, withSpring(restY, { stiffness: 220, damping: 16 }));
       return;
     }
-    x.value = withSpring(restX, { stiffness: 220, damping: 24 });
-    y.value = withSpring(restY, { stiffness: 220, damping: 22 });
+    // The field moved (keyboard, a longer sentence): Memo glides along, no spring (Julian 08.11.).
+    const move = { duration: 240, easing: Easing.bezier(0.23, 1, 0.32, 1) };
+    x.value = withTiming(restX, move);
+    y.value = withTiming(restY, move);
   }, [dockTop, W, H, b.intro]);
 
   const st = useAnimatedStyle(() => ({ opacity: o.value, transform: [{ translateX: x.value }, { translateY: y.value }] as any }));
@@ -109,7 +110,7 @@ export default function BuddyHost() {
   // "?" while a question waits for my answer.
   const ask = b.waiting && mood !== 'listen' && mood !== 'think';
   const askA = useSharedValue(0);
-  useEffect(() => { askA.value = ask ? withSpring(1, { stiffness: 260, damping: 14 }) : withTiming(0, { duration: 140 }); }, [ask]);
+  useEffect(() => { askA.value = ask ? withTiming(1, { duration: 220, easing: Easing.bezier(0.23, 1, 0.32, 1) }) : withTiming(0, { duration: 140 }); }, [ask]);
   const askStyle = useAnimatedStyle(() => ({ opacity: askA.value, transform: [{ scale: 0.4 + 0.6 * askA.value }] as any }));
 
   // The first three starts: a small line beside Memo says what he is for.
@@ -143,7 +144,7 @@ export default function BuddyHost() {
           <Txt size={13} weight={600} color={tokens.sub} numberOfLines={1}>{tx('Tipp mich an und sprich', 'Tap me and talk')}</Txt>
         </Animated.View>
       ) : null}
-      <Pressable onPress={tap} hitSlop={10} accessibilityRole="button" accessibilityLabel={tx('Memo, tippen zum Sprechen', 'Memo, tap to talk')}>
+      <Pressable onPress={tap} hitSlop={{ top: 10, left: 10, right: 10, bottom: 0 }} accessibilityRole="button" accessibilityLabel={tx('Memo, tippen zum Sprechen', 'Memo, tap to talk')}>
         <Blob size={SIZE} mood={mood} joy={b.joy} poke={b.poke} level={voiceLevel} glance={glance} />
       </Pressable>
       <Animated.View pointerEvents="none" style={[{ position: 'absolute', right: -4, top: -6, width: 16, height: 16, borderRadius: 8, alignItems: 'center', justifyContent: 'center', backgroundColor: tokens.row, boxShadow: `0 0 0 1px ${tokens.hair}` } as any, askStyle]}>

@@ -36,6 +36,8 @@ import { speechLocale } from '../lib/speechLang';
 
 /** The cloud ears' day cap is said once per app launch. */
 let toldCap = false;
+/** The last listen request a bar acted on, shared by every bar (only one Dock), so a remount never replays it. */
+let handledListen = 0;
 
 // Phones and tablets: Enter on the screen keyboard adds a line.
 const TOUCH = Platform.OS !== 'web' || (typeof window !== 'undefined' && !!window.matchMedia?.('(pointer: coarse)').matches);
@@ -350,8 +352,13 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, o
   // An example from the plus sheet lands in the field, ready to change (Julian 30.10.).
   const fill = usePrefill();
   useEffect(() => { if (!takeFill(fill.n)) return; setText(fill.text); setTimeout(() => field.current?.focus(), 250); }, [fill.n]);
+  // Each listen request starts the mic once. Julian 08.11.: "every second recording fails again": since a Memo tap
+  // also bumps the key, a bar that was rebuilt (another tab, the bar folding) saw the old key on mount and switched the
+  // mic on by itself; the next tap on the mic then stopped that empty recording. Only a key newer than the last one counts.
   useEffect(() => {
-    if (!listenKey || listening || text.trim()) return;
+    if (!listenKey || listenKey <= handledListen) return;
+    handledListen = listenKey;
+    if (listening || text.trim()) return;
     listen();
   }, [listenKey]);
 

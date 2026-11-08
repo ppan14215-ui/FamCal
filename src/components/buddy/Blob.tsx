@@ -14,7 +14,7 @@ import React, { useEffect, useRef } from 'react';
 import { View, type StyleProp, type ViewStyle } from 'react-native';
 import Svg, { Defs, RadialGradient, Stop, Path, Ellipse } from 'react-native-svg';
 import Animated, {
-  useSharedValue, useAnimatedStyle, useAnimatedProps, useFrameCallback, withTiming, withSpring, withSequence,
+  useSharedValue, useAnimatedStyle, useAnimatedProps, useFrameCallback, withTiming, withSequence,
   withRepeat, withDelay, cancelAnimation, Easing, useReducedMotion, type SharedValue,
 } from 'react-native-reanimated';
 import type { Mood } from '../../lib/buddy';
@@ -146,7 +146,8 @@ export default function Blob({ size = 40, mood = 'idle', joy = 0, poke = 0, glan
     all.forEach(cancelAnimation);
     const timers: ReturnType<typeof setTimeout>[] = [];
     const later = (ms: number, fn: () => void) => timers.push(setTimeout(fn, ms));
-    const sp = { stiffness: 220, damping: 18, mass: 1 };
+    // No springs anywhere (Julian 08.11.: "die Spring-Animation ist immer noch da"): every move eases out and settles, no overshoot.
+    const sp = { duration: 260, easing: Easing.bezier(0.23, 1, 0.32, 1) };
     const look = (x: number, y: number, ms = 260) => { gx.value = withTiming(x, { duration: ms, easing: Easing.bezier(0.23, 1, 0.32, 1) }); gy.value = withTiming(y, { duration: ms, easing: Easing.bezier(0.23, 1, 0.32, 1) }); };
     const blinkOnce = (twice = false) => {
       const one = [withTiming(0.12, { duration: 70 }), withTiming(1, { duration: 110 })];
@@ -155,13 +156,13 @@ export default function Blob({ size = 40, mood = 'idle', joy = 0, poke = 0, glan
 
     if (mood !== 'happy') happy.value = withTiming(0, { duration: 160 });
     lvlOn.value = withTiming(mood === 'listen' ? 1 : 0, { duration: 250 });
-    wide.value = withSpring(mood === 'listen' ? 1.12 : 1, sp);
-    grow.value = withSpring(mood === 'listen' ? 1.22 : 1, { stiffness: 180, damping: 14, mass: 1 });
+    wide.value = withTiming(mood === 'listen' ? 1.12 : 1, sp);
+    grow.value = withTiming(mood === 'listen' ? 1.15 : 1, { duration: 320, easing: Easing.bezier(0.23, 1, 0.32, 1) });
     amp.value = withTiming(mood === 'listen' ? 0.038 : mood === 'think' ? 0.04 : mood === 'sleep' ? 0.015 : 0.026, { duration: 400 });
     bf.value = mood === 'sleep' ? 0.9 : mood === 'listen' ? 3.2 : 2.2;
     ba.value = withTiming(mood === 'sleep' ? 0.035 : 0.018, { duration: 400 });
-    rot.value = withSpring(0, sp);
-    tx.value = withSpring(0, sp);
+    rot.value = withTiming(0, sp);
+    tx.value = withTiming(0, sp);
 
     if (mood === 'think') {
       // Squashed flat and wide, pulsing like it is mulling it over; eyes go up and wander.
@@ -171,12 +172,12 @@ export default function Blob({ size = 40, mood = 'idle', joy = 0, poke = 0, glan
       look(0.7, -0.6);
       if (live) {
         let k = 0;
-        const wander = () => { k++; look(k % 2 ? -0.7 : 0.7, -0.6, 420); rot.value = withSpring(k % 2 ? -4 : 4, sp); later(900, wander); };
+        const wander = () => { k++; look(k % 2 ? -0.7 : 0.7, -0.6, 420); rot.value = withTiming(k % 2 ? -4 : 4, { duration: 420, easing: Easing.inOut(Easing.sin) }); later(900, wander); };
         later(700, wander);
       }
     } else {
-      sx.value = withSpring(1, sp);
-      sy.value = withSpring(1, sp);
+      sx.value = withTiming(1, sp);
+      sy.value = withTiming(1, sp);
       if (mood === 'listen') { look(0, -0.5); blink.value = withTiming(1, { duration: 100 }); }
       else if (mood === 'type') look(-0.55, 0.75);
       else if (mood === 'sleep') { look(0, 0.3); blink.value = withTiming(0.12, { duration: 300 }); }
@@ -207,18 +208,19 @@ export default function Blob({ size = 40, mood = 'idle', joy = 0, poke = 0, glan
     return () => { timers.forEach(clearTimeout); };
   }, [mood, live]);
 
-  // Reactions stay in place (Julian 08.11.: "the jumping doesn't make sense"): a jelly squish, a little
-  // happy wiggle and ^^ eyes. Memo never leaves its spot on the field.
+  // Reactions stay in place (Julian 08.11.: "the jumping doesn't make sense"): a soft squish, ^^ eyes.
+  // Memo never leaves its spot on the field.
   const react = (big: boolean, eyes: number) => {
     happy.value = withSequence(withTiming(1, { duration: 140 }), withDelay(eyes, withTiming(0, { duration: 220 })));
     gx.value = withTiming(0, { duration: 200 }); gy.value = withTiming(0, { duration: 200 });
     if (!live) return;
     cancelAnimation(sx); cancelAnimation(sy); cancelAnimation(rot);
-    const k = big ? 1 : 0.55;
-    const jelly = { stiffness: 260, damping: 9, mass: 0.8 };
-    sx.value = withSequence(withTiming(1 + 0.14 * k, { duration: 110, easing: Easing.out(Easing.quad) }), withTiming(1 - 0.06 * k, { duration: 130 }), withSpring(1, jelly));
-    sy.value = withSequence(withTiming(1 - 0.14 * k, { duration: 110, easing: Easing.out(Easing.quad) }), withTiming(1 + 0.08 * k, { duration: 130 }), withSpring(1, jelly));
-    if (big) rot.value = withSequence(withDelay(160, withTiming(-7, { duration: 120 })), withTiming(6, { duration: 160 }), withTiming(-3, { duration: 140 }), withSpring(0, { stiffness: 200, damping: 12 }));
+    // A soft squish that eases back, no wobble or bounce; a big moment adds one gentle tilt.
+    const k = big ? 1 : 0.6;
+    const out = Easing.bezier(0.23, 1, 0.32, 1);
+    sx.value = withSequence(withTiming(1 + 0.07 * k, { duration: 120, easing: out }), withTiming(1, { duration: 320, easing: out }));
+    sy.value = withSequence(withTiming(1 - 0.07 * k, { duration: 120, easing: out }), withTiming(1, { duration: 320, easing: out }));
+    if (big) rot.value = withSequence(withTiming(-5, { duration: 200, easing: out }), withTiming(0, { duration: 360, easing: out }));
   };
   // Follows you: eyes go where you touched, then drift back.
   useEffect(() => {
@@ -226,7 +228,7 @@ export default function Blob({ size = 40, mood = 'idle', joy = 0, poke = 0, glan
     const out = Easing.bezier(0.23, 1, 0.32, 1);
     gx.value = withSequence(withTiming(glance.x, { duration: 180, easing: out }), withDelay(1300, withTiming(mood === 'type' ? -0.55 : 0, { duration: 420 })));
     gy.value = withSequence(withTiming(glance.y, { duration: 180, easing: out }), withDelay(1300, withTiming(mood === 'type' ? 0.75 : 0, { duration: 420 })));
-    if (live) rot.value = withSequence(withTiming(glance.x * 5, { duration: 200 }), withDelay(1250, withSpring(0, { stiffness: 200, damping: 16 })));
+    if (live) rot.value = withSequence(withTiming(glance.x * 5, { duration: 200 }), withDelay(1250, withTiming(0, { duration: 420, easing: out })));
   }, [glance?.n]);
   const first = useRef(true);
   useEffect(() => { if (first.current) return; react(true, 1600); }, [joy]);
