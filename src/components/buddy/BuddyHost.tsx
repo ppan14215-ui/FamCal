@@ -69,8 +69,10 @@ export default function BuddyHost() {
   const y = useSharedValue(0);
   const o = useSharedValue(0);
   const flew = useRef(false);
-  const restY = H - dockTop - SIZE - 6;
-  const restX = W - RIGHT - SIZE;
+  // Docked in the bar (Julian 08.11. 23:19): the arrival glides into the mic spot, then the bar's Memo takes over.
+  const dk = b.docked > 0 && b.dockAt ? b.dockAt : null;
+  const restY = dk ? dk.y - SIZE / 2 : H - dockTop - SIZE - 6;
+  const restX = dk ? dk.x - SIZE / 2 : W - RIGHT - SIZE;
   // The field goes away for a moment (a sheet, a screen without it): Memo fades and comes back where it was.
   const hidden = useRef(false);
   useEffect(() => {
@@ -98,13 +100,21 @@ export default function BuddyHost() {
     const move = { duration: 240, easing: Easing.bezier(0.23, 1, 0.32, 1) };
     x.value = withTiming(restX, move);
     y.value = withTiming(restY, move);
-  }, [dockTop, W, H, b.intro]);
+  }, [dockTop, W, H, b.intro, dk?.x, dk?.y]);
 
   // The Sprechkarte is open: Memo lives in its middle as the talk button, so this one steps aside (Julian 08.11.: "make sure the mascot doesn't overlap").
-  const inCard = speakOpen(useSpeak()) || b.covered;
+  // After the arrival the bar's own Memo is the only one (a short wait so the glide finishes in place).
+  const [landed, setLanded] = useState(false);
+  useEffect(() => { if (b.intro) return; const t = setTimeout(() => setLanded(true), b.from ? 900 : 0); return () => clearTimeout(t); }, [b.intro]);
+  const blocked = speakOpen(useSpeak()) || b.covered;
+  const docked = b.docked > 0 && landed;
+  const inCard = blocked || docked;
   const away = useSharedValue(1);
+  const hv = useSharedValue(1);
   useEffect(() => { away.value = withTiming(inCard ? 0 : 1, { duration: inCard ? 120 : 220, easing: Easing.bezier(0.23, 1, 0.32, 1) }); }, [inCard]);
-  const st = useAnimatedStyle(() => ({ opacity: o.value * away.value, transform: [{ translateX: x.value }, { translateY: y.value }] as any }));
+  useEffect(() => { hv.value = withTiming(blocked ? 0 : 1, { duration: 140 }); }, [blocked]);
+  const st = useAnimatedStyle(() => ({ opacity: o.value, transform: [{ translateX: x.value }, { translateY: y.value }] as any }));
+  const bodyStyle = useAnimatedStyle(() => ({ opacity: away.value }));
   // Glance at the last touch, relative to where Memo sits.
   const glance = React.useMemo(() => {
     if (!b.touch) return undefined;
@@ -133,7 +143,7 @@ export default function BuddyHost() {
     });
     return () => { clearTimeout(t1); clearTimeout(t2); };
   }, [b.intro, !!dockTop]);
-  const hintStyle = useAnimatedStyle(() => ({ opacity: hintA.value, transform: [{ translateX: 8 * (1 - hintA.value) }] as any }));
+  const hintStyle = useAnimatedStyle(() => ({ opacity: hintA.value * hv.value, transform: [{ translateX: 8 * (1 - hintA.value) }] as any }));
 
   const tap = () => {
     haptics.select();
@@ -145,15 +155,18 @@ export default function BuddyHost() {
   return (
     <Animated.View pointerEvents={dockTop && !inCard ? 'box-none' : 'none'} style={[{ position: 'absolute', left: 0, top: 0 }, st]}>
       {hint ? (
-        <Animated.View pointerEvents="none" style={[{ position: 'absolute', right: SIZE + 8, top: SIZE / 2 - 15, height: 30, paddingHorizontal: 12, borderRadius: 15, justifyContent: 'center', backgroundColor: tokens.row, boxShadow: `0 0 0 1px ${tokens.hair}, 0 4px 12px rgba(22,35,42,0.08)` } as any, hintStyle]}>
+        // Docked in the bar the line sits just above Memo, so it never covers the field.
+        <Animated.View pointerEvents="none" style={[{ position: 'absolute', ...(b.docked > 0 ? { right: -4, bottom: SIZE + 8 } : { right: SIZE + 8, top: SIZE / 2 - 15 }), height: 30, paddingHorizontal: 12, borderRadius: 15, justifyContent: 'center', backgroundColor: tokens.row, boxShadow: `0 0 0 1px ${tokens.hair}, 0 4px 12px rgba(22,35,42,0.08)` } as any, hintStyle]}>
           <Txt size={13} weight={600} color={tokens.sub} numberOfLines={1}>{tx('Tipp mich an und sprich', 'Tap me and talk')}</Txt>
         </Animated.View>
       ) : null}
+      <Animated.View style={bodyStyle}>
       <Pressable onPress={tap} hitSlop={{ top: 10, left: 10, right: 10, bottom: 0 }} accessibilityRole="button" accessibilityLabel={tx('Memo, tippen zum Sprechen', 'Memo, tap to talk')}>
         <Blob size={SIZE} mood={mood} joy={b.joy} poke={b.poke} level={voiceLevel} glance={glance} />
       </Pressable>
       <Animated.View pointerEvents="none" style={[{ position: 'absolute', right: -4, top: -6, width: 16, height: 16, borderRadius: 8, alignItems: 'center', justifyContent: 'center', backgroundColor: tokens.row, boxShadow: `0 0 0 1px ${tokens.hair}` } as any, askStyle]}>
         <Txt size={11} weight={700} color={tokens.done} style={{ lineHeight: 13 }}>?</Txt>
+      </Animated.View>
       </Animated.View>
     </Animated.View>
   );

@@ -22,6 +22,7 @@ import { Avatar, Pair, Owner } from './ui/Person';
 import PressScale from './ui/PressScale';
 import TalkBar from './TalkBar';
 import SpeakCard from './SpeakCard';
+import MemoMic from './buddy/MemoMic';
 import { setSpeak, getSpeak, useSpeak, speakOpen, speakDone, parseHour } from '../lib/speak';
 import { settle as settleTime } from './ChatCards';
 import { setVeil } from './Veil';
@@ -1066,10 +1067,10 @@ export default function Dock() {
         <View style={{ flex: 1, minWidth: 0, alignItems: 'flex-end', overflow: 'hidden' }}>
           {barMode === 'tabs' && !priv.ohneKi ? (
             <Animated.View key="mic" entering={FadeIn.duration(180).delay(80)} exiting={FadeOut.duration(100)}>
-              <PressScale scale={0.9} accessibilityLabel={tx('Sprechen', 'Speak')} onPress={() => { haptics.select(); setBarMode('input'); setListenKey(Date.now()); }}
-                style={{ width: D, height: D, alignItems: 'center', justifyContent: 'center' }}>
-                <LineIcon name="mic" size={21} color={tokens.onInk} />
-              </PressScale>
+              {/* Julian 08.11. 23:19: Memo instead of the mic, the same one as in the field. */}
+              <View style={{ width: D, height: D, alignItems: 'center', justifyContent: 'center' }}>
+                <MemoMic onPress={() => { setBarMode('input'); setListenKey(Date.now()); }} />
+              </View>
             </Animated.View>
           ) : (
             <Animated.View key="field" entering={FadeIn.duration(200).delay(60)} exiting={FadeOut.duration(100)} style={fieldInner}>

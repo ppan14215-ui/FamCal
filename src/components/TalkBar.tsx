@@ -34,6 +34,7 @@ import { hearInCloud, cloudOn, cloudCapped } from '../lib/hoeren';
 import { track } from '../lib/analytics';
 import { speechLocale, speechLang } from '../lib/speechLang';
 import { setSpeak, getSpeak, speakHandlers } from '../lib/speak';
+import MemoMic from './buddy/MemoMic';
 
 /** The cloud ears' day cap is said once per app launch. */
 let toldCap = false;
@@ -456,7 +457,8 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, o
       <LineIcon name="plus" size={18} color={cInk} stroke={2} />
     </PressScale>
   );
-  const cardMic = (
+  // Julian 08.11. 23:19: Memo sits where the mic was, so there is only one of him. Listening shows the check as before.
+  const cardMic = !listening ? <MemoMic onPress={listen} /> : (
     <PressScale accessibilityLabel={listening ? tx('Fertig gesprochen', 'Done speaking') : tx('Sprechen', 'Speak')} onPress={listen} style={{ width: 34, height: 34, borderRadius: 999, alignItems: 'center', justifyContent: 'center' }}>
       {listening ? <LineIcon name="check" size={21} color={cInk} stroke={2.4} /> : <LineIcon name="mic" size={20} color={cInk} />}
     </PressScale>
@@ -501,11 +503,11 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, o
         <>
           <PressScale
             accessibilityLabel={listening ? tx('Fertig gesprochen', 'Done speaking') : tx('Sprechen', 'Speak')}
-            onPress={listen}
+            onPress={listening ? listen : undefined}
             style={{ width: 36, height: 44, marginBottom: 2, borderRadius: 999, alignItems: 'center', justifyContent: 'center' }}
           >
             {/* Julian 31.10. 12:55: a clear button to finish, like Claude. 01.11.: a check, not a stop square, since it keeps what was said. */}
-            {listening ? <View style={{ width: 34, height: 34, borderRadius: 999, backgroundColor: tokens.ink, alignItems: 'center', justifyContent: 'center' }}><LineIcon name="check" size={19} color={tokens.onInk} stroke={2.4} /></View> : <LineIcon name="mic" size={22} color={dark && !text ? tokens.onInk : tokens.ink} />}
+            {listening ? <View style={{ width: 34, height: 34, borderRadius: 999, backgroundColor: tokens.ink, alignItems: 'center', justifyContent: 'center' }}><LineIcon name="check" size={19} color={tokens.onInk} stroke={2.4} /></View> : <MemoMic onPress={listen} />}
           </PressScale>
           {(text && !listening) || listening ? (
             <PressScale accessibilityLabel={tx('Senden', 'Send')} onPress={finishAndSend} style={{ width: 44, height: 44, marginBottom: 2, borderRadius: 999, alignItems: 'center', justifyContent: 'center', backgroundColor: tokens.ink }}>
@@ -520,6 +522,7 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, o
           <LineIcon name="send" size={20} color={tokens.ink} />
         </PressScale>
       ) : null}
+      {!listening && !text ? <MemoMic onPress={listen} box={48} size={48} /> : (
       <View style={{ width: 48, height: 48 }}>
       {listening && micStyle === 'ring' ? <VoiceRing level={level} /> : null}
       <PressScale
@@ -530,6 +533,7 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, o
         {listening ? (micStyle === 'ring' ? <LineIcon name="check" size={22} color={tokens.onInk} stroke={2.4} /> : <VoiceBars level={level} />) : <LineIcon name={text ? 'send' : 'mic'} size={22} color={tokens.onInk} />}
       </PressScale>
       </View>
+      )}
       </>
       )}
     </View>

@@ -38,10 +38,14 @@ type State = {
   waiting: boolean;
   /** A card sits right above the field (a question, a receipt): Memo steps aside so he never covers it. */
   covered: boolean;
+  /** Memo sits in the bar where the mic was (Julian 08.11. 23:19: "only one exist"): how many bars show him there. */
+  docked: number;
+  /** Where the docked Memo sits on screen (its centre), so the arrival glides there and he glances from there. */
+  dockAt: { x: number; y: number } | null;
 };
 
 // intro starts true: BuddyIntro says when the screen is free (it always mounts with the root).
-let state: State = { listening: false, joy: 0, poke: 0, from: null, intro: true, talk: 0, touch: null, waiting: false, covered: false };
+let state: State = { listening: false, joy: 0, poke: 0, from: null, intro: true, talk: 0, touch: null, waiting: false, covered: false, docked: 0, dockAt: null };
 const subs = new Set<() => void>();
 const emit = () => subs.forEach((l) => l());
 
@@ -75,3 +79,7 @@ export const isNight = () => { const h = new Date().getHours(); return h >= 23 |
 export function useBuddyTalk() {
   return useSyncExternalStore((l) => { subs.add(l); return () => { subs.delete(l); }; }, () => state.talk, () => state.talk);
 }
+
+/** A bar shows Memo in place of the mic; the floating one steps aside while any does. */
+export const dockIn = () => setBuddy({ docked: state.docked + 1 });
+export const dockOut = () => setBuddy({ docked: Math.max(0, state.docked - 1) });

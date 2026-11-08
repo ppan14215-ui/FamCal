@@ -9,6 +9,7 @@ Alle sichtbaren Änderungen an FamCal. Neueste oben. Agenten und Menschen: Ände
 - Der gesagte Satz steht in der Karte, mit Senden oder Ändern. Er geht nie von selbst raus.
 - Rückfragen kommen in derselben Karte: "Um wie viel Uhr?" mit Stunden zum Antippen oder einfach sagen ("um drei"), andere Fragen mit Antworten zum Antippen. Danach zeigt die Karte kurz, was jetzt im Kalender steht.
 - Memo sitzt nicht mehr auf der Leiste oder auf Karten darüber.
+- Memo sitzt jetzt in der Leiste, wo das Mikro war. Es gibt nur noch einen Memo; antippen heißt sprechen, ins Feld tippen heißt schreiben.
 
 ### Bewegung nach Emil Kowalski (08.11.)
 - Tabs wechseln mit kurzem Einblenden statt Schieben, die Kalenderansichten bauen sich schneller auf.
