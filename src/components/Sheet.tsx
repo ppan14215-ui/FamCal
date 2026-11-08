@@ -52,7 +52,9 @@ export default function Sheet({ children, bg = tokens.bg, top, style, onClose, s
     })
     .onEnd((e) => {
       if (drag.value > 120 || e.velocityY > 900) {
-        y.value = withTiming(height, { duration: 220, easing: easing.drawer }, (d) => { if (d) scheduleOnRN(close); });
+        // A flick leaves with the speed of the hand: spring with the release velocity, clamped so it never bounces back up
+        // (Emil Kowalski 08.11.: if a finger was involved, use a spring).
+        y.value = withSpring(height, { duration: 300, dampingRatio: 1, overshootClamping: true, velocity: Math.max(e.velocityY, 0) }, (d) => { if (d) scheduleOnRN(close); });
       } else {
         drag.value = withSpring(0, { ...springs.smooth, velocity: e.velocityY });
       }

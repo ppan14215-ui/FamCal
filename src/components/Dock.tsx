@@ -21,7 +21,7 @@ import { Avatar, Pair, Owner } from './ui/Person';
 import PressScale from './ui/PressScale';
 import TalkBar from './TalkBar';
 import { setVeil } from './Veil';
-import { tokens, persons, fonts } from '../theme';
+import { tokens, persons, fonts, easing } from '../theme';
 import { useStore, actions, get, toast } from '../state/store';
 import { plan, splitItems, claudeSays, replyPlan, listFromClaude, asksNewList, thinksOnline, revisePlan, reviseOffline, draftOf, cutOff, addPicks, settleWork, clashLine, dishy, linkPlan, Ctx, Plan, Result, Said, SPOKEN, PLACEHOLDER } from '../lib/act';
 import { canUnderstand, type Convo, type Glimpse } from '../lib/verstehen';
@@ -743,7 +743,8 @@ export default function Dock() {
     const quick = agentOn();
     const steps = quick ? [] : p.steps;
     setVeil(fresh ? { phase: 'think', inline: true, origin, target: null, lines: steps, shown: 0, said, head: quick ? undefined : p.head, onCancel: p.head && !quick ? stop : undefined, typing: false, reply: undefined } : { lines: steps, shown: 0, head: quick ? undefined : p.head, onCancel: p.head && !quick ? stop : undefined });
-    steps.forEach((_, i) => later(450 + STEP_MS * i, () => { setVeil({ shown: i + 1 }); haptics.select(); }));
+    // One haptic per sentence, on the landing (Emil Kowalski 08.11.: never a buzz for motion the person didn't cause).
+    steps.forEach((_, i) => later(450 + STEP_MS * i, () => { setVeil({ shown: i + 1 }); }));
     later(quick ? 0 : 450 + STEP_MS * steps.length + 150, () => {
       setVeil({ onCancel: undefined });
       const out = p.run();
@@ -761,7 +762,7 @@ export default function Dock() {
       const finish = () => {
         // Each new row arrives on its own with a tick, then the receipt says what happened.
         const rows = out.lit?.length ? out.lit : out.land ? [out.land] : [];
-        if (rows.length > 1) lightOneByOne(rows, (i) => (i === rows.length - 1 ? haptics.success() : haptics.select()));
+        if (rows.length > 1) lightOneByOne(rows, (i) => { if (i === rows.length - 1) haptics.success(); });
         else { light(rows.length ? rows : null); haptics.success(); }
         if (out.result) later(rows.length > 1 ? 260 * rows.length : 120, () => {
           const res = out.result!;
@@ -800,7 +801,7 @@ export default function Dock() {
     const { incoming, old } = turn.result;
     const done = settleWork(incoming, old, replace);
     addMade(turn.said, done.lit, done.text, done.undo, done.events);
-    lightOneByOne(done.lit.slice(0, 12), (i) => (i === Math.min(12, done.lit.length) - 1 ? haptics.success() : haptics.select()));
+    lightOneByOne(done.lit.slice(0, 12), (i) => { if (i === Math.min(12, done.lit.length) - 1) haptics.success(); });
     setTurn(null);
     if (!where.chat) openPeek();
   };
@@ -821,7 +822,7 @@ export default function Dock() {
     if (kept) keepRecipe(kept);
     const done = addPicks(r.dish, items);
     addMade(turn?.said ?? r.dish, done.lit, done.text, () => { done.undo?.(); r.undo?.(); });
-    lightOneByOne(done.lit, (i) => (i === done.lit.length - 1 ? haptics.success() : haptics.select()));
+    lightOneByOne(done.lit, (i) => { if (i === done.lit.length - 1) haptics.success(); });
     // The chat card already shows what landed; a short toast is enough (Julian 30.10.: "sehr groß und doppelt").
     setTurn(null); light(null); toast(done.text, undefined, { kind: 'done' });
   };
@@ -890,7 +891,7 @@ export default function Dock() {
       {where.chat || turn ? null : <Peek />}
       {turn || !onTabs ? null : <SessionPill />}
       {turn ? (
-        <Animated.View key={turn.id} entering={FadeInDown.duration(220)} exiting={FadeOut.duration(150)} style={[{ maxHeight: 420, borderRadius: 26, backgroundColor: tokens.row }, shadow]}>
+        <Animated.View key={turn.id} entering={FadeInDown.duration(220).easing(easing.out)} exiting={FadeOut.duration(150).easing(easing.out)} style={[{ maxHeight: 420, borderRadius: 26, backgroundColor: tokens.row }, shadow]}>
           <ScrollView ref={scroller} onContentSizeChange={() => scroller.current?.scrollToEnd({ animated: false })} contentContainerStyle={{ padding: 18, gap: 12 }} showsVerticalScrollIndicator={false}>
             {turn.result.kind === 'cut' ? (
               <>

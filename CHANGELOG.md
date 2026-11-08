@@ -4,6 +4,12 @@ Alle sichtbaren Änderungen an FamCal. Neueste oben. Agenten und Menschen: Ände
 
 ## Unreleased
 
+### Bewegung nach Emil Kowalski (08.11.)
+- Tabs wechseln mit kurzem Einblenden statt Schieben, die Kalenderansichten bauen sich schneller auf.
+- Vibration nur noch einmal pro Aktion: beim Eintragen am Ende, beim Löschen im Moment des Loslassens.
+- Blätter und Hinweise, die man wegwischt, behalten den Schwung der Hand.
+- Tag wechseln im Tagkalender ist etwas schneller.
+
 ### Memo als Blob (07.11.)
 - 08.11.: Memo hüpft nicht mehr. Er freut sich auf der Stelle (kurz zusammendrücken, kleines Wackeln, ^^ Augen) und bleibt immer auf dem Eingabefeld sitzen, auch wenn eine Karte oder Pille darüber erscheint.
 - 08.11.: Die Start Animation läuft jetzt flüssig: nur noch Bewegungen, die das Handy direkt zeichnet, und der kleine Memo übernimmt ohne Lücke.

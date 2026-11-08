@@ -62,5 +62,8 @@ export const rowLayout = LinearTransition.duration(motion.base).easing(easing.ou
 
 /** Swapping content in place (tab, view, step). */
 export const swapIn = FadeIn.duration(motion.micro).easing(easing.out);
-/** A new view builds up: fades in and settles 10 px, fast (Julian 31.10.: "sauber animierter schneller Aufbau"). */
-export const build = new Keyframe({ 0: { opacity: 0, transform: [{ translateY: 10 }] }, 100: { opacity: 1, transform: [{ translateY: 0 }], easing: Easing.bezier(0.22, 1, 0.36, 1) } }).duration(240);
+/**
+ * A new view builds up: fades in and settles 8 px, fast (Julian 31.10.: "sauber animierter schneller Aufbau").
+ * View switches happen tens of times a day, so it stays near-imperceptible: 160 ms (Emil Kowalski 08.11.).
+ */
+export const build = new Keyframe({ 0: { opacity: 0, transform: [{ translateY: 8 }] }, 100: { opacity: 1, transform: [{ translateY: 0 }], easing: Easing.bezier(0.23, 1, 0.32, 1) } }).duration(160);
