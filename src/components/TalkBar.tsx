@@ -32,7 +32,7 @@ import { tx } from '../i18n/lang';
 import { toast } from '../state/store';
 import { hearInCloud, cloudOn, cloudCapped } from '../lib/hoeren';
 import { track } from '../lib/analytics';
-import { speechLocale } from '../lib/speechLang';
+import { speechLocale, speechLang } from '../lib/speechLang';
 
 /** The cloud ears' day cap is said once per app launch. */
 let toldCap = false;
@@ -255,6 +255,7 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, o
       const heard = () => `${done} ${part}`.replace(/\s+/g, ' ').trim();
       // The recording the phone keeps (Android 13 and newer); ElevenLabs then writes the final text in the language it hears.
       let audio: string | null = null;
+      let peak = -2;
       let audioDone: (() => void) | null = null;
       // A long sentence takes the phone a moment to close the file (31.10. 12:42 a voice note missed the cloud ears after 1.5 s and fell back to the phone's English guess); the wait ends the moment the file is there.
       const audioReady = new Promise<void>((r) => { audioDone = r; setTimeout(r, 5000); });
@@ -272,7 +273,7 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, o
         // The phone's guess may be empty when it heard the wrong language; the recording still goes to the cloud ears.
         // The file is here: close the session for good, so the next tap starts on an idle recognizer.
         try { if (String(await SR.getStateAsync()) !== 'inactive') SR.abort(); } catch {}
-        const better = audio && (heard() || cloud) ? await hearInCloud(audio) : null;
+        const better = audio && (heard() || cloud) ? await hearInCloud(audio, speechLang(), peak) : null;
         setWriting(false);
         if (typed.current) return;
         // Julian 31.10. 15:20: "Lokale Handy-Erkennung ist offensichtlich nicht gut genug". With the cloud ears on, the
@@ -281,6 +282,9 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, o
         if (cloud) {
           track('voice_transcribed', { ok: !!better, engine: 'cloud', ms });
           if (better) land(better);
+          // The cloud ears missed it but the phone heard words (it listens in the family's language): those land, ready to
+          // check, instead of throwing the sentence away (Julian 08.11.: "every second time it doesn't take it").
+          else if (heard() && !cloudCapped()) land(heard());
           else if (cloudCapped() && heard()) {
             // Day cap of the cloud ears: the phone's own words land, said once (Julian 05.11. 22:15).
             land(heard());
@@ -302,7 +306,7 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, o
           if (!cloud) setText(heard());
         }),
         // -2 to 10 from the phone; below 0 is inaudible.
-        SR.addListener('volumechange', (e) => { level.value = withTiming(Math.min(1, Math.max(0, e.value / 10)), { duration: 100 }); }),
+        SR.addListener('volumechange', (e) => { if (e.value > peak) peak = e.value; level.value = withTiming(Math.min(1, Math.max(0, e.value / 10)), { duration: 100 }); }),
         // Android can end a long recording with an error (no-speech, network) although the file is there (31.10. 14:16 a
         // voice note skipped the cloud ears). Keep listening for the file and finish like a normal stop.
         SR.addListener('error', () => { clearTimeout(quiet); setListening(false); void finish().finally(() => subs.forEach((x) => x.remove())); }),

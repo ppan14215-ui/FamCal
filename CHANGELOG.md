@@ -11,6 +11,7 @@ Alle sichtbaren Änderungen an FamCal. Neueste oben. Agenten und Menschen: Ände
 - Tag wechseln im Tagkalender ist etwas schneller.
 
 ### Memo als Blob (07.11.)
+- 08.11. abends: Der wahre Grund für „jede zweite Aufnahme klappt nicht“: Die Cloud-Erkennung hat manche deutschen Sätze für Englisch gehalten und leer zurückgegeben (12 von 12 Fehlern). Jetzt fragt sie dann einmal auf Deutsch nach, und wenn sie trotzdem nichts liefert, landen die Wörter, die das Handy selbst gehört hat, im Feld statt einer Fehlermeldung.
 - 08.11. spät: Jede zweite Aufnahme schlug fehl. Nach einem Tab-Wechsel ging das Mikro von selbst wieder an (seit Memo auch das Mikro startet), und der nächste Tipp stoppte diese leere Aufnahme. Jetzt startet jeder Sprech-Auftrag das Mikro genau einmal. Memo federt nicht mehr: Freude, Zuhören und Mitgleiten mit dem Feld laufen weich aus, ohne Nachwippen.
 - 08.11. abends: Memo hat eine Aufgabe. Er ist der Sprechknopf: Antippen und sprechen. Er schaut dahin, wo du tippst, und zeigt ein kleines „?“, wenn eine Frage auf deine Antwort wartet. Bei den ersten drei Starts sagt eine kleine Zeile „Tipp mich an und sprich“.
 - 08.11.: Memo hüpft nicht mehr. Er freut sich auf der Stelle (kurz zusammendrücken, kleines Wackeln, ^^ Augen) und bleibt immer auf dem Eingabefeld sitzen, auch wenn eine Karte oder Pille darüber erscheint.

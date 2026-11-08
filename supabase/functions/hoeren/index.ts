@@ -35,7 +35,9 @@ Deno.serve(async (req) => {
   if (!key) return json({ error: 'no_key' }, 503);
 
   let audio: File | null = null;
-  try { const form = await req.formData(); const a = form.get('audio'); audio = a instanceof File ? a : null; } catch { return json({ error: 'bad_form' }, 400); }
+  let form: FormData;
+  try { form = await req.formData(); const a = form.get('audio'); audio = a instanceof File ? a : null; } catch { return json({ error: 'bad_form' }, 400); }
+  const formField = (_: Request, k: string) => { const v = form.get(k); return typeof v === 'string' ? v : null; };
   if (!audio || !audio.size) return json({ error: 'empty' }, 400);
   if (audio.size > MAX_BYTES) return json({ error: 'too_long' }, 413);
 
@@ -47,21 +49,39 @@ Deno.serve(async (req) => {
   if (countError) return json({ error: 'not_signed_in' }, 401);
   if (!allowed?.ok) return json({ error: 'limit' }, 429);
 
+  // The app's listening language ('de' or 'en') and the loudest moment the phone measured (0..10), only for the log.
+  const hint = String((await formField(req, 'hint')) ?? '').slice(0, 3);
+  const peak = Number((await formField(req, 'peak')) ?? NaN);
   const t0 = Date.now();
-  const out = new FormData();
-  out.append('model_id', 'scribe_v2');
-  out.append('file', audio, 'satz.wav');
-  // No language_code: Scribe detects it per recording, so a German sentence on an English phone stays German.
-  out.append('tag_audio_events', 'false');
-  out.append('diarize', 'false');
-  try {
+  // Julian 08.11.: "every second recording fails". The logs showed it: each failed sentence was one Scribe took for
+  // English and returned empty (12 of 12), each German one worked. So when Scribe hears English and nothing in it,
+  // ask once more in the app's language before giving up. A clear English sentence still comes back in English.
+  const ask = async (lang?: string) => {
+    const out = new FormData();
+    out.append('model_id', 'scribe_v2');
+    out.append('file', audio!, 'satz.wav');
+    if (lang) out.append('language_code', lang);
+    out.append('tag_audio_events', 'false');
+    out.append('diarize', 'false');
     const res = await fetch('https://api.elevenlabs.io/v1/speech-to-text', { method: 'POST', headers: { 'xi-api-key': key }, body: out, signal: AbortSignal.timeout(12000) });
-    if (!res.ok) { console.error('hoeren', res.status, Date.now() - t0); return json({ error: 'stt_failed' }, 502); }
+    if (!res.ok) return { ok: false as const, status: res.status };
     const r = await res.json() as { text?: string; language_code?: string };
-    const text = String(r.text ?? '').replace(/\s+/g, ' ').trim();
-    // Only timing, size and language, never what was said.
-    console.log(JSON.stringify({ ms: Date.now() - t0, bytes: audio.size, lang: r.language_code ?? null, empty: !text }));
-    return text ? json({ text, lang: r.language_code ?? null }) : json({ error: 'nothing_heard' }, 422);
+    return { ok: true as const, text: String(r.text ?? '').replace(/\s+/g, ' ').trim(), lang: r.language_code ?? null };
+  };
+  try {
+    let r = await ask();
+    if (!r.ok) { console.error('hoeren', r.status, Date.now() - t0, audio.size); return json({ error: 'stt_failed' }, 502); }
+    let retry = false;
+    if (!r.text && hint && hint !== 'en' && (!r.lang || r.lang === 'eng' || r.lang === 'en')) {
+      retry = true;
+      const again = await ask(hint);
+      if (again.ok) r = again;
+    }
+    const text = r.ok ? r.text : '';
+    const lang = r.ok ? r.lang : null;
+    // Only timing, size, language and loudness, never what was said.
+    console.log(JSON.stringify({ ms: Date.now() - t0, bytes: audio.size, lang, empty: !text, retry, peak: Number.isFinite(peak) ? peak : null }));
+    return text ? json({ text, lang }) : json({ error: 'nothing_heard' }, 422);
   } catch (e) {
     console.error('hoeren', Date.now() - t0, e instanceof Error ? e.name : 'error');
     return json({ error: 'stt_failed' }, 502);
