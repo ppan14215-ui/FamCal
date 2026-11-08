@@ -468,13 +468,13 @@ export default function Dock() {
   useEffect(() => { setDockSpace(where && shown ? h + (where.chat ? (folded ? 0 : navH() + 10) : where.tab ? 0 : 8) : 0); }, [h, !!where, shown, folded]);
   useEffect(() => () => timers.current.forEach(clearTimeout), []);
   // Shared to FamCal from the browser or another app (Julian 28.10.): as if typed into the field.
-  const hearRef = useRef<(raw: string) => void>(() => {});
+  const hearRef = useRef<(raw: string, how?: { voice?: boolean }) => void>(() => {});
   /** Where the next sentence comes from when it is not the field (share sheet). */
   const viaRef = useRef<Input | null>(null);
   const lastVia = useRef<Input>('text');
   // A shared screenshot becomes a list offer (Julian 29.10.), never a list by itself.
   useEffect(() => onShared((text) => { viaRef.current = 'share'; hearRef.current(text); }, (uri) => router.push({ pathname: '/bild-liste', params: { uri } })), []);
-  useEffect(() => onSayInApp((text) => hearRef.current(text)), []);
+  useEffect(() => onSayInApp((text, voice) => hearRef.current(text, voice ? { voice: true } : undefined)), []);
 
   // Examples only while the calendar is still empty; after that they are clutter (Julian 27.10.).
   const onTabs = !!where && (where.tab || !!where.chat);
@@ -570,7 +570,7 @@ export default function Dock() {
 
   const hear = (raw: string, how?: { voice?: boolean }) => {
     // Before the very first sentence leaves the phone: Mit KI or Ohne KI (Julian 05.11.).
-    if (!priv.ohneKi && !priv.zugestimmt && !(where.chat && mode === 'msg')) { router.push({ pathname: '/ki-zustimmung', params: { said: raw } }); return; }
+    if (!priv.ohneKi && !priv.zugestimmt && !(where.chat && mode === 'msg')) { router.push({ pathname: '/ki-zustimmung', params: { said: raw, voice: how?.voice ? '1' : '' } }); return; }
     // Funnel "Voice" and the core action (analytics.ts): how the sentence came in, never what it said.
     const via: Input = viaRef.current ?? (how?.voice ? 'voice' : 'text');
     viaRef.current = null;
