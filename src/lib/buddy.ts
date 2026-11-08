@@ -42,10 +42,16 @@ type State = {
   docked: number;
   /** Where the docked Memo sits on screen (its centre), so the arrival glides there and he glances from there. */
   dockAt: { x: number; y: number } | null;
+  /** How long the text in the field is: Memo reads along while you type. */
+  typed: number;
+  /** The start glide has reached the bar: from now on the bar's Memo shows (a clean handover, never two). */
+  landed: boolean;
+  /** Someone else (the onboarding's flying Memo) is on its way to the bar: the bar's Memo stays invisible meanwhile. */
+  dockHidden: boolean;
 };
 
 // intro starts true: BuddyIntro says when the screen is free (it always mounts with the root).
-let state: State = { listening: false, joy: 0, poke: 0, from: null, intro: true, talk: 0, touch: null, waiting: false, covered: false, docked: 0, dockAt: null };
+let state: State = { listening: false, joy: 0, poke: 0, from: null, intro: true, talk: 0, touch: null, waiting: false, covered: false, docked: 0, dockAt: null, typed: 0, landed: false, dockHidden: false };
 const subs = new Set<() => void>();
 const emit = () => subs.forEach((l) => l());
 

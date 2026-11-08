@@ -4,6 +4,13 @@ Alle sichtbaren Änderungen an FamCal. Neueste oben. Agenten und Menschen: Ände
 
 ## Unreleased
 
+### Memo lebt (08.11. Nacht)
+- Beim Tippen schaut Memo hoch auf den Text und liest mit; jeder neue Buchstabe ein kleines Nicken.
+- Er reagiert auf alles: anderer Bildschirm, etwas abgehakt (freut sich), etwas gelöscht (zuckt kurz).
+- Neue Bewegungen ohne Standard-Federn: erst kurz Schwung holen, dann strecken, dann nachwackeln. Augen huschen zuerst, der Körper lehnt sich hinterher zur Berührung.
+- Start: der kleine Memo aus dem Intro gleitet direkt an seinen Platz in der Leiste, es gibt nie zwei.
+- Die Leiste klappt mit einer eigenen weichen Kurve statt einer Feder.
+
 ### Sprechkarte (08.11. abends)
 - Beim Sprechen wächst die Leiste zu einer hellen Karte. Memo sitzt in ihrer Mitte als Sprechknopf: antippen, wenn du fertig bist.
 - Der gesagte Satz steht in der Karte, mit Senden oder Ändern. Er geht nie von selbst raus.

@@ -110,6 +110,9 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, o
   const listeningRef = useRef(false); listeningRef.current = listening;
   // Memo grows and wobbles with the voice while the mic is on (Julian 07.11.).
   useEffect(() => { if (listening) { setBuddy({ listening: true }); return () => setBuddy({ listening: false }); } }, [listening]);
+  // Memo reads along while you type (Julian 08.11. 23:49).
+  useEffect(() => { setBuddy({ typed: text.length }); }, [text.length]);
+  useEffect(() => () => setBuddy({ typed: 0 }), []);
   const listenAt = useRef(0);
   /** How loud the voice is right now, 0 to 1; drives the bars in the mic. */
   const level = voiceLevel;

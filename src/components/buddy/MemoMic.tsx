@@ -32,13 +32,15 @@ export default function MemoMic({ onPress, box = 34, size = 40, label }: { onPre
     const c = (v: number) => Math.max(-1, Math.min(1, v));
     return { x: c((b.touch.x - b.dockAt.x) / 140), y: c((b.touch.y - b.dockAt.y) / 140), n: b.touch.n };
   }, [b.touch?.n]);
+  // Typing: the text sits left of him on one line, above him once it grows into the card; his eyes follow it as it gets longer.
+  const typeAt = { x: Math.round((-1 + 0.5 * Math.min(1, b.typed / 40)) * 10) / 10, y: b.typed > 0 ? -0.85 : -0.15 };
   const ask = b.waiting && mood !== 'listen' && mood !== 'think';
   return (
     <Pressable ref={me as any} onLayout={measure} onPress={() => { haptics.select(); onPress(); }} hitSlop={6}
       accessibilityRole="button" accessibilityLabel={label ?? tx('Memo, tippen zum Sprechen', 'Memo, tap to talk')}
       style={{ width: box, height: box, alignItems: 'center', justifyContent: 'center', overflow: 'visible' }}>
-      <View pointerEvents="none" style={{ width: size, height: size, marginTop: -3 }}>
-        <Blob size={size} mood={mood} joy={b.joy} poke={b.poke} level={voiceLevel} glance={glance} shadow={false} />
+      <View pointerEvents="none" style={{ width: size, height: size, marginTop: -3, opacity: b.landed && !b.dockHidden ? 1 : 0 }}>
+        <Blob size={size} mood={mood} joy={b.joy} poke={b.poke} level={voiceLevel} glance={glance} typeAt={typeAt} shadow={false} />
       </View>
       {ask ? (
         <View pointerEvents="none" style={{ position: 'absolute', right: -5, top: -5, width: 15, height: 15, borderRadius: 8, alignItems: 'center', justifyContent: 'center', backgroundColor: tokens.row, boxShadow: `0 0 0 1px ${tokens.hair}` } as any}>

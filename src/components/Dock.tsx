@@ -492,7 +492,8 @@ export default function Dock() {
   const iconA = useSharedValue(barMode === 'rest' ? 1 : 0);
   const tabsA = useSharedValue(barMode === 'tabs' ? 1 : 0);
   useEffect(() => {
-    navW.value = withSpring(navTarget, BAR_SPRING);
+    // Julian 08.11. 23:50: no stock spring. One crafted curve, fast out, long soft landing (like an iOS sheet).
+    navW.value = withTiming(navTarget, { duration: 380, easing: Easing.bezier(0.32, 0.72, 0, 1) });
     // The content crossfades inside the moving shape: what leaves goes fast, what arrives waits a beat.
     iconA.value = barMode === 'rest' ? withDelay(90, withTiming(1, { duration: 200, easing: Easing.bezier(0.23, 1, 0.32, 1) })) : withTiming(0, { duration: 90 });
     tabsA.value = barMode === 'tabs' ? withDelay(70, withTiming(1, { duration: 220, easing: Easing.bezier(0.23, 1, 0.32, 1) })) : withTiming(0, { duration: 110 });
@@ -523,7 +524,7 @@ export default function Dock() {
   useEffect(() => {
     const spring = wasFolded.current !== folded;
     wasFolded.current = folded;
-    bAnim.value = spring ? withSpring(bottom, { stiffness: 250, damping: 27, mass: 1 }) : bottom;
+    bAnim.value = spring ? withTiming(bottom, { duration: 340, easing: Easing.bezier(0.32, 0.72, 0, 1) }) : bottom;
   }, [bottom, folded]);
   const bStyle = useAnimatedStyle(() => ({ bottom: bAnim.value }));
 

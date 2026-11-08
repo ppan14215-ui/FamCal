@@ -73,12 +73,19 @@ export type BlobProps = {
   level?: SharedValue<number>;
   /** No frame loop: the shape holds still and only the eyes follow the mood (small faces in a long chat). */
   still?: boolean;
+  /** Where the eyes rest while typing (x, y in -1..1). Above the field that is down at the text; in the bar the text sits up and left (Julian 08.11. 23:49: "he should be looking up at the text as I type"). */
+  typeAt?: { x: number; y: number };
+  /** A lasting gaze target that replaces the resting look in idle and type (the onboarding looks at its text with it). */
+  gaze?: { x: number; y: number } | null;
   /** A soft shadow on the ground. */
   shadow?: boolean;
   style?: StyleProp<ViewStyle>;
 };
 
-export default function Blob({ size = 40, mood = 'idle', joy = 0, poke = 0, glance, level, still, shadow = true, style }: BlobProps) {
+export default function Blob({ size = 40, mood = 'idle', joy = 0, poke = 0, glance, level, still, shadow = true, style, typeAt, gaze }: BlobProps) {
+  const tAt = gaze ?? typeAt ?? { x: -0.55, y: 0.75 };
+  const restRef = useRef(gaze ?? { x: 0, y: 0 }); restRef.current = gaze ?? { x: 0, y: 0 };
+  const tAtRef = useRef(tAt); tAtRef.current = tAt;
   const S = size;
   const reduced = useReducedMotion();
   const live = !still && !reduced;
@@ -129,7 +136,7 @@ export default function Blob({ size = 40, mood = 'idle', joy = 0, poke = 0, glan
   });
   const eyeStyle = useAnimatedStyle(() => ({
     opacity: 1 - happy.value,
-    transform: [{ translateX: gx.value * S * 0.11 }, { translateY: gy.value * S * 0.09 }, { scaleY: blink.value * wide.value }] as any,
+    transform: [{ translateX: gx.value * S * 0.13 }, { translateY: gy.value * S * 0.12 }, { scaleY: blink.value * wide.value }] as any,
   }));
   const arcStyle = useAnimatedStyle(() => ({
     opacity: happy.value,
@@ -179,9 +186,9 @@ export default function Blob({ size = 40, mood = 'idle', joy = 0, poke = 0, glan
       sx.value = withTiming(1, sp);
       sy.value = withTiming(1, sp);
       if (mood === 'listen') { look(0, -0.5); blink.value = withTiming(1, { duration: 100 }); }
-      else if (mood === 'type') look(-0.55, 0.75);
+      else if (mood === 'type') look(tAtRef.current.x, tAtRef.current.y);
       else if (mood === 'sleep') { look(0, 0.3); blink.value = withTiming(0.12, { duration: 300 }); }
-      else look(0, 0);
+      else look(restRef.current.x, restRef.current.y);
     }
 
     if (live && mood !== 'sleep' && mood !== 'think') {
@@ -199,37 +206,80 @@ export default function Blob({ size = 40, mood = 'idle', joy = 0, poke = 0, glan
         glance();
       });
       glance();
+      // Tiny eye darts in between, the way a living face never quite holds still.
+      const dart = () => later(700 + Math.random() * 1400, () => {
+        const bx = gx.value, by = gy.value;
+        gx.value = withSequence(withTiming(bx + (Math.random() - 0.5) * 0.3, { duration: 60 }), withDelay(220 + Math.random() * 300, withTiming(bx, { duration: 90 })));
+        gy.value = withSequence(withTiming(by + (Math.random() - 0.5) * 0.2, { duration: 60 }), withDelay(220 + Math.random() * 300, withTiming(by, { duration: 90 })));
+        dart();
+      });
+      dart();
     }
     if (live && mood === 'type') {
       // Follows the typing with small nods.
-      const nod = () => later(900 + Math.random() * 700, () => { gy.value = withSequence(withTiming(0.95, { duration: 140 }), withTiming(0.7, { duration: 220 })); nod(); });
+      const nod = () => later(900 + Math.random() * 700, () => { const y = tAtRef.current.y; gy.value = withSequence(withTiming(y + 0.2, { duration: 140 }), withTiming(y, { duration: 220 })); nod(); });
       nod();
     }
     return () => { timers.forEach(clearTimeout); };
   }, [mood, live]);
 
-  // Reactions stay in place (Julian 08.11.: "the jumping doesn't make sense"): a soft squish, ^^ eyes.
-  // Memo never leaves its spot on the field.
+  // Reactions stay in place (Julian 08.11.: "the jumping doesn't make sense"), but with real life in them
+  // (Julian 08.11. 23:50: "top notch, not boring spring"): a small gather (anticipation), a stretch that
+  // overshoots on its own curve, a little counter-squash as the jelly settles (follow-through). No springs.
+  const OUT = Easing.bezier(0.23, 1, 0.32, 1);
+  const OVER = Easing.bezier(0.34, 1.56, 0.64, 1);
   const react = (big: boolean, eyes: number) => {
-    happy.value = withSequence(withTiming(1, { duration: 140 }), withDelay(eyes, withTiming(0, { duration: 220 })));
-    gx.value = withTiming(0, { duration: 200 }); gy.value = withTiming(0, { duration: 200 });
+    happy.value = withSequence(withDelay(big ? 90 : 0, withTiming(1, { duration: 120 })), withDelay(eyes, withTiming(0, { duration: 220 })));
+    gx.value = withTiming(0, { duration: 160 }); gy.value = withTiming(big ? -0.25 : 0, { duration: 160 });
     if (!live) return;
-    cancelAnimation(sx); cancelAnimation(sy); cancelAnimation(rot);
-    // A soft squish that eases back, no wobble or bounce; a big moment adds one gentle tilt.
-    const k = big ? 1 : 0.6;
-    const out = Easing.bezier(0.23, 1, 0.32, 1);
-    sx.value = withSequence(withTiming(1 + 0.07 * k, { duration: 120, easing: out }), withTiming(1, { duration: 320, easing: out }));
-    sy.value = withSequence(withTiming(1 - 0.07 * k, { duration: 120, easing: out }), withTiming(1, { duration: 320, easing: out }));
-    if (big) rot.value = withSequence(withTiming(-5, { duration: 200, easing: out }), withTiming(0, { duration: 360, easing: out }));
+    cancelAnimation(sx); cancelAnimation(sy); cancelAnimation(rot); cancelAnimation(amp);
+    const k = big ? 1 : 0.55;
+    sx.value = withSequence(withTiming(1 + 0.1 * k, { duration: 90, easing: OUT }), withTiming(1 - 0.09 * k, { duration: 170, easing: OVER }), withTiming(1 + 0.03 * k, { duration: 160, easing: OUT }), withTiming(1, { duration: 260, easing: OUT }));
+    sy.value = withSequence(withTiming(1 - 0.12 * k, { duration: 90, easing: OUT }), withTiming(1 + 0.13 * k, { duration: 170, easing: OVER }), withTiming(1 - 0.04 * k, { duration: 160, easing: OUT }), withTiming(1, { duration: 260, easing: OUT }));
+    // The jelly ripples a moment longer, like a body that really moved.
+    amp.value = withSequence(withTiming(0.06 * k + 0.02, { duration: 120 }), withTiming(0.026, { duration: 700, easing: OUT }));
+    if (big) rot.value = withSequence(withDelay(90, withTiming(-6, { duration: 170, easing: OVER })), withTiming(3, { duration: 200, easing: OUT }), withTiming(0, { duration: 300, easing: OUT }));
+    if (!big) return;
+    // ...and then he looks at you, pleased.
+    later2(eyes + 260, () => { gy.value = withTiming(0, { duration: 300, easing: OUT }); });
   };
+  const timers2 = useRef<ReturnType<typeof setTimeout>[]>([]);
+  const later2 = (ms: number, f: () => void) => { timers2.current.push(setTimeout(f, ms)); };
+  useEffect(() => () => timers2.current.forEach(clearTimeout), []);
+  // Perks up when something starts (the keyboard opens, the mic starts): gather, rise, eyes pop open.
+  const prevMood = useRef(mood);
+  useEffect(() => {
+    const was = prevMood.current; prevMood.current = mood;
+    if (!live || first.current || was === mood) return;
+    if (!((mood === 'type' || mood === 'listen') && (was === 'idle' || was === 'sleep'))) return;
+    const k = was === 'sleep' ? 1.2 : 1;
+    blink.value = withSequence(withTiming(0.2, { duration: 70 }), withTiming(1.15, { duration: 140, easing: OVER }), withTiming(1, { duration: 200 }));
+    sy.value = withSequence(withTiming(1 - 0.08 * k, { duration: 80, easing: OUT }), withTiming(1 + 0.09 * k, { duration: 160, easing: OVER }), withTiming(1, { duration: 280, easing: OUT }));
+    sx.value = withSequence(withTiming(1 + 0.06 * k, { duration: 80, easing: OUT }), withTiming(1 - 0.05 * k, { duration: 160, easing: OVER }), withTiming(1, { duration: 280, easing: OUT }));
+  }, [mood]);
   // Follows you: eyes go where you touched, then drift back.
   useEffect(() => {
     if (!glance || (mood !== 'idle' && mood !== 'type')) return;
     const out = Easing.bezier(0.23, 1, 0.32, 1);
-    gx.value = withSequence(withTiming(glance.x, { duration: 180, easing: out }), withDelay(1300, withTiming(mood === 'type' ? -0.55 : 0, { duration: 420 })));
-    gy.value = withSequence(withTiming(glance.y, { duration: 180, easing: out }), withDelay(1300, withTiming(mood === 'type' ? 0.75 : 0, { duration: 420 })));
-    if (live) rot.value = withSequence(withTiming(glance.x * 5, { duration: 200 }), withDelay(1250, withTiming(0, { duration: 420, easing: out })));
+    const over = Easing.bezier(0.34, 1.56, 0.64, 1);
+    // Eyes first, in one quick dart; the body follows a beat later and leans in, like he's curious.
+    gx.value = withSequence(withTiming(glance.x, { duration: 90, easing: out }), withDelay(1300, withTiming(mood === 'type' ? tAtRef.current.x : restRef.current.x, { duration: 420, easing: out })));
+    gy.value = withSequence(withTiming(glance.y, { duration: 90, easing: out }), withDelay(1300, withTiming(mood === 'type' ? tAtRef.current.y : restRef.current.y, { duration: 420, easing: out })));
+    if (live) {
+      rot.value = withSequence(withDelay(60, withTiming(glance.x * 8, { duration: 260, easing: over })), withDelay(1050, withTiming(0, { duration: 480, easing: out })));
+      tx.value = withSequence(withDelay(60, withTiming(glance.x * S * 0.06, { duration: 260, easing: over })), withDelay(1050, withTiming(0, { duration: 480, easing: out })));
+      sy.value = withSequence(withDelay(40, withTiming(1.04, { duration: 140, easing: out })), withTiming(1, { duration: 300, easing: out }));
+    }
   }, [glance?.n]);
+  // Reading along: as the text grows the eyes move with it.
+  useEffect(() => {
+    if (mood === 'idle' && gaze) { const out = Easing.bezier(0.23, 1, 0.32, 1); gx.value = withTiming(gaze.x, { duration: 200, easing: out }); gy.value = withTiming(gaze.y, { duration: 200, easing: out }); return; }
+    if (mood !== 'type') return;
+    const out = Easing.bezier(0.23, 1, 0.32, 1);
+    gx.value = withTiming(tAt.x, { duration: 160, easing: out });
+    gy.value = withSequence(withTiming(tAt.y + 0.12, { duration: 90, easing: out }), withTiming(tAt.y, { duration: 200, easing: out }));
+    if (live) sy.value = withSequence(withTiming(0.97, { duration: 80, easing: out }), withTiming(1, { duration: 220, easing: out }));
+  }, [tAt.x, tAt.y]);
   const first = useRef(true);
   useEffect(() => { if (first.current) return; react(true, 1600); }, [joy]);
   useEffect(() => { if (first.current) return; react(false, 450); }, [poke]);

@@ -23,6 +23,8 @@ import { useVeil } from '../Veil';
 import { useFeed } from '../../lib/feed';
 import { getFamily, myRole } from '../../lib/sync';
 import { haptics } from '../../lib/haptics';
+import { usePathname } from 'expo-router';
+import { useStore } from '../../state/store';
 import { useSpeak, speakOpen } from '../../lib/speak';
 import { tx } from '../../i18n/lang';
 
@@ -61,6 +63,19 @@ export default function BuddyHost() {
     }
     seen.current = feed.length;
   }, [feed.length]);
+
+  // He notices what you do (Julian 08.11. 23:49: "react to everything I do inside the app"):
+  // another screen = a little look-up squish; something ticked off on a list or a task done = a small happy wiggle.
+  const path = usePathname();
+  const firstPath = useRef(true);
+  useEffect(() => { if (firstPath.current) { firstPath.current = false; return; } buddyPoke(); }, [path]);
+  const doneCount = useStore((s) => s.tasks.filter((t) => t.done).length + s.lists.reduce((n, l) => n + l.sections.reduce((m, sec) => m + sec.items.filter((i) => i.done).length, 0), 0));
+  const allCount = useStore((s) => s.events.length + s.tasks.length + s.lists.reduce((n, l) => n + l.sections.reduce((m, sec) => m + sec.items.length, 0), 0));
+  const seenDone = useRef(doneCount);
+  const seenAll = useRef(allCount);
+  useEffect(() => { if (doneCount > seenDone.current) joy(); seenDone.current = doneCount; }, [doneCount]);
+  // Something removed: a small startled squish.
+  useEffect(() => { if (allCount < seenAll.current) buddyPoke(); seenAll.current = allCount; }, [allCount]);
 
   const mood: Mood = b.listening ? 'listen' : veil.phase === 'think' ? 'think' : typing ? 'type' : night ? 'sleep' : 'idle';
 
@@ -105,13 +120,13 @@ export default function BuddyHost() {
   // The Sprechkarte is open: Memo lives in its middle as the talk button, so this one steps aside (Julian 08.11.: "make sure the mascot doesn't overlap").
   // After the arrival the bar's own Memo is the only one (a short wait so the glide finishes in place).
   const [landed, setLanded] = useState(false);
-  useEffect(() => { if (b.intro) return; const t = setTimeout(() => setLanded(true), b.from ? 900 : 0); return () => clearTimeout(t); }, [b.intro]);
+  useEffect(() => { if (b.intro) return; const t = setTimeout(() => { setLanded(true); setBuddy({ landed: true }); }, b.from ? 720 : 0); return () => clearTimeout(t); }, [b.intro]);
   const blocked = speakOpen(useSpeak()) || b.covered;
   const docked = b.docked > 0 && landed;
   const inCard = blocked || docked;
   const away = useSharedValue(1);
   const hv = useSharedValue(1);
-  useEffect(() => { away.value = withTiming(inCard ? 0 : 1, { duration: inCard ? 120 : 220, easing: Easing.bezier(0.23, 1, 0.32, 1) }); }, [inCard]);
+  useEffect(() => { away.value = withTiming(inCard ? 0 : 1, { duration: inCard ? (docked && !blocked ? 0 : 120) : 220, easing: Easing.bezier(0.23, 1, 0.32, 1) }); }, [inCard]);
   useEffect(() => { hv.value = withTiming(blocked ? 0 : 1, { duration: 140 }); }, [blocked]);
   const st = useAnimatedStyle(() => ({ opacity: o.value, transform: [{ translateX: x.value }, { translateY: y.value }] as any }));
   const bodyStyle = useAnimatedStyle(() => ({ opacity: away.value }));
