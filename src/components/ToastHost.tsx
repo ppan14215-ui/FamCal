@@ -9,14 +9,14 @@
 import React, { useEffect } from 'react';
 import { Platform, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
-import Animated, { FadeInDown, FadeOutDown, useSharedValue, useAnimatedStyle, withTiming, Easing } from 'react-native-reanimated';
+import Animated, { FadeInDown, FadeOutDown, useSharedValue, useAnimatedStyle, withTiming, withSpring, Easing } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
 import PressScale from './ui/PressScale';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import Txt from './ui/Txt';
 import LineIcon, { type LineName } from './ui/LineIcon';
-import { tokens, motion, easing } from '../theme';
+import { tokens, motion, easing, springs } from '../theme';
 import { useStore, dismissToast } from '../state/store';
 import type { ToastKind } from '../state/types';
 import { haptics } from '../lib/haptics';
@@ -58,7 +58,7 @@ export default function ToastHost() {
     .onUpdate((e) => { drag.value = Math.max(0, e.translationY); })
     .onEnd((e) => {
       if (e.translationY > 40 || e.velocityY > 600) scheduleOnRN(dismissToast);
-      else drag.value = withTiming(0, { duration: 160 });
+      else drag.value = withSpring(0, { ...springs.snapBack, velocity: e.velocityY });
     });
 
   if (!toast) return null;

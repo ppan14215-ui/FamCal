@@ -18,7 +18,8 @@ export const cloudOn = () => !off && !hearCapped && spracheCloud() && !!getAuth(
 let hearCapped = false;
 export const cloudCapped = () => hearCapped;
 
-export async function hearInCloud(uri: string): Promise<string | null> {
+/** hint: the app's listening language, so a sentence Scribe takes for empty English is asked again in it; peak: loudest volume 0..10, only for the log. */
+export async function hearInCloud(uri: string, hint?: string, peak?: number): Promise<string | null> {
   const session = getAuth().session;
   const url = process.env.EXPO_PUBLIC_SUPABASE_URL;
   // Sprache nur auf dem Handy or Ohne KI (Julian 05.11.): the recording never leaves the phone.
@@ -26,6 +27,8 @@ export async function hearInCloud(uri: string): Promise<string | null> {
   const form = new FormData();
   // React Native sends a local file this way; the bytes never pass through JavaScript.
   form.append('audio', { uri, name: 'satz.wav', type: 'audio/wav' } as any);
+  if (hint) form.append('hint', hint);
+  if (peak !== undefined) form.append('peak', String(Math.round(peak * 10) / 10));
   const ctrl = new AbortController();
   const late = setTimeout(() => ctrl.abort(), WAIT_MS);
   try {

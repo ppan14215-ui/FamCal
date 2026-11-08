@@ -4,6 +4,38 @@ Alle sichtbaren Änderungen an FamCal. Neueste oben. Agenten und Menschen: Ände
 
 ## Unreleased
 
+### Memo lebt (08.11. Nacht)
+- Beim Tippen schaut Memo hoch auf den Text und liest mit; jeder neue Buchstabe ein kleines Nicken.
+- Er reagiert auf alles: anderer Bildschirm, etwas abgehakt (freut sich), etwas gelöscht (zuckt kurz).
+- Neue Bewegungen ohne Standard-Federn: erst kurz Schwung holen, dann strecken, dann nachwackeln. Augen huschen zuerst, der Körper lehnt sich hinterher zur Berührung.
+- Start: der kleine Memo aus dem Intro gleitet direkt an seinen Platz in der Leiste, es gibt nie zwei.
+- Die Leiste klappt mit einer eigenen weichen Kurve statt einer Feder.
+
+### Sprechkarte (08.11. abends)
+- Beim Sprechen wächst die Leiste zu einer hellen Karte. Memo sitzt in ihrer Mitte als Sprechknopf: antippen, wenn du fertig bist.
+- Der gesagte Satz steht in der Karte, mit Senden oder Ändern. Er geht nie von selbst raus.
+- Rückfragen kommen in derselben Karte: "Um wie viel Uhr?" mit Stunden zum Antippen oder einfach sagen ("um drei"), andere Fragen mit Antworten zum Antippen. Danach zeigt die Karte kurz, was jetzt im Kalender steht.
+- Memo sitzt nicht mehr auf der Leiste oder auf Karten darüber.
+- Memo sitzt jetzt in der Leiste, wo das Mikro war. Es gibt nur noch einen Memo; antippen heißt sprechen, ins Feld tippen heißt schreiben.
+
+### Bewegung nach Emil Kowalski (08.11.)
+- Tabs wechseln mit kurzem Einblenden statt Schieben, die Kalenderansichten bauen sich schneller auf.
+- Vibration nur noch einmal pro Aktion: beim Eintragen am Ende, beim Löschen im Moment des Loslassens.
+- Blätter und Hinweise, die man wegwischt, behalten den Schwung der Hand.
+- Tag wechseln im Tagkalender ist etwas schneller.
+
+### Memo als Blob (07.11.)
+- 08.11. abends: Der wahre Grund für „jede zweite Aufnahme klappt nicht“: Die Cloud-Erkennung hat manche deutschen Sätze für Englisch gehalten und leer zurückgegeben (12 von 12 Fehlern). Jetzt fragt sie dann einmal auf Deutsch nach, und wenn sie trotzdem nichts liefert, landen die Wörter, die das Handy selbst gehört hat, im Feld statt einer Fehlermeldung.
+- 08.11. spät: Jede zweite Aufnahme schlug fehl. Nach einem Tab-Wechsel ging das Mikro von selbst wieder an (seit Memo auch das Mikro startet), und der nächste Tipp stoppte diese leere Aufnahme. Jetzt startet jeder Sprech-Auftrag das Mikro genau einmal. Memo federt nicht mehr: Freude, Zuhören und Mitgleiten mit dem Feld laufen weich aus, ohne Nachwippen.
+- 08.11. abends: Memo hat eine Aufgabe. Er ist der Sprechknopf: Antippen und sprechen. Er schaut dahin, wo du tippst, und zeigt ein kleines „?“, wenn eine Frage auf deine Antwort wartet. Bei den ersten drei Starts sagt eine kleine Zeile „Tipp mich an und sprich“.
+- 08.11.: Memo hüpft nicht mehr. Er freut sich auf der Stelle (kurz zusammendrücken, kleines Wackeln, ^^ Augen) und bleibt immer auf dem Eingabefeld sitzen, auch wenn eine Karte oder Pille darüber erscheint.
+- 08.11.: Die Start Animation läuft jetzt flüssig: nur noch Bewegungen, die das Handy direkt zeichnet, und der kleine Memo übernimmt ohne Lücke.
+- Memo ist jetzt ein weicher, glänzender Tropfen in Teal mit zwei cremefarbenen Augen und sitzt rechts über dem Eingabefeld, auf jedem Screen mit Feld.
+- Memo lebt mit: atmet, blinzelt, schaut sich um, schaut aufs Feld beim Tippen, wird beim Sprechen größer und wackelt mit der Stimme, drückt sich beim Nachdenken flach und hüpft mit ^^ Augen, wenn etwas eingetragen ist. Antippen lässt ihn hüpfen. Nachts (23 bis 6 Uhr) döst er.
+- Beim App Start ist der ganze Bildschirm kurz Memo und schmilzt nach oben weg, dann fliegt Memo an seinen Platz. Tippen überspringt es.
+- Im Chat zeigt jede Antwort den kleinen Blob statt des alten Magneten.
+- Auch im Onboarding und in der Vorstellung ist Memo jetzt der Blob; der alte Magnet ist überall ersetzt.
+
 ### Datenschutz (05.11.)
 - Der Assistent bekommt pro Satz nur noch die nächsten zwei Wochen und was zum Satz passt, statt bis zu 220 Termine, alle Fakten und alle Listen. Braucht er mehr, sucht die App auf dem Handy nach (höchstens 20 Zeilen, höchstens 3 Suchen pro Satz). Etwa halb so viel Text pro Satz, bei großen Familien 60 % weniger.
 - Eure Namen gehen nur noch als Platzhalter raus, die App setzt sie wieder ein. Private Kalender gehen nur als „Belegt“ oder „Arbeit“ raus, ohne Titel und Ort.

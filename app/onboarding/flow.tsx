@@ -30,7 +30,9 @@ import Txt from '../../src/components/ui/Txt';
 import { Btn, H1 } from '../../src/components/ui/kit';
 import LineIcon from '../../src/components/ui/LineIcon';
 import PressScale from '../../src/components/ui/PressScale';
-import { MemoFace, type EyeKey, type Eyes } from '../../src/components/onboarding/Memo';
+import LiveMemo, { BIG } from '../../src/components/onboarding/LiveMemo';
+import Blob from '../../src/components/buddy/Blob';
+import { setBuddy, buddyJoy, buddyPoke, useBuddy as useBuddyState } from '../../src/lib/buddy';
 import { Sticker, StickerRing } from '../../src/components/onboarding/Sticker';
 import { clayIcons, type ClayName } from '../../src/lib/clayIcons';
 import TalkBar from '../../src/components/TalkBar';
@@ -203,8 +205,6 @@ export default function Flow() {
   const [ask, setAsk] = useState<'ort' | 'runde' | 'liste' | 'split' | null>(null);
   const [pick, setPick] = useState<{ dish: string; picks: string[]; have: string[]; off: string[]; said: string } | null>(null);
   const [reply, setReply] = useState<string | null>(null);
-  const [act, setAct] = useState<{ kind: Act; n: number }>({ kind: 'land', n: 0 });
-  const t = useSharedValue(0);
   const si = STEPS.indexOf(step);
   const A = nameA.trim() || tx('du', 'you');
   const B = nameB.trim();
@@ -225,14 +225,22 @@ export default function Flow() {
   const [pops, setPops] = useState<{ name: ClayName; x: number; y: number; size: number; rot: number; fromY: number }[]>([]);
 
   // ── Memo ───────────────────────────────────────────────────────────────
-  const play = (kind: Act, dur: number) => {
-    cancelAnimation(t);
-    t.value = 0;
-    setAct((a) => ({ kind, n: a.n + 1 }));
-    if (reduced) { t.value = dur; return; }
-    t.value = withTiming(dur, { duration: dur * 1000, easing: Easing.linear });
+  // The live Memo (Julian 08.11.: "react to everything I do"): every reaction goes through the shared
+  // buddy store, so the big one up here and the one in the bar react the same way.
+  const lastJoy = useRef(0);
+  const joy = () => { if (Date.now() - lastJoy.current < 900) return; lastJoy.current = Date.now(); buddyJoy(); };
+  const think = (on: boolean) => setBuddy({ thinking: on });
+  useEffect(() => () => think(false), []);
+  /** Explicit looks: each sticker as it pops, the letters you type. */
+  const [look, setLook] = useState<{ x: number; y: number; n: number } | undefined>(undefined);
+  const lookN = useRef(0);
+  const lookAt = (x: number, y: number) => setLook({ x: Math.max(-1, Math.min(1, x)), y: Math.max(-1, Math.min(1, y)), n: ++lookN.current });
+  /** His eyes follow the ring of stickers, one after another, then come back to you. */
+  const followRing = (items: Stk[], start: number) => {
+    items.forEach((it, i) => later(start + i * 190 + 60, () => lookAt(it.dx / 110, it.dy / 110)));
+    later(start + items.length * 190 + 500, () => { lookAt(0, 0.15); joy(); });
   };
-  useEffect(() => { play('land', 3.2); stepViewed('hallo', 'flow', 0); }, []);
+  useEffect(() => { stepViewed('hallo', 'flow', 0); if (!q.step) followRing(HALLO, T_RING + 250); }, []);
   useEffect(() => {
     const s = q.step as Step | undefined;
     if (!s || !STEPS.includes(s) || s === 'hallo') return;
@@ -243,15 +251,15 @@ export default function Flow() {
   }, []);
   const corner = TRY.has(step);
   const isHero = step === 'hallo' || step === 'fertig';
-  const pos = useSharedValue(0);
-  useEffect(() => { pos.value = reduced ? (corner ? 1 : 0) : withSpring(corner ? 1 : 0, { stiffness: 170, damping: 26 }); }, [corner]);
-  const hero = useSharedValue(1);
-  useEffect(() => { hero.value = reduced ? (isHero ? 1 : 0) : withSpring(isHero ? 1 : 0, { stiffness: 170, damping: 26 }); }, [isHero]);
 
   const [magA, setMagA] = useState(false);
   const [magB, setMagB] = useState(false);
-  useEffect(() => { const on = !!nameA.trim(); if (on !== magA) { setMagA(on); if (on) { haptics.tap(); play('name', 1.2); } } }, [nameA]);
-  useEffect(() => { const on = !!nameB.trim(); if (on !== magB) { setMagB(on); if (on) { haptics.tap(); play('name', 1.2); } } }, [nameB]);
+  useEffect(() => { const on = !!nameA.trim(); if (on !== magA) { setMagA(on); if (on) { haptics.tap(); joy(); } } }, [nameA]);
+  useEffect(() => { const on = !!nameB.trim(); if (on !== magB) { setMagB(on); if (on) { haptics.tap(); joy(); } } }, [nameB]);
+  /** Which name field you are in: Memo reads along, his eyes on the letters as they come. */
+  const [typingIn, setTypingIn] = useState<'a' | 'b' | null>(null);
+  const typedLen = typingIn === 'a' ? nameA.length : typingIn === 'b' ? nameB.length : 0;
+  const nameGaze = typingIn ? { x: Math.max(-1, Math.min(1, (70 + typedLen * 10 - W / 2) / (W / 2))), y: 1 } : null;
 
   // ── Geometry ───────────────────────────────────────────────────────────
   const barY = insets.top + 12;
@@ -265,49 +273,6 @@ export default function Flow() {
   const heroR = (MEMO * HERO) / 2;
   const cy = isHero ? heroCY : memoY + MEMO / 2;
   const R = isHero ? heroR : MEMO / 2;
-
-  const outer = useAnimatedStyle((): any => {
-    const p = pos.value;
-    const h = hero.value;
-    const k = mix(1, SMALL / MEMO, p) * (1 + (HERO - 1) * h);
-    const big = { x: W / 2 - MEMO / 2, y: memoY + (heroCY - memoY - MEMO / 2) * h };
-    const small = { x: 18 - (MEMO - SMALL) / 2, y: headY - (MEMO - SMALL) / 2 };
-    return { transform: [{ translateX: mix(big.x, small.x, p) }, { translateY: mix(big.y, small.y, p) }, { scale: k }] };
-  }, [W, memoY, headY, heroCY]);
-  const keys: Record<Act, EyeKey[]> = {
-    land: [{ t: 0.75, e: 'happy' }, { t: 1.6, e: 'open' }, { t: 2.2, e: 'wink', direct: true }, { t: 2.75, e: 'open', direct: true }],
-    name: [{ t: 0.05, e: 'happy' }, { t: 0.9, e: 'open' }],
-    answer: [{ t: 0.15, e: 'closed' }, { t: 0.45, e: 'think' }, { t: 1.3, e: 'happy' }, { t: 2.6, e: 'open' }],
-    idle: [],
-    fertig: [{ t: 0.1, e: 'happy' }, { t: 1.2, e: 'wink', direct: true }, { t: 1.75, e: 'happy', direct: true }],
-  };
-  const answering = act.kind === 'answer';
-  const memoSt = useAnimatedStyle((): any => {
-    const v = t.value;
-    const k = act.kind;
-    if (k === 'land') {
-      // Pulled in like a magnet: travels down, the last 30 % accelerates, contact squash and one rebound.
-      const p = seg(v, 0.1, 0.7);
-      const y = p < 0.7 ? mix(-220, -40, 1 - (1 - p / 0.7) ** 3) : mix(-40, 0, ((p - 0.7) / 0.3) ** 2);
-      const sq = Math.max(0, recoil(v - 0.7, 0.09));
-      return { opacity: seg(v, 0.1, 0.3), transform: [{ translateY: y + sq * MEMO * 0.5 }, { scaleY: 1 - sq }, { scaleX: 1 + sq * 0.9 }] };
-    }
-    if (k === 'name' || k === 'fertig') {
-      const hop = -9 * Math.sin(Math.PI * seg(v, 0.02, 0.27));
-      const sq = Math.max(0, recoil(v - 0.27, 0.07));
-      return { opacity: 1, transform: [{ translateY: hop + sq * MEMO * 0.5 }, { scaleY: 1 - sq }, { scaleX: 1 + sq * 0.9 }] };
-    }
-    if (k === 'answer') {
-      // Thinks (anticipation squash, tilt), then the answer lands: a glad hop with a ceramic recoil.
-      const ant = kf(v, [0.15, 0.25, 0.4], [0, 1, 0]);
-      const tilt = 7 * crit(v - 0.4, 13) * (1 - crit(v - 1.25, 15));
-      const hop = -14 * Math.sin(Math.PI * seg(v, 1.3, 1.58));
-      const land1 = recoil(v - 1.58, 0.08);
-      const sq = ant * 0.07 + Math.max(0, land1);
-      return { opacity: 1, transform: [{ translateY: hop + sq * MEMO * 0.5 }, { rotate: `${tilt}deg` }, { scaleY: 1 - sq }, { scaleX: 1 + sq * 0.9 }] };
-    }
-    return { opacity: 1, transform: [] };
-  }, [act]);
 
   // ── Moving on ──────────────────────────────────────────────────────────
   const go = (s: Step) => {
@@ -325,15 +290,18 @@ export default function Flow() {
       later(700, () => {
         setItems([{ id: 'plan', type: 'plan' }]);
         haptics.success();
+        joy();
         later(1800, () => { setReply(tx('Soll ich daraus Aufgaben für euch machen? Sag einfach „Ja“.', 'Shall I turn it into tasks for you? Just say “Yes”.')); setAsk('liste'); });
       });
     }
     if (s === 'verschieben' && ev) { demo.set(() => ({ calDay: ev.date })); setCalKey((k) => k + 1); }
-    if (s === 'fertig') play('fertig', 2.4); else { cancelAnimation(t); t.value = 0; setAct((a) => ({ kind: 'idle', n: a.n + 1 })); }
+    think(false);
+    if (s === 'fertig') followRing(FERTIG, 760);
   };
 
-  const land = (it: Bit) => setItems((its) => (its.some((x) => x.id === it.id) ? its.map((x) => (x.id === it.id ? it : x)) : [...its, it]));
+  const land = (it: Bit) => { think(false); joy(); setItems((its) => (its.some((x) => x.id === it.id) ? its.map((x) => (x.id === it.id ? it : x)) : [...its, it])); };
   const finish = (line: string) => {
+    think(false);
     setReply(line);
     later(T_DONE, () => setPhase('done'));
   };
@@ -349,6 +317,7 @@ export default function Flow() {
     later(1800, () => {
       demo.set((st) => ({ lists: st.lists.map((l) => (l.id !== DEMO.einkauf ? l : { ...l, sections: l.sections.map((sec) => ({ ...sec, items: sec.items.map((i) => (i.id === add[0].id ? { ...i, done: true, who: 'T' as const } : i)) })) })) }));
       haptics.select();
+      buddyPoke();
     });
     later(2400, () => {
       haptics.success();
@@ -385,7 +354,7 @@ export default function Flow() {
     haptics.commit();
     setPhase('think');
     setReply(null);
-    play('answer', 2.8);
+    think(true);
     const id = `u${Date.now()}`;
     const at = now();
 
@@ -653,12 +622,17 @@ export default function Flow() {
         </>
       ) : null}
 
-      {/* Memo: big in the middle when it talks to you, small in its corner while the app plays */}
-      <Animated.View pointerEvents="none" style={[{ position: 'absolute', left: 0, top: 0, width: MEMO, height: MEMO, transformOrigin: 'center' } as any, outer]}>
-        <Animated.View style={[{ width: MEMO, height: MEMO }, memoSt]}>
-          <MemoFace key={`${act.kind}-${act.n}`} size={MEMO} clock={t} keys={keys[act.kind]} initial="open" />
-        </Animated.View>
-      </Animated.View>
+      {/* Memo, alive: big in the middle when he talks to you, down in the bar as the talk button while the app plays */}
+      <LiveMemo
+        place={corner ? 'dock' : isHero ? 'hero' : 'mid'}
+        hero={{ x: W / 2, y: heroCY }}
+        mid={{ x: W / 2, y: memoY + MEMO / 2 }}
+        midScale={MEMO / BIG}
+        look={look}
+        gaze={step === 'namen' ? nameGaze : null}
+        mood={step === 'namen' && typingIn ? 'type' : undefined}
+        entrance={!q.step}
+      />
 
       {/* Stickers pop out of Memo: hallo and fertig (Airbnb reference) */}
       {step === 'hallo' ? <StickerRing key="r-hallo" cx={W / 2} cy={heroCY} items={HALLO} start={T_RING} /> : null}
@@ -666,13 +640,13 @@ export default function Flow() {
 
       {/* Memo's one line. In the middle as a bubble; in the corner beside Memo, overwritten in place, never stacked. */}
       {corner ? (
-        <View pointerEvents="none" style={{ position: 'absolute', left: 18 + SMALL + 12, right: 18, top: headY, height: SMALL, justifyContent: 'center' }}>
+        <View pointerEvents="none" style={{ position: 'absolute', left: 20, right: 20, top: headY, height: SMALL, justifyContent: 'center' }}>
           {line ? (
             <Animated.View key={line} entering={FadeIn.duration(220)} exiting={FadeOut.duration(120)}>
-              <Txt size={16.5} weight={600} line={22} numberOfLines={3}>{line}</Txt>
+              <Txt size={18} weight={600} line={24} numberOfLines={3}>{line}</Txt>
             </Animated.View>
           ) : (
-            <Animated.View key="dots" entering={FadeIn.duration(160)}><Txt size={16.5} weight={600} color={tokens.mute}>…</Txt></Animated.View>
+            <Animated.View key="dots" entering={FadeIn.duration(160)}><Txt size={18} weight={600} color={tokens.mute}>…</Txt></Animated.View>
           )}
         </View>
       ) : line ? (
@@ -688,8 +662,8 @@ export default function Flow() {
       <View style={{ marginHorizontal: 12, gap: 10 }}>
         {step === 'namen' ? (
           <View style={{ gap: 10, paddingHorizontal: 4 }}>
-            <NameField value={nameA} onChange={setNameA} placeholder={tx('Dein Name', 'Your name')} c={ME} />
-            <NameField value={nameB} onChange={setNameB} placeholder={tx('Mit wem teilst du ihn? (Partner)', 'Shared with? (partner)')} c={YOU} />
+            <NameField onFocus={() => setTypingIn('a')} onBlur={() => setTypingIn(null)} value={nameA} onChange={setNameA} placeholder={tx('Dein Name', 'Your name')} c={ME} />
+            <NameField onFocus={() => setTypingIn('b')} onBlur={() => setTypingIn(null)} value={nameB} onChange={setNameB} placeholder={tx('Mit wem teilst du ihn? (Partner)', 'Shared with? (partner)')} c={YOU} />
             <Txt size={13.5} color={tokens.mute} center>{tx('Kinder und Großeltern kommen später dazu.', 'Kids and grandparents can join later.')}</Txt>
           </View>
         ) : null}
@@ -698,11 +672,11 @@ export default function Flow() {
             <TalkBar split card={navStyle() === 'strip'} onSend={send} spoken={examples[step]} placeholder={ask === 'ort' ? tx('Name und Straße …', 'Name and street …') : tx('Sprich oder schreib einfach …', 'Just say or type it …')} />
           </View>
         ) : null}
-        {TRY.has(step) && phase === 'done' ? <View style={{ paddingHorizontal: 4 }}><Btn label={nextLabel[step]} onPress={() => go(next[step])} /></View> : null}
+        {TRY.has(step) && phase === 'done' ? <DoneRow label={nextLabel[step]} onPress={() => go(next[step])} /> : null}
         {step === 'hallo' ? <Late key="b-hallo" ms={ringEnd(HALLO.length) + 250} style={{ paddingHorizontal: 4 }}><Btn label={tx('Hallo Memo!', 'Hi Memo!')} onPress={() => go('namen')} /></Late> : null}
         {step === 'leiste' ? <View style={{ gap: 14, paddingHorizontal: 4 }}><NavChoice /><Txt size={13.5} color={tokens.mute} center>{tx('Später jederzeit in den Einstellungen änderbar.', 'You can change it any time in Settings.')}</Txt><Btn label={tx('Weiter', 'Continue')} onPress={() => go('ki')} /></View> : null}
         {/* Ohne KI: the speaking steps would show what is switched off, so it goes straight to the end. */}
-        {step === 'ki' ? <ScrollView style={{ maxHeight: H * 0.625 }} contentContainerStyle={{ paddingHorizontal: 4, paddingBottom: 4 }}><KiWahl source="onboarding" onDone={(mitKi) => go(mitKi ? 'termin' : 'fertig')} onMore={() => router.push('/datenschutz')} /></ScrollView> : null}
+        {step === 'ki' ? <ScrollView style={{ maxHeight: H * 0.625 }} contentContainerStyle={{ paddingHorizontal: 4, paddingBottom: 4 }}><KiWahl source="onboarding" onDone={(mitKi) => { if (mitKi) joy(); else buddyPoke(); later(mitKi ? 420 : 200, () => go(mitKi ? 'termin' : 'fertig')); }} onMore={() => router.push('/datenschutz')} /></ScrollView> : null}
         {step === 'namen' ? <View style={{ paddingHorizontal: 4 }}><Btn label={tx('Weiter', 'Continue')} disabled={!magA} onPress={() => go('leiste')} /></View> : null}
         {step === 'fertig' ? <Late key="b-fertig" ms={500 + (FERTIG.length - 1) * 190 + 700} style={{ paddingHorizontal: 4 }}><View style={{ gap: 6 }}><Btn label={tx('14 Tage Plus gratis testen', 'Try Plus free for 14 days')} onPress={() => { haptics.success(); onboardingDone('flow'); router.replace('/plus?trigger=onboarding'); }} /></View></Late> : null}
       </View>
@@ -765,15 +739,36 @@ function PartnerPhone({ owner, title, body }: { owner: string; title: string; bo
   );
 }
 
-function NameField({ value, onChange, placeholder, c }: { value: string; onChange: (v: string) => void; placeholder: string; c: { bg: string; fg: string } }) {
+function NameField({ value, onChange, placeholder, c, onFocus, onBlur }: { value: string; onChange: (v: string) => void; placeholder: string; c: { bg: string; fg: string }; onFocus?: () => void; onBlur?: () => void }) {
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, height: 54, borderRadius: 18, backgroundColor: tokens.row, paddingHorizontal: 14, borderWidth: 1, borderColor: tokens.hair }}>
       <View style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: value.trim() ? c.bg : tokens.chipBg, alignItems: 'center', justifyContent: 'center' }}>
         <Txt size={13} weight={700} color={value.trim() ? c.fg : tokens.mute}>{value.trim() ? value.trim()[0].toUpperCase() : '?'}</Txt>
       </View>
-      <TextInput value={value} onChangeText={onChange} placeholder={placeholder} placeholderTextColor={tokens.mute} autoCapitalize="words" style={[{ flex: 1, fontSize: 17, color: tokens.ink }, noOutline]} />
+      <TextInput value={value} onChangeText={onChange} onFocus={onFocus} onBlur={onBlur} placeholder={placeholder} placeholderTextColor={tokens.mute} autoCapitalize="words" style={[{ flex: 1, fontSize: 17, color: tokens.ink }, noOutline]} />
     </View>
   );
+}
+
+/**
+ * After a try step: the button to go on, and Memo right beside it where the bar had him, happy about
+ * what just landed. He stays at your fingertips the whole time (Julian 08.11.).
+ */
+function DoneRow({ label, onPress }: { label: string; onPress: () => void }) {
+  const [glad, setGlad] = useState(true);
+  useEffect(() => { const t = setTimeout(() => setGlad(false), 1400); return () => clearTimeout(t); }, []);
+  return (
+    <Animated.View entering={FadeIn.duration(200)} style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 4 }}>
+      <View style={{ flex: 1 }}><Btn label={label} onPress={onPress} /></View>
+      <Pressable onPress={() => { haptics.select(); buddyPoke(); }} accessibilityRole="button" accessibilityLabel="Memo" style={{ width: 52, height: 52, alignItems: 'center', justifyContent: 'center' }}>
+        <DoneMemo glad={glad} />
+      </Pressable>
+    </Animated.View>
+  );
+}
+function DoneMemo({ glad }: { glad: boolean }) {
+  const b = useBuddyState();
+  return <Blob size={50} mood={glad ? 'happy' : 'idle'} poke={b.poke} joy={b.joy} gaze={{ x: -0.6, y: -0.1 }} shadow={false} />;
 }
 
 /** A name magnet next to Memo: pops in once (critically damped), then stays still. */

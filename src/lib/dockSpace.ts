@@ -23,3 +23,15 @@ export function setDockTop(v: number) {
 export function useDockTop() {
   return useSyncExternalStore((l) => { topSubs.add(l); return () => { topSubs.delete(l); }; }, () => top, () => top);
 }
+
+/** Where the talk field's own top edge sits above the screen bottom (without cards or pills over it). Memo sits on it. */
+let field = 0;
+const fieldSubs = new Set<() => void>();
+export function setFieldTop(v: number) {
+  if (Math.abs(v - field) < 2) return;
+  field = v;
+  fieldSubs.forEach((l) => l());
+}
+export function useFieldTop() {
+  return useSyncExternalStore((l) => { fieldSubs.add(l); return () => { fieldSubs.delete(l); }; }, () => field, () => field);
+}

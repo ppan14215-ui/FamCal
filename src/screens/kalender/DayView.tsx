@@ -11,10 +11,10 @@
 import Origin from '../../components/ui/Origin';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { View, ScrollView } from 'react-native';
-import Animated, { useSharedValue, useAnimatedStyle, withSpring, withTiming, Easing } from 'react-native-reanimated';
+import Animated, { useSharedValue, useAnimatedStyle, withSpring, withTiming } from 'react-native-reanimated';
 import { build } from '../../theme/motion';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { springs } from '../../theme';
+import { springs, easing } from '../../theme';
 import { useScroller } from '../../lib/landing';
 import { useDockSpace } from '../../lib/dockSpace';
 import { router } from 'expo-router';
@@ -65,8 +65,9 @@ export function WeekStrip({ day, onSelect }: { day: string; onSelect: (d: string
     const dir = start > prev.current ? 1 : -1;
     prev.current = start;
     slideX.value = dir * 36; op.value = 0.2;
-    slideX.value = withTiming(0, { duration: 320, easing: Easing.bezier(0.22, 1, 0.36, 1) });
-    op.value = withTiming(1, { duration: 240 });
+    // UI stays under 300 ms (Emil Kowalski 08.11.); the strong ease-out from the theme.
+    slideX.value = withTiming(0, { duration: 240, easing: easing.out });
+    op.value = withTiming(1, { duration: 180, easing: easing.out });
   }, [start]);
   const row = useAnimatedStyle(() => ({ opacity: op.value, transform: [{ translateX: slideX.value }] }));
   return (

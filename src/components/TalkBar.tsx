@@ -9,6 +9,7 @@
  * lines, then scrolls inside (Julian 27.10.).
  */
 import React, { useEffect, useRef, useState } from 'react';
+import { voiceLevel, setBuddy } from '../lib/buddy';
 import { View, TextInput, Platform } from 'react-native';
 import Txt from './ui/Txt';
 import LineIcon from './ui/LineIcon';
@@ -31,10 +32,14 @@ import { tx } from '../i18n/lang';
 import { toast } from '../state/store';
 import { hearInCloud, cloudOn, cloudCapped } from '../lib/hoeren';
 import { track } from '../lib/analytics';
-import { speechLocale } from '../lib/speechLang';
+import { speechLocale, speechLang } from '../lib/speechLang';
+import { setSpeak, getSpeak, speakHandlers } from '../lib/speak';
+import MemoMic from './buddy/MemoMic';
 
 /** The cloud ears' day cap is said once per app launch. */
 let toldCap = false;
+/** The last listen request a bar acted on, shared by every bar (only one Dock), so a remount never replays it. */
+let handledListen = 0;
 
 // Phones and tablets: Enter on the screen keyboard adds a line.
 const TOUCH = Platform.OS !== 'web' || (typeof window !== 'undefined' && !!window.matchMedia?.('(pointer: coarse)').matches);
@@ -90,20 +95,27 @@ type Props = {
   onIdle?: () => void;
   /** Called when the mic starts or text arrives (one bar: the input takes the whole width). */
   onBusy?: () => void;
+  /** Julian 08.11.: speaking turns the bar into the Sprechkarte (SpeakCard in the Dock) instead of a wave in the field. */
+  speakCard?: boolean;
 };
 
 // Listeners of the last recording, shared by every TalkBar: the phone has one recognizer, and a bar that was swapped
 // for a new one (the onboarding makes a new one per sentence) must not leave its listeners on it (Julian 05.11. 23:28).
 const lastSubs = { current: [] as { remove: () => void }[] };
 
-export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, onClose, split, card, dark, onIdle, onBusy, placeholder = tx('Sag oder schreib, was ansteht …', 'Say or type what\'s coming up …') }: Props) {
+export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, onClose, split, card, dark, onIdle, onBusy, speakCard, placeholder = tx('Sag oder schreib, was ansteht …', 'Say or type what\'s coming up …') }: Props) {
   const [text, setText] = useState('');
   const [listening, setListening] = useState(false);
   const textRef = useRef(''); textRef.current = text;
   const listeningRef = useRef(false); listeningRef.current = listening;
+  // Memo grows and wobbles with the voice while the mic is on (Julian 07.11.).
+  useEffect(() => { if (listening) { setBuddy({ listening: true }); return () => setBuddy({ listening: false }); } }, [listening]);
+  // Memo reads along while you type (Julian 08.11. 23:49).
+  useEffect(() => { setBuddy({ typed: text.length }); }, [text.length]);
+  useEffect(() => () => setBuddy({ typed: 0 }), []);
   const listenAt = useRef(0);
   /** How loud the voice is right now, 0 to 1; drives the bars in the mic. */
-  const level = useSharedValue(0);
+  const level = voiceLevel;
   const micStyle = useMicStyle();
   const [demo, setDemo] = useState(false);
   const [boxH, setBoxH] = useState(MIN_H);
@@ -165,12 +177,29 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, o
   // Julian 31.10.: spoken words never send by themselves. They land in the field, correct, and only Senden sends.
   // Julian 01.11.: like Claude, a send button next to the check while recording. It finishes and sends what was heard.
   const sendAfter = useRef(false);
+  /** The Sprechkarte holds the spoken sentence until Senden (or Ändern hands it to the field). */
+  const held = useRef(false);
   const land = (t: string) => {
-    if (sendAfter.current && t.trim()) { sendAfter.current = false; send(t, true); return; }
+    // A question in the card may take the answer itself (a time for "Um wie viel Uhr?").
+    const a = speakCard ? getSpeak().ask : null;
+    if (a?.onSpoken && t.trim() && a.onSpoken(t.trim())) { sendAfter.current = false; held.current = false; setText(''); return; }
+    if (sendAfter.current && t.trim()) { sendAfter.current = false; held.current = false; send(t, true); return; }
     sendAfter.current = false;
     setText(t.trim()); spokenText.current = true;
+    if (speakCard) held.current = true;
   };
   const finishAndSend = () => { if (!listening) return send(); sendAfter.current = true; listen(); };
+
+  // The Sprechkarte shows what happens: listening, writing it down, the sentence ready to send.
+  useEffect(() => {
+    if (!speakCard) return;
+    const ph = getSpeak().phase;
+    if (listening) setSpeak({ phase: 'listen', text: '' });
+    else if (writing) setSpeak({ phase: 'write' });
+    else if (held.current && text.trim()) setSpeak({ phase: 'text', text: text.trim() });
+    else if (ph === 'listen' || ph === 'write' || ph === 'text') setSpeak({ phase: 'idle', text: '' });
+  }, [listening, writing, text, speakCard]);
+  useEffect(() => () => { if (speakCard) setSpeak({ phase: 'idle', text: '', ask: null }); }, [speakCard]);
 
   // One bar: speaking or text makes the input the whole bar; a mic that stops with nothing said folds it back.
   const busy = listening || !!text;
@@ -250,6 +279,7 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, o
       const heard = () => `${done} ${part}`.replace(/\s+/g, ' ').trim();
       // The recording the phone keeps (Android 13 and newer); ElevenLabs then writes the final text in the language it hears.
       let audio: string | null = null;
+      let peak = -2;
       let audioDone: (() => void) | null = null;
       // A long sentence takes the phone a moment to close the file (31.10. 12:42 a voice note missed the cloud ears after 1.5 s and fell back to the phone's English guess); the wait ends the moment the file is there.
       const audioReady = new Promise<void>((r) => { audioDone = r; setTimeout(r, 5000); });
@@ -267,7 +297,7 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, o
         // The phone's guess may be empty when it heard the wrong language; the recording still goes to the cloud ears.
         // The file is here: close the session for good, so the next tap starts on an idle recognizer.
         try { if (String(await SR.getStateAsync()) !== 'inactive') SR.abort(); } catch {}
-        const better = audio && (heard() || cloud) ? await hearInCloud(audio) : null;
+        const better = audio && (heard() || cloud) ? await hearInCloud(audio, speechLang(), peak) : null;
         setWriting(false);
         if (typed.current) return;
         // Julian 31.10. 15:20: "Lokale Handy-Erkennung ist offensichtlich nicht gut genug". With the cloud ears on, the
@@ -276,6 +306,9 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, o
         if (cloud) {
           track('voice_transcribed', { ok: !!better, engine: 'cloud', ms });
           if (better) land(better);
+          // The cloud ears missed it but the phone heard words (it listens in the family's language): those land, ready to
+          // check, instead of throwing the sentence away (Julian 08.11.: "every second time it doesn't take it").
+          else if (heard() && !cloudCapped()) land(heard());
           else if (cloudCapped() && heard()) {
             // Day cap of the cloud ears: the phone's own words land, said once (Julian 05.11. 22:15).
             land(heard());
@@ -297,7 +330,7 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, o
           if (!cloud) setText(heard());
         }),
         // -2 to 10 from the phone; below 0 is inaudible.
-        SR.addListener('volumechange', (e) => { level.value = withTiming(Math.min(1, Math.max(0, e.value / 10)), { duration: 100 }); }),
+        SR.addListener('volumechange', (e) => { if (e.value > peak) peak = e.value; level.value = withTiming(Math.min(1, Math.max(0, e.value / 10)), { duration: 100 }); }),
         // Android can end a long recording with an error (no-speech, network) although the file is there (31.10. 14:16 a
         // voice note skipped the cloud ears). Keep listening for the file and finish like a normal stop.
         SR.addListener('error', () => { clearTimeout(quiet); setListening(false); void finish().finally(() => subs.forEach((x) => x.remove())); }),
@@ -347,10 +380,29 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, o
   // An example from the plus sheet lands in the field, ready to change (Julian 30.10.).
   const fill = usePrefill();
   useEffect(() => { if (!takeFill(fill.n)) return; setText(fill.text); setTimeout(() => field.current?.focus(), 250); }, [fill.n]);
+  // Each listen request starts the mic once. Julian 08.11.: "every second recording fails again": since a Memo tap
+  // also bumps the key, a bar that was rebuilt (another tab, the bar folding) saw the old key on mount and switched the
+  // mic on by itself; the next tap on the mic then stopped that empty recording. Only a key newer than the last one counts.
   useEffect(() => {
-    if (!listenKey || listening || text.trim()) return;
+    if (!listenKey || listenKey <= handledListen) return;
+    handledListen = listenKey;
+    if (listening || text.trim()) return;
     listen();
   }, [listenKey]);
+
+  if (speakCard) {
+    speakHandlers.stop = () => { if (listeningRef.current) listen(); };
+    speakHandlers.again = () => { held.current = false; setText(''); listen(); };
+    speakHandlers.send = () => { held.current = false; finishAndSend(); };
+    speakHandlers.cancel = () => {
+      held.current = false; sendAfter.current = false;
+      if (listeningRef.current || writing) { typed.current = true; timers.current.forEach(clearTimeout); setDemo(false); toKeys.current?.(); setWriting(false); }
+      setText('');
+      const a = getSpeak().ask;
+      setSpeak({ phase: 'idle', text: '', ask: a?.hold ? null : a });
+    };
+    speakHandlers.edit = () => { held.current = false; setSpeak({ phase: 'idle' }); setTimeout(() => field.current?.focus(), 300); };
+  }
 
   const plus = (
     <PressScale accessibilityLabel={tx('Foto, Termin, Aufgabe', 'Photo, event, task')} onPress={() => { if (listening) { typed.current = true; timers.current.forEach(clearTimeout); setDemo(false); toKeys.current?.(); setText(''); } onPlus?.(); }} style={{ width: split ? 36 : 44, height: split ? 36 : 44, marginBottom: split ? 6 : 2, marginLeft: split ? 4 : 0, borderRadius: 999, alignItems: 'center', justifyContent: 'center' }}>
@@ -408,7 +460,8 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, o
       <LineIcon name="plus" size={18} color={cInk} stroke={2} />
     </PressScale>
   );
-  const cardMic = (
+  // Julian 08.11. 23:19: Memo sits where the mic was, so there is only one of him. Listening shows the check as before.
+  const cardMic = !listening ? <MemoMic onPress={listen} /> : (
     <PressScale accessibilityLabel={listening ? tx('Fertig gesprochen', 'Done speaking') : tx('Sprechen', 'Speak')} onPress={listen} style={{ width: 34, height: 34, borderRadius: 999, alignItems: 'center', justifyContent: 'center' }}>
       {listening ? <LineIcon name="check" size={21} color={cInk} stroke={2.4} /> : <LineIcon name="mic" size={20} color={cInk} />}
     </PressScale>
@@ -453,11 +506,11 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, o
         <>
           <PressScale
             accessibilityLabel={listening ? tx('Fertig gesprochen', 'Done speaking') : tx('Sprechen', 'Speak')}
-            onPress={listen}
+            onPress={listening ? listen : undefined}
             style={{ width: 36, height: 44, marginBottom: 2, borderRadius: 999, alignItems: 'center', justifyContent: 'center' }}
           >
             {/* Julian 31.10. 12:55: a clear button to finish, like Claude. 01.11.: a check, not a stop square, since it keeps what was said. */}
-            {listening ? <View style={{ width: 34, height: 34, borderRadius: 999, backgroundColor: tokens.ink, alignItems: 'center', justifyContent: 'center' }}><LineIcon name="check" size={19} color={tokens.onInk} stroke={2.4} /></View> : <LineIcon name="mic" size={22} color={dark && !text ? tokens.onInk : tokens.ink} />}
+            {listening ? <View style={{ width: 34, height: 34, borderRadius: 999, backgroundColor: tokens.ink, alignItems: 'center', justifyContent: 'center' }}><LineIcon name="check" size={19} color={tokens.onInk} stroke={2.4} /></View> : <MemoMic onPress={listen} />}
           </PressScale>
           {(text && !listening) || listening ? (
             <PressScale accessibilityLabel={tx('Senden', 'Send')} onPress={finishAndSend} style={{ width: 44, height: 44, marginBottom: 2, borderRadius: 999, alignItems: 'center', justifyContent: 'center', backgroundColor: tokens.ink }}>
@@ -472,6 +525,7 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, o
           <LineIcon name="send" size={20} color={tokens.ink} />
         </PressScale>
       ) : null}
+      {!listening && !text ? <MemoMic onPress={listen} box={48} size={48} /> : (
       <View style={{ width: 48, height: 48 }}>
       {listening && micStyle === 'ring' ? <VoiceRing level={level} /> : null}
       <PressScale
@@ -482,6 +536,7 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, o
         {listening ? (micStyle === 'ring' ? <LineIcon name="check" size={22} color={tokens.onInk} stroke={2.4} /> : <VoiceBars level={level} />) : <LineIcon name={text ? 'send' : 'mic'} size={22} color={tokens.onInk} />}
       </PressScale>
       </View>
+      )}
       </>
       )}
     </View>

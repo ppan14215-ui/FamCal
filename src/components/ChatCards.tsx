@@ -24,7 +24,7 @@ import { getFamily, myRole } from '../lib/sync';
 import { hm, short, TODAY } from '../lib/dates';
 import HeaderRight from './ui/HeaderRight';
 import { tx } from '../i18n/lang';
-import Memo from './onboarding/Memo';
+import Blob from './buddy/Blob';
 import { useVeil, Step, Dots } from './Veil';
 import { isTrip, makePackList, kidsOn, ageText } from '../lib/pack';
 import { isVacation, leftLine } from '../lib/urlaub';
@@ -85,7 +85,7 @@ export function Termine({ ids, snap, changed, ask, timeQ, fresh, placeQ }: { ids
 /** Time questions answered with "Ganztägig": the Termin stays all day, the question is done. */
 const settled = new Set<string>();
 const settledSubs = new Set<() => void>();
-const settle = (id: string) => { settled.add(id); settledSubs.forEach((l) => l()); };
+export const settle = (id: string) => { settled.add(id); settledSubs.forEach((l) => l()); };
 export const useSettled = () => { const [, bump] = useState(0); useEffect(() => { const l = () => bump((n) => n + 1); settledSubs.add(l); return () => { settledSubs.delete(l); }; }, []); return settled; };
 
 const pad2 = (n: number) => String(n).padStart(2, '0');
@@ -97,7 +97,9 @@ const plusMin = (t: string, min: number) => { const m = Math.min(23 * 60 + 59, N
  */
 function TimeAsk({ e, q }: { e: EventSnap; q: string }) {
   const [step, setStep] = useState<'start' | 'end' | 'done'>(e.allDay && !settled.has(e.id) ? 'start' : 'done');
-  if (step === 'done') return null;
+  // Answered in the Sprechkarte (Julian 08.11.): the question here is done too.
+  const done = useSettled();
+  if (step === 'done' || (step === 'start' && done.has(e.id))) return null;
   const chip = (label: string, on: () => void, key = label) => (
     <PressScale key={key} onPress={() => { haptics.select(); on(); }} style={{ height: 32, paddingHorizontal: 12, borderRadius: 999, alignItems: 'center', justifyContent: 'center', backgroundColor: tokens.chipBg }}>
       <Txt size={13.5}>{label}</Txt>
@@ -388,11 +390,12 @@ export const cardFrame = { alignSelf: 'stretch' as const, borderRadius: 18, over
  * just entered something. Older cards in the log stay still, so a long chat never twitches.
  */
 export function Reply({ text, live, fresh }: { text?: string; live?: boolean; fresh?: boolean }) {
-  const act = live ? (text ? 'happy' : 'think') : fresh ? 'blink' : 'idle';
+  // The blob (Julian 07.11.): squashes while it thinks, ^^ when it has answered; older cards hold still.
+  const mood = live ? (text ? 'happy' : 'think') : 'idle';
   return (
     <View style={{ paddingTop: 10, paddingHorizontal: 14, paddingBottom: 4, gap: 4 }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-        <Memo act={act} size={24} shadow={false} alive={false} delay={0} beat={text ? 1 : 0} />
+        <Blob mood={mood} size={24} shadow={false} still={!live} />
         <Txt size={12} weight={600} tracking={0.6} color={tokens.done}>MEMO</Txt>
       </View>
       {text ? <Animated.View entering={swapIn}><Txt size={15} line={21}>{text}</Txt></Animated.View> : <View style={{ paddingVertical: 4 }}><Dots /></View>}

@@ -11,7 +11,7 @@ import Animated, { useAnimatedStyle, useSharedValue, withSpring, withTiming, int
 import { scheduleOnRN } from 'react-native-worklets';
 import Txt from './ui/Txt';
 import LineIcon from './ui/LineIcon';
-import { tokens, springs, motion } from '../theme';
+import { tokens, springs, motion, easing } from '../theme';
 import { haptics } from '../lib/haptics';
 import { tx } from '../i18n/lang';
 
@@ -27,7 +27,9 @@ export default function SwipeRow({ children, onDelete, bg = tokens.row }: { chil
   const w = useSharedValue(360);
   const armed = useSharedValue(false);
 
-  const fire = useCallback(() => { haptics.commit(); onDelete(); }, [onDelete]);
+  // The buzz lands on the release that deletes, the row flies off after (Emil Kowalski 08.11.: haptic in the same frame as the cause).
+  const buzz = useCallback(() => haptics.commit(), []);
+  const fire = useCallback(() => { onDelete(); }, [onDelete]);
   const tick = useCallback(() => haptics.select(), []);
   const mark = useCallback(() => { swipedAt = Date.now(); }, []);
 
@@ -47,7 +49,8 @@ export default function SwipeRow({ children, onDelete, bg = tokens.row }: { chil
       scheduleOnRN(mark);
       const far = -x.value > w.value * 0.5 || (e.velocityX < -900 && -x.value > 40);
       if (far) {
-        x.value = withTiming(-w.value, { duration: motion.micro }, (done) => { if (done) scheduleOnRN(fire); });
+        scheduleOnRN(buzz);
+        x.value = withTiming(-w.value, { duration: motion.micro, easing: easing.out }, (done) => { if (done) scheduleOnRN(fire); });
       } else if (-x.value > OPEN * 0.6) {
         x.value = withSpring(-OPEN, { ...springs.smooth, velocity: e.velocityX });
       } else {
@@ -69,7 +72,7 @@ export default function SwipeRow({ children, onDelete, bg = tokens.row }: { chil
       <Animated.View style={[{ position: 'absolute', right: 0, top: 0, bottom: 0, backgroundColor: tokens.danger }, action]}>
         <Pressable
           accessibilityLabel={tx('Löschen', 'Delete')}
-          onPress={() => { x.value = withTiming(-w.value, { duration: motion.micro }, (d) => { if (d) scheduleOnRN(fire); }); }}
+          onPress={() => { buzz(); x.value = withTiming(-w.value, { duration: motion.micro, easing: easing.out }, (d) => { if (d) scheduleOnRN(fire); }); }}
           style={{ flex: 1, alignItems: 'center', justifyContent: 'center', gap: 2 }}
         >
           <LineIcon name="x" size={18} color={tokens.onInk} stroke={2.2} />

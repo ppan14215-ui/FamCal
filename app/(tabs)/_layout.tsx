@@ -12,8 +12,9 @@ export default function TabsLayout() {
       tabBar={(props) => <Keyed><NavBar {...props} /></Keyed>}
       screenLayout={({ children }) => <Keyed>{children}</Keyed>}
       screenOptions={{ headerShown: false, sceneStyle: { backgroundColor: tokens.bg }, freezeOnBlur: true,
-        // Each tab builds up quickly instead of just appearing (Julian 31.10.).
-        animation: 'shift', transitionSpec: { animation: 'timing', config: { duration: 200 } } }}
+        // Each tab builds up quickly instead of just appearing (Julian 31.10.). A short fade, no slide: tabs are peers,
+        // sliding claims a depth that isn't there and is felt dozens of times a day (Emil Kowalski, animate-expo, 08.11.).
+        animation: 'fade', transitionSpec: { animation: 'timing', config: { duration: 150 } } }}
     >
       <Tabs.Screen name="chat" />
       <Tabs.Screen name="kalender" />

@@ -13,7 +13,7 @@ import { toast } from '../src/state/store';
 import { tx } from '../src/i18n/lang';
 
 export default function KiZustimmung() {
-  const { said } = useLocalSearchParams<{ said?: string }>();
+  const { said, voice } = useLocalSearchParams<{ said?: string; voice?: string }>();
   return (
     <Screen gap={16}>
       <BackBar />
@@ -23,7 +23,7 @@ export default function KiZustimmung() {
         onMore={() => router.push('/datenschutz')}
         onDone={(mitKi) => {
           goBack();
-          if (mitKi && said) setTimeout(() => sayInApp(String(said)), 250);
+          if (mitKi && said) setTimeout(() => sayInApp(String(said), voice === '1'), 250);
           if (!mitKi) toast(tx('Ohne KI: ihr tragt alles von Hand ein, mit dem Plus.', 'Without AI: add everything by hand with the plus.'));
         }}
       />
