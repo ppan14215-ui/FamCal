@@ -28,6 +28,7 @@ import PressScale from '../../components/ui/PressScale';
 import { tx } from '../../i18n/lang';
 import { useCalEvents } from '../../lib/useEvents';
 import { isInfoDay } from '../../lib/feiertage';
+import { lanes } from '../../lib/lanes';
 
 // The usual day; it grows to the earliest and latest Termin of the shown days
 // (Julian 30.10.: "Wieso geht der Tag nur bis 18 Uhr?").
@@ -205,15 +206,29 @@ export default function WeekView() {
           <View onLayout={(e: LayoutChangeEvent) => setColsW(e.nativeEvent.layout.width)} style={{ flex: 1, flexDirection: 'row', gap: 3 }}>
             {days.map((d) => {
               const list = events.filter((e) => e.date === d && !isSpan(e));
+              // Two people at the same time (Julian 08.11.): side by side, each in their own colour, never one over the other.
+              const colW = Math.max(20, (colsW - 3 * (n - 1)) / n);
+              const workSpan = (e: CalEvent): [number, number] => {
+                const [from, to] = e.allDay || !e.end || e.end <= e.start ? ['08:00', '17:00'] : [e.start, e.end];
+                return [top(from), top(from) + Math.max(HP * 0.6, top(to) - top(from))];
+              };
+              const evH = (e: CalEvent) => Math.max(28, (e.end && top(e.end) > top(e.start) ? top(e.end) - top(e.start) : HP * 0.8) - 4);
+              const workLane = lanes(list.filter((e) => e.work), workSpan, () => 0, (e) => e.who ?? '');
+              const evLane = lanes(list.filter((e) => !e.work), (e) => [top(e.start) + 2, top(e.start) + 2 + evH(e)], (e) => (e.who === 'J' ? 0 : e.who === 'T' ? 1 : 2));
+              const place = (l: { lane: number; lanes: number } | undefined, pad: number) => {
+                const k = l?.lanes ?? 1, i = l?.lane ?? 0;
+                const inner = colW - 2 * pad, gap = k > 1 ? 2 : 0, w = (inner - gap * (k - 1)) / k;
+                return { left: pad + i * (w + gap), width: w };
+              };
               return (
                 <View key={d} style={{ flex: 1, position: 'relative', zIndex: liftCol === days.indexOf(d) ? 5 : 0 }}>
                   <Pressable accessibilityLabel={tx('Termin hier eintragen', 'Add an event here')} onPress={(ev: any) => slotAt(d, ev.nativeEvent.locationY ?? ev.nativeEvent.offsetY)} style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0 }} />
                   {list.filter((e) => e.work).map((e) => {
                     // Work without hours ("Arbeit bis Weihnachten") fills a usual working day, so it never vanishes (Julian 30.10.).
-                    const [from, to] = e.allDay || !e.end || e.end <= e.start ? ['08:00', '17:00'] : [e.start, e.end];
+                    const [y0, y1] = workSpan(e);
                     return (
                       // Work blocks open like any Termin (Julian 29.10.: they could not be seen or deleted).
-                      <PressScale key={e.id} scale={0.99} onPress={(ev: any) => { const y = ev?.nativeEvent?.locationY ?? ev?.nativeEvent?.offsetY ?? 0; if (y < 20) router.push(`/termin/${e.id}`); else slotAt(d, top(from) + y); }} accessibilityLabel={`${e.title}, ${tx('ansehen oder Termin darin eintragen', 'view or add an event inside')}`} style={{ position: 'absolute', left: 1, right: 1, top: top(from), height: Math.max(HP * 0.6, top(to) - top(from)) }}>
+                      <PressScale key={e.id} scale={0.99} onPress={(ev: any) => { const y = ev?.nativeEvent?.locationY ?? ev?.nativeEvent?.offsetY ?? 0; if (y < 20) router.push(`/termin/${e.id}`); else slotAt(d, y0 + y); }} accessibilityLabel={`${e.title}, ${tx('ansehen oder Termin darin eintragen', 'view or add an event inside')}`} style={{ position: 'absolute', ...place(workLane.get(e), 1), top: y0, height: y1 - y0 }}>
                         <Stripes p={(e.who === 'J' ? 'J' : 'T') as PersonId} radius={8} style={{ flex: 1, opacity: 0.9, padding: 3 }}>
                           {wide || e.title !== tx('Arbeit', 'Work') ? <Txt size={10} line={12} weight={700} numberOfLines={1} ellipsizeMode="clip" color={persons[e.who === 'J' ? 'J' : 'T'].ink}>{wide ? e.title : SHORT[e.title] ?? e.title.split(' ')[0]}</Txt> : null}
                         </Stripes>
@@ -221,12 +236,14 @@ export default function WeekView() {
                     );
                   })}
                   {list.filter((e) => !e.work).map((e) => {
-                    const h = Math.max(28, (e.end && top(e.end) > top(e.start) ? top(e.end) - top(e.start) : HP * 0.8) - 4);
+                    const h = evH(e);
+                    const l = evLane.get(e);
+                    const slim = !!l && l.lanes > 1;
                     return (
-                      <Drag key={e.id} e={e} days={days} col={days.indexOf(d)} step={(colsW + 3) / n} HP={HP} dragging={dragging} onLift={setLiftCol} style={{ top: top(e.start) + 2, height: h, backgroundColor: evTint(e), ...(evShared(e) ? sharedBorder() : null) }}>
+                      <Drag key={e.id} e={e} days={days} col={days.indexOf(d)} step={(colsW + 3) / n} HP={HP} dragging={dragging} onLift={setLiftCol} style={{ ...place(l, 3), top: top(e.start) + 2, height: h, backgroundColor: evTint(e), ...(slim ? { paddingHorizontal: 2 } : null), ...(evShared(e) ? sharedBorder() : null) }}>
                         {/* Narrow columns clip one line like Apple and Google; a word is never broken into single letters (Julian 30.10.). */}
-                        <Txt size={wide ? 12.5 : 10.5} line={wide ? 16 : 13} weight={700} numberOfLines={wide ? Math.max(1, Math.floor(h / 17) - 1) : 1} ellipsizeMode="clip" textBreakStrategy="simple" android_hyphenationFrequency="none">{wide ? e.title : SHORT[e.title] ?? e.title.split(' ')[0]}</Txt>
-                        <View pointerEvents="none" style={{ position: 'absolute', top: 2, right: 2 }}><Origin e={e} size={wide ? 12 : 10} /></View>
+                        <Txt size={wide ? 12.5 : 10.5} line={wide ? 16 : 13} weight={700} numberOfLines={wide && !slim ? Math.max(1, Math.floor(h / 17) - 1) : 1} ellipsizeMode={slim && wide ? 'tail' : 'clip'} textBreakStrategy="simple" android_hyphenationFrequency="none">{wide ? e.title : SHORT[e.title] ?? e.title.split(' ')[0]}</Txt>
+                        {!slim || wide ? <View pointerEvents="none" style={{ position: 'absolute', top: 2, right: 2 }}><Origin e={e} size={wide ? 12 : 10} /></View> : null}
                         {big && h >= 44 && !e.allDay ? <Txt size={wide ? 12 : 10} line={wide ? 15 : 12} color={tokens.sub} numberOfLines={1}>{wide && e.end ? `${hm(e.start)} ${tx('bis', 'to')} ${hm(e.end)}` : hm(e.start)}</Txt> : null}
                       </Drag>
                     );
@@ -271,7 +288,7 @@ const hhmm = (m: number) => `${pad(Math.floor(m / 60))}:${pad(m % 60)}`;
  */
 function Drag({ e, days, col, step, HP, dragging, onLift, style, children }: {
   e: CalEvent; days: string[]; col: number; step: number; HP: number;
-  dragging: { value: number }; onLift: (col: number) => void; style: { top: number; height: number; backgroundColor: string }; children: React.ReactNode;
+  dragging: { value: number }; onLift: (col: number) => void; style: { top: number; height: number; backgroundColor: string; left: number; width: number; paddingHorizontal?: number }; children: React.ReactNode;
 }) {
   const dx = useSharedValue(0);
   const dy = useSharedValue(0);
@@ -334,7 +351,7 @@ function Drag({ e, days, col, step, HP, dragging, onLift, style, children }: {
         accessibilityRole="button"
         accessibilityLabel={`${e.title}, ${hm(e.start)}`}
         accessibilityHint={series ? undefined : tx('Halten und ziehen zum Verschieben', 'Hold and drag to move')}
-        style={[{ position: 'absolute', left: 3, right: 3, borderRadius: 8, borderWidth: 1.5, borderColor: tokens.onInk, paddingVertical: 3, paddingHorizontal: 4, overflow: 'visible', shadowColor: '#000', shadowRadius: 10, shadowOffset: { width: 0, height: 4 } }, style, anim]}
+        style={[{ position: 'absolute', borderRadius: 8, borderWidth: 1.5, borderColor: tokens.onInk, paddingVertical: 3, paddingHorizontal: 4, overflow: 'visible', shadowColor: '#000', shadowRadius: 10, shadowOffset: { width: 0, height: 4 } }, style, anim]}
       >
         <View style={{ flex: 1, overflow: 'hidden' }}>{children}</View>
         {label ? (
