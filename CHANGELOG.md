@@ -11,6 +11,7 @@ Alle sichtbaren Änderungen an FamCal. Neueste oben. Agenten und Menschen: Ände
 - Tag wechseln im Tagkalender ist etwas schneller.
 
 ### Memo als Blob (07.11.)
+- 08.11. abends: Memo hat eine Aufgabe. Er ist der Sprechknopf: Antippen und sprechen. Er schaut dahin, wo du tippst, und zeigt ein kleines „?“, wenn eine Frage auf deine Antwort wartet. Bei den ersten drei Starts sagt eine kleine Zeile „Tipp mich an und sprich“.
 - 08.11.: Memo hüpft nicht mehr. Er freut sich auf der Stelle (kurz zusammendrücken, kleines Wackeln, ^^ Augen) und bleibt immer auf dem Eingabefeld sitzen, auch wenn eine Karte oder Pille darüber erscheint.
 - 08.11.: Die Start Animation läuft jetzt flüssig: nur noch Bewegungen, die das Handy direkt zeichnet, und der kleine Memo übernimmt ohne Lücke.
 - Memo ist jetzt ein weicher, glänzender Tropfen in Teal mit zwei cremefarbenen Augen und sitzt rechts über dem Eingabefeld, auf jedem Screen mit Feld.

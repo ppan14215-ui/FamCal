@@ -67,6 +67,8 @@ export type BlobProps = {
   joy?: number;
   /** Bumping it plays a small squish (a tap, a new message, landing on the field). */
   poke?: number;
+  /** Look towards a point for a moment (x, y in -1..1); a new n plays it again. */
+  glance?: { x: number; y: number; n: number };
   /** Voice level 0..1 while listening. */
   level?: SharedValue<number>;
   /** No frame loop: the shape holds still and only the eyes follow the mood (small faces in a long chat). */
@@ -76,7 +78,7 @@ export type BlobProps = {
   style?: StyleProp<ViewStyle>;
 };
 
-export default function Blob({ size = 40, mood = 'idle', joy = 0, poke = 0, level, still, shadow = true, style }: BlobProps) {
+export default function Blob({ size = 40, mood = 'idle', joy = 0, poke = 0, glance, level, still, shadow = true, style }: BlobProps) {
   const S = size;
   const reduced = useReducedMotion();
   const live = !still && !reduced;
@@ -117,7 +119,7 @@ export default function Blob({ size = 40, mood = 'idle', joy = 0, poke = 0, leve
     const v = lv.value * lvlOn.value;
     return {
       transform: [
-        { translateX: tx.value + gx.value * S * 0.025 },
+        { translateX: tx.value + gx.value * S * 0.05 },
         { translateY: ty.value },
         { rotate: `${rot.value + gx.value * 3}deg` },
         { scaleX: sx.value * grow.value * (1 - b * 0.6 + v * 0.05) },
@@ -127,7 +129,7 @@ export default function Blob({ size = 40, mood = 'idle', joy = 0, poke = 0, leve
   });
   const eyeStyle = useAnimatedStyle(() => ({
     opacity: 1 - happy.value,
-    transform: [{ translateX: gx.value * S * 0.075 }, { translateY: gy.value * S * 0.06 }, { scaleY: blink.value * wide.value }] as any,
+    transform: [{ translateX: gx.value * S * 0.11 }, { translateY: gy.value * S * 0.09 }, { scaleY: blink.value * wide.value }] as any,
   }));
   const arcStyle = useAnimatedStyle(() => ({
     opacity: happy.value,
@@ -218,6 +220,14 @@ export default function Blob({ size = 40, mood = 'idle', joy = 0, poke = 0, leve
     sy.value = withSequence(withTiming(1 - 0.14 * k, { duration: 110, easing: Easing.out(Easing.quad) }), withTiming(1 + 0.08 * k, { duration: 130 }), withSpring(1, jelly));
     if (big) rot.value = withSequence(withDelay(160, withTiming(-7, { duration: 120 })), withTiming(6, { duration: 160 }), withTiming(-3, { duration: 140 }), withSpring(0, { stiffness: 200, damping: 12 }));
   };
+  // Follows you: eyes go where you touched, then drift back.
+  useEffect(() => {
+    if (!glance || (mood !== 'idle' && mood !== 'type')) return;
+    const out = Easing.bezier(0.23, 1, 0.32, 1);
+    gx.value = withSequence(withTiming(glance.x, { duration: 180, easing: out }), withDelay(1300, withTiming(mood === 'type' ? -0.55 : 0, { duration: 420 })));
+    gy.value = withSequence(withTiming(glance.y, { duration: 180, easing: out }), withDelay(1300, withTiming(mood === 'type' ? 0.75 : 0, { duration: 420 })));
+    if (live) rot.value = withSequence(withTiming(glance.x * 5, { duration: 200 }), withDelay(1250, withSpring(0, { stiffness: 200, damping: 16 })));
+  }, [glance?.n]);
   const first = useRef(true);
   useEffect(() => { if (first.current) return; react(true, 1600); }, [joy]);
   useEffect(() => { if (first.current) return; react(false, 450); }, [poke]);

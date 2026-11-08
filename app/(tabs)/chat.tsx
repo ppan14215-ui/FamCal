@@ -37,6 +37,7 @@ import WhenField from '../../src/components/WhenField';
 import type { When } from '../../src/lib/when';
 import type { CalEvent } from '../../src/state/types';
 import { haptics } from '../../src/lib/haptics';
+import { setBuddy } from '../../src/lib/buddy';
 
 import { Entry, Thinking, Jumps, at, dayOf, useSettled } from '../../src/components/ChatCards';
 
@@ -61,6 +62,9 @@ export default function Chat() {
   const [more, setMore] = useState(0);
   const openQ = useOpenQuestion(feed, me);
   const qY = useRef(0);
+  // Memo shows a "?" while something waits for my answer; tapping him answers by voice.
+  useEffect(() => { setBuddy({ waiting: !!openQ && !thinking }); }, [!!openQ, thinking]);
+  useEffect(() => () => setBuddy({ waiting: false }), []);
   const shown = feed.slice(-(SHOWN + more));
   let lastDay = '';
   return (

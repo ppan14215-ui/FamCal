@@ -20,6 +20,7 @@ import { actions } from '../src/state/store';
 import { VeilHost } from '../src/components/Veil';
 import Dock from '../src/components/Dock';
 import BuddyHost from '../src/components/buddy/BuddyHost';
+import { buddyTouch } from '../src/lib/buddy';
 import BuddyIntro from '../src/components/buddy/BuddyIntro';
 import { tokens } from '../src/theme';
 import { useThemeGen, Keyed } from '../src/theme/mode';
@@ -54,7 +55,7 @@ function RootLayout() {
   if (!loaded && !error) return <View style={{ flex: 1, backgroundColor: tokens.bg }} />;
 
   return (
-    <GestureHandlerRootView style={{ flex: 1, backgroundColor: tokens.bg }}>
+    <GestureHandlerRootView style={{ flex: 1, backgroundColor: tokens.bg }} onTouchStart={(e) => buddyTouch(e.nativeEvent.pageX, e.nativeEvent.pageY)}>
       <SafeAreaProvider>
         <WebInsets>
           <StatusBar style={isDark() ? 'light' : 'dark'} />

@@ -8,6 +8,7 @@
  */
 import { track, firstTime, type EntryKind, type Input } from '../lib/analytics';
 import SessionPill from './SessionPill';
+import { useBuddyTalk } from '../lib/buddy';
 import React, { useEffect, useRef, useState } from 'react';
 import { View, ScrollView, Platform, BackHandler, useWindowDimensions, TextInput } from 'react-native';
 import { router, usePathname } from 'expo-router';
@@ -443,6 +444,9 @@ export default function Dock() {
   const [mode, setMode] = useState<'card' | 'msg'>('card');
   // The bubble opened the field: the mic starts right away.
   useEffect(() => { if (talking) setListenKey((k) => k + 1); }, [talking]);
+  // Tapping Memo is the same as tapping the mic (Julian 08.11.: Memo needs a purpose).
+  const buddyTalkN = useBuddyTalk();
+  useEffect(() => { if (!buddyTalkN) return; if (navStyle() === 'bar') setBarMode('input'); setListenKey((k) => k + 1); }, [buddyTalkN]);
   useEffect(() => {
     if (!talking) return;
     const sub = BackHandler.addEventListener('hardwareBackPress', () => { setTalkOpen(false); setTurn(null); light(null); return true; });

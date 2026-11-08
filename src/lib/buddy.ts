@@ -30,10 +30,16 @@ type State = {
   from: { x: number; y: number } | null;
   /** The intro is still covering the screen. */
   intro: boolean;
+  /** Bumps when Memo is tapped: the field starts listening (Memo is the talk button, Julian 08.11.). */
+  talk: number;
+  /** The last touch anywhere on screen: Memo glances there. */
+  touch: { x: number; y: number; n: number } | null;
+  /** Something waits for my answer (a question in the chat): Memo shows a "?". */
+  waiting: boolean;
 };
 
 // intro starts true: BuddyIntro says when the screen is free (it always mounts with the root).
-let state: State = { listening: false, joy: 0, poke: 0, from: null, intro: true };
+let state: State = { listening: false, joy: 0, poke: 0, from: null, intro: true, talk: 0, touch: null, waiting: false };
 const subs = new Set<() => void>();
 const emit = () => subs.forEach((l) => l());
 
@@ -46,6 +52,15 @@ export function setBuddy(patch: Partial<State>) {
 }
 export const buddyJoy = () => setBuddy({ joy: state.joy + 1 });
 export const buddyPoke = () => setBuddy({ poke: state.poke + 1 });
+export const buddyTalk = () => setBuddy({ talk: state.talk + 1 });
+let lastTouch = 0;
+/** A touch anywhere: at most a few per second reach Memo, so scrolling stays cheap. */
+export function buddyTouch(x: number, y: number) {
+  const now = Date.now();
+  if (now - lastTouch < 250) return;
+  lastTouch = now;
+  setBuddy({ touch: { x, y, n: (state.touch?.n ?? 0) + 1 } });
+}
 
 export function useBuddy() {
   return useSyncExternalStore((l) => { subs.add(l); return () => { subs.delete(l); }; }, () => state, () => state);
@@ -53,3 +68,8 @@ export function useBuddy() {
 
 /** Night: from 23 to 6 o'clock an idle Memo dozes (concept 01.11. said 21, later so evening use still sees its eyes). */
 export const isNight = () => { const h = new Date().getHours(); return h >= 23 || h < 6; };
+
+/** Only the talk counter, so the dock re-renders on a Memo tap and not on every touch. */
+export function useBuddyTalk() {
+  return useSyncExternalStore((l) => { subs.add(l); return () => { subs.delete(l); }; }, () => state.talk, () => state.talk);
+}
