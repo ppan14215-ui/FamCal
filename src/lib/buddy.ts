@@ -48,10 +48,12 @@ type State = {
   landed: boolean;
   /** Someone else (the onboarding's flying Memo) is on its way to the bar: the bar's Memo stays invisible meanwhile. */
   dockHidden: boolean;
+  /** Something works outside the Veil (the onboarding's offline answers): the bar's Memo thinks as with the assistant. */
+  thinking: boolean;
 };
 
 // intro starts true: BuddyIntro says when the screen is free (it always mounts with the root).
-let state: State = { listening: false, joy: 0, poke: 0, from: null, intro: true, talk: 0, touch: null, waiting: false, covered: false, docked: 0, dockAt: null, typed: 0, landed: false, dockHidden: false };
+let state: State = { listening: false, joy: 0, poke: 0, from: null, intro: true, talk: 0, touch: null, waiting: false, covered: false, docked: 0, dockAt: null, typed: 0, landed: false, dockHidden: false, thinking: false };
 const subs = new Set<() => void>();
 const emit = () => subs.forEach((l) => l());
 

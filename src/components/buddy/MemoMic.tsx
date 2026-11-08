@@ -26,7 +26,7 @@ export default function MemoMic({ onPress, box = 34, size = 40, label }: { onPre
   // Tell the floating Memo where to glide on start and where to glance from.
   const measure = () => me.current?.measureInWindow?.((x, y, w, h) => { if (w) setBuddy({ dockAt: { x: x + w / 2, y: y + h / 2 } }); });
   useEffect(() => { const t = [setTimeout(measure, 60), setTimeout(measure, 700)]; return () => t.forEach(clearTimeout); }, []);
-  const mood: Mood = b.listening ? 'listen' : veil.phase === 'think' ? 'think' : typing ? 'type' : night ? 'sleep' : 'idle';
+  const mood: Mood = b.listening ? 'listen' : veil.phase === 'think' || b.thinking ? 'think' : typing ? 'type' : night ? 'sleep' : 'idle';
   const glance = React.useMemo(() => {
     if (!b.touch || !b.dockAt) return undefined;
     const c = (v: number) => Math.max(-1, Math.min(1, v));
