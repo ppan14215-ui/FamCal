@@ -3,7 +3,7 @@
  * pill eyes and no mouth. Everything it says, it says with its body and its
  * eyes: it breathes, its outline never quite holds still (jelly), it blinks,
  * looks around, squashes flat while it thinks, grows and wobbles with your
- * voice, and hops with ^^ eyes when something has landed.
+ * voice, and squishes with a happy wiggle and ^^ eyes when something has landed.
  *
  * The outline is a closed spline through eight points whose distance from the
  * centre drifts a little every frame; the shine is two SVG gradients, so it is
@@ -63,9 +63,9 @@ let seq = 0;
 export type BlobProps = {
   size?: number;
   mood?: Mood;
-  /** Bumping it plays one happy hop. */
+  /** Bumping it plays one happy wiggle with ^^ eyes. */
   joy?: number;
-  /** Bumping it plays a quick look and a little hop (a tap, a new message). */
+  /** Bumping it plays a small squish (a tap, a new message, landing on the field). */
   poke?: number;
   /** Voice level 0..1 while listening. */
   level?: SharedValue<number>;
@@ -205,21 +205,22 @@ export default function Blob({ size = 40, mood = 'idle', joy = 0, poke = 0, leve
     return () => { timers.forEach(clearTimeout); };
   }, [mood, live]);
 
-  // A hop: squash, stretch up, fall, squash on landing, settle.
-  const hop = (height: number, eyes: number) => {
-    const out = Easing.bezier(0.23, 1, 0.32, 1);
-    const inn = Easing.bezier(0.55, 0, 0.9, 0.4);
-    if (!live) { happy.value = withSequence(withTiming(1, { duration: 120 }), withDelay(eyes, withTiming(0, { duration: 200 }))); return; }
-    cancelAnimation(sx); cancelAnimation(sy);
-    ty.value = withSequence(withTiming(0, { duration: 90 }), withTiming(-S * height, { duration: 230, easing: out }), withTiming(0, { duration: 210, easing: inn }), withSpring(0, { stiffness: 300, damping: 14 }));
-    sx.value = withSequence(withTiming(1.14, { duration: 90 }), withTiming(0.9, { duration: 160 }), withTiming(1, { duration: 280 }), withTiming(1.16, { duration: 70 }), withSpring(1, { stiffness: 260, damping: 10 }));
-    sy.value = withSequence(withTiming(0.84, { duration: 90 }), withTiming(1.14, { duration: 160 }), withTiming(1, { duration: 280 }), withTiming(0.84, { duration: 70 }), withSpring(1, { stiffness: 260, damping: 10 }));
+  // Reactions stay in place (Julian 08.11.: "the jumping doesn't make sense"): a jelly squish, a little
+  // happy wiggle and ^^ eyes. Memo never leaves its spot on the field.
+  const react = (big: boolean, eyes: number) => {
     happy.value = withSequence(withTiming(1, { duration: 140 }), withDelay(eyes, withTiming(0, { duration: 220 })));
     gx.value = withTiming(0, { duration: 200 }); gy.value = withTiming(0, { duration: 200 });
+    if (!live) return;
+    cancelAnimation(sx); cancelAnimation(sy); cancelAnimation(rot);
+    const k = big ? 1 : 0.55;
+    const jelly = { stiffness: 260, damping: 9, mass: 0.8 };
+    sx.value = withSequence(withTiming(1 + 0.14 * k, { duration: 110, easing: Easing.out(Easing.quad) }), withTiming(1 - 0.06 * k, { duration: 130 }), withSpring(1, jelly));
+    sy.value = withSequence(withTiming(1 - 0.14 * k, { duration: 110, easing: Easing.out(Easing.quad) }), withTiming(1 + 0.08 * k, { duration: 130 }), withSpring(1, jelly));
+    if (big) rot.value = withSequence(withDelay(160, withTiming(-7, { duration: 120 })), withTiming(6, { duration: 160 }), withTiming(-3, { duration: 140 }), withSpring(0, { stiffness: 200, damping: 12 }));
   };
   const first = useRef(true);
-  useEffect(() => { if (first.current) return; hop(0.42, 1700); }, [joy]);
-  useEffect(() => { if (first.current) return; hop(0.22, 500); }, [poke]);
+  useEffect(() => { if (first.current) return; react(true, 1600); }, [joy]);
+  useEffect(() => { if (first.current) return; react(false, 450); }, [poke]);
   useEffect(() => { first.current = false; if (mood === 'happy') happy.value = withTiming(1, { duration: 160 }); }, [mood]);
 
   const ew = S * 0.1, eh = S * 0.175; // a pill eye

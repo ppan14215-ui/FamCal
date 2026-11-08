@@ -5,6 +5,8 @@ Alle sichtbaren Änderungen an FamCal. Neueste oben. Agenten und Menschen: Ände
 ## Unreleased
 
 ### Memo als Blob (07.11.)
+- 08.11.: Memo hüpft nicht mehr. Er freut sich auf der Stelle (kurz zusammendrücken, kleines Wackeln, ^^ Augen) und bleibt immer auf dem Eingabefeld sitzen, auch wenn eine Karte oder Pille darüber erscheint.
+- 08.11.: Die Start Animation läuft jetzt flüssig: nur noch Bewegungen, die das Handy direkt zeichnet, und der kleine Memo übernimmt ohne Lücke.
 - Memo ist jetzt ein weicher, glänzender Tropfen in Teal mit zwei cremefarbenen Augen und sitzt rechts über dem Eingabefeld, auf jedem Screen mit Feld.
 - Memo lebt mit: atmet, blinzelt, schaut sich um, schaut aufs Feld beim Tippen, wird beim Sprechen größer und wackelt mit der Stimme, drückt sich beim Nachdenken flach und hüpft mit ^^ Augen, wenn etwas eingetragen ist. Antippen lässt ihn hüpfen. Nachts (23 bis 6 Uhr) döst er.
 - Beim App Start ist der ganze Bildschirm kurz Memo und schmilzt nach oben weg, dann fliegt Memo an seinen Platz. Tippen überspringt es.

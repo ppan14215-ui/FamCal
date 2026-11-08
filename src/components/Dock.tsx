@@ -30,7 +30,7 @@ import { linkIn, recipeFromLink, keepRecipe, loadRecipes, type Recipe } from '..
 import { onShared, onSayInApp } from '../lib/shared';
 import { dayLabel, slotLine, type Suggest } from '../lib/talk';
 import { light, lightOneByOne } from '../lib/landing';
-import { setDockTop, setDockSpace } from '../lib/dockSpace';
+import { setDockTop, setDockSpace, setFieldTop } from '../lib/dockSpace';
 import { useKeyboardInset, useTyping, useInlineEditing } from '../lib/keyboard';
 import { setTalkOpen, useTalkOpen } from '../lib/talkOpen';
 import { navH, navTop, TABS, BarTab, floatShadow } from './NavBar';
@@ -501,6 +501,9 @@ export default function Dock() {
   // Typing hides the tabs, so the field drops into their place right above the keyboard.
   const bottom = !where ? 0 : kb > 0 ? kb + 8 : onTabs ? (typing && Platform.OS === 'web' ? Math.max(insets.bottom, 12) + 10 : above) : insets.bottom + 12 + where.lift;
   useEffect(() => { setDockTop(where ? bottom + (shown ? h : 0) : 0); }, [bottom, h, !!where, shown]);
+  // The field's own top edge (cards and pills above it don't count): Memo sits right on it (Julian 08.11.).
+  const [fieldY, setFieldY] = useState(0);
+  useEffect(() => { setFieldTop(where ? bottom + Math.max(0, h - fieldY) : 0); }, [bottom, h, fieldY, !!where]);
   // Folding or opening the tabs moves the field with a soft spring (keep2read: k 250, c 27); the keyboard moves it at once.
   const bAnim = useSharedValue(bottom);
   const wasFolded = useRef(folded);
@@ -977,7 +980,7 @@ export default function Dock() {
       ) : null}
       {bar ? (
       // Julian 05.11. 08:48: one dark shape at the bottom; tab icon and field share it and it morphs as one piece.
-      <View style={[{ alignSelf: 'flex-end', width: W - 28, borderRadius: 27, backgroundColor: tokens.ink }, floatShadow]}>
+      <View onLayout={(e) => setFieldY(e.nativeEvent.layout.y)} style={[{ alignSelf: 'flex-end', width: W - 28, borderRadius: 27, backgroundColor: tokens.ink }, floatShadow]}>
       <View style={{ flexDirection: 'row', alignItems: 'flex-end', borderRadius: 27, overflow: 'hidden' }}>
         <Animated.View style={[{ height: D, overflow: 'hidden' }, navStyleA]}>
           <Animated.View pointerEvents={barMode === 'rest' ? 'auto' : 'none'} style={[{ position: 'absolute', left: 0, top: 0, width: D, height: D }, iconStyle]}>
@@ -1025,7 +1028,7 @@ export default function Dock() {
       </View>
       </View>
       ) : (
-      <Animated.View style={[{ alignSelf: 'flex-end', alignItems: 'flex-end', overflow: 'hidden', borderRadius: onTabs && navStyle() === 'strip' ? 24 : 30 }, wStyle]}>
+      <Animated.View onLayout={(e) => setFieldY(e.nativeEvent.layout.y)} style={[{ alignSelf: 'flex-end', alignItems: 'flex-end', overflow: 'hidden', borderRadius: onTabs && navStyle() === 'strip' ? 24 : 30 }, wStyle]}>
       <Animated.View style={wStyle}>
       {priv.ohneKi ? <ManualField h={52} /> : <TalkBar
         key={onTabs ? 'tabs' : kind}

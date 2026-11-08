@@ -2,7 +2,7 @@
  * Memo sits right above the talk field, at its right end, on every screen that
  * has the field (Julian 07.11.: "well integrated into the app experience").
  * It reads what the app is doing and shows it: listening, thinking, typing,
- * happy when something landed, asleep late at night. A tap makes it hop.
+ * happy when something landed, asleep late at night. A tap gives a little squish. It never leaves the field (Julian 08.11.).
  * On start it flies in from where the intro left it (top of the screen).
  */
 import React, { useEffect, useRef, useState } from 'react';
@@ -10,7 +10,7 @@ import { Pressable, useWindowDimensions } from 'react-native';
 import Animated, { useSharedValue, useAnimatedStyle, withSpring, withTiming, withSequence, withDelay, Easing, useReducedMotion } from 'react-native-reanimated';
 import Blob from './Blob';
 import { useBuddy, setBuddy, buddyJoy, buddyPoke, voiceLevel, isNight, type Mood } from '../../lib/buddy';
-import { useDockTop } from '../../lib/dockSpace';
+import { useFieldTop } from '../../lib/dockSpace';
 import { useTyping } from '../../lib/keyboard';
 import { useVeil } from '../Veil';
 import { useFeed } from '../../lib/feed';
@@ -23,7 +23,7 @@ const RIGHT = 20;
 
 export default function BuddyHost() {
   const b = useBuddy();
-  const dockTop = useDockTop();
+  const dockTop = useFieldTop();
   const typing = useTyping();
   const veil = useVeil();
   const feed = useFeed();
@@ -32,7 +32,7 @@ export default function BuddyHost() {
   const [night, setNight] = useState(isNight());
   useEffect(() => { const id = setInterval(() => setNight(isNight()), 60000); return () => clearInterval(id); }, []);
 
-  // Something landed: the assistant finished (think -> off/land) or answered in the chat.
+  // Something landed (a happy jiggle in place): the assistant finished (think -> off/land) or answered in the chat.
   // One hop per answer, even when the reply and the landing come close together.
   const lastJoy = useRef(0);
   const joy = () => { if (Date.now() - lastJoy.current < 1500) return; lastJoy.current = Date.now(); buddyJoy(); };
@@ -43,7 +43,7 @@ export default function BuddyHost() {
   }, [veil.phase]);
   const replied = useRef<string | undefined>(undefined);
   useEffect(() => { if (veil.reply && !replied.current) joy(); replied.current = veil.reply; }, [veil.reply]);
-  // A message from someone else in the family: Memo looks up and hops a little.
+  // A message from someone else in the family: Memo looks up with a little squish.
   const seen = useRef(feed.length);
   useEffect(() => {
     if (feed.length > seen.current) {
@@ -74,11 +74,11 @@ export default function BuddyHost() {
     if (!flew.current) {
       flew.current = true;
       if (b.from && !reduced) {
-        // From the top of the screen in a soft arc, stretching as it falls, squashing on landing (Blob does the hop).
+        // From the top of the screen in one smooth glide down to the field, then a soft squish (Julian 08.11.: no jumping).
         x.value = b.from.x - SIZE / 2; y.value = b.from.y - SIZE / 2; o.value = 1;
-        x.value = withTiming(restX, { duration: 620, easing: Easing.bezier(0.33, 0, 0.2, 1) });
-        y.value = withSequence(withTiming(b.from.y - SIZE / 2 - 30, { duration: 160, easing: Easing.out(Easing.quad) }), withTiming(restY, { duration: 460, easing: Easing.bezier(0.5, 0, 0.75, 0.4) }));
-        setTimeout(() => buddyPoke(), 600);
+        x.value = withTiming(restX, { duration: 700, easing: Easing.bezier(0.45, 0, 0.2, 1) });
+        y.value = withTiming(restY, { duration: 700, easing: Easing.bezier(0.6, 0, 0.3, 1) });
+        setTimeout(() => buddyPoke(), 680);
         setBuddy({ from: null });
         return;
       }
