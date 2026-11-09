@@ -11,7 +11,7 @@ import { parseWhen, When } from './when';
 import { iconFor } from './iconWords';
 import { clayWhole, CODEX_HAD } from './clayWhole';
 import { calmDur } from './clayCurves';
-import { TODAY, NOW, addDays, weekday, minutes, long, short, hm, count } from './dates';
+import { TODAY, NOW, nowHM, addDays, weekday, minutes, long, short, hm, count } from './dates';
 import { byTime } from './selectors';
 import { ruleOf } from './repeat';
 import { tx, EN } from '../i18n/lang';
@@ -365,7 +365,7 @@ export function fromModel(m: Understood, said: string, events: CalEvent[], newId
   const who: Who = m.who === 'J' || m.who === 'T' || m.who === 'both' ? m.who : null;
   if (!m.date || !ISO.test(m.date)) return { kind: 'ask', text: m.question || askWhen(m.title), title: m.title, who };
   // A start equal to the clock with no time in the sentence was made up from "now" (29.10.).
-  const madeUp = m.start === NOW && !/\d|uhr|o'?clock|mittag|abend|morgens|noon|evening|morning/i.test(said);
+  const madeUp = (m.start === NOW || m.start === nowHM()) && !/\d|uhr|o'?clock|mittag|abend|morgens|noon|evening|morning/i.test(said);
   const start = m.start && HHMM.test(m.start) && !madeUp ? m.start : undefined;
   const known = recall(m.title, events, m.sub);
   const guess = isIcon(m.icon) && m.icon !== 'kalender' ? m.icon : iconFor(`${m.title} ${m.sub ?? ''}`);

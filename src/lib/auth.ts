@@ -4,7 +4,7 @@
  * (signInWithIdToken). No browser bounce, no password. On the web the
  * provider's page opens instead (signInWithOAuth).
  */
-import { Platform } from 'react-native';
+import { AppState, Platform } from 'react-native';
 import { useSyncExternalStore } from 'react';
 import type { Session } from '@supabase/supabase-js';
 import { supabase } from './cloud';
@@ -36,6 +36,35 @@ if (supabase) {
 }
 
 export const getAuth = () => auth;
+
+/**
+ * Supabase only refreshes the sign-in while the app is in front (React Native has no timers in the
+ * background). After an hour away the cached token was expired, so the first sentence, the first
+ * recording and the sync after coming back failed with 401 and fell back to the rules (Audit 09.11.).
+ * Refresh runs while the app is open, and every server call asks for a fresh token first.
+ */
+if (supabase && Platform.OS !== 'web') {
+  if (AppState.currentState === 'active') supabase.auth.startAutoRefresh();
+  AppState.addEventListener('change', (st) => {
+    if (st === 'active') supabase!.auth.startAutoRefresh();
+    else supabase!.auth.stopAutoRefresh();
+  });
+}
+
+/** A token that is valid right now: refreshes first when the stored one is about to run out. */
+export async function freshToken(): Promise<string | null> {
+  if (!supabase) return null;
+  try {
+    const { data } = await supabase.auth.getSession();
+    let s = data.session;
+    // getSession refreshes an expired token itself; one that runs out within a minute is renewed too.
+    if (s && (s.expires_at ?? 0) * 1000 - Date.now() < 60_000) s = (await supabase.auth.refreshSession()).data.session ?? s;
+    if (s && s.access_token !== auth.session?.access_token) put({ session: s });
+    return s?.access_token ?? null;
+  } catch {
+    return auth.session?.access_token ?? null;
+  }
+}
 export function useAuth(): Auth {
   return useSyncExternalStore((f) => { subs.add(f); return () => subs.delete(f); }, () => auth, () => auth);
 }

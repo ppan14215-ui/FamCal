@@ -20,7 +20,9 @@ import { useStore, actions } from '../state/store';
 import { useDockSpace } from '../lib/dockSpace';
 import { useKeyboardInset } from '../lib/keyboard';
 import { useFeed, canUndo, undoEntry, answerAsk, type FeedEntry, type EventSnap } from '../lib/feed';
-import { getFamily, myRole } from '../lib/sync';
+import { getFamily, myRole, useEventsLoaded } from '../lib/sync';
+import { useAuth } from '../lib/auth';
+import { LIVE } from '../lib/live';
 import { hm, short, TODAY } from '../lib/dates';
 import HeaderRight from './ui/HeaderRight';
 import { tx } from '../i18n/lang';
@@ -48,17 +50,27 @@ export const dayOf = (s: string) => { const d = new Date(s); return `${d.getFull
  * no navigation, no undo. Set through `Entry showcase` or a provider around the stage.
  */
 export const StillContext = createContext(false);
+
+/** The calendar this card points into is there: synced in this run, or a phone without family sync. */
+function useCalendarReady() {
+  const synced = useEventsLoaded();
+  const { session, ready } = useAuth();
+  return synced || !LIVE || (ready && !session);
+}
 const useStill = () => useContext(StillContext);
 const noop = () => {};
 
 export function Termine({ ids, snap, changed, ask, timeQ, fresh, placeQ }: { ids: string[]; snap?: EventSnap[]; changed?: boolean; ask?: 'J' | 'T'; timeQ?: string; fresh?: boolean; placeQ?: boolean }) {
   const events = useStore((s) => s.events);
   const still = useStill();
+  const ready = useCalendarReady();
   // A card that just appeared plays its icon once (Julian 31.10.: "das icon kurz animieren").
   const [play, setPlay] = useState(false);
   useEffect(() => { if (!fresh) return; const t = setTimeout(() => setPlay(true), 220); return () => clearTimeout(t); }, []);
   // Live from the calendar; the snapshot only if the Termin never reached this phone.
-  const live = ids.map((id) => events.find((e) => e.id === id) ?? (events.length ? undefined : snap?.find((x) => x.id === id))).filter(Boolean) as (EventSnap & { who?: typeof events[number]['who'] })[];
+  const live = ids.map((id) => events.find((e) => e.id === id) ?? (ready ? undefined : snap?.find((x) => x.id === id))).filter(Boolean) as (EventSnap & { who?: typeof events[number]['who'] })[];
+  // Still loading and nothing remembered: say nothing rather than "gone".
+  if (!live.length && !ready) return null;
   if (!live.length) return <Txt size={13.5} color={tokens.mute} style={{ padding: 14 }}>{changed ? tx('Mit der nächsten Nachricht geändert, siehe unten.', 'Changed by the next message, see below.') : tx('Nicht mehr im Kalender.', 'No longer in the calendar.')}</Txt>;
   return (
     <>
@@ -437,7 +449,8 @@ function EntryBody({ f, mine: own, me, answer, side }: Omit<EntryProps, 'showcas
   const p = persons[f.by];
   // Deleted later (Julian 04.11.): the card says so once, the footer no longer claims "Im Kalender".
   const allEvents = useStore((st) => st.events);
-  const gone = !!f.events?.length && allEvents.length > 0 && !f.events.some((id) => allEvents.some((e) => e.id === id));
+  const ready = useCalendarReady();
+  const gone = !!f.events?.length && ready && !f.events.some((id) => allEvents.some((e) => e.id === id));
   const name = mine ? tx('Du', 'You') : p.name || f.by;
   const bubble = f.kind === 'msg'
     ? { backgroundColor: tokens.row, borderWidth: 1, borderColor: tokens.hair }

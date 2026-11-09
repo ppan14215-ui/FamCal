@@ -142,11 +142,60 @@ export async function startListSync(familyId: string) {
       apply(d, gone);
       last = { lists: get().lists, tasks: get().tasks };
     })
-    .subscribe();
+    // Deletes are never sent through a filter (Supabase limitation), so the partner's ticked-off and
+    // deleted rows did not arrive live (Audit 09.11.). Their key holds the family, so it is checked here.
+    .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'family_docs' }, (p) => {
+      const d = p.old as Partial<Doc> & { family_id?: string };
+      if (!d?.type || !d.id || d.family_id !== familyId || !known.has(k(d as Doc))) return;
+      known.delete(k(d as Doc));
+      apply(d as Doc, true);
+      last = { lists: get().lists, tasks: get().tasks };
+    })
+    .subscribe((status) => {
+      if (status === 'SUBSCRIBED') { if (subscribedOnce) void catchUpLists(); subscribedOnce = true; }
+    });
+}
+
+let subscribedOnce = false;
+
+/**
+ * Lists level with the server after the app was away (Audit 09.11.), like the Termine in sync.ts:
+ * a row changed here and not sent yet stays, a row the server lost but this phone knew was deleted
+ * elsewhere, a row only here is new and goes up.
+ */
+export function catchUpLists(): Promise<void> {
+  pushing = pushing.then(async () => {
+    const familyId = fam;
+    if (!supabase || !familyId) return;
+    clearTimeout(timer);
+    const { data, error } = await allRows<any>((a, b) => supabase!.from('family_docs').select('type, id, parent, section, pos, data').eq('family_id', familyId).order('type').order('id').range(a, b));
+    if (error || !data || fam !== familyId) return;
+    const remote = data as Doc[];
+    // An empty answer for a family that had rows is a hiccup, never a reason to clear the phone.
+    if (!remote.length && known.size) return;
+    const remoteKeys = new Set(remote.map(k));
+    const here = new Map(flatten(get().lists, get().tasks).map((d) => [k(d), d]));
+    const nextKnown = new Map<string, string>();
+    const docs: Doc[] = [];
+    for (const r of remote) {
+      const h = here.get(k(r));
+      const unsent = h && known.has(k(r)) && known.get(k(r)) !== sig(h);
+      docs.push(unsent ? h! : r);
+      nextKnown.set(k(r), sig(r));
+    }
+    let extra = 0;
+    for (const [key, d] of here) if (!remoteKeys.has(key) && !known.has(key)) docs.push({ ...d, pos: d.pos + 1000 + extra++ });
+    known = nextKnown;
+    const both = assemble(docs);
+    set(() => ({ lists: both.lists, tasks: both.tasks }));
+    last = { lists: get().lists, tasks: get().tasks };
+  }).catch((e) => console.warn('[listen] catch up', e));
+  return pushing.then(() => push());
 }
 
 export function stopListSync() {
   stopStore?.(); stopStore = null;
+  subscribedOnce = false;
   clearTimeout(timer);
   if (channel) supabase?.removeChannel(channel);
   channel = null;

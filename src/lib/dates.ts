@@ -10,6 +10,13 @@ const pad2 = (n: number) => String(n).padStart(2, '0');
 const local = new Date();
 /** The real app runs on the phone's clock, the test link on the fixed day of the sample family. */
 export const TODAY = LIVE ? `${local.getFullYear()}-${pad2(local.getMonth() + 1)}-${pad2(local.getDate())}` : '2026-10-29';
+/**
+ * TODAY and NOW are read once when the app starts. Android keeps the app alive for days, so what goes
+ * to the assistant reads the clock at the moment of the sentence ("morgen" the next morning was the
+ * day the app was opened, Audit 09.11.). A new day reloads the app anyway (src/lib/lifecycle.ts).
+ */
+export const today = () => { if (!LIVE) return TODAY; const d = new Date(); return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`; };
+export const nowHM = () => { if (!LIVE) return NOW; const d = new Date(); return `${pad2(d.getHours())}:${pad2(d.getMinutes())}`; };
 export const BEN_BORN = '2026-09-14';
 
 const WD_SHORT_EN = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];

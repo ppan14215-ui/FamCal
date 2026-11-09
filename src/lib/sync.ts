@@ -4,6 +4,7 @@
  * the partner's changes come in live. The screens keep working on the local
  * store as before, sync only watches it.
  */
+import { useSyncExternalStore } from 'react';
 import type { RealtimeChannel } from '@supabase/supabase-js';
 import { setFamily } from './analytics';
 import { supabase, allRows } from './cloud';
@@ -58,6 +59,19 @@ let channel: RealtimeChannel | null = null;
 let pushing = Promise.resolve();
 
 export const getFamily = () => family;
+
+/**
+ * Whether this run of the app has the family's Termine yet. Until then a chat card cannot tell a
+ * deleted Termin from one still loading; it said "Nicht mehr im Kalender" and "Im Kalender" at once
+ * (Julian 04.11.). Cards wait for this before they call a Termin gone.
+ */
+let loaded = false;
+const loadSubs = new Set<() => void>();
+const setLoaded = (v: boolean) => { if (loaded === v) return; loaded = v; loadSubs.forEach((f) => f()); };
+export const eventsLoaded = () => loaded;
+export function useEventsLoaded(): boolean {
+  return useSyncExternalStore((f) => { loadSubs.add(f); return () => { loadSubs.delete(f); }; }, () => loaded, () => loaded);
+}
 export const myRole = () => me;
 
 /** Called once a session exists. Returns the family, or an error to show. */
@@ -110,6 +124,7 @@ export async function startSync(name?: string): Promise<{ family?: Family; error
   set((s) => ({ demo: false, events: [...s.events.filter((e) => !shared(e)), ...remote, ...local] }));
   actions.ensureHolidays();
   lastEvents = get().events;
+  setLoaded(true);
   push();
 
   // Kinder und Großeltern (Julian 28.10.). Before the table existed this simply returns an error and nothing changes.
@@ -164,8 +179,75 @@ export async function startSync(name?: string): Promise<{ family?: Family; error
       }
       lastPeople = get().people;
     })
-    .subscribe();
+    // Deletes carry only the id and are never sent through a filter (Supabase limitation without
+    // replica identity full), so the partner's deletions never arrived live (Audit 09.11.). An unknown
+    // id is someone else's; a known one asks the server once what is really there.
+    .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'events' }, (p) => {
+      const id = (p.old as { id?: string })?.id;
+      if (id && known.has(id)) catchUpSoon();
+    })
+    .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'family_people' }, (p) => {
+      const id = (p.old as { id?: string })?.id;
+      if (id && knownP.has(id)) catchUpSoon();
+    })
+    .subscribe((status) => {
+      // Back after the connection dropped: what happened meanwhile is fetched once.
+      if (status === 'SUBSCRIBED') { if (subscribedOnce) catchUpSoon(); subscribedOnce = true; }
+    });
   return { family };
+}
+
+let subscribedOnce = false;
+let soon: ReturnType<typeof setTimeout> | undefined;
+/** Several triggers in a row (resume, reconnect, a delete) fetch only once. */
+export function catchUpSoon(ms = 400) {
+  clearTimeout(soon);
+  soon = setTimeout(() => { void catchUp(); }, ms);
+}
+
+/**
+ * Brings this phone level with the server without losing what it has not sent yet (Audit 09.11.):
+ * the live channel sleeps while the app is in the background, so whatever the partner added, moved
+ * or deleted meanwhile was missing until the app was killed and opened again.
+ * Rules: a Termin changed here and not yet sent stays as it is here; one the server no longer has
+ * but this phone knew was deleted elsewhere and goes; one only here is new and goes up.
+ */
+export function catchUp(): Promise<void> {
+  pushing = pushing.then(async () => {
+    if (!supabase || !family) return;
+    const fam = family.id;
+    const [res, people] = await Promise.all([
+      allRows<Row>((a, b) => supabase!.from('events').select('*').eq('family_id', fam).order('id').range(a, b)),
+      peopleOn ? supabase.from('family_people').select('id, name, kind, color, birthday').eq('family_id', fam) : Promise.resolve(null),
+    ]);
+    if (res.error || family?.id !== fam) return;
+    const remote = (res.data as Row[]).map(fromRow);
+    // An empty answer for a family that had Termine is a hiccup, never a reason to clear the phone.
+    if (!remote.length && known.size) return;
+    const remoteIds = new Set(remote.map((e) => e.id));
+    const mine = new Map(get().events.filter(shared).map((e) => [e.id, e]));
+    const merged: CalEvent[] = [];
+    const nextKnown = new Map<string, string>();
+    for (const r of remote) {
+      const here = mine.get(r.id);
+      const unsent = here && known.has(r.id) && known.get(r.id) !== key(here);
+      merged.push(unsent ? here! : r);
+      nextKnown.set(r.id, key(r));
+    }
+    for (const [id, e] of mine) if (!remoteIds.has(id) && !known.has(id)) merged.push(e);
+    known = nextKnown;
+    set((st) => ({ events: [...st.events.filter((e) => !shared(e)), ...merged] }));
+    lastEvents = get().events;
+    if (people && !people.error) {
+      const remoteP = (people.data as PRow[]).map(fromPRow);
+      const ids = new Set(remoteP.map((x) => x.id));
+      const newHere = get().people.filter((x) => !ids.has(x.id) && !knownP.has(x.id));
+      knownP = new Map(remoteP.map((x) => [x.id, JSON.stringify(x)]));
+      actions.setPeople([...remoteP, ...newHere]);
+      lastPeople = get().people;
+    }
+  }).catch((e) => console.warn('[sync] catch up', e));
+  return pushing.then(() => { push(); pushPeople(); });
 }
 
 /** Sends what changed since the server last saw it. Runs one at a time so two quick edits never cross. */
@@ -281,6 +363,8 @@ export async function joinFamily(code: string, name?: string): Promise<{ error?:
 
 export function stopSync() {
   stopStore?.(); stopStore = null;
+  clearTimeout(soon);
+  subscribedOnce = false;
   if (channel) supabase?.removeChannel(channel);
   channel = null;
   stopComments();
