@@ -28,6 +28,8 @@ async function catchUpAll() {
   try {
     const [sync, lists, feed] = await Promise.all([import('./sync'), import('./listSync'), import('./feed')]);
     if (!sync.getFamily()) return;
+    // Opened without network: the real start is still due.
+    if (!sync.isSyncLive()) { void sync.syncUntilLive(); return; }
     sync.catchUpSoon(0);
     void lists.catchUpLists();
     void feed.catchUpFeed();

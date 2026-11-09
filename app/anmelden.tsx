@@ -8,8 +8,8 @@ import { View, Platform } from 'react-native';
 import { router } from 'expo-router';
 import { Screen, Btn, Hint, Meta, TextLink } from '../src/components/ui/kit';
 import Intro from '../src/components/Intro';
-import { signInWithApple, signInWithGoogle, signInForTest, canTestSignIn, SignIn } from '../src/lib/auth';
-import { startSync } from '../src/lib/sync';
+import { signInWithApple, signInWithGoogle, signInForTest, canTestSignIn, SignIn, getAuth } from '../src/lib/auth';
+import { startSync, restoreFromCache, syncUntilLive } from '../src/lib/sync';
 import { get } from '../src/state/store';
 import { tokens } from '../src/theme';
 import { haptics } from '../src/lib/haptics';
@@ -18,6 +18,13 @@ import { track, trackOnce } from '../src/lib/analytics';
 
 /** After any sign-in: load the family, then the calendar or, for a new family, onboarding. */
 export async function afterSignIn(name?: string): Promise<string | null> {
+  // Known account on this phone: the calendar opens from the phone at once, the server catches up behind it (Audit 09.11.).
+  const uid = getAuth().session?.user.id;
+  if (uid && !name && await restoreFromCache(uid)) {
+    router.replace('/chat');
+    void syncUntilLive();
+    return null;
+  }
   const res = await startSync(name);
   if (res.error) return tx('Die Verbindung hat nicht geklappt. Bitte noch einmal versuchen.', 'Could not connect. Please try again.');
   const s = get();

@@ -10,6 +10,7 @@ import type { RealtimeChannel } from '@supabase/supabase-js';
 import { supabase, allRows } from './cloud';
 import { get, set, subscribe } from '../state/store';
 import type { List, Item, Task } from '../state/types';
+import { writeCache, type Cache } from './cache';
 
 type Type = 'list' | 'item' | 'task';
 type Doc = { type: Type; id: string; parent: string | null; section: string | null; pos: number; data: any };
@@ -68,7 +69,22 @@ function push() {
       if (!error) these.forEach((id) => known.delete(`${type}:${id}`));
       else console.warn('[listen] delete', error.message);
     }
+    if (changed.length || gone.length) save();
   }).catch((e) => console.warn('[listen]', e));
+}
+
+/** Lists, tasks and what the server confirmed, onto the phone (src/lib/cache.ts). */
+function save() {
+  if (!fam) return;
+  writeCache({ lists: get().lists, tasks: get().tasks, docsKnown: [...known] });
+}
+
+let prevDocs: Map<string, string> | null = null;
+/** Lists from the phone at once (Audit 09.11.), before the server answers. */
+export function restoreLists(c: Cache) {
+  if (!c.lists) return;
+  set(() => ({ lists: c.lists as List[], tasks: (c.tasks ?? []) as Task[] }));
+  prevDocs = new Map(c.docsKnown ?? []);
 }
 
 /** One row from the partner, patched into the store. */
@@ -111,15 +127,26 @@ export async function startListSync(familyId: string) {
   const { data, error } = await allRows<any>((a, b) => supabase!.from('family_docs').select('type, id, parent, section, pos, data').eq('family_id', familyId).order('type').order('id').range(a, b));
   if (error || !data) { console.warn('[listen] load', error?.message); return; }
   const remote = data as Doc[];
+  // What the server confirmed last time (cache): a row changed here meanwhile stays, one deleted here stays deleted.
+  const prev = prevDocs ?? new Map<string, string>();
+  prevDocs = null;
   known = new Map(remote.map((d) => [k(d), sig(d)]));
   if (remote.length) {
-    // Everything entered on this phone before signing in goes up with the rest.
-    const have = new Set(remote.map(k));
-    const local = flatten(get().lists, get().tasks).filter((d) => !have.has(k(d)));
-    const both = assemble([...remote, ...local.map((d, i) => ({ ...d, pos: d.pos + 1000 + i }))]);
+    const here = new Map(flatten(get().lists, get().tasks).map((d) => [k(d), d]));
+    const docs: Doc[] = [];
+    for (const r of remote) {
+      const h = here.get(k(r));
+      if (!h) { if (prev.get(k(r)) !== sig(r)) docs.push(r); continue; }
+      docs.push(prev.has(k(r)) && prev.get(k(r)) !== sig(h) ? h : r);
+    }
+    // Everything entered on this phone before signing in or offline goes up with the rest.
+    let extra = 0;
+    for (const [key, d] of here) if (!known.has(key) && !prev.has(key)) docs.push({ ...d, pos: d.pos + 1000 + extra++ });
+    const both = assemble(docs);
     set(() => ({ lists: both.lists.length ? both.lists : get().lists, tasks: both.tasks }));
   }
   last = { lists: get().lists, tasks: get().tasks };
+  save();
   push();
   void import('./enrich').then((m) => m.refreshCovers());
   stopStore = subscribe(() => {
@@ -128,7 +155,7 @@ export async function startListSync(familyId: string) {
     last = { lists: s.lists, tasks: s.tasks };
     // Typing into a row changes it with every letter; send once the hand rests.
     clearTimeout(timer);
-    timer = setTimeout(push, 400);
+    timer = setTimeout(() => { save(); push(); }, 400);
   });
   channel = supabase
     .channel(`docs:${familyId}`)
@@ -179,9 +206,10 @@ export function catchUpLists(): Promise<void> {
     const docs: Doc[] = [];
     for (const r of remote) {
       const h = here.get(k(r));
-      const unsent = h && known.has(k(r)) && known.get(k(r)) !== sig(h);
-      docs.push(unsent ? h! : r);
       nextKnown.set(k(r), sig(r));
+      if (!h) { if (known.get(k(r)) !== sig(r)) docs.push(r); continue; }
+      const unsent = known.has(k(r)) && known.get(k(r)) !== sig(h);
+      docs.push(unsent ? h : r);
     }
     let extra = 0;
     for (const [key, d] of here) if (!remoteKeys.has(key) && !known.has(key)) docs.push({ ...d, pos: d.pos + 1000 + extra++ });
@@ -189,6 +217,7 @@ export function catchUpLists(): Promise<void> {
     const both = assemble(docs);
     set(() => ({ lists: both.lists, tasks: both.tasks }));
     last = { lists: get().lists, tasks: get().tasks };
+    save();
   }).catch((e) => console.warn('[listen] catch up', e));
   return pushing.then(() => push());
 }

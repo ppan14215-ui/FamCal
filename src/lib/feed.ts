@@ -241,6 +241,13 @@ async function loadFeed(familyId: string) {
   local.forEach((f) => void upload(f));
 }
 
+/** Signed out: the chat of that family leaves the phone too. */
+export function clearFeed() {
+  feed = [];
+  undos.clear();
+  emit();
+}
+
 export function stopFeed() {
   if (channel) supabase?.removeChannel(channel);
   channel = null;

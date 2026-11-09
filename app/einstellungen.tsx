@@ -12,7 +12,7 @@ import { tokens } from '../src/theme';
 import { actions, toast, useStore } from '../src/state/store';
 import type { ClayName } from '../src/lib/clayIcons';
 import { LIVE } from '../src/lib/live';
-import { getFamily, stopSync } from '../src/lib/sync';
+import { getFamily, forgetLocal } from '../src/lib/sync';
 import { signOut, canTestSignIn, useAuth } from '../src/lib/auth';
 import { analyticsOff, setAnalyticsOff } from '../src/lib/analytics';
 import { chooseNav } from '../src/lib/funnel';
@@ -133,7 +133,7 @@ export default function Einstellungen() {
         <Group>
           <SRow icon="sync" t={tx('Nutzungsdaten teilen', 'Share usage data')} v={noStats ? tx('Aus', 'Off') : tx('An', 'On')} onPress={() => { haptics.select(); const off = !noStats; setAnalyticsOff(off); setNoStats(off); }} />
         </Group>
-        <PressScale onPress={async () => { stopSync(); await signOut(); router.dismissAll(); router.replace('/anmelden'); }} style={{ alignItems: 'center', paddingVertical: 14 }}>
+        <PressScale onPress={async () => { await forgetLocal(); await signOut(); router.dismissAll(); router.replace('/anmelden'); }} style={{ alignItems: 'center', paddingVertical: 14 }}>
           <Txt size={15} weight={600} color={tokens.danger}>{tx('Abmelden', 'Sign out')}</Txt>
         </PressScale>
         </>
