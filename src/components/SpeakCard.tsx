@@ -16,7 +16,8 @@ import Txt from './ui/Txt';
 import LineIcon from './ui/LineIcon';
 import PressScale from './ui/PressScale';
 import VoiceWaves from './VoiceWaves';
-import Blob from './buddy/Blob';
+import Pin from './buddy/Pin';
+import { useMascot } from '../lib/mascot';
 import { tokens } from '../theme';
 import { voiceLevel, useBuddy } from '../lib/buddy';
 import { useSpeak, speakOpen, speakHandlers, setSpeak, type SpeakAsk } from '../lib/speak';
@@ -83,8 +84,11 @@ export default function SpeakCard({ barH, from }: { barH: number; from: string }
   const s = useSpeak();
   const b = useBuddy();
   const open = speakOpen(s);
+  const minimal = useMascot() === 'minimal';
+  // The words as they come (Julian 11.11.): with Pin only; minimal keeps the waves.
+  const words = !minimal && !!s.live && !!(s.live.sure || s.live.part) && (s.phase === 'listen' || s.phase === 'write');
   const answers = !!s.ask && (!!s.ask.hours || !!s.ask.picks?.length) && s.phase !== 'text' && s.phase !== 'write';
-  const cardH = s.phase === 'done' ? 176 : 248 + (answers ? (s.ask?.hours ? 92 : 58) : 0) + (s.phase === 'text' ? 34 : 0);
+  const cardH = s.phase === 'done' ? 176 : 248 + (answers ? (s.ask?.hours ? 92 : 58) : 0) + (s.phase === 'text' || words ? 34 : 0);
   const p = useSharedValue(0);
   const h = useSharedValue(cardH);
   useEffect(() => { p.value = open ? withTiming(1, OPEN) : withTiming(0, CLOSE); }, [open]);
@@ -110,6 +114,9 @@ export default function SpeakCard({ barH, from }: { barH: number; from: string }
     : writing ? tx('Schreibe auf …', 'Writing it down …')
     : s.ask ? s.ask.text
     : tx('Ich höre zu …', "I'm listening …");
+  // A long sentence shows its end, so the newest words are always in view.
+  const tail = (t: string, max: number) => (t.length > max ? '… ' + t.slice(t.length - max).replace(/^\S*\s/, '') : t);
+  const sure = words ? tail(s.live!.sure, Math.max(0, 150 - s.live!.part.length)) : '';
   const mood = listening ? 'listen' : writing ? 'think' : s.phase === 'done' ? 'happy' : 'idle';
 
   return (
@@ -117,8 +124,14 @@ export default function SpeakCard({ barH, from }: { barH: number; from: string }
       <Animated.View style={[{ position: 'absolute', left: 0, right: 0, bottom: 0, height: cardH, paddingHorizontal: 18, paddingTop: 14, paddingBottom: 12 }, inner]}>
         <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 10, minHeight: 34 }}>
           <View style={{ flex: 1, gap: 4, paddingTop: 4 }}>
-            {label ? <Txt size={12.5} weight={600} tracking={0.4} color={tokens.done} numberOfLines={2}>{label}</Txt> : null}
-            <Txt size={s.phase === 'text' ? 18 : 20} line={s.phase === 'text' ? 25 : 26} weight={s.phase === 'text' ? 500 : 600} numberOfLines={s.phase === 'text' ? 4 : 3}>{main}</Txt>
+            {label || words ? <Txt size={12.5} weight={600} tracking={0.4} color={tokens.done} numberOfLines={2}>{label ?? (writing ? tx('Schreibe auf …', 'Writing it down …') : tx('Ich höre zu …', "I'm listening …"))}</Txt> : null}
+            {words ? (
+              <Txt size={18} line={25} weight={500} numberOfLines={4} color={writing ? tokens.sub : tokens.ink}>
+                {sure}{sure && s.live!.part ? ' ' : ''}<Txt size={18} line={25} weight={500} color={tokens.mute}>{s.live!.part}</Txt>
+              </Txt>
+            ) : (
+              <Txt size={s.phase === 'text' ? 18 : 20} line={s.phase === 'text' ? 25 : 26} weight={s.phase === 'text' ? 500 : 600} numberOfLines={s.phase === 'text' ? 4 : 3}>{main}</Txt>
+            )}
           </View>
           {s.phase === 'done' ? null : (
             <PressScale accessibilityLabel={tx('Abbrechen', 'Cancel')} hitSlop={10} onPress={() => { haptics.select(); speakHandlers.cancel(); }}
@@ -131,7 +144,7 @@ export default function SpeakCard({ barH, from }: { barH: number; from: string }
           {answers && s.ask ? <Answers ask={s.ask} /> : null}
         </View>
         <View style={{ height: 30, justifyContent: 'center', marginBottom: 6 }}>
-          {listening ? <VoiceWaves level={voiceLevel} height={28} color={tokens.done} /> : writing ? <Dots />
+          {listening && minimal ? <VoiceWaves level={voiceLevel} height={28} color={tokens.done} /> : writing ? <Dots />
             : s.ask?.hold && s.phase === 'idle' ? <Txt size={13} color={tokens.mute} style={{ textAlign: 'center' }}>{tx('Tipp eine Uhrzeit oder tipp Memo und sag sie', 'Tap a time, or tap Memo and say it')}</Txt> : null}
         </View>
         <View style={{ height: MEMO + 6, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -147,10 +160,17 @@ export default function SpeakCard({ barH, from }: { barH: number; from: string }
               disabled={writing || s.phase === 'done'}
               onPress={() => { if (listening) speakHandlers.stop(); else speakHandlers.again(); }}
               accessibilityRole="button"
-              accessibilityLabel={listening ? tx('Fertig gesprochen', 'Done speaking') : tx('Memo, tippen zum Sprechen', 'Memo, tap to talk')}
+              accessibilityLabel={listening ? tx('Fertig gesprochen', 'Done speaking') : minimal ? tx('Sprechen', 'Speak') : tx('Memo, tippen zum Sprechen', 'Memo, tap to talk')}
               hitSlop={8}
             >
-              <Blob size={MEMO} mood={mood as any} joy={b.joy} poke={b.poke} level={voiceLevel} />
+              {minimal ? (
+                // Minimal (Julian 11.11.): record and stop, as before.
+                <View style={{ width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center', backgroundColor: tokens.ink, opacity: writing ? 0.4 : 1 }}>
+                  {listening ? <View style={{ width: 18, height: 18, borderRadius: 4, backgroundColor: tokens.onInk }} /> : <LineIcon name="mic" size={24} color={tokens.onInk} />}
+                </View>
+              ) : (
+                <Pin size={MEMO} mood={mood as any} joy={b.joy} poke={b.poke} level={voiceLevel} heard={s.live?.n ?? 0} />
+              )}
             </Pressable>
           </Animated.View>
           <View style={{ width: 92, alignItems: 'flex-end' }}>
@@ -163,7 +183,7 @@ export default function SpeakCard({ barH, from }: { barH: number; from: string }
           </View>
         </View>
         {listening && !s.ask ? (
-          <Txt size={12} color={tokens.mute} style={{ textAlign: 'center', marginTop: 2 }}>{tx('Tipp Memo, wenn du fertig bist', 'Tap Memo when you are done')}</Txt>
+          <Txt size={12} color={tokens.mute} style={{ textAlign: 'center', marginTop: 2 }}>{minimal ? tx('Tipp Stopp, wenn du fertig bist', 'Tap stop when you are done') : tx('Tipp Memo, wenn du fertig bist', 'Tap Memo when you are done')}</Txt>
         ) : null}
       </Animated.View>
     </Animated.View>

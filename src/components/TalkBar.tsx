@@ -169,7 +169,9 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, o
     let i = 0;
     const step = () => {
       i += 2;
-      setText(sentence.slice(0, i));
+      // The words a moment back count as understood (dark), the newest ones are still a guess (grey).
+      if (speakCard) { const upto = sentence.slice(0, i); const cut = Math.max(0, upto.lastIndexOf(' ', i - 12)); setSpeak({ live: { sure: upto.slice(0, cut).trim(), part: upto.slice(cut).trim(), n: i } }); }
+      else setText(sentence.slice(0, i));
       if (i < sentence.length) timers.current.push(setTimeout(step, 45));
       else timers.current.push(setTimeout(() => { setListening(false); setDemo(false); land(sentence); }, 500));
     };
@@ -196,7 +198,7 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, o
   useEffect(() => {
     if (!speakCard) return;
     const ph = getSpeak().phase;
-    if (listening) setSpeak({ phase: 'listen', text: '' });
+    if (listening) setSpeak({ phase: 'listen', text: '', live: null });
     else if (writing) setSpeak({ phase: 'write' });
     else if (held.current && text.trim()) setSpeak({ phase: 'text', text: text.trim() });
     else if (ph === 'listen' || ph === 'write' || ph === 'text') setSpeak({ phase: 'idle', text: '' });
@@ -235,7 +237,12 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, o
       // Blocked or silent mics often never answer, so wait at most 3 seconds for a first word.
       const guard = setTimeout(() => { if (!heard) fallback(); }, 3000);
       timers.current.push(guard);
-      r.onresult = (e: any) => { heard = Array.from(e.results).map((x: any) => x[0].transcript).join(' '); setText(heard); };
+      r.onresult = (e: any) => {
+        const all = Array.from(e.results) as any[];
+        heard = all.map((x: any) => x[0].transcript).join(' ');
+        if (speakCard) setSpeak({ live: { sure: all.filter((x: any) => x.isFinal).map((x: any) => x[0].transcript).join(' ').trim(), part: all.filter((x: any) => !x.isFinal).map((x: any) => x[0].transcript).join(' ').trim(), n: (getSpeak().live?.n ?? 0) + 1 } });
+        else setText(heard);
+      };
       r.onerror = () => { clearTimeout(guard); fallback(); };
       r.onend = () => { clearTimeout(guard); if (failed) return; setListening(false); if (typed.current) return; if (heard) land(heard); else fallback(); };
       toKeys.current = () => { failed = true; clearTimeout(guard); try { r.abort(); } catch {} setListening(false); };
@@ -338,6 +345,8 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, o
           live();
           const t = e.results[0]?.transcript ?? '';
           if (e.isFinal) { done = `${done} ${t}`; part = ''; } else part = t;
+          // The speak card shows the words as they come: settled ones dark, the current guess grey (Julian 11.11.).
+          if (speakCard) setSpeak({ live: { sure: done.replace(/\s+/g, ' ').trim(), part: part.trim(), n: (getSpeak().live?.n ?? 0) + 1 } });
           // The phone hears in one language only, so its live guess is often wrong English (Julian 31.10.). With the cloud ears on it never shows.
           if (!cloud) setText(heard());
         }),
