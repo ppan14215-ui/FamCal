@@ -7,7 +7,7 @@
  */
 import React, { useState } from 'react';
 import SignInSheet from '../../src/components/onboarding/SignInSheet';
-import { router } from 'expo-router';
+import { router, Redirect, useLocalSearchParams } from 'expo-router';
 import Showcase from '../../src/components/showcase/Showcase';
 import { actions, get, toast } from '../../src/state/store';
 import { LIVE } from '../../src/lib/live';
@@ -15,7 +15,13 @@ import { isPreview } from '../../src/lib/vorschau';
 import { stepViewed, onboardingDone, inviteSent, calendarConnected } from '../../src/lib/funnel';
 import { tx } from '../../src/i18n/lang';
 
-export default function Hallo() {
+/** New families start in the story onboarding (Julian 11.11.2026); the film stays at /onboarding?film=1. */
+export default function Start() {
+  const q = useLocalSearchParams<{ film?: string }>();
+  return q.film ? <Hallo /> : <Redirect href="/onboarding/story" />;
+}
+
+function Hallo() {
   stepViewed('hallo');
   // Sign-in as a sheet over the showcase, not a full screen (Julian 11.11., adrian_partain post).
   const [sheet, setSheet] = useState(false);
