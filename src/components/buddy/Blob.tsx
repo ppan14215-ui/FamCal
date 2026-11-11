@@ -189,6 +189,8 @@ export default function Blob({ size = 40, mood = 'idle', joy = 0, poke = 0, glan
       else if (mood === 'type') look(tAtRef.current.x, tAtRef.current.y);
       else if (mood === 'sleep') { look(0, 0.3); blink.value = withTiming(0.12, { duration: 300 }); }
       else look(restRef.current.x, restRef.current.y);
+      // Waking up: sleep left the lids almost shut, every other mood opens them again.
+      if (mood !== 'sleep' && mood !== 'listen') blink.value = withTiming(1, { duration: 160 });
     }
 
     if (live && mood !== 'sleep' && mood !== 'think') {

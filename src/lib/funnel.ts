@@ -9,13 +9,13 @@ import { getPref } from './prefs';
 
 let startedAt = 0;
 
-export function stepViewed(step: string, flow: 'v3' | 'flow' = 'v3', index?: number) {
+export function stepViewed(step: string, flow: 'v3' | 'flow' | 'story' = 'v3', index?: number) {
   if (isPreview()) return;
   if (!startedAt) startedAt = Date.now();
   trackOnce(`${flow}:${step}`, 'onboarding_step_viewed', { step, flow, index });
 }
 
-export function onboardingDone(flow: 'v3' | 'flow' = 'v3') {
+export function onboardingDone(flow: 'v3' | 'flow' | 'story' = 'v3') {
   if (isPreview()) return;
   trackOnce(flow, 'onboarding_completed', {
     flow,

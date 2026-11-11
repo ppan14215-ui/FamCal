@@ -3,7 +3,7 @@
  * writes the final text with the language it hears. Any problem (no key yet,
  * offline, too slow, day cap) returns null and the phone's own text is used.
  */
-import { getAuth } from './auth';
+import { getAuth, freshToken } from './auth';
 import { spracheCloud } from './privat';
 
 const WAIT_MS = 7000;
@@ -34,7 +34,7 @@ export async function hearInCloud(uri: string, hint?: string, peak?: number): Pr
   try {
     const res = await fetch(`${url}/functions/v1/hoeren`, {
       method: 'POST', body: form, signal: ctrl.signal,
-      headers: { Authorization: `Bearer ${session.access_token}`, apikey: process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? '' },
+      headers: { Authorization: `Bearer ${(await freshToken()) ?? session.access_token}`, apikey: process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? '' },
     });
     const r = await res.json().catch(() => ({})) as { text?: string; error?: string };
     if (r.error === 'no_key' || res.status === 404) off = true;

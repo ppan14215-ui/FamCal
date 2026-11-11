@@ -5,7 +5,8 @@
  * step follows. "Überspringen" jumps to the last chapter; "Los geht’s" there starts.
  * The real app signs in next; the test link goes to the family step.
  */
-import React from 'react';
+import React, { useState } from 'react';
+import SignInSheet from '../../src/components/onboarding/SignInSheet';
 import { router } from 'expo-router';
 import Showcase from '../../src/components/showcase/Showcase';
 import { actions, get, toast } from '../../src/state/store';
@@ -16,20 +17,27 @@ import { tx } from '../../src/i18n/lang';
 
 export default function Hallo() {
   stepViewed('hallo');
+  // Sign-in as a sheet over the showcase, not a full screen (Julian 11.11., adrian_partain post).
+  const [sheet, setSheet] = useState(false);
   const start = () => {
     if (isPreview()) return router.push('/onboarding/eltern');
-    if (LIVE) return router.push('/anmelden');
+    if (LIVE) return setSheet(true);
     actions.reset();
     router.push('/onboarding/eltern');
   };
   const invited = () => {
     if (isPreview()) return toast(tx('Vorschau: hier ginge es zur Anmeldung', 'Preview: this would go to sign in'));
-    if (LIVE) return router.push('/anmelden');
+    if (LIVE) return setSheet(true);
     // The link is on every chapter. A family that already has its own data (reached here through
     // +not-found mid session) keeps it: the demo is never written over a real store.
     if (get().names.J) return router.replace('/chat');
     actions.loadDemo();
     router.replace('/chat');
   };
-  return <Showcase onStart={start} onInvited={invited} />;
+  return (
+    <>
+      <Showcase onStart={start} onInvited={invited} />
+      {sheet ? <SignInSheet from="showcase" onClose={() => setSheet(false)} /> : null}
+    </>
+  );
 }

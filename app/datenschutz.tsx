@@ -17,7 +17,7 @@ import { usePrivat, setOhneKi, setSpracheLokal, stimmeZu } from '../src/lib/priv
 import { KI_TEXT } from '../src/components/KiWahl';
 import { supabase } from '../src/lib/cloud';
 import { getAuth, signOut } from '../src/lib/auth';
-import { stopSync } from '../src/lib/sync';
+import { forgetLocal } from '../src/lib/sync';
 import { track } from '../src/lib/analytics';
 import { haptics } from '../src/lib/haptics';
 
@@ -60,7 +60,7 @@ export default function Datenschutz() {
     setBusy(false);
     if (error) { toast(tx('Das hat nicht geklappt. Bitte später nochmal.', "That didn't work. Please try again later.")); return; }
     track('account_deleted');
-    stopSync();
+    await forgetLocal();
     await signOut().catch(() => {});
     actions.reset();
     router.dismissAll();

@@ -52,11 +52,11 @@ export type EntryKind = 'event' | 'events' | 'list_item' | 'list' | 'recipe' | '
  */
 export type Events = {
   /** A step of the first-run flow became visible. step: hallo, signin, familie, eltern, kalender, navigation, partner, fertig, or a flow.tsx step. flow: which onboarding build. */
-  onboarding_step_viewed: { step: string; index?: number; flow: 'v3' | 'flow' };
+  onboarding_step_viewed: { step: string; index?: number; flow: 'v3' | 'flow' | 'story' };
   /** Skipped or left the first-run flow before the end. */
-  onboarding_skipped: { step: string; flow: 'v3' | 'flow' };
+  onboarding_skipped: { step: string; flow: 'v3' | 'flow' | 'story' };
   /** Reached the app at the end of the first-run flow. */
-  onboarding_completed: { flow: 'v3' | 'flow'; nav_style: string; time_picker: 'calendar' | 'keyboard'; ms_total?: number };
+  onboarding_completed: { flow: 'v3' | 'flow' | 'story'; nav_style: string; time_picker: 'calendar' | 'keyboard'; ms_total?: number };
 
   /** Julian 05.11.: only the choice, never what was said. */
   ai_choice: { choice: 'mit_ki' | 'ohne_ki'; source: 'zustimmung' | 'onboarding' | 'settings' };
@@ -84,6 +84,7 @@ export type Events = {
   voice_started: { screen: string };
   /** The recording became text. ok=false: nothing usable heard. engine: cloud (Scribe) or phone. */
   voice_transcribed: { ok: boolean; engine: 'cloud' | 'phone'; ms?: number; chars_bucket?: string };
+  voice_failed: { reason: 'stale_error' | 'stale_end' | 'no_start' | 'cloud_empty' | 'no_file'; code?: string };
   /** A sentence was sent to FamCal. */
   message_sent: { input: Input; screen: string; follow_up: boolean };
   /** The assistant answered. ok=false: failed or timed out, offline rules took over. */

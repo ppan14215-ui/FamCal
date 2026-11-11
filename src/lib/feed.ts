@@ -206,20 +206,51 @@ export async function startFeed(familyId: string) {
       if (p.eventType === 'DELETE') { const id = (p.old as { id: string }).id; feed = feed.filter((f) => f.id !== id); emit(); return; }
       put(fromRow(p.new as Row));
     })
-    .subscribe();
+    // Deletes are never sent through a filter (Supabase limitation): an id this phone shows goes.
+    .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'family_feed' }, (p) => {
+      const id = (p.old as { id?: string })?.id;
+      if (id && feed.some((f) => f.id === id)) { feed = feed.filter((f) => f.id !== id); emit(); }
+    })
+    .subscribe((status) => {
+      if (status === 'SUBSCRIBED') { if (subscribedOnce) void loadFeed(familyId); subscribedOnce = true; }
+    });
+  feedFamily = familyId;
+  await loadFeed(familyId);
+}
+
+let subscribedOnce = false;
+let feedFamily: string | null = null;
+
+/** The chat after the app was away (Audit 09.11.): the partner's sentences of the meantime come in. */
+export const catchUpFeed = () => (feedFamily ? loadFeed(feedFamily) : Promise.resolve());
+
+async function loadFeed(familyId: string) {
+  if (!supabase) return;
   const { data, error } = await supabase.from('family_feed').select('id, role, kind, said, card, undone, created_at').eq('family_id', familyId).order('created_at', { ascending: false }).limit(300);
-  if (error || !data) return;
+  if (error || !data || feedFamily !== familyId) return;
   const remote = (data as Row[]).map(fromRow);
   const ids = new Set(remote.map((f) => f.id));
   // Written on this phone before signing in: goes up with the rest.
   const mine = myRole();
-  const local = feed.filter((f) => !ids.has(f.id) && f.by === mine);
-  feed = sorted([...remote, ...local]);
+  // Only the window the server answered for counts; older lines stay as they are and are not sent again.
+  const oldest = remote.length >= 300 ? remote[remote.length - 1].at : '';
+  const local = feed.filter((f) => !ids.has(f.id) && f.by === mine && f.at >= oldest);
+  const older = oldest ? feed.filter((f) => !ids.has(f.id) && f.at < oldest) : [];
+  feed = sorted([...older, ...remote, ...local]);
   emit();
   local.forEach((f) => void upload(f));
+}
+
+/** Signed out: the chat of that family leaves the phone too. */
+export function clearFeed() {
+  feed = [];
+  undos.clear();
+  emit();
 }
 
 export function stopFeed() {
   if (channel) supabase?.removeChannel(channel);
   channel = null;
+  subscribedOnce = false;
+  feedFamily = null;
 }

@@ -12,7 +12,7 @@ import { tokens } from '../src/theme';
 import { actions, toast, useStore } from '../src/state/store';
 import type { ClayName } from '../src/lib/clayIcons';
 import { LIVE } from '../src/lib/live';
-import { getFamily, stopSync } from '../src/lib/sync';
+import { getFamily, forgetLocal } from '../src/lib/sync';
 import { signOut, canTestSignIn, useAuth } from '../src/lib/auth';
 import { analyticsOff, setAnalyticsOff } from '../src/lib/analytics';
 import { chooseNav } from '../src/lib/funnel';
@@ -117,6 +117,7 @@ export default function Einstellungen() {
       <Group>
         <SRow icon="sync" t={tx('Navigation', 'Navigation')} v={navStyle() === 'bar' ? tx('Ein Balken', 'One bar') : tx('Unter der Eingabe', 'Under the field')} onPress={() => { haptics.select(); const prev = navStyle(); const next = prev === 'bar' ? 'strip' : 'bar'; setNavStyle(next); chooseNav(next, 'settings', prev); toast(tx('Navigation geändert', 'Navigation changed')); }} />
         <SRow icon="zuhause" t={tx('Neues Onboarding ansehen', 'View new onboarding')} onPress={() => router.push('/onboarding/flow')} />
+        <SRow icon="zuhause" t={tx('Onboarding mit Maskottchen ansehen', 'View mascot onboarding')} onPress={() => { startPreview(); router.push('/onboarding/story'); }} />
         <SRow icon="zuhause" t={tx('Onboarding ansehen', 'View onboarding')} onPress={() => { startPreview(); router.push('/onboarding'); }} />
       </Group>
       <PressScale scale={0.985} onPress={() => router.push('/plus')} style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12, paddingHorizontal: 14, borderRadius: 20, backgroundColor: tokens.row }}>
@@ -133,7 +134,7 @@ export default function Einstellungen() {
         <Group>
           <SRow icon="sync" t={tx('Nutzungsdaten teilen', 'Share usage data')} v={noStats ? tx('Aus', 'Off') : tx('An', 'On')} onPress={() => { haptics.select(); const off = !noStats; setAnalyticsOff(off); setNoStats(off); }} />
         </Group>
-        <PressScale onPress={async () => { stopSync(); await signOut(); router.dismissAll(); router.replace('/anmelden'); }} style={{ alignItems: 'center', paddingVertical: 14 }}>
+        <PressScale onPress={async () => { await forgetLocal(); await signOut(); router.dismissAll(); router.replace('/anmelden'); }} style={{ alignItems: 'center', paddingVertical: 14 }}>
           <Txt size={15} weight={600} color={tokens.danger}>{tx('Abmelden', 'Sign out')}</Txt>
         </PressScale>
         </>

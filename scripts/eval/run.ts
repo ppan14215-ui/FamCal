@@ -15,7 +15,7 @@
  */
 import fs from 'node:fs';
 import path from 'node:path';
-import { converse, agentBody, snapshotAlt, agentPlan, withReply, promisesOnly, RETRY_NOTE, type AgentAnswer, type Usage } from '../../src/lib/assistent';
+import { converse, agentBody, snapshotAlt, agentPlan, withReply, promisesOnly, emptyAnswer, RETRY_NOTE, type AgentAnswer, type Usage } from '../../src/lib/assistent';
 import { get, set } from '../../src/state/store';
 import { persons } from '../../src/theme/tokens';
 import { termine, listen, aufgaben } from '../../eval/assistent/familie';
@@ -105,7 +105,10 @@ async function ask(said: string, history: { said: string; app?: string }[]): Pro
     let last: Omit<Ergebnis, 'stand' | 'vorher'> = { antwort: '', frage: null, tools: [], aktionen: [], karte: null };
     let fail = '';
     for (const said of c.saetze) {
-      const first = await ask(said, history);
+      const asked = await ask(said, history);
+      // Same as the app: an empty answer (no step, no words) is asked once more as it was.
+      const retried = emptyAnswer(asked.r) ? await ask(said, history) : null;
+      const first = retried?.r ? { ...retried, ms: asked.ms + retried.ms } : asked;
       // Same as the app: a promise without any action is asked once more.
       const again = promisesOnly(first.r, said) ? await ask(said, [...history, { said, app: `${String(first.r!.actions[0]?.input?.text ?? '')} (${RETRY_NOTE})` }]) : null;
       const { r, ms, error } = again?.r ? { ...again, ms: first.ms + again.ms } : first;

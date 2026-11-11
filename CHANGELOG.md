@@ -4,6 +4,16 @@ Alle sichtbaren Änderungen an FamCal. Neueste oben. Agenten und Menschen: Ände
 
 ## Unreleased
 
+### App funktioniert zuverlässig (09.11. Audit)
+- Nach längerer Pause im Hintergrund klappen Assistent und Spracheingabe gleich beim ersten Satz, statt "Ich komme gerade nicht an den Assistenten".
+- "Heute" und "morgen" stimmen auch, wenn die App seit gestern offen war. Am neuen Tag lädt sie sich beim Zurückkommen einmal neu.
+- Was der Partner in der Zwischenzeit eingetragen, verschoben oder gelöscht hat, ist beim Zurückkommen in die App sofort da. Löschungen kommen jetzt auch live an.
+- Chatkarten sagen beim Laden nicht mehr "Nicht mehr im Kalender" und "Im Kalender" gleichzeitig.
+- Eine leere Antwort des Assistenten wird einmal still neu gefragt.
+- Kalender und Listen liegen jetzt auch auf dem Handy: die App öffnet sofort, auch ohne Netz, und was du ohne Netz einträgst, geht nicht verloren.
+- Klappt das erste Laden nicht, zeigt die App das an und bietet "Nochmal versuchen" statt eines leeren Bildschirms.
+- Abmelden räumt Kalender, Listen und Chat vom Handy.
+
 ### Memo lebt (08.11. Nacht)
 - Beim Tippen schaut Memo hoch auf den Text und liest mit; jeder neue Buchstabe ein kleines Nicken.
 - Er reagiert auf alles: anderer Bildschirm, etwas abgehakt (freut sich), etwas gelöscht (zuckt kurz).

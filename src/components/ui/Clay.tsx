@@ -19,6 +19,23 @@ import { tint } from '../../theme';
 /** Measured: objects span 53 to 66 % of the 1024 canvas, 64 % on average. */
 const FILL = 1.35;
 
+/**
+ * Balls without their baked floor shadow (Julian 11.11.: "Der Fußball hüpft und landet mit Schatten oben"):
+ * the bounce spins the ball, and the shadow in the picture spun with it. Here the ball spins alone and its
+ * shadow stays on the floor, smaller and lighter while the ball is up. y is the floor line in the canvas.
+ */
+const SOLO: Partial<Record<ClayName, { src: any; y: number; w: number }>> = {
+  fussball: { src: require('../../../assets/icons-solo/icon-fussball.webp'), y: 0.79, w: 0.5 },
+  ball: { src: require('../../../assets/icons-solo/icon-ball.webp'), y: 0.79, w: 0.5 },
+  basketball: { src: require('../../../assets/icons-solo/icon-basketball.webp'), y: 0.805, w: 0.52 },
+  handball: { src: require('../../../assets/icons-solo/icon-handball.webp'), y: 0.81, w: 0.52 },
+  volleyball: { src: require('../../../assets/icons-solo/icon-volleyball.webp'), y: 0.795, w: 0.5 },
+  // The rugby ball is thrown up spinning a full turn: same problem, same cure.
+  rugby: { src: require('../../../assets/icons-solo/icon-rugby.webp'), y: 0.71, w: 0.48 },
+};
+/** How high each throw goes, as a share of the icon, so the shadow knows when the thing is at the top. */
+const THROW: Record<string, number> = { bounce: 0.42, toss: 0.5 };
+
 export function ClayIcon({ name, size = 40, style, celebrate }: { name: ClayName; size?: number; style?: StyleProp<any>; celebrate?: boolean }) {
   const [n, setN] = useState(0);
   const prev = useRef(celebrate);
@@ -75,9 +92,26 @@ function ClayMotion({ name, size, style }: { name: ClayName; size: number; style
   const base = useAnimatedStyle((): any => (spec && kind !== 'state' ? toRN(baseF(kind, t.value, u, variant)) : {}));
   // A check mark draws itself: the part sits in a box that grows from the left.
   const reveal = useAnimatedStyle((): any => (kind === 'draw' ? { width: size * (partF(kind, t.value, u).reveal ?? 1) } : {}));
+  const solo = !spec && THROW[kind] ? SOLO[name] : undefined;
+  // The floor shadow: full while the ball rests, half as wide and faint at the top of the throw.
+  const floor = useAnimatedStyle((): any => {
+    if (!solo) return {};
+    const up = Math.min(1, Math.max(0, -(wholeF(kind, t.value, size, whole!.variant).ty ?? 0) / (THROW[kind] * size)));
+    return { opacity: 1 - 0.7 * up, transform: [{ scaleX: 1 - 0.5 * up }, { scaleY: 1 - 0.5 * up }] };
+  });
   const glow = useAnimatedStyle((): any => (kind === 'glow' ? { opacity: wholeF(kind, t.value, size).glow ?? 0 } : { opacity: 0 }));
 
   const box = { position: 'absolute' as const, left: 0, top: 0, width: size, height: size };
+  if (solo) {
+    return (
+      <View style={[{ width: size, height: size }, style]}>
+        <Animated.View pointerEvents="none" style={[{ position: 'absolute', left: size * (0.5 - solo.w / 2), top: size * solo.y - size * 0.025, width: size * solo.w, height: size * 0.05, borderRadius: size, backgroundColor: 'rgba(38,52,48,0.16)', boxShadow: `0 0 ${Math.max(2, Math.round(size * 0.03))}px rgba(38,52,48,0.16)` } as any, floor]} />
+        <Animated.View style={[{ width: size, height: size, transformOrigin: whole!.origin ?? '50% 50%' } as any, outer]}>
+          <Image source={solo.src} style={{ width: size, height: size }} resizeMode="contain" />
+        </Animated.View>
+      </View>
+    );
+  }
   if (!spec) {
     return (
       <View style={[{ width: size, height: size }, style]}>

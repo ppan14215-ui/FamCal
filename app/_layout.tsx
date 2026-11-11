@@ -15,6 +15,7 @@ import ToastHost from '../src/components/ToastHost';
 import { initSentry, wrapRoot } from '../src/lib/sentry';
 import { initAnalytics } from '../src/lib/analytics';
 import { startNotifications } from '../src/lib/notify';
+import { startLifecycle } from '../src/lib/lifecycle';
 import { startWidgetSync } from '../src/widget/snapshot';
 import { actions } from '../src/state/store';
 import { VeilHost } from '../src/components/Veil';
@@ -50,7 +51,7 @@ function RootLayout() {
   }, [loaded, error]);
 
   // Reminders on the phone (Spec §5): plans them and keeps them in step with the Termine.
-  useEffect(() => { startNotifications(); actions.ensureHolidays(); startWidgetSync(); }, []);
+  useEffect(() => { startNotifications(); actions.ensureHolidays(); startWidgetSync(); startLifecycle(); }, []);
 
   if (!loaded && !error) return <View style={{ flex: 1, backgroundColor: tokens.bg }} />;
 

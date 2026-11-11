@@ -5,8 +5,8 @@
  */
 import { fetch as streamFetch } from 'expo/fetch';
 import { supabase } from './cloud';
-import { getAuth } from './auth';
-import { TODAY, NOW } from './dates';
+import { getAuth, freshToken } from './auth';
+import { today, nowHM } from './dates';
 import { persons } from '../theme/tokens';
 import { TERMIN_ICON_NAMES, type Understood } from './talk';
 import { LANG, tx } from '../i18n/lang';
@@ -57,7 +57,7 @@ export type Convo = { history: { said: string; app?: string }[]; draft?: string;
 export async function understandOnline(text: string, convo?: Convo): Promise<Understood | null> {
   if (!supabase || !getAuth().session) return null;
   const call = supabase.functions
-    .invoke<Understood & { left: number | null }>('verstehen', { body: { text, today: TODAY, now: NOW, names: { J: persons.J.name, T: persons.T.name }, lang: LANG, icons: TERMIN_ICON_NAMES, lists: myLists(), ...convo } })
+    .invoke<Understood & { left: number | null }>('verstehen', { body: { text, today: today(), now: nowHM(), names: { J: persons.J.name, T: persons.T.name }, lang: LANG, icons: TERMIN_ICON_NAMES, lists: myLists(), ...convo } })
     .then(async ({ data, error }) => {
       if (error || !data) { await limitHint(error); return null; }
       if (data.left === 5) toast(tx('Noch 5 Sätze gratis in diesem Monat', '5 free sentences left this month'), undefined, { kind: 'info' });
@@ -88,8 +88,8 @@ export async function understandLive(text: string, convo: Convo | undefined, onP
     const res = await streamFetch(`${url}/functions/v1/verstehen`, {
       method: 'POST',
       signal: ctrl.signal,
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}`, apikey: process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? '' },
-      body: JSON.stringify({ text, today: TODAY, now: NOW, names: { J: persons.J.name, T: persons.T.name }, lang: LANG, icons: TERMIN_ICON_NAMES, lists: myLists(), ...convo, stream: true }),
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${(await freshToken()) ?? session.access_token}`, apikey: process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? '' },
+      body: JSON.stringify({ text, today: today(), now: nowHM(), names: { J: persons.J.name, T: persons.T.name }, lang: LANG, icons: TERMIN_ICON_NAMES, lists: myLists(), ...convo, stream: true }),
     });
     if (!res.ok || !res.body) { await limitHint({ context: res as unknown as Response }); return null; }
     const reader = res.body.getReader();

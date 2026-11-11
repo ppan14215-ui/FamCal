@@ -69,6 +69,9 @@ import { haptics } from '../../src/lib/haptics';
 import { tx, isEn } from '../../src/i18n/lang';
 import NavChoice from '../../src/components/NavChoice';
 import KiWahl from '../../src/components/KiWahl';
+import SignInSheet from '../../src/components/onboarding/SignInSheet';
+import { LIVE } from '../../src/lib/live';
+import { getAuth } from '../../src/lib/auth';
 import { ohneKi } from '../../src/lib/privat';
 import { stepViewed, onboardingDone } from '../../src/lib/funnel';
 
@@ -196,7 +199,7 @@ export default function Flow() {
   const reduced = useReducedMotion();
   const kb = useKeyboardInset();
   // Screens for the landing page: /onboarding/flow?step=baby&a=Julia&b=Tom opens a step directly.
-  const q = useLocalSearchParams<{ step?: string; a?: string; b?: string }>();
+  const q = useLocalSearchParams<{ step?: string; a?: string; b?: string; signin?: string }>();
   const [step, setStep] = useState<Step>('hallo');
   const [nameA, setNameA] = useState('');
   const [nameB, setNameB] = useState('');
@@ -205,6 +208,8 @@ export default function Flow() {
   const [ask, setAsk] = useState<'ort' | 'runde' | 'liste' | 'split' | null>(null);
   const [pick, setPick] = useState<{ dish: string; picks: string[]; have: string[]; off: string[]; said: string } | null>(null);
   const [reply, setReply] = useState<string | null>(null);
+  /** Sign-in comes up as a sheet over the last step (Julian 11.11.), never as a wall. */
+  const [signIn, setSignIn] = useState(!!q.signin);
   const si = STEPS.indexOf(step);
   const A = nameA.trim() || tx('du', 'you');
   const B = nameB.trim();
@@ -623,16 +628,19 @@ export default function Flow() {
       ) : null}
 
       {/* Memo, alive: big in the middle when he talks to you, down in the bar as the talk button while the app plays */}
-      <LiveMemo
-        place={corner ? 'dock' : isHero ? 'hero' : 'mid'}
-        hero={{ x: W / 2, y: heroCY }}
-        mid={{ x: W / 2, y: memoY + MEMO / 2 }}
-        midScale={MEMO / BIG}
-        look={look}
-        gaze={step === 'namen' ? nameGaze : null}
-        mood={step === 'namen' && typingIn ? 'type' : undefined}
-        entrance={!q.step}
-      />
+      {/* While the sign-in sheet is up, Memo sits on its edge instead: still only one. */}
+      <View pointerEvents="box-none" style={{ position: 'absolute', left: 0, top: 0, right: 0, bottom: 0, opacity: signIn ? 0 : 1 }}>
+        <LiveMemo
+          place={corner ? 'dock' : isHero ? 'hero' : 'mid'}
+          hero={{ x: W / 2, y: heroCY }}
+          mid={{ x: W / 2, y: memoY + MEMO / 2 }}
+          midScale={MEMO / BIG}
+          look={look}
+          gaze={step === 'namen' ? nameGaze : null}
+          mood={step === 'namen' && typingIn ? 'type' : undefined}
+          entrance={!q.step}
+        />
+      </View>
 
       {/* Stickers pop out of Memo: hallo and fertig (Airbnb reference) */}
       {step === 'hallo' ? <StickerRing key="r-hallo" cx={W / 2} cy={heroCY} items={HALLO} start={T_RING} /> : null}
@@ -678,8 +686,9 @@ export default function Flow() {
         {/* Ohne KI: the speaking steps would show what is switched off, so it goes straight to the end. */}
         {step === 'ki' ? <ScrollView style={{ maxHeight: H * 0.625 }} contentContainerStyle={{ paddingHorizontal: 4, paddingBottom: 4 }}><KiWahl source="onboarding" onDone={(mitKi) => { if (mitKi) joy(); else buddyPoke(); later(mitKi ? 420 : 200, () => go(mitKi ? 'termin' : 'fertig')); }} onMore={() => router.push('/datenschutz')} /></ScrollView> : null}
         {step === 'namen' ? <View style={{ paddingHorizontal: 4 }}><Btn label={tx('Weiter', 'Continue')} disabled={!magA} onPress={() => go('leiste')} /></View> : null}
-        {step === 'fertig' ? <Late key="b-fertig" ms={500 + (FERTIG.length - 1) * 190 + 700} style={{ paddingHorizontal: 4 }}><View style={{ gap: 6 }}><Btn label={tx('14 Tage Plus gratis testen', 'Try Plus free for 14 days')} onPress={() => { haptics.success(); onboardingDone('flow'); router.replace('/plus?trigger=onboarding'); }} /></View></Late> : null}
+        {step === 'fertig' ? <Late key="b-fertig" ms={500 + (FERTIG.length - 1) * 190 + 700} style={{ paddingHorizontal: 4 }}><View style={{ gap: 6 }}><Btn label={tx('14 Tage Plus gratis testen', 'Try Plus free for 14 days')} onPress={() => { haptics.success(); onboardingDone('flow'); if (LIVE && !getAuth().session) setSignIn(true); else router.replace('/plus?trigger=onboarding'); }} /></View></Late> : null}
       </View>
+      {signIn ? <SignInSheet from="flow" partner={B} onClose={() => setSignIn(false)} /> : null}
     </View>
   );
 }

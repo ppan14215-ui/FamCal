@@ -14,10 +14,10 @@ import { useSyncExternalStore } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { fetch as streamFetch } from 'expo/fetch';
 import { supabase } from './cloud';
-import { getAuth } from './auth';
+import { getAuth, freshToken } from './auth';
 import { limitHint } from './verstehen';
 import { getPref, setPref } from './prefs';
-import { TODAY, NOW, addDays, WD_SHORT, weekday, long, hm, short } from './dates';
+import { TODAY, today, nowHM, addDays, WD_SHORT, weekday, long, hm, short } from './dates';
 import { persons } from '../theme/tokens';
 import { LANG, tx } from '../i18n/lang';
 import { get, set, actions } from '../state/store';
@@ -155,7 +155,7 @@ export function agentBody(said: string, history: { said: string; app?: string }[
   const text = A.hide(said);
   const scr = A.hide(screen);
   return {
-    text, today: TODAY, now: NOW, names: { J: 'Fam1', T: 'Fam2' }, me: myRole(), lang: LANG, icons: TERMIN_ICON_NAMES,
+    text, today: today(), now: nowHM(), names: { J: 'Fam1', T: 'Fam2' }, me: myRole(), lang: LANG, icons: TERMIN_ICON_NAMES,
     snapshot: leanSnapshot(text, scr, A, screenList), history: history.map((h) => ({ said: A.hide(h.said), app: h.app ? A.hide(h.app) : undefined })), screen: scr,
   };
 }
@@ -197,7 +197,7 @@ export async function askAgent(said: string, lines: { said: string; app?: string
   if (!supabase || !session || !url) return null;
   const history = [...chatHistory(), ...lines.slice(0, -1)].slice(-6);
   const A = aliases();
-  return converse(said, history, screen, (b) => post(url, session.access_token, b, (t) => onSay?.(A.show(t))), screenList);
+  return converse(said, history, screen, async (b) => post(url, (await freshToken()) ?? session.access_token, b, (t) => onSay?.(A.show(t))), screenList);
 }
 
 async function post(url: string, token: string, b: object, onSay: (say: string) => void): Promise<Reply | null> {
@@ -570,6 +570,15 @@ export function promisesOnly(r: AgentAnswer | null, said: string): boolean {
   if (QUESTION.test(said.trim())) return false;
   return PROMISE.test(s(r.actions[0]?.input?.text));
 }
+/**
+ * Nothing usable came back: no step and no words (test list 09.11.: "Welche Schuhgröße hat Mia?"
+ * answered with an empty text now and then). Asked once more, the same sentence answers.
+ */
+export function emptyAnswer(r: AgentAnswer | null): boolean {
+  if (!r) return false;
+  if (r.actions.some((a) => a.tool !== 'antworten')) return false;
+  return !r.actions.some((a) => s(a.input?.text));
+}
 export const RETRY_NOTE = 'Du hast eben nur geantwortet und nichts ausgeführt. Führe es jetzt mit den Werkzeugen aus. / You only replied and did nothing; do it now with the tools.';
 
 export function withReply(r: AgentAnswer, said: string): AgentAnswer {
@@ -610,7 +619,7 @@ function planOf(r: AgentAnswer, said: string): { ask: string } | Plan | null {
   }
   const ops = [...(termine.length ? [fromPlan(replyPlan({ kind: 'added', event: termine[0], more: termine.slice(1), steps: [] }))] : []), ...others.map((a) => opOf(a, said)).filter(Boolean) as Op[]];
   if (!ops.length) {
-    if (!answer) return null;
+    if (!answer || !s(answer.input?.text)) return null;
     const ids = arr(answer.input?.events).filter((id) => get().events.some((e) => e.id === id));
     return { steps: [], run: () => ({ result: { kind: 'answer', reply: { kind: 'answer', text: s(answer.input?.text), events: ids.map((id) => get().events.find((e) => e.id === id)!) } } }) };
   }

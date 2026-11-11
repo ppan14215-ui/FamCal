@@ -30,7 +30,7 @@ import { tokens, persons, fonts, easing } from '../theme';
 import { useStore, actions, get, toast } from '../state/store';
 import { plan, splitItems, claudeSays, replyPlan, listFromClaude, asksNewList, thinksOnline, revisePlan, reviseOffline, draftOf, cutOff, addPicks, settleWork, clashLine, dishy, linkPlan, Ctx, Plan, Result, Said, SPOKEN, PLACEHOLDER } from '../lib/act';
 import { canUnderstand, type Convo, type Glimpse } from '../lib/verstehen';
-import { agentOn, askAgent, agentPlan, screenOf, promisesOnly, RETRY_NOTE } from '../lib/assistent';
+import { agentOn, askAgent, agentPlan, screenOf, promisesOnly, emptyAnswer, RETRY_NOTE } from '../lib/assistent';
 import { linkIn, recipeFromLink, keepRecipe, loadRecipes, type Recipe } from '../lib/rezepte';
 import { onShared, onSayInApp } from '../lib/shared';
 import { dayLabel, slotLine, type Suggest } from '../lib/talk';
@@ -726,6 +726,7 @@ export default function Dock() {
     const asked = Date.now();
     const onList = where.ctx.kind === 'liste' ? where.ctx.id : undefined;
     askAgent(said, talk, screenOf(where.ctx), onSay, onList)
+      .then((r) => (emptyAnswer(r) && heard.current === n ? askAgent(said, talk, screenOf(where.ctx), onSay, onList).then((r2) => r2 ?? r) : r))
       .then((r) => (promisesOnly(r, said) ? askAgent(said, [...talk.slice(0, -1), { said, app: `${String(r!.actions[0]?.input?.text ?? "")} (${RETRY_NOTE})` }, { said }], screenOf(where.ctx), undefined, onList).then((r2) => r2 ?? r) : r))
       .then((r) => {
       if (heard.current !== n) return;
