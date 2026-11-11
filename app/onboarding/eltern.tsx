@@ -27,6 +27,7 @@ import { haptics } from '../../src/lib/haptics';
 import { tokens, fonts, personPalette } from '../../src/theme';
 import { stepViewed, onboardingDone, inviteSent, calendarConnected } from '../../src/lib/funnel';
 import { tx } from '../../src/i18n/lang';
+import { getPref, setPref } from '../../src/lib/prefs';
 
 type Kind = 'kind' | 'grosseltern' | 'andere';
 type Draft = { key: string; name: string; kind: Kind; birthday: string | null };
@@ -54,8 +55,8 @@ export default function Familie() {
   stepViewed('eltern');
   const names = useStore((s) => s.names);
   const country = useStore((s) => s.country);
-  const [j, setJ] = useState(isPreview() ? '' : names.J || '');
-  const [t, setT] = useState(isPreview() ? '' : names.T || '');
+  const [j, setJ] = useState(isPreview() ? '' : names.J || getPref('obName') || '');
+  const [t, setT] = useState(isPreview() ? '' : names.T || getPref('obPartner') || '');
   const [others, setOthers] = useState<Draft[]>([]);
   const [beat, setBeat] = useState(0);
 
@@ -72,6 +73,11 @@ export default function Familie() {
     if (isPreview()) { setPreviewNames({ J: j.trim(), T: t.trim() }); return router.push('/onboarding/kalender'); }
     actions.setNames({ J: j.trim(), T: t.trim() });
     setMyName(j.trim());
+    // The appointment you said in the story onboarding moves in as your first real one, once.
+    try {
+      const raw = getPref('obEvent');
+      if (raw) { const e = JSON.parse(raw); actions.addEvent({ ...e, id: `e-${Date.now()}` }); setPref('obEvent', ''); }
+    } catch {}
     const taken = new Set(get().people.map((p) => p.name.toLowerCase()));
     others.filter((d) => d.name.trim()).forEach((d, i) => {
       if (taken.has(d.name.trim().toLowerCase())) return;

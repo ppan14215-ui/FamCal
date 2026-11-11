@@ -126,6 +126,7 @@ export default function Story() {
     haptics.success();
     setPref('obName', me);
     if (du) setPref('obPartner', du);
+    if (ev && !isPreview()) setPref('obEvent', JSON.stringify(ev));
     onboardingDone('story');
     if (LIVE && !getAuth().session && !isPreview()) setSignIn(true);
     else if (!LIVE && !isPreview()) router.replace('/onboarding/eltern');
