@@ -117,6 +117,7 @@ export default function Einstellungen() {
       <Group>
         <SRow icon="sync" t={tx('Navigation', 'Navigation')} v={navStyle() === 'bar' ? tx('Ein Balken', 'One bar') : tx('Unter der Eingabe', 'Under the field')} onPress={() => { haptics.select(); const prev = navStyle(); const next = prev === 'bar' ? 'strip' : 'bar'; setNavStyle(next); chooseNav(next, 'settings', prev); toast(tx('Navigation geändert', 'Navigation changed')); }} />
         <SRow icon="zuhause" t={tx('Neues Onboarding ansehen', 'View new onboarding')} onPress={() => router.push('/onboarding/flow')} />
+        <SRow icon="zuhause" t={tx('Onboarding mit Maskottchen ansehen', 'View mascot onboarding')} onPress={() => { startPreview(); router.push('/onboarding/story'); }} />
         <SRow icon="zuhause" t={tx('Onboarding ansehen', 'View onboarding')} onPress={() => { startPreview(); router.push('/onboarding'); }} />
       </Group>
       <PressScale scale={0.985} onPress={() => router.push('/plus')} style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12, paddingHorizontal: 14, borderRadius: 20, backgroundColor: tokens.row }}>

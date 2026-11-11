@@ -19,12 +19,12 @@ import { haptics } from '../../lib/haptics';
 import { tx } from '../../i18n/lang';
 import { track, trackOnce } from '../../lib/analytics';
 
-export default function SignInSheet({ onClose, partner, from }: { onClose: () => void; partner?: string; from: 'showcase' | 'flow' }) {
+export default function SignInSheet({ onClose, partner, from }: { onClose: () => void; partner?: string; from: 'showcase' | 'flow' | 'story' }) {
   const [busy, setBusy] = useState<'apple' | 'google' | 'test' | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [glad, setGlad] = useState(0);
   const b = useBuddy();
-  useEffect(() => { trackOnce('signin', 'onboarding_step_viewed', { step: 'signin', flow: from === 'flow' ? 'flow' : 'v3' }); }, []);
+  useEffect(() => { trackOnce('signin', 'onboarding_step_viewed', { step: 'signin', flow: from === 'showcase' ? 'v3' : from }); }, []);
 
   const go = async (which: 'apple' | 'google' | 'test', fn: () => Promise<SignIn>) => {
     if (busy) return;
