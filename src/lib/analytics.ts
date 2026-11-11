@@ -84,6 +84,7 @@ export type Events = {
   voice_started: { screen: string };
   /** The recording became text. ok=false: nothing usable heard. engine: cloud (Scribe) or phone. */
   voice_transcribed: { ok: boolean; engine: 'cloud' | 'phone'; ms?: number; chars_bucket?: string };
+  voice_failed: { reason: 'stale_error' | 'stale_end' | 'no_start' | 'cloud_empty' | 'no_file'; code?: string };
   /** A sentence was sent to FamCal. */
   message_sent: { input: Input; screen: string; follow_up: boolean };
   /** The assistant answered. ok=false: failed or timed out, offline rules took over. */
