@@ -22,6 +22,7 @@ import { Avatar, Pair, Owner } from './ui/Person';
 import PressScale from './ui/PressScale';
 import TalkBar from './TalkBar';
 import SpeakCard from './SpeakCard';
+import { addPic } from '../lib/attach';
 import MemoMic from './buddy/MemoMic';
 import { setSpeak, getSpeak, useSpeak, speakOpen, speakDone, parseHour } from '../lib/speak';
 import { settle as settleTime } from './ChatCards';
@@ -474,7 +475,7 @@ export default function Dock() {
   const viaRef = useRef<Input | null>(null);
   const lastVia = useRef<Input>('text');
   // A shared screenshot becomes a list offer (Julian 29.10.), never a list by itself.
-  useEffect(() => onShared((text) => { viaRef.current = 'share'; hearRef.current(text); }, (uri) => router.push({ pathname: '/bild-liste', params: { uri } })), []);
+  useEffect(() => onShared((text) => { viaRef.current = 'share'; hearRef.current(text); }, (uri) => { addPic(uri); router.navigate('/chat'); }), []); // Julian 11.11.: a shared picture lands in the field like in the Claude app
   useEffect(() => onSayInApp((text, voice) => hearRef.current(text, voice ? { voice: true } : undefined)), []);
 
   // Examples only while the calendar is still empty; after that they are clutter (Julian 27.10.).

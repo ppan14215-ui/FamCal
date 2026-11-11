@@ -10,7 +10,7 @@
  */
 import React, { useEffect, useRef, useState } from 'react';
 import { voiceLevel, setBuddy } from '../lib/buddy';
-import { View, TextInput, Platform } from 'react-native';
+import { View, TextInput, Platform, Image } from 'react-native';
 import Txt from './ui/Txt';
 import LineIcon from './ui/LineIcon';
 import PressScale from './ui/PressScale';
@@ -35,6 +35,8 @@ import { track } from '../lib/analytics';
 import { speechLocale, speechLang } from '../lib/speechLang';
 import { setSpeak, getSpeak, speakHandlers } from '../lib/speak';
 import MemoMic from './buddy/MemoMic';
+import { usePics, dropPic, takePics } from '../lib/attach';
+import { readLines } from '../lib/screenshot';
 
 /** The cloud ears' day cap is said once per app launch. */
 let toldCap = false;
@@ -107,6 +109,7 @@ let recSeq = 0;
 
 export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, onClose, split, card, dark, onIdle, onBusy, speakCard, placeholder = tx('Sag oder schreib, was ansteht …', 'Say or type what\'s coming up …') }: Props) {
   const [text, setText] = useState('');
+  const pics = usePics();
   const [listening, setListening] = useState(false);
   const textRef = useRef(''); textRef.current = text;
   const listeningRef = useRef(false); listeningRef.current = listening;
@@ -155,11 +158,26 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, o
 
   const send = (t = text, voice = spokenText.current) => {
     const q = t.trim();
+    if (pics.length) return void sendWithPics(q, voice);
     if (!q) return;
     spokenText.current = false;
     setText('');
     haptics.tap();
     if (voice) onSend(q, { voice: true }); else onSend(q);
+  };
+
+  // Pictures go with the words like in the Claude app (Julian 11.11.). The phone reads each one; only that text
+  // (numbers like an IBAN already cut out) goes along, the picture itself stays on the phone.
+  const sendWithPics = async (q: string, voice: boolean) => {
+    const all = takePics();
+    spokenText.current = false;
+    setText('');
+    haptics.tap();
+    const read = (await Promise.all(all.map((p) => readLines(p.uri).catch(() => [] as string[])))).map((l) => l.join(' / ')).filter(Boolean);
+    if (!read.length && !q) { toast(tx('Auf dem Bild konnte ich keinen Text lesen.', "I couldn't read any text in the picture."), undefined, { kind: 'warn' }); return; }
+    const from = read.length ? `${read.length > 1 ? tx('Von den Bildern', 'From the pictures') : tx('Vom Bild', 'From the picture')}: ${read.join(' // ')}` : '';
+    const msg = [q, from].filter(Boolean).join('\n\n').slice(0, 2500);
+    if (voice) onSend(msg, { voice: true }); else onSend(msg);
   };
 
   // Types the sentence letter by letter, as if it were heard, then sends it.
@@ -206,7 +224,7 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, o
   useEffect(() => () => { if (speakCard) setSpeak({ phase: 'idle', text: '', ask: null }); }, [speakCard]);
 
   // One bar: speaking or text makes the input the whole bar; a mic that stops with nothing said folds it back.
-  const busy = listening || !!text;
+  const busy = listening || !!text || pics.length > 0;
   const wasBusy = useRef(busy);
   useEffect(() => {
     if (wasBusy.current === busy) return;
@@ -475,7 +493,7 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, o
 
   // Julian 04.11.: like the Claude app. At rest (and while the waves run) one line: plus, field, mic, send.
   // With text it grows into the card with the buttons below. The check sits where the mic was, in the same style.
-  const one = !text;
+  const one = !text && !pics.length;
   // Julian 05.11.: in the one bar the card sits inside the dark shape, so it draws light on dark and no box of its own.
   const dk = !!dark;
   const cInk = dk ? tokens.onInk : tokens.ink;
@@ -490,19 +508,33 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, o
       {listening ? <LineIcon name="check" size={21} color={cInk} stroke={2.4} /> : <LineIcon name="mic" size={20} color={cInk} />}
     </PressScale>
   );
-  const live = !!text.trim() || listening;
+  const live = !!text.trim() || listening || pics.length > 0;
   const cardSend = (
     <PressScale accessibilityLabel={tx('Senden', 'Send')} disabled={!live} onPress={finishAndSend} style={{ width: 34, height: 34, borderRadius: 999, alignItems: 'center', justifyContent: 'center', backgroundColor: live ? (dk ? tokens.onInk : tokens.ink) : dk ? 'rgba(255,255,255,0.12)' : tokens.chipBg }}>
       <LineIcon name="send" size={17} color={live ? (dk ? tokens.ink : tokens.onInk) : dk ? 'rgba(255,255,255,0.5)' : tokens.mute} />
     </PressScale>
   );
+  // The pictures sit in the field above the text, each with an x, like the Claude app.
+  const picRow = pics.length ? (
+    <Animated.View key="a" layout={MORPH} entering={SHOW} exiting={HIDE} style={{ flexDirection: 'row', gap: 8, paddingTop: 6, paddingHorizontal: card ? 2 : 6 }}>
+      {pics.map((p) => (
+        <Animated.View key={p.id} layout={MORPH} entering={SHOW} exiting={HIDE} style={{ width: 64, height: 64 }}>
+          <Image source={{ uri: p.uri }} style={{ width: 64, height: 64, borderRadius: 12, backgroundColor: tokens.chipBg, borderWidth: 1, borderColor: dark ? 'rgba(255,255,255,0.18)' : tokens.hair }} />
+          <PressScale accessibilityLabel={tx('Bild entfernen', 'Remove picture')} hitSlop={8} onPress={() => { haptics.select(); dropPic(p.id); }}
+            style={{ position: 'absolute', right: -6, top: -6, width: 22, height: 22, borderRadius: 11, alignItems: 'center', justifyContent: 'center', backgroundColor: tokens.ink, borderWidth: 1.5, borderColor: dark ? tokens.ink : tokens.row }}>
+            <LineIcon name="x" size={12} color={tokens.onInk} stroke={2.4} />
+          </PressScale>
+        </Animated.View>
+      ))}
+    </Animated.View>
+  ) : null;
   // One parent with keyed children, so the field is not remounted (and the keyboard stays) when the first letter turns the line into the card.
   const cardInput = (
     <Animated.View layout={MORPH} style={[one
       ? { flexDirection: 'row', alignItems: 'center', gap: 6, borderRadius: 26, paddingVertical: 4, paddingHorizontal: 8 }
       : { flexDirection: 'column', borderRadius: 24, paddingTop: 6, paddingHorizontal: 10, paddingBottom: 8, gap: 4 },
       dk ? { borderWidth: 1, borderColor: 'transparent' } : [{ backgroundColor: tokens.row, borderWidth: 1, borderColor: listening ? tokens.ink : tokens.hair }, lift]]}>
-      {one ? <Animated.View key="p" layout={MORPH} entering={SHOW} exiting={HIDE}>{cardPlus}</Animated.View> : null}
+      {one ? <Animated.View key="p" layout={MORPH} entering={SHOW} exiting={HIDE}>{cardPlus}</Animated.View> : picRow}
       <Animated.View key="f" layout={MORPH} style={one ? { flex: 1, minWidth: 0 } : { alignSelf: 'stretch' }}>{fieldBox}</Animated.View>
       {one ? <Animated.View key="m" layout={MORPH} entering={SHOW} exiting={HIDE} style={{ flexDirection: 'row', gap: 6 }}>{cardMic}{cardSend}</Animated.View> : null}
       {one ? null : (
@@ -536,7 +568,7 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, o
             {/* Julian 31.10. 12:55: a clear button to finish, like Claude. 01.11.: a check, not a stop square, since it keeps what was said. */}
             {listening ? <View style={{ width: 34, height: 34, borderRadius: 999, backgroundColor: tokens.ink, alignItems: 'center', justifyContent: 'center' }}><LineIcon name="check" size={19} color={tokens.onInk} stroke={2.4} /></View> : <MemoMic onPress={listen} />}
           </PressScale>
-          {(text && !listening) || listening ? (
+          {((text || pics.length) && !listening) || listening ? (
             <PressScale accessibilityLabel={tx('Senden', 'Send')} onPress={finishAndSend} style={{ width: 44, height: 44, marginBottom: 2, borderRadius: 999, alignItems: 'center', justifyContent: 'center', backgroundColor: tokens.ink }}>
               <LineIcon name="send" size={20} color={tokens.onInk} />
             </PressScale>
@@ -549,15 +581,15 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, o
           <LineIcon name="send" size={20} color={tokens.ink} />
         </PressScale>
       ) : null}
-      {!listening && !text ? <MemoMic onPress={listen} box={48} size={48} /> : (
+      {!listening && !text && !pics.length ? <MemoMic onPress={listen} box={48} size={48} /> : (
       <View style={{ width: 48, height: 48 }}>
       {listening && micStyle === 'ring' ? <VoiceRing level={level} /> : null}
       <PressScale
         accessibilityLabel={listening ? tx('Fertig gesprochen', 'Done speaking') : text ? tx('Senden', 'Send') : tx('Sprechen', 'Speak')}
-        onPress={text && !listening ? () => send() : listen}
+        onPress={(text || pics.length) && !listening ? () => send() : listen}
         style={{ width: 48, height: 48, borderRadius: 999, backgroundColor: tokens.ink, alignItems: 'center', justifyContent: 'center' }}
       >
-        {listening ? (micStyle === 'ring' ? <LineIcon name="check" size={22} color={tokens.onInk} stroke={2.4} /> : <VoiceBars level={level} />) : <LineIcon name={text ? 'send' : 'mic'} size={22} color={tokens.onInk} />}
+        {listening ? (micStyle === 'ring' ? <LineIcon name="check" size={22} color={tokens.onInk} stroke={2.4} /> : <VoiceBars level={level} />) : <LineIcon name={text || pics.length ? 'send' : 'mic'} size={22} color={tokens.onInk} />}
       </PressScale>
       </View>
       )}
@@ -571,6 +603,7 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, o
       {demo ? (
         <Txt size={12.5} line={17} color={tokens.sub} style={{ paddingHorizontal: 10 }}>{tx('Im Testlink ist das Mikro gesperrt, darum spreche ich einen Beispielsatz. In der App hört es euch zu.', 'The test link can\'t use the microphone, so I say a sample sentence. The app listens to you.')}</Txt>
       ) : null}
+      {!card ? picRow : null}
       {card ? cardInput : input}
     </View>
   );
