@@ -182,11 +182,11 @@ export default function Story() {
       footer = <Btn label={tx('Weiter', 'Next')} disabled={!me} onPress={() => go()} />;
       break;
     case 'nice':
-      body = <Big pose="jump" title={tx(`Schön dich kennenzulernen, ${me}!`, `Nice to meet you, ${me}!`)} />;
+      body = <Big pose="jump" title={me ? tx(`Schön dich kennenzulernen, ${me}!`, `Nice to meet you, ${me}!`) : tx('Schön dich kennenzulernen!', 'Nice to meet you!')} />;
       footer = <Btn label={tx('Weiter', 'Next')} onPress={() => go()} />;
       break;
     case 'familie':
-      body = <Ask say={tx(`Wer gehört zu eurer Familie, ${me}?`, `Who’s in your family, ${me}?`)}>{FAMILIE.map((o) => <Choice key={o.key} o={o} on={familie === o.key} onPress={() => pick(setFamilie, o.key)} />)}</Ask>;
+      body = <Ask say={me ? tx(`Wer gehört zu eurer Familie, ${me}?`, `Who’s in your family, ${me}?`) : tx('Wer gehört zu eurer Familie?', 'Who’s in your family?')}>{FAMILIE.map((o) => <Choice key={o.key} o={o} on={familie === o.key} onPress={() => pick(setFamilie, o.key)} />)}</Ask>;
       footer = <Btn label={tx('Weiter', 'Next')} disabled={!familie} onPress={() => go()} />;
       break;
     case 'partner':
@@ -228,7 +228,7 @@ export default function Story() {
     }
     case 'value': {
       const keys = [...abnehmen.filter((k) => SO[k]), 'beide', 'termine', 'erinnern'].filter((k, i, a) => a.indexOf(k) === i).slice(0, 3);
-      body = <Value title={tx(`So nehme ich euch das ab, ${me}`, `Here’s how I take it off you, ${me}`)} keys={keys} />;
+      body = <Value title={me ? tx(`So nehme ich euch das ab, ${me}`, `Here’s how I take it off you, ${me}`) : tx('So nehme ich euch das ab', 'Here’s how I take it off you')} keys={keys} />;
       footer = <Btn label={tx('Weiter', 'Next')} onPress={() => go()} />;
       break;
     }
@@ -348,7 +348,7 @@ function Peek({ onDone }: { onDone: () => void }) {
   }, []);
   return (
     <Pressable style={{ flex: 1 }} onPress={onDone} accessibilityLabel={tx('Weiter', 'Next')}>
-      <Rising size={size} peek={0.46}><Mascot size={size} pose="peek" glance={g} /></Rising>
+      <Rising size={size} peek={0.58}><Mascot size={size} pose="peek" glance={g} /></Rising>
     </Pressable>
   );
 }
@@ -387,11 +387,15 @@ function Intro({ lines, sub, rise }: { lines: string[]; sub?: string; rise?: boo
 function NameAsk({ value, onChange, onSubmit, title, placeholder }: { value: string; onChange: (v: string) => void; onSubmit: () => void; title: string; placeholder: string }) {
   // The eyes follow the letters: left at the start, along to the right as the name grows.
   const gx = Math.min(0.7, -0.3 + value.length * 0.08);
+  // Focus after the screen faded in (autoFocus during the entering animation is lost on some devices).
+  const ref = useRef<TextInput>(null);
+  useEffect(() => { const t = setTimeout(() => ref.current?.focus(), 350); return () => clearTimeout(t); }, []);
   return (
     <View style={{ flex: 1, alignItems: 'center', paddingHorizontal: 24, paddingTop: 30, gap: 22 }}>
       <Mascot size={96} mood={value ? 'type' : 'idle'} gaze={{ x: gx, y: 0.7 }} />
       <Txt size={28} line={34} weight={700} center>{title}</Txt>
       <TextInput
+        ref={ref}
         value={value}
         onChangeText={(t) => { onChange(t); if (t.length === 1 && !value) buddyPoke(); }}
         onSubmitEditing={onSubmit}
