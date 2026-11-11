@@ -102,6 +102,8 @@ type Props = {
 // Listeners of the last recording, shared by every TalkBar: the phone has one recognizer, and a bar that was swapped
 // for a new one (the onboarding makes a new one per sentence) must not leave its listeners on it (Julian 05.11. 23:28).
 const lastSubs = { current: [] as { remove: () => void }[] };
+/** Counts recordings, so a timer or event of an older recording never touches the one running now (Julian 11.11.). */
+let recSeq = 0;
 
 export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, onClose, split, card, dark, onIdle, onBusy, speakCard, placeholder = tx('Sag oder schreib, was ansteht …', 'Say or type what\'s coming up …') }: Props) {
   const [text, setText] = useState('');
@@ -271,6 +273,13 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, o
         }
       };
       await idle();
+      // Julian 11.11. 22:07: "every second recording wrong again", and those recordings never reached the server.
+      // Android delivers the end/error of the session torn down before (the abort in idle() or after the last file)
+      // a moment later, onto the listeners of this new one, which then finished at once with no file. Events only
+      // count once this session has really started, and late timers of an older one leave it alone.
+      const seq = ++recSeq;
+      let alive = false;
+      const live = () => { alive = true; };
       // Let the person finish (Julian 28.10.: "wartet nicht lange genug"): listen
       // on through short pauses and stop only after a longer silence or a second tap.
       let done = '';
@@ -314,7 +323,7 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, o
             land(heard());
             if (!toldCap) { toldCap = true; toast(tx('Für heute nutze ich die Spracherkennung vom Handy. Bitte kurz prüfen, was ankommt.', 'For today I use the phone’s own speech recognition. Please check what comes through.'), undefined, { kind: 'info' }); }
           }
-          else { sendAfter.current = false; setText(''); haptics.tap(); toast(tx('Die Aufnahme kam nicht an. Tipp aufs Mikro und sag es bitte nochmal.', 'The recording didn\'t come through. Tap the mic and say it again.'), undefined, { kind: 'warn' }); }
+          else { track('voice_failed', { reason: audio ? 'cloud_empty' : 'no_file' }); sendAfter.current = false; setText(''); haptics.tap(); toast(tx('Die Aufnahme kam nicht an. Tipp aufs Mikro und sag es bitte nochmal.', 'The recording didn\'t come through. Tap the mic and say it again.'), undefined, { kind: 'warn' }); }
           return;
         }
         const t = heard();
@@ -323,20 +332,23 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, o
       };
       const hush = (ms: number) => { clearTimeout(quiet); quiet = setTimeout(() => SR.stop(), ms); };
       const subs = [
+        SR.addListener('start', live),
+        SR.addListener('audiostart', live),
         SR.addListener('result', (e) => {
+          live();
           const t = e.results[0]?.transcript ?? '';
           if (e.isFinal) { done = `${done} ${t}`; part = ''; } else part = t;
           // The phone hears in one language only, so its live guess is often wrong English (Julian 31.10.). With the cloud ears on it never shows.
           if (!cloud) setText(heard());
         }),
         // -2 to 10 from the phone; below 0 is inaudible.
-        SR.addListener('volumechange', (e) => { if (e.value > peak) peak = e.value; level.value = withTiming(Math.min(1, Math.max(0, e.value / 10)), { duration: 100 }); }),
+        SR.addListener('volumechange', (e) => { if (seq === recSeq && e.value > -2) live(); if (e.value > peak) peak = e.value; level.value = withTiming(Math.min(1, Math.max(0, e.value / 10)), { duration: 100 }); }),
         // Android can end a long recording with an error (no-speech, network) although the file is there (31.10. 14:16 a
         // voice note skipped the cloud ears). Keep listening for the file and finish like a normal stop.
-        SR.addListener('error', () => { clearTimeout(quiet); setListening(false); void finish().finally(() => subs.forEach((x) => x.remove())); }),
+        SR.addListener('error', (e: any) => { if (!alive || seq !== recSeq) return track('voice_failed', { reason: 'stale_error', code: String(e?.error ?? '') }); clearTimeout(quiet); setListening(false); void finish().finally(() => subs.forEach((x) => x.remove())); }),
         // A second teardown can send audioend again without a file; keep the first real one.
-        SR.addListener('audioend', (e) => { if (e.uri) { audio = e.uri; audioDone?.(); } }),
-        SR.addListener('end', () => { clearTimeout(quiet); setListening(false); void finish().finally(() => subs.forEach((x) => x.remove())); }),
+        SR.addListener('audioend', (e) => { if (e.uri && seq === recSeq) { audio = e.uri; audioDone?.(); } }),
+        SR.addListener('end', () => { if (!alive || seq !== recSeq) return track('voice_failed', { reason: 'stale_end' }); clearTimeout(quiet); setListening(false); void finish().finally(() => subs.forEach((x) => x.remove())); }),
       ];
       lastSubs.current = subs;
       // A tap on the mic ends at once (Julian 28.10.): keep what was heard and put it in the field, no waiting for the phone to finish.
@@ -345,12 +357,15 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, o
         clearTimeout(quiet); SR.stop(); setListening(false);
         // Android sometimes never closes a segmented session after stop, so the file never comes (Julian 31.10. 17:02,
         // still errors). abort() tears down and hands over the recording right away; the cloud writes the words anyway.
-        setTimeout(() => { if (!audio) { try { SR.abort(); } catch {} } }, 1200);
+        setTimeout(() => { if (!audio && seq === recSeq) { try { SR.abort(); } catch {} } }, 1200);
         void finish();
       };
       toKeys.current = () => { clearTimeout(quiet); SR.abort(); setListening(false); };
       // Only the user stops it; the cap is a safety net, not a pause guess.
       hush(MAX_MS);
+      // A recognizer that never really starts (busy, no mic) would leave the mic spinning: after 4 s it ends like a
+      // stop, so what there is (nothing, or a file) is handled the normal way.
+      setTimeout(() => { if (!alive && seq === recSeq && !finishing) { track('voice_failed', { reason: 'no_start' }); try { SR.abort(); } catch {} setListening(false); void finish().finally(() => subs.forEach((x) => x.remove())); } }, 4000);
       SR.start({
         lang: speechLocale(), interimResults: true, continuous: true, addsPunctuation: true,
         volumeChangeEventOptions: { enabled: true, intervalMillis: 100 },
