@@ -17,7 +17,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Pressable } from 'react-native';
 import Animated, { useSharedValue, useAnimatedStyle, withTiming, withSequence, withDelay, Easing, useReducedMotion, cancelAnimation } from 'react-native-reanimated';
-import Blob from '../buddy/Blob';
+import Blob from '../buddy/Pin';
 import { useBuddy, setBuddy, buddyPoke, type Mood } from '../../lib/buddy';
 import { haptics } from '../../lib/haptics';
 

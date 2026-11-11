@@ -1,27 +1,29 @@
 /**
  * The story onboarding (Julian 11.11.2026, x.com/jacobrodri_/status/2120150681256628702: "adopt this
- * onboarding concept with our apps content and mascot, stick as closely as possible to the design and
- * concept but make it our own"; 22:51: "mit unserem neuen Maskottchen und zur App passend").
+ * onboarding concept with our apps content and mascot"; 22:51: "mit unserem neuen Maskottchen"; 23:13:
+ * check it against the X collection, the vault and what Namore taught us, "muss sofort überzeugen").
  *
- * The concept (a study app's 37 screens, see project-files famcal/onboarding/knowunity-ref) told with our
- * content and mascot, light like the app:
- *   peek       the mascot looks in huge from the bottom edge and blinks
- *   welcome    claim, Los geht's / Ich wurde eingeladen
- *   intro1/2   lines that type themselves while the mascot peeks from below
- *   name       big centered input, then "Schön dich kennenzulernen"
- *   questions  mascot top left with a speech bubble, answer rows with clay icons (family, partner, what
- *              bugs you, how you plan today, what I should take off you)
- *   confirm    "Damit seid ihr nicht allein", how I take it off you, the curve (less on your mind), a
- *              little commitment with confetti, reminders pre-prompt
- *   setup      percent loader with ticks built from your answers, "Fertig, {Name}!" with confetti
- *   then the sign-in sheet (not a wall, adrian_partain) and Plus.
- * Not copied on purpose: invented numbers (users, ratings), the dark look, the app icon picker (needs a build).
- * No network here: no assistant call without an account. The answers only shape the words on screen.
+ * What the check changed (v2):
+ * - Namore, decision 08.11.2026: the longer personal onboarding finished as often as the short one but sold
+ *   half as well (purchase starts 3.9 % vs 7.3 %). Judge by what people do after, never by completion.
+ *   So: three questions, each one changes what you see next (names, examples, the words). No question
+ *   whose answer changes nothing, no invented curve, no staged loading bar, no streak promise.
+ * - Vault (famcal-onboarding-inspo-design-2026-11-02): do the core action for real before anything is asked
+ *   of you; examples to tap; the sentence becomes the card; the partner's notification is the permission
+ *   ask; account and invite after the aha; end on a concrete result, not "You're all set".
+ * - @ereniroh (X collection): questions only build excitement when they are what the user came for. A family
+ *   came to say an appointment and have it in. That is the middle of this flow now.
+ * - Julian 23:18: Pin walking into the input bar is how people learn that tapping him starts speaking. He
+ *   flies there in the try step, in plain sight, and a small label names it.
+ *
+ * Steps: peek · welcome · intro (lines type themselves) · name · partner · familie · nervt · confirm ·
+ * probe (say your next appointment in the real input, the card lands, the partner sees it, reminders) ·
+ * fertig (your family and your first appointment) · sign-in sheet · Plus.
+ * No network here: the offline rules read the sentence (talk.understand); no assistant call without an account.
  */
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { View, TextInput, Pressable, ScrollView, useWindowDimensions, Platform } from 'react-native';
-import Animated, { useSharedValue, useAnimatedStyle, useAnimatedProps, withTiming, withDelay, withSequence, Easing, useReducedMotion, FadeIn, FadeOut } from 'react-native-reanimated';
-import Svg, { Path, Circle, Line } from 'react-native-svg';
+import Animated, { useSharedValue, useAnimatedStyle, withTiming, withDelay, Easing, useReducedMotion, FadeIn, FadeOut } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import Txt from '../../src/components/ui/Txt';
@@ -31,8 +33,13 @@ import PressScale from '../../src/components/ui/PressScale';
 import { ClayIcon } from '../../src/components/ui/Clay';
 import type { ClayName } from '../../src/lib/clayIcons';
 import Mascot, { type Pose } from '../../src/components/onboarding/Mascot';
+import LiveMemo, { BIG } from '../../src/components/onboarding/LiveMemo';
 import SignInSheet from '../../src/components/onboarding/SignInSheet';
-import { buddyJoy, buddyPoke } from '../../src/lib/buddy';
+import TalkBar from '../../src/components/TalkBar';
+import { buddyJoy, buddyPoke, setBuddy, useBuddy } from '../../src/lib/buddy';
+import { understand } from '../../src/lib/talk';
+import type { CalEvent } from '../../src/state/types';
+import { TODAY, addDays, weekday, WD_LONG, hm } from '../../src/lib/dates';
 import { tokens } from '../../src/theme';
 import { haptics } from '../../src/lib/haptics';
 import { tx } from '../../src/i18n/lang';
@@ -44,16 +51,13 @@ import { startNotifications } from '../../src/lib/notify';
 import { stepViewed, onboardingDone } from '../../src/lib/funnel';
 import { useKeyboardInset } from '../../src/lib/keyboard';
 
-/** The mascot's name on screen; one place to change when the new one gets its name. */
+/** The mascot's name on screen; one place to change it. */
 const NAME = 'Memo';
 
-type Step = 'peek' | 'welcome' | 'intro1' | 'intro2' | 'name' | 'nice' | 'familie' | 'partner' | 'nervt' | 'bisher' | 'abnehmen'
-  | 'confirm' | 'value' | 'kurve' | 'abmachung' | 'abgemacht' | 'erinnern' | 'setup' | 'fertig';
-const STEPS: Step[] = ['peek', 'welcome', 'intro1', 'intro2', 'name', 'nice', 'familie', 'partner', 'nervt', 'bisher', 'abnehmen',
-  'confirm', 'value', 'kurve', 'abmachung', 'abgemacht', 'erinnern', 'setup', 'fertig'];
-/** The steps that show the progress bar (the story part before and the celebrations after do not). */
-const BAR = new Set<Step>(['name', 'familie', 'partner', 'nervt', 'bisher', 'abnehmen', 'confirm', 'value', 'kurve', 'abmachung', 'erinnern']);
-const BAR_LIST = STEPS.filter((s) => BAR.has(s));
+type Step = 'peek' | 'welcome' | 'intro' | 'name' | 'partner' | 'familie' | 'nervt' | 'confirm' | 'probe' | 'fertig';
+const STEPS: Step[] = ['peek', 'welcome', 'intro', 'name', 'partner', 'familie', 'nervt', 'confirm', 'probe', 'fertig'];
+/** The steps that show the progress bar. */
+const BAR_LIST: Step[] = ['name', 'partner', 'familie', 'nervt', 'confirm', 'probe'];
 
 type Opt = { key: string; icon: ClayName; de: string; en: string };
 const FAMILIE: Opt[] = [
@@ -70,40 +74,25 @@ const NERVT: Opt[] = [
   { key: 'kopf', icon: 'gluehbirne', de: 'Einer hat alles im Kopf', en: 'One of us keeps it all in mind' },
   { key: 'kita', icon: 'kita', de: 'Kita, Schule, Elternabende', en: 'Daycare, school, parent evenings' },
 ];
-const BISHER: Opt[] = [
-  { key: 'chat', icon: 'chat', de: 'Im Chat hin und her', en: 'Back and forth in chat' },
-  { key: 'papier', icon: 'magnet', de: 'Kalender am Kühlschrank', en: 'Calendar on the fridge' },
-  { key: 'app', icon: 'kalender', de: 'Google oder Apple Kalender', en: 'Google or Apple Calendar' },
-  { key: 'kopf', icon: 'gluehbirne', de: 'Gar nicht, alles im Kopf', en: 'Not at all, all in our heads' },
-];
-const ABNEHMEN: Opt[] = [
-  { key: 'termine', icon: 'kalender', de: 'Termine eintragen', en: 'Adding appointments' },
-  { key: 'erinnern', icon: 'glocke', de: 'Rechtzeitig erinnern', en: 'Reminding in time' },
-  { key: 'einkauf', icon: 'einkauf', de: 'Die Einkaufsliste', en: 'The shopping list' },
-  { key: 'essen', icon: 'pasta', de: 'Was es zu essen gibt', en: 'What’s for dinner' },
-  { key: 'aufgaben', icon: 'checkliste', de: 'Aufgaben fair verteilen', en: 'Sharing chores fairly' },
-  { key: 'schule', icon: 'schule', de: 'Kita und Schule', en: 'Daycare and school' },
-];
-/** How I take each thing off you (the value list). */
-const SO: Record<string, [string, string, string, string]> = {
-  termine: ['Einfach sagen, ich trage ein', '„Freitag 16 Uhr Kinderarzt“ reicht. Kein Formular.', 'Just say it, I add it', '“Friday 4 pm pediatrician” is enough. No form.'],
-  erinnern: ['Ich sage rechtzeitig Bescheid', 'Bevor ihr losmüsst, nicht erst wenn es zu spät ist.', 'I tell you in time', 'Before you need to leave, not when it’s too late.'],
-  einkauf: ['Eine Liste für euch beide', 'Was einer abhakt, sieht der andere sofort.', 'One list for both of you', 'What one ticks off, the other sees at once.'],
-  essen: ['Ich schlage vor, was es gibt', 'Und die Zutaten landen direkt auf der Liste.', 'I suggest what to cook', 'And the ingredients go straight on the list.'],
-  aufgaben: ['Aufgaben mit Namen', 'Jeder sieht, was er übernommen hat.', 'Chores with names', 'Everyone sees what they took on.'],
-  schule: ['Kita und Schule im Blick', 'Elternabende, Ferien, Ausflüge, alles an einem Ort.', 'Daycare and school in view', 'Parent evenings, holidays, trips, all in one place.'],
-  beide: ['Ihr seht beide dasselbe', 'Kein „hast du das eingetragen?“ mehr.', 'You both see the same', 'No more “did you add that?”.'],
+/** What you can say in the try step: it fits the family you told me about. */
+const SAG: Record<string, [string, string][]> = {
+  kinder: [['Freitag 16 Uhr Kinderarzt', 'Friday 4pm pediatrician'], ['Dienstag 19 Uhr Elternabend', 'Tuesday 7pm parents’ evening'], ['Samstag 10 Uhr Schwimmkurs', 'Saturday 10am swim class']],
+  baby: [['Donnerstag 9 Uhr Hebamme', 'Thursday 9am midwife'], ['Mittwoch 14 Uhr Ultraschall', 'Wednesday 2pm ultrasound'], ['Samstag 11 Uhr Kinderwagen abholen', 'Saturday 11am pick up the stroller']],
+  zwei: [['Freitag 19 Uhr Essen mit Freunden', 'Friday 7pm dinner with friends'], ['Montag 8 Uhr Zahnarzt', 'Monday 8am dentist'], ['Samstag 10 Uhr Wocheneinkauf', 'Saturday 10am weekly shop']],
 };
-const ZIEL: Opt[] = [
-  { key: '3', icon: 'kalender', de: '3 Tage', en: '3 days' },
-  { key: '7', icon: 'wochenplan', de: '7 Tage', en: '7 days' },
-  { key: '14', icon: 'monatsplan', de: '14 Tage', en: '14 days' },
-  { key: '30', icon: 'pokal', de: '30 Tage', en: '30 days' },
-];
 const label = (o: Opt) => tx(o.de, o.en);
+const whenOf = (e: CalEvent) => `${WD_LONG[weekday(e.date)]}${e.allDay ? '' : `, ${hm(e.start)}`}`;
 
 const out = Easing.bezier(0.23, 1, 0.32, 1);
-const inOut = Easing.bezier(0.65, 0, 0.35, 1);
+/** Text first, then what it is about: rises 12 pt, the second thing 120 ms later (film motion rule 2). */
+function Rise({ delay = 0, style, children }: { delay?: number; style?: any; children: React.ReactNode }) {
+  const reduced = useReducedMotion();
+  const k = useSharedValue(reduced ? 1 : 0);
+  useEffect(() => { k.value = withDelay(delay, withTiming(1, { duration: 260, easing: out })); }, []);
+  const st = useAnimatedStyle(() => ({ opacity: k.value, transform: [{ translateY: (1 - k.value) * 12 }] }));
+  // A plain transform, not a layout animation: those leave the flow on web and can overlap what follows.
+  return <Animated.View style={[style, st]}>{children}</Animated.View>;
+}
 
 export default function Story() {
   const q = useLocalSearchParams<{ step?: string; signin?: string }>();
@@ -113,11 +102,12 @@ export default function Story() {
   const [partner, setPartner] = useState('');
   const [familie, setFamilie] = useState<string | null>(null);
   const [nervt, setNervt] = useState<string[]>([]);
-  const [bisher, setBisher] = useState<string | null>(null);
-  const [abnehmen, setAbnehmen] = useState<string[]>([]);
-  const [ziel, setZiel] = useState<string | null>('7');
+  const [ev, setEv] = useState<CalEvent | null>(null);
+  /** Where Pin is in the try step: in the avatar slot, in the bar, or back in the slot once the card landed. */
+  const [docked, setDocked] = useState(false);
   const [signIn, setSignIn] = useState(!!q.signin);
   const insets = useSafeAreaInsets();
+  const { width: W, height: H } = useWindowDimensions();
   const kb = useKeyboardInset();
   const me = name.trim();
   const du = partner.trim();
@@ -129,30 +119,30 @@ export default function Story() {
     if (next) setStep(next);
   };
   const back = () => {
-    const i = STEPS.indexOf(step);
-    // The celebrations are not stops on the way back.
-    let p = STEPS[i - 1];
-    if (p === 'nice') p = 'name';
-    if (p === 'abgemacht') p = 'abmachung';
-    if (p) { haptics.select(); setStep(p); }
+    const p = STEPS[STEPS.indexOf(step) - 1];
+    if (p) { haptics.select(); setDocked(false); setStep(p); }
   };
   const finish = () => {
+    haptics.success();
     setPref('obName', me);
     if (du) setPref('obPartner', du);
     onboardingDone('story');
     if (LIVE && !getAuth().session && !isPreview()) setSignIn(true);
+    else if (!LIVE && !isPreview()) router.replace('/onboarding/eltern');
     else router.replace('/plus?trigger=onboarding');
   };
-  const toggle = (list: string[], set: (v: string[]) => void, k: string) => {
+  const toggle = (k: string) => {
     haptics.select();
-    set(list.includes(k) ? list.filter((x) => x !== k) : [...list, k]);
+    setNervt(nervt.includes(k) ? nervt.filter((x) => x !== k) : [...nervt, k]);
     buddyPoke();
   };
-  const pick = (set: (v: string) => void, k: string) => { haptics.select(); set(k); buddyPoke(); };
 
   const barI = BAR_LIST.indexOf(step);
-  const showBar = barI >= 0;
   const bottomPad = Math.max(insets.bottom, 16) + (kb ? kb - Math.max(insets.bottom, 0) : 0);
+  /** The avatar slot of the question screens (window coordinates): Pin flies from here into the bar and back. */
+  // LiveMemo scales around a point near his feet, so the small Pin sits lower than its centre: take that back.
+  const slot = { x: 20 + 30, y: insets.top + 52 + 6 + 6 + 30 - Math.round(0.4 * BIG * (1 - 60 / BIG)) };
+  const hero = { x: W / 2, y: insets.top + Math.max(196, Math.round(H * 0.26)) };
 
   let body: React.ReactNode = null;
   let footer: React.ReactNode = null;
@@ -169,29 +159,17 @@ export default function Story() {
         </View>
       );
       break;
-    case 'intro1':
-      body = <Intro lines={[tx(`Hey, ich bin ${NAME}!`, `Hey, I’m ${NAME}!`)]} sub={tx('Euer Familienkalender, mit dem man einfach reden kann.', 'Your family calendar you can simply talk to.')} />;
-      footer = <Btn label={tx('Weiter', 'Next')} onPress={() => go()} />;
-      break;
-    case 'intro2':
-      body = <Intro lines={[tx('Ich behalte Termine, Listen und Pläne für euch im Kopf.', 'I keep appointments, lists and plans in mind for you.'), tx('Lass uns kurz kennenlernen.', 'Let’s get to know each other.')]} rise />;
+    case 'intro':
+      body = <Intro lines={[tx(`Hey, ich bin ${NAME}!`, `Hey, I’m ${NAME}!`), tx('Sag mir, was ansteht. Ich trage es ein und denke für euch mit.', 'Tell me what’s coming up. I add it and think along for you.')]} />;
       footer = <Btn label={tx('Weiter', 'Next')} onPress={() => go()} />;
       break;
     case 'name':
       body = <NameAsk value={name} onChange={setName} onSubmit={() => me && go()} title={tx('Wie soll ich dich nennen?', 'What should I call you?')} placeholder={tx('Dein Name', 'Your name')} />;
       footer = <Btn label={tx('Weiter', 'Next')} disabled={!me} onPress={() => go()} />;
       break;
-    case 'nice':
-      body = <Big pose="jump" title={me ? tx(`Schön dich kennenzulernen, ${me}!`, `Nice to meet you, ${me}!`) : tx('Schön dich kennenzulernen!', 'Nice to meet you!')} />;
-      footer = <Btn label={tx('Weiter', 'Next')} onPress={() => go()} />;
-      break;
-    case 'familie':
-      body = <Ask say={me ? tx(`Wer gehört zu eurer Familie, ${me}?`, `Who’s in your family, ${me}?`) : tx('Wer gehört zu eurer Familie?', 'Who’s in your family?')}>{FAMILIE.map((o) => <Choice key={o.key} o={o} on={familie === o.key} onPress={() => pick(setFamilie, o.key)} />)}</Ask>;
-      footer = <Btn label={tx('Weiter', 'Next')} disabled={!familie} onPress={() => go()} />;
-      break;
     case 'partner':
       body = (
-        <Ask say={tx('Und wer plant mit dir zusammen?', 'And who plans with you?')}>
+        <Ask say={me ? tx(`Schön dich kennenzulernen, ${me}! Wer plant mit dir?`, `Nice to meet you, ${me}! Who plans with you?`) : tx('Wer plant mit dir?', 'Who plans with you?')}>
           <PartnerField value={partner} onChange={setPartner} onSubmit={() => go()} />
         </Ask>
       );
@@ -202,17 +180,13 @@ export default function Story() {
         </View>
       );
       break;
+    case 'familie':
+      body = <Ask say={du ? tx(`Und wer gehört zu dir und ${du}?`, `And who belongs to you and ${du}?`) : tx('Wer gehört zu eurer Familie?', 'Who’s in your family?')}>{FAMILIE.map((o) => <Choice key={o.key} o={o} on={familie === o.key} onPress={() => { haptics.select(); setFamilie(o.key); buddyPoke(); }} />)}</Ask>;
+      footer = <Btn label={tx('Weiter', 'Next')} disabled={!familie} onPress={() => go()} />;
+      break;
     case 'nervt':
-      body = <Ask say={tx('Was nervt euch beim Planen am meisten?', 'What bugs you most about planning?')} hint={tx('Mehrere möglich', 'Pick any')}>{NERVT.map((o) => <Choice key={o.key} o={o} multi on={nervt.includes(o.key)} onPress={() => toggle(nervt, setNervt, o.key)} />)}</Ask>;
+      body = <Ask say={tx('Was nervt euch beim Planen am meisten?', 'What bugs you most about planning?')} hint={tx('Mehrere möglich', 'Pick any')}>{NERVT.map((o) => <Choice key={o.key} o={o} multi on={nervt.includes(o.key)} onPress={() => toggle(o.key)} />)}</Ask>;
       footer = <Btn label={tx('Weiter', 'Next')} disabled={!nervt.length} onPress={() => go()} />;
-      break;
-    case 'bisher':
-      body = <Ask say={tx('Wie plant ihr bisher?', 'How do you plan today?')}>{BISHER.map((o) => <Choice key={o.key} o={o} on={bisher === o.key} onPress={() => pick(setBisher, o.key)} />)}</Ask>;
-      footer = <Btn label={tx('Weiter', 'Next')} disabled={!bisher} onPress={() => go()} />;
-      break;
-    case 'abnehmen':
-      body = <Ask say={tx('Was soll ich euch abnehmen?', 'What should I take off your hands?')} hint={tx('Mehrere möglich', 'Pick any')}>{ABNEHMEN.map((o) => <Choice key={o.key} o={o} multi on={abnehmen.includes(o.key)} onPress={() => toggle(abnehmen, setAbnehmen, o.key)} />)}</Ask>;
-      footer = <Btn label={tx('Weiter', 'Next')} disabled={!abnehmen.length} onPress={() => go()} />;
       break;
     case 'confirm': {
       const n = NERVT.find((o) => o.key === nervt[0]);
@@ -223,56 +197,31 @@ export default function Story() {
           sub={n ? tx(`„${n.de}“ muss nicht mehr sein. Genau dafür bin ich da.`, `“${n.en}” doesn’t have to happen anymore. That’s what I’m here for.`) : tx('Genau dafür bin ich da.', 'That’s what I’m here for.')}
         />
       );
-      footer = <Btn label={tx('Weiter', 'Next')} onPress={() => go()} />;
+      footer = <Btn label={tx('Zeig’s mir', 'Show me')} onPress={() => go()} />;
       break;
     }
-    case 'value': {
-      const keys = [...abnehmen.filter((k) => SO[k]), 'beide', 'termine', 'erinnern'].filter((k, i, a) => a.indexOf(k) === i).slice(0, 3);
-      body = <Value title={me ? tx(`So nehme ich euch das ab, ${me}`, `Here’s how I take it off you, ${me}`) : tx('So nehme ich euch das ab', 'Here’s how I take it off you')} keys={keys} />;
-      footer = <Btn label={tx('Weiter', 'Next')} onPress={() => go()} />;
-      break;
-    }
-    case 'kurve':
-      body = <Curve partner={du} />;
-      footer = <Btn label={tx('Weiter', 'Next')} onPress={() => go()} />;
-      break;
-    case 'abmachung':
-      body = (
-        <Ask say={tx('Abmachung? Sag mir alles, was ansteht. Wie lange probierst du es?', 'Deal? Tell me everything that comes up. How long will you try it?')}>
-          {ZIEL.map((o) => <Choice key={o.key} o={o} on={ziel === o.key} tag={o.key === '7' ? tx('Empfohlen', 'Recommended') : undefined} onPress={() => pick(setZiel, o.key)} />)}
-        </Ask>
-      );
-      footer = <Btn label={tx('Abgemacht', 'It’s a deal')} disabled={!ziel} onPress={() => { haptics.success(); buddyJoy(); go(); }} />;
-      break;
-    case 'abgemacht':
-      body = <Big pose="jump" confetti title={tx(`${ziel} Tage, abgemacht!`, `${ziel} days, it’s a deal!`)} sub={tx('Ich bin jeden Tag da. Du musst nur sagen, was ansteht.', 'I’m here every day. You only need to say what’s coming up.')} />;
-      footer = <Btn label={tx('Weiter', 'Next')} onPress={() => go()} />;
-      break;
-    case 'erinnern':
-      body = <Remind me={me} du={du} />;
-      footer = (
-        <View style={{ gap: 12 }}>
-          <Btn label={tx('Ja, erinnere mich', 'Yes, remind me')} onPress={() => { if (!isPreview()) void startNotifications(); buddyJoy(); go(); }} />
-          <TextLink label={tx('Später', 'Later')} weight={400} onPress={() => go()} />
-        </View>
-      );
-      break;
-    case 'setup':
-      body = <Setup me={me} du={du} picks={abnehmen} onDone={() => go('fertig')} />;
+    case 'probe':
+      body = <Probe me={me} du={du} familie={familie} ev={ev} setEv={setEv} docked={docked} setDocked={setDocked} pad={bottomPad} onDone={() => go('fertig')} />;
       break;
     case 'fertig':
-      body = <Big pose="jump" confetti title={tx(`Fertig, ${me || 'ihr zwei'}!`, `All set, ${me || 'you two'}!`)} sub={tx('Alles steht. Jetzt nur noch sichern, damit nichts verloren geht.', 'Everything’s ready. Just save it so nothing gets lost.')} />;
-      footer = <Btn label={tx('Weiter', 'Next')} onPress={finish} />;
+      body = <Fertig me={me} du={du} ev={ev} nervt={nervt} top={hero.y + BIG / 2} cx={hero.x} cy={hero.y - insets.top - 8} />;
+      footer = <Btn label={tx('Sichern und loslegen', 'Save and get started')} onPress={finish} />;
       break;
   }
 
   return (
     <View style={{ flex: 1, backgroundColor: tokens.bg, paddingTop: insets.top }}>
-      {showBar ? <Bar i={barI} n={BAR_LIST.length} onBack={back} /> : <View style={{ height: 8 }} />}
-      <Animated.View key={step} entering={FadeIn.duration(260)} exiting={FadeOut.duration(120)} style={{ flex: 1 }}>
+      {barI >= 0 ? <Bar i={barI} n={BAR_LIST.length} onBack={back} /> : <View style={{ height: 8 }} />}
+      <Animated.View key={step} entering={FadeIn.duration(220)} exiting={FadeOut.duration(100)} style={{ flex: 1 }}>
         {body}
       </Animated.View>
       {footer ? <View style={{ paddingHorizontal: 20, paddingTop: 10, paddingBottom: bottomPad }}>{footer}</View> : null}
+      {/* One Pin for the try step and the end: from the avatar slot into the bar, back out, then up to celebrate. */}
+      {step === 'probe' || step === 'fertig' ? (
+        <View pointerEvents="box-none" style={{ position: 'absolute', left: 0, top: 0, right: 0, bottom: 0, opacity: signIn ? 0 : 1 }}>
+          <LiveMemo place={step === 'fertig' ? 'hero' : docked ? 'dock' : 'mid'} hero={hero} mid={slot} midScale={60 / BIG} mood={step === 'fertig' ? 'happy' : undefined} />
+        </View>
+      ) : null}
       {signIn ? <SignInSheet from="story" partner={du || undefined} onClose={() => setSignIn(false)} /> : null}
     </View>
   );
@@ -343,7 +292,7 @@ function Peek({ onDone }: { onDone: () => void }) {
   useEffect(() => {
     const a = setTimeout(() => setG({ x: 0, y: -0.5, n: 1 }), 900);
     const b = setTimeout(() => { haptics.tap(); buddyPoke(); }, 1300);
-    const c = setTimeout(onDone, 2300);
+    const c = setTimeout(onDone, 1900);
     return () => { clearTimeout(a); clearTimeout(b); clearTimeout(c); };
   }, []);
   return (
@@ -468,14 +417,13 @@ function Choice({ o, on, multi, tag, onPress }: { o: Opt; on: boolean; multi?: b
   );
 }
 
-function Big({ title, sub, pose, confetti }: { title: string; sub?: string; pose: Pose; confetti?: boolean }) {
+function Big({ title, sub, pose }: { title: string; sub?: string; pose: Pose }) {
   const { width } = useWindowDimensions();
   const size = Math.min(width * 0.56, 240);
   const [n, setN] = useState(0);
   useEffect(() => { const t = setTimeout(() => { setN(1); if (pose === 'jump') haptics.success(); }, 280); return () => clearTimeout(t); }, []);
   return (
     <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 28, gap: 26 }}>
-      {confetti ? <Confetti /> : null}
       <Mascot size={size} pose={n ? pose : 'rest'} n={n} mood="happy" />
       <View style={{ gap: 10, alignSelf: 'stretch' }}>
         <Typer text={title} size={28} line={34} center />
@@ -485,177 +433,228 @@ function Big({ title, sub, pose, confetti }: { title: string; sub?: string; pose
   );
 }
 
-function Value({ title, keys }: { title: string; keys: string[] }) {
+/** The bubble of the question screens, with the avatar slot left free: Pin is the live one here. */
+function Say({ text }: { text: string }) {
   return (
-    <ScrollView contentContainerStyle={{ paddingHorizontal: 22, paddingTop: 10, gap: 26 }}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-        <Mascot size={64} shadow={false} mood="happy" />
-        <View style={{ flex: 1 }}><Typer text={title} size={24} line={30} /></View>
+    <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 10, paddingHorizontal: 20, paddingTop: 6 }}>
+      <View style={{ width: 60, height: 72 }} />
+      <View style={{ flex: 1, backgroundColor: tokens.row, borderRadius: 20, borderTopLeftRadius: 6, paddingHorizontal: 16, paddingVertical: 13, borderWidth: 1, borderColor: tokens.hair }}>
+        <Typer text={text} size={18} line={24} weight={600} />
       </View>
-      <View style={{ gap: 22 }}>
-        {keys.map((k, i) => {
-          const s = SO[k];
-          return (
-            <Animated.View key={k} entering={FadeIn.delay(350 + i * 260).duration(320)} style={{ flexDirection: 'row', gap: 14 }}>
-              <View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: tokens.ink, alignItems: 'center', justifyContent: 'center', marginTop: 1 }}>
-                <Txt size={15} weight={700} color={tokens.onInk}>{i + 1}</Txt>
-              </View>
-              <View style={{ flex: 1, gap: 3 }}>
-                <Txt size={17} line={22} weight={700}>{tx(s[0], s[2])}</Txt>
-                <Txt size={15} line={21} color={tokens.sub}>{tx(s[1], s[3])}</Txt>
-              </View>
-            </Animated.View>
-          );
-        })}
-      </View>
-    </ScrollView>
-  );
-}
-
-const APath = Animated.createAnimatedComponent(Path);
-/** "Less on your mind": a curve that falls week by week. A goal, not a measured number. */
-function Curve({ partner }: { partner: string }) {
-  const { width } = useWindowDimensions();
-  const W = Math.min(width - 40, 420), H = 210;
-  const pts = [[0.06, 0.16], [0.36, 0.34], [0.64, 0.66], [0.94, 0.82]].map(([x, y]) => [x * W, y * H]);
-  const d = `M${pts[0][0]},${pts[0][1]} C${pts[0][0] + W * 0.16},${pts[0][1]} ${pts[1][0] - W * 0.12},${pts[1][1] - 6} ${pts[1][0]},${pts[1][1]} S${pts[2][0] - W * 0.12},${pts[2][1] - 8} ${pts[2][0]},${pts[2][1]} S${pts[3][0] - W * 0.14},${pts[3][1]} ${pts[3][0]},${pts[3][1]}`;
-  const L = W * 1.25;
-  const p = useSharedValue(L);
-  useEffect(() => { p.value = withDelay(400, withTiming(0, { duration: 1400, easing: inOut })); }, []);
-  const ap = useAnimatedProps(() => ({ strokeDashoffset: p.value }));
-  const weeks = [tx('Heute', 'Today'), tx('Woche 1', 'Week 1'), tx('Woche 2', 'Week 2'), tx('Woche 4', 'Week 4')];
-  return (
-    <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 10, gap: 20 }}>
-      <Typer text={partner ? tx(`Weniger im Kopf, für dich und ${partner}`, `Less on your mind, for you and ${partner}`) : tx('Weniger im Kopf, Woche für Woche', 'Less on your mind, week by week')} size={26} line={32} />
-      <View style={{ backgroundColor: tokens.row, borderRadius: 24, borderWidth: 1, borderColor: tokens.hair, padding: 16, gap: 10 }}>
-        <Txt size={13.5} weight={600} color={tokens.sub}>{tx('Woran ihr selbst denken müsst', 'What you need to keep in mind yourselves')}</Txt>
-        <Svg width={W - 34} height={H} viewBox={`0 0 ${W} ${H}`}>
-          {[0.25, 0.5, 0.75].map((y) => <Line key={y} x1={0} x2={W} y1={y * H} y2={y * H} stroke={tokens.hair} strokeWidth={1} strokeDasharray="4 6" />)}
-          <APath d={d} stroke={tokens.done} strokeWidth={5} strokeLinecap="round" fill="none" strokeDasharray={`${L} ${L}`} animatedProps={ap} />
-          {pts.map(([x, y], i) => <Circle key={i} cx={x} cy={y} r={i === 3 ? 9 : 6} fill={i === 3 ? tokens.done : tokens.row} stroke={tokens.done} strokeWidth={3} />)}
-        </Svg>
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-          {weeks.map((w) => <Txt key={w} size={12} color={tokens.mute}>{w}</Txt>)}
-        </View>
-      </View>
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-        <Mascot size={52} shadow={false} mood="happy" />
-        <Txt size={15} line={21} color={tokens.sub} style={{ flex: 1 }}>{tx('Das ist das Ziel, keine Statistik: Je mehr ihr mir sagt, desto weniger müsst ihr selbst behalten.', 'That’s the goal, not a statistic: the more you tell me, the less you have to remember.')}</Txt>
-      </View>
-    </ScrollView>
-  );
-}
-
-function Remind({ me, du }: { me: string; du: string }) {
-  return (
-    <View style={{ flex: 1, paddingHorizontal: 20, paddingTop: 10, gap: 26 }}>
-      <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 10 }}>
-        <View style={{ marginTop: 6 }}><Mascot size={60} shadow={false} /></View>
-        <View style={{ flex: 1, backgroundColor: tokens.row, borderRadius: 20, borderTopLeftRadius: 6, paddingHorizontal: 16, paddingVertical: 13, borderWidth: 1, borderColor: tokens.hair }}>
-          <Typer text={tx('Darf ich dich rechtzeitig erinnern? Nur bei Wichtigem, versprochen.', 'May I remind you in time? Only when it matters, promise.')} size={18} line={24} weight={600} />
-        </View>
-      </View>
-      <Animated.View entering={FadeIn.delay(700).duration(360)} style={{ backgroundColor: tokens.row, borderRadius: 22, padding: 14, gap: 6, borderWidth: 1, borderColor: tokens.hair, flexDirection: 'row' }}>
-        <ClayIcon name="glocke" size={40} />
-        <View style={{ flex: 1, gap: 3 }}>
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-            <Txt size={13} weight={600} color={tokens.sub}>FamCal</Txt>
-            <Txt size={13} color={tokens.mute}>{tx('jetzt', 'now')}</Txt>
-          </View>
-          <Txt size={15.5} line={21} weight={600}>{tx('Kinderarzt in 45 Minuten', 'Pediatrician in 45 minutes')}</Txt>
-          <Txt size={14.5} line={20} color={tokens.sub}>{du ? tx(`${du} bringt die Versichertenkarte mit.`, `${du} brings the insurance card.`) : tx('Denk an die Versichertenkarte.', 'Remember the insurance card.')}</Txt>
-        </View>
-      </Animated.View>
-      <Animated.View entering={FadeIn.delay(1100).duration(360)} style={{ backgroundColor: tokens.row, borderRadius: 22, padding: 14, gap: 6, borderWidth: 1, borderColor: tokens.hair, flexDirection: 'row' }}>
-        <ClayIcon name="einkauf" size={40} />
-        <View style={{ flex: 1, gap: 3 }}>
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-            <Txt size={13} weight={600} color={tokens.sub}>FamCal</Txt>
-            <Txt size={13} color={tokens.mute}>{tx('vor 2 Min.', '2 min ago')}</Txt>
-          </View>
-          <Txt size={15.5} line={21} weight={600}>{du ? tx(`${du} hat Milch abgehakt`, `${du} ticked off milk`) : tx('Milch wurde abgehakt', 'Milk was ticked off')}</Txt>
-          <Txt size={14.5} line={20} color={tokens.sub}>{tx(`Fehlt noch: Brot und Eier${me ? `, ${me}` : ''}.`, `Still missing: bread and eggs${me ? `, ${me}` : ''}.`)}</Txt>
-        </View>
-      </Animated.View>
     </View>
   );
 }
 
-function Setup({ me, du, picks, onDone }: { me: string; du: string; picks: string[]; onDone: () => void }) {
-  const [pct, setPct] = useState(0);
-  const [mood, setMood] = useState<'think' | 'happy'>('think');
-  const lists = ABNEHMEN.filter((o) => picks.includes(o.key) && ['einkauf', 'essen', 'aufgaben'].includes(o.key)).map(label);
-  const rows = [
-    du ? tx(`Familie für ${me} und ${du} anlegen`, `Setting up the family for ${me} and ${du}`) : tx(`Familie für ${me || 'euch'} anlegen`, `Setting up the family for ${me || 'you'}`),
-    tx('Kalender vorbereiten', 'Preparing the calendar'),
-    lists.length ? tx(`Listen anlegen: ${lists.join(', ')}`, `Creating lists: ${lists.join(', ')}`) : tx('Einkaufsliste anlegen', 'Creating the shopping list'),
-    tx('Erinnerungen einstellen', 'Setting up reminders'),
-  ];
+/**
+ * The try step, as a sequence of states (vault pattern 7 and 9):
+ *   intro   Pin sits in his slot and says what comes
+ *   wait    he has flown into the bar and is the talk button; a label names it; three examples to tap
+ *   think   the examples are gone, your sentence stays, he thinks
+ *   landed  the card is there with both of you on it; he comes back out, glad
+ *   notif   your partner's phone: the notification is the question about reminders
+ */
+function Probe({ me, du, familie, ev, setEv, docked, setDocked, pad, onDone }: {
+  me: string; du: string; familie: string | null; ev: CalEvent | null; setEv: (e: CalEvent) => void;
+  docked: boolean; setDocked: (v: boolean) => void; pad: number; onDone: () => void;
+}) {
+  const [phase, setPhase] = useState<'intro' | 'wait' | 'think' | 'landed' | 'notif'>(ev ? 'notif' : 'intro');
+  const [said, setSaid] = useState('');
+  const [miss, setMiss] = useState(false);
+  const [hint, setHint] = useState(false);
+  const b = useBuddy();
+  const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
+  const later = (ms: number, fn: () => void) => { timers.current.push(setTimeout(fn, ms)); };
+  useEffect(() => () => { timers.current.forEach(clearTimeout); setBuddy({ thinking: false }); }, []);
   useEffect(() => {
-    const t0 = Date.now(), D = 3600;
-    let done = false;
-    const id = setInterval(() => {
-      const k = Math.min(1, (Date.now() - t0) / D);
-      // Eased like real work: quick start, a little wait near the end.
-      const e = k < 0.8 ? (k / 0.8) * 0.86 : 0.86 + ((k - 0.8) / 0.2) * 0.14;
-      setPct(Math.round(e * 100));
-      if (k >= 1 && !done) {
-        done = true;
-        clearInterval(id);
-        setMood('happy');
-        haptics.success();
-        buddyJoy();
-        setTimeout(onDone, 900);
-      }
-    }, 50);
-    return () => clearInterval(id);
+    if (phase !== 'intro') return;
+    // Only one Pin: the bar's own stays hidden until this one has flown into its place.
+    setBuddy({ dockHidden: true });
+    // He reads his line to you first, then goes where you will find him from now on.
+    later(1500, () => setDocked(true));
+    later(1500 + 900, () => { setPhase('wait'); });
+    later(1500 + 1500, () => setHint(true));
   }, []);
+
+  const ex = (SAG[familie === 'patchwork' ? 'kinder' : familie ?? 'zwei'] ?? SAG.zwei).map(([d, e]) => tx(d, e));
+  const send = (text: string) => {
+    const t = text.trim();
+    if (!t || phase === 'think') return;
+    setHint(false); setMiss(false); setSaid(t); setPhase('think'); setBuddy({ thinking: true });
+    later(750, () => {
+      setBuddy({ thinking: false });
+      const r = understand(t, [], null, () => 'ev_mine');
+      if (r.kind === 'answer') { setMiss(true); setPhase('wait'); return; }
+      const e: CalEvent = r.kind === 'added'
+        ? { ...r.event, who: r.event.who ?? 'J' }
+        : { id: 'ev_mine', title: (r as any).title ?? t, icon: 'kalender', date: addDays(TODAY, 1), start: '00:00', allDay: true, who: 'J' } as CalEvent;
+      setEv(e);
+      setPhase('landed');
+      setDocked(false);
+      haptics.success();
+      later(420, () => buddyJoy());
+      later(1900, () => { setPhase('notif'); haptics.tap(); });
+    });
+  };
+
+  const line = phase === 'intro' ? (me ? tx(`Jetzt du, ${me}. Ich setze mich in die Leiste.`, `Your turn, ${me}. I’ll sit down in the bar.`) : tx('Jetzt du. Ich setze mich in die Leiste.', 'Your turn. I’ll sit down in the bar.'))
+    : phase === 'wait' ? (miss ? tx('Das war kein Termin. Versuch „Freitag 15 Uhr Zahnarzt“.', 'That wasn’t an appointment. Try “Friday 3pm dentist”.') : tx('Tipp mich unten an und sag euren nächsten Termin.', 'Tap me down there and say your next appointment.'))
+      : phase === 'think' ? tx('Moment …', 'One moment …')
+        : phase === 'landed' ? tx(`Steht drin. ${ev ? whenOf(ev) : ''}.`, `It’s in. ${ev ? whenOf(ev) : ''}.`)
+          : tx(du ? `${du} sieht es auch sofort. Soll ich euch Bescheid sagen, wenn sich was ändert?` : 'Dein Partner sieht es auch sofort. Soll ich euch Bescheid sagen, wenn sich was ändert?', du ? `${du} sees it right away too. Should I tell you both when something changes?` : 'Your partner sees it right away too. Should I tell you both when something changes?');
+  const bar = phase === 'intro' || phase === 'wait' || phase === 'think';
+
   return (
-    <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 28, gap: 22 }}>
-      <Mascot size={150} mood={mood} />
-      <Txt size={52} line={58} weight={700}>{pct} %</Txt>
-      <Txt size={22} line={28} weight={700} center>{tx('Ich richte alles für euch ein', 'I’m setting everything up for you')}</Txt>
-      <View style={{ height: 8, alignSelf: 'stretch', borderRadius: 4, backgroundColor: tokens.segBg, overflow: 'hidden' }}>
-        <View style={{ height: 8, width: `${pct}%`, borderRadius: 4, backgroundColor: tokens.done }} />
-      </View>
-      <View style={{ alignSelf: 'stretch', gap: 12, marginTop: 4 }}>
-        {rows.map((r, i) => {
-          const ok = pct >= (i + 1) * 24;
-          return (
-            <View key={i} style={{ flexDirection: 'row', alignItems: 'center', gap: 12, opacity: ok ? 1 : 0.45 }}>
-              <View style={{ width: 24, height: 24, borderRadius: 12, backgroundColor: ok ? tokens.done : 'transparent', borderWidth: ok ? 0 : 2, borderColor: tokens.circleLine, alignItems: 'center', justifyContent: 'center' }}>
-                {ok ? <LineIcon name="check" size={15} color={tokens.onInk} /> : null}
-              </View>
-              <Txt size={15.5} weight={ok ? 600 : 400} style={{ flex: 1 }}>{r}</Txt>
+    <View style={{ flex: 1 }}>
+      <Say text={line} />
+      <View style={{ flex: 1, paddingHorizontal: 20, paddingTop: 22, gap: 12 }}>
+        {phase === 'think' ? (
+          <Rise style={{ alignSelf: 'flex-end', maxWidth: '84%', backgroundColor: tokens.chipBg, borderRadius: 20, borderBottomRightRadius: 6, paddingHorizontal: 16, paddingVertical: 11 }}>
+            <Txt size={16.5} line={22}>{said}</Txt>
+          </Rise>
+        ) : null}
+        {ev && (phase === 'landed' || phase === 'notif') ? (
+          <Rise style={{ backgroundColor: tokens.row, borderRadius: 22, padding: 14, flexDirection: 'row', alignItems: 'center', gap: 12, borderWidth: 1, borderColor: tokens.hair }}>
+            <ClayIcon name={ev.icon as ClayName} size={52} celebrate />
+            <View style={{ flex: 1, gap: 3 }}>
+              <Txt size={18} line={23} weight={700}>{ev.title}</Txt>
+              <Txt size={15} color={tokens.sub}>{whenOf(ev)}</Txt>
             </View>
-          );
-        })}
+            <View style={{ flexDirection: 'row' }}>
+              <Who n={me || tx('Du', 'You')} bg="#F6DDE2" fg="#9D2B48" />
+              <Who n={du || '+'} bg="#DCE7F4" fg="#1F4E89" style={{ marginLeft: -8 }} />
+            </View>
+          </Rise>
+        ) : null}
+        {ev && phase === 'notif' ? (
+          <Rise delay={120} style={{ marginTop: 14, gap: 8 }}>
+            <Txt size={13} weight={600} color={tokens.mute} style={{ marginLeft: 4 }}>{du ? tx(`Auf ${du}s Handy`, `On ${du}’s phone`) : tx('Auf dem Handy deines Partners', 'On your partner’s phone')}</Txt>
+            <View style={{ backgroundColor: tokens.noteBg, borderRadius: 22, padding: 14, flexDirection: 'row', gap: 12 }}>
+              <ClayIcon name="glocke" size={38} />
+              <View style={{ flex: 1, gap: 2 }}>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                  <Txt size={13} weight={600} color={tokens.sub}>FamCal</Txt>
+                  <Txt size={13} color={tokens.mute}>{tx('jetzt', 'now')}</Txt>
+                </View>
+                <Txt size={15.5} line={21} weight={600}>{tx(`${me || 'Neu'}: ${ev.title}`, `${me || 'New'}: ${ev.title}`)}</Txt>
+                <Txt size={14.5} line={20} color={tokens.sub}>{whenOf(ev)}</Txt>
+              </View>
+            </View>
+          </Rise>
+        ) : null}
       </View>
+
+      {phase === 'wait' ? (
+        <Rise style={{ paddingHorizontal: 16, paddingBottom: 50, gap: 8 }}>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 4 }}>
+            <Txt size={13} color={tokens.mute}>{tx('Oder tipp ein Beispiel an', 'Or tap an example')}</Txt>
+            <PressScale onPress={onDone} hitSlop={10}><Txt size={13} color={tokens.mute}>{tx('Überspringen', 'Skip')}</Txt></PressScale>
+          </View>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+            {ex.map((e) => (
+              <PressScale key={e} onPress={() => { haptics.select(); send(e); }} style={{ backgroundColor: tokens.row, borderRadius: 999, borderWidth: 1, borderColor: tokens.hair, paddingHorizontal: 14, height: 40, justifyContent: 'center' }}>
+                <Txt size={15} weight={600}>{e}</Txt>
+              </PressScale>
+            ))}
+          </View>
+        </Rise>
+      ) : null}
+      {bar ? (
+        <View style={{ paddingBottom: pad, opacity: phase === 'think' ? 0.5 : 1 }} pointerEvents={phase === 'think' ? 'none' : 'auto'}>
+          <TalkBar split onSend={(t) => send(t)} spoken={ex} placeholder={tx('Sprich oder schreib einfach …', 'Just say or type it …')} />
+        </View>
+      ) : null}
+      {phase === 'landed' ? <View style={{ height: 54 + 34 + pad }} /> : null}
+      {phase === 'notif' ? (
+        <Rise delay={260} style={{ paddingHorizontal: 20, paddingTop: 10, paddingBottom: pad, gap: 12 }}>
+          <Btn label={tx('Ja, sag Bescheid', 'Yes, tell us')} onPress={() => { if (!isPreview()) void startNotifications(); buddyJoy(); onDone(); }} />
+          <TextLink label={tx('Später', 'Later')} weight={400} onPress={onDone} />
+        </Rise>
+      ) : null}
+      {/* The label over Pin in the bar: this is the talk button. */}
+      {hint && phase === 'wait' && b.dockAt ? <TapHint x={b.dockAt.x} y={b.dockAt.y} /> : null}
     </View>
   );
 }
 
-/** Paper confetti from the top: falls, turns, fades. Each piece on its own curve. */
-const COLORS = ['#075056', '#F6CD6A', '#9D2B48', '#1F4E89', '#AF3A0B', '#2F9E6E', '#F6DDE2'];
-function Confetti() {
-  const { width, height } = useWindowDimensions();
-  const pieces = useMemo(() => Array.from({ length: 34 }, (_, i) => ({
-    x: Math.random() * width, d: 1500 + Math.random() * 1300, delay: Math.random() * 350,
-    w: 7 + Math.random() * 6, h: 10 + Math.random() * 8, c: COLORS[i % COLORS.length], r: (Math.random() - 0.5) * 900, drift: (Math.random() - 0.5) * 120,
-  })), [width]);
-  if (useReducedMotion()) return null;
+function Who({ n, bg, fg, style }: { n: string; bg: string; fg: string; style?: any }) {
   return (
-    <View pointerEvents="none" style={{ position: 'absolute', left: 0, top: 0, width, height, zIndex: 5 }}>
-      {pieces.map((p, i) => <Piece key={i} p={p} fall={height * 0.9} />)}
+    <View style={[{ width: 34, height: 34, borderRadius: 17, backgroundColor: bg, borderWidth: 2, borderColor: tokens.row, alignItems: 'center', justifyContent: 'center' }, style]}>
+      <Txt size={14} weight={700} color={fg}>{n.slice(0, 1).toUpperCase()}</Txt>
     </View>
   );
 }
-function Piece({ p, fall }: { p: { x: number; d: number; delay: number; w: number; h: number; c: string; r: number; drift: number }; fall: number }) {
+
+/** "Tap me to speak", sitting right over Pin in the bar; it nods toward him once. */
+function TapHint({ x, y }: { x: number; y: number }) {
+  const insets = useSafeAreaInsets();
+  const { width } = useWindowDimensions();
   const k = useSharedValue(0);
-  useEffect(() => { k.value = withDelay(p.delay, withTiming(1, { duration: p.d, easing: Easing.bezier(0.3, 0.1, 0.6, 1) })); }, []);
+  const reduced = useReducedMotion();
+  useEffect(() => { k.value = withTiming(1, { duration: 320, easing: out }); }, []);
+  const st = useAnimatedStyle(() => ({ opacity: k.value, transform: [{ translateY: reduced ? 0 : (1 - k.value) * -8 }] }));
+  const w = 178;
+  const left = Math.max(12, Math.min(width - w - 12, x - w + 34));
+  return (
+    <Animated.View pointerEvents="none" style={[{ position: 'absolute', left, top: y - insets.top - 52 - 34 - 46, width: w, alignItems: 'flex-end' }, st]}>
+      <View style={{ backgroundColor: tokens.ink, borderRadius: 14, paddingHorizontal: 12, height: 34, justifyContent: 'center', alignSelf: 'stretch', alignItems: 'center' }}>
+        <Txt size={13.5} weight={600} color={tokens.onInk}>{tx('Antippen und sprechen', 'Tap and speak')}</Txt>
+      </View>
+      <View style={{ width: 12, height: 12, backgroundColor: tokens.ink, transform: [{ rotate: '45deg' }], marginTop: -7, marginRight: Math.max(10, Math.min(w - 22, w - (x - left) - 6)), borderRadius: 2 }} />
+    </Animated.View>
+  );
+}
+
+/** The end: Pin is up, your things pop out around him, and below is what you have now. */
+function Fertig({ me, du, ev, nervt, top, cx, cy }: { me: string; du: string; ev: CalEvent | null; nervt: string[]; top: number; cx: number; cy: number }) {
+  const insets = useSafeAreaInsets();
+  const icons = [ev?.icon as ClayName | undefined, ...NERVT.filter((o) => nervt.includes(o.key)).map((o) => o.icon), 'kalender', 'einkauf', 'glocke', 'herz', 'checkliste'].filter((k, i, a): k is ClayName => !!k && a.indexOf(k) === i).slice(0, 5);
+  useEffect(() => { const t = setTimeout(() => { haptics.success(); buddyJoy(); }, 760); return () => clearTimeout(t); }, []);
+  return (
+    <View style={{ flex: 1 }}>
+      <Burst icons={icons} cx={cx} cy={cy} />
+      <View style={{ paddingTop: top - insets.top + 26, paddingHorizontal: 24, gap: 10 }}>
+        <Rise delay={700}><Txt size={30} line={36} weight={700} center>{me ? tx(`Fertig, ${me}!`, `All set, ${me}!`) : tx('Fertig!', 'All set!')}</Txt></Rise>
+        <Rise delay={820}><Txt size={16.5} line={23} color={tokens.sub} center>{tx(`Sichere es jetzt, damit ${du || 'dein Partner'} alles auch sieht.`, `Save it now so ${du || 'your partner'} sees it all too.`)}</Txt></Rise>
+      </View>
+      <Rise delay={1000} style={{ marginTop: 22, marginHorizontal: 20, backgroundColor: tokens.row, borderRadius: 24, borderWidth: 1, borderColor: tokens.hair, paddingHorizontal: 16, paddingVertical: 6 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 10 }}>
+          <ClayIcon name="gruppe" size={40} />
+          <View style={{ flex: 1 }}>
+            <Txt size={13} color={tokens.mute}>{tx('Eure Familie', 'Your family')}</Txt>
+            <Txt size={16.5} weight={600}>{du ? tx(`${me || 'Du'} und ${du}`, `${me || 'You'} and ${du}`) : tx(`${me || 'Du'} und dein Partner`, `${me || 'You'} and your partner`)}</Txt>
+          </View>
+        </View>
+        {ev ? (
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 10, borderTopWidth: 1, borderTopColor: tokens.hair }}>
+            <ClayIcon name={ev.icon as ClayName} size={40} />
+            <View style={{ flex: 1 }}>
+              <Txt size={13} color={tokens.mute}>{tx('Euer erster Termin', 'Your first appointment')}</Txt>
+              <Txt size={16.5} weight={600}>{`${ev.title}, ${whenOf(ev)}`}</Txt>
+            </View>
+          </View>
+        ) : null}
+      </Rise>
+    </View>
+  );
+}
+
+/** Your icons pop out around Pin on small arcs, one after the other, and stay (no particles, no loop). */
+const SPOTS = [[-158, 118], [-124, 146], [-90, 122], [-56, 146], [-22, 118]];
+function Burst({ icons, cx, cy }: { icons: ClayName[]; cx: number; cy: number }) {
+  return (
+    <View pointerEvents="none" style={{ position: 'absolute', left: 0, top: 0, right: 0, bottom: 0 }}>
+      {icons.map((n, i) => <Pop key={n} name={n} cx={cx} cy={cy} a={SPOTS[i][0]} r={SPOTS[i][1]} delay={900 + i * 120} />)}
+    </View>
+  );
+}
+function Pop({ name, cx, cy, a, r, delay }: { name: ClayName; cx: number; cy: number; a: number; r: number; delay: number }) {
+  const reduced = useReducedMotion();
+  const k = useSharedValue(reduced ? 1 : 0);
+  useEffect(() => { k.value = withDelay(delay, withTiming(1, { duration: 520, easing: out })); }, []);
+  const dx = Math.cos((a * Math.PI) / 180) * r, dy = Math.sin((a * Math.PI) / 180) * r;
   const st = useAnimatedStyle(() => ({
-    opacity: k.value < 0.75 ? 1 : 1 - (k.value - 0.75) / 0.25,
-    transform: [{ translateX: p.x + p.drift * k.value }, { translateY: -30 + fall * k.value }, { rotate: `${p.r * k.value}deg` }, { scaleX: Math.cos(k.value * 12) }] as any,
+    opacity: Math.min(1, k.value * 2.5),
+    transform: [{ translateX: cx - 24 + dx * k.value }, { translateY: cy - 24 + dy * k.value - Math.sin(Math.PI * k.value) * 18 }, { scale: 0.6 + 0.4 * k.value }] as any,
   }));
-  return <Animated.View style={[{ position: 'absolute', left: 0, top: 0, width: p.w, height: p.h, borderRadius: 2, backgroundColor: p.c }, st]} />;
+  return <Animated.View style={[{ position: 'absolute', left: 0, top: 0, width: 48, height: 48 }, st]}><ClayIcon name={name} size={48} /></Animated.View>;
 }
