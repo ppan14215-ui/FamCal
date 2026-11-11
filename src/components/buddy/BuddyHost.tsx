@@ -12,7 +12,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Pressable, useWindowDimensions, View } from 'react-native';
 import Animated, { useSharedValue, useAnimatedStyle, withTiming, withSequence, withDelay, Easing, useReducedMotion } from 'react-native-reanimated';
-import Blob from './Blob';
+import Pin from './Pin';
+import { useMascot } from '../../lib/mascot';
 import { useBuddy, setBuddy, buddyJoy, buddyPoke, buddyTalk, voiceLevel, isNight, type Mood } from '../../lib/buddy';
 import { getPref, setPref, onPrefsReady } from '../../lib/prefs';
 import Txt from '../ui/Txt';
@@ -33,6 +34,7 @@ const RIGHT = 20;
 
 export default function BuddyHost() {
   const b = useBuddy();
+  const minimal = useMascot() === 'minimal';
   const dockTop = useFieldTop();
   const typing = useTyping();
   const veil = useVeil();
@@ -167,6 +169,7 @@ export default function BuddyHost() {
     if (!b.listening) buddyTalk();
   };
 
+  if (minimal) return null;
   return (
     <Animated.View pointerEvents={dockTop && !inCard ? 'box-none' : 'none'} style={[{ position: 'absolute', left: 0, top: 0 }, st]}>
       {hint ? (
@@ -177,7 +180,7 @@ export default function BuddyHost() {
       ) : null}
       <Animated.View style={bodyStyle}>
       <Pressable onPress={tap} hitSlop={{ top: 10, left: 10, right: 10, bottom: 0 }} accessibilityRole="button" accessibilityLabel={tx('Memo, tippen zum Sprechen', 'Memo, tap to talk')}>
-        <Blob size={SIZE} mood={mood} joy={b.joy} poke={b.poke} level={voiceLevel} glance={glance} />
+        <Pin size={SIZE} mood={mood} joy={b.joy} poke={b.poke} level={voiceLevel} glance={glance} />
       </Pressable>
       <Animated.View pointerEvents="none" style={[{ position: 'absolute', right: -4, top: -6, width: 16, height: 16, borderRadius: 8, alignItems: 'center', justifyContent: 'center', backgroundColor: tokens.row, boxShadow: `0 0 0 1px ${tokens.hair}` } as any, askStyle]}>
         <Txt size={11} weight={700} color={tokens.done} style={{ lineHeight: 13 }}>?</Txt>

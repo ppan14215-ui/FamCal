@@ -21,6 +21,7 @@ import { tx } from '../src/i18n/lang';
 import { speechLang, setSpeechLang } from '../src/lib/speechLang';
 import * as Updates from 'expo-updates';
 import { useMicStyle, setMicStyle } from '../src/lib/micStyle';
+import { useMascot, setMascot } from '../src/lib/mascot';
 import { useSimple, setSimple } from '../src/lib/simple';
 import { useAgent, setAgent } from '../src/lib/assistent';
 import { usePrivat } from '../src/lib/privat';
@@ -58,6 +59,7 @@ export default function Einstellungen() {
   const [sl, setSl] = React.useState(speechLang());
   const [noStats, setNoStats] = React.useState(analyticsOff());
   const mic = useMicStyle();
+  const masc = useMascot();
   const pal = usePalette();
   const themeName = (() => { const t = THEMES.find((x) => x.id === pal); return t ? tx(t.de, t.en) : ''; })();
   const simple = useSimple();
@@ -107,6 +109,8 @@ export default function Einstellungen() {
         <SRow icon="reise" t={tx('Urlaub und Feiertage', 'Vacation and holidays')} v={(land && (country === 'DE' ? land : regionName(country, land))) || countryName(country)} onPress={() => router.push('/urlaub')} />
         {HIDDEN.extras ? null : <SRow icon="glocke" t={tx('Hinweise', 'Notifications')} onPress={() => router.push('/demo/sperrbildschirm')} />}
         <SRow icon="chat" t={tx('Sprache', 'Language')} v={sl === 'de' ? tx('Deutsch', 'German') : tx('Englisch', 'English')} onPress={() => { const v = sl === 'de' ? 'en' : 'de'; setSpeechLang(v); setSl(v); toast(v === 'de' ? tx('Ich höre jetzt auf Deutsch', 'Listening in German now') : tx('Ich höre jetzt auf Englisch', 'Listening in English now')); }} />
+        {/* Julian 11.11.: Pin, the clay magnet, or a minimal mic with record and stop. */}
+        <SRow icon="chat" t={tx('Sprechen', 'Talking')} v={masc === 'minimal' ? tx('Minimal', 'Minimal') : tx('Mit Memo', 'With Memo')} onPress={() => { const v = masc === 'minimal' ? 'pin' : 'minimal'; setMascot(v); haptics.select(); toast(v === 'minimal' ? tx('Nur Mikro und Stopp, ohne Memo', 'Just mic and stop, no Memo') : tx('Memo ist wieder da', 'Memo is back')); }} />
         {HIDDEN.toggles ? null : <SRow icon="chat" t={tx('Mikro Anzeige', 'Mic display')} v={mic === 'ring' ? tx('Ring', 'Ring') : tx('Balken', 'Bars')} onPress={() => { const v = mic === 'ring' ? 'balken' : 'ring'; setMicStyle(v); haptics.select(); toast(v === 'ring' ? tx('Mikro zeigt jetzt den Ring', 'Mic now shows the ring') : tx('Mikro zeigt jetzt die Balken', 'Mic now shows the bars')); }} />}
         <SRow icon="kalender" t={tx('Kalender Abo und Export', 'Calendar feed and export')} onPress={() => router.push('/kalender-abo')} />
         {/* Julian 05.11.: Ohne KI, Sprache nur auf dem Handy, Alle Daten löschen. */}

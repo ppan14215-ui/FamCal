@@ -17,7 +17,8 @@ import Svg, { Path } from 'react-native-svg';
 import Animated, { useSharedValue, useAnimatedStyle, withTiming, withDelay, withSequence, Easing, runOnJS, useReducedMotion } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { usePathname } from 'expo-router';
-import { BLOB, BlobArt } from './Blob';
+import Pin, { PIN } from './Pin';
+import { mascot } from '../../lib/mascot';
 import { setBuddy } from '../../lib/buddy';
 import { useFieldTop } from '../../lib/dockSpace';
 
@@ -56,7 +57,7 @@ export default function BuddyIntro() {
   const topY = insets.top + 24; // centre of the small Memo at the top
 
   // Only where Memo lives (screens with the field), never over the onboarding or sign-in.
-  const skip = /onboarding|anmelden/.test(path);
+  const skip = /onboarding|anmelden/.test(path) || mascot() === 'minimal';
   // It starts once the field is there (Memo's spot is known), or after a moment anyway.
   const [late, setLate] = useState(false);
   useEffect(() => { const id = setTimeout(() => setLate(true), 900); return () => clearTimeout(id); }, []);
@@ -101,17 +102,17 @@ export default function BuddyIntro() {
     <Animated.View style={[{ position: 'absolute', left: 0, top: 0, width: W, height: H }, fade]}>
       <Pressable onPress={finish} style={{ flex: 1 }} accessibilityLabel="Intro überspringen">
         <Animated.View style={[{ position: 'absolute', left: 0, top: 0, width: W, height: H }, sheet]}>
-          <View style={{ position: 'absolute', left: 0, top: -H, width: W, height: H * 2, backgroundColor: BLOB.mid }} />
+          <View style={{ position: 'absolute', left: 0, top: -H, width: W, height: H * 2, backgroundColor: PIN.rim }} />
           <Animated.View style={[{ position: 'absolute', left: 0, top: H - 1, width: W, height: DRIP + 1, transformOrigin: ['50%', '0%', 0] }, drips]}>
-            <Svg width={W} height={DRIP + 1}><Path d={dripPath(W)} fill={BLOB.mid} /></Svg>
+            <Svg width={W} height={DRIP + 1}><Path d={dripPath(W)} fill={PIN.rim} /></Svg>
           </Animated.View>
         </Animated.View>
         <Animated.View style={[{ position: 'absolute', left: W / 2 - SMALL / 2, top: topY - SMALL / 2, width: SMALL, height: SMALL }, drop]}>
-          <BlobArt size={SMALL} />
+          <Pin size={SMALL} still shadow={false} />
         </Animated.View>
         <Animated.View style={[{ position: 'absolute', left: 0, right: 0, top: 0, flexDirection: 'row', justifyContent: 'center', gap: 14 }, eyes]}>
-          <View style={{ width: 9, height: 16, borderRadius: 5, backgroundColor: BLOB.eye }} />
-          <View style={{ width: 9, height: 16, borderRadius: 5, backgroundColor: BLOB.eye }} />
+          <View style={{ width: 9, height: 16, borderRadius: 5, backgroundColor: PIN.face }} />
+          <View style={{ width: 9, height: 16, borderRadius: 5, backgroundColor: PIN.face }} />
         </Animated.View>
       </Pressable>
     </Animated.View>
