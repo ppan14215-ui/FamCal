@@ -22,6 +22,8 @@ import Svg, { Defs, RadialGradient, Stop, Ellipse } from 'react-native-svg';
 import type { Mood } from '../../lib/buddy';
 
 const BODY = require('../../../assets/memo/pin-body.webp');
+/** The same render at 1400 px for the big onboarding moments (up to about 460 pt); small Pins keep the light one. */
+const BODY_LARGE = require('../../../assets/memo/pin-body-large.webp');
 
 /** Colours of the clay, for anything drawn next to him. */
 export const PIN = { rim: '#1F6F72', rimDeep: '#0E5256', face: '#F0E5D2', ink: '#1A2124' };
@@ -303,7 +305,7 @@ export default function Pin({ size = 40, mood = 'idle', joy = 0, poke = 0, glanc
         </Animated.View>
       ) : null}
       <Animated.View style={[{ position: 'absolute', left: 0, top: 0, width: S, height: S, transformOrigin: ['50%', '92%', 0] }, bodyStyle]}>
-        <Image source={BODY} style={{ width: S, height: S }} resizeMode="contain" accessibilityIgnoresInvertColors />
+        <Image source={S > 180 ? BODY_LARGE : BODY} style={{ width: S, height: S }} resizeMode="contain" accessibilityIgnoresInvertColors />
         {[-1, 1].map((side) => (
           <React.Fragment key={side}>
             <Animated.View style={[{ position: 'absolute', left: cx + side * ex - ew / 2, top: ey - eh / 2, width: ew, height: eh, borderRadius: ew / 2, backgroundColor: PIN.ink }, eyeStyle]}>

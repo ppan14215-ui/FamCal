@@ -19,6 +19,7 @@ import { actions, toast } from '../src/state/store';
 import type { ClayName } from '../src/lib/clayIcons';
 import { tx } from '../src/i18n/lang';
 import { canRead, pickImage, readLines } from '../src/lib/screenshot';
+import { addPic } from '../src/lib/attach';
 import { sayInApp } from '../src/lib/shared';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { HIDDEN } from '../src/lib/core';
@@ -33,8 +34,9 @@ export default function Neu() {
   const go = (fn: () => void) => { goBack(); setTimeout(fn, 30); };
   const soon = () => toast(tx('Kommt mit dem nächsten App Update', 'Coming with the next app update'));
   const attach: { icon: LineName; t: string; onPress: () => void }[] = [
-    { icon: 'camera', t: tx('Kamera', 'Camera'), onPress: () => go(() => (canRead() ? router.push({ pathname: '/bild-liste', params: { from: 'camera' } }) : router.push('/foto-kamera'))) },
-    { icon: 'image', t: tx('Fotos', 'Photos'), onPress: canRead() ? () => go(() => router.push({ pathname: '/bild-liste', params: { from: 'gallery' } })) : soon },
+    // Julian 11.11.: like the Claude app, the picture lands in the field as a preview; you add words and send both.
+    { icon: 'camera', t: tx('Kamera', 'Camera'), onPress: canRead() ? () => go(() => void pickImage('camera').then((u) => { if (u) addPic(u); })) : () => go(() => router.push('/foto-kamera')) },
+    { icon: 'image', t: tx('Fotos', 'Photos'), onPress: canRead() ? () => go(() => void pickImage('gallery').then((u) => { if (u) addPic(u); })) : soon },
     { icon: 'file', t: tx('Datei', 'File'), onPress: soon },
   ];
   const all: { icon: ClayName; t: string; s: string; onPress: () => void; extra?: boolean }[] = [
