@@ -21,7 +21,7 @@
  * fertig (your family and your first appointment) · sign-in sheet · Plus.
  * No network here: the offline rules read the sentence (talk.understand); no assistant call without an account.
  */
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { View, TextInput, Pressable, ScrollView, useWindowDimensions, Platform } from 'react-native';
 import Animated, { useSharedValue, useAnimatedStyle, withTiming, withDelay, Easing, useReducedMotion, FadeIn, FadeOut } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -36,11 +36,17 @@ import Mascot, { type Pose } from '../../src/components/onboarding/Mascot';
 import LiveMemo, { BIG } from '../../src/components/onboarding/LiveMemo';
 import SignInSheet from '../../src/components/onboarding/SignInSheet';
 import TalkBar from '../../src/components/TalkBar';
+import DayView from '../../src/screens/kalender/DayView';
+import { monthTitle } from '../../src/screens/kalender/MonthView';
+import { StoreContext, createStore, type Store } from '../../src/state/store';
+import { PersonsContext, type Persons } from '../../src/components/ui/Person';
+import { StillContext } from '../../src/components/ChatCards';
+import { buildDemoState, demoEvents } from '../../src/data/demoFamily';
 import { buddyJoy, buddyPoke, setBuddy, useBuddy } from '../../src/lib/buddy';
 import { understand } from '../../src/lib/talk';
 import type { CalEvent } from '../../src/state/types';
 import { TODAY, addDays, weekday, WD_LONG, hm } from '../../src/lib/dates';
-import { tokens } from '../../src/theme';
+import { tokens, persons as appPersons } from '../../src/theme';
 import { haptics } from '../../src/lib/haptics';
 import { tx } from '../../src/i18n/lang';
 import { LIVE } from '../../src/lib/live';
@@ -463,6 +469,16 @@ function Probe({ me, du, familie, ev, setEv, docked, setDocked, pad, onDone }: {
   const [miss, setMiss] = useState(false);
   const [hint, setHint] = useState(false);
   const b = useBuddy();
+  // The real calendar in a world of its own (Julian 12.11.: "too empty, doesn't show the app interface"): a calm
+  // example week with your two names on it, and what you say lands in it. Nothing here touches the real store.
+  const world: Store = useMemo(() => {
+    const base = buildDemoState(TODAY);
+    const keep = new Set(['ev_fussball', 'ev_markt', 'ev_film']);
+    const seed = demoEvents(TODAY).filter((e) => keep.has(e.id)).map((e) => ({ ...e, people: undefined, place: undefined }));
+    return createStore({ ...base, people: [], events: ev ? [...seed, ev] : seed, calView: 'tag' as const, calDay: ev ? ev.date : TODAY, names: { J: me || tx('Du', 'You'), T: du || tx('Partner', 'Partner') } });
+  }, []);
+  const people: Persons = useMemo(() => ({ J: { ...appPersons.J, name: me || tx('Du', 'You') }, T: { ...appPersons.T, name: du || tx('Partner', 'Partner') } }), [me, du]);
+  const [calKey, setCalKey] = useState(0);
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
   const later = (ms: number, fn: () => void) => { timers.current.push(setTimeout(fn, ms)); };
   useEffect(() => () => { timers.current.forEach(clearTimeout); setBuddy({ thinking: false }); }, []);
@@ -489,6 +505,9 @@ function Probe({ me, du, familie, ev, setEv, docked, setDocked, pad, onDone }: {
         ? { ...r.event, who: r.event.who ?? 'J' }
         : { id: 'ev_mine', title: (r as any).title ?? t, icon: 'kalender', date: addDays(TODAY, 1), start: '00:00', allDay: true, who: 'J' } as CalEvent;
       setEv(e);
+      // It moves into the calendar and the calendar opens on its day.
+      world.set((st) => ({ events: [...st.events.filter((x) => x.id !== e.id), e], calDay: e.date }));
+      setCalKey((k) => k + 1);
       setPhase('landed');
       setDocked(false);
       haptics.success();
@@ -507,30 +526,31 @@ function Probe({ me, du, familie, ev, setEv, docked, setDocked, pad, onDone }: {
   return (
     <View style={{ flex: 1 }}>
       <Say text={line} />
-      <View style={{ flex: 1, paddingHorizontal: 20, paddingTop: 22, gap: 12 }}>
-        {phase === 'think' ? (
-          <Rise style={{ alignSelf: 'flex-end', maxWidth: '84%', backgroundColor: tokens.chipBg, borderRadius: 20, borderBottomRightRadius: 6, paddingHorizontal: 16, paddingVertical: 11 }}>
-            <Txt size={16.5} line={22}>{said}</Txt>
-          </Rise>
+      <View style={{ flex: 1, marginHorizontal: 14, marginTop: 14, marginBottom: 10, borderRadius: 26, overflow: 'hidden', borderWidth: 1, borderColor: tokens.hair, backgroundColor: tokens.bg }}>
+        <View pointerEvents="none" style={{ flex: 1 }}>
+          <StoreContext.Provider value={world}>
+            <PersonsContext.Provider value={people}>
+              <StillContext.Provider value>
+                <DayView key={calKey} header={() => <CalTitle />} />
+              </StillContext.Provider>
+            </PersonsContext.Provider>
+          </StoreContext.Provider>
+        </View>
+        {!ev ? (
+          <View pointerEvents="none" style={{ position: 'absolute', right: 12, top: 12, backgroundColor: tokens.chipBg, borderRadius: 999, paddingHorizontal: 10, height: 26, justifyContent: 'center' }}>
+            <Txt size={12} weight={600} color={tokens.sub}>{tx('Beispielwoche', 'Example week')}</Txt>
+          </View>
         ) : null}
-        {ev && (phase === 'landed' || phase === 'notif') ? (
-          <Rise style={{ backgroundColor: tokens.row, borderRadius: 22, padding: 14, flexDirection: 'row', alignItems: 'center', gap: 12, borderWidth: 1, borderColor: tokens.hair }}>
-            <ClayIcon name={ev.icon as ClayName} size={52} celebrate />
-            <View style={{ flex: 1, gap: 3 }}>
-              <Txt size={18} line={23} weight={700}>{ev.title}</Txt>
-              <Txt size={15} color={tokens.sub}>{whenOf(ev)}</Txt>
-            </View>
-            <View style={{ flexDirection: 'row' }}>
-              <Who n={me || tx('Du', 'You')} bg="#F6DDE2" fg="#9D2B48" />
-              <Who n={du || '+'} bg="#DCE7F4" fg="#1F4E89" style={{ marginLeft: -8 }} />
-            </View>
+        {phase === 'think' ? (
+          <Rise style={{ position: 'absolute', right: 12, bottom: 12, maxWidth: '84%', backgroundColor: tokens.ink, borderRadius: 20, borderBottomRightRadius: 6, paddingHorizontal: 16, paddingVertical: 11 }}>
+            <Txt size={16.5} line={22} color={tokens.onInk}>{said}</Txt>
           </Rise>
         ) : null}
         {ev && phase === 'notif' ? (
-          <Rise delay={120} style={{ marginTop: 14, gap: 8 }}>
-            <Txt size={13} weight={600} color={tokens.mute} style={{ marginLeft: 4 }}>{du ? tx(`Auf ${du}s Handy`, `On ${du}’s phone`) : tx('Auf dem Handy deines Partners', 'On your partner’s phone')}</Txt>
-            <View style={{ backgroundColor: tokens.noteBg, borderRadius: 22, padding: 14, flexDirection: 'row', gap: 12 }}>
-              <ClayIcon name="glocke" size={38} />
+          <Rise delay={120} style={{ position: 'absolute', left: 10, right: 10, bottom: 10, borderRadius: 24, backgroundColor: '#2E4650', padding: 10, paddingTop: 8, gap: 6, boxShadow: '0 14px 30px rgba(22,35,42,0.25)' } as any}>
+            <Txt size={12} weight={600} color="#FFFFFF" style={{ opacity: 0.8, paddingHorizontal: 6 }}>{du ? tx(`${du}s Handy`, `${du}’s phone`) : tx('Das Handy deines Partners', 'Your partner’s phone')}</Txt>
+            <View style={{ backgroundColor: 'rgba(255,255,255,0.94)', borderRadius: 18, padding: 12, flexDirection: 'row', gap: 12 }}>
+              <ClayIcon name={ev.icon as ClayName} size={38} />
               <View style={{ flex: 1, gap: 2 }}>
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
                   <Txt size={13} weight={600} color={tokens.sub}>FamCal</Txt>
@@ -573,6 +593,17 @@ function Probe({ me, du, familie, ev, setEv, docked, setDocked, pad, onDone }: {
       ) : null}
       {/* The label over Pin in the bar: this is the talk button. */}
       {hint && phase === 'wait' && b.dockAt ? <TapHint x={b.dockAt.x} y={b.dockAt.y} /> : null}
+    </View>
+  );
+}
+
+function CalTitle() {
+  const day = React.useContext(StoreContext)!.get().calDay;
+  const { month } = monthTitle(day);
+  return (
+    <View style={{ gap: 2 }}>
+      <Txt size={15} color={tokens.sub}>{tx(`${WD_LONG[weekday(day)]}, ${Number(day.slice(8))}.`, `${WD_LONG[weekday(day)]} ${Number(day.slice(8))}`)}</Txt>
+      <Txt size={30} line={36} weight={700} tracking={-1}>{month}</Txt>
     </View>
   );
 }
