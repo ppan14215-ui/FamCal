@@ -53,3 +53,8 @@ export function setSentryUser(id: string | null) {
 export function reportError(e: unknown, where: string, extra?: Record<string, string | number | boolean>) {
   try { S?.captureException(e, { tags: { where }, extra }); } catch {}
 }
+
+/** A note that is not an error (how a recording went). Never put user text in tags or extra. */
+export function reportNote(name: string, level: 'info' | 'warning', tags: Record<string, string>, extra?: Record<string, string | number | boolean>) {
+  try { S?.captureMessage(name, { level, tags, extra }); } catch {}
+}

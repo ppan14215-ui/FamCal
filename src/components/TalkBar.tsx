@@ -30,7 +30,8 @@ import { LIVE } from '../lib/live';
 import { usePrefill, takeFill } from '../lib/simple';
 import { tx } from '../i18n/lang';
 import { toast } from '../state/store';
-import { hearInCloud, cloudOn, cloudCapped } from '../lib/hoeren';
+import { hearInCloud, cloudOn, cloudCapped, lastHear } from '../lib/hoeren';
+import { reportNote } from '../lib/sentry';
 import { track } from '../lib/analytics';
 import { speechLocale, speechLang } from '../lib/speechLang';
 import { setSpeak, getSpeak, speakHandlers } from '../lib/speak';
@@ -52,6 +53,8 @@ const TOUCH = Platform.OS !== 'web' || (typeof window !== 'undefined' && !!windo
  * Only a long safety cap ends a recording nobody stops, so a forgotten mic cannot run on.
  */
 const MAX_MS = 3 * 60000;
+/** How long a stopped recording may take to hand over its file before the app goes on without it. */
+const FILE_WAIT_MS = 4000;
 // Android ends on silence by itself unless told to wait; give it the same cap.
 const ANDROID_SILENCE_MS = MAX_MS;
 
@@ -316,7 +319,13 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, o
       let peak = -2;
       let audioDone: (() => void) | null = null;
       // A long sentence takes the phone a moment to close the file (31.10. 12:42 a voice note missed the cloud ears after 1.5 s and fell back to the phone's English guess); the wait ends the moment the file is there.
-      const audioReady = new Promise<void>((r) => { audioDone = r; setTimeout(r, 5000); });
+      // Julian 12.11.: "still not fixed". The 5 s wait used to start with the recording, not with the stop, so every
+      // sentence longer than 5 s was finished before its file existed: the session was aborted, nothing went to the
+      // cloud ears, and the phone's rough guess (or the "didn't come through" note) landed. The wait now starts at the stop.
+      const audioFile = new Promise<void>((r) => { audioDone = r; });
+      const t0 = Date.now();
+      const marks: string[] = [];
+      const mark = (m: string) => { if (marks.length < 40) marks.push(`${m}@${Date.now() - t0}`); };
       const cloud = cloudOn();
       setWavy(cloud);
       // One finish per recording, shared by the stop tap, the error and the end event. Julian 31.10. 16:10: every second
@@ -327,12 +336,17 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, o
       const finishNow = async () => {
         if (typed.current) return;
         setWriting(true);
-        await audioReady;
+        mark('finish');
+        await Promise.race([audioFile, new Promise<void>((r) => setTimeout(r, FILE_WAIT_MS))]);
+        mark(audio ? 'file' : 'nofile');
         // The phone's guess may be empty when it heard the wrong language; the recording still goes to the cloud ears.
         // The file is here: close the session for good, so the next tap starts on an idle recognizer.
         try { if (String(await SR.getStateAsync()) !== 'inactive') SR.abort(); } catch {}
         const better = audio && (heard() || cloud) ? await hearInCloud(audio, speechLang(), peak) : null;
         setWriting(false);
+        // One line per recording for the error log, never what was said: which events came when, and how the server answered.
+        const outcome = better ? 'cloud' : !cloud ? (heard() ? 'phone' : 'none') : heard() ? 'phone_fallback' : audio ? 'cloud_empty' : 'no_file';
+        reportNote('voice_rec', outcome === 'cloud' || outcome === 'phone' ? 'info' : 'warning', { outcome }, { marks: marks.join(' '), total_ms: Date.now() - t0, peak, cloud, phone_words: heard().split(' ').filter(Boolean).length, hear: JSON.stringify(lastHear()) });
         if (typed.current) return;
         // Julian 31.10. 15:20: "Lokale Handy-Erkennung ist offensichtlich nicht gut genug". With the cloud ears on, the
         // phone's guess (one language, often wrong English) never lands; a miss says so and asks to speak again.
@@ -357,8 +371,8 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, o
       };
       const hush = (ms: number) => { clearTimeout(quiet); quiet = setTimeout(() => SR.stop(), ms); };
       const subs = [
-        SR.addListener('start', live),
-        SR.addListener('audiostart', live),
+        SR.addListener('start', () => { mark('start'); live(); }),
+        SR.addListener('audiostart', () => { mark('audiostart'); live(); }),
         SR.addListener('result', (e) => {
           live();
           const t = e.results[0]?.transcript ?? '';
@@ -372,19 +386,20 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, o
         SR.addListener('volumechange', (e) => { if (seq === recSeq && e.value > -2) live(); if (e.value > peak) peak = e.value; level.value = withTiming(Math.min(1, Math.max(0, e.value / 10)), { duration: 100 }); }),
         // Android can end a long recording with an error (no-speech, network) although the file is there (31.10. 14:16 a
         // voice note skipped the cloud ears). Keep listening for the file and finish like a normal stop.
-        SR.addListener('error', (e: any) => { if (!alive || seq !== recSeq) return track('voice_failed', { reason: 'stale_error', code: String(e?.error ?? '') }); clearTimeout(quiet); setListening(false); void finish().finally(() => subs.forEach((x) => x.remove())); }),
+        SR.addListener('error', (e: any) => { mark(`error:${String(e?.error ?? '')}`); if (!alive || seq !== recSeq) return track('voice_failed', { reason: 'stale_error', code: String(e?.error ?? '') }); clearTimeout(quiet); setListening(false); void finish().finally(() => subs.forEach((x) => x.remove())); }),
         // A second teardown can send audioend again without a file; keep the first real one.
-        SR.addListener('audioend', (e) => { if (e.uri && seq === recSeq) { audio = e.uri; audioDone?.(); } }),
-        SR.addListener('end', () => { if (!alive || seq !== recSeq) return track('voice_failed', { reason: 'stale_end' }); clearTimeout(quiet); setListening(false); void finish().finally(() => subs.forEach((x) => x.remove())); }),
+        SR.addListener('audioend', (e) => { mark(e.uri ? 'audioend' : 'audioend_nouri'); if (e.uri && seq === recSeq) { audio = e.uri; audioDone?.(); } }),
+        SR.addListener('end', () => { mark('end'); if (!alive || seq !== recSeq) return track('voice_failed', { reason: 'stale_end' }); clearTimeout(quiet); setListening(false); void finish().finally(() => subs.forEach((x) => x.remove())); }),
       ];
       lastSubs.current = subs;
       // A tap on the mic ends at once (Julian 28.10.): keep what was heard and put it in the field, no waiting for the phone to finish.
       // stop, not abort, so the recording is finished and can go to the cloud ears.
       stopNative.current = () => {
+        mark('tap_stop');
         clearTimeout(quiet); SR.stop(); setListening(false);
         // Android sometimes never closes a segmented session after stop, so the file never comes (Julian 31.10. 17:02,
         // still errors). abort() tears down and hands over the recording right away; the cloud writes the words anyway.
-        setTimeout(() => { if (!audio && seq === recSeq) { try { SR.abort(); } catch {} } }, 1200);
+        setTimeout(() => { if (!audio && seq === recSeq) { mark('abort1200'); try { SR.abort(); } catch {} } }, 1200);
         void finish();
       };
       toKeys.current = () => { clearTimeout(quiet); SR.abort(); setListening(false); };
