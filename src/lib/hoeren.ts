@@ -6,7 +6,8 @@
 import { getAuth, freshToken } from './auth';
 import { spracheCloud } from './privat';
 
-const WAIT_MS = 7000;
+// 12.11.: 7 s cut off long sentences the server was still writing (it allows Scribe 12 s).
+const WAIT_MS = 15000;
 // Once the server says it has no key, stop trying until the app restarts.
 let off = false;
 
@@ -19,11 +20,16 @@ let hearCapped = false;
 export const cloudCapped = () => hearCapped;
 
 /** hint: the app's listening language, so a sentence Scribe takes for empty English is asked again in it; peak: loudest volume 0..10, only for the log. */
+/** How the last upload went (status, server error, time), for the error log only. */
+let last: { status?: number; error?: string; ms?: number; skipped?: string } = {};
+export const lastHear = () => last;
+
 export async function hearInCloud(uri: string, hint?: string, peak?: number): Promise<string | null> {
   const session = getAuth().session;
   const url = process.env.EXPO_PUBLIC_SUPABASE_URL;
   // Sprache nur auf dem Handy or Ohne KI (Julian 05.11.): the recording never leaves the phone.
-  if (off || !session || !url || !uri || !spracheCloud()) return null;
+  if (off || !session || !url || !uri || !spracheCloud()) { last = { skipped: off ? 'off' : !session ? 'no_session' : !uri ? 'no_uri' : 'setting' }; return null; }
+  const began = Date.now();
   const form = new FormData();
   // React Native sends a local file this way; the bytes never pass through JavaScript.
   form.append('audio', { uri, name: 'satz.wav', type: 'audio/wav' } as any);
@@ -39,8 +45,10 @@ export async function hearInCloud(uri: string, hint?: string, peak?: number): Pr
     const r = await res.json().catch(() => ({})) as { text?: string; error?: string };
     if (r.error === 'no_key' || res.status === 404) off = true;
     if (res.status === 429) hearCapped = true;
+    last = { status: res.status, error: r.error, ms: Date.now() - began };
     return res.ok && r.text ? r.text : null;
-  } catch {
+  } catch (e) {
+    last = { error: e instanceof Error ? e.name : 'error', ms: Date.now() - began };
     return null;
   } finally {
     clearTimeout(late);
