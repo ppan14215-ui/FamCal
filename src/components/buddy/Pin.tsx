@@ -1,38 +1,40 @@
 /**
- * Pin, the clay fridge magnet (Julian 11.11.2026: "a new mascot with the clay style, just like our icons ...
- * goes back to the PIN idea ... similar to the blob, with similar animations. It should react to what I'm saying").
- *
- * The body is one render of the Blender model (assets/memo/pin-body.webp: teal clay rim, cream face, no eyes),
- * lit and coloured like the clay icons. Everything that moves is drawn on top: black enamel eyes that blink,
- * glance, read along, turn into ^^, and a body that breathes, squashes, tilts and hops with the voice. That way the
- * motion is never forced onto a still picture (the icon rule: motion first, then the exact assets).
+ * Memo, flat (Julian 13.11.2026: the clay Pin "doesn't fit into a flat app style"; he picked direction A "Punkt"
+ * from the Pumpy reference: one solid shape in one colour, two white oval eyes, no shading, no 3D).
+ * He is the period after every headline, come alive: an ink circle (light in dark mode, it follows `tokens.ink`),
+ * the one dark element on the screen, sitting where the mic was. All feeling lives in the eyes (open, ^^, closed)
+ * and in motion; the body only moves, squashes and turns. Pure vector, sharp at every size, no rendered assets.
  *
  * Same props as Blob, so any Memo on screen can switch by import. Extra:
  *   heard  bumps when new words came in while listening: a small nod, as if he follows along
  *   pose   for the onboarding: 'peek' (look up from the bottom edge, gentle sway), 'wave' (rocks hello, he has
- *          no arms), 'jump' (one big happy jump with ^^)
+ *          no arms), 'jump' (one big happy jump with a salto and ^^)
  */
 import React, { useEffect, useRef } from 'react';
-import { View, Image, StyleProp, ViewStyle } from 'react-native';
+import { View, StyleProp, ViewStyle } from 'react-native';
 import Animated, {
   useSharedValue, useAnimatedStyle, useFrameCallback, withTiming, withSequence, withRepeat, withDelay,
   cancelAnimation, Easing, useReducedMotion, type SharedValue,
 } from 'react-native-reanimated';
 import Svg, { Defs, RadialGradient, Stop, Ellipse } from 'react-native-svg';
 import type { Mood } from '../../lib/buddy';
+import { tokens } from '../../theme';
 
-const BODY = require('../../../assets/memo/pin-body.webp');
-/** The same render at 1400 px for the big onboarding moments (up to about 460 pt); small Pins keep the light one. */
-const BODY_LARGE = require('../../../assets/memo/pin-body-large.webp');
+/** Colours of Memo, for anything drawn next to him (the intro drip). Read live, so dark mode follows. */
+export const PIN = {
+  get rim() { return tokens.ink; },
+  get rimDeep() { return tokens.ink; },
+  get face() { return tokens.onInk; },
+  get ink() { return tokens.onInk; },
+};
 
-/** Colours of the clay, for anything drawn next to him. */
-export const PIN = { rim: '#1F6F72', rimDeep: '#0E5256', face: '#F0E5D2', ink: '#1A2124' };
-
-/** Where the face and eyes sit on the 600 px render, as shares of its width. */
-const EYE_X = 0.119; // from the centre
-const EYE_Y = 0.518;
-const EYE_W = 0.085;
-const EYE_H = 0.122;
+/** The body circle and where the eyes sit, as shares of the box. Bottom edge at 94 % so squash stays grounded. */
+const BODY_D = 0.8;
+const BODY_TOP = 0.14;
+const EYE_X = 0.1; // from the centre
+const EYE_Y = 0.5;
+const EYE_W = 0.104;
+const EYE_H = 0.164;
 
 export type PinPose = 'peek' | 'wave' | 'jump';
 
@@ -58,7 +60,7 @@ const OUT = Easing.bezier(0.23, 1, 0.32, 1);
 const OVER = Easing.bezier(0.34, 1.56, 0.64, 1);
 const SINE = Easing.inOut(Easing.sin);
 
-export default function Pin({ size = 40, mood = 'idle', joy = 0, poke = 0, glance, level, still, shadow = true, style, typeAt, gaze, heard = 0, pose }: PinProps) {
+export default function Pin({ size = 40, mood = 'idle', joy = 0, poke = 0, glance, level, still, shadow = false, style, typeAt, gaze, heard = 0, pose }: PinProps) {
   const S = size;
   const tAt = gaze ?? typeAt ?? { x: -0.55, y: 0.75 };
   const restRef = useRef(gaze ?? { x: 0, y: 0 }); restRef.current = gaze ?? { x: 0, y: 0 };
@@ -223,10 +225,11 @@ export default function Pin({ size = 40, mood = 'idle', joy = 0, poke = 0, glanc
     happy.value = withSequence(withTiming(1, { duration: 120 }), withDelay(1100, withTiming(0, { duration: 220 })));
     if (!live) return;
     [ty, sx, sy].forEach(cancelAnimation);
-    ty.value = withSequence(withDelay(110, withTiming(-S * 0.4, { duration: 260, easing: Easing.out(Easing.quad) })), withTiming(0, { duration: 230, easing: Easing.in(Easing.quad) }));
+    ty.value = withSequence(withDelay(110, withTiming(-S * 0.5, { duration: 260, easing: Easing.out(Easing.quad) })), withTiming(0, { duration: 230, easing: Easing.in(Easing.quad) }));
     sy.value = withSequence(withTiming(0.86, { duration: 110, easing: OUT }), withTiming(1.1, { duration: 160, easing: OUT }), withTiming(1, { duration: 330 }), withTiming(0.85, { duration: 70, easing: OUT }), withTiming(1.04, { duration: 160, easing: OVER }), withTiming(1, { duration: 200, easing: OUT }));
     sx.value = withSequence(withTiming(1.1, { duration: 110, easing: OUT }), withTiming(0.93, { duration: 160, easing: OUT }), withTiming(1, { duration: 330 }), withTiming(1.12, { duration: 70, easing: OUT }), withTiming(0.98, { duration: 160, easing: OVER }), withTiming(1, { duration: 200, easing: OUT }));
-    rot.value = withSequence(withDelay(110, withTiming(-8, { duration: 260, easing: OUT })), withTiming(0, { duration: 300, easing: OUT }));
+    // The salto (Pumpy's mortalzinho): one full turn while in the air, then back to 0 without a visible jump.
+    rot.value = withSequence(withDelay(110, withTiming(-360, { duration: 490, easing: Easing.bezier(0.2, 0.7, 0.3, 1) })), withTiming(0, { duration: 0 }));
   };
 
   // A joy or a poke: gather, stretch, a little counter squash as the clay settles (follow-through). No springs.
@@ -287,7 +290,6 @@ export default function Pin({ size = 40, mood = 'idle', joy = 0, poke = 0, glanc
   const ew = S * EYE_W, eh = S * EYE_H;
   const aw = S * 0.125, at = Math.max(1.5, S * 0.038);
   const cx = S / 2, ey = S * EYE_Y, ex = S * EYE_X;
-  const hl = Math.max(1, ew * 0.28);
 
   return (
     <View pointerEvents="none" style={[{ width: S, height: S }, style]}>
@@ -305,15 +307,12 @@ export default function Pin({ size = 40, mood = 'idle', joy = 0, poke = 0, glanc
         </Animated.View>
       ) : null}
       <Animated.View style={[{ position: 'absolute', left: 0, top: 0, width: S, height: S, transformOrigin: ['50%', '92%', 0] }, bodyStyle]}>
-        <Image source={S > 180 ? BODY_LARGE : BODY} style={{ width: S, height: S }} resizeMode="contain" accessibilityIgnoresInvertColors />
+        <View style={{ position: 'absolute', left: S * (1 - BODY_D) / 2, top: S * BODY_TOP, width: S * BODY_D, height: S * BODY_D, borderRadius: S * BODY_D / 2, backgroundColor: tokens.ink }} />
         {[-1, 1].map((side) => (
           <React.Fragment key={side}>
-            <Animated.View style={[{ position: 'absolute', left: cx + side * ex - ew / 2, top: ey - eh / 2, width: ew, height: eh, borderRadius: ew / 2, backgroundColor: PIN.ink }, eyeStyle]}>
-              {/* The enamel catches the light top left. */}
-              <View style={{ position: 'absolute', left: ew * 0.22, top: eh * 0.16, width: hl, height: hl * 1.3, borderRadius: hl, backgroundColor: 'rgba(255,255,255,0.55)' }} />
-            </Animated.View>
+            <Animated.View style={[{ position: 'absolute', left: cx + side * ex - ew / 2, top: ey - eh / 2, width: ew, height: eh, borderRadius: ew / 2, backgroundColor: tokens.onInk }, eyeStyle]} />
             <Animated.View style={[{ position: 'absolute', left: cx + side * ex - aw / 2, top: ey - aw / 2, width: aw, height: aw / 2 + at / 2, overflow: 'hidden' }, arcStyle]}>
-              <View style={{ width: aw, height: aw, borderRadius: aw / 2, borderWidth: at, borderColor: PIN.ink }} />
+              <View style={{ width: aw, height: aw, borderRadius: aw / 2, borderWidth: at, borderColor: tokens.onInk }} />
             </Animated.View>
           </React.Fragment>
         ))}
