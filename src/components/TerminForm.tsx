@@ -167,7 +167,7 @@ export function FormWho({ who, people, onWho, onPerson }: { who: Who; people: st
   return (
     <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'flex-end', gap: 8 }}>
       {(['J', 'T'] as const).map((p) => circle(p, has(p), p, () => flip(p), <Avatar p={p} size={32} />))}
-      {family.map((f) => circle(f.id, people.includes(f.id), f.name, () => { haptics.select(); onPerson(f.id); }, <PersonDot name={f.name} color={f.color} size={32} />))}
+      {family.map((f) => circle(f.id, people.includes(f.id), f.name, () => { haptics.select(); onPerson(f.id); }, <PersonDot name={f.name} color={f.color} size={32} id={f.id} />))}
     </View>
   );
 }

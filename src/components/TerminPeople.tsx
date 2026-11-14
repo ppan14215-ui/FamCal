@@ -26,7 +26,7 @@ export default function TerminPeople({ ids, onToggle }: { ids: string[]; onToggl
           return (
             <PressScale key={p.id} accessibilityRole="checkbox" accessibilityState={{ checked: on }} onPress={() => { haptics.select(); onToggle(p.id); }}
               style={{ flexDirection: 'row', alignItems: 'center', gap: 6, height: 34, paddingLeft: 5, paddingRight: 12, borderRadius: 999, backgroundColor: on ? tokens.doneSoft : tokens.chipBg, borderWidth: 1.5, borderColor: on ? tokens.done : 'transparent' }}>
-              <PersonDot name={p.name} color={p.color} size={24} />
+              <PersonDot name={p.name} color={p.color} size={24} id={p.id} />
               <Txt size={14} weight={on ? 600 : 500} color={on ? tokens.done : tokens.ink}>{p.name}</Txt>
             </PressScale>
           );

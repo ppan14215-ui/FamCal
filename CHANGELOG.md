@@ -57,6 +57,9 @@ Alle sichtbaren Änderungen an FamCal. Neueste oben. Agenten und Menschen: Ände
 - Personen Kreise im Kopf überlappen wie bei Wabi und tragen einen Ring in der Farbe der Person.
 - Im Chat spricht der Assistent jetzt in einer eigenen ruhigen grauen Blase links neben Memo, wie man es von WhatsApp kennt. Deine Sätze bleiben farbig rechts.
 - Blasen und Karten beginnen an derselben Linie, zwischen zwei Wortwechseln ist mehr Luft, und in den Karten hat alles denselben Rand.
+- In den Chat Karten wird die Uhrzeit nicht mehr abgeschnitten, wenn ein Ort daneben steht: Datum und Zeit bleiben ganz, die graue Zeile darf dafür eine zweite Zeile haben.
+- Fotos in den Personen Kreisen: In Familie auf einen Kreis tippen, Foto aus der Galerie wählen und quadratisch zuschneiden. Das Foto füllt den Kreis, der Ring bleibt in der Farbe der Person. Wer schon ein Foto hat, bekommt beim Antippen „Neues Foto“ und „Foto entfernen“. Ohne Foto bleibt der Buchstabe.
+- Die Fotos liegen in einem privaten Speicher nur für die eigene Familie. Es gibt keinen öffentlichen Link, jedes Handy holt sie mit der eigenen Anmeldung. Beim Abmelden verschwinden sie vom Handy, beim Löschen des Kontos auch aus dem Speicher.
 
 ### App funktioniert zuverlässig (09.11. Audit)
 - Nach längerer Pause im Hintergrund klappen Assistent und Spracheingabe gleich beim ersten Satz, statt "Ich komme gerade nicht an den Assistenten".

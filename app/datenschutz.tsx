@@ -16,7 +16,7 @@ import { usePrivat, setOhneKi, stimmeZu } from '../src/lib/privat';
 import { KI_TEXT } from '../src/components/KiWahl';
 import { supabase } from '../src/lib/cloud';
 import { getAuth, signOut } from '../src/lib/auth';
-import { forgetLocal } from '../src/lib/sync';
+import { forgetLocal, myRole } from '../src/lib/sync';
 import { track } from '../src/lib/analytics';
 import { haptics } from '../src/lib/haptics';
 
@@ -55,9 +55,16 @@ export default function Datenschutz() {
   const loeschen = async () => {
     if (del < 1) { setDel(1); haptics.select(); return; }
     setBusy(true);
+    // The photos of the people circles lie in the family's private store, not in the database: they go first.
+    if (supabase && getAuth().session) await import('../src/lib/photoSync').then((m) => m.removePhotosBeforeDelete(myRole())).catch(() => {});
     const { error } = supabase && getAuth().session ? await supabase.rpc('delete_my_account') : { error: null };
     setBusy(false);
-    if (error) { toast(tx('Das hat nicht geklappt. Bitte später nochmal.', "That didn't work. Please try again later.")); return; }
+    if (error) {
+      // The account is still there: the photos this phone holds go back up.
+      void import('../src/lib/photoSync').then((m) => m.resendPhotos()).catch(() => {});
+      toast(tx('Das hat nicht geklappt. Bitte später nochmal.', "That didn't work. Please try again later."));
+      return;
+    }
     track('account_deleted');
     await forgetLocal();
     await signOut().catch(() => {});

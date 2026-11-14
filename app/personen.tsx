@@ -9,14 +9,14 @@ import React, { useState } from 'react';
 import { View } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import * as Clipboard from 'expo-clipboard';
-import { Screen, H1, H2, Group, Seg, Btn } from '../src/components/ui/kit';
+import { Screen, H1, H2, Group, Seg, Btn, Meta } from '../src/components/ui/kit';
 import { Field } from '../src/components/Field';
 import DateField from '../src/components/DateField';
 import Txt from '../src/components/ui/Txt';
 import PressScale from '../src/components/ui/PressScale';
 import SwipeRow from '../src/components/SwipeRow';
 import { HeadBtn } from '../src/components/ui/HeaderRight';
-import { FormRow, FormValue } from '../src/components/TerminForm';
+import { FormRow, FormValue, FormChip } from '../src/components/TerminForm';
 import { Avatar, PersonDot } from '../src/components/ui/Person';
 import { tokens, personPalette, persons, shade, allColors, glass } from '../src/theme';
 import { useStore, actions, toast, get } from '../src/state/store';
@@ -26,6 +26,7 @@ import { getFamily } from '../src/lib/sync';
 import { goBack } from '../src/lib/nav';
 import { haptics } from '../src/lib/haptics';
 import { tx } from '../src/i18n/lang';
+import { usePhotos, setPhoto, pickPhoto } from '../src/lib/photos';
 
 const KINDS: { key: Person['kind']; label: string }[] = [
   { key: 'kind', label: tx('Kind', 'Child') },
@@ -45,10 +46,10 @@ function note(p: Person) {
 }
 
 /** One person as one quiet line (40 of 284 in the draft). */
-function Line({ circle, name, word, dot, last }: { circle: React.ReactNode; name: string; word?: string; dot: string; last: boolean }) {
+function Line({ circle, name, word, dot, last, onCircle }: { circle: React.ReactNode; name: string; word?: string; dot: string; last: boolean; /** A tap on the circle: the person's photo. */ onCircle: () => void }) {
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 56, backgroundColor: tokens.bg, borderBottomWidth: last ? 0 : 1, borderBottomColor: tokens.hair }}>
-      {circle}
+      <PressScale scale={0.92} hitSlop={10} accessibilityRole="button" accessibilityLabel={tx(`Foto von ${name}`, `Photo of ${name}`)} onPress={onCircle}>{circle}</PressScale>
       <Txt size={17} line={22} numberOfLines={1} style={{ flex: 1, minWidth: 0 }}>
         {name}
         {word ? <Txt size={14.5} line={22} color={tokens.sub}>{`  ${word}`}</Txt> : null}
@@ -84,6 +85,23 @@ export default function Personen() {
   const { neu } = useLocalSearchParams<{ neu?: string }>();
   const [adding, setAdding] = useState(neu === '1');
   const code = getFamily()?.invite_code;
+  // A tap on a circle chooses that person's photo (Julian 14.11.). With a photo there, the tap offers a new one or none.
+  const photos = usePhotos();
+  const [photoOf, setPhotoOf] = useState<string | null>(null);
+  const choose = async (key: string) => {
+    const uri = await pickPhoto();
+    if (!uri) return;
+    haptics.commit();
+    setPhoto(key, uri);
+    setPhotoOf(null);
+  };
+  const circle = (key: string) => () => { haptics.select(); if (photos[key]) setPhotoOf((k) => (k === key ? null : key)); else void choose(key); };
+  const photoRow = (key: string) => photoOf === key ? (
+    <View style={{ flexDirection: 'row', gap: 8, paddingLeft: 46, paddingBottom: 12, backgroundColor: tokens.bg, borderBottomWidth: 1, borderBottomColor: tokens.hair }}>
+      <FormChip label={tx('Neues Foto', 'New photo')} onPress={() => void choose(key)} />
+      <FormChip label={tx('Foto entfernen', 'Remove photo')} onPress={() => { haptics.select(); setPhoto(key, null); setPhotoOf(null); }} />
+    </View>
+  ) : null;
 
   const add = () => {
     const n = name.trim();
@@ -115,16 +133,23 @@ export default function Personen() {
       <H1 sub={count === 1 ? tx('1 Person', '1 person') : tx(`${count} Personen`, `${count} people`)}>{tx('Familie', 'Family')}</H1>
       <View style={{ marginTop: -6 }}>
         {parents.map((r, i) => (
-          <Line key={r} circle={<Avatar p={r} size={34} />} name={persons[r].name} dot={persons[r].ink} last={i === count - 1} />
+          <React.Fragment key={r}>
+            <Line circle={<Avatar p={r} size={34} />} name={persons[r].name} dot={persons[r].ink} last={i === count - 1 || photoOf === r} onCircle={circle(r)} />
+            {photoRow(r)}
+          </React.Fragment>
         ))}
         {people.map((p, i) => {
           const c = allColors.find((x) => x.name === p.color);
           return (
-            <SwipeRow key={p.id} bg={tokens.bg} onDelete={() => remove(p)}>
-              <Line circle={<PersonDot name={p.name} color={p.color} size={34} />} name={p.name} word={note(p)} dot={c ? shade(c).fg : tokens.circleLine} last={parents.length + i === count - 1} />
-            </SwipeRow>
+            <React.Fragment key={p.id}>
+              <SwipeRow bg={tokens.bg} onDelete={() => remove(p)}>
+                <Line circle={<PersonDot name={p.name} color={p.color} size={34} id={p.id} />} name={p.name} word={note(p)} dot={c ? shade(c).fg : tokens.circleLine} last={parents.length + i === count - 1 || photoOf === p.id} onCircle={circle(p.id)} />
+              </SwipeRow>
+              {photoRow(p.id)}
+            </React.Fragment>
           );
         })}
+        <View style={{ paddingTop: 12 }}><Meta>{tx('Tippe auf einen Kreis, um ein Foto zu wählen.', 'Tap a circle to choose a photo.')}</Meta></View>
       </View>
       {adding ? (
         <>
