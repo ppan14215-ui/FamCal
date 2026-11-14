@@ -77,6 +77,8 @@ Aus Devouring Details (Interaktion; als Regel festgelegt, im statischen Canvas n
 
 **Personen Kreise.** Überlappend wie Wabis Stapel von Gesichtern (26 %), jeder Kreis mit einem Ring in der Farbe der Person und einem zweiten Ring in der Farbe des Grundes, der ihn aus dem Kreis darunter ausschneidet. Innen steht der Anfangsbuchstabe auf dem hellen Ton der Person, später das Foto.
 
+**Chat.** Jeder spricht in einer Blase (Julian 14.11.: wie in WhatsApp, ohne Grund ist es zu unruhig): meine farbig rechts, die des Partners in seinem Ton links, die des Assistenten flach grau (`chipBg`) links neben Memo. Alle haben dieselbe Form (`BUBBLE`: Radius 20, die Ecke zum Sprecher 6). Blasen und Karten des Assistenten beginnen an derselben Linie neben Memo. Zwischen zwei Wortwechseln stehen 20, innerhalb 8. In der Karte gilt ein Rand (`EDGE` 14) an den Seiten und 12 zwischen den Teilen.
+
 **Ring und Karten** sind der Kern (Julian, 25.10. 08:00): der Jahresring ist der visuelle Anker, die Karten verteilen Aufgaben mit Besitzern.
 
 **Clay-Icons.** Siehe `icons-v1/`. Bewegung nur bei Zustandswechseln, die selten sind (übernehmen, erledigen, Brief angekommen). Keine Endlosschleifen in Listen.

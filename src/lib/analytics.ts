@@ -60,7 +60,6 @@ export type Events = {
 
   /** Julian 05.11.: only the choice, never what was said. */
   ai_choice: { choice: 'mit_ki' | 'ohne_ki'; source: 'zustimmung' | 'onboarding' | 'settings' };
-  voice_choice: { choice: 'cloud' | 'handy' };
   account_deleted: Record<string, never>;
   signin_started: { provider: 'apple' | 'google' | 'test' };
   signin_completed: { provider: 'apple' | 'google' | 'test' };

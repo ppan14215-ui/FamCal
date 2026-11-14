@@ -75,6 +75,9 @@ function WhoDots({ who }: { who?: CalEvent['who'] }) {
  * What was made, as one object like Wabi's cards (Julian 14.11.: "cards and shadow like wabi"): its picture on the
  * left, its name in bold, one grey line below, and a small arrow when a tap opens it.
  */
+/** The inner edge of a card in the chat. */
+const EDGE = 14;
+
 function Made({ icon, title, sub, onPress, right, celebrate }: { icon: ClayName; title: string; sub?: string; onPress?: () => void; right?: React.ReactNode; celebrate?: boolean }) {
   const row = (
     <>
@@ -87,7 +90,8 @@ function Made({ icon, title, sub, onPress, right, celebrate }: { icon: ClayName;
       {onPress ? <LineIcon name="arrow" size={18} color={tokens.mute} /> : null}
     </>
   );
-  const box = { flexDirection: 'row' as const, alignItems: 'center' as const, gap: 12, padding: 10, paddingRight: 14 };
+  // One inner edge for everything in a card (Julian 14.11.: "padding in chat need to be improved"): 14 at the sides, 12 between the parts.
+  const box = { flexDirection: 'row' as const, alignItems: 'center' as const, gap: 12, paddingHorizontal: EDGE, paddingTop: EDGE, paddingBottom: 12 };
   return onPress
     ? <PressScale scale={0.99} accessibilityRole="button" accessibilityLabel={sub ? `${title}, ${sub}` : title} onPress={onPress} style={box}>{row}</PressScale>
     : <View style={box}>{row}</View>;
@@ -146,7 +150,7 @@ function TimeAsk({ e, q }: { e: EventSnap; q: string }) {
     </PressScale>
   );
   return (
-    <View style={{ gap: 8, paddingHorizontal: 12, paddingBottom: 10 }}>
+    <View style={{ gap: 8, paddingHorizontal: EDGE, paddingBottom: 12 }}>
       <Txt size={14} line={19} weight={600}>{step === 'start' ? q : tx(`Ab ${hm(e.start)}. Bis wann?`, `From ${hm(e.start)}. Until when?`)}</Txt>
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
         {step === 'start' ? <>
@@ -168,7 +172,7 @@ function WhoGoes({ e, me }: { e: EventSnap & { who?: string }; me: 'J' | 'T' }) 
   const persons = usePersons();
   const opts: [string, 'J' | 'T' | 'both'][] = [[tx('Ich', 'Me'), me], [persons[other].name || tx('Partner', 'Partner'), other], [tx('Beide', 'Both'), 'both']];
   return (
-    <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 6, paddingHorizontal: 12, paddingBottom: 10 }}>
+    <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 6, paddingHorizontal: EDGE, paddingBottom: 12 }}>
       <Txt size={13.5} color={tokens.sub} style={{ marginRight: 2 }}>{tx('Wer geht?', 'Who goes?')}</Txt>
       {opts.map(([label, w]) => {
         const on = e.who === w;
@@ -192,7 +196,7 @@ function EditTermine({ ids, me }: { ids: string[]; me: 'J' | 'T' }) {
   const [draft, setDraft] = useState<Record<string, When>>({});
   if (!live.length) return null;
   return (
-    <View style={{ gap: 10, paddingHorizontal: 12, paddingBottom: 12 }}>
+    <View style={{ gap: 10, paddingHorizontal: EDGE, paddingBottom: 12 }}>
       {live.map((e) => {
         const now: When = { date: e.date, endDate: e.endDate, start: e.allDay ? undefined : e.start, end: e.allDay ? undefined : e.end };
         const done = () => {
@@ -203,7 +207,7 @@ function EditTermine({ ids, me }: { ids: string[]; me: 'J' | 'T' }) {
         return (
           <View key={e.id} style={{ gap: 8 }}>
             {live.length > 1 ? <Txt size={13} weight={600} color={tokens.sub}>{e.title}</Txt> : null}
-            {e.work ? null : <View style={{ marginHorizontal: -12 }}><WhoGoes e={e} me={me} /></View>}
+            {e.work ? null : <View style={{ marginHorizontal: -EDGE }}><WhoGoes e={e} me={me} /></View>}
             <WhenField card value={draft[e.id] ?? now} onChange={(w) => setDraft((d) => ({ ...d, [e.id]: w }))} onDone={done} />
           </View>
         );
@@ -404,14 +408,25 @@ export const cardFrame = [{ alignSelf: 'stretch' as const, borderRadius: 20, ove
  * Memo is the assistant's face (Julian 01.11.): thinks with a "?" while working, happy eyes when it has answered,
  * just entered something. Older cards in the log stay still, so a long chat never twitches.
  */
+/** One bubble in the log, mine or the assistant's: the same shape, only the side and the colour differ. */
+const BUBBLE = { maxWidth: '84%' as const, flexShrink: 1, borderRadius: 20, paddingVertical: 10, paddingHorizontal: 15 };
+/** Memo beside his bubble, and how far his cards stand in so they line up with it. */
+const MEMO = 26;
+const MEMO_GAP = 8;
+const memoInset = (minimal: boolean) => (minimal ? 0 : MEMO + MEMO_GAP);
+
 export function Reply({ text, live, fresh, bare }: { text?: string; live?: boolean; fresh?: boolean; /** In the chat log: Memo and his words as one plain line on the ground, as in the klar draft. */ bare?: boolean }) {
   // The blob (Julian 07.11.): squashes while it thinks, ^^ when it has answered; older cards hold still.
   const mood = live ? (text ? 'happy' : 'think') : 'idle';
   const minimal = useMascot() === 'minimal';
+  // Julian 14.11.: "the chat message from the Assistent need to have their own chat background just like any other
+  // chat". A quiet grey bubble, flat like mine, its tail towards Memo, who stands at its foot as my own tail sits at the foot of mine.
   if (bare) return (
-    <View style={{ alignSelf: 'stretch', flexDirection: 'row', alignItems: 'flex-start', gap: 8, paddingRight: 8 }}>
-      {minimal ? null : <View style={{ marginTop: -1 }}><Pin mood={mood} size={26} shadow={false} still={!live} /></View>}
-      {text ? <Animated.View entering={swapIn} style={{ flex: 1, minWidth: 0 }}><Txt size={17} line={24}>{text}</Txt></Animated.View> : <View style={{ paddingVertical: 8 }}><Dots /></View>}
+    <View style={{ alignSelf: 'stretch', flexDirection: 'row', alignItems: 'flex-end', gap: MEMO_GAP }}>
+      {minimal ? null : <View style={{ marginBottom: 9 }}><Pin mood={mood} size={MEMO} shadow={false} still={!live} /></View>}
+      <View style={[BUBBLE, { borderBottomLeftRadius: 6, backgroundColor: tokens.chipBg }]}>
+        {text ? <Animated.View entering={swapIn}><Txt size={17} line={24}>{text}</Txt></Animated.View> : <View style={{ paddingVertical: 8, paddingHorizontal: 2 }}><Dots /></View>}
+      </View>
     </View>
   );
   return (
@@ -487,20 +502,24 @@ function EntryBody({ f, mine: own, me, answer, side }: Omit<EntryProps, 'showcas
   const canChange = f.events?.length === 1 && !f.undone && !gone;
   const hasWhy = !!f.why && !f.events && !f.items && !f.tasks;
   const undo = !still && !f.undone && canUndo(f.id);
+  const inset = memoInset(useMascot() === 'minimal');
   return (
-    <View style={{ flexDirection: 'row', gap: 8, alignItems: 'flex-start', justifyContent: mine ? 'flex-end' : 'flex-start' }}>
-      {mine ? null : <View style={{ marginTop: 20 }}><Avatar p={f.by} size={28} /></View>}
-      <View style={{ flex: 1, minWidth: 0, gap: 8, alignItems: mine ? 'flex-end' : 'flex-start' }}>
+    <View>
+      {/* One column: my words on the right; the partner's, Memo's and the cards all start at the same line on the left. */}
+      <View style={{ gap: 8, alignItems: mine ? 'flex-end' : 'flex-start' }}>
         {/* Mine needs no name; the others say who and when. */}
-        {mine && f.kind !== 'msg' ? null : <Txt size={12.5} color={tokens.sub}>{[mine ? tx('Du', 'You') : p.name || f.by, f.kind === 'msg' ? tx('Nachricht', 'Message') : null, at(f.at)].filter(Boolean).join(' · ')}</Txt>}
-        <View style={[{ maxWidth: '84%', borderRadius: 20, paddingVertical: 9, paddingHorizontal: 14 }, mine ? { borderBottomRightRadius: 6 } : { borderBottomLeftRadius: 6 }, bubble]}>
-          {f.ask ? <Txt size={12} weight={600} tracking={0.6} color={tokens.done}>{tx(`FRAGE AN ${persons[f.ask.to].name.toUpperCase()}`, `QUESTION FOR ${persons[f.ask.to].name.toUpperCase()}`)}</Txt> : null}
-          <Txt size={17} line={24}>{f.ask ? f.ask.q : shortSaid(f.said)}</Txt>
+        {mine && f.kind !== 'msg' ? null : <Txt size={12.5} color={tokens.sub} style={mine ? undefined : { marginLeft: MEMO + MEMO_GAP, marginBottom: -3 }}>{[mine ? tx('Du', 'You') : p.name || f.by, f.kind === 'msg' ? tx('Nachricht', 'Message') : null, at(f.at)].filter(Boolean).join(' · ')}</Txt>}
+        <View style={{ alignSelf: 'stretch', flexDirection: 'row', alignItems: 'flex-end', gap: MEMO_GAP, justifyContent: mine ? 'flex-end' : 'flex-start' }}>
+          {mine ? null : <View style={{ marginBottom: 9 }}><Avatar p={f.by} size={MEMO} /></View>}
+          <View style={[BUBBLE, mine ? { borderBottomRightRadius: 6 } : { borderBottomLeftRadius: 6 }, bubble]}>
+            {f.ask ? <Txt size={12} weight={600} tracking={0.6} color={tokens.done}>{tx(`FRAGE AN ${persons[f.ask.to].name.toUpperCase()}`, `QUESTION FOR ${persons[f.ask.to].name.toUpperCase()}`)}</Txt> : null}
+            <Txt size={17} line={24}>{f.ask ? f.ask.q : shortSaid(f.said)}</Txt>
+          </View>
         </View>
         {f.ask ? <Ask f={f} me={me} answer={answer} /> : null}
         {says ? <Reply bare text={says} fresh={fresh} /> : null}
         {made ? (
-          <Animated.View layout={rowLayout} style={[cardFrame, { opacity: f.undone ? 0.55 : 1 }]}>
+          <Animated.View layout={rowLayout} style={[cardFrame, { marginLeft: inset, opacity: f.undone ? 0.55 : 1 }]}>
             {f.undone ? null : f.events ? <Termine ids={f.events} snap={f.snap?.events} changed={f.changed} fresh={fresh} ask={asks && !open && recent ? me : undefined} timeQ={asks && !open && recent ? f.timeQ : undefined} placeQ={asks && !open && recent} /> : null}
             {f.undone ? null : f.events ? <VacationLeft ids={f.events} /> : null}
             {f.undone || HIDDEN.suggestions ? null : f.events ? <PackOffer ids={f.events} /> : null}
@@ -510,7 +529,7 @@ function EntryBody({ f, mine: own, me, answer, side }: Omit<EntryProps, 'showcas
             {f.undone ? <Txt size={14.5} weight={600} color={tokens.sub} style={{ paddingVertical: 10, paddingHorizontal: 14 }}>{tx('Rückgängig gemacht', 'Undone')}</Txt> : null}
             {/* The two steps you may want next, as real buttons: change it, or take it back. */}
             {!f.undone && !still && (canChange || undo) ? (
-              <View style={{ flexDirection: 'row', gap: 8, paddingHorizontal: 12, paddingTop: 4, paddingBottom: 12 }}>
+              <View style={{ flexDirection: 'row', gap: 8, paddingHorizontal: EDGE, paddingTop: 2, paddingBottom: EDGE }}>
                 {canChange ? <CardBtn primary icon="edit" label={tx('Ändern', 'Change')} onPress={() => { haptics.select(); router.push({ pathname: '/termin-aendern', params: { id: f.events![0] } }); }} /> : null}
                 {undo ? <CardBtn label={tx('Rückgängig', 'Undo')} onPress={() => undoEntry(f.id)} /> : null}
               </View>
@@ -524,7 +543,7 @@ function EntryBody({ f, mine: own, me, answer, side }: Omit<EntryProps, 'showcas
               <Txt size={13.5} color={tokens.sub}>{tx('Details', 'Details')}</Txt>
               <View style={{ transform: [{ rotate: open ? '-90deg' : '90deg' }] }}><LineIcon name="chev" size={14} color={tokens.sub} /></View>
             </PressScale>
-            {open ? <View style={cardFrame}><Why why={f.why!} /></View> : null}
+            {open ? <View style={[cardFrame, { marginLeft: inset }]}><Why why={f.why!} /></View> : null}
           </View>
         ) : null}
       </View>
@@ -537,12 +556,13 @@ export function Thinking({ by }: { by: 'J' | 'T' }) {
   const v = useVeil();
   const persons = usePersons();
   const mineSoft = useBubble().soft;
+  const inset = memoInset(useMascot() === 'minimal');
   if (!v.inline || v.phase === 'off') return null;
   return (
     <View style={{ gap: 8, alignItems: 'flex-end' }}>
       {v.said ? (
         <>
-          <View style={{ maxWidth: '84%', borderRadius: 20, borderBottomRightRadius: 6, paddingVertical: 9, paddingHorizontal: 14, backgroundColor: persons === basePersons ? mineSoft : persons[by].tint }}>
+          <View style={[BUBBLE, { borderBottomRightRadius: 6, backgroundColor: persons === basePersons ? mineSoft : persons[by].tint }]}>
             <Txt size={17} line={24}>{shortSaid(v.said)}</Txt>
           </View>
         </>
@@ -550,7 +570,7 @@ export function Thinking({ by }: { by: 'J' | 'T' }) {
       <Reply bare text={v.reply} live />
       {/* Julian 31.10.: one thinking sign only. The typing dots in Reply say it; steps show only once there is a plan. */}
       {v.head || v.lines.length ? (
-        <Animated.View layout={rowLayout} style={cardFrame}>
+        <Animated.View layout={rowLayout} style={[cardFrame, { marginLeft: inset }]}>
           <View style={{ paddingHorizontal: 14, paddingTop: 12, paddingBottom: 14, gap: 10 }}>
             {v.head ? <Txt size={12} weight={600} tracking={0.6} color={tokens.done}>{v.head.toUpperCase()}</Txt> : null}
             {v.lines.map((l, i) => <Step key={i} label={l} state={i < v.shown ? 'done' : i === v.shown ? 'now' : 'next'} />)}

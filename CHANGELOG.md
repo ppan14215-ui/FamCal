@@ -4,6 +4,11 @@ Alle sichtbaren Änderungen an FamCal. Neueste oben. Agenten und Menschen: Ände
 
 ## Unreleased
 
+### Sprechen und Tippen (14.11.)
+- „Aa“ beim Sprechen: Die Tastatur kommt sofort, nicht erst nach dem Aufschreiben. Was schon gesagt war, landet danach im Feld. Kein „Aufnahme kam nicht an“ mehr, wenn man nur tippen wollte.
+- Der Schalter „Sprache nur auf dem Handy“ ist weg (Julian 14.11.). Sprache geht immer über die Cloud und wird dadurch viel besser verstanden. Wer das nicht will, nutzt „Ohne KI“.
+- Das Fehlerprotokoll je Aufnahme nennt jetzt den Grund, warum die Cloud Ohren aus waren, und ob „Aa“ getippt wurde. Nie den Inhalt.
+
 ### Klarer Look (14.11.)
 - Die App ist jetzt ruhig und neutral: Weiß, fast Schwarz und Grau. Farbe kommt nur noch von den Personen. Schrift ist Inter.
 - Inhalte sind flach und dicht mit feinen Linien statt weißer Blöcke. Glas gibt es nur auf dem, was man drückt: Knöpfe, Chips, Leiste.
@@ -50,6 +55,8 @@ Alle sichtbaren Änderungen an FamCal. Neueste oben. Agenten und Menschen: Ände
 - Chat Karten wie bei Wabi (Julian 14.11.): weiße Karte mit feinem Rand und weichem Schatten, links das Bild, der Name fett, darunter eine graue Zeile, rechts ein kleiner Pfeil zum Öffnen. Was auf eine Liste kam, steht als eine solche Karte da, abgehakt wird in der Liste. Die Beispiele im leeren Chat liegen auf denselben Karten.
 - Schatten sind jetzt feste Bausteine im Designsystem (nach Wabi gemessen): ein Kartenschatten für alle Karten, ein enger Schatten mit Glanz für runde Knöpfe, helle Pillen und Chips.
 - Personen Kreise im Kopf überlappen wie bei Wabi und tragen einen Ring in der Farbe der Person.
+- Im Chat spricht der Assistent jetzt in einer eigenen ruhigen grauen Blase links neben Memo, wie man es von WhatsApp kennt. Deine Sätze bleiben farbig rechts.
+- Blasen und Karten beginnen an derselben Linie, zwischen zwei Wortwechseln ist mehr Luft, und in den Karten hat alles denselben Rand.
 
 ### App funktioniert zuverlässig (09.11. Audit)
 - Nach längerer Pause im Hintergrund klappen Assistent und Spracheingabe gleich beim ersten Satz, statt "Ich komme gerade nicht an den Assistenten".
