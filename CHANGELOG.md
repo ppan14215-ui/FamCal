@@ -42,6 +42,7 @@ Alle sichtbaren Änderungen an FamCal. Neueste oben. Agenten und Menschen: Ände
 - Monat wie im Entwurf: Wochentage als ein Buchstabe, der gewählte Tag liegt auf einem grauen Feld, Feiertage stehen fett. Darunter die Termine des Tages als höhere Zeilen mit feinen Linien, die Überschrift nennt Wochentag und Tag. Arbeitszeiten stehen nicht mehr im Monat, sie bleiben in Tage und Woche.
 - Im Kalender Kopf stehen nur noch Suchen und Plus, die Pfeile sind weg. Geblättert wird durch Wischen zur Seite.
 - Listen zum Abhaken wie im Entwurf: oben steht „4 von 9 gepackt“ mit Prozent über der Linie, Abgehaktes sammelt sich unten unter Erledigt, die Abschnitte zeigen nur noch, was offen ist.
+- Ein Termin öffnet jetzt als Blatt über dem Kalender wie im Entwurf: Symbol, Titel und Zeit, darunter ruhige Zeilen (Für, Wer geht, Wo, Mitbringen, Erinnern), woher er kommt, und drei Knöpfe: Ändern, Verschieben und Mehr (dort steht Löschen). Bearbeitet wird auf der Seite hinter „Ändern“; „Verschieben“ öffnet dort gleich Tag und Zeit. Das Sprechfeld sitzt auf der Seite hinter „Ändern“.
 
 ### App funktioniert zuverlässig (09.11. Audit)
 - Nach längerer Pause im Hintergrund klappen Assistent und Spracheingabe gleich beim ersten Satz, statt "Ich komme gerade nicht an den Assistenten".

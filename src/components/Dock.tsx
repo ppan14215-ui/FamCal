@@ -11,7 +11,7 @@ import SessionPill from './SessionPill';
 import { useBuddyTalk, useBuddyKeys, getBuddy, setBuddy } from '../lib/buddy';
 import React, { useEffect, useRef, useState } from 'react';
 import { View, ScrollView, Platform, BackHandler, useWindowDimensions, TextInput, Pressable, Keyboard } from 'react-native';
-import { router, usePathname } from 'expo-router';
+import { router, usePathname, useGlobalSearchParams } from 'expo-router';
 import Animated, { FadeIn, FadeInDown, FadeOut, useSharedValue, useAnimatedStyle, withSpring, withTiming, withDelay, Easing } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Defs, LinearGradient, Stop, Rect } from 'react-native-svg';
@@ -96,12 +96,13 @@ const shadow = { boxShadow: '0 1px 2px rgba(22,35,42,0.06), 0 4px 14px rgba(22,3
 function useWhere(): { ctx: Ctx; tab: boolean; lift: number; chat?: boolean } | null {
   const path = usePathname();
   const active = useStore((s) => s.activeList);
+  const { id } = useGlobalSearchParams<{ id?: string }>();
   // The family chat (Julian 29.10.): the field is always there, a sentence becomes a card in the log.
   if (path === '/chat') return { ctx: { kind: 'kalender' }, tab: false, lift: 0, chat: true };
   if (path === '/kalender' || path === '/eingang') return { ctx: { kind: 'kalender' }, tab: true, lift: 0 };
   if (path === '/listen') return { ctx: { kind: 'liste', id: active }, tab: true, lift: 0 };
-  const t = path.match(/^\/termin\/(.+)$/);
-  if (t) return { ctx: { kind: 'termin', id: decodeURIComponent(t[1]) }, tab: false, lift: 0 };
+  // The Termin's sheet is as quiet as in the klar draft; the field sits on the page behind "Ändern", where spoken changes land.
+  if (path === '/termin-aendern' && typeof id === 'string' && id) return { ctx: { kind: 'termin', id }, tab: false, lift: 0 };
   // Above the "Liste anlegen" button.
   if (path === '/liste-neu') return { ctx: { kind: 'liste-neu' }, tab: false, lift: 74 };
   return null;

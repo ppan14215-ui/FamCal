@@ -519,7 +519,7 @@ function EntryBody({ f, mine: own, me, answer, side }: Omit<EntryProps, 'showcas
             {/* The two steps you may want next, as real buttons: change it, or take it back. */}
             {!f.undone && !still && (canChange || undo) ? (
               <View style={{ flexDirection: 'row', gap: 8, paddingHorizontal: 12, paddingTop: 4, paddingBottom: 12 }}>
-                {canChange ? <CardBtn primary icon="edit" label={tx('Ändern', 'Change')} onPress={() => { haptics.select(); router.push(`/termin/${f.events![0]}`); }} /> : null}
+                {canChange ? <CardBtn primary icon="edit" label={tx('Ändern', 'Change')} onPress={() => { haptics.select(); router.push({ pathname: '/termin-aendern', params: { id: f.events![0] } }); }} /> : null}
                 {undo ? <CardBtn label={tx('Rückgängig', 'Undo')} onPress={() => undoEntry(f.id)} /> : null}
               </View>
             ) : !f.undone ? <View style={{ height: 4 }} /> : null}
