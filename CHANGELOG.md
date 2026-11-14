@@ -11,6 +11,9 @@ Alle sichtbaren Änderungen an FamCal. Neueste oben. Agenten und Menschen: Ände
 - Memo verwandelt sich bei echten Ergebnissen kurz in ein passendes Zeichen und zurück: Termin, Geburtstag, Urlaub, Einkauf, verschoben, gelöscht, Liste fertig, neues Familienmitglied. Häufiges wie Abhaken bekommt nur ein kurzes Lächeln.
 - Wenn etwas nicht klappt, schaut Memo kurz betrübt.
 - Neue Seite "Memo" (Testlink) zeigt alle Zustände, kleinen Antworten und 20 Verwandlungen.
+- Unten sitzt jetzt eine kleine Glas Pille mit den Tabs und Memo. Tippst du Memo an, wächst die Eingabe aus ihm heraus, legt sich über die Pille und hört sofort zu. „Aa“ holt die Tastatur, der Text bleibt. Lange auf Memo drücken geht direkt zur Tastatur.
+- Beim Sprechen stehen die Worte live in der Karte, sichere dunkel, unsichere grau. Gesendet wird weiter erst, wenn du auf Senden tippst.
+- Die alte Leiste bleibt unter „Zum Testen“ in den Einstellungen umschaltbar.
 
 ### App funktioniert zuverlässig (09.11. Audit)
 - Nach längerer Pause im Hintergrund klappen Assistent und Spracheingabe gleich beim ersten Satz, statt "Ich komme gerade nicht an den Assistenten".

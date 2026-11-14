@@ -86,20 +86,32 @@ export const vivid = (fg: string) => blend(fg, '#FFFFFF', dark ? 0.35 : 0.2);
  * shadow. The recipe is Wabi's inner light (Julian 13.11.). boxShadow draws on the new architecture and on the web.
  */
 const G_IN = 'inset 0 1px 4px rgba(255,255,255,0.67), inset 0 -4px 4px rgba(255,255,255,0.85), inset 0 0 14px rgba(229,229,229,0.55)';
-export const glass = {
-  /** Small controls: round buttons, chips, the chosen segment. */
-  sm: { backgroundColor: '#FFFFFF', boxShadow: `${G_IN}, 0 0 0 1px rgba(17,20,23,0.07), 0 2px 6px rgba(17,20,23,0.05)` } as any,
-  /** The floating nav pill. */
-  nav: { backgroundColor: '#FFFFFF', boxShadow: `${G_IN}, 0 0 0 1px rgba(17,20,23,0.05), 0 10px 30px rgba(17,20,23,0.10)` } as any,
-  /** The input card that grows out of Memo, and sheets. */
-  card: { backgroundColor: '#FFFFFF', boxShadow: `${G_IN}, 0 0 0 1px rgba(17,20,23,0.06), 0 14px 40px rgba(17,20,23,0.14)` } as any,
-  /** A flat card in the content: only a hairline. */
-  line: { backgroundColor: '#FFFFFF', boxShadow: '0 0 0 1px rgba(17,20,23,0.08)' } as any,
+// At night the same shapes: a lifted dark surface, a faint light on the top edge, a deeper shadow.
+const G_IN_N = 'inset 0 1px 0 rgba(255,255,255,0.10), inset 0 0 14px rgba(255,255,255,0.03)';
+const glassOf = (night: boolean) => {
+  const bg = night ? '#222C32' : '#FFFFFF';
+  const inn = night ? G_IN_N : G_IN;
+  const line = (a: number) => (night ? `0 0 0 1px rgba(255,255,255,${a})` : `0 0 0 1px rgba(17,20,23,${a})`);
+  const drop = (y: number, r: number, a: number) => `0 ${y}px ${r}px rgba(${night ? '0,0,0' : '17,20,23'},${night ? Math.min(0.6, a * 3.2) : a})`;
+  return {
+    /** Small controls: round buttons, chips, the chosen segment. */
+    sm: { backgroundColor: bg, boxShadow: `${inn}, ${line(0.07)}, ${drop(2, 6, 0.05)}` } as any,
+    /** The floating nav pill. */
+    nav: { backgroundColor: bg, boxShadow: `${inn}, ${line(0.05)}, ${drop(10, 30, 0.1)}` } as any,
+    /** The input card that grows out of Memo, and sheets. */
+    card: { backgroundColor: bg, boxShadow: `${inn}, ${line(0.06)}, ${drop(14, 40, 0.14)}` } as any,
+    /** A flat card in the content: only a hairline. */
+    line: { backgroundColor: night ? '#1A2328' : '#FFFFFF', boxShadow: line(0.08) } as any,
+  };
 };
+/** The live glass styles; like `tokens` they swap in place, so every style reads the current ones. */
+export const glass = glassOf(false);
 
 export function applyPalette(isDark: boolean) {
   dark = isDark;
   Object.assign(tokens, isDark ? DARK : LIGHT);
+  const g = glassOf(isDark);
+  (Object.keys(g) as (keyof typeof g)[]).forEach((k) => Object.assign(glass[k], g[k]));
 }
 
 export type PersonId = 'J' | 'T';

@@ -23,7 +23,7 @@ import Animated, { useSharedValue, withTiming, LinearTransition, FadeIn, FadeOut
 const MORPH = LinearTransition.duration(240).easing(Easing.bezier(0.23, 1, 0.32, 1));
 const SHOW = FadeIn.duration(180);
 const HIDE = FadeOut.duration(120);
-import { tokens, fonts } from '../theme';
+import { tokens, fonts, glass } from '../theme';
 import { haptics } from '../lib/haptics';
 import { setTyping } from '../lib/keyboard';
 import { LIVE } from '../lib/live';
@@ -102,6 +102,8 @@ type Props = {
   onBusy?: () => void;
   /** Julian 08.11.: speaking turns the bar into the Sprechkarte (SpeakCard in the Dock) instead of a wave in the field. */
   speakCard?: boolean;
+  /** Klar (Julian 13.11.): the glass card that grows out of Memo. Text on top; below it plus, mic, a hint and send. */
+  klar?: boolean;
 };
 
 // Listeners of the last recording, shared by every TalkBar: the phone has one recognizer, and a bar that was swapped
@@ -110,7 +112,7 @@ const lastSubs = { current: [] as { remove: () => void }[] };
 /** Counts recordings, so a timer or event of an older recording never touches the one running now (Julian 11.11.). */
 let recSeq = 0;
 
-export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, onClose, split, card, dark, onIdle, onBusy, speakCard, placeholder = tx('Sag oder schreib, was ansteht …', 'Say or type what\'s coming up …') }: Props) {
+export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, onClose, split, card, dark, onIdle, onBusy, speakCard, klar, placeholder = tx('Sag oder schreib, was ansteht …', 'Say or type what\'s coming up …') }: Props) {
   const [text, setText] = useState('');
   const pics = usePics();
   const [listening, setListening] = useState(false);
@@ -204,7 +206,15 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, o
   const sendAfter = useRef(false);
   /** The Sprechkarte holds the spoken sentence until Senden (or Ändern hands it to the field). */
   const held = useRef(false);
+  /** "Aa" in the Sprechkarte (klar): the words that land next go into the field and the keyboard comes up; nothing is sent. */
+  const keysNext = useRef(false);
   const land = (t: string) => {
+    if (keysNext.current) {
+      keysNext.current = false; sendAfter.current = false; held.current = false;
+      setText(t.trim()); spokenText.current = true;
+      setTimeout(() => field.current?.focus(), 60);
+      return;
+    }
     // A question in the card may take the answer itself (a time for "Um wie viel Uhr?").
     const a = speakCard ? getSpeak().ask : null;
     if (a?.onSpoken && t.trim() && a.onSpoken(t.trim())) { sendAfter.current = false; held.current = false; setText(''); return; }
@@ -213,6 +223,12 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, o
     setText(t.trim()); spokenText.current = true;
     if (speakCard) held.current = true;
   };
+  // "Aa" with nothing heard: the recording is over and no words landed, so the keyboard comes up on the empty field.
+  useEffect(() => {
+    if (listening || writing || !keysNext.current) return;
+    const t = setTimeout(() => { if (!keysNext.current) return; keysNext.current = false; field.current?.focus(); }, 80);
+    return () => clearTimeout(t);
+  }, [listening, writing]);
   const finishAndSend = () => { if (!listening) return send(); sendAfter.current = true; listen(); };
 
   // The Sprechkarte shows what happens: listening, writing it down, the sentence ready to send.
@@ -239,6 +255,7 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, o
     if (listening) { haptics.tap(); stopNative.current?.(); return; }
     typed.current = false;
     sendAfter.current = false;
+    keysNext.current = false;
     haptics.select();
     setListening(true);
     listenAt.current = Date.now();
@@ -459,6 +476,16 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, o
       setSpeak({ phase: 'idle', text: '', ask: a?.hold ? null : a });
     };
     speakHandlers.edit = () => { held.current = false; setSpeak({ phase: 'idle' }); setTimeout(() => field.current?.focus(), 300); };
+    speakHandlers.keys = () => {
+      held.current = false; sendAfter.current = false;
+      // Still recording: stop it like a tap on Memo; what was heard lands in the field (land above).
+      if (listeningRef.current) { keysNext.current = true; listen(); return; }
+      if (writing) { keysNext.current = true; return; }
+      // A question that held the card open steps aside; it stays on its card above the field.
+      const a = getSpeak().ask;
+      setSpeak({ phase: 'idle', ask: a?.hold ? null : a });
+      setTimeout(() => field.current?.focus(), 60);
+    };
   }
 
   const plus = (
@@ -563,6 +590,29 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, o
     </Animated.View>
   );
 
+  // Klar (Julian 13.11.): the same card Memo speaks in, now for typing. Text on top, the buttons in one row below.
+  const klarBtn = { width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center' } as const;
+  const klarInput = (
+    <View style={[{ borderRadius: 24, paddingTop: 6, paddingHorizontal: 12, paddingBottom: 10, gap: 2 }, glass.card]}>
+      {picRow}
+      <View style={{ alignSelf: 'stretch' }}>{fieldBox}</View>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+        <PressScale accessibilityLabel={listening ? tx('Fertig gesprochen', 'Done speaking') : tx('Sprechen', 'Speak')} onPress={listen} style={[klarBtn, { backgroundColor: listening ? tokens.ink : tokens.chipBg }]}>
+          {listening ? <LineIcon name="check" size={18} color={tokens.onInk} stroke={2.4} /> : <LineIcon name="mic" size={18} color={tokens.ink} />}
+        </PressScale>
+        {onPlus ? (
+          <PressScale accessibilityLabel={tx('Foto, Termin, Aufgabe', 'Photo, event, task')} onPress={() => onPlus()} style={[klarBtn, { backgroundColor: tokens.chipBg }]}>
+            <LineIcon name="plus" size={18} color={tokens.ink} stroke={2} />
+          </PressScale>
+        ) : null}
+        <Txt size={13} color={tokens.mute} numberOfLines={1} style={{ flex: 1, minWidth: 0, paddingLeft: 2 }}>{tx('Sprechen oder tippen', 'Speak or type')}</Txt>
+        <PressScale accessibilityLabel={tx('Senden', 'Send')} disabled={!live} onPress={finishAndSend} style={[klarBtn, { backgroundColor: live ? tokens.ink : tokens.chipBg }]}>
+          <LineIcon name="up" size={18} color={live ? tokens.onInk : tokens.mute} stroke={2.2} />
+        </PressScale>
+      </View>
+    </View>
+  );
+
   const input = (
     <View style={[{ flexDirection: 'row', alignItems: 'flex-end', gap: 4, padding: 6, paddingLeft: 6, borderRadius: boxH > MIN_H ? 26 : 30, backgroundColor: dark && !text && !listening ? 'transparent' : tokens.row, borderWidth: 1, borderColor: dark && !text && !listening ? 'transparent' : listening ? tokens.ink : tokens.hair }, dark && !text && !listening ? null : lift]}>
       {onClose ? (
@@ -618,8 +668,8 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, o
       {demo ? (
         <Txt size={12.5} line={17} color={tokens.sub} style={{ paddingHorizontal: 10 }}>{tx('Im Testlink ist das Mikro gesperrt, darum spreche ich einen Beispielsatz. In der App hört es euch zu.', 'The test link can\'t use the microphone, so I say a sample sentence. The app listens to you.')}</Txt>
       ) : null}
-      {!card ? picRow : null}
-      {card ? cardInput : input}
+      {!card && !klar ? picRow : null}
+      {klar ? klarInput : card ? cardInput : input}
     </View>
   );
 }

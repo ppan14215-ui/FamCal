@@ -37,6 +37,8 @@ type State = {
   intro: boolean;
   /** Bumps when Memo is tapped: the field starts listening (Memo is the talk button, Julian 08.11.). */
   talk: number;
+  /** Bumped by a long press on Memo: straight to the keyboard. */
+  keys: number;
   /** The last touch anywhere on screen: Memo glances there. */
   touch: { x: number; y: number; n: number } | null;
   /** Something waits for my answer (a question in the chat): Memo shows a "?". */
@@ -58,7 +60,7 @@ type State = {
 };
 
 // intro starts true: BuddyIntro says when the screen is free (it always mounts with the root).
-let state: State = { listening: false, joy: 0, joyKind: null, sad: 0, wink: 0, poke: 0, from: null, intro: true, talk: 0, touch: null, waiting: false, covered: false, docked: 0, dockAt: null, typed: 0, landed: false, dockHidden: false, thinking: false };
+let state: State = { listening: false, joy: 0, joyKind: null, sad: 0, wink: 0, poke: 0, from: null, intro: true, talk: 0, keys: 0, touch: null, waiting: false, covered: false, docked: 0, dockAt: null, typed: 0, landed: false, dockHidden: false, thinking: false };
 const subs = new Set<() => void>();
 const emit = () => subs.forEach((l) => l());
 
@@ -75,6 +77,8 @@ export const buddySad = () => setBuddy({ sad: state.sad + 1 });
 export const buddyWink = () => setBuddy({ wink: state.wink + 1 });
 export const buddyPoke = () => setBuddy({ poke: state.poke + 1 });
 export const buddyTalk = () => setBuddy({ talk: state.talk + 1 });
+export const buddyKeys = () => setBuddy({ keys: state.keys + 1 });
+export const getBuddy = () => state;
 let lastTouch = 0;
 /** A touch anywhere: at most a few per second reach Memo, so scrolling stays cheap. */
 export function buddyTouch(x: number, y: number) {
@@ -94,6 +98,10 @@ export const isNight = () => { const h = new Date().getHours(); return h >= 23 |
 /** Only the talk counter, so the dock re-renders on a Memo tap and not on every touch. */
 export function useBuddyTalk() {
   return useSyncExternalStore((l) => { subs.add(l); return () => { subs.delete(l); }; }, () => state.talk, () => state.talk);
+}
+
+export function useBuddyKeys() {
+  return useSyncExternalStore((l) => { subs.add(l); return () => { subs.delete(l); }; }, () => state.keys, () => state.keys);
 }
 
 /** A bar shows Memo in place of the mic; the floating one steps aside while any does. */

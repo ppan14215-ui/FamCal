@@ -18,7 +18,7 @@ import PressScale from './ui/PressScale';
 import VoiceWaves from './VoiceWaves';
 import Pin from './buddy/Pin';
 import { useMascot } from '../lib/mascot';
-import { tokens } from '../theme';
+import { tokens, glass } from '../theme';
 import { voiceLevel, useBuddy } from '../lib/buddy';
 import { useSpeak, speakOpen, speakHandlers, setSpeak, type SpeakAsk } from '../lib/speak';
 import { hm } from '../lib/dates';
@@ -80,7 +80,101 @@ function Answers({ ask }: { ask: SpeakAsk }) {
   );
 }
 
-export default function SpeakCard({ barH, from }: { barH: number; from: string }) {
+/**
+ * Klar (Julian 13.11.2026: "tapping Memo opens voice AND text input in one element"): the card grows out of Memo in
+ * the nav pill and lies over the pill. On top what is heard, settled words dark and the current guess grey; below it
+ * Memo (tap him when you are done), the wave, "Aa" for the keyboard and send. Only opacity and a small scale move;
+ * the card has the height of its content and grows like a text field.
+ */
+function KlarCard() {
+  const s = useSpeak();
+  const b = useBuddy();
+  const open = speakOpen(s);
+  const minimal = useMascot() === 'minimal';
+  const listening = s.phase === 'listen';
+  const writing = s.phase === 'write';
+  const done = s.phase === 'done';
+  const words = !!s.live && !!(s.live.sure || s.live.part) && (listening || writing);
+  const answers = !!s.ask && (!!s.ask.hours || !!s.ask.picks?.length) && s.phase !== 'text' && !writing;
+  const p = useSharedValue(0);
+  useEffect(() => { p.value = withTiming(open ? 1 : 0, { duration: open ? 240 : 140, easing: Easing.bezier(0.23, 1, 0.32, 1) }); }, [open]);
+  const outer = useAnimatedStyle((): any => ({ opacity: p.value, transform: [{ scale: 0.92 + 0.08 * p.value }] }));
+  const tail = (t: string, max: number) => (t.length > max ? '… ' + t.slice(t.length - max).replace(/^\S*\s/, '') : t);
+  const sure = words ? tail(s.live!.sure, Math.max(0, 150 - s.live!.part.length)) : '';
+  const mood = listening ? 'listen' : writing ? 'think' : done ? 'happy' : 'idle';
+  const ready = s.phase === 'text' || (listening && words);
+  const T = { size: 17, line: 24 } as const;
+  return (
+    <Animated.View pointerEvents={open ? 'auto' : 'none'} style={[{ position: 'absolute', left: 0, right: 0, bottom: 0, borderRadius: 26, paddingTop: 14, paddingLeft: 16, paddingRight: 12, paddingBottom: 10, gap: 10, transformOrigin: '82% 100%' } as any, glass.card, outer]}>
+      {done ? (
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 44 }}>
+          {minimal ? <LineIcon name="check" size={22} color={tokens.ink} stroke={2.4} /> : <Pin size={40} mood="happy" joy={b.joy} />}
+          <View style={{ flex: 1, minWidth: 0 }}>
+            <Txt size={12.5} weight={500} color={tokens.mute}>{tx('Steht im Kalender', "It's in the calendar")}</Txt>
+            <Txt size={16} line={22} weight={500} numberOfLines={2}>{s.done}</Txt>
+          </View>
+        </View>
+      ) : (
+        <>
+          <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 8 }}>
+            <View style={{ flex: 1, minWidth: 0, gap: 2, minHeight: 24 }}>
+              {s.ask && (listening || writing || s.ask.hold) && (words || s.phase === 'text') ? <Txt size={12.5} weight={500} color={tokens.mute} numberOfLines={2}>{s.ask.text}</Txt> : null}
+              {words ? (
+                <Txt {...T} numberOfLines={5} color={writing ? tokens.sub : tokens.ink}>
+                  {sure}{sure && s.live!.part ? ' ' : ''}<Txt {...T} color={tokens.mute}>{s.live!.part}</Txt>
+                </Txt>
+              ) : s.phase === 'text' ? <Txt {...T} numberOfLines={5}>{s.text}</Txt>
+                : writing ? <Txt {...T} color={tokens.mute}>{tx('Schreibe auf …', 'Writing it down …')}</Txt>
+                : s.ask ? <Txt {...T} weight={500} numberOfLines={3}>{s.ask.text}</Txt>
+                : <Txt {...T} color={tokens.mute}>{tx('Ich höre zu …', "I'm listening …")}</Txt>}
+            </View>
+            <PressScale accessibilityLabel={tx('Abbrechen', 'Cancel')} hitSlop={10} onPress={() => { haptics.select(); speakHandlers.cancel(); }} style={{ width: 28, height: 28, borderRadius: 14, alignItems: 'center', justifyContent: 'center' }}>
+              <LineIcon name="x" size={16} color={tokens.mute} stroke={2} />
+            </PressScale>
+          </View>
+          {answers && s.ask ? <Answers ask={s.ask} /> : null}
+          <View style={{ height: 40, flexDirection: 'row', alignItems: 'center', gap: 8, marginLeft: -4 }}>
+            <Pressable
+              disabled={writing}
+              onPress={() => { if (listening) speakHandlers.stop(); else speakHandlers.again(); }}
+              accessibilityRole="button"
+              accessibilityLabel={listening ? tx('Fertig gesprochen', 'Done speaking') : minimal ? tx('Sprechen', 'Speak') : tx('Memo, tippen zum Sprechen', 'Memo, tap to talk')}
+              hitSlop={8}
+              style={{ width: 40, height: 40, alignItems: 'center', justifyContent: 'center' }}
+            >
+              {minimal ? (
+                <View style={{ width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center', backgroundColor: tokens.ink, opacity: writing ? 0.4 : 1 }}>
+                  {listening ? <View style={{ width: 11, height: 11, borderRadius: 3, backgroundColor: tokens.onInk }} /> : <LineIcon name="mic" size={17} color={tokens.onInk} />}
+                </View>
+              ) : (
+                <View pointerEvents="none" style={{ marginTop: -3 }}><Pin size={40} mood={mood as any} joy={b.joy} poke={b.poke} level={voiceLevel} heard={s.live?.n ?? 0} ground="#FFFFFF" /></View>
+              )}
+            </Pressable>
+            <View style={{ flex: 1, minWidth: 0, justifyContent: 'center' }}>
+              {listening ? <VoiceWaves level={voiceLevel} height={24} color={tokens.sub} />
+                : writing ? <View style={{ alignItems: 'flex-start', paddingLeft: 4 }}><Dots /></View>
+                : s.phase === 'text' ? <Txt size={13} color={tokens.mute} numberOfLines={1}>{tx('Passt das so?', 'Is that right?')}</Txt>
+                : s.ask?.hold ? <Txt size={13} color={tokens.mute} numberOfLines={2}>{minimal ? tx('Tipp eine Uhrzeit oder sag sie', 'Tap a time or say it') : tx('Tipp eine Uhrzeit oder tipp Memo und sag sie', 'Tap a time, or tap Memo and say it')}</Txt> : null}
+            </View>
+            <PressScale accessibilityLabel={tx('Tippen statt sprechen', 'Type instead of speaking')} onPress={() => { haptics.select(); speakHandlers.keys(); }} style={{ height: 32, paddingHorizontal: 12, borderRadius: 16, alignItems: 'center', justifyContent: 'center', backgroundColor: tokens.chipBg }}>
+              <Txt size={14} weight={600}>Aa</Txt>
+            </PressScale>
+            <PressScale accessibilityLabel={tx('Senden', 'Send')} disabled={!(listening || s.phase === 'text')} onPress={() => { speakHandlers.send(); }}
+              style={{ width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center', backgroundColor: ready ? tokens.ink : tokens.chipBg }}>
+              <LineIcon name="up" size={18} color={ready ? tokens.onInk : tokens.mute} stroke={2.2} />
+            </PressScale>
+          </View>
+        </>
+      )}
+    </Animated.View>
+  );
+}
+
+export default function SpeakCard(props: { barH: number; from: string; klar?: boolean }) {
+  return props.klar ? <KlarCard /> : <BigCard {...props} />;
+}
+
+function BigCard({ barH, from }: { barH: number; from: string }) {
   const s = useSpeak();
   const b = useBuddy();
   const open = speakOpen(s);

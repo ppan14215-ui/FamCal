@@ -23,12 +23,17 @@ import { useTranslation } from 'react-i18next';
 import Txt from './ui/Txt';
 import LineIcon, { LineName } from './ui/LineIcon';
 import PressScale from './ui/PressScale';
-import { tokens } from '../theme';
+import { tokens, glass } from '../theme';
 import { haptics } from '../lib/haptics';
 import { useTyping as useFocus, useKeyboardInset } from '../lib/keyboard';
 import { useDockTop } from '../lib/dockSpace';
 import Svg, { Defs, LinearGradient, Stop, Rect } from 'react-native-svg';
 import { navStyle, useBarMode, setBarMode, setBarNav } from '../lib/navStyle';
+import MemoMic from './buddy/MemoMic';
+import { buddyTalk, buddyKeys } from '../lib/buddy';
+import { useSpeak, speakOpen } from '../lib/speak';
+import { usePrivat } from '../lib/privat';
+import { router } from 'expo-router';
 const EASE_OUT = Easing.bezier(0.23, 1, 0.32, 1);
 
 export const TABS: { name: string; key: string; icon: LineName }[] = [
@@ -38,7 +43,7 @@ export const TABS: { name: string; key: string; icon: LineName }[] = [
 ];
 
 /** Height of the bar; Dock.tsx puts the field right above it. */
-export const navH = () => (navStyle() === 'pill' ? 54 : navStyle() === 'bar' ? 54 : 50);
+export const navH = () => (navStyle() === 'klar' ? 52 : navStyle() === 'pill' ? 54 : navStyle() === 'bar' ? 54 : 50);
 /** Width of the icon pill in the one-bar navigation. */
 // One bar (Julian 04.11.): the old dark pill's look, the light block sits on the active tab with its word.
 const BAR_ON_W = 100;
@@ -46,7 +51,9 @@ export const BAR_TABS_W = BAR_ON_W + 40 * 2 + 8;
 /** The open tab always has the same width, so the bar never changes size and recenters while the pill moves (Julian 31.10.: Listen overshot). */
 const ON_W = 128;
 /** Where the pill's top edge sits above the screen bottom. */
-export const navTop = (insetBottom: number) => (navStyle() === 'pill' ? Math.max(insetBottom, 12) + 10 + navH() : navStyle() === 'bar' ? Math.max(insetBottom, 8) + 4 + navH() : Math.max(insetBottom, 4) + navH());
+/** Klar: how far the glass pill floats above the screen bottom. */
+export const klarFoot = (insetBottom: number) => Math.max(insetBottom, 10) + 8;
+export const navTop = (insetBottom: number) => (navStyle() === 'klar' ? klarFoot(insetBottom) + navH() : navStyle() === 'pill' ? Math.max(insetBottom, 12) + 10 + navH() : navStyle() === 'bar' ? Math.max(insetBottom, 8) + 4 + navH() : Math.max(insetBottom, 4) + navH());
 
 /** The pill's width before it is measured: one open tab and two icons. */
 const PILL_W = ON_W + 56 * 2 + 4 + 10;
@@ -324,6 +331,64 @@ export function BarTab({ on, icon, label, onPress, onW, offW }: { on: boolean; i
   );
 }
 
+/**
+ * Klar (Julian 13.11.2026): one small glass pill in the middle. The open tab shows its icon and word on a soft grey
+ * fill, the others only their icon; after a hairline sits Memo. Tap him and the input grows out of him and lies over
+ * the pill (Dock.tsx); a long press goes straight to the keyboard. Content scrolls under the pill, there is no ground.
+ */
+const KLAR_ON = 118;
+const KLAR_OFF = 46;
+function KlarNav({ state, navigation }: BottomTabBarProps) {
+  const insets = useSafeAreaInsets();
+  const { t } = useTranslation();
+  const current = state.routes[state.index]?.name;
+  const focus = useFocus();
+  const kb = useKeyboardInset();
+  const typing = focus && (Platform.OS === 'web' || kb > 0);
+  const mode = useBarMode();
+  const speaking = speakOpen(useSpeak());
+  const priv = usePrivat();
+  // The input lies over the pill: the pill steps back a little and fades, and comes back when the input closes.
+  const away = typing || mode === 'input' || speaking;
+  const a = useSharedValue(away ? 1 : 0);
+  useEffect(() => { a.value = withTiming(away ? 1 : 0, { duration: away ? 140 : 240, easing: EASE_OUT }); }, [away]);
+  const hide = useAnimatedStyle((): any => ({ opacity: 1 - a.value, transform: [{ scale: 1 - 0.04 * a.value }] }));
+  return (
+    <View pointerEvents="box-none" style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0 }}>
+      <Animated.View pointerEvents={away ? 'none' : 'box-none'} style={[{ position: 'absolute', left: 0, right: 0, bottom: klarFoot(insets.bottom), alignItems: 'center' }, hide]}>
+        <View style={[{ height: navH(), borderRadius: navH() / 2, padding: 5, flexDirection: 'row', alignItems: 'center' }, glass.nav]}>
+          <View accessibilityRole="tablist" style={{ flexDirection: 'row', alignItems: 'center', gap: 2 }}>
+            {TABS.map((tab) => {
+              const on = current === tab.name;
+              return <KlarTab key={tab.name} on={on} icon={tab.icon} label={t(tab.key)} onPress={() => { if (!on) { haptics.select(); navigation.navigate(tab.name); } }} />;
+            })}
+          </View>
+          <View style={{ width: 1, height: 20, marginHorizontal: 6, backgroundColor: tokens.hair }} />
+          {/* Ohne KI there is nothing to talk to: Memo opens the plus sheet instead. */}
+          <MemoMic box={navH() - 10} size={navH() - 10} ground={tokens.row}
+            onPress={() => (priv.ohneKi ? router.push('/neu') : buddyTalk())}
+            onLongPress={priv.ohneKi ? undefined : buddyKeys} />
+        </View>
+      </Animated.View>
+    </View>
+  );
+}
+
+function KlarTab({ on, icon, label, onPress }: { on: boolean; icon: LineName; label: string; onPress: () => void }) {
+  const w = useSharedValue(on ? KLAR_ON : KLAR_OFF);
+  useEffect(() => { w.value = withTiming(on ? KLAR_ON : KLAR_OFF, SWITCH); }, [on]);
+  const size = useAnimatedStyle(() => ({ width: w.value }));
+  return (
+    <Animated.View style={[{ overflow: 'hidden', borderRadius: 999, backgroundColor: on ? tokens.pillOn : 'transparent' }, size]}>
+      <PressScale scale={0.94} accessibilityRole="tab" accessibilityLabel={label} accessibilityState={{ selected: on }} onPress={onPress}
+        style={{ height: navH() - 10, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7 }}>
+        <LineIcon name={icon} size={20} color={on ? tokens.ink : tokens.sub} />
+        {on ? <Animated.View entering={FadeIn.duration(180).delay(90)}><Txt size={14} weight={600} color={tokens.ink} numberOfLines={1}>{label}</Txt></Animated.View> : null}
+      </PressScale>
+    </Animated.View>
+  );
+}
+
 export default function NavBar(props: BottomTabBarProps) {
-  return navStyle() === 'pill' ? <PillNav {...props} /> : navStyle() === 'bar' ? <BarNav {...props} /> : <StripNav {...props} />;
+  return navStyle() === 'klar' ? <KlarNav {...props} /> : navStyle() === 'pill' ? <PillNav {...props} /> : navStyle() === 'bar' ? <BarNav {...props} /> : <StripNav {...props} />;
 }

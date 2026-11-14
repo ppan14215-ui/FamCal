@@ -10,7 +10,7 @@ import { tokens } from '../../theme';
 export type LineName =
   | 'home' | 'cal' | 'list' | 'inbox' | 'plus' | 'mic' | 'sync' | 'camera' | 'back' | 'chev'
   | 'check' | 'x' | 'lock' | 'clock' | 'copy' | 'send' | 'flash' | 'pin' | 'sparkle' | 'settings'
-  | 'papier' | 'users' | 'undo' | 'trash' | 'warn' | 'chat' | 'grid' | 'file' | 'image';
+  | 'papier' | 'users' | 'undo' | 'trash' | 'warn' | 'chat' | 'grid' | 'file' | 'image' | 'up' | 'search';
 
 type Props = { name: LineName; size?: number; color?: string; stroke?: number };
 
@@ -54,6 +54,8 @@ function shape(n: LineName, p: any) {
     case 'grid': return <><Rect {...p} x={4} y={4} width={6.5} height={6.5} rx={2} /><Rect {...p} x={13.5} y={4} width={6.5} height={6.5} rx={2} /><Rect {...p} x={4} y={13.5} width={6.5} height={6.5} rx={2} /><Rect {...p} x={13.5} y={13.5} width={6.5} height={6.5} rx={2} /></>;
     case 'file': return <><Path {...p} d="M7 3h7l5 5v12a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z" /><Path {...p} d="M14 3v5h5" /></>;
     case 'image': return <><Rect {...p} x={4} y={5} width={16} height={14} rx={2} /><Circle {...p} cx={9} cy={10} r={1.5} /><Path {...p} d="M4 17l5-4 4 3 3-2 4 3" /></>;
+    case 'up': return <Path {...p} d="M12 19V5M6 11l6-6 6 6" />;
+    case 'search': return <><Circle {...p} cx={11} cy={11} r={6.5} /><Path {...p} d="M16 16l4 4" /></>;
     case 'undo': return <><Path {...p} d="M9 14L4 9l5-5" /><Path {...p} d="M4 9h10a6 6 0 0 1 0 12h-3" /></>;
   }
 }

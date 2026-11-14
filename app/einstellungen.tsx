@@ -119,7 +119,8 @@ export default function Einstellungen() {
       {/* Julian 04.11.: the real settings apart from what is only there to try things out. */}
       <H2>{tx('Zum Testen', 'For testing')}</H2>
       <Group>
-        <SRow icon="sync" t={tx('Navigation', 'Navigation')} v={navStyle() === 'bar' ? tx('Ein Balken', 'One bar') : tx('Unter der Eingabe', 'Under the field')} onPress={() => { haptics.select(); const prev = navStyle(); const next = prev === 'bar' ? 'strip' : 'bar'; setNavStyle(next); chooseNav(next, 'settings', prev); toast(tx('Navigation geändert', 'Navigation changed')); }} />
+        <SRow icon="sync" t={tx('Navigation', 'Navigation')} v={navStyle() === 'klar' ? tx('Glas Pille mit Memo', 'Glass pill with Memo') : navStyle() === 'bar' ? tx('Ein Balken', 'One bar') : tx('Unter der Eingabe', 'Under the field')} onPress={() => { haptics.select(); const prev = navStyle(); const next = prev === 'klar' ? 'strip' : prev === 'strip' ? 'bar' : 'klar'; setNavStyle(next); chooseNav(next, 'settings', prev); toast(tx('Navigation geändert', 'Navigation changed')); }} />
+        <SRow icon="chat" t={tx('Memo, alle Zustände', 'Memo, every state')} onPress={() => router.push('/memo')} />
         <SRow icon="zuhause" t={tx('Neues Onboarding ansehen', 'View new onboarding')} onPress={() => { startPreview(); router.push('/onboarding/story'); }} />
       </Group>
       <PressScale scale={0.985} onPress={() => router.push('/plus')} style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12, paddingHorizontal: 14, borderRadius: 20, backgroundColor: tokens.row }}>
