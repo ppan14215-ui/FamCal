@@ -26,7 +26,7 @@ import { View, TextInput, Pressable, ScrollView, Keyboard, useWindowDimensions, 
 import Animated, { useSharedValue, useAnimatedStyle, withTiming, withDelay, Easing, useReducedMotion, FadeIn, FadeOut } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
-import Txt, { Dot } from '../../src/components/ui/Txt';
+import Txt from '../../src/components/ui/Txt';
 import { Btn, TextLink } from '../../src/components/ui/kit';
 import LineIcon from '../../src/components/ui/LineIcon';
 import PressScale from '../../src/components/ui/PressScale';
@@ -551,7 +551,6 @@ function Probe({ me, du, familie, ev, setEv, docked, setDocked, pad, onDone }: {
   useEffect(() => { exA.value = withTiming(exOn ? 1 : 0, { duration: exOn ? 260 : 140, easing: out }); }, [exOn]);
   const exSt = useAnimatedStyle(() => ({ opacity: exA.value, transform: [{ translateY: (1 - exA.value) * 10 }] }));
   const reach = ev ? daysBetween(TODAY, ev.date) + 8 : undefined;
-  const n = world.get().events.filter((x) => x.date === TODAY).length;
 
   return (
     <View style={{ flex: 1 }}>
@@ -561,7 +560,7 @@ function Probe({ me, du, familie, ev, setEv, docked, setDocked, pad, onDone }: {
           <StoreContext.Provider value={world}>
             <PersonsContext.Provider value={people}>
               <StillContext.Provider value>
-                <CalHead n={n} />
+                <CalHead />
                 <AgendaView reach={reach} />
               </StillContext.Provider>
             </PersonsContext.Provider>
@@ -625,12 +624,13 @@ function Probe({ me, du, familie, ev, setEv, docked, setDocked, pad, onDone }: {
   );
 }
 
-/** The head of the Kalender tab as it is in the app: the weekday tight and bold with a period, the grey line below. */
-function CalHead({ n }: { n: number }) {
+/** The head of the Kalender tab as it is in the app (klar draft, Julian 14.11.): the weekday semibold without a period,
+ *  the short grey info behind it on the same line ("Donnerstag 29. Okt"). */
+function CalHead() {
   return (
-    <View style={{ paddingHorizontal: 18, paddingTop: 16, paddingBottom: 4, gap: 2 }}>
-      <Txt size={30} line={34} weight={700} tracking={-1.2} numberOfLines={1}>{WD_LONG[weekday(TODAY)]}<Dot /></Txt>
-      <Txt size={13.5} line={18} color={tokens.sub}>{n ? `${dmShort(TODAY)} · ${tx(`${n} ${n === 1 ? 'Termin' : 'Termine'}`, `${n} ${n === 1 ? 'event' : 'events'}`)}` : dmShort(TODAY)}</Txt>
+    <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 9, paddingHorizontal: 18, paddingTop: 16, paddingBottom: 6 }}>
+      <Txt size={29} line={34} weight={600} tracking={-0.72} numberOfLines={1} style={{ flexShrink: 1 }}>{WD_LONG[weekday(TODAY)]}</Txt>
+      <Txt size={16} line={21} color={tokens.sub} numberOfLines={1} style={{ flexShrink: 2 }}>{dmShort(TODAY)}</Txt>
     </View>
   );
 }
