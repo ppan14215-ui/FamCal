@@ -32,7 +32,7 @@ function Line({ k, v, last }: { k: string; v: string; last: boolean }) {
   return (
     <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 12, paddingVertical: 11, borderBottomWidth: last ? 0 : 1, borderBottomColor: tokens.hair }}>
       <Txt size={17} line={22} color={tokens.sub} style={{ width: 118 }} numberOfLines={1}>{k}</Txt>
-      <Txt size={17} line={22} style={{ flex: 1, minWidth: 0 }}>{v}</Txt>
+      <Txt size={17} line={22} numberOfLines={3} style={{ flex: 1, minWidth: 0 }}>{v}</Txt>
     </View>
   );
 }
@@ -119,7 +119,7 @@ export default function Termin() {
   };
 
   return (
-    <Sheet bg={tokens.row} style={{ gap: 14, paddingBottom: 18 }}>
+    <Sheet bg={tokens.row} style={{ gap: 14 }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14, paddingTop: 6 }}>
         <ClayIcon name={e.icon} size={44} />
         <View style={{ flex: 1, minWidth: 0 }}>
