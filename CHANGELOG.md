@@ -22,6 +22,8 @@ Alle sichtbaren Änderungen an FamCal. Neueste oben. Agenten und Menschen: Ände
 - Zoomen mit zwei Fingern wechselt die Ansicht und rastet ein: auseinander geht es näher heran (Jahr, Monat, Woche, Tage), zusammen weiter weg. Die Chips oben machen dasselbe per Tipp.
 - Monat ist flach: Zahl mit Punkten, heute als oranger Kreis. Feiertage färben die Zahl, Urlaub liegt als weiches Band hinter seinen Tagen, beides steht unter dem Raster mit Namen.
 - Im Kopf stehen bei Tagen, Woche, Monat und Jahr zwei kleine Pfeile zum Blättern; die Infozeile zeigt Zeitraum und Zahl der Termine.
+- Sprechen im klaren Look: Die Karte ist jetzt dunkel und wächst aus Memo heraus. Was du sagst, steht groß darin, sichere Worte hell, unsichere grau. Unten läuft die Aufnahme mit orangem Punkt, Zeit und Stopp.
+- Nach dem Senden schrumpft die Karte zu einer kleinen Blase, Memos Augen werden drei Ladepunkte. Ist die Antwort da, gleitet Memo an seinen Platz zurück und die Leiste schiebt sich wieder herein. Nichts verschwindet und taucht neu auf.
 
 ### App funktioniert zuverlässig (09.11. Audit)
 - Nach längerer Pause im Hintergrund klappen Assistent und Spracheingabe gleich beim ersten Satz, statt "Ich komme gerade nicht an den Assistenten".

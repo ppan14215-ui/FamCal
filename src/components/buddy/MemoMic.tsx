@@ -13,6 +13,7 @@ import Txt from '../ui/Txt';
 import { useBuddy, setBuddy, dockIn, dockOut, voiceLevel, isNight, type Mood } from '../../lib/buddy';
 import { useTyping } from '../../lib/keyboard';
 import { useVeil } from '../Veil';
+import { useMemoOut } from '../../lib/memoOut';
 import { tokens } from '../../theme';
 import { haptics } from '../../lib/haptics';
 import { tx } from '../../i18n/lang';
@@ -22,6 +23,8 @@ export default function MemoMic({ onPress, onLongPress, box = 34, size = 40, lab
   const minimal = useMascot() === 'minimal';
   const typing = useTyping();
   const veil = useVeil();
+  // Klar: while he is out on the Sprechkarte or as the thinking bubble, he is not drawn here (never two).
+  const out = useMemoOut().out;
   const [night, setNight] = useState(isNight());
   useEffect(() => { const id = setInterval(() => setNight(isNight()), 60000); return () => clearInterval(id); }, []);
   useEffect(() => { dockIn(); return () => { dockOut(); }; }, []);
@@ -51,7 +54,7 @@ export default function MemoMic({ onPress, onLongPress, box = 34, size = 40, lab
     <Pressable ref={me as any} onLayout={measure} onPress={() => { haptics.select(); setTap((n) => n + 1); onPress(); }} onLongPress={onLongPress ? () => { haptics.select(); onLongPress(); } : undefined} hitSlop={6}
       accessibilityRole="button" accessibilityLabel={label ?? tx('Memo, tippen zum Sprechen', 'Memo, tap to talk')}
       style={{ width: box, height: box, alignItems: 'center', justifyContent: 'center', overflow: 'visible' }}>
-      <View pointerEvents="none" style={{ width: size, height: size, marginTop: -3, opacity: b.landed && !b.dockHidden ? 1 : 0 }}>
+      <View pointerEvents="none" style={{ width: size, height: size, marginTop: -3, opacity: b.landed && !b.dockHidden && !out ? 1 : 0 }}>
         <Pin size={size} mood={mood} joy={b.joy} joyKind={b.joyKind} poke={b.poke} tap={tap} sad={b.sad} wink={b.wink} level={voiceLevel} glance={glance} typeAt={typeAt} ground={ground} />
       </View>
       {ask ? (

@@ -33,7 +33,8 @@ function swap(x: number, a: number, b: number) {
   return x < a ? 0 : x < a + 70 ? 0.5 * out((x - a) / 70) : 0.5 + 0.5 * out(cl((x - a - 70) / 90));
 }
 
-export const ST = { idle: 0, type: 1, listen: 2, think: 3, sleep: 4, happy: 5 } as const;
+/** load is not a mood of the app: it is the loading bubble of the klar look (Pin's `load`). */
+export const ST = { idle: 0, type: 1, listen: 2, think: 3, sleep: 4, happy: 5, load: 6 } as const;
 export const POSE = { none: 0, peek: 1, wave: 2 } as const;
 const NEVER = -1e9;
 
@@ -43,6 +44,8 @@ export type Base = {
   blink: number; dash: number; wide: number; happy: number; peek: number;
   /** Thinking dots: how visible, how far from a line to a circle, the circle's angle, a shift towards where he looks. */
   tho: number; thm: number; tha: number; thx: number;
+  /** Loading: how much the three dots stand apart as a line and take turns (0 = the thinking dots as before). */
+  thw: number;
 };
 export type Frame = Base & {
   /** Lids of the left and right eye (a wink shuts one). */
@@ -73,7 +76,7 @@ export type Rt = {
 
 export function zero(): Base {
   'worklet';
-  return { turn: 0, gx: 0, gy: 0, sx: 1, sy: 1, rot: 0, tx: 0, ty: 0, blink: 1, dash: 0, wide: 1, happy: 0, peek: 0, tho: 0, thm: 0, tha: 0, thx: 0 };
+  return { turn: 0, gx: 0, gy: 0, sx: 1, sy: 1, rot: 0, tx: 0, ty: 0, blink: 1, dash: 0, wide: 1, happy: 0, peek: 0, tho: 0, thm: 0, tha: 0, thx: 0, thw: 0 };
 }
 export function firstIn(p: Partial<In>): In {
   return { st: 0, pose: 0, breathe: 0, restX: 0, restY: 0, typeX: -0.55, typeY: 0.75, blinkN: 0, blink2: 0, glN: 0, glX: 0, glY: 0, glHold: 1000, nodN: 0, pokeN: 0, tapN: 0, winkN: 0, sadN: 0, joyN: 0, joyKind: 0, joyLong: 900, ...p };
@@ -138,6 +141,12 @@ function state(st: number, ts: number, v: number, gx: number, gy: number): Base 
     return b;
   }
   if (st === 5) { b.happy = 1; return b; }
+  if (st === 6) {
+    // Loading (Julian 14.11.: "the eyes turn into the loading bubble"): at once the eyes become the three dots.
+    // They stay in a line, a little bigger and further apart, and take turns like someone typing.
+    b.tho = out(seg(ts, 0, 260)); b.thw = io(seg(ts, 120, 520)); b.tha = (ts / 1000) * 2.2;
+    return b;
+  }
   b.turn = gx * 0.6; b.gx = gx * 0.2; b.gy = gy * 0.8;
   return b;
 }
@@ -156,7 +165,8 @@ function flow(A: Base, B: Base, ts: number): Base {
   if (A.tho > B.tho) {
     // The dots first come back into a line, then fade, while the eyes open again.
     o.thm = A.thm * (1 - io(cl(e * 1.7))); o.tho = A.tho * (1 - cl((e - 0.45) * 2.2)) + B.tho; o.tha = A.tha + (ts / 1000) * 2.2; o.thx = A.thx;
-  } else { o.tho = lerp(A.tho, B.tho, e); o.thm = B.thm; o.tha = B.tha; o.thx = B.thx; }
+    o.thw = A.thw * (1 - io(cl(e * 1.7)));
+  } else { o.tho = lerp(A.tho, B.tho, e); o.thm = B.thm; o.tha = B.tha; o.thx = B.thx; o.thw = B.thw; }
   return o;
 }
 

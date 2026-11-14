@@ -32,6 +32,7 @@ import { navStyle, useBarMode, setBarMode, setBarNav } from '../lib/navStyle';
 import MemoMic from './buddy/MemoMic';
 import { buddyTalk, buddyKeys } from '../lib/buddy';
 import { useSpeak, speakOpen } from '../lib/speak';
+import { useMemoOut, setMemoOut } from '../lib/memoOut';
 import { usePrivat } from '../lib/privat';
 import { router } from 'expo-router';
 const EASE_OUT = Easing.bezier(0.23, 1, 0.32, 1);
@@ -348,15 +349,20 @@ function KlarNav({ state, navigation }: BottomTabBarProps) {
   const mode = useBarMode();
   const speaking = speakOpen(useSpeak());
   const priv = usePrivat();
-  // The input lies over the pill: the pill steps back a little and fades, and comes back when the input closes.
-  const away = typing || mode === 'input' || speaking;
+  // The input lies over the pill: the pill steps back a little, down and out, and slides back in when the input closes
+  // or Memo comes back from thinking (Julian 14.11.: "the nav slides back in").
+  const mo = useMemoOut();
+  const away = typing || mode === 'input' || speaking || mo.away;
   const a = useSharedValue(away ? 1 : 0);
-  useEffect(() => { a.value = withTiming(away ? 1 : 0, { duration: away ? 140 : 240, easing: EASE_OUT }); }, [away]);
-  const hide = useAnimatedStyle((): any => ({ opacity: 1 - a.value, transform: [{ scale: 1 - 0.04 * a.value }] }));
+  useEffect(() => { a.value = withTiming(away ? 1 : 0, { duration: away ? 160 : 320, easing: EASE_OUT }); }, [away]);
+  const hide = useAnimatedStyle((): any => ({ opacity: 1 - a.value, transform: [{ translateY: 14 * a.value }, { scale: 1 - 0.04 * a.value }] }));
+  // Where Memo sits in the pill, so the Sprechkarte can grow out of him and bring him back to exactly this spot.
+  const pillW = useRef(0), memoAt = useRef(0);
+  const tell = () => { if (pillW.current && memoAt.current) setMemoOut({ dx: Math.round((memoAt.current - pillW.current / 2) * 2) / 2 }); };
   return (
     <View pointerEvents="box-none" style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0 }}>
       <Animated.View pointerEvents={away ? 'none' : 'box-none'} style={[{ position: 'absolute', left: 0, right: 0, bottom: klarFoot(insets.bottom), alignItems: 'center' }, hide]}>
-        <View style={[{ height: navH(), borderRadius: navH() / 2, padding: 5, flexDirection: 'row', alignItems: 'center' }, glass.nav]}>
+        <View onLayout={(e) => { pillW.current = e.nativeEvent.layout.width; tell(); }} style={[{ height: navH(), borderRadius: navH() / 2, padding: 5, flexDirection: 'row', alignItems: 'center' }, glass.nav]}>
           <View accessibilityRole="tablist" style={{ flexDirection: 'row', alignItems: 'center', gap: 2 }}>
             {TABS.map((tab) => {
               const on = current === tab.name;
@@ -365,9 +371,11 @@ function KlarNav({ state, navigation }: BottomTabBarProps) {
           </View>
           <View style={{ width: 1, height: 20, marginHorizontal: 6, backgroundColor: tokens.hair }} />
           {/* Ohne KI there is nothing to talk to: Memo opens the plus sheet instead. */}
-          <MemoMic box={navH() - 10} size={navH() - 10} ground={tokens.row}
-            onPress={() => (priv.ohneKi ? router.push('/neu') : buddyTalk())}
-            onLongPress={priv.ohneKi ? undefined : buddyKeys} />
+          <View onLayout={(e) => { memoAt.current = e.nativeEvent.layout.x + e.nativeEvent.layout.width / 2; tell(); }}>
+            <MemoMic box={navH() - 10} size={navH() - 10} ground={tokens.row}
+              onPress={() => (priv.ohneKi ? router.push('/neu') : buddyTalk())}
+              onLongPress={priv.ohneKi ? undefined : buddyKeys} />
+          </View>
         </View>
       </Animated.View>
     </View>

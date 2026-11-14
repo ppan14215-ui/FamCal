@@ -68,6 +68,8 @@ export type PinProps = {
   breathe?: boolean;
   color?: string;
   ground?: string;
+  /** The loading bubble (klar): the eyes are three dots in a line that take turns, whatever the mood. */
+  load?: boolean;
   style?: StyleProp<ViewStyle>;
 };
 
@@ -107,9 +109,9 @@ function Still({ size: S, mood, color, eye, gaze, style }: { size: number; mood:
 
 type LiveProps = PinProps & { color: string; eye: string; ground: string };
 
-function Live({ size: S = 40, mood = 'idle', joy = 0, joyKind, joyLong, poke = 0, tap = 0, wink = 0, sad = 0, glance, level, typeAt, gaze, heard = 0, pose, breathe, color, eye, ground, style }: LiveProps) {
+function Live({ size: S = 40, mood = 'idle', joy = 0, joyKind, joyLong, poke = 0, tap = 0, wink = 0, sad = 0, glance, level, typeAt, gaze, heard = 0, pose, breathe, color, eye, ground, load, style }: LiveProps) {
   const D = S * BODY_D, u = D / 34;
-  const st = ST[mood];
+  const st = load ? ST.load : ST[mood];
   const rest = gaze ?? REST, ty = typeAt ?? TYPE_AT;
   const poseId = pose === 'peek' ? 1 : pose === 'wave' ? 2 : 0;
   const kindId = joyKind ? MORPH[joyKind] : 0;
@@ -147,7 +149,7 @@ function Live({ size: S = 40, mood = 'idle', joy = 0, joyKind, joyLong, poke = 0
   }, false);
 
   // Frames run only while something moves. These states never rest: he listens, thinks, breathes or sways.
-  const always = st === ST.listen || st === ST.think || !!breathe || poseId > 0;
+  const always = st === ST.listen || st === ST.think || st === ST.load || !!breathe || poseId > 0;
   const alwaysRef = useRef(always); alwaysRef.current = always;
   const until = useRef(0);
   const off = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -178,7 +180,7 @@ function Live({ size: S = 40, mood = 'idle', joy = 0, joyKind, joyLong, poke = 0
   }, [glance?.n]);
   // Blinks come at uneven gaps (2.6 to 5 s), now and then twice. Not while he thinks or sleeps.
   useEffect(() => {
-    if (st === ST.sleep || st === ST.think) return;
+    if (st === ST.sleep || st === ST.think || st === ST.load) return;
     let id: ReturnType<typeof setTimeout>;
     const next = () => { id = setTimeout(() => { push({ blinkN: cur.current.blinkN + 1, blink2: Math.random() < 0.3 ? 1 : 0 }, RUN.blink); next(); }, 2600 + Math.random() * 2400); };
     next();
@@ -269,10 +271,12 @@ function Dot({ P, k, u, D, color }: { P: SharedValue<Frame>; k: number; u: numbe
     const p = P.value;
     if (p.tho <= 0.001) return { opacity: 0, transform: [{ translateX: 0 }, { translateY: 0 }, { scale: 1 }] as any };
     const ca = p.tha + k * 2.0944;
-    const lx = (k - 1) * 5.6 + p.thx, ly = -p.thx * 0.5;
+    // Loading (thw): the line stands wider and bigger, and each dot rises and brightens a little after the one before.
+    const wv = p.thw > 0 ? (0.5 - 0.5 * Math.cos(p.tha * 2.4 - k * 1.1)) * p.thw : 0;
+    const lx = (k - 1) * 5.6 * (1 + 0.6 * p.thw) + p.thx, ly = -p.thx * 0.5 - 1.5 * wv;
     const ox = Math.cos(ca) * 4.4 + p.thx * 0.6, oy = Math.sin(ca) * 4.4 - p.thx * 0.3;
-    const sc = k === 1 ? lerp(0.5, 1, cl(p.tho * 1.6 - 0.4)) : 1;
-    return { opacity: p.tho, transform: [{ translateX: lerp(lx, ox, p.thm) * u }, { translateY: lerp(ly, oy, p.thm) * u }, { scale: lerp(sc, 1 - k * 0.18, p.thm) }] as any };
+    const sc = (k === 1 ? lerp(0.5, 1, cl(p.tho * 1.6 - 0.4)) : 1) * (1 + 0.4 * p.thw);
+    return { opacity: p.tho * (1 - 0.5 * (p.thw - wv)), transform: [{ translateX: lerp(lx, ox, p.thm) * u }, { translateY: lerp(ly, oy, p.thm) * u }, { scale: lerp(sc, 1 - k * 0.18, p.thm) }] as any };
   });
   return <Animated.View style={[{ position: 'absolute', left: D / 2 - s / 2, top: D / 2 - s / 2, width: s, height: s, borderRadius: s / 2, backgroundColor: color }, st]} />;
 }
