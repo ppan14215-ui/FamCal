@@ -72,11 +72,11 @@ export default function PlaceAsk({ e }: { e: EventSnap }) {
       <Txt size={13.5} weight={strong ? 600 : 400} color={strong ? tokens.done : tokens.ink}>{label}</Txt>
     </PressScale>
   );
-  const wrap = (children: React.ReactNode) => <View style={{ gap: 8, paddingHorizontal: 12, paddingBottom: 12 }}>{children}</View>;
+  const wrap = (children: React.ReactNode) => <View style={{ gap: 8, paddingHorizontal: 14, paddingBottom: 12 }}>{children}</View>;
 
   if (step.s === 'auto' || step.s === 'saved') {
     return (
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 12, paddingBottom: 10 }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 14, paddingBottom: 12 }}>
         <LineIcon name="pin" size={16} color={tokens.done} />
         <Txt size={13.5} line={18} color={tokens.sub} style={{ flex: 1 }}>
           {step.s === 'auto' ? kind.again(placeName(step.place)) : L(`Gemerkt. Nächstes Mal trage ich ${placeName(step.place)} direkt ein.`, `Saved. Next time I'll add ${placeName(step.place)} right away.`)}
