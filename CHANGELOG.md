@@ -4,6 +4,11 @@ Alle sichtbaren Änderungen an FamCal. Neueste oben. Agenten und Menschen: Ände
 
 ## Unreleased
 
+### Sprechen und Tippen (14.11.)
+- „Aa“ beim Sprechen: Die Tastatur kommt sofort, nicht erst nach dem Aufschreiben. Was schon gesagt war, landet danach im Feld. Kein „Aufnahme kam nicht an“ mehr, wenn man nur tippen wollte.
+- Ist „Sprache nur auf dem Handy“ an und es wurde nichts verstanden, sagt die App das einmal und nennt den Schalter unter Einstellungen, Datenschutz.
+- Das Fehlerprotokoll je Aufnahme nennt jetzt den Grund, warum die Cloud Ohren aus waren, und ob „Aa“ getippt wurde. Nie den Inhalt.
+
 ### Klarer Look (14.11.)
 - Die App ist jetzt ruhig und neutral: Weiß, fast Schwarz und Grau. Farbe kommt nur noch von den Personen. Schrift ist Inter.
 - Inhalte sind flach und dicht mit feinen Linien statt weißer Blöcke. Glas gibt es nur auf dem, was man drückt: Knöpfe, Chips, Leiste.

@@ -30,7 +30,7 @@ import { LIVE } from '../lib/live';
 import { usePrefill, takeFill } from '../lib/simple';
 import { tx } from '../i18n/lang';
 import { toast } from '../state/store';
-import { hearInCloud, cloudOn, cloudCapped, lastHear } from '../lib/hoeren';
+import { hearInCloud, cloudOn, cloudCapped, cloudWhy, lastHear } from '../lib/hoeren';
 import { reportNote } from '../lib/sentry';
 import { track } from '../lib/analytics';
 import { speechLocale, speechLang } from '../lib/speechLang';
@@ -41,6 +41,7 @@ import { readLines } from '../lib/screenshot';
 
 /** The cloud ears' day cap is said once per app launch. */
 let toldCap = false;
+let toldLokal = false;
 /** The last listen request a bar acted on, shared by every bar (only one Dock), so a remount never replays it. */
 let handledListen = 0;
 
@@ -211,7 +212,10 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, o
   const land = (t: string) => {
     if (keysNext.current) {
       keysNext.current = false; sendAfter.current = false; held.current = false;
-      setText(t.trim()); spokenText.current = true;
+      // The keyboard is already up (keys below): the spoken words go in front of what was typed in the meantime.
+      const typedNow = textRef.current.trim();
+      setText(typedNow ? `${t.trim()} ${typedNow}` : t.trim()); spokenText.current = true;
+      onBusy?.();
       setTimeout(() => field.current?.focus(), 60);
       return;
     }
@@ -226,7 +230,7 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, o
   // "Aa" with nothing heard: the recording is over and no words landed, so the keyboard comes up on the empty field.
   useEffect(() => {
     if (listening || writing || !keysNext.current) return;
-    const t = setTimeout(() => { if (!keysNext.current) return; keysNext.current = false; field.current?.focus(); }, 80);
+    const t = setTimeout(() => { if (!keysNext.current) return; keysNext.current = false; onBusy?.(); field.current?.focus(); }, 80);
     return () => clearTimeout(t);
   }, [listening, writing]);
   const finishAndSend = () => { if (!listening) return send(); sendAfter.current = true; listen(); };
@@ -235,6 +239,8 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, o
   useEffect(() => {
     if (!speakCard) return;
     const ph = getSpeak().phase;
+    // "Aa" was tapped: the card steps aside at once, the field and the keyboard take over while the words are still written down.
+    if (keysNext.current && !listening) { if (ph !== 'idle') setSpeak({ phase: 'idle', text: '', live: null }); return; }
     if (listening) setSpeak({ phase: 'listen', text: '', live: null });
     else if (writing) setSpeak({ phase: 'write' });
     else if (held.current && text.trim()) setSpeak({ phase: 'text', text: text.trim() });
@@ -249,7 +255,9 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, o
     if (wasBusy.current === busy) return;
     wasBusy.current = busy;
     if (busy) onBusy?.();
-    else if (onIdle && !field.current?.isFocused()) onIdle();
+    // Julian 14.11.: "switching from voice to text does not work reliable". Stopping the mic made the bar idle for a
+    // moment, it folded back to the nav, and the keyboard then opened on a hidden field (or not at all).
+    else if (onIdle && !field.current?.isFocused() && !keysNext.current) onIdle();
   }, [busy]);
   const listen = () => {
     if (listening) { haptics.tap(); stopNative.current?.(); return; }
@@ -363,7 +371,7 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, o
         setWriting(false);
         // One line per recording for the error log, never what was said: which events came when, and how the server answered.
         const outcome = better ? 'cloud' : !cloud ? (heard() ? 'phone' : 'none') : heard() ? 'phone_fallback' : audio ? 'cloud_empty' : 'no_file';
-        reportNote('voice_rec', outcome === 'cloud' || outcome === 'phone' ? 'info' : 'warning', { outcome }, { marks: marks.join(' '), total_ms: Date.now() - t0, peak, cloud, phone_words: heard().split(' ').filter(Boolean).length, hear: JSON.stringify(lastHear()) });
+        reportNote('voice_rec', outcome === 'cloud' || outcome === 'phone' ? 'info' : 'warning', { outcome }, { marks: marks.join(' '), total_ms: Date.now() - t0, peak, cloud, why: cloud ? '' : cloudWhy(), keys: keysNext.current, phone_words: heard().split(' ').filter(Boolean).length, hear: JSON.stringify(lastHear()) });
         if (typed.current) return;
         // Julian 31.10. 15:20: "Lokale Handy-Erkennung ist offensichtlich nicht gut genug". With the cloud ears on, the
         // phone's guess (one language, often wrong English) never lands; a miss says so and asks to speak again.
@@ -379,12 +387,16 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, o
             land(heard());
             if (!toldCap) { toldCap = true; toast(tx('Für heute nutze ich die Spracherkennung vom Handy. Bitte kurz prüfen, was ankommt.', 'For today I use the phone’s own speech recognition. Please check what comes through.'), undefined, { kind: 'info' }); }
           }
+          else if (keysNext.current) sendAfter.current = false;
           else { track('voice_failed', { reason: audio ? 'cloud_empty' : 'no_file' }); sendAfter.current = false; setText(''); haptics.tap(); toast(tx('Die Aufnahme kam nicht an. Tipp aufs Mikro und sag es bitte nochmal.', 'The recording didn\'t come through. Tap the mic and say it again.'), undefined, { kind: 'warn' }); }
           return;
         }
         const t = heard();
         track('voice_transcribed', { ok: !!t, engine: 'phone', ms });
         if (t) land(t); else fail();
+        // Julian 14.11.: 16 recordings in a row went to the phone's own recognizer only ("Speech on the phone only" was
+        // on) and 8 of them heard nothing. Nobody could see why. A miss in this mode now says so, once per app start.
+        if (!t && !keysNext.current && !toldLokal && cloudWhy() === 'lokal') { toldLokal = true; toast(tx('Nichts verstanden. „Sprache nur auf dem Handy“ ist an, das versteht schlechter.', 'Didn’t catch that. “Speech on the phone only” is on, which understands worse.'), undefined, { kind: 'info', sub: tx('Ausschalten unter Einstellungen, Datenschutz.', 'Turn it off under Settings, Privacy.') }); }
       };
       const hush = (ms: number) => { clearTimeout(quiet); quiet = setTimeout(() => SR.stop(), ms); };
       const subs = [
@@ -478,9 +490,16 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, o
     speakHandlers.edit = () => { held.current = false; setSpeak({ phase: 'idle' }); setTimeout(() => field.current?.focus(), 300); };
     speakHandlers.keys = () => {
       held.current = false; sendAfter.current = false;
-      // Still recording: stop it like a tap on Memo; what was heard lands in the field (land above).
-      if (listeningRef.current) { keysNext.current = true; listen(); return; }
-      if (writing) { keysNext.current = true; return; }
+      // Still recording or writing it down (Julian 14.11.): the keyboard comes at once, never after the words. The recording
+      // stops like a tap on Memo, and what was heard lands in the field when it is ready (land above).
+      if (listeningRef.current || writing) {
+        keysNext.current = true;
+        onBusy?.();
+        if (listeningRef.current) listen();
+        else setSpeak({ phase: 'idle', text: '', live: null });
+        setTimeout(() => field.current?.focus(), 80);
+        return;
+      }
       // A question that held the card open steps aside; it stays on its card above the field.
       const a = getSpeak().ask;
       setSpeak({ phase: 'idle', ask: a?.hold ? null : a });
