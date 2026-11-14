@@ -27,6 +27,7 @@ Alle sichtbaren Änderungen an FamCal. Neueste oben. Agenten und Menschen: Ände
 - Plus Menü im klaren Look: kein Blatt von unten mehr. Eine kleine dunkle Karte wächst aus dem Plus, das Plus dreht sich zum Kreuz und schließt wieder, der Bildschirm dahinter tritt zurück. Aus dem Tippfeld geöffnet steigt die Karte über der Navigation auf.
 - Listen im klaren Look: Die Listen stehen oben als Chips mit kleinem Zeichen und Zahl der offenen Dinge, die gewählte ist dunkel. Die Zeilen liegen flach auf dem Grund, nur feine Linien.
 - Hinzufügen ist jetzt die nächste Zeile der Liste: leerer Kreis und Text. Was du dort schreibst, wird zur Zeile darüber, die Zeile bleibt für den nächsten Eintrag offen.
+- Einstellungen im klaren Look: Zeilen liegen flach auf dem Grund mit feinen Linien, keine weißen Blöcke mehr.
 
 ### App funktioniert zuverlässig (09.11. Audit)
 - Nach längerer Pause im Hintergrund klappen Assistent und Spracheingabe gleich beim ersten Satz, statt "Ich komme gerade nicht an den Assistenten".

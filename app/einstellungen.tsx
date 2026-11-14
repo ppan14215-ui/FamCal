@@ -34,10 +34,10 @@ import { THEMES } from '../src/theme/tokens';
 import { usePalette } from '../src/theme/mode';
 import { navStyle, setNavStyle } from '../src/lib/navStyle';
 
-/** Name left, value right, like Apple's settings (Julian 03.11.): no second line under every row. */
+/** Name left, value right, like Apple's settings (Julian 03.11.): no second line under every row. Flat on the ground since the klar look (14.11.), hairlines only. */
 function SRow({ icon, t, v, right, onPress }: { icon: ClayName; t: string; v?: string; right?: React.ReactNode; onPress?: () => void }) {
   return (
-    <PressScale onPress={onPress} style={{ flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 52, paddingVertical: 8, paddingHorizontal: 14, backgroundColor: tokens.row }}>
+    <PressScale scale={0.985} onPress={onPress} style={{ flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 52, paddingVertical: 8, paddingHorizontal: 2, backgroundColor: tokens.bg }}>
       <Tile name={icon} size={32} radius={10} bg="transparent" />
       <Txt size={15.5} weight={500} numberOfLines={1} style={{ flexShrink: 0 }}>{t}</Txt>
       <View style={{ flex: 1 }} />
