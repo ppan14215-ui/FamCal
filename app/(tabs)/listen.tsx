@@ -239,17 +239,25 @@ function Packliste({ list }: { list: List }) {
   const items = list.sections.flatMap((s) => s.items);
   const pct = items.length ? items.filter((i) => i.done).length / items.length : 0;
   const plain = list.kind === 'collection' || !!list.blueprint;
-  const add = <AddInline key="add" flat placeholder={isPoints(list) ? tx('Spieler hinzufügen …', 'Add player …') : tx('Hinzufügen …', 'Add …')} onAdd={(t) => actions.addItem(list.id, t)} />;
+  const done = items.filter((i) => i.done).length;
+  // "Gepackt" only where something is packed (a trip's list, a bag); every other list is "erledigt".
+  const packs = !!list.forEvent || /pack|tasche|koffer|bag|suitcase/i.test(list.name);
+  // As in the klar draft, a list you tick off is only what is on it: new things come by speaking or over the plus.
+  // The line to write on stays where there is nothing to tick (collections, games) and while nothing is open.
+  const add = plain || isPoints(list) || done === items.length ? <AddInline key="add" flat placeholder={isPoints(list) ? tx('Spieler hinzufügen …', 'Add player …') : tx('Hinzufügen …', 'Add …')} onAdd={(t) => actions.addItem(list.id, t)} /> : undefined;
   return (
     <>
       {items.length && !plain ? (
-        <View style={{ height: 3, borderRadius: 999, backgroundColor: tokens.hair, overflow: 'hidden' }}>
-          <View style={{ width: `${Math.round(pct * 100)}%`, height: '100%', borderRadius: 999, backgroundColor: tokens.accent }} />
+        <View style={{ gap: 8 }}>
+          <H2 right={`${Math.round(pct * 100)} %`}>{packs ? tx(`${done} von ${items.length} gepackt`, `${done} of ${items.length} packed`) : tx(`${done} von ${items.length} erledigt`, `${done} of ${items.length} done`)}</H2>
+          <View style={{ height: 3, borderRadius: 999, backgroundColor: tokens.hair, overflow: 'hidden' }}>
+            <View style={{ width: `${Math.round(pct * 100)}%`, height: '100%', borderRadius: 999, backgroundColor: tokens.accent }} />
+          </View>
         </View>
       ) : null}
       {isPoints(list) ? <Scoreboard list={list} /> : null}
       {/* The add row is the next line of the list: what is written there becomes the line above it. */}
-      {list.sections.length ? <Sections list={list} counts={!plain} footer={add} /> : add}
+      {list.sections.length ? <Sections list={list} footer={add} /> : add}
       <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 28 }}>
         <PressScale
           accessibilityLabel={tx(`Liste ${list.name} bearbeiten`, `Edit list ${list.name}`)}
@@ -304,7 +312,7 @@ function Scoreboard({ list }: { list: List }) {
   return <ScoreboardView list={list} action={newGame} alert={ask} />;
 }
 
-function Sections({ list, counts, footer }: { list: List; counts?: boolean; footer?: React.ReactElement }) {
+function Sections({ list, footer }: { list: List; footer?: React.ReactElement }) {
   const shop = list.kind === 'shopping';
   const plain = list.kind === 'collection' || !!list.blueprint;
   const bp = list.blueprint;
@@ -333,19 +341,19 @@ function Sections({ list, counts, footer }: { list: List; counts?: boolean; foot
       />
     </Fresh>
   );
-  // Einkauf: what is bought leaves its aisle and gathers under "Erledigt" at the end.
-  const bought = shop ? list.sections.flatMap((x) => x.items.filter((i) => i.done)) : [];
+  // Every list you tick off, as in the klar draft: what is done leaves its section and gathers under "Erledigt" at the end.
+  const gather = !plain;
+  const bought = gather ? list.sections.flatMap((x) => x.items.filter((i) => i.done)) : [];
   return (
     <>
       {list.sections.map((sec, at) => {
         // The add row closes the last section, where new entries land.
-        const tail = !shop && footer && at === list.sections.length - 1 ? footer : null;
+        const tail = !gather && footer && at === list.sections.length - 1 ? footer : null;
         const open = sec.items.filter((i) => !i.done);
-        const done = sec.items.filter((i) => i.done);
-        if (shop && !open.length) return null;
-        const right = plain ? String(sec.items.length) : counts ? tx(`${done.length} von ${sec.items.length}`, `${done.length} of ${sec.items.length}`) : String(open.length);
+        if (gather && !open.length) return null;
+        const right = String(plain ? sec.items.length : open.length);
         // The shop's own order: vegetables together, then bread, fridge, meat, shelves (Julian 30.10.).
-        const ordered = shop ? open.map((i, k) => ({ i, k, a: aisleOf(i.name) })).sort((x, y) => x.a - y.a || x.k - y.k).map((x) => x.i) : sec.items;
+        const ordered = shop ? open.map((i, k) => ({ i, k, a: aisleOf(i.name) })).sort((x, y) => x.a - y.a || x.k - y.k).map((x) => x.i) : gather ? open : sec.items;
         return (
           <View key={sec.id} style={{ gap: 6 }}>
             {plain && list.sections.length === 1 ? null : <H2 right={right}>{sec.title}</H2>}
@@ -360,7 +368,7 @@ function Sections({ list, counts, footer }: { list: List; counts?: boolean; foot
           </View>
         );
       })}
-      {shop ? footer : null}
+      {gather ? footer : null}
       {bought.length ? (
         <View style={{ gap: 6 }}>
           <H2 right={String(bought.length)}>{tx('Erledigt', 'Done')}</H2>

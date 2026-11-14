@@ -43,6 +43,8 @@ const LEAD = EN ? 68 : 54;
 /** One line of the list. Dense like the klar draft (22 of 284 there), Julian 14.11.: the app must look like the concept. */
 const ROW = 32;
 const GUTTER = 42;
+/** The taller row under the month (36 of 284 in the draft), with fine lines between. */
+const TALL = 48;
 
 /** Who a Termin belongs to, as small dots in the person's colour. */
 function Dots({ e, people }: { e: CalEvent; people: Person[] }) {
@@ -66,7 +68,7 @@ function Dots({ e, people }: { e: CalEvent; people: Person[] }) {
 const NOTE_MAX = 14;
 
 /** One Termin as one flat line: the person's bar, time, icon, title, who as dots. Also used under the month. */
-export const AgendaRow = React.memo(function AgendaRow({ e, date, over, people, next }: { e: CalEvent; date: string; over: boolean; people: Person[]; /** The next one today: its time stands out. */ next?: boolean }) {
+export const AgendaRow = React.memo(function AgendaRow({ e, date, over, people, next, tall }: { e: CalEvent; date: string; over: boolean; people: Person[]; /** The next one today: its time stands out. */ next?: boolean; /** Under the month: the draft's taller row. */ tall?: boolean }) {
   const span = !!e.endDate && e.endDate > e.date;
   const ink = evInk(e);
   const lead = span ? tx(`Tag ${daysBetween(e.date, date) + 1}`, `Day ${daysBetween(e.date, date) + 1}`) : e.allDay ? tx('Tag', 'Day') : hm(e.start);
@@ -74,13 +76,13 @@ export const AgendaRow = React.memo(function AgendaRow({ e, date, over, people, 
   return (
     <Fresh id={e.id} radius={10}>
       <SwipeRow bg={tokens.bg} onDelete={() => dropEvent(e)}>
-        <PressScale scale={0.985} onPress={() => { if (!justSwiped()) router.push(`/termin/${e.id}`); }} accessibilityLabel={`${e.title}, ${lead}`} style={{ flexDirection: 'row', alignItems: 'center', gap: 8, height: ROW, opacity: over ? 0.45 : 1 }}>
-          <View style={{ width: 3, alignSelf: 'stretch', marginVertical: 6, borderRadius: 2, backgroundColor: ink }} />
-          <Txt size={14} line={18} weight={next ? 600 : 400} color={next ? tokens.accent : ink} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8} style={{ width: LEAD - 11, fontVariant: ['tabular-nums'] }}>{lead}</Txt>
-          <View style={{ width: 22, height: 22 }}>{e.work ? null : <ClayIcon name={e.icon} size={22} />}</View>
-          <Txt size={16.5} line={21} weight={400} color={e.work ? tokens.sub : tokens.ink} numberOfLines={1} style={{ flex: 1, minWidth: 0 }}>
+        <PressScale scale={0.985} onPress={() => { if (!justSwiped()) router.push(`/termin/${e.id}`); }} accessibilityLabel={`${e.title}, ${lead}`} style={{ flexDirection: 'row', alignItems: 'center', gap: tall ? 10 : 8, height: tall ? TALL : ROW, opacity: over ? 0.45 : 1 }}>
+          <View style={{ width: 3, alignSelf: 'stretch', marginVertical: tall ? 9 : 6, borderRadius: 2, backgroundColor: ink }} />
+          <Txt size={tall ? 15 : 14} line={tall ? 19 : 18} weight={next ? 600 : 400} color={next ? tokens.accent : ink} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8} style={{ width: LEAD - 11 + (tall ? 4 : 0), fontVariant: ['tabular-nums'] }}>{lead}</Txt>
+          <View style={{ width: tall ? 26 : 22, height: tall ? 26 : 22 }}>{e.work ? null : <ClayIcon name={e.icon} size={tall ? 26 : 22} />}</View>
+          <Txt size={tall ? 17 : 16.5} line={tall ? 22 : 21} weight={400} color={e.work ? tokens.sub : tokens.ink} numberOfLines={1} style={{ flex: 1, minWidth: 0 }}>
             {e.title}
-            {note && note.length <= NOTE_MAX ? <Txt size={13.5} line={21} color={tokens.mute}>{`  ${note}`}</Txt> : null}
+            {note && note.length <= NOTE_MAX ? <Txt size={tall ? 14.5 : 13.5} line={tall ? 22 : 21} color={tokens.mute}>{`  ${note}`}</Txt> : null}
           </Txt>
           <Dots e={e} people={people} />
         </PressScale>

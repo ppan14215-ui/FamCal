@@ -56,19 +56,3 @@ export default function HeaderRight({ before, people }: { before?: React.ReactNo
     </View>
   );
 }
-
-/** Back and forward as one white pill, for views that page (days, weeks, months, years). */
-export function HeadArrows({ onStep, prev, next }: { onStep: (dir: 1 | -1) => void; prev: string; next: string }) {
-  const half = { width: 33, height: HEAD_BTN - 4, alignItems: 'center' as const, justifyContent: 'center' as const };
-  return (
-    <View style={{ flexDirection: 'row', alignItems: 'center', height: HEAD_BTN - 4, borderRadius: 999, backgroundColor: tokens.row, boxShadow: HEAD_SHADOW } as any}>
-      <PressScale accessibilityLabel={prev} hitSlop={{ top: 8, bottom: 8, left: 8 }} scale={0.88} onPress={() => { haptics.select(); onStep(-1); }} style={half}>
-        <View style={{ transform: [{ rotate: '180deg' }] }}><LineIcon name="chev" size={14} color={tokens.ink} stroke={2.2} /></View>
-      </PressScale>
-      <View style={{ width: 1, height: 14, backgroundColor: tokens.hair }} />
-      <PressScale accessibilityLabel={next} hitSlop={{ top: 8, bottom: 8, right: 8 }} scale={0.88} onPress={() => { haptics.select(); onStep(1); }} style={half}>
-        <LineIcon name="chev" size={14} color={tokens.ink} stroke={2.2} />
-      </PressScale>
-    </View>
-  );
-}

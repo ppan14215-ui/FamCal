@@ -13,12 +13,12 @@ import { tokens, build, easing, springs, persons, personPalette, shade, PersonId
 import { Screen, Tabs, Head } from '../../src/components/ui/kit';
 import Txt from '../../src/components/ui/Txt';
 import LineIcon from '../../src/components/ui/LineIcon';
-import HeaderRight, { HeadArrows } from '../../src/components/ui/HeaderRight';
+import HeaderRight from '../../src/components/ui/HeaderRight';
 import { useStore, actions, get, CalView } from '../../src/state/store';
 import AgendaView from '../../src/screens/kalender/AgendaView';
 import WeekView from '../../src/screens/kalender/WeekView';
-import MonthView, { monthTitle, shiftMonth } from '../../src/screens/kalender/MonthView';
-import YearView, { shiftYear } from '../../src/screens/kalender/YearView';
+import MonthView, { monthTitle } from '../../src/screens/kalender/MonthView';
+import YearView from '../../src/screens/kalender/YearView';
 import PressScale from '../../src/components/ui/PressScale';
 import { TODAY, WD_LONG, weekday, dayNum, MONTHS_SHORT, monthIdx, addDays, monday, isoWeek, dmShort, iso } from '../../src/lib/dates';
 import { haptics } from '../../src/lib/haptics';
@@ -108,18 +108,6 @@ function span(a: string, b: string): string {
   if (monthIdx(a) !== monthIdx(b)) return `${dmShort(a)} ${tx('bis', 'to')} ${dmShort(b)}`;
   return EN ? `${MONTHS_SHORT[monthIdx(a)]} ${dayNum(a)} to ${dayNum(b)}` : `${dayNum(a)}. bis ${dmShort(b)}`;
 }
-
-/** Steps a paging view back or forward: three days, a week, a month, a year. */
-function step(view: CalView, dir: 1 | -1) {
-  const day = get().calDay;
-  actions.setCalDay(view === 'tag' ? addDays(day, dir * 3) : view === 'woche' ? addDays(day, dir * 7) : view === 'monat' ? shiftMonth(day, dir) : shiftYear(day, dir));
-}
-const STEP_LABEL: Record<string, [string, string]> = {
-  tag: [tx('Drei Tage zurück', 'Three days back'), tx('Drei Tage weiter', 'Three days on')],
-  woche: [tx('Vorige Woche', 'Previous week'), tx('Nächste Woche', 'Next week')],
-  monat: [tx('Voriger Monat', 'Previous month'), tx('Nächster Monat', 'Next month')],
-  jahr: [tx('Voriges Jahr', 'Previous year'), tx('Nächstes Jahr', 'Next year')],
-};
 
 /**
  * A calendar view arriving after a zoom step: from slightly smaller when it came closer, slightly larger when it
@@ -217,11 +205,10 @@ export default function Kalender() {
     : view === 'woche' ? tx(`KW ${isoWeek(day)}`, `Week ${isoWeek(day)}`)
     : view === 'monat' ? monthTitle(day).month
     : String(yr);
-  // Short, so it fits behind the title beside the arrows and the two buttons.
+  // Short, so it fits behind the title beside the two buttons. No arrows, as in the draft: every view pages by a swipe.
   const sub = view === 'tag' || view === 'woche' ? span(first, lastDay) : view === 'monat' ? String(yr) : undefined;
-  const arrows = <HeadArrows onStep={(dir) => step(view, dir)} prev={STEP_LABEL[view][0]} next={STEP_LABEL[view][1]} />;
   return (
-    <Screen tab gap={14} headEnd={0} head={<><Title text={title} sub={sub} open={open} onPress={toggle} right={<HeaderRight before={arrows} />} />{seg}</>}>
+    <Screen tab gap={14} headEnd={0} head={<><Title text={title} sub={sub} open={open} onPress={toggle} right={<HeaderRight />} />{seg}</>}>
       <GestureDetector gesture={pinch} touchAction="pan-y">
         <Animated.View style={zoomed}>
           <Arrive key={view} from={from.current}>
