@@ -16,6 +16,7 @@ import LineIcon from '../../src/components/ui/LineIcon';
 import HeaderRight from '../../src/components/ui/HeaderRight';
 import { useStore, actions, get, CalView } from '../../src/state/store';
 import AgendaView from '../../src/screens/kalender/AgendaView';
+import Briefing from '../../src/screens/kalender/Briefing';
 import WeekView from '../../src/screens/kalender/WeekView';
 import MonthView, { monthTitle } from '../../src/screens/kalender/MonthView';
 import YearView from '../../src/screens/kalender/YearView';
@@ -196,7 +197,7 @@ export default function Kalender() {
     return (
       <View style={{ flex: 1, backgroundColor: tokens.bg, paddingTop: insets.top }}>
         <Head end={0}><Title text={WD_LONG[weekday(TODAY)]} sub={dmShort(TODAY)} open={open} onPress={toggle} right={<HeaderRight />} />{seg}</Head>
-        <Animated.View entering={build} style={{ flex: 1 }}><AgendaView /></Animated.View>
+        <Animated.View entering={build} style={{ flex: 1 }}><AgendaView top={<Briefing />} /></Animated.View>
       </View>
     );
   }

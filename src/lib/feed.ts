@@ -241,6 +241,31 @@ async function loadFeed(familyId: string) {
   local.forEach((f) => void upload(f));
 }
 
+/**
+ * The test link's sample family gets a few lines of log, so the briefing and the chat have something to show (the partner
+ * said things too). Only in memory and only on the test link: nothing is uploaded.
+ */
+export function seedDemoFeed() {
+  const s = get();
+  const before = (min: number) => new Date(Date.now() - min * 60000).toISOString();
+  const made = (by: PersonId, min: number, said: string, ids: string[]): FeedEntry | null => {
+    const es = ids.map((id) => s.events.find((e) => e.id === id)).filter(Boolean) as typeof s.events;
+    return es.length ? { id: newId(), at: before(min), by, said, kind: 'made', events: es.map((e) => e.id), snap: { events: es.map((e) => ({ id: e.id, title: e.title, date: e.date, start: e.start, end: e.end, allDay: e.allDay, icon: e.icon, place: e.place })) } } : null;
+  };
+  const shop = s.lists.find((l) => l.id === 'einkauf');
+  const milk = shop?.sections.flatMap((x) => x.items).find((i) => /Hafermilch/.test(i.name));
+  const rows: (FeedEntry | null)[] = [
+    made('T', 3 * 24 * 60, 'Dienstags ist wieder Fußball, 19 Uhr', ['e-fb1']),
+    made('J', 26 * 60, 'Sonntag um drei gehen wir mit Lena in den Zoo', ['e-zoo']),
+    made('J', 3 * 60, 'Oma Inge wird am Montag 70, wir essen mittags zusammen', ['e-inge']),
+    shop && milk ? { id: newId(), at: before(20), by: 'T', said: 'Hafermilch ist alle', kind: 'made', items: { list: shop.id, ids: [milk.id] }, snap: { list: shop.name, items: [milk.name] } } : null,
+    made('T', 5, 'Ich gehe heute mit Ben zur U6', ['e-u6']),
+  ];
+  feed = sorted(rows.filter(Boolean) as FeedEntry[]);
+  undos.clear();
+  subs.forEach((l) => l());
+}
+
 /** Signed out: the chat of that family leaves the phone too. */
 export function clearFeed() {
   feed = [];

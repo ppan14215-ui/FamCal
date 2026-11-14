@@ -4,9 +4,16 @@
  * anschaue"). A sentence said on Kalender or Listen thinks in the same card as
  * in the chat, right above the field, and what it made shows there as the chat
  * card. The entry itself sits in the chat log, so the log stays complete.
+ *
+ * Kalender and Listen in the klar look (Julian 14.11.: "if I edit something in the calendar I don't want to jump to
+ * the chat tab but just stay where I am at and watch the change happen", "Chat is just the log for what happened the
+ * calendar is the basis of what we work on"): what was made arrives where I am looking and lights up there, Memo
+ * thinks in the bar, and no chat card lies over it. The card still comes when words are the answer, when it needs me
+ * (the time question), or when what changed is no longer there to look at.
  */
 import React, { useEffect, useState } from 'react';
 import { View, ScrollView, useWindowDimensions } from 'react-native';
+import { usePathname } from 'expo-router';
 import Animated, { FadeInDown, FadeOut } from 'react-native-reanimated';
 import PressScale from './ui/PressScale';
 import LineIcon from './ui/LineIcon';
@@ -15,6 +22,8 @@ import { useVeil } from './Veil';
 import { Entry, Thinking } from './ChatCards';
 import { useFeed } from '../lib/feed';
 import { getFamily, myRole } from '../lib/sync';
+import { useStore } from '../state/store';
+import { navStyle } from '../lib/navStyle';
 import { tx } from '../i18n/lang';
 
 /** How long a finished card stays before it goes by itself. */
@@ -44,7 +53,16 @@ export default function Peek() {
     const t = setTimeout(() => openPeek(0), STAY_MS);
     return () => clearTimeout(t);
   }, [made?.id, thinking, held]);
-  if (!from || (!thinking && !made)) return null;
+  const path = usePathname();
+  const events = useStore((x) => x.events);
+  const quiet = navStyle() === 'klar' && (path === '/kalender' || path === '/listen');
+  // It landed on the page I am on: Termine in the calendar, items and tasks on the lists.
+  const landed = !!made && !made.timeQ && !made.undone && (path === '/kalender'
+    ? !!made.events?.length && made.events.every((id) => events.some((e) => e.id === id))
+    : !!(made.items?.ids.length || made.tasks?.length));
+  const thinks = thinking && !quiet;
+  const card = made && !(quiet && landed) ? made : null;
+  if (!from || (!thinks && !card)) return null;
   return (
     <Animated.View entering={FadeInDown.duration(220)} exiting={FadeOut.duration(150)} onTouchStart={() => setHeld(true)}
       style={{ maxHeight: H * 0.55, borderRadius: 24, backgroundColor: tokens.bg, boxShadow: '0 1px 2px rgba(22,35,42,0.06), 0 4px 14px rgba(22,35,42,0.08)' } as any}>
@@ -52,7 +70,7 @@ export default function Peek() {
         <PressScale accessibilityLabel={tx('Schließen', 'Close')} hitSlop={10} onPress={() => openPeek(0)} style={{ position: 'absolute', top: 10, left: 12, zIndex: 2 }}>
           <LineIcon name="x" size={18} color={tokens.mute} />
         </PressScale>
-        {thinking ? <Thinking by={me} /> : made ? <Entry f={made} mine me={me} /> : null}
+        {thinks ? <Thinking by={me} /> : card ? <Entry f={card} mine me={me} /> : null}
       </ScrollView>
     </Animated.View>
   );
