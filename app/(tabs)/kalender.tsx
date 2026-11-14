@@ -82,14 +82,15 @@ function Title({ text, sub, open, onPress, right }: { text: string; sub?: string
   const view = useStore((s) => s.calView);
   // Simple: the name of the month opens the year, the year's number goes back to the month.
   const chev = !simple || view === 'monat' || view === 'jahr';
+  // After the reference (Julian 14.11.): the title tight and bold with a period, the grey info line below it.
   return (
-    <View style={{ flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', gap: 12 }}>
-      <PressScale scale={0.97} onPress={onPress} accessibilityLabel={simple ? (view === 'monat' ? tx('Jahr zeigen', 'Show year') : tx('Monat zeigen', 'Show month')) : tx('Ansicht wechseln', 'Change view')} accessibilityState={{ expanded: open }} style={{ flex: 1, gap: 2 }}>
-        {sub ? <Txt size={15} color={tokens.sub}>{sub}</Txt> : null}
+    <View style={{ flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
+      <PressScale scale={0.97} onPress={onPress} accessibilityLabel={simple ? (view === 'monat' ? tx('Jahr zeigen', 'Show year') : tx('Monat zeigen', 'Show month')) : tx('Ansicht wechseln', 'Change view')} accessibilityState={{ expanded: open }} style={{ flex: 1, gap: 3 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-          <Txt size={34} line={40} weight={700} tracking={-1} numberOfLines={1}>{text}<Dot /></Txt>
+          <Txt size={34} line={38} weight={700} tracking={-1.4} numberOfLines={1} style={{ flexShrink: 1 }}>{text}<Dot /></Txt>
           {chev ? <View style={{ transform: [{ rotate: simple ? (view === 'jahr' ? '-90deg' : '90deg') : open ? '-90deg' : '90deg' }], marginTop: 4 }}><LineIcon name="chev" size={16} color={tokens.sub} stroke={2.2} /></View> : null}
         </View>
+        {sub ? <Txt size={14} line={19} color={tokens.sub} numberOfLines={1}>{sub}</Txt> : null}
       </PressScale>
       {right}
     </View>

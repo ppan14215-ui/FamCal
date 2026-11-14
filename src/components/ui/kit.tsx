@@ -14,7 +14,7 @@ import LineIcon, { LineName } from './LineIcon';
 import PressScale from './PressScale';
 import { Tile, ClayIcon } from './Clay';
 import { ClayName } from '../../lib/clayIcons';
-import { tokens, springs, rise, rowIn, rowOut, rowLayout, motion, easing, glass } from '../../theme';
+import { tokens, springs, rise, rowIn, rowOut, rowLayout, motion, easing, glass, fonts } from '../../theme';
 import { goBack } from '../../lib/nav';
 import { haptics } from '../../lib/haptics';
 import { tx } from '../../i18n/lang';
@@ -108,13 +108,17 @@ export function Screen({ children, head, tab, footer, bg = tokens.bg, gap = 14, 
 
 // ─── Type ──────────────────────────────────────────────────────────────────
 
-/** Screen title. Klar look (Julian 13.11.): 28 pt semibold, no coloured period; `dot` is kept for callers and ignored. */
-export function H1({ children, sub, right, size = 28 }: { children: React.ReactNode; sub?: string; right?: React.ReactNode; size?: number; dot?: string }) {
+/**
+ * Screen title after the "Recordings" reference (Julian 14.11.): tight and bold with a period, the grey info line
+ * below it. A title that already ends in a mark keeps its own. `dot` is kept for callers and ignored.
+ */
+export function H1({ children, sub, right, size = 30 }: { children: React.ReactNode; sub?: string; right?: React.ReactNode; size?: number; dot?: string }) {
+  const period = typeof children === 'string' && !/[.?!…:]$/.test(children.trim());
   return (
-    <View style={{ flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', gap: 12 }}>
-      <View style={{ flex: 1, gap: 1 }}>
-        {sub ? <Txt size={13.5} line={18} color={tokens.sub}>{sub}</Txt> : null}
-        <Txt size={size} line={Math.round(size * 1.2)} weight={600} tracking={-0.7}>{children}</Txt>
+    <View style={{ flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
+      <View style={{ flex: 1, gap: 3 }}>
+        <Txt size={size} line={Math.round(size * 1.12)} weight={700} tracking={-size * 0.04}>{children}{period ? <Dot /> : null}</Txt>
+        {sub ? <Txt size={14} line={19} color={tokens.sub}>{sub}</Txt> : null}
       </View>
       {right}
     </View>
@@ -264,10 +268,23 @@ export function StepDots({ i, n = 8 }: { i: number; n?: number }) {
 }
 
 /**
- * Segmented control on a grey track; the white pill slides to the tapped
- * item on a spring instead of jumping.
+ * The view switch as chips, after the reference (Julian 14.11.): every item is a white chip with a whisper of
+ * shadow, the chosen one is ink with white text. The ink chip glides to the tapped item on a spring.
  */
-export function Seg<T extends string>({ items, value, onChange, height = 34 }: { items: { key: T; label: string }[]; value: T; onChange: (k: T) => void; height?: number }) {
+const SEG_GAP = 6;
+/** A resting chip: white with a hairline and a whisper of shadow. */
+const CHIP_SHADOW = '0 0 0 1px rgba(17,20,23,0.035), 0 2px 8px rgba(17,20,23,0.06)';
+/** A label turns white while the ink chip is under it. */
+function SegLabel({ i, x, label }: { i: number; x: SharedValue<number>; label: string }) {
+  const ink = tokens.ink, on = tokens.onInk;
+  const st = useAnimatedStyle(() => ({ color: interpolateColor(Math.min(1, Math.abs(x.value - i)), [0.25, 0.6], [on, ink]) }));
+  return (
+    <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+      <Animated.Text numberOfLines={1} maxFontSizeMultiplier={1.2} style={[{ fontFamily: fonts[600], fontSize: 14, lineHeight: 19 }, st]}>{label}</Animated.Text>
+    </View>
+  );
+}
+export function Seg<T extends string>({ items, value, onChange, height = 36 }: { items: { key: T; label: string }[]; value: T; onChange: (k: T) => void; height?: number }) {
   const idx = Math.max(0, items.findIndex((it) => it.key === value));
   const [w, setW] = useState(0);
   // Julian 31.10. 18:20: on the phone a fresh switch (each Kalender view draws its own header) showed the pill at the
@@ -275,31 +292,30 @@ export function Seg<T extends string>({ items, value, onChange, height = 34 }: {
   // starts right on its tab; the tap glides the old one first (140 ms) before the new view takes over.
   const x = useSharedValue(idx);
   useEffect(() => { if (Math.abs(x.value - idx) > 0.001) x.value = withSpring(idx, springs.smooth); }, [idx]);
-  // The pill glides on the tap itself; the new view comes once the glide is mostly done, so building it never holds the glide (Julian 31.10.: "lag").
+  // The chip glides on the tap itself; the new view comes once the glide is mostly done, so building it never holds the glide (Julian 31.10.: "lag").
   const pick = (k: T, i: number) => { x.value = withSpring(i, springs.smooth); setTimeout(() => onChange(k), 140); };
-  const pill = useAnimatedStyle(() => ({ transform: [{ translateX: x.value * w }] }));
-  const onLayout = (e: LayoutChangeEvent) => setW((e.nativeEvent.layout.width - 8) / items.length);
+  const pill = useAnimatedStyle(() => ({ transform: [{ translateX: x.value * (w + SEG_GAP) }] }));
+  const onLayout = (e: LayoutChangeEvent) => setW((e.nativeEvent.layout.width - SEG_GAP * (items.length - 1)) / items.length);
   return (
-    <View onLayout={onLayout} style={{ flexDirection: 'row', padding: 4, borderRadius: 999, backgroundColor: tokens.segBg }}>
-      {w ? <Animated.View pointerEvents="none" style={[{ position: 'absolute', left: 4, top: 4, width: w, height, borderRadius: 999 }, glass.sm, pill]} /> : null}
+    <View onLayout={onLayout} style={{ flexDirection: 'row', gap: SEG_GAP, height }}>
       {items.map((it) => {
         const on = it.key === value;
         return (
           <PressScale
             key={it.key}
             accessibilityRole="tab"
+            accessibilityLabel={it.label}
             accessibilityState={{ selected: on }}
             scale={0.95}
             onPress={() => { if (!on) { haptics.select(); pick(it.key, items.indexOf(it)); } }}
-            style={{
-              flex: 1, height, borderRadius: 999, alignItems: 'center', justifyContent: 'center',
-              backgroundColor: !w && on ? tokens.segOn : 'transparent',
-            }}
-          >
-            <Txt size={14} weight={on ? 600 : 500} color={on ? tokens.ink : tokens.sub}>{it.label}</Txt>
-          </PressScale>
+            style={{ flex: 1, height, borderRadius: 999, backgroundColor: tokens.row, boxShadow: CHIP_SHADOW } as any}
+          />
         );
       })}
+      {w ? <Animated.View pointerEvents="none" style={[{ position: 'absolute', left: 0, top: 0, width: w, height, borderRadius: 999, backgroundColor: tokens.ink }, pill]} /> : null}
+      <View pointerEvents="none" style={{ position: 'absolute', left: 0, right: 0, top: 0, height, flexDirection: 'row', gap: SEG_GAP }}>
+        {items.map((it, i) => <SegLabel key={it.key} i={i} x={x} label={it.label} />)}
+      </View>
     </View>
   );
 }
