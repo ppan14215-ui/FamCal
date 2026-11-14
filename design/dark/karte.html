@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<title>FamCal Gesprächskarte hell und dunkel</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;display=swap">
+<link rel="stylesheet" href="theme.css">
+</head>
+<body>
+<template>
+  <div class="sub">Mittwoch</div>
+  <h1 class="h1">28. Oktober<b>.</b></h1>
+  <div class="group" style="margin-top:18px;opacity:.5">
+    <div class="rowi"><span class="time">Fr</span><div class="tile" style="background:var(--tile-blue)"><img src="../../assets/icons/icon-zahnarzt.webp" alt=""></div><span class="t" style="flex:1">Julia beim Zahnarzt</span></div>
+    <div class="rowi"><span class="time">So</span><div class="tile" style="background:var(--tile-green)"><img src="../../assets/icons/icon-fussball.webp" alt=""></div><span class="t" style="flex:1">Fußball beim FCN</span></div>
+  </div>
+  <div style="position:absolute;left:14px;right:14px;bottom:174px;background:var(--row);border:1px solid var(--hair);border-radius:28px;padding:18px;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:14px">
+    <div style="align-self:flex-end;max-width:80%;background:var(--chipBg);border-radius:18px 18px 4px 18px;padding:10px 14px;font-size:15px">Ich gehe am Sonntag mit Annie und Irene zum Fußball beim FCN</div>
+    <div style="display:flex;gap:12px;align-items:center">
+      <div class="tile" style="width:52px;height:52px;background:var(--tile-green)"><img src="../../assets/icons/icon-fussball.webp" alt="" style="width:44px;height:44px"></div>
+      <div style="display:flex;flex-direction:column;gap:2px"><span class="kicker">✓ IM KALENDER EINGETRAGEN</span><span style="font-size:20px;font-weight:700">Fußball beim FCN</span><span class="m">mit Annie und Irene</span></div>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap"><span class="chip">So 1. Nov</span><span class="chip ok">Tom</span></div>
+    <div style="font-size:16px;font-weight:600">Um wie viel Uhr? Oder ganztägig?</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap"><span class="chip">13:30</span><span class="chip">15:30</span><span class="chip">18:30</span><span class="chip">Ganztägig</span></div>
+    <div style="display:flex;gap:10px"><span class="btn soft">Rückgängig</span><span class="btn main">Passt</span></div>
+  </div>
+  <div class="dock"><div class="field" style="border-color:var(--ink)"><span class="plus">+</span><span class="ph">Antworten oder ergänzen …</span><span class="mic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--onMain)" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></span></div></div>
+  <div class="tabs"><span class="on">Kalender</span><span>Listen</span><span>Eingang</span></div>
+</template>
+<script src="_frame.js"></script>
+</body>
+</html>

@@ -5,7 +5,7 @@ import os, json, shutil, datetime
 ROOT = os.path.dirname(os.path.abspath(__file__))
 P = os.path.join(ROOT, "project")
 os.makedirs(os.path.join(P, "assets"), exist_ok=True)
-ICONS = "/tmp/claude-0/-home-claude/5a50915f-2979-561d-9dac-93f2ab2e131d/scratchpad/icons/img"
+ICONS = os.path.join(ROOT, "..", "assets", "icons")  # 192 px webp, same names as the canvas assets
 
 # ---------- Tokens (Clay-Ruhe-System) ----------
 BG = "#F5F5F4"; ROW = "#FFFFFF"; INK = "#16232A"; SUB = "#5B666B"; MUTE = "#8A9397"; HAIR = "#E7E7E4"
@@ -957,6 +957,119 @@ screen("V1-Liste-Neu-Urlaub.dc.html", "Listen · Neue Liste aus Vorschlag", f'''
 <span style="font-size: 13.5px; line-height: 19px; color: {SUB}">Gleicher Screen wie über „+ Neu“, nur ist Name, Datum und Vorlage schon aus dem Anlass gefüllt.</span>
 <span style="flex: 1"></span>{btn("Liste anlegen", href="V1-Liste-Klinik.dc.html")}''', pad="0 18px 34px", gap=12, x=COL(17), y=ROWY[1])
 
+
+# ================= Zeile 7: Datum und Uhrzeit wählen (Konzept "Schreibzeile", zur Freigabe 26.10.) =================
+YW = 8800
+MONO = "font-family: 'Geist Mono', ui-monospace, monospace; font-variant-numeric: tabular-nums"
+def mono(t): return f'<span style="{MONO}">{t}</span>'
+def chipr(t, on=False):
+    ring = f"background: {ROW}; box-shadow: inset 0 0 0 1.5px {INK};" if on else "background: #EFEFEC;"
+    return f'<span style="height: 32px; padding: 0 12px; border-radius: 999px; {ring} color: {INK}; font-size: 13.5px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap">{t}</span>'
+def chips(items): return '<div style="display: flex; flex-wrap: wrap; gap: 6px">' + "".join(items) + '</div>'
+KAL = chipr(li("cal", 14) + "Kalender"); TAST = chipr(li("papier", 14) + "Tastatur")
+def wann(field, sentence, chip_row, extra="", ic="clock", pad_left=48):
+    return (f'<div style="display: flex; flex-direction: column; gap: 10px; padding: 14px 16px 12px; background: {ROW}">'
+            f'<div style="display: flex; align-items: center; gap: 12px">{li(ic, 20, SUB)}<span style="flex: 1; min-width: 0; font-size: 16px; font-weight: 600">{field}</span></div>'
+            f'<div style="padding-left: {pad_left - 16}px; display: flex; flex-direction: column; gap: 10px">{meta(sentence)}{chip_row}</div>{extra}</div>')
+def grid(title, cells, band=None):
+    # cells: 42 tuples (num, muted, dots, ring, today)
+    head = (f'<div style="display: flex; align-items: center; justify-content: space-between; padding: 0 4px">'
+            f'<span style="font-size: 15px; font-weight: 600">{title}</span><span style="display: flex; gap: 6px">'
+            + "".join(f'<span role="button" aria-label="{a}" style="width: 32px; height: 32px; border-radius: 999px; background: {BG}; display: flex; align-items: center; justify-content: center">{li(n, 16, SUB)}</span>' for n, a in [("back", "Monat zurück"), ("chev", "Monat vor")]) + '</span></div>')
+    wd = '<div style="display: grid; grid-template-columns: repeat(7, 1fr); text-align: center; font-size: 12px; font-weight: 600; color: ' + SUB + '">' + "".join(f'<span>{d}</span>' for d in ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"]) + '</div>'
+    cs = ""
+    for i, (n, muted, dts, ring, today) in enumerate(cells):
+        c = MUTE if muted else INK
+        bnd = ""
+        if band and band[0] <= i <= band[1]:
+            l = "50%" if i == band[0] else "0"; r = "50%" if i == band[1] else "0"
+            if i % 7 == 0 and i != band[0]: l = "0"
+            bnd = f'<span style="position: absolute; top: 2px; bottom: 2px; left: {l}; right: {r}; background: #EFEFEC"></span>'
+        rs = f"box-shadow: inset 0 0 0 1.5px {INK}; background: {ROW};" if ring else ""
+        dot = "".join(f'<span style="width: 4px; height: 4px; border-radius: 999px; background: {d}"></span>' for d in ([INK] if today else dts))
+        cs += (f'<span style="position: relative; height: 40px; display: flex; flex-direction: column; align-items: center; justify-content: center">{bnd}'
+               f'<span style="position: relative; width: 36px; height: 36px; border-radius: 999px; {rs} display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px">'
+               f'<span style="font-size: 15px; line-height: 17px; font-weight: {700 if today else 500}; color: {c}">{n}</span><span style="display: flex; gap: 2px; height: 4px">{dot}</span></span></span>')
+    return f'<div style="display: flex; flex-direction: column; gap: 6px; padding: 4px 0 0">{head}{wd}<div style="display: grid; grid-template-columns: repeat(7, 1fr)">{cs}</div></div>'
+def month(first_wd, days, prev_days, sel=(), dots=None, today=None, muted_from=None):
+    dots = dots or {}
+    cells = [(prev_days - first_wd + 1 + i, True, [], False, False) for i in range(first_wd)]
+    for d in range(1, days + 1):
+        cells.append((d, bool(muted_from and d >= muted_from), dots.get(d, []), d in sel, d == today))
+    n = 1
+    while len(cells) < 42: cells.append((n, True, [], False, False)); n += 1
+    return cells
+TERMIN_KOPF = f'''<div style="display: flex; align-items: center; justify-content: space-between"><span style="font-size: 15px; color: {SUB}">Abbrechen</span><span style="width: 70px"></span></div>
+<div style="display: flex; flex-direction: column; gap: 4px; padding: 6px 2px 0"><span style="font: 700 30px Geist, system-ui; letter-spacing: -.9px">U5 bei Dr. Weber</span><span style="font-size: 14px; color: {SUB}">Für Ben</span></div>
+<div style="display: flex; gap: 6px">{katb("stethoskop", "Arzt", True)}{katb("vertrag", "Amt")}{katb("geburtstag", "Familie")}{katb("yogamatte", "Kurs")}<span style="flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 8px 4px 6px; border-radius: 16px; background: {ROW}"><span style="width: 34px; height: 34px; display: flex; align-items: center; justify-content: center">{li("plus", 22, SUB)}</span><span style="font-size: 11.5px; font-weight: 500; color: {SUB}">Alle</span></span></div>'''
+ORT = f'<div style="opacity: .4">{line(li("pin", 20, SUB), "Kinderarztpraxis Weber", CH)}</div>'
+def wnote(t, bottom=296):
+    return f'<div style="position: absolute; left: 18px; right: 18px; bottom: {bottom}px">{note(t)}</div>'
+
+screen("V2-Wann-1-Antippen.dc.html", "Wann · 1 Zeile antippen", f'''
+{TERMIN_KOPF}
+{group(wann(f'{caret()}<span style="color: {MUTE}; font-weight: 500">Wann? Zum Beispiel morgen 15 Uhr</span>', "Tag und Uhrzeit, gern auch jeden Dienstag.", chips([KAL, chipr("Heute · Do"), chipr("Morgen · Fr"), chipr("Sa 31."), chipr("So 1."), chipr("Mo 2."), chipr("Di 3."), chipr("Mi 4.")])) + ORT)}
+{wnote("Text antippen macht die Zeile zum Textfeld, wie beim Einkauf. Kein Sheet. Darunter steht nur, was als Nächstes fehlt.")}
+{kb()}''', pad="0 18px 34px", gap=14, x=COL(0), y=YW)
+
+screen("V2-Wann-2-Schreiben.dc.html", "Wann · 2 Schreiben", f'''
+{TERMIN_KOPF}
+{group(wann(f'12.11. 930-1015{caret()}', f'Donnerstag, 12. November, {mono("9:30")} bis {mono("10:15")}. 45 Minuten.', chips([KAL, chipr("+1 Tag"), chipr("+1 Std"), chipr("Jede Woche"), chipr("Ganztägig")])) + ORT)}
+{wnote("Fertig oder Termin speichern übernimmt. Die Zeile zeigt danach wieder Do 12. Nov · 9:30–10:15. Auch „Do 9:30“, „morgen 15 Uhr“ und „jeden Di 19-2030“ gehen.")}
+{kb()}''', pad="0 18px 34px", gap=14, x=COL(1), y=YW)
+
+NOV = month(6, 30, 31, sel={12}, today=None, dots={1: [JUL_INK, TOM_INK], 2: [JUL_INK, TOM_INK], 3: [TOM_INK], 10: [TOM_INK], 17: [TOM_INK], 24: [TOM_INK], 5: [JUL_INK], 12: [JUL_INK], 19: [JUL_INK], 26: [JUL_INK], 9: [SUB]})
+NOV[3] = (29, True, [], False, True)  # heute, Do 29. Okt
+screen("V2-Wann-3-Kalender.dc.html", "Wann · 3 Kalender statt Tastatur", f'''
+{TERMIN_KOPF}
+{group(wann(f'Do 12. Nov {mono("9:30")}', f'Donnerstag, 12. November, {mono("9:30")}. Wie lange?', chips([TAST, chipr("30 Min"), chipr("45 Min"), chipr("1 Std"), chipr("1,5 Std"), chipr("2 Std")]), grid("November 2026", NOV)))}
+<span style="flex: 1"></span>
+{note("Auswahl ist ein Ring, nie dunkel. Punkte zeigen echte Termine in Personenfarbe, Arbeitsblöcke bekommen keinen. Blättern mit den Pfeilen oder Monats-Chips.")}
+{btn("Termin speichern")}''', pad="0 18px 34px", gap=12, x=COL(2), y=YW)
+
+MAR = month(0, 31, 28, sel={20, 27}, dots={2: [TOM_INK], 9: [TOM_INK], 16: [TOM_INK], 23: [TOM_INK], 30: [TOM_INK], 4: [JUL_INK], 11: [JUL_INK], 18: [JUL_INK], 25: [JUL_INK]})
+screen("V2-Wann-4-Ostsee.dc.html", "Wann · 4 Mehrere Tage", f'''
+<div style="display: flex; align-items: center; justify-content: space-between"><span style="font-size: 15px; color: {SUB}">Abbrechen</span><span style="width: 70px"></span></div>
+<div style="display: flex; align-items: center; gap: 14px; padding-top: 6px">{tile("reise", 64, 20)}<span style="flex: 1; display: flex; flex-direction: column; gap: 2px"><span style="font: 700 30px Geist, system-ui; letter-spacing: -.9px">Ostsee</span><span style="font-size: 14px; color: {SUB}">Für euch drei</span></span></div>
+{group(wann("Sa 20. bis Sa 27. März 2027", "Samstag, 20. März bis Samstag, 27. März 2027. Ganztägig, 8 Tage. In der Zeit stehen Fußball am Di 23. und Rückbildung am Do 25.", chips([TAST, chipr("Jan"), chipr("Feb"), chipr("März", True), chipr("Apr"), chipr("Mai")]), grid("März 2027", MAR, band=(19, 26))))}
+<span style="flex: 1"></span>
+{note("Zwei Tipps ergeben einen Zeitraum, ein Datum ohne Uhrzeit ist ganztägig. Geschrieben: 20.-27.3. Das Jahr steht im Satz, weil es nicht 2026 ist.")}
+{btn("Termin speichern")}''', pad="0 18px 34px", gap=12, x=COL(3), y=YW)
+
+def task_edit():
+    return (f'<div style="display: flex; flex-direction: column; gap: 10px; padding: 12px 14px; background: {ROW}">'
+            f'<div style="display: flex; align-items: center; gap: 12px">{circle()}<span style="flex: 1; min-width: 0; font-size: 17px; font-weight: 500">Passfotos machen bis Fr{caret()}</span>{av("J", 26)}</div>'
+            f'<div style="padding-left: 38px; display: flex; flex-direction: column; gap: 10px">{meta("Fällig bis Freitag, 30. Oktober.")}'
+            + chips([KAL, chipr("Heute · Do"), chipr("Morgen · Fr", True), chipr("Wochenende · So 1."), chipr("Nächste Woche · Fr 6."), chipr("Kein Datum")]) + '</div></div>')
+screen("V2-Wann-5-Aufgabe.dc.html", "Aufgabe · bis Freitag", f'''
+{h1("Listen", "2 offen, 1 erledigt", pair())}
+{ltabs("Aufgaben")}
+{group(task_edit() + '<div style="opacity: .4">' + wrow("umschlag-euro", "Bescheinigung anfragen", "bis 28. Nov", av("T", 24), sub_c=FRIST) + '</div>')}
+{wnote("Die Frist steht im Text, wie Menge und Notiz beim Einkauf. Ohne „bis“ gibt es kein Datum. Nach Fertig: Passfotos machen, darunter „bis Fr 30. Okt“.")}
+{kb()}''', pad="0 18px 34px", gap=12, x=COL(4), y=YW)
+
+SEP = month(1, 30, 31, sel={14}, muted_from=None)
+screen("V2-Wann-6-Geburt.dc.html", "Onboarding · Geburtsdatum", f'''
+{back("V1-Onb-Eltern.dc.html", dots(2))}
+{h1("Eure Kinder")}
+<div style="display: flex; padding: 4px; border-radius: 999px; background: #EAEAE7"><span style="flex: 1; height: 38px; border-radius: 999px; background: {ROW}; display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 600; box-shadow: 0 1px 2px rgba(0,0,0,.06)">Schon da</span><span style="flex: 1; display: flex; align-items: center; justify-content: center; font-size: 15px; color: {SUB}">Noch unterwegs</span></div>
+<div style="display: flex; flex-direction: column; gap: 10px; padding: 12px 16px; border-radius: 18px; background: {ROW}">
+<div style="display: flex; align-items: center"><span style="flex: 1; display: flex; flex-direction: column; gap: 2px"><span style="font-size: 13px; color: {SUB}">Geboren am</span><span style="font-size: 18px; font-weight: 600">14. September 2026</span></span>{meta("6 Wochen")}</div>
+{meta("Montag, 14. September 2026. Ben ist 6 Wochen alt.")}
+{chips([TAST, chipr("Okt"), chipr("Sep", True), chipr("Aug"), chipr("Jul")])}
+{grid("September 2026", SEP)}
+</div>
+<span style="flex: 1"></span>
+{note("Ein Tipp auf den Tag übernimmt und klappt zu. Tage nach heute sind grau. Bei „Noch unterwegs“: 12.3. ergibt Freitag, 12. März 2027, SSW 21.")}
+{btn("Weiter")}''', pad="0 18px 34px", gap=12, x=COL(5), y=YW)
+
+screen("V2-Wann-7-Verschieben.dc.html", "Termin · Verschieben", f'''
+<div style="margin: 0 -18px; height: 200px; background: {TINT["stethoskop"]}; position: relative; display: flex; align-items: center; justify-content: center">{icon("stethoskop", 150)}<span style="position: absolute; left: 18px; top: 8px; width: 40px; height: 40px; border-radius: 999px; background: {ROW}; display: flex; align-items: center; justify-content: center">{li("back", 20)}</span></div>
+{group(wann(f'Do 29. Okt {mono("14:00–14:45")}{caret()}', f'Von {mono("9:30")} auf {mono("14:00")}, gleiche Dauer. Gleichzeitig: Rückbildung, <b style="color: {JUL_INK}; font-weight: 600">Julia</b>, {mono("14:00")} bis {mono("15:00")}.', chips([KAL, chipr("+1 Std"), chipr("+1 Tag"), chipr("+1 Woche"), chipr("Wie vorher")])))}
+<div style="display: flex; flex-direction: column; gap: 2px"><span style="font-size: 30px; line-height: 36px; font-weight: 700; letter-spacing: -.9px">U6 bei Dr. Weber<span style="color: {DONE}">.</span></span>{meta("Kinderarztpraxis Weber · Hauptstr. 12")}</div>
+<div style="position: absolute; left: 18px; right: 18px; bottom: 296px; display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-radius: 16px; background: {INK}; color: #FFFFFF; font-size: 15px">{li("check", 18, "#FFFFFF")}<span style="flex: 1">Verschoben auf Do 14:00</span><span style="font-weight: 600">Rückgängig</span></div>
+{kb()}''', pad="0 18px 34px", gap=14, x=COL(6), y=YW)
+
 # ---------- Index ----------
 notes = {
  "t0": {"x": 0, "y": ROWY[0] - 260, "text": "1 · Onboarding: Eltern, Kinder (falls ja), Kalender, Partner, erstes Jahr, Karten", "kind": "title1", "maxW": 3680},
@@ -964,6 +1077,7 @@ notes = {
  "t2": {"x": 0, "y": ROWY[2] - 260, "text": "3 · Neu: Foto wird gelesen, verstanden, Infozettel; neuer Termin, Symbol aus allen Clay-Icons, wiederkehrender Termin", "kind": "title1", "maxW": 3680},
  "t3": {"x": 0, "y": ROWY[3] - 260, "text": "4 · Eingang (Neu und Dokumente mit Fristen), Aufgaben aufteilen, Entwürfe", "kind": "title1", "maxW": 2270},
  "t4": {"x": 0, "y": ROWY[4] - 260, "text": "5 · Hinweise, Teilen, Assistent, Einstellungen, Plus", "kind": "title1", "maxW": 3210},
+ "t7": {"x": 0, "y": YW - 260, "text": "7 · Datum und Uhrzeit: Schreibzeile (zur Freigabe)", "kind": "title1", "maxW": 3210},
  "t5": {"x": 0, "y": ROWY[5] - 260, "text": "6 · Designsystem v2 (Einfachheit), Widgets, Jahresring: halten, ziehen, loslassen", "kind": "title1", "maxW": 3210},
 }
 order = ["Main.dc.html"] + [k for k in BOARDS if k != "Main.dc.html"]
