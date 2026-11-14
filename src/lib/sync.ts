@@ -158,6 +158,8 @@ export async function startSync(name?: string): Promise<{ family?: Family; error
   }
   lastPeople = get().people;
   pushPeople();
+  // Fotos der Personen Kreise (Julian 14.11.): privat für die Familie, jedes Handy hält seine Kopie.
+  void import('./photoSync').then((m) => m.syncPhotos(family!.id, !people.error)).catch(() => {});
   watchComments(family.id);
   // Listen, Aufgaben und der Familienchat (Julian 29.10.).
   void import('./listSync').then((m) => m.startListSync(family!.id)).catch(() => {});
@@ -270,6 +272,7 @@ export function catchUp(): Promise<void> {
       actions.setPeople([...remoteP, ...newHere]);
       lastPeople = get().people;
     }
+    void import('./photoSync').then((m) => m.syncPhotos(fam, !!people && !people.error)).catch(() => {});
   }).catch((e) => console.warn('[sync] catch up', e));
   return pushing.then(() => { push(); pushPeople(); });
 }
@@ -366,6 +369,7 @@ export async function forgetLocal() {
   await clearCache();
   actions.reset();
   void import('./feed').then((m) => m.clearFeed()).catch(() => {});
+  void import('./photoSync').then((m) => m.forgetPhotos()).catch(() => {});
 }
 
 type PRow = { id: string; name: string; kind: Person['kind']; color: string; birthday: string | null };
