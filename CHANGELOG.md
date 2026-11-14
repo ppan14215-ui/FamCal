@@ -25,6 +25,8 @@ Alle sichtbaren Änderungen an FamCal. Neueste oben. Agenten und Menschen: Ände
 - Sprechen im klaren Look: Die Karte ist jetzt dunkel und wächst aus Memo heraus. Was du sagst, steht groß darin, sichere Worte hell, unsichere grau. Unten läuft die Aufnahme mit orangem Punkt, Zeit und Stopp.
 - Nach dem Senden schrumpft die Karte zu einer kleinen Blase, Memos Augen werden drei Ladepunkte. Ist die Antwort da, gleitet Memo an seinen Platz zurück und die Leiste schiebt sich wieder herein. Nichts verschwindet und taucht neu auf.
 - Plus Menü im klaren Look: kein Blatt von unten mehr. Eine kleine dunkle Karte wächst aus dem Plus, das Plus dreht sich zum Kreuz und schließt wieder, der Bildschirm dahinter tritt zurück. Aus dem Tippfeld geöffnet steigt die Karte über der Navigation auf.
+- Listen im klaren Look: Die Listen stehen oben als Chips mit kleinem Zeichen und Zahl der offenen Dinge, die gewählte ist dunkel. Die Zeilen liegen flach auf dem Grund, nur feine Linien.
+- Hinzufügen ist jetzt die nächste Zeile der Liste: leerer Kreis und Text. Was du dort schreibst, wird zur Zeile darüber, die Zeile bleibt für den nächsten Eintrag offen.
 
 ### App funktioniert zuverlässig (09.11. Audit)
 - Nach längerer Pause im Hintergrund klappen Assistent und Spracheingabe gleich beim ersten Satz, statt "Ich komme gerade nicht an den Assistenten".

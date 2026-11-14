@@ -45,9 +45,11 @@ type Props = {
   trailing?: React.ReactNode;
   /** Seen in a collection: dimmed, but stays in place. */
   dim?: boolean;
+  /** Klar look (Julian 14.11.): the line lies flat on the page ground, hairlines only, no white block. */
+  flat?: boolean;
 };
 
-export default function ItemRow({ title, editText, meta, metaColor, done, who, icon, onToggle, onEdit, onCycleWho, onDelete, onPressTitle, noCheck, lead, below, trailing, dim, editHint = tx('Menge und Notiz einfach mitschreiben', 'Just add amount and note') }: Props) {
+export default function ItemRow({ title, editText, meta, metaColor, done, who, icon, onToggle, onEdit, onCycleWho, onDelete, onPressTitle, noCheck, lead, below, trailing, dim, flat, editHint = tx('Menge und Notiz einfach mitschreiben', 'Just add amount and note') }: Props) {
   const [editing, setEditing] = useState(false);
   const [text, setText] = useState(editText ?? title);
 
@@ -64,7 +66,7 @@ export default function ItemRow({ title, editText, meta, metaColor, done, who, i
   };
 
   const body = (
-    <View style={{ paddingVertical: editing ? 12 : 10, paddingHorizontal: 14, backgroundColor: tokens.row, gap: 6 }}>
+    <View style={{ paddingVertical: editing ? 12 : 10, paddingHorizontal: flat ? 2 : 14, backgroundColor: flat ? tokens.bg : tokens.row, gap: 6 }}>
       <View style={{ flexDirection: 'row', alignItems: lead ? 'flex-start' : 'center', gap: 12 }}>
         {noCheck ? null : <Check done={done} onPress={onToggle} />}
         {lead}
@@ -112,5 +114,5 @@ export default function ItemRow({ title, editText, meta, metaColor, done, who, i
     </View>
   );
 
-  return onDelete ? <SwipeRow onDelete={onDelete}>{body}</SwipeRow> : body;
+  return onDelete ? <SwipeRow onDelete={onDelete} bg={flat ? tokens.bg : undefined}>{body}</SwipeRow> : body;
 }
