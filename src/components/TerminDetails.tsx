@@ -34,7 +34,8 @@ const LEGACY: Record<string, string> = { '1 Tag vorher': '1d', '1 day before': '
 export const reminderKey = (r?: string) => (r === undefined ? '' : LEGACY[r] ?? r);
 export const reminderLabel = (r?: string) => REMINDERS.find((x) => x.key === reminderKey(r))?.label ?? r ?? '';
 
-const repeats = (date: string) => [
+/** The choices for "Wiederholen" on a day. */
+export const repeatOptions = (date: string) => [
   { key: '', label: tx('Nie', 'Never') },
   { key: tx('Täglich', 'Daily'), label: tx('Täglich', 'Daily') },
   { key: tx(`Jeden ${WD_LONG[weekday(date)]}`, `Every ${WD_LONG[weekday(date)]}`), label: tx(`Jeden ${WD_LONG[weekday(date)]}`, `Every ${WD_LONG[weekday(date)]}`) },
@@ -59,7 +60,7 @@ export default function TerminDetails({ e, onPatch }: { e: CalEvent; onPatch: (p
   const [open, setOpen] = useState<Open>(null);
   const [note, setNote] = useState(e.note ?? '');
   const toggle = (k: Open) => { haptics.select(); setOpen(open === k ? null : k); };
-  const rep = repeats(e.date);
+  const rep = repeatOptions(e.date);
   const untilText = (d: string) => (year(d) === year(TODAY) ? dayMonth(d) : `${dayMonth(d)} ${year(d)}`);
   return (
     <Card pad={0} gap={0}>

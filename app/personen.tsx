@@ -1,22 +1,29 @@
 /**
- * Eure Familie (Julian 28.10.: "auch Kinder und Großeltern"). The two parents
- * come from the sign-in; everyone else is added here with a name, what they
- * are and a colour, a birthday if you like (it becomes a yearly Termin with a
- * reminder a week before). They can then be "dabei" on any Termin.
+ * Familie, exactly as in the klar draft Julian approved (14.11., "Familie"): the back button and "Einladen" on top,
+ * the name of the page with how many you are, then one quiet line per person: the circle, the name with a short grey
+ * word behind it, and the person's colour as a dot on the right. Nothing else stands here. "Einladen" opens what is
+ * needed to bring someone in: the family code for a partner, or name, colour and birthday for a child or the
+ * grandparents (a birthday becomes a yearly Termin with a reminder a week before). A swipe to the left removes.
  */
 import React, { useState } from 'react';
 import { View } from 'react-native';
-import { Screen, BackBar, H1, Group, Meta, Seg, Btn, Lead } from '../src/components/ui/kit';
+import { useLocalSearchParams } from 'expo-router';
+import * as Clipboard from 'expo-clipboard';
+import { Screen, H1, H2, Group, Seg, Btn } from '../src/components/ui/kit';
 import { Field } from '../src/components/Field';
 import DateField from '../src/components/DateField';
 import Txt from '../src/components/ui/Txt';
 import PressScale from '../src/components/ui/PressScale';
-import LineIcon from '../src/components/ui/LineIcon';
+import SwipeRow from '../src/components/SwipeRow';
+import { HeadBtn } from '../src/components/ui/HeaderRight';
+import { FormRow, FormValue } from '../src/components/TerminForm';
 import { Avatar, PersonDot } from '../src/components/ui/Person';
-import { tokens, personPalette, persons, shade } from '../src/theme';
+import { tokens, personPalette, persons, shade, allColors, glass } from '../src/theme';
 import { useStore, actions, toast, get } from '../src/state/store';
 import type { Person, CalEvent } from '../src/state/types';
 import { dayMonth, year, TODAY } from '../src/lib/dates';
+import { getFamily } from '../src/lib/sync';
+import { goBack } from '../src/lib/nav';
 import { haptics } from '../src/lib/haptics';
 import { tx } from '../src/i18n/lang';
 
@@ -25,7 +32,31 @@ const KINDS: { key: Person['kind']; label: string }[] = [
   { key: 'grosseltern', label: tx('Großeltern', 'Grandparent') },
   { key: 'andere', label: tx('Andere', 'Other') },
 ];
-const kindLabel = (k: Person['kind']) => KINDS.find((x) => x.key === k)?.label ?? '';
+
+/** The short grey word behind a name: a child's age ("7 J."), or what the person is. */
+function note(p: Person) {
+  if (p.kind === 'kind' && p.birthday) {
+    const [y, m, d] = p.birthday.split('-').map(Number);
+    const [ty, tm, td] = TODAY.split('-').map(Number);
+    const months = (ty - y) * 12 + (tm - m) - (td < d ? 1 : 0);
+    if (months >= 0) return months < 24 ? tx(`${months} Mon.`, `${months} mo`) : tx(`${Math.floor(months / 12)} J.`, `${Math.floor(months / 12)} y`);
+  }
+  return p.kind === 'kind' ? tx('Kind', 'Child') : p.kind === 'grosseltern' ? tx('Großeltern', 'Grandparent') : '';
+}
+
+/** One person as one quiet line (40 of 284 in the draft). */
+function Line({ circle, name, word, dot, last }: { circle: React.ReactNode; name: string; word?: string; dot: string; last: boolean }) {
+  return (
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 56, backgroundColor: tokens.bg, borderBottomWidth: last ? 0 : 1, borderBottomColor: tokens.hair }}>
+      {circle}
+      <Txt size={17} line={22} numberOfLines={1} style={{ flex: 1, minWidth: 0 }}>
+        {name}
+        {word ? <Txt size={14.5} line={22} color={tokens.sub}>{`  ${word}`}</Txt> : null}
+      </Txt>
+      <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: dot }} />
+    </View>
+  );
+}
 
 /** The next birthday as a yearly Termin, reminded a week before, unless one is there already. */
 function birthdayEvent(p: Person) {
@@ -49,6 +80,10 @@ export default function Personen() {
   const [kind, setKind] = useState<Person['kind']>('kind');
   const [color, setColor] = useState(personPalette[2].name);
   const [birthday, setBirthday] = useState<string | null>(null);
+  // "Person hinzufügen" from a Termin opens the form right away.
+  const { neu } = useLocalSearchParams<{ neu?: string }>();
+  const [adding, setAdding] = useState(neu === '1');
+  const code = getFamily()?.invite_code;
 
   const add = () => {
     const n = name.trim();
@@ -66,47 +101,58 @@ export default function Personen() {
     if (gone) toast(tx(`${p.name} entfernt`, `${p.name} removed`), () => actions.setPeople([...get().people, gone]));
   };
 
+  const parents = (['J', 'T'] as const).filter((r) => names[r]);
+  const count = parents.length + people.length;
   return (
-    <Screen>
-      <BackBar />
-      <H1 dot=".">{tx('Eure Familie', 'Your family')}</H1>
-      <Lead>{tx('Wer bei einem Termin dabei ist, wählt ihr dann mit einem Tipp. Geburtstage landen als jährlicher Termin im Kalender.', 'Pick who is coming along on any event with one tap. Birthdays become a yearly event.')}</Lead>
-      <Group>
-        {(['J', 'T'] as const).filter((r) => names[r]).map((r) => (
-          <View key={r} style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12, paddingHorizontal: 16, backgroundColor: tokens.row }}>
-            <Avatar p={r} size={32} />
-            <View style={{ flex: 1 }}><Txt size={16} weight={600}>{persons[r].name}</Txt><Meta>{tx('Elternteil', 'Parent')}</Meta></View>
-          </View>
-        ))}
-        {people.map((p) => (
-          <View key={p.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12, paddingHorizontal: 16, backgroundColor: tokens.row }}>
-            <PersonDot name={p.name} color={p.color} size={32} />
-            <View style={{ flex: 1 }}>
-              <Txt size={16} weight={600}>{p.name}</Txt>
-              <Meta>{[kindLabel(p.kind), p.birthday ? tx(`Geburtstag ${dayMonth(p.birthday)}`, `Birthday ${dayMonth(p.birthday)}`) : null].filter(Boolean).join(' · ')}</Meta>
-            </View>
-            <PressScale hitSlop={10} accessibilityLabel={tx(`${p.name} entfernen`, `Remove ${p.name}`)} onPress={() => remove(p)}>
-              <LineIcon name="x" size={18} color={tokens.mute} />
-            </PressScale>
-          </View>
-        ))}
-      </Group>
-
-      <Txt size={13} weight={600} color={tokens.sub} style={{ marginTop: 8 }}>{tx('Jemanden hinzufügen', 'Add someone')}</Txt>
-      <Field label={tx('Name', 'Name')} value={name} onChangeText={setName} placeholder={tx('Zum Beispiel Mia oder Oma Gisela', 'For example Mia or Grandma')} />
-      <Seg items={KINDS} value={kind} onChange={(k) => setKind(k as Person['kind'])} />
-      <View style={{ flexDirection: 'row', gap: 10, flexWrap: 'wrap' }}>
-        {personPalette.map(shade).map((c) => (
-          <PressScale key={c.name} accessibilityLabel={c.name} accessibilityState={{ selected: color === c.name }} onPress={() => { haptics.select(); setColor(c.name); }}
-            style={{ width: 40, height: 40, borderRadius: 999, backgroundColor: c.bg, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: color === c.name ? c.fg : 'transparent' }}>
-            <Txt size={15} weight={600} color={c.fg}>{name.trim()[0]?.toUpperCase() ?? ''}</Txt>
-          </PressScale>
-        ))}
+    <Screen gap={18} padTop={10}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', minHeight: 44 }}>
+        <HeadBtn icon="back" label={tx('Zurück', 'Back')} onPress={goBack} size={19} />
+        <PressScale accessibilityRole="button" scale={0.95} hitSlop={6} onPress={() => { haptics.select(); setAdding((a) => !a); }}
+          style={[{ height: 40, paddingHorizontal: 16, borderRadius: 999, alignItems: 'center', justifyContent: 'center' }, glass.sm]}>
+          <Txt size={16.5} weight={500}>{adding ? tx('Fertig', 'Done') : tx('Einladen', 'Invite')}</Txt>
+        </PressScale>
       </View>
-      <Group>
-        <DateField label={tx('Geburtstag (optional)', 'Birthday (optional)')} value={birthday} onChange={setBirthday} past />
-      </Group>
-      <Btn label={tx('Hinzufügen', 'Add')} onPress={add} disabled={!name.trim()} />
+      <H1 sub={count === 1 ? tx('1 Person', '1 person') : tx(`${count} Personen`, `${count} people`)}>{tx('Familie', 'Family')}</H1>
+      <View style={{ marginTop: -6 }}>
+        {parents.map((r, i) => (
+          <Line key={r} circle={<Avatar p={r} size={34} />} name={persons[r].name} dot={persons[r].ink} last={i === count - 1} />
+        ))}
+        {people.map((p, i) => {
+          const c = allColors.find((x) => x.name === p.color);
+          return (
+            <SwipeRow key={p.id} bg={tokens.bg} onDelete={() => remove(p)}>
+              <Line circle={<PersonDot name={p.name} color={p.color} size={34} />} name={p.name} word={note(p)} dot={c ? shade(c).fg : tokens.circleLine} last={parents.length + i === count - 1} />
+            </SwipeRow>
+          );
+        })}
+      </View>
+      {adding ? (
+        <>
+          {code ? (
+            <View>
+              <H2>{tx('Mit eigenem Handy', 'With their own phone')}</H2>
+              <FormRow last label={tx('Familiencode', 'Family code')} onPress={async () => { await Clipboard.setStringAsync(code).catch(() => {}); toast(tx('Code kopiert', 'Code copied')); }}>
+                <FormValue>{code}</FormValue>
+              </FormRow>
+            </View>
+          ) : null}
+          <H2>{tx('Ohne eigenes Handy', 'Without a phone')}</H2>
+          <Field label={tx('Name', 'Name')} value={name} onChangeText={setName} placeholder={tx('Zum Beispiel Mia oder Oma Gisela', 'For example Mia or Grandma')} />
+          <Seg items={KINDS} value={kind} onChange={(k) => setKind(k as Person['kind'])} />
+          <View style={{ flexDirection: 'row', gap: 10, flexWrap: 'wrap' }}>
+            {personPalette.map(shade).map((c) => (
+              <PressScale key={c.name} accessibilityLabel={c.name} accessibilityState={{ selected: color === c.name }} onPress={() => { haptics.select(); setColor(c.name); }}
+                style={{ width: 40, height: 40, borderRadius: 999, backgroundColor: c.bg, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: color === c.name ? c.fg : 'transparent' }}>
+                <Txt size={15} weight={600} color={c.fg}>{name.trim()[0]?.toUpperCase() ?? ''}</Txt>
+              </PressScale>
+            ))}
+          </View>
+          <Group>
+            <DateField label={tx('Geburtstag (optional)', 'Birthday (optional)')} value={birthday} onChange={setBirthday} past />
+          </Group>
+          <Btn label={tx('Hinzufügen', 'Add')} onPress={add} disabled={!name.trim()} />
+        </>
+      ) : null}
     </Screen>
   );
 }

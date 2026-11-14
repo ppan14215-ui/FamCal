@@ -9,7 +9,7 @@ import { View } from 'react-native';
 import Txt from './ui/Txt';
 import PressScale from './ui/PressScale';
 import { ClayIcon } from './ui/Clay';
-import { tokens, persons } from '../theme';
+import { tokens, glass, persons } from '../theme';
 import { haptics } from '../lib/haptics';
 import { fillField } from '../lib/simple';
 import type { ClayName } from '../lib/clayIcons';
@@ -28,7 +28,7 @@ export default function ExampleCards({ onPick }: { onPick?: () => void }) {
   return (
     <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
       {examples().map((x) => (
-        <PressScale key={x.t} scale={0.97} accessibilityLabel={`${x.t}: ${x.say}`} onPress={() => { haptics.select(); onPick?.(); fillField(x.say); }} style={{ width: '48.5%', flexGrow: 1, gap: 6, padding: 12, borderRadius: 18, backgroundColor: tokens.row }}>
+        <PressScale key={x.t} scale={0.97} accessibilityLabel={`${x.t}: ${x.say}`} onPress={() => { haptics.select(); onPick?.(); fillField(x.say); }} style={[{ width: '48.5%', flexGrow: 1, gap: 6, padding: 12, borderRadius: 18 }, glass.lift]}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
             <ClayIcon name={x.icon} size={30} />
             <Txt size={14.5} weight={700}>{x.t}</Txt>

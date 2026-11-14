@@ -43,6 +43,8 @@ type Props = {
   closeOnPick?: boolean;
   /** Called when the field closes (Fertig, return key, pick). */
   onDone?: () => void;
+  /** Opens with the calendar already out ("Verschieben" on a Termin). */
+  startOpen?: boolean;
 };
 
 const noOutline = Platform.OS === 'web' ? ({ outlineStyle: 'none' } as any) : null;
@@ -51,8 +53,8 @@ const plusMin = (t: string, m: number) => {
   return `${String(Math.floor(v / 60)).padStart(2, '0')}:${String(v % 60).padStart(2, '0')}`;
 };
 
-export default function WhenField({ value, onChange, kind = 'termin', past, icon = 'clock', label, placeholder = tx('Wann? Zum Beispiel morgen 15 Uhr', 'When? For example tomorrow 3pm'), right, extra, card, closeOnPick, onDone }: Props) {
-  const [open, setOpen] = useState(false);
+export default function WhenField({ value, onChange, kind = 'termin', past, icon = 'clock', label, placeholder = tx('Wann? Zum Beispiel morgen 15 Uhr', 'When? For example tomorrow 3pm'), right, extra, card, closeOnPick, onDone, startOpen }: Props) {
+  const [open, setOpen] = useState(!!startOpen);
   // Julian 05.11.: the open calendar is the default; typing stays as the other way (pref 'wann': 'cal' | 'text').
   const [mode, setMode] = useState<Mode>('cal');
   const [text, setText] = useState('');

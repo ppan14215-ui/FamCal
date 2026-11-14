@@ -135,8 +135,8 @@ export function H1({ children, sub, right, size = 29 }: { children: React.ReactN
 export function H2({ children, right }: { children: React.ReactNode; right?: string }) {
   return (
     <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', paddingTop: 6 }}>
-      <Txt size={12} line={16} weight={600} tracking={0.7} color={tokens.sub} style={{ textTransform: 'uppercase' }}>{children}</Txt>
-      {right ? <Txt size={12} line={16} weight={600} color={tokens.sub}>{right}</Txt> : null}
+      <Txt size={13.5} line={18} weight={600} tracking={0.6} color={tokens.sub} style={{ textTransform: 'uppercase' }}>{children}</Txt>
+      {right ? <Txt size={14} line={18} weight={500} color={tokens.sub}>{right}</Txt> : null}
     </View>
   );
 }

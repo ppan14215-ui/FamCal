@@ -68,6 +68,7 @@ function RootLayout() {
             <Stack.Screen name="onboarding" options={{ animation: 'fade' }} />
             <Stack.Screen name="(tabs)" options={{ animation: 'fade' }} />
             <Stack.Screen name="neu" options={navStyle() === 'klar' ? plusMenu : sheet} />
+            <Stack.Screen name="termin/[id]" options={sheet} />
             <Stack.Screen name="symbol" options={sheet} />
             <Stack.Screen name="meilenstein/[id]" options={sheet} />
             <Stack.Screen name="titel" options={sheet} />

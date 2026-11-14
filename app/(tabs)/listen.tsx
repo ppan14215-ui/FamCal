@@ -17,7 +17,7 @@ import PressScale from '../../src/components/ui/PressScale';
 import ItemRow from '../../src/components/ItemRow';
 import AddInline from '../../src/components/AddInline';
 import { HintLine } from '../../src/components/HintCard';
-import { tokens, fonts, motion, easing, swapIn, persons } from '../../src/theme';
+import { tokens, fonts, motion, easing, swapIn, persons, glass } from '../../src/theme';
 import { useStore, actions, toast } from '../../src/state/store';
 import { itemMeta, itemText, aisleOf } from '../../src/data/sample';
 import { haptics } from '../../src/lib/haptics';
@@ -28,7 +28,7 @@ import type { List, Task, Item, Blueprint } from '../../src/state/types';
 import type { ClayName } from '../../src/lib/clayIcons';
 import { isPoints, players, roundsOf, total, looksOver, listIcon, ranked, gameOver } from '../../src/lib/points';
 import ScoreboardView from '../../src/components/showcase/cards/Scoreboard';
-import HeaderRight, { HEAD_SHADOW } from '../../src/components/ui/HeaderRight';
+import HeaderRight from '../../src/components/ui/HeaderRight';
 import { tx } from '../../src/i18n/lang';
 import { HIDDEN } from '../../src/lib/core';
 import { isWissen } from '../../src/lib/wissen';
@@ -121,7 +121,7 @@ function ListChip({ on, name, icon, n, onPress, onLongPress, onLayout }: { on: b
       onLayout={(e) => onLayout(e.nativeEvent.layout.x, e.nativeEvent.layout.width)}
       style={{ height: CHIP_H, borderRadius: 999 }}
     >
-      <Animated.View pointerEvents="none" style={[{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, borderRadius: 999, backgroundColor: tokens.row, boxShadow: HEAD_SHADOW } as any, fill]} />
+      <Animated.View pointerEvents="none" style={[{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, borderRadius: 999 }, glass.sm, fill]} />
       <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 7, paddingLeft: 8, paddingRight: 14 }}>
         <ClayIcon name={icon} size={26} />
         <Animated.Text numberOfLines={1} maxFontSizeMultiplier={1.2} style={[{ fontFamily: fonts[on ? 600 : 400], fontSize: 16.5, lineHeight: 21 }, label]}>{name}</Animated.Text>
@@ -223,14 +223,14 @@ function Einkauf({ list }: { list: List }) {
   const hints = useStore((s) => s.hints);
   // Twins from before the merge rule (Julian 30.10.: "Mais" twice, "Zwiebel" and "Zwiebeln") fold once, with an undo.
   useEffect(() => { actions.mergeTwins(list.id); }, [list.id]);
+  const open = list.sections.some((x) => x.items.some((i) => !i.done));
   return (
     <>
       {hints.abo ? (
         <HintLine icon="windeln" bold={tx('Windeln', 'Diapers')} text={tx(' kauft ihr etwa alle 12 Tage. Abo?', ': you buy them about every 12 days. Subscribe?')} go={tx('Ansehen', 'View')} onGo={() => router.push('/abo')} onNo={() => actions.dismissHint('abo')} />
       ) : null}
-      {/* The add row is the next line of the list, after what is still open. */}
-      <Sections list={list} footer={<AddInline key="add" flat placeholder={tx('Hinzufügen …', 'Add …')} mic onPress={() => router.push('/einkauf-neu')} />} />
-      <Txt size={13.5} line={19} color={tokens.sub}>{tx('Haken antippen: erledigt. Text antippen: bearbeiten. Nach links wischen: löschen.', 'Tap the check: done. Tap the text: edit. Swipe left: delete.')}</Txt>
+      {/* As in the klar draft: the list is only what is on it. New things come by speaking or over the plus; an empty list keeps one line to start with. */}
+      <Sections list={list} footer={open ? undefined : <AddInline key="add" flat placeholder={tx('Hinzufügen …', 'Add …')} mic onPress={() => router.push('/einkauf-neu')} />} />
     </>
   );
 }
@@ -239,17 +239,25 @@ function Packliste({ list }: { list: List }) {
   const items = list.sections.flatMap((s) => s.items);
   const pct = items.length ? items.filter((i) => i.done).length / items.length : 0;
   const plain = list.kind === 'collection' || !!list.blueprint;
-  const add = <AddInline key="add" flat placeholder={isPoints(list) ? tx('Spieler hinzufügen …', 'Add player …') : tx('Hinzufügen …', 'Add …')} onAdd={(t) => actions.addItem(list.id, t)} />;
+  const done = items.filter((i) => i.done).length;
+  // "Gepackt" only where something is packed (a trip's list, a bag); every other list is "erledigt".
+  const packs = !!list.forEvent || /pack|tasche|koffer|bag|suitcase/i.test(list.name);
+  // As in the klar draft, a list you tick off is only what is on it: new things come by speaking or over the plus.
+  // The line to write on stays where there is nothing to tick (collections, games) and while nothing is open.
+  const add = plain || isPoints(list) || done === items.length ? <AddInline key="add" flat placeholder={isPoints(list) ? tx('Spieler hinzufügen …', 'Add player …') : tx('Hinzufügen …', 'Add …')} onAdd={(t) => actions.addItem(list.id, t)} /> : undefined;
   return (
     <>
       {items.length && !plain ? (
-        <View style={{ height: 3, borderRadius: 999, backgroundColor: tokens.hair, overflow: 'hidden' }}>
-          <View style={{ width: `${Math.round(pct * 100)}%`, height: '100%', borderRadius: 999, backgroundColor: tokens.accent }} />
+        <View style={{ gap: 8 }}>
+          <H2 right={`${Math.round(pct * 100)} %`}>{packs ? tx(`${done} von ${items.length} gepackt`, `${done} of ${items.length} packed`) : tx(`${done} von ${items.length} erledigt`, `${done} of ${items.length} done`)}</H2>
+          <View style={{ height: 3, borderRadius: 999, backgroundColor: tokens.hair, overflow: 'hidden' }}>
+            <View style={{ width: `${Math.round(pct * 100)}%`, height: '100%', borderRadius: 999, backgroundColor: tokens.accent }} />
+          </View>
         </View>
       ) : null}
       {isPoints(list) ? <Scoreboard list={list} /> : null}
       {/* The add row is the next line of the list: what is written there becomes the line above it. */}
-      {list.sections.length ? <Sections list={list} counts={!plain} footer={add} /> : add}
+      {list.sections.length ? <Sections list={list} footer={add} /> : add}
       <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 28 }}>
         <PressScale
           accessibilityLabel={tx(`Liste ${list.name} bearbeiten`, `Edit list ${list.name}`)}
@@ -304,7 +312,7 @@ function Scoreboard({ list }: { list: List }) {
   return <ScoreboardView list={list} action={newGame} alert={ask} />;
 }
 
-function Sections({ list, counts, footer }: { list: List; counts?: boolean; footer?: React.ReactElement }) {
+function Sections({ list, footer }: { list: List; footer?: React.ReactElement }) {
   const shop = list.kind === 'shopping';
   const plain = list.kind === 'collection' || !!list.blueprint;
   const bp = list.blueprint;
@@ -333,19 +341,19 @@ function Sections({ list, counts, footer }: { list: List; counts?: boolean; foot
       />
     </Fresh>
   );
-  // Einkauf: what is bought leaves its aisle and gathers under "Erledigt" at the end.
-  const bought = shop ? list.sections.flatMap((x) => x.items.filter((i) => i.done)) : [];
+  // Every list you tick off, as in the klar draft: what is done leaves its section and gathers under "Erledigt" at the end.
+  const gather = !plain;
+  const bought = gather ? list.sections.flatMap((x) => x.items.filter((i) => i.done)) : [];
   return (
     <>
       {list.sections.map((sec, at) => {
         // The add row closes the last section, where new entries land.
-        const tail = !shop && footer && at === list.sections.length - 1 ? footer : null;
+        const tail = !gather && footer && at === list.sections.length - 1 ? footer : null;
         const open = sec.items.filter((i) => !i.done);
-        const done = sec.items.filter((i) => i.done);
-        if (shop && !open.length) return null;
-        const right = plain ? String(sec.items.length) : counts ? tx(`${done.length} von ${sec.items.length}`, `${done.length} of ${sec.items.length}`) : String(open.length);
+        if (gather && !open.length) return null;
+        const right = String(plain ? sec.items.length : open.length);
         // The shop's own order: vegetables together, then bread, fridge, meat, shelves (Julian 30.10.).
-        const ordered = shop ? open.map((i, k) => ({ i, k, a: aisleOf(i.name) })).sort((x, y) => x.a - y.a || x.k - y.k).map((x) => x.i) : sec.items;
+        const ordered = shop ? open.map((i, k) => ({ i, k, a: aisleOf(i.name) })).sort((x, y) => x.a - y.a || x.k - y.k).map((x) => x.i) : gather ? open : sec.items;
         return (
           <View key={sec.id} style={{ gap: 6 }}>
             {plain && list.sections.length === 1 ? null : <H2 right={right}>{sec.title}</H2>}
@@ -360,7 +368,7 @@ function Sections({ list, counts, footer }: { list: List; counts?: boolean; foot
           </View>
         );
       })}
-      {shop ? footer : null}
+      {gather ? footer : null}
       {bought.length ? (
         <View style={{ gap: 6 }}>
           <H2 right={String(bought.length)}>{tx('Erledigt', 'Done')}</H2>

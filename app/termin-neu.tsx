@@ -1,20 +1,19 @@
 /**
- * Neuer Termin (Variante B, Julian 26.10.). Visible is what almost everyone
- * needs: title, when, where, who. The rest is one line with value and arrow,
- * rare things sit under "Mehr". Four categories + "Alle" opens every clay
- * icon; picked symbols move to the front next time.
+ * Neuer Termin, exactly as in the klar draft Julian approved (14.11., "Termin, neu"): the cross, the name of the page
+ * and "Sichern" on top; the symbol beside the big title; then one line each for when, who, where, the reminder, what
+ * to bring, repeating and a note. A tap on the symbol opens every clay icon. Below it the reminder that saying it to
+ * Memo does the same.
  */
-import React, { useEffect, useMemo, useState } from 'react';
-import { View, TextInput, Platform } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { goBack } from '../src/lib/nav';
-import { Screen, CancelBar, Btn, Group, LineRow, Meta, Chevron, TextLink } from '../src/components/ui/kit';
+import { Screen } from '../src/components/ui/kit';
 import Txt from '../src/components/ui/Txt';
-import LineIcon from '../src/components/ui/LineIcon';
-import { ClayIcon } from '../src/components/ui/Clay';
-import { Avatar, Pair } from '../src/components/ui/Person';
-import { TitleInput } from '../src/components/Field';
-import { tokens, tint, persons, fonts } from '../src/theme';
+import Pin from '../src/components/buddy/Pin';
+import { FormBar, FormTitle, FormRow, FormValue, FormChip, FormPicks, FormInput, FormWho, whenChips } from '../src/components/TerminForm';
+import { REMINDERS, reminderLabel, repeatOptions } from '../src/components/TerminDetails';
+import { tokens } from '../src/theme';
 import { useStore, actions, toast, get } from '../src/state/store';
 import WhenField from '../src/components/WhenField';
 import type { When } from '../src/lib/when';
@@ -24,26 +23,17 @@ import { newId } from '../src/data/sample';
 import { findCity, passBring, isPassTermin } from '../src/data/cities';
 import type { ClayName } from '../src/lib/clayIcons';
 import type { Who } from '../src/state/types';
-import PressScale from '../src/components/ui/PressScale';
 import { LIVE } from '../src/lib/live';
 import { TODAY } from '../src/lib/dates';
 import { onToday } from '../src/screens/kalender/AgendaView';
+import { useMascot } from '../src/lib/mascot';
 import { tx } from '../src/i18n/lang';
 
-const BASE: { icon: ClayName; label: string }[] = [
-  { icon: 'stethoskop', label: tx('Arzt', 'Doctor') },
-  { icon: 'vertrag', label: tx('Amt', 'Office') },
-  { icon: 'geburtstag', label: tx('Familie', 'Family') },
-  { icon: 'yogamatte', label: tx('Kurs', 'Class') },
-];
-const REMIND = [tx('1 Tag vorher', '1 day before'), tx('1 Stunde vorher', '1 hour before'), tx('Keine', 'None')];
-const REPEAT = [tx('Jede Woche', 'Every week'), tx('Alle 2 Wochen', 'Every 2 weeks'), tx('Jeden Monat', 'Every month')];
-// Cycles through the repeat options and back to none.
-const nextRepeat = (r?: string) => (r === undefined ? REPEAT[0] : REPEAT[REPEAT.indexOf(r) + 1]);
+type Open = 'wann' | 'erinnern' | 'wiederholen' | null;
 
 export default function TerminNeu() {
   const draft = useStore((s) => s.draftSymbol);
-  const recent = useStore((s) => s.recentSymbols);
+  const minimal = useMascot() === 'minimal';
   // The test link shows a filled example; the real app starts empty on today.
   const [icon, setIcon] = useState<ClayName>(LIVE ? 'kalender' : 'stethoskop');
   const [title, setTitle] = useState(LIVE ? '' : 'U5 bei Dr. Weber');
@@ -53,16 +43,17 @@ export default function TerminNeu() {
   const plusHour = (t: string) => { const [h, m] = t.split(':').map(Number); return `${String(Math.min(23, h + 1)).padStart(2, '0')}:${String(m).padStart(2, '0')}`; };
   const [when, setWhen] = useState<When>(slot.date ? { date: slot.date, ...(slot.start ? { start: slot.start, end: plusHour(slot.start) } : {}) } : LIVE ? { date: TODAY } : { date: '2026-11-12', start: '09:30', end: '10:15' });
   const [place, setPlace] = useState(LIVE ? '' : 'Kinderarztpraxis Weber');
-  const kid = useStore((s) => s.kid);
-  const [forWhom, setForWhom] = useState(kid?.name ? tx(`Für ${kid.name}`, `For ${kid.name}`) : tx('Für euch', 'For you'));
   const [who, setWho] = useState<Who>(LIVE ? 'both' : 'T');
-  const [remind, setRemind] = useState(0);
-  const [more, setMore] = useState(false);
+  const [people, setPeople] = useState<string[]>([]);
+  const [reminder, setReminder] = useState('1d');
+  const [bring, setBring] = useState('');
   const [note, setNote] = useState('');
+  const [open, setOpen] = useState<Open>(null);
+  const toggle = (k: Open) => { haptics.select(); setOpen(open === k ? null : k); };
 
   useEffect(() => () => actions.clearDraftSymbol(), []);
 
-  // A symbol picked under "Alle" arrives through the store.
+  // A symbol picked from all clay icons arrives through the store.
   useEffect(() => {
     if (!draft) return;
     setIcon(draft);
@@ -70,9 +61,7 @@ export default function TerminNeu() {
       if (!touched) setTitle(symbolLabel(draft));
       setWhen({ date: '2026-11-03', start: '19:00', end: '20:30', repeat: 'Jeden Dienstag' });
       setPlace('Sportplatz Süd');
-      setForWhom(`Für ${persons.T.name}`);
       setWho('T');
-      setRemind(1);
     } else if (!touched) {
       setTitle(symbolLabel(draft));
     }
@@ -80,24 +69,22 @@ export default function TerminNeu() {
     actions.clearDraftSymbol();
   }, [draft]);
 
-  const custom = !BASE.some((b) => b.icon === icon);
-  const cats = useMemo(() => {
-    const r = recent.filter((n) => !BASE.some((b) => b.icon === n)).map((n) => ({ icon: n, label: symbolLabel(n) }));
-    return [...r, ...BASE].slice(0, 4);
-  }, [recent]);
-
   const save = () => {
     // Pass or ID at the city office: the assistant adds what to bring, with its source.
     const pass = isPassTermin(title);
+    const things = bring.split(',').map((t) => t.trim()).filter(Boolean).map((t) => ({ id: newId('b'), t, done: false }));
+    const where = place.trim() || undefined;
     actions.addEvent({
-      bring: pass ? passBring(findCity(get().city)) : undefined,
-      id: newId('e'), title: title.trim() || tx('Termin', 'Event'), sub: place, icon, date: when.date, endDate: when.endDate,
-      start: when.start ?? '00:00', end: when.end, allDay: !when.start, who, place,
+      bring: pass ? [...things, ...(passBring(findCity(get().city)) ?? [])] : things.length ? things : undefined,
+      id: newId('e'), title: title.trim() || tx('Termin', 'Event'), icon, date: when.date, endDate: when.endDate,
+      start: when.start ?? '00:00', end: when.end, allDay: !when.start, who, place: where,
+      people: people.length ? people : undefined,
       repeat: when.repeat,
-      reminder: REMIND[remind],
+      reminder: reminder || undefined,
+      note: note.trim() || undefined,
     });
     actions.setCalDay(when.date);
-    // Heute shows the coming week; anything later opens in the list of days.
+    // Heute shows the coming weeks; anything later opens in the grid of days.
     actions.setCalView(onToday(when.date) ? 'heute' : 'tag');
     haptics.success();
     toast(pass ? tx('Termin gespeichert, Mitbringliste ergänzt', 'Saved, bring list added') : tx('Termin gespeichert', 'Saved'));
@@ -105,89 +92,41 @@ export default function TerminNeu() {
     router.navigate('/kalender');
   };
 
-  const whoBtn = (w: Who, label: string, lead: React.ReactNode) => {
-    const on = who === w;
-    const c = w === 'J' ? persons.J : persons.T;
-    return (
-      <PressScale
-        key={label}
-        onPress={() => { haptics.select(); setWho(w); }}
-        style={{ flex: 1, height: 40, borderRadius: 999, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7, backgroundColor: on ? c.tint : 'transparent' }}
-      >
-        {lead}
-        <Txt size={14.5} weight={600} color={on ? c.ink : tokens.sub}>{label}</Txt>
-      </PressScale>
-    );
-  };
-
+  const rep = repeatOptions(when.date);
   return (
-    <Screen footer={<Btn label={tx('Termin speichern', 'Save event')} onPress={save} />}>
-      <CancelBar />
-      {custom ? (
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14, paddingTop: 6 }}>
-          <PressScale accessibilityLabel={tx('Symbol ändern', 'Change icon')} onPress={() => router.push('/symbol')} style={{ width: 64, height: 64, borderRadius: 20, backgroundColor: tint(icon), alignItems: 'center', justifyContent: 'center' }}>
-            <ClayIcon name={icon} size={50} />
-            <View style={{ position: 'absolute', right: -4, bottom: -4, width: 22, height: 22, borderRadius: 999, backgroundColor: tokens.row, borderWidth: 1, borderColor: tokens.hair, alignItems: 'center', justifyContent: 'center' }}>
-              <LineIcon name="papier" size={12} color={tokens.sub} />
-            </View>
-          </PressScale>
-          <TitleInput value={title} onChangeText={(t) => { setTouched(true); setTitle(t); }} sub={forWhom} placeholder={tx('Titel', 'Title')} />
-        </View>
-      ) : (
-        <>
-          <TitleInput value={title} onChangeText={(t) => { setTouched(true); setTitle(t); }} sub={forWhom} placeholder={tx('Titel', 'Title')} />
-          <View style={{ flexDirection: 'row', gap: 6 }}>
-            {cats.map((c) => {
-              const on = c.icon === icon;
-              return (
-                <PressScale
-                  key={c.icon}
-                  onPress={() => { haptics.select(); setIcon(c.icon); }}
-                  style={{ flex: 1, alignItems: 'center', gap: 2, paddingTop: 8, paddingBottom: 6, paddingHorizontal: 4, borderRadius: 16, backgroundColor: on ? tint(c.icon) : tokens.row, borderWidth: 1.5, borderColor: on ? tokens.ink : 'transparent' }}
-                >
-                  <View style={{ opacity: on ? 1 : 0.55 }}><ClayIcon name={c.icon} size={42} /></View>
-                  <Txt size={11.5} weight={on ? 600 : 500} color={on ? tokens.ink : tokens.sub} numberOfLines={1}>{c.label}</Txt>
-                </PressScale>
-              );
-            })}
-            <PressScale onPress={() => router.push('/symbol')} style={{ flex: 1, alignItems: 'center', gap: 2, paddingTop: 8, paddingBottom: 6, borderRadius: 16, backgroundColor: tokens.row }}>
-              <View style={{ width: 34, height: 34, alignItems: 'center', justifyContent: 'center' }}><LineIcon name="plus" size={22} color={tokens.sub} /></View>
-              <Txt size={11.5} weight={500} color={tokens.sub}>{tx('Alle', 'All')}</Txt>
-            </PressScale>
-          </View>
-        </>
-      )}
-
-      <Group>
-        <WhenField key="wann" value={when} onChange={setWhen} />
-        {when.repeat ? <LineRow key="rep" icon="sync" value={when.repeat} right={<View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Meta>{tx('bis Ende März', 'until end of March')}</Meta><Chevron /></View>} onPress={() => setWhen({ ...when, repeat: nextRepeat(when.repeat) })} /> : null}
-        <LineRow icon="pin" value={place || tx('Ort', 'Place')} right={<Chevron />} onPress={() => toast(tx('Ortssuche kommt mit Google Maps', 'Place search comes with Google Maps'))} />
-      </Group>
-
-      <View style={{ flexDirection: 'row', gap: 2, padding: 4, borderRadius: 999, backgroundColor: tokens.row }}>
-        {whoBtn('J', persons.J.name, <Avatar p="J" size={22} ring={who === 'J' ? tokens.onInk : undefined} />)}
-        {whoBtn('T', persons.T.name, <Avatar p="T" size={22} ring={who === 'T' ? tokens.onInk : undefined} />)}
-        {whoBtn('both', tx('Beide', 'Both'), <Pair size={20} ring={tokens.row} />)}
+    <Screen gap={18} padTop={10}>
+      <FormBar title={tx('Neuer Termin', 'New event')} icon="x" leftLabel={tx('Abbrechen', 'Cancel')} onLeft={goBack} action={tx('Sichern', 'Save')} onAction={save} />
+      <FormTitle icon={icon} value={title} onIcon={() => { haptics.select(); actions.pickSymbol(icon); router.push('/symbol'); }} onChange={(t) => { setTouched(true); setTitle(t); }} autoFocus={LIVE} />
+      <View>
+        <FormRow label={tx('Wann', 'When')} below={open === 'wann' ? <WhenField card startOpen value={when} onChange={setWhen} onDone={() => setOpen(null)} /> : undefined}>
+          {open === 'wann' ? null : whenChips(when).map((c) => <FormChip key={c} label={c} onPress={() => toggle('wann')} />)}
+        </FormRow>
+        <FormRow label={tx('Wer', 'Who')}>
+          <FormWho who={who} people={people} onWho={setWho} onPerson={(id) => setPeople((p) => (p.includes(id) ? p.filter((x) => x !== id) : [...p, id]))} />
+        </FormRow>
+        <FormRow label={tx('Wo', 'Where')}>
+          <FormInput live label={tx('Wo', 'Where')} value={place} placeholder={tx('Hinzufügen', 'Add')} onCommit={setPlace} />
+        </FormRow>
+        <FormRow label={tx('Erinnern', 'Reminder')} onPress={() => toggle('erinnern')}
+          below={open === 'erinnern' ? <FormPicks items={REMINDERS.filter((r) => !!when.start || !/m$|h$/.test(r.key) || r.key === '')} value={reminder} onPick={(k) => { setReminder(k); setOpen(null); }} /> : undefined}>
+          <FormValue dim={!reminder}>{reminderLabel(reminder) || tx('Keine', 'None')}</FormValue>
+        </FormRow>
+        <FormRow label={tx('Mitbringen', 'Bring')}>
+          <FormInput live label={tx('Mitbringen', 'Bring')} value={bring} placeholder={tx('Hinzufügen', 'Add')} onCommit={setBring} />
+        </FormRow>
+        <FormRow label={tx('Wiederholen', 'Repeat')} onPress={() => toggle('wiederholen')}
+          below={open === 'wiederholen' ? <FormPicks items={rep} value={when.repeat ?? ''} onPick={(k) => { setWhen({ ...when, repeat: k || undefined }); setOpen(null); }} /> : undefined}>
+          <FormValue dim={!when.repeat}>{when.repeat || tx('Nie', 'Never')}</FormValue>
+        </FormRow>
+        <FormRow last label={tx('Notiz', 'Note')}>
+          <FormInput live label={tx('Notiz', 'Note')} value={note} placeholder={tx('Hinzufügen', 'Add')} onCommit={setNote} />
+        </FormRow>
       </View>
-
-      <Group>
-        {!isSport(icon) ? <LineRow icon="check" value={tx('Mitnehmen', 'Bring')} weight={500} right={<View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Meta>{tx('4 Dinge', '4 things')}</Meta><Chevron /></View>} onPress={() => toast('U-Heft, Impfpass, Versichertenkarte, Windeln')} /> : null}
-        <LineRow icon="clock" value={tx('Erinnerung', 'Reminder')} weight={500} right={<View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Meta>{REMIND[remind]}</Meta><Chevron /></View>} onPress={() => setRemind((remind + 1) % REMIND.length)} />
-      </Group>
-
-      {more ? (
-        <Group>
-          {!when.repeat ? <LineRow icon="sync" value={tx('Wiederholen', 'Repeat')} weight={500} right={<View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Meta>{tx('Nie', 'Never')}</Meta><Chevron /></View>} onPress={() => setWhen({ ...when, repeat: nextRepeat(undefined) })} /> : null}
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 16, paddingVertical: 6, backgroundColor: tokens.row }}>
-            <LineIcon name="papier" size={20} color={tokens.sub} />
-            <TextInput value={note} onChangeText={setNote} placeholder={tx('Notiz', 'Note')} placeholderTextColor={tokens.mute} style={[{ flex: 1, fontFamily: fonts[500], fontSize: 16, color: tokens.ink, paddingVertical: 8 }, Platform.OS === 'web' ? ({ outlineStyle: 'none' } as any) : null]} />
-          </View>
-          <LineRow icon="copy" value={tx('Anhang', 'Attachment')} weight={500} right={<Chevron />} onPress={() => toast(tx('Anhänge kommen später', 'Attachments come later'))} />
-        </Group>
-      ) : (
-        <TextLink label={tx('Mehr: Wiederholen, Notiz, Anhang', 'More: repeat, note, attachment')} onPress={() => setMore(true)} />
-      )}
-      {custom ? <Txt size={13.5} line={19} color={tokens.sub}>{tx(`Das Symbol merken wir uns. Nächstes Mal steht ${symbolLabel(icon)} gleich oben bei den Kategorien.`, `We'll remember the icon. Next time ${symbolLabel(icon)} is right at the top.`)}</Txt> : null}
+      <View style={{ flex: 1 }} />
+      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingBottom: 6 }}>
+        {minimal ? null : <Pin mood="idle" size={22} shadow={false} still />}
+        <Txt size={15.5} color={tokens.sub}>{minimal ? tx('Oder einfach sagen', 'Or just say it') : tx('Oder einfach Memo sagen', 'Or just tell Memo')}</Txt>
+      </View>
     </Screen>
   );
 }

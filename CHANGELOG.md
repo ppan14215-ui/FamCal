@@ -18,7 +18,6 @@ Alle sichtbaren Änderungen an FamCal. Neueste oben. Agenten und Menschen: Ände
 - Tage und Woche sind dasselbe Stundenraster, flach mit feinen Linien: Woche zeigt sieben Tage, Tage zeigt drei Tage größer mit ganzen Titeln und Zeiten. Heute und die Jetzt Linie sind dunkel.
 - Zoomen mit zwei Fingern wechselt die Ansicht und rastet ein: auseinander geht es näher heran (Jahr, Monat, Woche, Tage), zusammen weiter weg. Die Chips oben machen dasselbe per Tipp.
 - Monat ist flach: Zahl mit Punkten, heute als dunkler Kreis. Feiertage färben die Zahl, Urlaub liegt als weiches Band hinter seinen Tagen, beides steht unter dem Raster mit Namen.
-- Im Kopf stehen bei Tagen, Woche, Monat und Jahr zwei kleine Pfeile zum Blättern; die Infozeile zeigt Zeitraum und Zahl der Termine.
 - Sprechen im klaren Look: Die Karte ist jetzt dunkel und wächst aus Memo heraus. Was du sagst, steht groß darin, sichere Worte hell, unsichere grau. Unten läuft die Aufnahme mit weißem Punkt, Zeit und Stopp.
 - Nach dem Senden schrumpft die Karte zu einer kleinen Blase, Memos Augen werden drei Ladepunkte. Ist die Antwort da, gleitet Memo an seinen Platz zurück und die Leiste schiebt sich wieder herein. Nichts verschwindet und taucht neu auf.
 - Plus Menü im klaren Look: kein Blatt von unten mehr. Eine kleine dunkle Karte wächst aus dem Plus, das Plus dreht sich zum Kreuz und schließt wieder, der Bildschirm dahinter tritt zurück. Aus dem Tippfeld geöffnet steigt die Karte über der Navigation auf.
@@ -35,6 +34,22 @@ Alle sichtbaren Änderungen an FamCal. Neueste oben. Agenten und Menschen: Ände
 - Kalender Heute ist so dicht wie im Entwurf: kleinere Zeilen, Zeit in der Farbe der Person, der nächste Termin steht fett. Englische Zeiten („9:30am“) haben genug Platz und werden nicht mehr abgeschnitten.
 - Listen wie im Entwurf: die gewählte Liste ist ein weißer Chip, die anderen stehen schlicht daneben. Jede Zeile hat ihr kleines Symbol, die Notiz steht grau hinter dem Titel, die Person ist ein Farbpunkt. Gekauftes sammelt sich unten unter „Erledigt“.
 - Hinweise wie „Windeln kauft ihr etwa alle 12 Tage“ sind jetzt eine ruhige graue Zeile mit „Ansehen“.
+- Chat wie im Entwurf: deine Sätze stehen in deiner Blasenfarbe, Memo antwortet als schlichte Zeile mit seinem Gesicht, das Ergebnis ist eine weiße Karte mit zwei echten Knöpfen: „Ändern“ in Schwarz und „Rückgängig“.
+- Kalender Heute zeigt nur noch, was im Entwurf steht: pro Termin eine Zeile mit Farbstrich, Zeit, Symbol, Titel und Farbpunkt. Zweite Zeilen, Quellen, Aufgaben, Fristen, Hinweiskarten und Arbeitszeiten stehen dort nicht mehr. Arbeitszeiten bleiben in Tage und Woche.
+- Listen zeigen nur noch die Liste selbst: die Hinzufügen Zeile und der Hilfetext sind weg. Neues kommt über Sprechen oder das Plus oben rechts; nur eine leere Liste behält eine Zeile zum Anfangen.
+- Hinweiszeilen haben kein Kreuz mehr: nach links wischen räumt sie weg.
+- Einstellungen wie im Entwurf: oben Du mit Blasenfarbe, Memo (Schwarz oder Meine Farbe), Vorschau und Sprechen (Mit Memo oder Minimal), dann Familie mit Mitglieder, Kalender verbinden und Benachrichtigungen, dann Konto. Zeilen ohne Symbole. Das Farbthema steht unter Zum Testen.
+- Monat wie im Entwurf: Wochentage als ein Buchstabe, der gewählte Tag liegt auf einem grauen Feld, Feiertage stehen fett. Darunter die Termine des Tages als höhere Zeilen mit feinen Linien, die Überschrift nennt Wochentag und Tag. Arbeitszeiten stehen nicht mehr im Monat, sie bleiben in Tage und Woche.
+- Im Kalender Kopf stehen nur noch Suchen und Plus, die Pfeile sind weg. Geblättert wird durch Wischen zur Seite.
+- Listen zum Abhaken wie im Entwurf: oben steht „4 von 9 gepackt“ mit Prozent über der Linie, Abgehaktes sammelt sich unten unter Erledigt, die Abschnitte zeigen nur noch, was offen ist.
+- Ein Termin öffnet jetzt als Blatt über dem Kalender wie im Entwurf: Symbol, Titel und Zeit, darunter ruhige Zeilen (Für, Wer geht, Wo, Mitbringen, Erinnern), woher er kommt, und drei Knöpfe: Ändern, Verschieben und Mehr (dort steht Löschen). Bearbeitet wird auf der Seite hinter „Ändern“; „Verschieben“ öffnet dort gleich Tag und Zeit. Das Sprechfeld sitzt auf der Seite hinter „Ändern“.
+- Neuer Termin sieht aus wie im Entwurf: oben Schließen, Name der Seite und Sichern, das Symbol neben dem großen Titel, darunter je eine ruhige Zeile für Wann, Wer, Wo, Erinnern, Mitbringen, Wiederholen und Notiz. Die vier Kacheln und der Link Mehr sind weg.
+- Termin ändern ist aus denselben Zeilen gebaut wie Neuer Termin. Löschen liegt auf dem Blatt hinter den drei Punkten.
+- Ein neu gesicherter Termin steht in Heute und im Monat wieder an der richtigen Stelle nach Uhrzeit.
+- Familie sieht aus wie im Entwurf: oben Zurück und Einladen, darunter je Person eine ruhige Zeile mit Kreis, Name, einem kurzen grauen Wort (Alter beim Kind) und der Farbe als Punkt. Hinzufügen und der Familiencode liegen hinter Einladen, entfernt wird mit einem Wisch nach links.
+- Chat Karten wie bei Wabi (Julian 14.11.): weiße Karte mit feinem Rand und weichem Schatten, links das Bild, der Name fett, darunter eine graue Zeile, rechts ein kleiner Pfeil zum Öffnen. Was auf eine Liste kam, steht als eine solche Karte da, abgehakt wird in der Liste. Die Beispiele im leeren Chat liegen auf denselben Karten.
+- Schatten sind jetzt feste Bausteine im Designsystem (nach Wabi gemessen): ein Kartenschatten für alle Karten, ein enger Schatten mit Glanz für runde Knöpfe, helle Pillen und Chips.
+- Personen Kreise im Kopf überlappen wie bei Wabi und tragen einen Ring in der Farbe der Person.
 
 ### App funktioniert zuverlässig (09.11. Audit)
 - Nach längerer Pause im Hintergrund klappen Assistent und Spracheingabe gleich beim ersten Satz, statt "Ich komme gerade nicht an den Assistenten".

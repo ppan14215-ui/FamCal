@@ -9,20 +9,17 @@ import { router } from 'expo-router';
 import PressScale from './PressScale';
 import LineIcon, { type LineName } from './LineIcon';
 import { Family } from './Person';
-import { tokens } from '../../theme';
+import { tokens, glass } from '../../theme';
 import { tx } from '../../i18n/lang';
 import { haptics } from '../../lib/haptics';
 import { setPlusFrom } from '../../lib/plusFrom';
 
 export const HEAD_BTN = 40;
-/** The soft lift of white controls on the ground. */
-export const HEAD_SHADOW = '0 0 0 1px rgba(17,20,23,0.06), 0 2px 6px rgba(17,20,23,0.05)';
-
-/** One round white button of the head. */
+/** One round button of the head: white glass with Wabi's inner light (Julian 14.11.: "icon button should get that glossy look"). */
 export function HeadBtn({ icon, label, onPress, size = 21 }: { icon: LineName; label: string; onPress: () => void; size?: number }) {
   return (
     <PressScale accessibilityLabel={label} hitSlop={6} scale={0.92} onPress={onPress}
-      style={{ width: HEAD_BTN, height: HEAD_BTN, borderRadius: 999, backgroundColor: tokens.row, alignItems: 'center', justifyContent: 'center', boxShadow: HEAD_SHADOW } as any}>
+      style={[{ width: HEAD_BTN, height: HEAD_BTN, borderRadius: 999, alignItems: 'center', justifyContent: 'center' }, glass.sm]}>
       <LineIcon name={icon} size={size} color={tokens.ink} />
     </PressScale>
   );
@@ -42,7 +39,7 @@ export default function HeaderRight({ before, people }: { before?: React.ReactNo
   if (people) return (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
       {before}
-      <PressScale accessibilityLabel={tx('Familie', 'Family')} scale={0.95} onPress={() => { haptics.select(); router.push('/personen'); }}><Family /></PressScale>
+      <PressScale accessibilityLabel={tx('Familie', 'Family')} scale={0.95} onPress={() => { haptics.select(); router.push('/personen'); }}><Family size={34} /></PressScale>
       <HeadBtn icon="settings" label={tx('Einstellungen', 'Settings')} onPress={() => { haptics.select(); router.push('/einstellungen'); }} size={20} />
     </View>
   );
@@ -53,22 +50,6 @@ export default function HeaderRight({ before, people }: { before?: React.ReactNo
       <View ref={plus} collapsable={false}>
         <HeadBtn icon="plus" label={tx('Neu', 'New')} onPress={openNew} size={22} />
       </View>
-    </View>
-  );
-}
-
-/** Back and forward as one white pill, for views that page (days, weeks, months, years). */
-export function HeadArrows({ onStep, prev, next }: { onStep: (dir: 1 | -1) => void; prev: string; next: string }) {
-  const half = { width: 33, height: HEAD_BTN - 4, alignItems: 'center' as const, justifyContent: 'center' as const };
-  return (
-    <View style={{ flexDirection: 'row', alignItems: 'center', height: HEAD_BTN - 4, borderRadius: 999, backgroundColor: tokens.row, boxShadow: HEAD_SHADOW } as any}>
-      <PressScale accessibilityLabel={prev} hitSlop={{ top: 8, bottom: 8, left: 8 }} scale={0.88} onPress={() => { haptics.select(); onStep(-1); }} style={half}>
-        <View style={{ transform: [{ rotate: '180deg' }] }}><LineIcon name="chev" size={14} color={tokens.ink} stroke={2.2} /></View>
-      </PressScale>
-      <View style={{ width: 1, height: 14, backgroundColor: tokens.hair }} />
-      <PressScale accessibilityLabel={next} hitSlop={{ top: 8, bottom: 8, right: 8 }} scale={0.88} onPress={() => { haptics.select(); onStep(1); }} style={half}>
-        <LineIcon name="chev" size={14} color={tokens.ink} stroke={2.2} />
-      </PressScale>
     </View>
   );
 }
