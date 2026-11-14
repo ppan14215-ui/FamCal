@@ -5,6 +5,9 @@
  *   until the app was killed. Now Termine, lists and the chat are fetched again on every return.
  * - "Heute" and every relative day were frozen on the day the app was opened ("morgen" spoken the
  *   next morning landed a day too early). A new day reloads the app once, which resets every clock.
+ * - An update only arrived after the app was killed twice (14.11.: Julian's phone ran the old version
+ *   for hours after a fix went out). Now every return looks for an update, loads it quietly, and the
+ *   next return starts it.
  */
 import { AppState, Platform } from 'react-native';
 import { LIVE } from './live';
@@ -24,6 +27,27 @@ async function reload() {
   }
 }
 
+let updateReady = false;
+let looking = false;
+
+/** Looks for a newer version and loads it in the background. Never reloads by itself. */
+async function fetchUpdate() {
+  if (Platform.OS === 'web' || __DEV__ || updateReady || looking) return;
+  looking = true;
+  try {
+    const Updates = await import('expo-updates');
+    if (!Updates.isEnabled) return;
+    const check = await Updates.checkForUpdateAsync();
+    if (!check.isAvailable) return;
+    const got = await Updates.fetchUpdateAsync();
+    updateReady = !!got.isNew;
+  } catch {
+    // No network or no update server: the next return tries again.
+  } finally {
+    looking = false;
+  }
+}
+
 async function catchUpAll() {
   try {
     const [sync, lists, feed] = await Promise.all([import('./sync'), import('./listSync'), import('./feed')]);
@@ -39,11 +63,13 @@ async function catchUpAll() {
 export function startLifecycle() {
   if (started || !LIVE) return;
   started = true;
+  void fetchUpdate();
   AppState.addEventListener('change', (st) => {
     if (st !== 'active') { if (!awaySince) awaySince = Date.now(); return; }
     const away = awaySince ? Date.now() - awaySince : 0;
     awaySince = 0;
-    if (today() !== startedOn) { void reload(); return; }
-    if (away > 3000) void catchUpAll();
+    // A short hop to another app keeps a half written message; a real break starts the new version.
+    if (today() !== startedOn || (updateReady && away > 10000)) { void reload(); return; }
+    if (away > 3000) { void catchUpAll(); void fetchUpdate(); }
   });
 }

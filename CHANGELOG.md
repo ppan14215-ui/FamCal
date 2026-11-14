@@ -2,6 +2,9 @@
 
 Alle sichtbaren Änderungen an FamCal. Neueste oben. Agenten und Menschen: Änderung unter **Unreleased** in einfacher Sprache eintragen.
 
+### Updates kommen von selbst an (14.11.)
+- Die App sucht bei jeder Rückkehr nach einem Update, lädt es still und startet es bei der nächsten Rückkehr nach einer Pause. Vorher brauchte es zwei komplette Neustarts.
+
 ## Unreleased
 
 ### Sprechen und Tippen (14.11.)
