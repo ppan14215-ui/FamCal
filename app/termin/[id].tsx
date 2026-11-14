@@ -12,8 +12,7 @@ import Txt from '../../src/components/ui/Txt';
 import PressScale from '../../src/components/ui/PressScale';
 import LineIcon, { type LineName } from '../../src/components/ui/LineIcon';
 import { ClayIcon } from '../../src/components/ui/Clay';
-import { HEAD_SHADOW } from '../../src/components/ui/HeaderRight';
-import { tokens, persons } from '../../src/theme';
+import { tokens, persons, glass } from '../../src/theme';
 import { useStore, actions, toast, get } from '../../src/state/store';
 import { eventById } from '../../src/lib/useEvents';
 import { seriesId, ruleOf } from '../../src/lib/repeat';
@@ -41,7 +40,7 @@ function Line({ k, v, last }: { k: string; v: string; last: boolean }) {
 function Way({ label, icon, primary, onPress, round }: { label: string; icon?: LineName; primary?: boolean; onPress: () => void; round?: boolean }) {
   return (
     <PressScale accessibilityRole="button" accessibilityLabel={label} scale={0.96} onPress={onPress}
-      style={{ height: BTN, width: round ? BTN : undefined, paddingHorizontal: round ? 0 : 20, borderRadius: 999, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: primary ? tokens.ink : tokens.row, boxShadow: primary ? undefined : HEAD_SHADOW } as any}>
+      style={[{ height: BTN, width: round ? BTN : undefined, paddingHorizontal: round ? 0 : 20, borderRadius: 999, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 }, primary ? { backgroundColor: tokens.ink } : glass.sm]}>
       {icon ? <LineIcon name={icon} size={round ? 20 : 17} color={primary ? tokens.onInk : tokens.ink} /> : null}
       {round ? null : <Txt size={17} weight={600} color={primary ? tokens.onInk : tokens.ink}>{label}</Txt>}
     </PressScale>

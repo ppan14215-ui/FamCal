@@ -2,7 +2,7 @@
 import React, { createContext, useContext } from 'react';
 import { View } from 'react-native';
 import Txt from './Txt';
-import { persons, PersonId, tokens, personPalette, allColors, shade } from '../../theme';
+import { persons, PersonId, tokens, personPalette, allColors, shade, shadows, vivid } from '../../theme';
 import { useStore } from '../../state/store';
 
 export type Persons = typeof persons;
@@ -59,31 +59,43 @@ export function PersonDot({ name, color, size = 24 }: { name: string; color: str
 }
 
 /**
+ * One face of the stack, as in Wabi's facepile (Julian 14.11.: "people bubbles like this but with outline of user
+ * profile"): the initial on the person's light tone, a ring in the person's own colour around it, and a second ring
+ * in the colour of the ground that cuts it out of the face beneath.
+ */
+function Face({ size, bg, ink, letter, cut }: { size: number; bg: string; ink: string; letter: string; cut: string }) {
+  return (
+    <View style={{ width: size, height: size, borderRadius: 999, backgroundColor: bg, borderWidth: 2, borderColor: vivid(ink), alignItems: 'center', justifyContent: 'center', boxShadow: `0 0 0 2px ${cut}` } as any}>
+      <Txt size={Math.round(size * 0.4)} line={Math.round(size * 0.5)} weight={600} color={ink}>{letter}</Txt>
+    </View>
+  );
+}
+
+/**
  * The whole family on top of every tab (Julian 05.11.): the parents and every child or
  * grandparent, each in exactly the colour their Termine have in the calendar.
- * Overlapping; from five people on the rest shows as +N.
+ * Overlapping like Wabi's stack of faces; from five people on the rest shows as +N.
  */
 export function Family({ size = 28, ring = tokens.bg, max = 4 }: { size?: number; ring?: string; max?: number }) {
   const stored = useStore((s) => s.people);
+  const pp = usePersons();
   // In the onboarding showcase the parents are demo people; the real children stay out of it.
-  const people = usePersons() === persons ? stored : [];
-  const all: React.ReactNode[] = [
-    <Avatar key="J" p="J" size={size} />,
-    <Avatar key="T" p="T" size={size} />,
-    ...people.map((p) => <PersonDot key={p.id} name={p.name} color={p.color} size={size} />),
+  const people = pp === persons ? stored : [];
+  const all: { key: string; bg: string; ink: string; letter: string }[] = [
+    ...(['J', 'T'] as const).map((p) => ({ key: p, bg: pp[p].tint, ink: pp[p].ink, letter: pp[p].name.trim()[0]?.toUpperCase() || p })),
+    ...people.map((p) => { const c = shade(allColors.find((x) => x.name === p.color) ?? personPalette[2]); return { key: p.id, bg: c.bg, ink: c.fg, letter: p.name.trim()[0]?.toUpperCase() ?? '?' }; }),
   ];
   const shown = all.length > max ? all.slice(0, max - 1) : all;
   const rest = all.length - shown.length;
+  const lap = -Math.round(size * 0.26);
   return (
-    <View style={{ flexDirection: 'row' }}>
-      {shown.map((n, i) => (
-        <View key={i} style={i ? { marginLeft: -8, marginVertical: -2, borderRadius: 999, borderWidth: 2, borderColor: ring } : undefined}>{n}</View>
+    <View style={{ flexDirection: 'row', borderRadius: 999, boxShadow: shadows.face } as any}>
+      {shown.map((f, i) => (
+        <View key={f.key} style={i ? { marginLeft: lap } : undefined}><Face size={size} bg={f.bg} ink={f.ink} letter={f.letter} cut={ring} /></View>
       ))}
       {rest > 0 ? (
-        <View style={{ marginLeft: -8, marginVertical: -2, borderRadius: 999, borderWidth: 2, borderColor: ring }}>
-          <View style={{ width: size, height: size, borderRadius: 999, backgroundColor: tokens.row, alignItems: 'center', justifyContent: 'center' }}>
-            <Txt size={Math.round(size * 0.38)} line={Math.round(size * 0.5)} weight={600} color={tokens.sub}>+{rest}</Txt>
-          </View>
+        <View style={{ marginLeft: lap, width: size, height: size, borderRadius: 999, backgroundColor: tokens.row, alignItems: 'center', justifyContent: 'center', boxShadow: `0 0 0 2px ${ring}` } as any}>
+          <Txt size={Math.round(size * 0.38)} line={Math.round(size * 0.5)} weight={600} color={tokens.sub}>+{rest}</Txt>
         </View>
       ) : null}
     </View>

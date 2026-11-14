@@ -17,7 +17,7 @@ import PressScale from '../../src/components/ui/PressScale';
 import ItemRow from '../../src/components/ItemRow';
 import AddInline from '../../src/components/AddInline';
 import { HintLine } from '../../src/components/HintCard';
-import { tokens, fonts, motion, easing, swapIn, persons } from '../../src/theme';
+import { tokens, fonts, motion, easing, swapIn, persons, glass } from '../../src/theme';
 import { useStore, actions, toast } from '../../src/state/store';
 import { itemMeta, itemText, aisleOf } from '../../src/data/sample';
 import { haptics } from '../../src/lib/haptics';
@@ -28,7 +28,7 @@ import type { List, Task, Item, Blueprint } from '../../src/state/types';
 import type { ClayName } from '../../src/lib/clayIcons';
 import { isPoints, players, roundsOf, total, looksOver, listIcon, ranked, gameOver } from '../../src/lib/points';
 import ScoreboardView from '../../src/components/showcase/cards/Scoreboard';
-import HeaderRight, { HEAD_SHADOW } from '../../src/components/ui/HeaderRight';
+import HeaderRight from '../../src/components/ui/HeaderRight';
 import { tx } from '../../src/i18n/lang';
 import { HIDDEN } from '../../src/lib/core';
 import { isWissen } from '../../src/lib/wissen';
@@ -121,7 +121,7 @@ function ListChip({ on, name, icon, n, onPress, onLongPress, onLayout }: { on: b
       onLayout={(e) => onLayout(e.nativeEvent.layout.x, e.nativeEvent.layout.width)}
       style={{ height: CHIP_H, borderRadius: 999 }}
     >
-      <Animated.View pointerEvents="none" style={[{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, borderRadius: 999, backgroundColor: tokens.row, boxShadow: HEAD_SHADOW } as any, fill]} />
+      <Animated.View pointerEvents="none" style={[{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, borderRadius: 999 }, glass.sm, fill]} />
       <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 7, paddingLeft: 8, paddingRight: 14 }}>
         <ClayIcon name={icon} size={26} />
         <Animated.Text numberOfLines={1} maxFontSizeMultiplier={1.2} style={[{ fontFamily: fonts[on ? 600 : 400], fontSize: 16.5, lineHeight: 21 }, label]}>{name}</Animated.Text>

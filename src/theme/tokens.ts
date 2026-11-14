@@ -88,6 +88,20 @@ export const shade = (c: { name: string; bg: string; fg: string }) => ({ name: c
 export const vivid = (fg: string) => blend(fg, '#FFFFFF', dark ? 0.35 : 0.2);
 
 /**
+ * The shadows of the design system (Julian 14.11.: "shadow should become part of the design system"), measured on
+ * wabi.ai's own stylesheet: near black at a few percent, one tight layer and one wide soft one pulled in under the
+ * shape, never a glow. Every card and every circle takes its shadow from here, nothing writes its own.
+ */
+export const shadows = {
+  /** A card lying on the ground. Wabi's `--sheet`. */
+  card: '0 1px 2px rgba(25,25,25,0.04), 0 12px 28px -12px rgba(25,25,25,0.14)',
+  /** A round button or a pill you press. Measured on Wabi's app (Julian's screenshot 14.11.): tight under the shape, almost nothing above it. */
+  control: '0 1px 1px rgba(25,25,25,0.05), 0 3px 7px -1px rgba(25,25,25,0.13)',
+  /** People circles: the stack of faces sits a little above the ground. */
+  face: '0 4px 10px rgba(25,25,25,0.10)',
+};
+
+/**
  * Glass, only on things you press (nav, input, buttons, chips): white with an inner light, a hairline and a soft
  * shadow. The recipe is Wabi's inner light (Julian 13.11.). boxShadow draws on the new architecture and on the web.
  */
@@ -101,13 +115,15 @@ const glassOf = (night: boolean) => {
   const drop = (y: number, r: number, a: number) => `0 ${y}px ${r}px rgba(${night ? '0,0,0' : '17,20,23'},${night ? Math.min(0.6, a * 3.2) : a})`;
   return {
     /** Small controls: round buttons, chips, the chosen segment. */
-    sm: { backgroundColor: bg, boxShadow: `${inn}, ${line(0.07)}, ${drop(2, 6, 0.05)}` } as any,
+    sm: { backgroundColor: bg, boxShadow: `${inn}, ${line(0.05)}, ${night ? drop(2, 6, 0.05) : shadows.control}` } as any,
     /** The floating nav pill. */
     nav: { backgroundColor: bg, boxShadow: `${inn}, ${line(0.05)}, ${drop(10, 30, 0.1)}` } as any,
     /** The input card that grows out of Memo, and sheets. */
     card: { backgroundColor: bg, boxShadow: `${inn}, ${line(0.06)}, ${drop(14, 40, 0.14)}` } as any,
     /** A flat card in the content: only a hairline. */
     line: { backgroundColor: night ? '#1A2328' : '#FFFFFF', boxShadow: line(0.08) } as any,
+    /** A card lying on the ground (chat cards, examples): a hairline and Wabi's sheet shadow. No inner light, cards are not pressed like glass. */
+    lift: { backgroundColor: night ? '#1A2328' : '#FFFFFF', boxShadow: `${line(0.07)}, ${night ? '0 1px 2px rgba(0,0,0,0.3), 0 12px 28px -12px rgba(0,0,0,0.6)' : shadows.card}` } as any,
   };
 };
 /** The live glass styles; like `tokens` they swap in place, so every style reads the current ones. */

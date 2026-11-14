@@ -48,6 +48,8 @@ Alle sichtbaren Änderungen an FamCal. Neueste oben. Agenten und Menschen: Ände
 - Ein neu gesicherter Termin steht in Heute und im Monat wieder an der richtigen Stelle nach Uhrzeit.
 - Familie sieht aus wie im Entwurf: oben Zurück und Einladen, darunter je Person eine ruhige Zeile mit Kreis, Name, einem kurzen grauen Wort (Alter beim Kind) und der Farbe als Punkt. Hinzufügen und der Familiencode liegen hinter Einladen, entfernt wird mit einem Wisch nach links.
 - Chat Karten wie bei Wabi (Julian 14.11.): weiße Karte mit feinem Rand und weichem Schatten, links das Bild, der Name fett, darunter eine graue Zeile, rechts ein kleiner Pfeil zum Öffnen. Was auf eine Liste kam, steht als eine solche Karte da, abgehakt wird in der Liste. Die Beispiele im leeren Chat liegen auf denselben Karten.
+- Schatten sind jetzt feste Bausteine im Designsystem (nach Wabi gemessen): ein Kartenschatten für alle Karten, ein enger Schatten mit Glanz für runde Knöpfe, helle Pillen und Chips.
+- Personen Kreise im Kopf überlappen wie bei Wabi und tragen einen Ring in der Farbe der Person.
 
 ### App funktioniert zuverlässig (09.11. Audit)
 - Nach längerer Pause im Hintergrund klappen Assistent und Spracheingabe gleich beim ersten Satz, statt "Ich komme gerade nicht an den Assistenten".

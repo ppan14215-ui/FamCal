@@ -20,11 +20,10 @@ import LineIcon, { type LineName } from '../src/components/ui/LineIcon';
 import { ClayIcon } from '../src/components/ui/Clay';
 import PressScale from '../src/components/ui/PressScale';
 import { Meta } from '../src/components/ui/kit';
-import { tokens, blend } from '../src/theme';
+import { tokens, blend, glass } from '../src/theme';
 import { navStyle } from '../src/lib/navStyle';
 import { navH, klarFoot } from '../src/components/NavBar';
 import { takePlusFrom } from '../src/lib/plusFrom';
-import { HEAD_SHADOW } from '../src/components/ui/HeaderRight';
 import { haptics } from '../src/lib/haptics';
 import { actions, toast } from '../src/state/store';
 import type { ClayName } from '../src/lib/clayIcons';
@@ -138,7 +137,7 @@ function PlusCard({ opts, attach, ask, mail }: { opts: Opt[]; attach: Attach[]; 
       {from && off ? (
         // The plus again, exactly on the real one: it turns into the cross and closes.
         <Pressable accessibilityRole="button" accessibilityLabel={tx('Schließen', 'Close')} onPress={shut} hitSlop={6}
-          style={{ position: 'absolute', left: fx - fs / 2, top: fy - fs / 2, width: fs, height: fs, borderRadius: 999, backgroundColor: tokens.row, alignItems: 'center', justifyContent: 'center', boxShadow: HEAD_SHADOW } as any}>
+          style={[{ position: 'absolute', left: fx - fs / 2, top: fy - fs / 2, width: fs, height: fs, borderRadius: 999, alignItems: 'center', justifyContent: 'center' }, glass.sm]}>
           <Animated.View style={cross}><LineIcon name="plus" size={21} color={tokens.ink} stroke={2} /></Animated.View>
         </Pressable>
       ) : null}

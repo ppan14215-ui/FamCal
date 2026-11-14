@@ -14,9 +14,8 @@ import { Avatar, Pair, usePersons } from './ui/Person';
 import { Tile, ClayIcon } from './ui/Clay';
 import PressScale from './ui/PressScale';
 import LineIcon from './ui/LineIcon';
-import { tokens, persons as basePersons } from '../theme';
+import { tokens, glass, persons as basePersons } from '../theme';
 import { useBubble } from '../lib/look';
-import { HEAD_SHADOW, CARD_SHADOW } from './ui/HeaderRight';
 import { swapIn, rowLayout } from '../theme/motion';
 import { useStore, actions } from '../state/store';
 import { useDockSpace } from '../lib/dockSpace';
@@ -400,7 +399,7 @@ export function Ask({ f, me, answer }: { f: FeedEntry; me: 'J' | 'T'; answer?: F
  * it did grows in below. Thinking and the finished entry draw the same frame,
  * so nothing jumps when one becomes the other.
  */
-export const cardFrame = { alignSelf: 'stretch' as const, borderRadius: 20, overflow: 'hidden' as const, backgroundColor: tokens.row, borderWidth: 1, borderColor: tokens.hair, boxShadow: CARD_SHADOW };
+export const cardFrame = [{ alignSelf: 'stretch' as const, borderRadius: 20, overflow: 'hidden' as const }, glass.lift];
 /**
  * Memo is the assistant's face (Julian 01.11.): thinks with a "?" while working, happy eyes when it has answered,
  * just entered something. Older cards in the log stay still, so a long chat never twitches.
@@ -454,7 +453,7 @@ function EntryRow({ showcase, ...props }: EntryProps) {
 function CardBtn({ label, icon, primary, onPress }: { label: string; icon?: 'edit' | 'chev'; primary?: boolean; onPress: () => void }) {
   return (
     <PressScale scale={0.97} accessibilityRole="button" accessibilityLabel={label} onPress={onPress}
-      style={[{ flex: 1, height: 40, borderRadius: 999, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingHorizontal: 10 }, primary ? { backgroundColor: tokens.ink } : ({ backgroundColor: tokens.row, boxShadow: HEAD_SHADOW } as any)]}>
+      style={[{ flex: 1, height: 40, borderRadius: 999, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingHorizontal: 10 }, primary ? { backgroundColor: tokens.ink } : glass.sm]}>
       {icon === 'edit' ? <LineIcon name="edit" size={16} color={primary ? tokens.onInk : tokens.ink} stroke={2} /> : null}
       <Txt size={15.5} weight={600} color={primary ? tokens.onInk : tokens.ink} numberOfLines={1}>{label}</Txt>
     </PressScale>

@@ -9,22 +9,17 @@ import { router } from 'expo-router';
 import PressScale from './PressScale';
 import LineIcon, { type LineName } from './LineIcon';
 import { Family } from './Person';
-import { tokens } from '../../theme';
+import { tokens, glass } from '../../theme';
 import { tx } from '../../i18n/lang';
 import { haptics } from '../../lib/haptics';
 import { setPlusFrom } from '../../lib/plusFrom';
 
 export const HEAD_BTN = 40;
-/** The soft lift of white controls on the ground. */
-export const HEAD_SHADOW = '0 0 0 1px rgba(17,20,23,0.06), 0 2px 6px rgba(17,20,23,0.05)';
-/** A card that lies on the ground (Julian 14.11.: "cards and shadow like wabi"): soft and low, it lifts a little and never glows. */
-export const CARD_SHADOW = '0 1px 2px rgba(17,20,23,0.04), 0 6px 16px rgba(17,20,23,0.06)';
-
-/** One round white button of the head. */
+/** One round button of the head: white glass with Wabi's inner light (Julian 14.11.: "icon button should get that glossy look"). */
 export function HeadBtn({ icon, label, onPress, size = 21 }: { icon: LineName; label: string; onPress: () => void; size?: number }) {
   return (
     <PressScale accessibilityLabel={label} hitSlop={6} scale={0.92} onPress={onPress}
-      style={{ width: HEAD_BTN, height: HEAD_BTN, borderRadius: 999, backgroundColor: tokens.row, alignItems: 'center', justifyContent: 'center', boxShadow: HEAD_SHADOW } as any}>
+      style={[{ width: HEAD_BTN, height: HEAD_BTN, borderRadius: 999, alignItems: 'center', justifyContent: 'center' }, glass.sm]}>
       <LineIcon name={icon} size={size} color={tokens.ink} />
     </PressScale>
   );
@@ -44,7 +39,7 @@ export default function HeaderRight({ before, people }: { before?: React.ReactNo
   if (people) return (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
       {before}
-      <PressScale accessibilityLabel={tx('Familie', 'Family')} scale={0.95} onPress={() => { haptics.select(); router.push('/personen'); }}><Family /></PressScale>
+      <PressScale accessibilityLabel={tx('Familie', 'Family')} scale={0.95} onPress={() => { haptics.select(); router.push('/personen'); }}><Family size={34} /></PressScale>
       <HeadBtn icon="settings" label={tx('Einstellungen', 'Settings')} onPress={() => { haptics.select(); router.push('/einstellungen'); }} size={20} />
     </View>
   );

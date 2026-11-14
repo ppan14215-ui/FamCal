@@ -15,10 +15,10 @@ import DateField from '../src/components/DateField';
 import Txt from '../src/components/ui/Txt';
 import PressScale from '../src/components/ui/PressScale';
 import SwipeRow from '../src/components/SwipeRow';
-import { HeadBtn, HEAD_SHADOW } from '../src/components/ui/HeaderRight';
+import { HeadBtn } from '../src/components/ui/HeaderRight';
 import { FormRow, FormValue } from '../src/components/TerminForm';
 import { Avatar, PersonDot } from '../src/components/ui/Person';
-import { tokens, personPalette, persons, shade, allColors } from '../src/theme';
+import { tokens, personPalette, persons, shade, allColors, glass } from '../src/theme';
 import { useStore, actions, toast, get } from '../src/state/store';
 import type { Person, CalEvent } from '../src/state/types';
 import { dayMonth, year, TODAY } from '../src/lib/dates';
@@ -108,7 +108,7 @@ export default function Personen() {
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', minHeight: 44 }}>
         <HeadBtn icon="back" label={tx('Zurück', 'Back')} onPress={goBack} size={19} />
         <PressScale accessibilityRole="button" scale={0.95} hitSlop={6} onPress={() => { haptics.select(); setAdding((a) => !a); }}
-          style={{ height: 40, paddingHorizontal: 16, borderRadius: 999, backgroundColor: tokens.row, alignItems: 'center', justifyContent: 'center', boxShadow: HEAD_SHADOW } as any}>
+          style={[{ height: 40, paddingHorizontal: 16, borderRadius: 999, alignItems: 'center', justifyContent: 'center' }, glass.sm]}>
           <Txt size={16.5} weight={500}>{adding ? tx('Fertig', 'Done') : tx('Einladen', 'Invite')}</Txt>
         </PressScale>
       </View>

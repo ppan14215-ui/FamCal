@@ -10,9 +10,9 @@ import Txt from './ui/Txt';
 import PressScale from './ui/PressScale';
 import { ClayIcon } from './ui/Clay';
 import { Avatar, PersonDot } from './ui/Person';
-import { HeadBtn, HEAD_SHADOW } from './ui/HeaderRight';
+import { HeadBtn } from './ui/HeaderRight';
 import type { LineName } from './ui/LineIcon';
-import { tokens, fonts } from '../theme';
+import { tokens, fonts, glass } from '../theme';
 import { useStore } from '../state/store';
 import { haptics } from '../lib/haptics';
 import { whenLine, type When } from '../lib/when';
@@ -104,7 +104,7 @@ export function FormValue({ children, dim }: { children: string; dim?: boolean }
 export function FormChip({ label, onPress }: { label: string; onPress: () => void }) {
   return (
     <PressScale accessibilityRole="button" scale={0.95} onPress={onPress}
-      style={{ height: 34, paddingHorizontal: 12, borderRadius: 999, backgroundColor: tokens.row, alignItems: 'center', justifyContent: 'center', boxShadow: HEAD_SHADOW } as any}>
+      style={[{ height: 34, paddingHorizontal: 12, borderRadius: 999, alignItems: 'center', justifyContent: 'center' }, glass.sm]}>
       <Txt size={16.5} line={21} numberOfLines={1}>{label}</Txt>
     </PressScale>
   );
