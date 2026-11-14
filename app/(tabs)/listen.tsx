@@ -223,14 +223,14 @@ function Einkauf({ list }: { list: List }) {
   const hints = useStore((s) => s.hints);
   // Twins from before the merge rule (Julian 30.10.: "Mais" twice, "Zwiebel" and "Zwiebeln") fold once, with an undo.
   useEffect(() => { actions.mergeTwins(list.id); }, [list.id]);
+  const open = list.sections.some((x) => x.items.some((i) => !i.done));
   return (
     <>
       {hints.abo ? (
         <HintLine icon="windeln" bold={tx('Windeln', 'Diapers')} text={tx(' kauft ihr etwa alle 12 Tage. Abo?', ': you buy them about every 12 days. Subscribe?')} go={tx('Ansehen', 'View')} onGo={() => router.push('/abo')} onNo={() => actions.dismissHint('abo')} />
       ) : null}
-      {/* The add row is the next line of the list, after what is still open. */}
-      <Sections list={list} footer={<AddInline key="add" flat placeholder={tx('Hinzufügen …', 'Add …')} mic onPress={() => router.push('/einkauf-neu')} />} />
-      <Txt size={13.5} line={19} color={tokens.sub}>{tx('Haken antippen: erledigt. Text antippen: bearbeiten. Nach links wischen: löschen.', 'Tap the check: done. Tap the text: edit. Swipe left: delete.')}</Txt>
+      {/* As in the klar draft: the list is only what is on it. New things come by speaking or over the plus; an empty list keeps one line to start with. */}
+      <Sections list={list} footer={open ? undefined : <AddInline key="add" flat placeholder={tx('Hinzufügen …', 'Add …')} mic onPress={() => router.push('/einkauf-neu')} />} />
     </>
   );
 }

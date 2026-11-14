@@ -36,6 +36,10 @@ Alle sichtbaren Änderungen an FamCal. Neueste oben. Agenten und Menschen: Ände
 - Listen wie im Entwurf: die gewählte Liste ist ein weißer Chip, die anderen stehen schlicht daneben. Jede Zeile hat ihr kleines Symbol, die Notiz steht grau hinter dem Titel, die Person ist ein Farbpunkt. Gekauftes sammelt sich unten unter „Erledigt“.
 - Hinweise wie „Windeln kauft ihr etwa alle 12 Tage“ sind jetzt eine ruhige graue Zeile mit „Ansehen“.
 - Chat wie im Entwurf: deine Sätze stehen in deiner Blasenfarbe, Memo antwortet als schlichte Zeile mit seinem Gesicht, das Ergebnis ist eine weiße Karte mit zwei echten Knöpfen: „Ändern“ in Schwarz und „Rückgängig“.
+- Kalender Heute zeigt nur noch, was im Entwurf steht: pro Termin eine Zeile mit Farbstrich, Zeit, Symbol, Titel und Farbpunkt. Zweite Zeilen, Quellen, Aufgaben, Fristen, Hinweiskarten und Arbeitszeiten stehen dort nicht mehr. Arbeitszeiten bleiben in Tage und Woche.
+- Listen zeigen nur noch die Liste selbst: die Hinzufügen Zeile und der Hilfetext sind weg. Neues kommt über Sprechen oder das Plus oben rechts; nur eine leere Liste behält eine Zeile zum Anfangen.
+- Hinweiszeilen haben kein Kreuz mehr: nach links wischen räumt sie weg.
+- Einstellungen wie im Entwurf: oben Du mit Blasenfarbe, Memo (Schwarz oder Meine Farbe), Vorschau und Sprechen (Mit Memo oder Minimal), dann Familie mit Mitglieder, Kalender verbinden und Benachrichtigungen, dann Konto. Zeilen ohne Symbole. Das Farbthema steht unter Zum Testen.
 
 ### App funktioniert zuverlässig (09.11. Audit)
 - Nach längerer Pause im Hintergrund klappen Assistent und Spracheingabe gleich beim ersten Satz, statt "Ich komme gerade nicht an den Assistenten".

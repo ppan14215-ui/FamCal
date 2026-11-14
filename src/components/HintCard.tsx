@@ -9,6 +9,7 @@ import Txt from './ui/Txt';
 import LineIcon from './ui/LineIcon';
 import { Btn } from './ui/kit';
 import PressScale from './ui/PressScale';
+import SwipeRow, { justSwiped } from './SwipeRow';
 import { tx } from '../i18n/lang';
 import { ClayIcon, Tile } from './ui/Clay';
 import { tokens } from '../theme';
@@ -40,21 +41,21 @@ export default function HintCard({ icon, tile, kicker, title, body, yes, no, onY
 
 /**
  * The same thing in one line, as in the klar draft Julian approved (14.11.): a quiet grey strip with the icon, one
- * sentence whose first word is bold, and the way on. The small x puts it away.
+ * sentence whose first word is bold, and the way on. Nothing else stands on it; a swipe to the left puts it away.
  */
 export function HintLine({ icon, bold, text, go, onGo, onNo }: { icon: ClayName; bold: string; text: string; go: string; onGo: () => void; onNo?: () => void }) {
-  return (
-    <Animated.View exiting={FadeOut.duration(180)} style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 10, paddingLeft: 12, paddingRight: 6, borderRadius: 14, backgroundColor: tokens.chipBg }}>
+  const line = (
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 10, paddingLeft: 12, paddingRight: 10, backgroundColor: tokens.chipBg }}>
       <ClayIcon name={icon} size={28} />
       <Txt size={15.5} line={21} style={{ flex: 1 }}><Txt size={15.5} line={21} weight={600}>{bold}</Txt>{text}</Txt>
-      <PressScale scale={0.95} hitSlop={8} accessibilityRole="button" accessibilityLabel={go} onPress={onGo} style={{ paddingVertical: 6, paddingHorizontal: 6 }}>
+      <PressScale scale={0.95} hitSlop={8} accessibilityRole="button" accessibilityLabel={go} onPress={() => { if (!justSwiped()) onGo(); }} style={{ paddingVertical: 6, paddingHorizontal: 6 }}>
         <Txt size={15.5} weight={600}>{go}</Txt>
       </PressScale>
-      {onNo ? (
-        <PressScale scale={0.9} hitSlop={8} accessibilityRole="button" accessibilityLabel={tx('Ausblenden', 'Hide')} onPress={onNo} style={{ width: 28, height: 28, alignItems: 'center', justifyContent: 'center' }}>
-          <LineIcon name="x" size={14} color={tokens.mute} />
-        </PressScale>
-      ) : null}
+    </View>
+  );
+  return (
+    <Animated.View exiting={FadeOut.duration(180)} style={{ borderRadius: 14, overflow: 'hidden' }}>
+      {onNo ? <SwipeRow bg={tokens.chipBg} onDelete={onNo}>{line}</SwipeRow> : line}
     </Animated.View>
   );
 }
