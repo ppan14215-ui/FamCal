@@ -63,6 +63,12 @@ function useCalendarReady() {
 const useStill = () => useContext(StillContext);
 const noop = () => {};
 
+/**
+ * A date or a time span stays in one piece. Beside Memo the cards are narrower, and "9:30am to 10:15a…" was cut off
+ * when a place stood next to it: the grey line may now take a second line, and it only breaks after a "·".
+ */
+const keep = (t: string) => t.replace(/ /g, '\u00A0');
+
 /** Who goes, as dots in the persons' colours (klar draft: no faces in the cards). */
 function WhoDots({ who }: { who?: CalEvent['who'] }) {
   const persons = usePersons();
@@ -84,7 +90,7 @@ function Made({ icon, title, sub, onPress, right, celebrate }: { icon: ClayName;
       <Tile name={icon} size={48} radius={12} ratio={0.66} bg={tokens.chipBg} celebrate={celebrate} />
       <View style={{ flex: 1, minWidth: 0 }}>
         <Txt size={17} line={22} weight={600} numberOfLines={2}>{title}</Txt>
-        {sub ? <Txt size={14.5} line={20} color={tokens.sub} numberOfLines={1}>{sub}</Txt> : null}
+        {sub ? <Txt size={14.5} line={20} color={tokens.sub} numberOfLines={2}>{sub}</Txt> : null}
       </View>
       {right}
       {onPress ? <LineIcon name="arrow" size={18} color={tokens.mute} /> : null}
@@ -113,7 +119,7 @@ export function Termine({ ids, snap, changed, ask, timeQ, fresh, placeQ }: { ids
     <>
       {live.map((e) => (
         <Made key={e.id} icon={e.icon} celebrate={play} title={e.title}
-          sub={[(e as CalEvent).endDate && (e as CalEvent).endDate! > e.date ? tx(`${short(e.date)} bis ${short((e as CalEvent).endDate!)}`, `${short(e.date)} to ${short((e as CalEvent).endDate!)}`) : short(e.date), e.allDay ? tx('ganztägig', 'all day') : e.end ? tx(`${hm(e.start)} bis ${hm(e.end)}`, `${hm(e.start)} to ${hm(e.end)}`) : hm(e.start), e.place].filter(Boolean).join(' · ')}
+          sub={[keep((e as CalEvent).endDate && (e as CalEvent).endDate! > e.date ? tx(`${short(e.date)} bis ${short((e as CalEvent).endDate!)}`, `${short(e.date)} to ${short((e as CalEvent).endDate!)}`) : short(e.date)), keep(e.allDay ? tx('ganztägig', 'all day') : e.end ? tx(`${hm(e.start)} bis ${hm(e.end)}`, `${hm(e.start)} to ${hm(e.end)}`) : hm(e.start)), e.place].filter(Boolean).join('\u00A0· ')}
           onPress={still ? noop : () => router.push(`/termin/${e.id}`)}
           right={<>{e.place ? <PinChip place={e.place} still={still} /> : null}<WhoDots who={e.who} /></>} />
       ))}

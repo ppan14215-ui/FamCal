@@ -57,6 +57,7 @@ Alle sichtbaren Änderungen an FamCal. Neueste oben. Agenten und Menschen: Ände
 - Personen Kreise im Kopf überlappen wie bei Wabi und tragen einen Ring in der Farbe der Person.
 - Im Chat spricht der Assistent jetzt in einer eigenen ruhigen grauen Blase links neben Memo, wie man es von WhatsApp kennt. Deine Sätze bleiben farbig rechts.
 - Blasen und Karten beginnen an derselben Linie, zwischen zwei Wortwechseln ist mehr Luft, und in den Karten hat alles denselben Rand.
+- In den Chat Karten wird die Uhrzeit nicht mehr abgeschnitten, wenn ein Ort daneben steht: Datum und Zeit bleiben ganz, die graue Zeile darf dafür eine zweite Zeile haben.
 
 ### App funktioniert zuverlässig (09.11. Audit)
 - Nach längerer Pause im Hintergrund klappen Assistent und Spracheingabe gleich beim ersten Satz, statt "Ich komme gerade nicht an den Assistenten".
