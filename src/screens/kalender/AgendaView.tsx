@@ -5,6 +5,8 @@
  * Nothing else stands here (Julian 14.11. 10:05: "noch zu überladen im Vergleich zu der vereinbarten Vorlage"):
  * no second lines, no sources, no tasks, no hint cards, no work shifts. What is over today turns grey and a fine
  * line marks now. Free days are left out. Rows open on a tap, a swipe to the left deletes.
+ * Above the days stands the briefing "Neu und offen" (Julian 14.11.: one Heute page, the calendar is the basis of
+ * what we work on); it is handed in as `top` and scrolls with the list.
  */
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { View, ScrollView } from 'react-native';
@@ -133,7 +135,7 @@ const Day = React.memo(function Day({ d, first, now, people, month }: { d: DayDa
 });
 
 /** `reach`: the list covers at least this many days from today (the onboarding shows a day that may lie further out). */
-export default function AgendaView({ reach }: { reach?: number } = {}) {
+export default function AgendaView({ reach, top }: { reach?: number; /** Stands above the days and scrolls with them (the briefing). */ top?: React.ReactNode } = {}) {
   const events = useCalEvents();
   const people = useStore((s) => s.people);
   const insets = useSafeAreaInsets();
@@ -181,6 +183,7 @@ export default function AgendaView({ reach }: { reach?: number } = {}) {
       }}
       contentContainerStyle={{ paddingHorizontal: 18, paddingTop: 6, paddingBottom: 110 + insets.bottom + dock }}
     >
+      {top}
       {days.map((d, i) => (
         <Day key={d.date} d={d} first={i === 0} now={d.date === TODAY ? now : 0} people={people} month={i > 0 && monthIdx(d.date) !== monthIdx(days[i - 1].date) ? MONTHS_SHORT[monthIdx(d.date)] : undefined} />
       ))}
