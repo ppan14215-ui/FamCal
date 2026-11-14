@@ -1,19 +1,18 @@
 /**
- * Memo, the blob (Julian 07.11.2026: "this is the kind of mascot and animation I
- * was looking for", a soft glossy blob with two pill eyes that sits above the
- * field and lives with the conversation). This file is its little brain: what
- * the app is doing right now, so every Memo on screen can react the same way.
+ * Memo (Julian 07.11.2026: a mascot that lives with the conversation; since 13.11. flat and round, see buddy/Pin.tsx).
+ * This file is its little brain: what the app is doing right now, so every Memo on screen can react the same way.
  *
  * Moods, strongest first:
- *   listen  the mic is on: Memo grows, wobbles with the voice, looks up
- *   think   the assistant works: squashes flat and wide, eyes wander
- *   happy   something landed: a hop, eyes turn into ^^
+ *   listen  the mic is on: eyes wider and up, he moves evenly with the voice
+ *   think   the assistant works: he looks up to one side, then the other, then the eyes become three orbiting dots
+ *   happy   something landed: eyes turn into ^^
  *   type    the keyboard is open: Memo looks down at the field
  *   sleep   late at night and nothing going on
  *   idle    breathes, blinks, glances around now and then
  */
 import { useSyncExternalStore } from 'react';
 import { makeMutable } from 'react-native-reanimated';
+import type { MorphKind } from '../components/buddy/morphs';
 
 export type Mood = 'idle' | 'type' | 'listen' | 'think' | 'happy' | 'sleep';
 
@@ -22,8 +21,14 @@ export const voiceLevel = makeMutable(0);
 
 type State = {
   listening: boolean;
-  /** Bumps each time something lands (an entry, an answer): Memo hops once with happy eyes. */
+  /** Bumps each time something lands (an entry, an answer): ^^ and the smallest squash. */
   joy: number;
+  /** What landed, when it is a real result: Memo melts into that thing once (see buddy/morphs.ts). null = just glad. */
+  joyKind: MorphKind | null;
+  /** Bumps when something did not work: he looks down for a moment. */
+  sad: number;
+  /** Bumps for a wink (a small "got it"). */
+  wink: number;
   /** Bumps on a tap or a new message from the family: a quick glance and hop. */
   poke: number;
   /** Where Memo flies in from on start (the end of the intro), in screen points; null when it simply appears. */
@@ -32,6 +37,8 @@ type State = {
   intro: boolean;
   /** Bumps when Memo is tapped: the field starts listening (Memo is the talk button, Julian 08.11.). */
   talk: number;
+  /** Bumped by a long press on Memo: straight to the keyboard. */
+  keys: number;
   /** The last touch anywhere on screen: Memo glances there. */
   touch: { x: number; y: number; n: number } | null;
   /** Something waits for my answer (a question in the chat): Memo shows a "?". */
@@ -53,7 +60,7 @@ type State = {
 };
 
 // intro starts true: BuddyIntro says when the screen is free (it always mounts with the root).
-let state: State = { listening: false, joy: 0, poke: 0, from: null, intro: true, talk: 0, touch: null, waiting: false, covered: false, docked: 0, dockAt: null, typed: 0, landed: false, dockHidden: false, thinking: false };
+let state: State = { listening: false, joy: 0, joyKind: null, sad: 0, wink: 0, poke: 0, from: null, intro: true, talk: 0, keys: 0, touch: null, waiting: false, covered: false, docked: 0, dockAt: null, typed: 0, landed: false, dockHidden: false, thinking: false };
 const subs = new Set<() => void>();
 const emit = () => subs.forEach((l) => l());
 
@@ -64,9 +71,14 @@ export function setBuddy(patch: Partial<State>) {
   state = { ...state, ...patch };
   emit();
 }
-export const buddyJoy = () => setBuddy({ joy: state.joy + 1 });
+/** Something landed. With a kind (only for real results, at most one per action) Memo becomes that thing for a second. */
+export const buddyJoy = (kind: MorphKind | null = null) => setBuddy({ joy: state.joy + 1, joyKind: kind });
+export const buddySad = () => setBuddy({ sad: state.sad + 1 });
+export const buddyWink = () => setBuddy({ wink: state.wink + 1 });
 export const buddyPoke = () => setBuddy({ poke: state.poke + 1 });
 export const buddyTalk = () => setBuddy({ talk: state.talk + 1 });
+export const buddyKeys = () => setBuddy({ keys: state.keys + 1 });
+export const getBuddy = () => state;
 let lastTouch = 0;
 /** A touch anywhere: at most a few per second reach Memo, so scrolling stays cheap. */
 export function buddyTouch(x: number, y: number) {
@@ -86,6 +98,10 @@ export const isNight = () => { const h = new Date().getHours(); return h >= 23 |
 /** Only the talk counter, so the dock re-renders on a Memo tap and not on every touch. */
 export function useBuddyTalk() {
   return useSyncExternalStore((l) => { subs.add(l); return () => { subs.delete(l); }; }, () => state.talk, () => state.talk);
+}
+
+export function useBuddyKeys() {
+  return useSyncExternalStore((l) => { subs.add(l); return () => { subs.delete(l); }; }, () => state.keys, () => state.keys);
 }
 
 /** A bar shows Memo in place of the mic; the floating one steps aside while any does. */

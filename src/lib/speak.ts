@@ -26,11 +26,12 @@ export type SpeakAsk = {
 
 /** live: what the phone hears while you speak (Julian 11.11.: "grayed out and as you understand what we're saying, it gets darker"): sure is settled, part is still a guess. */
 type State = { phase: SpeakPhase; text: string; ask: SpeakAsk | null; done: string; live: { sure: string; part: string; n: number } | null };
-type Handlers = { stop: () => void; cancel: () => void; send: () => void; edit: () => void; again: () => void };
+/** keys: "Aa" in the card. What was said so far goes into the field and the keyboard comes up; nothing is sent. */
+type Handlers = { stop: () => void; cancel: () => void; send: () => void; edit: () => void; again: () => void; keys: () => void };
 
 let state: State = { phase: 'idle', text: '', ask: null, done: '', live: null };
 const noop = () => {};
-export const speakHandlers: Handlers = { stop: noop, cancel: noop, send: noop, edit: noop, again: noop };
+export const speakHandlers: Handlers = { stop: noop, cancel: noop, send: noop, edit: noop, again: noop, keys: noop };
 const subs = new Set<() => void>();
 
 export function setSpeak(patch: Partial<State>) {

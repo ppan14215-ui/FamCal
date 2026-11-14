@@ -14,7 +14,7 @@ import LineIcon, { LineName } from './LineIcon';
 import PressScale from './PressScale';
 import { Tile, ClayIcon } from './Clay';
 import { ClayName } from '../../lib/clayIcons';
-import { tokens, springs, rise, rowIn, rowOut, rowLayout, motion, easing } from '../../theme';
+import { tokens, springs, rise, rowIn, rowOut, rowLayout, motion, easing, glass, fonts } from '../../theme';
 import { goBack } from '../../lib/nav';
 import { haptics } from '../../lib/haptics';
 import { tx } from '../../i18n/lang';
@@ -108,25 +108,29 @@ export function Screen({ children, head, tab, footer, bg = tokens.bg, gap = 14, 
 
 // ─── Type ──────────────────────────────────────────────────────────────────
 
-export function H1({ children, sub, right, size = 34, dot }: { children: React.ReactNode; sub?: string; right?: React.ReactNode; size?: number; dot?: string }) {
+/**
+ * Screen title after the "Recordings" reference (Julian 14.11.): tight and bold with a period, the grey info line
+ * below it. A title that already ends in a mark keeps its own. `dot` is kept for callers and ignored.
+ */
+export function H1({ children, sub, right, size = 30 }: { children: React.ReactNode; sub?: string; right?: React.ReactNode; size?: number; dot?: string }) {
+  const period = typeof children === 'string' && !/[.?!…:]$/.test(children.trim());
   return (
-    <View style={{ flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', gap: 12 }}>
-      <View style={{ flex: 1, gap: 2 }}>
-        {sub ? <Txt size={15} color={tokens.sub}>{sub}</Txt> : null}
-        <Txt size={size} line={Math.round(size * 1.18)} weight={700} tracking={-1}>
-          {children}<Dot color={dot} />
-        </Txt>
+    <View style={{ flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
+      <View style={{ flex: 1, gap: 3 }}>
+        <Txt size={size} line={Math.round(size * 1.12)} weight={700} tracking={-size * 0.04}>{children}{period ? <Dot /> : null}</Txt>
+        {sub ? <Txt size={14} line={19} color={tokens.sub}>{sub}</Txt> : null}
       </View>
       {right}
     </View>
   );
 }
 
+/** Section label over a flat group: small caps, grey, an optional count on the right. */
 export function H2({ children, right }: { children: React.ReactNode; right?: string }) {
   return (
-    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' }}>
-      <Txt size={19} line={26} weight={600} tracking={-0.3}>{children}</Txt>
-      {right ? <Txt size={14} color={tokens.sub}>{right}</Txt> : null}
+    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', paddingTop: 6 }}>
+      <Txt size={12} line={16} weight={600} tracking={0.7} color={tokens.sub} style={{ textTransform: 'uppercase' }}>{children}</Txt>
+      {right ? <Txt size={12} line={16} weight={600} color={tokens.sub}>{right}</Txt> : null}
     </View>
   );
 }
@@ -142,7 +146,7 @@ export function Lead({ children }: { children: React.ReactNode }) {
 // ─── Surfaces ──────────────────────────────────────────────────────────────
 
 /**
- * White rows separated by 1px hairlines inside one rounded block. Rows rise
+ * Flat rows separated by 1px hairlines, straight on the ground (klar look, Julian 13.11.: dense, no white blocks). Rows rise
  * in one stagger apart on first show; later rows fade in or out and their
  * neighbours slide into place. Give rows a key so the right one leaves.
  */
@@ -151,7 +155,7 @@ export function Group({ children, style }: { children: React.ReactNode; style?: 
   const first = useRef(true);
   useEffect(() => { first.current = false; }, []);
   return (
-    <Animated.View layout={rowLayout} style={[{ borderRadius: 20, overflow: 'hidden', backgroundColor: tokens.row }, style]}>
+    <Animated.View layout={rowLayout} style={style}>
       {kids.map((k, i) => (
         <Animated.View
           key={(k as React.ReactElement).key ?? i}
@@ -167,13 +171,13 @@ export function Group({ children, style }: { children: React.ReactNode; style?: 
   );
 }
 
-export function Card({ children, pad = 16, gap = 12, style, radius = 22 }: { children: React.ReactNode; pad?: number; gap?: number; style?: StyleProp<ViewStyle>; radius?: number }) {
-  return <View style={[{ padding: pad, borderRadius: radius, backgroundColor: tokens.row, gap }, style]}>{children}</View>;
+export function Card({ children, pad = 14, gap = 12, style, radius = 18 }: { children: React.ReactNode; pad?: number; gap?: number; style?: StyleProp<ViewStyle>; radius?: number }) {
+  return <View style={[{ padding: pad, borderRadius: radius, gap }, glass.line, style]}>{children}</View>;
 }
 
 export function Note({ children }: { children: React.ReactNode }) {
   return (
-    <View style={{ flexDirection: 'row', gap: 10, padding: 14, paddingVertical: 12, borderRadius: 16, backgroundColor: tokens.noteBg }}>
+    <View style={{ flexDirection: 'row', gap: 10, padding: 12, paddingVertical: 10, borderRadius: 14, backgroundColor: tokens.noteBg }}>
       <LineIcon name="sparkle" size={16} color={tokens.sub} />
       <Txt size={13.5} line={19} color={tokens.sub} style={{ flex: 1 }}>{children}</Txt>
     </View>
@@ -193,8 +197,8 @@ export function Hint({ children, center, icon }: { children: React.ReactNode; ce
 
 type BtnProps = { label: string; onPress?: () => void; primary?: boolean; icon?: LineName; style?: StyleProp<ViewStyle>; height?: number; disabled?: boolean };
 
-/** Primary = the one dark element on the screen. Secondary = white with hairline. */
-export function Btn({ label, onPress, primary = true, icon, style, height = 54, disabled }: BtnProps) {
+/** Primary = the solid ink pill. Secondary = a glass pill (klar look: glass only on things you press). */
+export function Btn({ label, onPress, primary = true, icon, style, height = 50, disabled }: BtnProps) {
   return (
     <PressScale
       onPress={onPress}
@@ -203,14 +207,14 @@ export function Btn({ label, onPress, primary = true, icon, style, height = 54, 
       style={[
         {
           height, borderRadius: 999, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingHorizontal: 20,
-          backgroundColor: primary ? tokens.ink : tokens.row,
-          borderWidth: primary ? 0 : 1, borderColor: tokens.hair, opacity: disabled ? 0.4 : 1,
+          opacity: disabled ? 0.4 : 1,
         },
+        primary ? { backgroundColor: tokens.ink } : glass.sm,
         style,
       ]}
     >
-      {icon ? <LineIcon name={icon} size={20} color={primary ? tokens.onInk : tokens.ink} /> : null}
-      <Txt size={16} weight={600} color={primary ? tokens.onInk : tokens.ink}>{label}</Txt>
+      {icon ? <LineIcon name={icon} size={18} color={primary ? tokens.onInk : tokens.ink} /> : null}
+      <Txt size={15.5} weight={600} color={primary ? tokens.onInk : tokens.ink}>{label}</Txt>
     </PressScale>
   );
 }
@@ -223,10 +227,10 @@ export function TextLink({ label, onPress, color = tokens.sub, weight = 600 }: {
   );
 }
 
-export function RoundButton({ icon, onPress, label, bg = tokens.row, size = 40, color = tokens.ink }: { icon: LineName; onPress?: () => void; label: string; bg?: string; size?: number; color?: string }) {
+export function RoundButton({ icon, onPress, label, bg, size = 38, color = tokens.ink }: { icon: LineName; onPress?: () => void; label: string; bg?: string; size?: number; color?: string }) {
   return (
-    <PressScale onPress={onPress} accessibilityLabel={label} hitSlop={6} style={{ width: size, height: size, borderRadius: 999, backgroundColor: bg, alignItems: 'center', justifyContent: 'center' }}>
-      <LineIcon name={icon} size={20} color={color} />
+    <PressScale onPress={onPress} accessibilityLabel={label} hitSlop={6} style={[{ width: size, height: size, borderRadius: 999, alignItems: 'center', justifyContent: 'center' }, bg ? { backgroundColor: bg } : glass.sm]}>
+      <LineIcon name={icon} size={19} color={color} />
     </PressScale>
   );
 }
@@ -237,7 +241,7 @@ export function BackBar({ center, onBack }: { center?: React.ReactNode; onBack?:
     <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', minHeight: 40 }}>
       <RoundButton icon="back" label={tx('Zurück', 'Back')} onPress={onBack ?? goBack} />
       {center ?? null}
-      <View style={{ width: 40 }} />
+      <View style={{ width: 38 }} />
     </View>
   );
 }
@@ -264,10 +268,23 @@ export function StepDots({ i, n = 8 }: { i: number; n?: number }) {
 }
 
 /**
- * Segmented control on a grey track; the white pill slides to the tapped
- * item on a spring instead of jumping.
+ * The view switch as chips, after the reference (Julian 14.11.): every item is a white chip with a whisper of
+ * shadow, the chosen one is ink with white text. The ink chip glides to the tapped item on a spring.
  */
-export function Seg<T extends string>({ items, value, onChange, height = 34 }: { items: { key: T; label: string }[]; value: T; onChange: (k: T) => void; height?: number }) {
+const SEG_GAP = 6;
+/** A resting chip: white with a hairline and a whisper of shadow. */
+const CHIP_SHADOW = '0 0 0 1px rgba(17,20,23,0.035), 0 2px 8px rgba(17,20,23,0.06)';
+/** A label turns white while the ink chip is under it. */
+function SegLabel({ i, x, label }: { i: number; x: SharedValue<number>; label: string }) {
+  const ink = tokens.ink, on = tokens.onInk;
+  const st = useAnimatedStyle(() => ({ color: interpolateColor(Math.min(1, Math.abs(x.value - i)), [0.25, 0.6], [on, ink]) }));
+  return (
+    <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+      <Animated.Text numberOfLines={1} maxFontSizeMultiplier={1.2} style={[{ fontFamily: fonts[600], fontSize: 14, lineHeight: 19 }, st]}>{label}</Animated.Text>
+    </View>
+  );
+}
+export function Seg<T extends string>({ items, value, onChange, height = 36 }: { items: { key: T; label: string }[]; value: T; onChange: (k: T) => void; height?: number }) {
   const idx = Math.max(0, items.findIndex((it) => it.key === value));
   const [w, setW] = useState(0);
   // Julian 31.10. 18:20: on the phone a fresh switch (each Kalender view draws its own header) showed the pill at the
@@ -275,31 +292,30 @@ export function Seg<T extends string>({ items, value, onChange, height = 34 }: {
   // starts right on its tab; the tap glides the old one first (140 ms) before the new view takes over.
   const x = useSharedValue(idx);
   useEffect(() => { if (Math.abs(x.value - idx) > 0.001) x.value = withSpring(idx, springs.smooth); }, [idx]);
-  // The pill glides on the tap itself; the new view comes once the glide is mostly done, so building it never holds the glide (Julian 31.10.: "lag").
+  // The chip glides on the tap itself; the new view comes once the glide is mostly done, so building it never holds the glide (Julian 31.10.: "lag").
   const pick = (k: T, i: number) => { x.value = withSpring(i, springs.smooth); setTimeout(() => onChange(k), 140); };
-  const pill = useAnimatedStyle(() => ({ transform: [{ translateX: x.value * w }] }));
-  const onLayout = (e: LayoutChangeEvent) => setW((e.nativeEvent.layout.width - 8) / items.length);
+  const pill = useAnimatedStyle(() => ({ transform: [{ translateX: x.value * (w + SEG_GAP) }] }));
+  const onLayout = (e: LayoutChangeEvent) => setW((e.nativeEvent.layout.width - SEG_GAP * (items.length - 1)) / items.length);
   return (
-    <View onLayout={onLayout} style={{ flexDirection: 'row', padding: 4, borderRadius: 999, backgroundColor: tokens.segBg }}>
-      {w ? <Animated.View pointerEvents="none" style={[{ position: 'absolute', left: 4, top: 4, width: w, height, borderRadius: 999, backgroundColor: tokens.segOn }, shadowSm, pill]} /> : null}
+    <View onLayout={onLayout} style={{ flexDirection: 'row', gap: SEG_GAP, height }}>
       {items.map((it) => {
         const on = it.key === value;
         return (
           <PressScale
             key={it.key}
             accessibilityRole="tab"
+            accessibilityLabel={it.label}
             accessibilityState={{ selected: on }}
             scale={0.95}
             onPress={() => { if (!on) { haptics.select(); pick(it.key, items.indexOf(it)); } }}
-            style={{
-              flex: 1, height, borderRadius: 999, alignItems: 'center', justifyContent: 'center',
-              backgroundColor: !w && on ? tokens.segOn : 'transparent',
-            }}
-          >
-            <Txt size={14.5} weight={on ? 600 : 400} color={on ? tokens.ink : tokens.sub}>{it.label}</Txt>
-          </PressScale>
+            style={{ flex: 1, height, borderRadius: 999, backgroundColor: tokens.row, boxShadow: CHIP_SHADOW } as any}
+          />
         );
       })}
+      {w ? <Animated.View pointerEvents="none" style={[{ position: 'absolute', left: 0, top: 0, width: w, height, borderRadius: 999, backgroundColor: tokens.ink }, pill]} /> : null}
+      <View pointerEvents="none" style={{ position: 'absolute', left: 0, right: 0, top: 0, height, flexDirection: 'row', gap: SEG_GAP }}>
+        {items.map((it, i) => <SegLabel key={it.key} i={i} x={x} label={it.label} />)}
+      </View>
     </View>
   );
 }
@@ -333,7 +349,8 @@ export function Chip({ children, bg = tokens.chipBg, color = tokens.ink, onPress
   // A chosen chip (doneSoft) also gets a teal ring, so it reads as chosen in the dark too (Julian 28.10.).
   const chosen = bg === tokens.doneSoft;
   const st: ViewStyle = { height, paddingHorizontal: chosen ? 10.5 : 12, borderRadius: 999, backgroundColor: bg, borderWidth: chosen ? 1.5 : 0, borderColor: tokens.done, flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'flex-start' };
-  return onPress ? <PressScale onPress={onPress} style={st}>{body}</PressScale> : <View style={st}>{body}</View>;
+  // Klar look: a plain chip you can press is glass; one that only tells something stays a flat grey fill.
+  return onPress ? <PressScale onPress={onPress} style={[st, bg === tokens.chipBg ? glass.sm : null]}>{body}</PressScale> : <View style={st}>{body}</View>;
 }
 
 /**
@@ -341,7 +358,7 @@ export function Chip({ children, bg = tokens.chipBg, color = tokens.ink, onPress
  * the only way to complete something. Completing is a rare moment, so the
  * fill gets one short spring.
  */
-export function Check({ done, onPress, size = 26 }: { done: boolean; onPress?: () => void; size?: number }) {
+export function Check({ done, onPress, size = 24, color = tokens.done }: { done: boolean; onPress?: () => void; size?: number; color?: string }) {
   const v = useSharedValue(done ? 1 : 0);
   useEffect(() => {
     // Calm, not playful (Julian 28.10.): the fill settles in once, no bounce.
@@ -350,8 +367,8 @@ export function Check({ done, onPress, size = 26 }: { done: boolean; onPress?: (
   const fill = useAnimatedStyle(() => ({ opacity: v.value, transform: [{ scale: 0.8 + 0.2 * v.value }] }));
   const inner = (
     <Animated.View style={[{ width: size, height: size, borderRadius: 999, borderWidth: 1.5, borderColor: tokens.circleLine, alignItems: 'center', justifyContent: 'center' }]}>
-      <Animated.View style={[{ position: 'absolute', top: -1.5, left: -1.5, width: size, height: size, borderRadius: 999, backgroundColor: tokens.done, alignItems: 'center', justifyContent: 'center' }, fill]}>
-        <LineIcon name="check" size={size * 0.62} color={tokens.onInk} stroke={2.4} />
+      <Animated.View style={[{ position: 'absolute', top: -1.5, left: -1.5, width: size, height: size, borderRadius: 999, backgroundColor: color, alignItems: 'center', justifyContent: 'center' }, fill]}>
+        <LineIcon name="check" size={size * 0.62} color="#FFFFFF" stroke={2.4} />
       </Animated.View>
     </Animated.View>
   );
@@ -388,15 +405,19 @@ type RowProps = {
   tileSize?: number;
 };
 
-/** A white row: optional time, clay icon or tile, title + meta, owner/right. */
-export function Row({ icon, title, sub, subColor, right, time, strike, onPress, lead = 'clay', tileSize = 48 }: RowProps) {
+/**
+ * A flat, dense row (klar look): optional person bar and time, a small clay icon inline, title with its
+ * meta behind it, owner or anything else on the right.
+ */
+export function Row({ icon, title, sub, subColor, right, time, strike, onPress, bar }: RowProps & { bar?: string }) {
   const body = (
-    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: lead === 'tile' ? 10 : 12, paddingHorizontal: 14, paddingLeft: lead === 'tile' ? 10 : 14, backgroundColor: tokens.row }}>
-      {time !== undefined ? <Txt size={13.5} weight={600} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75} style={{ width: 48 }}>{time}</Txt> : null}
-      {lead === 'clay' ? <ClayIcon name={icon} size={46} celebrate={strike} /> : <Tile name={icon} bg="transparent" size={tileSize} radius={tileSize >= 48 ? 16 : 14} celebrate={strike} />}
-      <View style={{ flex: 1, minWidth: 0, gap: 1 }}>
-        <Txt size={16} line={21} weight={600} strike={strike} color={strike ? tokens.mute : tokens.ink} numberOfLines={2}>{title}</Txt>
-        {sub ? <Meta color={subColor}>{sub}</Meta> : null}
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 44, paddingVertical: 8, paddingHorizontal: 2 }}>
+      {bar ? <View style={{ width: 2.5, alignSelf: 'stretch', marginVertical: 3, borderRadius: 2, backgroundColor: bar }} /> : null}
+      {time !== undefined ? <Txt size={13} weight={500} color={bar ?? tokens.sub} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8} style={{ width: 42, fontVariant: ['tabular-nums'] }}>{time}</Txt> : null}
+      <ClayIcon name={icon} size={26} celebrate={strike} />
+      <View style={{ flex: 1, minWidth: 0 }}>
+        <Txt size={15.5} line={20} weight={500} strike={strike} color={strike ? tokens.mute : tokens.ink} numberOfLines={2}>{title}</Txt>
+        {sub ? <Txt size={13} line={17} color={subColor ?? tokens.sub} numberOfLines={1}>{sub}</Txt> : null}
       </View>
       {right}
     </View>
@@ -412,19 +433,19 @@ export function CardRow({ icon, title, sub, right, onPress, selected, empty }: {
       disabled={!onPress}
       scale={0.985}
       style={{
-        flexDirection: 'row', alignItems: 'center', gap: 12, padding: 10, paddingRight: 14, borderRadius: 20, backgroundColor: tokens.row,
-        borderWidth: selected ? 1.5 : 0, borderColor: tokens.ink, margin: selected ? 0 : 0,
+        flexDirection: 'row', alignItems: 'center', gap: 12, padding: 8, paddingRight: 14, borderRadius: 16, backgroundColor: tokens.row,
+        borderWidth: selected ? 1.5 : 1, borderColor: selected ? tokens.ink : tokens.hair,
       }}
     >
       {empty || !icon ? (
-        <View style={{ width: 48, height: 48, borderRadius: 14, backgroundColor: tokens.chipBg, alignItems: 'center', justifyContent: 'center' }}>
-          <LineIcon name="plus" size={20} color={tokens.sub} />
+        <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: tokens.chipBg, alignItems: 'center', justifyContent: 'center' }}>
+          <LineIcon name="plus" size={18} color={tokens.sub} />
         </View>
       ) : (
-        <Tile name={icon} bg="transparent" size={48} radius={14} />
+        <Tile name={icon} bg="transparent" size={40} radius={12} />
       )}
       <View style={{ flex: 1, gap: 1 }}>
-        <Txt size={16} line={21} weight={600}>{title}</Txt>
+        <Txt size={15.5} line={20} weight={600}>{title}</Txt>
         {sub ? <Meta>{sub}</Meta> : null}
       </View>
       {right ?? (selected ? <LineIcon name="check" size={18} stroke={2.2} /> : null)}
@@ -435,9 +456,9 @@ export function CardRow({ icon, title, sub, right, onPress, selected, empty }: {
 /** Plain line row inside a Group: line icon, value, right (meta + chevron). */
 export function LineRow({ icon, value, right, onPress, weight = 600, color = tokens.ink, lead }: { icon?: LineName; value: string; right?: React.ReactNode; onPress?: () => void; weight?: 400 | 500 | 600; color?: string; lead?: React.ReactNode }) {
   const body = (
-    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 14, paddingHorizontal: 16, backgroundColor: tokens.row }}>
-      {lead ?? (icon ? <LineIcon name={icon} size={20} color={tokens.sub} /> : null)}
-      <Txt size={16} weight={weight} color={color} style={{ flex: 1 }}>{value}</Txt>
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 46, paddingVertical: 11, paddingHorizontal: 2 }}>
+      {lead ?? (icon ? <LineIcon name={icon} size={19} color={tokens.sub} /> : null)}
+      <Txt size={15.5} weight={weight === 600 ? 500 : weight} color={color} style={{ flex: 1 }}>{value}</Txt>
       {right}
     </View>
   );
@@ -450,9 +471,9 @@ export function Chevron() {
 
 export function AddRow({ label, onPress, mic }: { label: string; onPress?: () => void; mic?: boolean }) {
   return (
-    <PressScale onPress={onPress} scale={0.985} style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12, paddingHorizontal: 14, borderRadius: 20, backgroundColor: tokens.row }}>
-      <LineIcon name="plus" size={20} color={tokens.sub} />
-      <Txt size={16} color={tokens.mute} style={{ flex: 1 }}>{label}</Txt>
+    <PressScale onPress={onPress} scale={0.985} style={{ flexDirection: 'row', alignItems: 'center', gap: 10, height: 44, paddingHorizontal: 12, borderRadius: 14, backgroundColor: tokens.row, borderWidth: 1, borderColor: tokens.hair }}>
+      <LineIcon name="plus" size={18} color={tokens.sub} />
+      <Txt size={15.5} color={tokens.mute} style={{ flex: 1 }}>{label}</Txt>
       {mic ? <LineIcon name="mic" size={20} color={tokens.sub} /> : null}
     </PressScale>
   );

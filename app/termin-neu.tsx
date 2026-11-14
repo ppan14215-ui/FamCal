@@ -27,7 +27,7 @@ import type { Who } from '../src/state/types';
 import PressScale from '../src/components/ui/PressScale';
 import { LIVE } from '../src/lib/live';
 import { TODAY } from '../src/lib/dates';
-import { onToday } from '../src/screens/kalender/TodayView';
+import { onToday } from '../src/screens/kalender/AgendaView';
 import { tx } from '../src/i18n/lang';
 
 const BASE: { icon: ClayName; label: string }[] = [

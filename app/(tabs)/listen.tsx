@@ -1,10 +1,11 @@
 /**
- * Listen: the only place with content tabs (Julian 26.10.). Clay tabs on top:
- * Aufgaben, Einkauf, own lists (Kliniktasche, Geschenke), + Neu.
+ * Listen: the only place with content tabs (Julian 26.10.): Aufgaben, Einkauf, own lists (Kliniktasche,
+ * Geschenke), + Neu. Since the klar look (Julian 14.11.) the tabs are chips like in the "Recordings" reference,
+ * the lines lie flat on the ground and "Hinzufügen" is the next line of the list.
  */
 import React, { useEffect, useMemo, useRef } from 'react';
 import { View, ScrollView } from 'react-native';
-import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
+import Animated, { useAnimatedStyle, useSharedValue, withTiming, interpolateColor } from 'react-native-reanimated';
 import { router } from 'expo-router';
 import { Screen, H1, H2, Group, Meta } from '../../src/components/ui/kit';
 import Txt from '../../src/components/ui/Txt';
@@ -15,7 +16,7 @@ import PressScale from '../../src/components/ui/PressScale';
 import ItemRow from '../../src/components/ItemRow';
 import AddInline from '../../src/components/AddInline';
 import HintCard from '../../src/components/HintCard';
-import { tokens, springs, swapIn, persons } from '../../src/theme';
+import { tokens, fonts, blend, motion, easing, swapIn, persons } from '../../src/theme';
 import { useStore, actions, toast } from '../../src/state/store';
 import { itemMeta, itemText, aisleOf } from '../../src/data/sample';
 import { haptics } from '../../src/lib/haptics';
@@ -26,7 +27,7 @@ import type { List, Task, Item, Blueprint } from '../../src/state/types';
 import type { ClayName } from '../../src/lib/clayIcons';
 import { isPoints, players, roundsOf, total, looksOver, listIcon, ranked, gameOver } from '../../src/lib/points';
 import ScoreboardView from '../../src/components/showcase/cards/Scoreboard';
-import HeaderRight from '../../src/components/ui/HeaderRight';
+import HeaderRight, { HEAD_SHADOW } from '../../src/components/ui/HeaderRight';
 import { tx } from '../../src/i18n/lang';
 import { HIDDEN } from '../../src/lib/core';
 import { isWissen } from '../../src/lib/wissen';
@@ -54,7 +55,7 @@ export default function Listen() {
   }, [active, tasks, list]);
 
   return (
-    <Screen tab gap={12} head={<><H1 sub={sub} right={<HeaderRight />}>{tx('Listen', 'Lists')}</H1><ClayTabs lists={lists} active={active} /></>}>
+    <Screen tab gap={12} head={<><H1 sub={sub} right={<HeaderRight />}>{tx('Listen', 'Lists')}</H1><ListChips lists={lists} tasks={tasks} active={active} /></>}>
       <Animated.View key={active} entering={swapIn} style={{ gap: 12 }}>
         {active === 'aufgaben' ? <Aufgaben tasks={tasks} /> : list?.kind === 'shopping' ? <Einkauf list={list} /> : list ? <Packliste list={list} /> : null}
       </Animated.View>
@@ -62,12 +63,21 @@ export default function Listen() {
   );
 }
 
-const HOP = 28;
+const CHIP_H = 38;
 
-function ClayTabs({ lists, active }: { lists: List[]; active: string }) {
-  const tabs: { id: string; name: string; icon: ClayName }[] = [...(HIDDEN.tasks ? [] : [{ id: 'aufgaben', name: tx('Aufgaben', 'Tasks'), icon: 'erledigt' as ClayName }]), ...lists.map((l) => ({ id: l.id, name: l.name, icon: listIcon(l) }))];
-  // Every tab is as wide as its name; more lists than fit scroll sideways and
-  // the chosen one slides into view (Julian 26.10.: "Schrift überlappt").
+/**
+ * The lists as chips (Julian 14.11.: tab style of the reference): the chosen list is the dark chip, the others are
+ * white with a whisper of shadow. Each carries its small icon and how much is still open. More lists than fit scroll
+ * sideways and the chosen one slides into view (Julian 26.10.: "Schrift überlappt").
+ */
+function ListChips({ lists, tasks, active }: { lists: List[]; tasks: Task[]; active: string }) {
+  const tabs: { id: string; name: string; icon: ClayName; n: number }[] = [
+    ...(HIDDEN.tasks ? [] : [{ id: 'aufgaben', name: tx('Aufgaben', 'Tasks'), icon: 'erledigt' as ClayName, n: tasks.filter((t) => t.who && !t.done).length }]),
+    ...lists.map((l) => {
+      const items = l.sections.flatMap((sec) => sec.items);
+      return { id: l.id, name: l.name, icon: listIcon(l), n: l.kind === 'collection' || l.blueprint ? items.length : items.filter((i) => !i.done).length };
+    }),
+  ];
   const scroller = useRef<ScrollView>(null);
   const xs = useRef<Record<string, { x: number; w: number }>>({});
   const width = useRef(0);
@@ -77,47 +87,65 @@ function ClayTabs({ lists, active }: { lists: List[]; active: string }) {
   };
   useEffect(() => reveal(active), [active, lists.length]);
   return (
-    // A scroll view clips its content, so it gets headroom above the icons for
-    // their hops and pulls itself up by the same amount (Julian 27.10.).
-    <View style={{ marginHorizontal: -18, marginTop: -HOP, borderBottomWidth: 1, borderBottomColor: tokens.hair, zIndex: 2 }} onLayout={(e) => { width.current = e.nativeEvent.layout.width; }}>
-      <ScrollView ref={scroller} horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 8, paddingTop: HOP, gap: 2, flexGrow: 1 }}>
+    // The scroll view clips, so the chips get a little room below for their shadow.
+    <View style={{ marginHorizontal: -18, marginBottom: -8 }} onLayout={(e) => { width.current = e.nativeEvent.layout.width; }}>
+      <ScrollView ref={scroller} horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 18, paddingTop: 2, paddingBottom: 10, gap: 8, alignItems: 'center' }}>
         {tabs.map((t) => {
           const on = t.id === active;
           return (
-            <PressScale
+            <ListChip
               key={t.id}
-              accessibilityRole="tab"
-              accessibilityState={{ selected: on }}
+              on={on}
+              name={t.name}
+              icon={t.icon}
+              n={t.n}
               onPress={() => { if (!on) { haptics.select(); actions.setActiveList(t.id); } }}
-              // Hold a tab to rename the list or change its icon (Julian 30.10.).
+              // Hold a chip to rename the list or change its icon (Julian 30.10.).
               onLongPress={t.id === 'aufgaben' ? undefined : () => { haptics.tap(); router.push({ pathname: '/liste-bearbeiten', params: { id: t.id } }); }}
-              onLayout={(e) => { xs.current[t.id] = { x: e.nativeEvent.layout.x, w: e.nativeEvent.layout.width }; if (on) reveal(t.id); }}
-              style={{ minWidth: 74, flexGrow: 1, flexShrink: 0, paddingHorizontal: 8, alignItems: 'center', gap: 2, paddingBottom: 10, borderBottomWidth: 2, borderBottomColor: on ? tokens.ink : 'transparent' }}
-            >
-              <TabIcon icon={t.icon} on={on} />
-              <Txt size={12.5} weight={on ? 600 : 500} color={on ? tokens.ink : tokens.sub} numberOfLines={1} style={{ flexShrink: 0 }}>{t.name}</Txt>
-            </PressScale>
+              onLayout={(x, w) => { xs.current[t.id] = { x, w }; if (on) reveal(t.id); }}
+            />
           );
         })}
         <PressScale
           accessibilityLabel={tx('Neue Liste', 'New list')}
+          scale={0.92}
           onPress={() => router.push('/liste-neu')}
-          style={{ width: 56, alignItems: 'center', gap: 2, paddingBottom: 10, borderBottomWidth: 2, borderBottomColor: 'transparent' }}
+          style={{ width: CHIP_H, height: CHIP_H, borderRadius: 999, backgroundColor: tokens.row, alignItems: 'center', justifyContent: 'center', boxShadow: HEAD_SHADOW } as any}
         >
-          <View style={{ width: 46, height: 46, alignItems: 'center', justifyContent: 'center' }}><LineIcon name="plus" size={24} color={tokens.sub} /></View>
-          <Txt size={12.5} color={tokens.sub}>{tx('Neu', 'New')}</Txt>
+          <LineIcon name="plus" size={19} color={tokens.ink} />
         </PressScale>
       </ScrollView>
     </View>
   );
 }
 
-/** The chosen tab lifts and its clay icon plays its story (Julian 26.10.: "bringt Leben rein"). */
-function TabIcon({ icon, on }: { icon: ClayName; on: boolean }) {
+/** One list chip. The dark fill fades in over the white chip and the words change colour with it (180 ms). */
+function ListChip({ on, name, icon, n, onPress, onLongPress, onLayout }: { on: boolean; name: string; icon: ClayName; n: number; onPress: () => void; onLongPress?: () => void; onLayout: (x: number, w: number) => void }) {
   const v = useSharedValue(on ? 1 : 0);
-  useEffect(() => { v.value = withSpring(on ? 1 : 0, on ? springs.reveal : springs.smooth); }, [on]);
-  const st = useAnimatedStyle((): any => ({ opacity: 0.75 + 0.25 * v.value, transform: [{ translateY: -3 * v.value }, { scale: 1 + 0.06 * v.value }] }));
-  return <Animated.View style={st}><ClayIcon name={icon} size={54} celebrate={on} /></Animated.View>;
+  useEffect(() => { v.value = withTiming(on ? 1 : 0, { duration: motion.micro, easing: easing.out }); }, [on]);
+  const ink = tokens.ink, onInk = tokens.onInk, sub = tokens.sub, soft = blend(tokens.ink, tokens.onInk, 0.62);
+  const fill = useAnimatedStyle(() => ({ opacity: v.value }));
+  const label = useAnimatedStyle(() => ({ color: interpolateColor(v.value, [0, 1], [ink, onInk]) }));
+  const count = useAnimatedStyle(() => ({ color: interpolateColor(v.value, [0, 1], [sub, soft]) }));
+  return (
+    <PressScale
+      accessibilityRole="tab"
+      accessibilityLabel={name}
+      accessibilityState={{ selected: on }}
+      scale={0.95}
+      onPress={onPress}
+      onLongPress={onLongPress}
+      onLayout={(e) => onLayout(e.nativeEvent.layout.x, e.nativeEvent.layout.width)}
+      style={{ height: CHIP_H, borderRadius: 999, backgroundColor: tokens.row, boxShadow: HEAD_SHADOW } as any}
+    >
+      <Animated.View pointerEvents="none" style={[{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, borderRadius: 999, backgroundColor: tokens.ink }, fill]} />
+      <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 6, paddingLeft: 8, paddingRight: 14 }}>
+        <ClayIcon name={icon} size={24} />
+        <Animated.Text numberOfLines={1} maxFontSizeMultiplier={1.2} style={[{ fontFamily: fonts[600], fontSize: 14.5, lineHeight: 19 }, label]}>{name}</Animated.Text>
+        {n ? <Animated.Text maxFontSizeMultiplier={1.2} style={[{ fontFamily: fonts[500], fontSize: 13, lineHeight: 19, fontVariant: ['tabular-nums'] }, count]}>{n}</Animated.Text> : null}
+      </View>
+    </PressScale>
+  );
 }
 
 function Aufgaben({ tasks }: { tasks: Task[] }) {
@@ -166,11 +194,12 @@ function Aufgaben({ tasks }: { tasks: Task[] }) {
             onCycleWho={() => actions.cycleTaskWho(t.id)}
             onDelete={() => actions.deleteTask(t.id)}
             editHint={tx('Text antippen ändert den Titel', 'Tap the text to change the title')}
+            flat
           />
           </Fresh>
         ))}
       </Group>
-      <AddInline placeholder={tx('Aufgabe hinzufügen …', 'Add a task …')} onAdd={actions.addTask} />
+      <AddInline flat placeholder={tx('Aufgabe hinzufügen …', 'Add a task …')} onAdd={actions.addTask} />
       <Txt size={13.5} line={19} color={tokens.sub}>{tx('Neue Aufgaben ohne Person landen im Stapel „ohne Zuständigen“. Ihr entscheidet, wer sie übernimmt.', 'New tasks without a person go to the “nobody on it” pile. You decide who takes them.')}</Txt>
     </>
   );
@@ -223,7 +252,7 @@ function Einkauf({ list }: { list: List }) {
   useEffect(() => { actions.mergeTwins(list.id); }, [list.id]);
   return (
     <>
-      <AddInline placeholder={tx('Hinzufügen …', 'Add …')} mic onPress={() => router.push('/einkauf-neu')} />
+      <AddInline flat placeholder={tx('Hinzufügen …', 'Add …')} mic onPress={() => router.push('/einkauf-neu')} />
       {hints.abo ? (
         <HintCard
           icon="windeln"
@@ -246,16 +275,17 @@ function Packliste({ list }: { list: List }) {
   const items = list.sections.flatMap((s) => s.items);
   const pct = items.length ? items.filter((i) => i.done).length / items.length : 0;
   const plain = list.kind === 'collection' || !!list.blueprint;
+  const add = <AddInline key="add" flat placeholder={isPoints(list) ? tx('Spieler hinzufügen …', 'Add player …') : tx('Hinzufügen …', 'Add …')} onAdd={(t) => actions.addItem(list.id, t)} />;
   return (
     <>
       {items.length && !plain ? (
-        <View style={{ height: 6, borderRadius: 999, backgroundColor: tokens.hair, overflow: 'hidden' }}>
-          <View style={{ width: `${Math.round(pct * 100)}%`, height: '100%', backgroundColor: tokens.done }} />
+        <View style={{ height: 3, borderRadius: 999, backgroundColor: tokens.hair, overflow: 'hidden' }}>
+          <View style={{ width: `${Math.round(pct * 100)}%`, height: '100%', borderRadius: 999, backgroundColor: tokens.accent }} />
         </View>
       ) : null}
       {isPoints(list) ? <Scoreboard list={list} /> : null}
-      <Sections list={list} counts={!plain} />
-      <AddInline placeholder={isPoints(list) ? tx('Spieler hinzufügen …', 'Add player …') : tx('Hinzufügen …', 'Add …')} onAdd={(t) => actions.addItem(list.id, t)} />
+      {/* The add row is the next line of the list: what is written there becomes the line above it. */}
+      {list.sections.length ? <Sections list={list} counts={!plain} footer={add} /> : add}
       <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 28 }}>
         <PressScale
           accessibilityLabel={tx(`Liste ${list.name} bearbeiten`, `Edit list ${list.name}`)}
@@ -310,10 +340,12 @@ function Scoreboard({ list }: { list: List }) {
   return <ScoreboardView list={list} action={newGame} alert={ask} />;
 }
 
-function Sections({ list, counts }: { list: List; counts?: boolean }) {
+function Sections({ list, counts, footer }: { list: List; counts?: boolean; footer?: React.ReactElement }) {
   return (
     <>
-      {list.sections.map((sec) => {
+      {list.sections.map((sec, at) => {
+        // The add row closes the last section, where new entries land.
+        const tail = footer && at === list.sections.length - 1 ? footer : null;
         const open = sec.items.filter((i) => !i.done);
         const done = sec.items.filter((i) => i.done);
         if (!sec.items.length && list.kind === 'shopping') return null;
@@ -325,7 +357,7 @@ function Sections({ list, counts }: { list: List; counts?: boolean }) {
         return (
           <View key={sec.id} style={{ gap: 12 }}>
             {plain && list.sections.length === 1 ? null : <H2 right={right}>{sec.title}</H2>}
-            {ordered.length ? (
+            {ordered.length || tail ? (
               <Group>
                 {ordered.map((i) => (
                   <Fresh key={i.id} id={i.id}>
@@ -344,9 +376,11 @@ function Sections({ list, counts }: { list: List; counts?: boolean }) {
                     onEdit={(t) => actions.editItem(list.id, i.id, t)}
                     onCycleWho={plain ? undefined : () => actions.cycleItemWho(list.id, i.id)}
                     onDelete={() => actions.deleteItem(list.id, i.id)}
+                    flat
                   />
                   </Fresh>
                 ))}
+                {tail}
               </Group>
             ) : (
               <Meta>{tx('Noch leer.', 'Still empty.')}</Meta>

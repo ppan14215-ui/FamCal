@@ -22,22 +22,23 @@
  * No network here: the offline rules read the sentence (talk.understand); no assistant call without an account.
  */
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { View, TextInput, Pressable, ScrollView, useWindowDimensions, Platform } from 'react-native';
+import { View, TextInput, Pressable, ScrollView, Keyboard, useWindowDimensions, Platform } from 'react-native';
 import Animated, { useSharedValue, useAnimatedStyle, withTiming, withDelay, Easing, useReducedMotion, FadeIn, FadeOut } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
-import Txt from '../../src/components/ui/Txt';
+import Txt, { Dot } from '../../src/components/ui/Txt';
 import { Btn, TextLink } from '../../src/components/ui/kit';
 import LineIcon from '../../src/components/ui/LineIcon';
 import PressScale from '../../src/components/ui/PressScale';
 import { ClayIcon } from '../../src/components/ui/Clay';
 import type { ClayName } from '../../src/lib/clayIcons';
-import Mascot, { type Pose } from '../../src/components/onboarding/Mascot';
+import type { Pose } from '../../src/components/onboarding/Mascot';
 import LiveMemo, { BIG } from '../../src/components/onboarding/LiveMemo';
 import SignInSheet from '../../src/components/onboarding/SignInSheet';
-import TalkBar from '../../src/components/TalkBar';
-import DayView from '../../src/screens/kalender/DayView';
-import { monthTitle } from '../../src/screens/kalender/MonthView';
+import KlarTalk from '../../src/components/onboarding/KlarTalk';
+import AgendaView from '../../src/screens/kalender/AgendaView';
+import { navH, klarFoot } from '../../src/components/NavBar';
+import { light, locate } from '../../src/lib/landing';
 import { StoreContext, createStore, type Store } from '../../src/state/store';
 import { PersonsContext, type Persons } from '../../src/components/ui/Person';
 import { StillContext } from '../../src/components/ChatCards';
@@ -45,7 +46,7 @@ import { buildDemoState, demoEvents } from '../../src/data/demoFamily';
 import { buddyJoy, buddyPoke, setBuddy, useBuddy } from '../../src/lib/buddy';
 import { understand } from '../../src/lib/talk';
 import type { CalEvent } from '../../src/state/types';
-import { TODAY, addDays, weekday, WD_LONG, hm } from '../../src/lib/dates';
+import { TODAY, addDays, weekday, WD_LONG, hm, dmShort, daysBetween } from '../../src/lib/dates';
 import { tokens, persons as appPersons } from '../../src/theme';
 import { haptics } from '../../src/lib/haptics';
 import { tx } from '../../src/i18n/lang';
@@ -55,7 +56,10 @@ import { setPref } from '../../src/lib/prefs';
 import { isPreview } from '../../src/lib/vorschau';
 import { startNotifications } from '../../src/lib/notify';
 import { stepViewed, onboardingDone } from '../../src/lib/funnel';
-import { useKeyboardInset } from '../../src/lib/keyboard';
+import { useKeyboardInset, useTyping } from '../../src/lib/keyboard';
+import { useSpeak, speakOpen } from '../../src/lib/speak';
+import { useBarMode } from '../../src/lib/navStyle';
+import { forceMascot } from '../../src/lib/mascot';
 
 /** The mascot's name on screen; one place to change it. */
 const NAME = 'Memo';
@@ -87,7 +91,8 @@ const SAG: Record<string, [string, string][]> = {
   zwei: [['Freitag 19 Uhr Essen mit Freunden', 'Friday 7pm dinner with friends'], ['Montag 8 Uhr Zahnarzt', 'Monday 8am dentist'], ['Samstag 10 Uhr Wocheneinkauf', 'Saturday 10am weekly shop']],
 };
 const label = (o: Opt) => tx(o.de, o.en);
-const whenOf = (e: CalEvent) => `${WD_LONG[weekday(e.date)]}${e.allDay ? '' : `, ${hm(e.start)}`}`;
+// Within a week the weekday says it; further out the date belongs to it ("Donnerstag, 24. Dez, 16:00").
+const whenOf = (e: CalEvent) => `${WD_LONG[weekday(e.date)]}${daysBetween(TODAY, e.date) > 6 ? `, ${dmShort(e.date)}` : ''}${e.allDay ? '' : `, ${hm(e.start)}`}`;
 
 const out = Easing.bezier(0.23, 1, 0.32, 1);
 /** Text first, then what it is about: rises 12 pt, the second thing 120 ms later (film motion rule 2). */
@@ -100,6 +105,12 @@ function Rise({ delay = 0, style, children }: { delay?: number; style?: any; chi
   return <Animated.View style={[style, st]}>{children}</Animated.View>;
 }
 
+/** Where Memo sits in each step. One Memo for the whole onboarding: he travels from seat to seat, he is never cut. */
+type Seat = 'boot' | 'peek' | 'welcome' | 'intro' | 'names' | 'ask' | 'confirm';
+const SEAT_OF: Record<Step, Seat> = { peek: 'peek', welcome: 'welcome', intro: 'intro', name: 'names', partner: 'names', familie: 'ask', nervt: 'ask', confirm: 'confirm', probe: 'ask', fertig: 'ask' };
+/** The room the footer always keeps: the button and one line for a link, so the button never moves between steps. */
+const FOOT_H = 10 + 50 + 12 + 22;
+
 export default function Story() {
   const q = useLocalSearchParams<{ step?: string; signin?: string }>();
   const start = (STEPS as string[]).includes(q.step ?? '') ? (q.step as Step) : 'peek';
@@ -109,24 +120,53 @@ export default function Story() {
   const [familie, setFamilie] = useState<string | null>(null);
   const [nervt, setNervt] = useState<string[]>([]);
   const [ev, setEv] = useState<CalEvent | null>(null);
-  /** Where Pin is in the try step: in the avatar slot, in the bar, or back in the slot once the card landed. */
+  /** Where Memo is in the try step: in the avatar slot, in the bar, or back in the slot once the card landed. */
   const [docked, setDocked] = useState(false);
   const [signIn, setSignIn] = useState(!!q.signin);
+  /** He comes up from below the edge once, at the very start. */
+  const [risen, setRisen] = useState(start !== 'peek');
+  const [typed, setTyped] = useState(false);
+  const [look, setLook] = useState<{ x: number; y: number; n: number } | undefined>();
+  const [pose, setPose] = useState<Pose>('rest');
   const insets = useSafeAreaInsets();
   const { width: W, height: H } = useWindowDimensions();
   const kb = useKeyboardInset();
   const me = name.trim();
   const du = partner.trim();
 
+  // The onboarding always has Memo, also on a phone that saved the plain mic.
+  useEffect(() => { forceMascot('pin'); return () => forceMascot(null); }, []);
   useEffect(() => { stepViewed(step, 'story', STEPS.indexOf(step)); }, [step]);
+  // What he does when he arrives in a step.
+  useEffect(() => {
+    const t: ReturnType<typeof setTimeout>[] = [];
+    setPose(step === 'peek' ? 'peek' : 'rest');
+    if (step === 'peek') {
+      t.push(setTimeout(() => setRisen(true), 60));
+      t.push(setTimeout(() => setLook({ x: 0, y: -0.5, n: Date.now() }), 900));
+      t.push(setTimeout(() => { haptics.tap(); buddyPoke(); }, 1300));
+      t.push(setTimeout(() => setStep((s) => (s === 'peek' ? 'welcome' : s)), 1900));
+    }
+    // Hello once he has arrived in the middle, and again when he says you are not alone.
+    if (step === 'welcome' || step === 'confirm') t.push(setTimeout(() => setPose('wave'), 620));
+    if (step === 'intro') setTyped(false);
+    return () => t.forEach(clearTimeout);
+  }, [step]);
+
   const go = (s?: Step) => {
     haptics.tap();
     const next = s ?? STEPS[STEPS.indexOf(step) + 1];
-    if (next) setStep(next);
+    if (!next) return;
+    // The keyboard stays up from your name to your partner's, and goes when the choices come.
+    if (next !== 'name' && next !== 'partner') Keyboard.dismiss();
+    setStep(next);
   };
   const back = () => {
     const p = STEPS[STEPS.indexOf(step) - 1];
-    if (p) { haptics.select(); setDocked(false); setStep(p); }
+    if (!p) return;
+    haptics.select(); setDocked(false);
+    if (p !== 'name' && p !== 'partner') Keyboard.dismiss();
+    setStep(p);
   };
   const finish = () => {
     haptics.success();
@@ -145,90 +185,128 @@ export default function Story() {
   };
 
   const barI = BAR_LIST.indexOf(step);
-  const bottomPad = Math.max(insets.bottom, 16) + (kb ? kb - Math.max(insets.bottom, 0) : 0);
-  /** The avatar slot of the question screens (window coordinates): Pin flies from here into the bar and back. */
-  // LiveMemo scales around a point near his feet, so the small Pin sits lower than its centre: take that back.
-  const slot = { x: 20 + 30, y: insets.top + 52 + 6 + 6 + 30 - Math.round(0.4 * BIG * (1 - 60 / BIG)) };
+  const basePad = Math.max(insets.bottom, 16);
+  // The footer rides up with the keyboard, gliding (the keyboard reports late on Android; a jump there reads as a hitch).
+  const lift = useSharedValue(0);
+  useEffect(() => { lift.value = withTiming(kb ? Math.max(0, kb - Math.max(insets.bottom, 0)) : 0, { duration: 200, easing: out }); }, [kb]);
+  const footSt = useAnimatedStyle(() => ({ paddingBottom: basePad + lift.value }));
+
+  // Memo's seats, as the middle of his box in window coordinates and his size there.
+  const top0 = insets.top;
+  const sPeek = Math.min(W * 1.05, 460), sWel = Math.min(W * 0.5, 210), sIntro = Math.min(W * 0.6, 280), sConf = Math.min(W * 0.56, 240);
+  const yBig = Math.round(H * 0.33);
+  const seats: Record<Seat, { x: number; y: number; s: number }> = {
+    boot: { x: W / 2, y: H + sPeek / 2 + 40, s: sPeek },
+    peek: { x: W / 2, y: H - sPeek * 0.08, s: sPeek },
+    welcome: { x: W / 2, y: yBig, s: sWel },
+    intro: { x: W / 2, y: H - basePad - FOOT_H - 6 - sIntro / 2, s: sIntro },
+    names: { x: W / 2, y: top0 + 52 + 26 + 48, s: 96 },
+    ask: { x: 20 + 30, y: top0 + 52 + 6 + 6 + 30, s: 60 },
+    confirm: { x: W / 2, y: yBig, s: sConf },
+  };
+  const seat: Seat = step === 'peek' && !risen ? 'boot' : SEAT_OF[step];
+  const at = seats[seat];
   const hero = { x: W / 2, y: insets.top + Math.max(196, Math.round(H * 0.26)) };
+  const val = step === 'name' ? name : partner;
+  const gaze = step === 'intro' ? { x: -0.4, y: -0.75 }
+    : seat === 'names' ? { x: Math.min(0.7, -0.3 + val.length * 0.08), y: 0.75 }
+      : step === 'familie' || step === 'nervt' ? { x: 0.6, y: 0.1 } : null;
+  const mood = step === 'fertig' || step === 'confirm' ? 'happy' as const : (step === 'intro' && !typed) || (seat === 'names' && !!val) ? 'type' as const : undefined;
 
   let body: React.ReactNode = null;
-  let footer: React.ReactNode = null;
+  let foot: { label: string; onPress: () => void; disabled?: boolean; link?: { label: string; onPress: () => void } } | null = null;
   switch (step) {
     case 'peek':
-      body = <Peek onDone={() => go('welcome')} />;
+      body = <Pressable style={{ flex: 1 }} onPress={() => go('welcome')} accessibilityLabel={tx('Weiter', 'Next')} />;
       break;
     case 'welcome':
-      body = <Welcome />;
-      footer = (
-        <View style={{ gap: 14 }}>
-          <Btn label={tx('Los geht’s', 'Let’s go')} onPress={() => go()} />
-          <TextLink label={tx('Ich wurde eingeladen', 'I was invited')} onPress={() => (LIVE && !isPreview() ? setSignIn(true) : go())} />
-        </View>
-      );
+      body = <Welcome top={at.y + at.s / 2 - top0 - 8 + 18} />;
+      foot = { label: tx('Los geht’s', 'Let’s go'), onPress: () => go(), link: { label: tx('Ich wurde eingeladen', 'I was invited'), onPress: () => (LIVE && !isPreview() ? setSignIn(true) : go()) } };
       break;
     case 'intro':
-      body = <Intro lines={[tx(`Hey, ich bin ${NAME}!`, `Hey, I’m ${NAME}!`), tx('Sag mir, was ansteht. Ich trage es ein und denke für euch mit.', 'Tell me what’s coming up. I add it and think along for you.')]} />;
-      footer = <Btn label={tx('Weiter', 'Next')} onPress={() => go()} />;
+      body = <Intro onTyped={() => setTyped(true)} lines={[tx(`Hey, ich bin ${NAME}!`, `Hey, I’m ${NAME}!`), tx('Sag mir, was ansteht. Ich trage es ein und denke für euch mit.', 'Tell me what’s coming up. I add it and think along for you.')]} />;
+      foot = { label: tx('Weiter', 'Next'), onPress: () => go() };
       break;
     case 'name':
-      body = <NameAsk value={name} onChange={setName} onSubmit={() => me && go()} title={tx('Wie soll ich dich nennen?', 'What should I call you?')} placeholder={tx('Dein Name', 'Your name')} />;
-      footer = <Btn label={tx('Weiter', 'Next')} disabled={!me} onPress={() => go()} />;
-      break;
-    case 'partner':
+    case 'partner': {
+      const p = step === 'partner';
       body = (
-        <Ask say={me ? tx(`Schön dich kennenzulernen, ${me}! Wer plant mit dir?`, `Nice to meet you, ${me}! Who plans with you?`) : tx('Wer plant mit dir?', 'Who plans with you?')}>
-          <PartnerField value={partner} onChange={setPartner} onSubmit={() => go()} />
-        </Ask>
+        <Names
+          which={step}
+          value={val}
+          onChange={p ? setPartner : setName}
+          onSubmit={() => (p ? du : me) && go()}
+          title={p ? (me ? tx(`Schön, ${me}! Wer plant mit dir?`, `Nice to meet you, ${me}! Who plans with you?`) : tx('Wer plant mit dir?', 'Who plans with you?')) : tx('Wie soll ich dich nennen?', 'What should I call you?')}
+          placeholder={p ? tx('z. B. Sophia', 'e.g. Sophia') : tx('Dein Name', 'Your name')}
+        />
       );
-      footer = (
-        <View style={{ gap: 12 }}>
-          <Btn label={tx('Weiter', 'Next')} disabled={!du} onPress={() => go()} />
-          <TextLink label={tx('Überspringen', 'Skip')} weight={400} onPress={() => { setPartner(''); go(); }} />
-        </View>
-      );
+      foot = { label: tx('Weiter', 'Next'), disabled: p ? !du : !me, onPress: () => go(), link: p ? { label: tx('Überspringen', 'Skip'), onPress: () => { setPartner(''); go(); } } : undefined };
       break;
+    }
     case 'familie':
       body = <Ask say={du ? tx(`Und wer gehört zu dir und ${du}?`, `And who belongs to you and ${du}?`) : tx('Wer gehört zu eurer Familie?', 'Who’s in your family?')}>{FAMILIE.map((o) => <Choice key={o.key} o={o} on={familie === o.key} onPress={() => { haptics.select(); setFamilie(o.key); buddyPoke(); }} />)}</Ask>;
-      footer = <Btn label={tx('Weiter', 'Next')} disabled={!familie} onPress={() => go()} />;
+      foot = { label: tx('Weiter', 'Next'), disabled: !familie, onPress: () => go() };
       break;
     case 'nervt':
       body = <Ask say={tx('Was nervt euch beim Planen am meisten?', 'What bugs you most about planning?')} hint={tx('Mehrere möglich', 'Pick any')}>{NERVT.map((o) => <Choice key={o.key} o={o} multi on={nervt.includes(o.key)} onPress={() => toggle(o.key)} />)}</Ask>;
-      footer = <Btn label={tx('Weiter', 'Next')} disabled={!nervt.length} onPress={() => go()} />;
+      foot = { label: tx('Weiter', 'Next'), disabled: !nervt.length, onPress: () => go() };
       break;
     case 'confirm': {
       const n = NERVT.find((o) => o.key === nervt[0]);
       body = (
         <Big
-          pose="wave"
+          top={at.y + at.s / 2 - top0 - 52 + 18}
           title={tx('Damit seid ihr nicht allein.', 'You’re not alone with that.')}
           sub={n ? tx(`„${n.de}“ muss nicht mehr sein. Genau dafür bin ich da.`, `“${n.en}” doesn’t have to happen anymore. That’s what I’m here for.`) : tx('Genau dafür bin ich da.', 'That’s what I’m here for.')}
         />
       );
-      footer = <Btn label={tx('Zeig’s mir', 'Show me')} onPress={() => go()} />;
+      foot = { label: tx('Zeig’s mir', 'Show me'), onPress: () => go() };
       break;
     }
     case 'probe':
-      body = <Probe me={me} du={du} familie={familie} ev={ev} setEv={setEv} docked={docked} setDocked={setDocked} pad={bottomPad} onDone={() => go('fertig')} />;
+      body = <Probe me={me} du={du} familie={familie} ev={ev} setEv={setEv} docked={docked} setDocked={setDocked} pad={basePad} onDone={() => go('fertig')} />;
       break;
     case 'fertig':
       body = <Fertig me={me} du={du} ev={ev} nervt={nervt} top={hero.y + BIG / 2} cx={hero.x} cy={hero.y - insets.top - 8} />;
-      footer = <Btn label={tx('Sichern und loslegen', 'Save and get started')} onPress={finish} />;
+      foot = { label: tx('Sichern und loslegen', 'Save and get started'), onPress: finish };
       break;
   }
 
   return (
     <View style={{ flex: 1, backgroundColor: tokens.bg, paddingTop: insets.top }}>
       {barI >= 0 ? <Bar i={barI} n={BAR_LIST.length} onBack={back} /> : <View style={{ height: 8 }} />}
-      <Animated.View key={step} entering={FadeIn.duration(220)} exiting={FadeOut.duration(100)} style={{ flex: 1 }}>
+      {/* The old page is gone before the new one comes (no two pages through each other); Memo travels across the gap.
+          Your name and your partner's are one page: the field and the keyboard stay. */}
+      <Animated.View key={step === 'partner' ? 'name' : step} entering={FadeIn.delay(90).duration(240)} exiting={FadeOut.duration(90)} style={{ flex: 1 }}>
         {body}
       </Animated.View>
-      {footer ? <View style={{ paddingHorizontal: 20, paddingTop: 10, paddingBottom: bottomPad }}>{footer}</View> : null}
-      {/* One Pin for the try step and the end: from the avatar slot into the bar, back out, then up to celebrate. */}
-      {step === 'probe' || step === 'fertig' ? (
-        <View pointerEvents="box-none" style={{ position: 'absolute', left: 0, top: 0, right: 0, bottom: 0, opacity: signIn ? 0 : 1 }}>
-          <LiveMemo place={step === 'fertig' ? 'hero' : docked ? 'dock' : 'mid'} hero={hero} mid={slot} midScale={60 / BIG} mood={step === 'fertig' ? 'happy' : undefined} />
-        </View>
+      {foot ? (
+        <Rise delay={step === 'welcome' ? 760 : 0}>
+          <Animated.View style={[{ paddingHorizontal: 20, paddingTop: 10, gap: 12 }, footSt]}>
+            <Btn label={foot.label} disabled={foot.disabled} onPress={foot.onPress} />
+            <View style={{ height: 22, justifyContent: 'center' }}>
+              {foot.link ? <TextLink label={foot.link.label} weight={400} onPress={foot.link.onPress} /> : null}
+            </View>
+          </Animated.View>
+        </Rise>
       ) : null}
+      {/* One Memo from the first second to the last: up from the edge, to the middle, down beside the words, into the
+          bar, back out, then up to celebrate. */}
+      <View pointerEvents="box-none" style={{ position: 'absolute', left: 0, top: 0, right: 0, bottom: 0, opacity: signIn ? 0 : 1 }}>
+        <LiveMemo
+          calm
+          place={step === 'fertig' ? 'hero' : step === 'probe' && docked ? 'dock' : 'mid'}
+          hero={hero}
+          mid={at}
+          midScale={at.s / BIG}
+          moveKey={seat}
+          moveMs={seat === 'peek' ? 760 : 580}
+          look={look}
+          gaze={gaze}
+          mood={mood}
+          pose={pose === 'rest' ? undefined : pose}
+        />
+      </View>
       {signIn ? <SignInSheet from="story" partner={du || undefined} onClose={() => setSignIn(false)} /> : null}
     </View>
   );
@@ -279,85 +357,41 @@ function Typer({ text, size, line, weight = 700, delay = 0, onDone, center }: { 
   );
 }
 
-/** The mascot rises from below the bottom edge, only its top half showing. */
-function Rising({ size, delay = 0, peek = 0.5, children }: { size: number; delay?: number; peek?: number; children: React.ReactNode }) {
-  const reduced = useReducedMotion();
-  const y = useSharedValue(reduced ? 0 : size * peek + 40);
-  useEffect(() => { y.value = withDelay(delay, withTiming(0, { duration: 760, easing: out })); }, []);
-  const st = useAnimatedStyle(() => ({ transform: [{ translateY: y.value }] }));
+function Welcome({ top }: { top: number }) {
   return (
-    <View pointerEvents="none" style={{ position: 'absolute', left: 0, right: 0, bottom: -size * (1 - peek), alignItems: 'center' }}>
-      <Animated.View style={st}>{children}</Animated.View>
+    <View style={{ flex: 1, alignItems: 'center', paddingHorizontal: 28, paddingTop: top, gap: 12 }}>
+      <Rise delay={520}><Txt size={30} line={36} weight={700} center>{tx('Der klügste Familienkalender, mit dem du je gesprochen hast', 'The smartest family calendar you ever spoke to')}</Txt></Rise>
+      <Rise delay={640}><Txt size={16} line={22} color={tokens.sub} center>{tx('Sag einfach, was ansteht. Ich kümmere mich um den Rest.', 'Just say what’s coming up. I’ll handle the rest.')}</Txt></Rise>
     </View>
   );
 }
 
-function Peek({ onDone }: { onDone: () => void }) {
-  const { width } = useWindowDimensions();
-  const size = Math.min(width * 1.05, 460);
-  const [g, setG] = useState<{ x: number; y: number; n: number } | undefined>();
-  useEffect(() => {
-    const a = setTimeout(() => setG({ x: 0, y: -0.5, n: 1 }), 900);
-    const b = setTimeout(() => { haptics.tap(); buddyPoke(); }, 1300);
-    const c = setTimeout(onDone, 1900);
-    return () => { clearTimeout(a); clearTimeout(b); clearTimeout(c); };
-  }, []);
-  return (
-    <Pressable style={{ flex: 1 }} onPress={onDone} accessibilityLabel={tx('Weiter', 'Next')}>
-      <Rising size={size} peek={0.58}><Mascot size={size} pose="peek" glance={g} /></Rising>
-    </Pressable>
-  );
-}
-
-function Welcome() {
-  const { width } = useWindowDimensions();
-  const size = Math.min(width * 0.5, 210);
-  const [n, setN] = useState(0);
-  useEffect(() => { const t = setTimeout(() => setN(1), 500); return () => clearTimeout(t); }, []);
-  return (
-    <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 28, gap: 26 }}>
-      <Mascot size={size} pose={n ? 'wave' : 'rest'} n={n} />
-      <View style={{ gap: 12, alignItems: 'center' }}>
-        <Txt size={30} line={36} weight={700} center>{tx('Der klügste Familienkalender, mit dem du je gesprochen hast', 'The smartest family calendar you ever spoke to')}</Txt>
-        <Txt size={16} line={22} color={tokens.sub} center>{tx('Sag einfach, was ansteht. Ich kümmere mich um den Rest.', 'Just say what’s coming up. I’ll handle the rest.')}</Txt>
-      </View>
-    </View>
-  );
-}
-
-function Intro({ lines, sub, rise }: { lines: string[]; sub?: string; rise?: boolean }) {
-  const { width } = useWindowDimensions();
-  const size = Math.min(width * 0.86, 380);
+function Intro({ lines, onTyped }: { lines: string[]; onTyped: () => void }) {
   const [k, setK] = useState(0);
+  useEffect(() => { if (k >= lines.length) onTyped(); }, [k]);
   return (
-    <View style={{ flex: 1, overflow: 'hidden' }}>
-      <View style={{ paddingHorizontal: 24, paddingTop: 28, gap: 14 }}>
-        {lines.map((l, i) => (i <= k ? <Typer key={i} text={l} size={30} line={37} delay={i ? 250 : 350} onDone={() => setK((v) => Math.max(v, i + 1))} /> : null))}
-        {sub && k >= lines.length ? <Animated.View entering={FadeIn.duration(300)}><Txt size={17} line={23} color={tokens.sub}>{sub}</Txt></Animated.View> : null}
-      </View>
-      <Rising size={size} peek={rise ? 0.72 : 0.55}><Mascot size={size} mood={k < lines.length ? 'type' : 'idle'} gaze={{ x: -0.4, y: -0.7 }} /></Rising>
+    <View style={{ flex: 1, paddingHorizontal: 24, paddingTop: 28, gap: 14 }}>
+      {lines.map((l, i) => (i <= k ? <Typer key={i} text={l} size={30} line={37} delay={i ? 250 : 450} onDone={() => setK((v) => Math.max(v, i + 1))} /> : null))}
     </View>
   );
 }
 
-function NameAsk({ value, onChange, onSubmit, title, placeholder }: { value: string; onChange: (v: string) => void; onSubmit: () => void; title: string; placeholder: string }) {
-  // The eyes follow the letters: left at the start, along to the right as the name grows.
-  const gx = Math.min(0.7, -0.3 + value.length * 0.08);
-  // Focus after the screen faded in (autoFocus during the entering animation is lost on some devices).
+/** Your name, then your partner's: one page and one field, so the keyboard stays where it is. Only the question changes. */
+function Names({ which, value, onChange, onSubmit, title, placeholder }: { which: string; value: string; onChange: (v: string) => void; onSubmit: () => void; title: string; placeholder: string }) {
+  // Focus after the page faded in (autoFocus during the entering animation is lost on some devices).
   const ref = useRef<TextInput>(null);
-  useEffect(() => { const t = setTimeout(() => ref.current?.focus(), 350); return () => clearTimeout(t); }, []);
+  useEffect(() => { const t = setTimeout(() => ref.current?.focus(), 380); return () => clearTimeout(t); }, []);
   return (
-    <View style={{ flex: 1, alignItems: 'center', paddingHorizontal: 24, paddingTop: 30, gap: 22 }}>
-      <Mascot size={96} mood={value ? 'type' : 'idle'} gaze={{ x: gx, y: 0.7 }} />
-      <Txt size={28} line={34} weight={700} center>{title}</Txt>
+    <View style={{ flex: 1, alignItems: 'center', paddingHorizontal: 24, paddingTop: 26 + 96 + 20, gap: 14 }}>
+      <Rise key={which} style={{ alignSelf: 'stretch', minHeight: 68, justifyContent: 'flex-end' }}><Txt size={28} line={34} weight={700} center>{title}</Txt></Rise>
       <TextInput
         ref={ref}
         value={value}
         onChangeText={(t) => { onChange(t); if (t.length === 1 && !value) buddyPoke(); }}
         onSubmitEditing={onSubmit}
+        blurOnSubmit={false}
         placeholder={placeholder}
         placeholderTextColor={tokens.mute}
-        autoFocus
         autoCapitalize="words"
         autoCorrect={false}
         returnKeyType="next"
@@ -368,41 +402,16 @@ function NameAsk({ value, onChange, onSubmit, title, placeholder }: { value: str
   );
 }
 
-function PartnerField({ value, onChange, onSubmit }: { value: string; onChange: (v: string) => void; onSubmit: () => void }) {
-  return (
-    <View style={{ backgroundColor: tokens.row, borderRadius: 18, borderWidth: 1, borderColor: tokens.hair, paddingHorizontal: 16, height: 60, flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-      <ClayIcon name="herz" size={34} />
-      <TextInput
-        value={value}
-        onChangeText={onChange}
-        onSubmitEditing={() => value.trim() && onSubmit()}
-        placeholder={tx('Name, z. B. Sophia', 'Name, e.g. Sophia')}
-        placeholderTextColor={tokens.mute}
-        autoCapitalize="words"
-        autoCorrect={false}
-        returnKeyType="next"
-        maxLength={30}
-        style={{ flex: 1, fontSize: 18, fontWeight: '600', color: tokens.ink, ...(Platform.OS === 'web' ? { outlineStyle: 'none' } as any : null) }}
-      />
-    </View>
-  );
-}
-
-/** A question: the mascot top left with its line in a bubble, the answers below. */
+/** A question: Memo top left (the live one sits in the free slot) with its line in a bubble, the answers below. */
 function Ask({ say, hint, children }: { say: string; hint?: string; children: React.ReactNode }) {
   return (
-    <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 6, paddingBottom: 12, gap: 22 }} keyboardShouldPersistTaps="handled">
-      <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 10 }}>
-        <View style={{ marginTop: 6 }}><Mascot size={60} shadow={false} gaze={{ x: 0.6, y: 0.1 }} /></View>
-        <View style={{ flex: 1, backgroundColor: tokens.row, borderRadius: 20, borderTopLeftRadius: 6, paddingHorizontal: 16, paddingVertical: 13, borderWidth: 1, borderColor: tokens.hair }}>
-          <Typer text={say} size={18} line={24} weight={600} />
-        </View>
-      </View>
-      <View style={{ gap: 10 }}>
+    <View style={{ flex: 1 }}>
+      <Say text={say} />
+      <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 12, paddingBottom: 12, gap: 10 }} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
         {hint ? <Txt size={13} color={tokens.mute} style={{ marginLeft: 4 }}>{hint}</Txt> : null}
-        {children}
-      </View>
-    </ScrollView>
+        {React.Children.map(children, (c, i) => <Rise delay={120 + i * 45}>{c}</Rise>)}
+      </ScrollView>
+    </View>
   );
 }
 
@@ -424,26 +433,22 @@ function Choice({ o, on, multi, tag, onPress }: { o: Opt; on: boolean; multi?: b
   );
 }
 
-function Big({ title, sub, pose }: { title: string; sub?: string; pose: Pose }) {
-  const { width } = useWindowDimensions();
-  const size = Math.min(width * 0.56, 240);
-  const [n, setN] = useState(0);
-  useEffect(() => { const t = setTimeout(() => { setN(1); if (pose === 'jump') haptics.success(); }, 280); return () => clearTimeout(t); }, []);
+function Big({ title, sub, top }: { title: string; sub?: string; top: number }) {
   return (
-    <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 28, gap: 26 }}>
-      <Mascot size={size} pose={n ? pose : 'rest'} n={n} mood="happy" />
-      <View style={{ gap: 10, alignSelf: 'stretch' }}>
-        <Typer text={title} size={28} line={34} center />
-        {sub ? <Animated.View entering={FadeIn.delay(500).duration(300)}><Txt size={16.5} line={23} color={tokens.sub} center>{sub}</Txt></Animated.View> : null}
-      </View>
+    <View style={{ flex: 1, paddingHorizontal: 28, paddingTop: top, gap: 10 }}>
+      <Rise delay={260}><Txt size={28} line={34} weight={700} center>{title}</Txt></Rise>
+      {sub ? <Rise delay={380}><Txt size={16.5} line={23} color={tokens.sub} center>{sub}</Txt></Rise> : null}
     </View>
   );
 }
 
-/** The bubble of the question screens, with the avatar slot left free: Pin is the live one here. */
+/** The bubble of the question screens, with the avatar slot left free: the live Memo sits there. Always the height of
+ *  the longest line, so what lies below never moves when the line changes. */
 function Say({ text }: { text: string }) {
+  // On a narrow phone the longest line needs three lines.
+  const { width } = useWindowDimensions();
   return (
-    <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 10, paddingHorizontal: 20, paddingTop: 6 }}>
+    <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 10, paddingHorizontal: 20, paddingTop: 6, minHeight: 6 + (width < 380 ? 100 : 76) }}>
       <View style={{ width: 60, height: 72 }} />
       <View style={{ flex: 1, backgroundColor: tokens.row, borderRadius: 20, borderTopLeftRadius: 6, paddingHorizontal: 16, paddingVertical: 13, borderWidth: 1, borderColor: tokens.hair }}>
         <Typer text={text} size={18} line={24} weight={600} />
@@ -453,50 +458,64 @@ function Say({ text }: { text: string }) {
 }
 
 /**
- * The try step, as a sequence of states (vault pattern 7 and 9):
- *   intro   Pin sits in his slot and says what comes
- *   wait    he has flown into the bar and is the talk button; a label names it; three examples to tap
- *   think   the examples are gone, your sentence stays, he thinks
- *   landed  the card is there with both of you on it; he comes back out, glad
- *   notif   your partner's phone: the notification is the question about reminders
+ * The try step, as a sequence of states (vault pattern 7 and 9). Since the klar look (Julian 14.11.2026) it is the
+ * app as it is: the Kalender list of the Heute tab and the glass pill with Memo, the dark Sprechkarte with the live
+ * words, the loading bubble (KlarTalk).
+ *   intro   Memo sits in his slot and says what comes
+ *   wait    he has flown into the pill and is the talk button; a label names it; three examples to tap
+ *   think   the examples are gone, he is the loading bubble
+ *   landed  the new line lights up in the list; he glides back to his seat in the pill, glad
+ *   notif   the pill leaves, he comes back out; your partner's phone: the notification is the question about reminders
  */
 function Probe({ me, du, familie, ev, setEv, docked, setDocked, pad, onDone }: {
   me: string; du: string; familie: string | null; ev: CalEvent | null; setEv: (e: CalEvent) => void;
   docked: boolean; setDocked: (v: boolean) => void; pad: number; onDone: () => void;
 }) {
   const [phase, setPhase] = useState<'intro' | 'wait' | 'think' | 'landed' | 'notif'>(ev ? 'notif' : 'intro');
-  const [said, setSaid] = useState('');
   const [miss, setMiss] = useState(false);
   const [hint, setHint] = useState(false);
   const b = useBuddy();
+  // The label and the examples step aside while the Sprechkarte or the typing card is open.
+  const speak = useSpeak(), barMode = useBarMode(), keys = useTyping();
+  const talking = speakOpen(speak) || barMode === 'input' || keys;
   // The real calendar in a world of its own (Julian 12.11.: "too empty, doesn't show the app interface"): a calm
   // example week with your two names on it, and what you say lands in it. Nothing here touches the real store.
   const world: Store = useMemo(() => {
     const base = buildDemoState(TODAY);
     const keep = new Set(['ev_fussball', 'ev_markt', 'ev_film']);
-    const seed = demoEvents(TODAY).filter((e) => keep.has(e.id)).map((e) => ({ ...e, people: undefined, place: undefined }));
-    return createStore({ ...base, people: [], events: ev ? [...seed, ev] : seed, calView: 'tag' as const, calDay: ev ? ev.date : TODAY, names: { J: me || tx('Du', 'You'), T: du || tx('Partner', 'Partner') } });
+    // One of each: in the endless list a weekly series would fill every week.
+    const seed = demoEvents(TODAY).filter((e) => keep.has(e.id)).map((e) => ({ ...e, people: undefined, place: undefined, repeat: undefined }));
+    // Only appointments: no open things, deadlines or hints of the demo family in the list.
+    return createStore({ ...base, people: [], tasks: [], docs: [], lists: [], events: ev ? [...seed, ev] : seed, calView: 'tag' as const, calDay: ev ? ev.date : TODAY, names: { J: me || tx('Du', 'You'), T: du || tx('Partner', 'Partner') } });
   }, []);
   const people: Persons = useMemo(() => ({ J: { ...appPersons.J, name: me || tx('Du', 'You') }, T: { ...appPersons.T, name: du || tx('Partner', 'Partner') } }), [me, du]);
-  const [calKey, setCalKey] = useState(0);
+  const insets = useSafeAreaInsets();
+  // Where the calendar box sits on the screen, so the new line can be brought into view inside it.
+  const frame = useRef<View>(null);
+  const showLine = (id: string) => {
+    light(id);
+    const f = frame.current as any;
+    if (!f?.measureInWindow) return;
+    f.measureInWindow((_x: number, y: number, _w: number, h: number) => locate(id, { top: y + 96, floor: y + h - 24, height: h }, () => {}));
+  };
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
   const later = (ms: number, fn: () => void) => { timers.current.push(setTimeout(fn, ms)); };
-  useEffect(() => () => { timers.current.forEach(clearTimeout); setBuddy({ thinking: false }); }, []);
+  useEffect(() => () => { timers.current.forEach(clearTimeout); setBuddy({ thinking: false }); light(null); }, []);
   useEffect(() => {
     if (phase !== 'intro') return;
     // Only one Pin: the bar's own stays hidden until this one has flown into its place.
     setBuddy({ dockHidden: true });
     // He reads his line to you first, then goes where you will find him from now on.
-    later(1500, () => setDocked(true));
-    later(1500 + 900, () => { setPhase('wait'); });
-    later(1500 + 1500, () => setHint(true));
+    later(1700, () => setDocked(true));
+    later(1700 + 800, () => { setPhase('wait'); });
+    later(1700 + 1300, () => setHint(true));
   }, []);
 
   const ex = (SAG[familie === 'patchwork' ? 'kinder' : familie ?? 'zwei'] ?? SAG.zwei).map(([d, e]) => tx(d, e));
   const send = (text: string) => {
     const t = text.trim();
     if (!t || phase === 'think') return;
-    setHint(false); setMiss(false); setSaid(t); setPhase('think'); setBuddy({ thinking: true });
+    setHint(false); setMiss(false); setPhase('think'); setBuddy({ thinking: true });
     later(750, () => {
       setBuddy({ thinking: false });
       const r = understand(t, [], null, () => 'ev_mine');
@@ -505,14 +524,14 @@ function Probe({ me, du, familie, ev, setEv, docked, setDocked, pad, onDone }: {
         ? { ...r.event, who: r.event.who ?? 'J' }
         : { id: 'ev_mine', title: (r as any).title ?? t, icon: 'kalender', date: addDays(TODAY, 1), start: '00:00', allDay: true, who: 'J' } as CalEvent;
       setEv(e);
-      // It moves into the calendar and the calendar opens on its day.
+      // It moves into the calendar: the new line lights up in the list and comes into view. Memo glides from the
+      // loading bubble back to his seat in the pill and is glad there; he leaves the bar when the next question comes.
       world.set((st) => ({ events: [...st.events.filter((x) => x.id !== e.id), e], calDay: e.date }));
-      setCalKey((k) => k + 1);
       setPhase('landed');
-      setDocked(false);
       haptics.success();
-      later(420, () => buddyJoy());
-      later(1900, () => { setPhase('notif'); haptics.tap(); });
+      later(120, () => showLine(e.id));
+      later(760, () => buddyJoy());
+      later(2100, () => { setBuddy({ dockHidden: true }); setDocked(false); setPhase('notif'); haptics.tap(); });
     });
   };
 
@@ -520,18 +539,30 @@ function Probe({ me, du, familie, ev, setEv, docked, setDocked, pad, onDone }: {
     : phase === 'wait' ? (miss ? tx('Das war kein Termin. Versuch „Freitag 15 Uhr Zahnarzt“.', 'That wasn’t an appointment. Try “Friday 3pm dentist”.') : tx('Tipp mich unten an und sag euren nächsten Termin.', 'Tap me down there and say your next appointment.'))
       : phase === 'think' ? tx('Moment …', 'One moment …')
         : phase === 'landed' ? tx(`Steht drin. ${ev ? whenOf(ev) : ''}.`, `It’s in. ${ev ? whenOf(ev) : ''}.`)
-          : tx(du ? `${du} sieht es auch sofort. Soll ich euch Bescheid sagen, wenn sich was ändert?` : 'Dein Partner sieht es auch sofort. Soll ich euch Bescheid sagen, wenn sich was ändert?', du ? `${du} sees it right away too. Should I tell you both when something changes?` : 'Your partner sees it right away too. Should I tell you both when something changes?');
-  const bar = phase === 'intro' || phase === 'wait' || phase === 'think';
+          : tx(du ? `${du} sieht es auch sofort.` : 'Dein Partner sieht es auch sofort.', du ? `${du} sees it right away too.` : 'Your partner sees it right away too.');
+  // The pill with Memo stays through 'landed', so he can come home to it; it leaves when the buttons come.
+  const bar = phase !== 'notif';
+  const foot = klarFoot(insets.bottom) + navH() + 12;
+  // The room under the calendar is the same in every phase (examples over the pill, or the question with its two
+  // buttons), so the calendar never changes its size while you watch it.
+  const zone = Math.max(22 + 8 + 40 + 46 + foot, 8 + 42 + 12 + 50 + 12 + 22 + pad);
+  const exOn = phase === 'wait' && !talking;
+  const exA = useSharedValue(0);
+  useEffect(() => { exA.value = withTiming(exOn ? 1 : 0, { duration: exOn ? 260 : 140, easing: out }); }, [exOn]);
+  const exSt = useAnimatedStyle(() => ({ opacity: exA.value, transform: [{ translateY: (1 - exA.value) * 10 }] }));
+  const reach = ev ? daysBetween(TODAY, ev.date) + 8 : undefined;
+  const n = world.get().events.filter((x) => x.date === TODAY).length;
 
   return (
     <View style={{ flex: 1 }}>
       <Say text={line} />
-      <View style={{ flex: 1, marginHorizontal: 14, marginTop: 14, marginBottom: 10, borderRadius: 26, overflow: 'hidden', borderWidth: 1, borderColor: tokens.hair, backgroundColor: tokens.bg }}>
+      <View ref={frame} collapsable={false} style={{ flex: 1, marginHorizontal: 14, marginTop: 14, marginBottom: 10, borderRadius: 26, overflow: 'hidden', borderWidth: 1, borderColor: tokens.hair, backgroundColor: tokens.bg }}>
         <View pointerEvents="none" style={{ flex: 1 }}>
           <StoreContext.Provider value={world}>
             <PersonsContext.Provider value={people}>
               <StillContext.Provider value>
-                <DayView key={calKey} header={() => <CalTitle />} />
+                <CalHead n={n} />
+                <AgendaView reach={reach} />
               </StillContext.Provider>
             </PersonsContext.Provider>
           </StoreContext.Provider>
@@ -540,11 +571,6 @@ function Probe({ me, du, familie, ev, setEv, docked, setDocked, pad, onDone }: {
           <View pointerEvents="none" style={{ position: 'absolute', right: 12, top: 12, backgroundColor: tokens.chipBg, borderRadius: 999, paddingHorizontal: 10, height: 26, justifyContent: 'center' }}>
             <Txt size={12} weight={600} color={tokens.sub}>{tx('Beispielwoche', 'Example week')}</Txt>
           </View>
-        ) : null}
-        {phase === 'think' ? (
-          <Rise style={{ position: 'absolute', right: 12, bottom: 12, maxWidth: '84%', backgroundColor: tokens.ink, borderRadius: 20, borderBottomRightRadius: 6, paddingHorizontal: 16, paddingVertical: 11 }}>
-            <Txt size={16.5} line={22} color={tokens.onInk}>{said}</Txt>
-          </Rise>
         ) : null}
         {ev && phase === 'notif' ? (
           <Rise delay={120} style={{ position: 'absolute', left: 10, right: 10, bottom: 10, borderRadius: 24, backgroundColor: '#2E4650', padding: 10, paddingTop: 8, gap: 6, boxShadow: '0 14px 30px rgba(22,35,42,0.25)' } as any}>
@@ -564,57 +590,51 @@ function Probe({ me, du, familie, ev, setEv, docked, setDocked, pad, onDone }: {
         ) : null}
       </View>
 
-      {phase === 'wait' ? (
-        <Rise style={{ paddingHorizontal: 16, paddingBottom: 50, gap: 8 }}>
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 4 }}>
+      <View style={{ height: zone }}>
+        <Animated.View pointerEvents={exOn ? 'auto' : 'none'} style={[{ gap: 8 }, exSt]}>
+          <View style={{ height: 22, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20 }}>
             <Txt size={13} color={tokens.mute}>{tx('Oder tipp ein Beispiel an', 'Or tap an example')}</Txt>
             <PressScale onPress={onDone} hitSlop={10}><Txt size={13} color={tokens.mute}>{tx('Überspringen', 'Skip')}</Txt></PressScale>
           </View>
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingHorizontal: 16, gap: 8 }}>
             {ex.map((e) => (
               <PressScale key={e} onPress={() => { haptics.select(); send(e); }} style={{ backgroundColor: tokens.row, borderRadius: 999, borderWidth: 1, borderColor: tokens.hair, paddingHorizontal: 14, height: 40, justifyContent: 'center' }}>
                 <Txt size={15} weight={600}>{e}</Txt>
               </PressScale>
             ))}
-          </View>
-        </Rise>
-      ) : null}
+          </ScrollView>
+        </Animated.View>
+        {phase === 'notif' ? (
+          <Rise delay={260} style={{ position: 'absolute', left: 0, right: 0, bottom: 0, paddingHorizontal: 20, paddingBottom: pad, gap: 12 }}>
+            <Txt size={15} line={21} color={tokens.sub} center>{tx('Soll ich euch Bescheid sagen, wenn sich was ändert?', 'Should I tell you both when something changes?')}</Txt>
+            <Btn label={tx('Ja, sag Bescheid', 'Yes, tell us')} onPress={() => { if (!isPreview()) void startNotifications(); buddyJoy(); onDone(); }} />
+            <View style={{ height: 22, justifyContent: 'center' }}><TextLink label={tx('Später', 'Later')} weight={400} onPress={onDone} /></View>
+          </Rise>
+        ) : null}
+      </View>
+      {/* The app's own input (Julian 02.11.: show the app in its final form): the pill with Memo, the dark Sprechkarte
+          with the live words, the loading bubble. What is said stays here, nothing goes to the assistant. */}
       {bar ? (
-        <View style={{ paddingBottom: pad, opacity: phase === 'think' ? 0.5 : 1 }} pointerEvents={phase === 'think' ? 'none' : 'auto'}>
-          <TalkBar split onSend={(t) => send(t)} spoken={ex} placeholder={tx('Sprich oder schreib einfach …', 'Just say or type it …')} />
-        </View>
+        <Animated.View exiting={FadeOut.duration(160)} pointerEvents={phase === 'think' || phase === 'landed' ? 'none' : 'box-none'} style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0 }}>
+          <KlarTalk onSend={send} spoken={ex} placeholder={tx('Sprich oder schreib einfach …', 'Just say or type it …')} />
+        </Animated.View>
       ) : null}
-      {phase === 'landed' ? <View style={{ height: 54 + 34 + pad }} /> : null}
-      {phase === 'notif' ? (
-        <Rise delay={260} style={{ paddingHorizontal: 20, paddingTop: 10, paddingBottom: pad, gap: 12 }}>
-          <Btn label={tx('Ja, sag Bescheid', 'Yes, tell us')} onPress={() => { if (!isPreview()) void startNotifications(); buddyJoy(); onDone(); }} />
-          <TextLink label={tx('Später', 'Later')} weight={400} onPress={onDone} />
-        </Rise>
-      ) : null}
-      {/* The label over Pin in the bar: this is the talk button. */}
-      {hint && phase === 'wait' && b.dockAt ? <TapHint x={b.dockAt.x} y={b.dockAt.y} /> : null}
+      {/* The label over Memo in the pill: this is the talk button. */}
+      {hint && phase === 'wait' && b.dockAt && !talking ? <TapHint x={b.dockAt.x} y={b.dockAt.y} /> : null}
     </View>
   );
 }
 
-function CalTitle() {
-  const day = React.useContext(StoreContext)!.get().calDay;
-  const { month } = monthTitle(day);
+/** The head of the Kalender tab as it is in the app: the weekday tight and bold with a period, the grey line below. */
+function CalHead({ n }: { n: number }) {
   return (
-    <View style={{ gap: 2 }}>
-      <Txt size={15} color={tokens.sub}>{tx(`${WD_LONG[weekday(day)]}, ${Number(day.slice(8))}.`, `${WD_LONG[weekday(day)]} ${Number(day.slice(8))}`)}</Txt>
-      <Txt size={30} line={36} weight={700} tracking={-1}>{month}</Txt>
+    <View style={{ paddingHorizontal: 18, paddingTop: 16, paddingBottom: 4, gap: 2 }}>
+      <Txt size={30} line={34} weight={700} tracking={-1.2} numberOfLines={1}>{WD_LONG[weekday(TODAY)]}<Dot /></Txt>
+      <Txt size={13.5} line={18} color={tokens.sub}>{n ? `${dmShort(TODAY)} · ${tx(`${n} ${n === 1 ? 'Termin' : 'Termine'}`, `${n} ${n === 1 ? 'event' : 'events'}`)}` : dmShort(TODAY)}</Txt>
     </View>
   );
 }
 
-function Who({ n, bg, fg, style }: { n: string; bg: string; fg: string; style?: any }) {
-  return (
-    <View style={[{ width: 34, height: 34, borderRadius: 17, backgroundColor: bg, borderWidth: 2, borderColor: tokens.row, alignItems: 'center', justifyContent: 'center' }, style]}>
-      <Txt size={14} weight={700} color={fg}>{n.slice(0, 1).toUpperCase()}</Txt>
-    </View>
-  );
-}
 
 /** "Tap me to speak", sitting right over Pin in the bar; it nods toward him once. */
 function TapHint({ x, y }: { x: number; y: number }) {
@@ -640,15 +660,15 @@ function TapHint({ x, y }: { x: number; y: number }) {
 function Fertig({ me, du, ev, nervt, top, cx, cy }: { me: string; du: string; ev: CalEvent | null; nervt: string[]; top: number; cx: number; cy: number }) {
   const insets = useSafeAreaInsets();
   const icons = [ev?.icon as ClayName | undefined, ...NERVT.filter((o) => nervt.includes(o.key)).map((o) => o.icon), 'kalender', 'einkauf', 'glocke', 'herz', 'checkliste'].filter((k, i, a): k is ClayName => !!k && a.indexOf(k) === i).slice(0, 5);
-  useEffect(() => { const t = setTimeout(() => { haptics.success(); buddyJoy(); }, 760); return () => clearTimeout(t); }, []);
+  useEffect(() => { const t = setTimeout(() => { haptics.success(); buddyJoy(); }, 640); return () => clearTimeout(t); }, []);
   return (
     <View style={{ flex: 1 }}>
       <Burst icons={icons} cx={cx} cy={cy} />
       <View style={{ paddingTop: top - insets.top + 26, paddingHorizontal: 24, gap: 10 }}>
-        <Rise delay={700}><Txt size={30} line={36} weight={700} center>{me ? tx(`Fertig, ${me}!`, `All set, ${me}!`) : tx('Fertig!', 'All set!')}</Txt></Rise>
-        <Rise delay={820}><Txt size={16.5} line={23} color={tokens.sub} center>{tx(`Sichere es jetzt, damit ${du || 'dein Partner'} alles auch sieht.`, `Save it now so ${du || 'your partner'} sees it all too.`)}</Txt></Rise>
+        <Rise delay={420}><Txt size={30} line={36} weight={700} center>{me ? tx(`Fertig, ${me}!`, `All set, ${me}!`) : tx('Fertig!', 'All set!')}</Txt></Rise>
+        <Rise delay={540}><Txt size={16.5} line={23} color={tokens.sub} center>{tx(`Sichere es jetzt, damit ${du || 'dein Partner'} alles auch sieht.`, `Save it now so ${du || 'your partner'} sees it all too.`)}</Txt></Rise>
       </View>
-      <Rise delay={1000} style={{ marginTop: 22, marginHorizontal: 20, backgroundColor: tokens.row, borderRadius: 24, borderWidth: 1, borderColor: tokens.hair, paddingHorizontal: 16, paddingVertical: 6 }}>
+      <Rise delay={700} style={{ marginTop: 22, marginHorizontal: 20, backgroundColor: tokens.row, borderRadius: 24, borderWidth: 1, borderColor: tokens.hair, paddingHorizontal: 16, paddingVertical: 6 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 10 }}>
           <ClayIcon name="gruppe" size={40} />
           <View style={{ flex: 1 }}>
@@ -675,7 +695,7 @@ const SPOTS = [[-158, 118], [-124, 146], [-90, 122], [-56, 146], [-22, 118]];
 function Burst({ icons, cx, cy }: { icons: ClayName[]; cx: number; cy: number }) {
   return (
     <View pointerEvents="none" style={{ position: 'absolute', left: 0, top: 0, right: 0, bottom: 0 }}>
-      {icons.map((n, i) => <Pop key={n} name={n} cx={cx} cy={cy} a={SPOTS[i][0]} r={SPOTS[i][1]} delay={900 + i * 120} />)}
+      {icons.map((n, i) => <Pop key={n} name={n} cx={cx} cy={cy} a={SPOTS[i][0]} r={SPOTS[i][1]} delay={700 + i * 100} />)}
     </View>
   );
 }

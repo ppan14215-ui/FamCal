@@ -11,39 +11,46 @@
  * - `done` (teal) is for "erledigt" and the period after headlines.
  */
 const LIGHT = {
-  bg: '#F5F5F4',
+  // Klar (Julian 13.11.): white, near black and greys. Colour comes from people only, never from the app.
+  // Ground and accent are measured from the "Recordings" reference (Julian 14.11.).
+  bg: '#F5F5F7',
   row: '#FFFFFF',
-  ink: '#16232A',
-  sub: '#5B666B',
-  mute: '#8A9397',
-  hair: '#E7E7E4',
-  done: '#075056',
-  doneSoft: '#E2EEEC',
+  ink: '#111417',
+  sub: '#6B7176',
+  mute: '#9AA0A5',
+  hair: '#E9EAEB',
+  /** Was teal. The klar look has no accent of its own, so "erledigt" and chosen things are ink. */
+  done: '#111417',
+  doneSoft: '#E6E8EA',
   frist: '#C2410C',
   /** Urlaub, sunny and clearly its own (Julian 31.10.: "Vacation kaum zu erkennen"). */
   vac: '#F6CD6A',
   vacInk: '#5B4100',
-  segBg: '#EAEAE7',
+  segBg: '#F0F1F2',
   /** The chosen pill in a segmented control: it must stand out from segBg in both modes. */
   segOn: '#FFFFFF',
-  /** The chosen tab in the bottom bar, on a white pill. */
-  pillOn: '#EFEFEC',
-  chipBg: '#EFEFEC',
-  circleLine: '#C9CDCF',
-  dotOff: '#D5D8D9',
+  /** The chosen tab in the bottom bar. */
+  pillOn: '#F0F1F2',
+  chipBg: '#F0F1F2',
+  circleLine: '#C8CCCF',
+  dotOff: '#D9DCDE',
   danger: '#C7372F',
-  /** Marked text: light teal, so the selected words stay readable (a dark highlight hid them on Android, Julian 28.10.). */
-  select: 'rgba(7,80,86,0.22)',
+  /** Marked text: a light grey wash, so the selected words stay readable. */
+  select: 'rgba(17,20,23,0.16)',
   ok: '#2F9E6E',
-  scrim: 'rgba(22,35,42,0.28)',
-  noteBg: '#ECEBE7',
+  scrim: 'rgba(17,20,23,0.28)',
+  noteBg: '#F0F1F2',
   paper: '#F4F1EA',
-  /** Text and icons on an ink surface (the mic bubble, primary buttons, today's day). */
+  /** Text and icons on an ink surface (primary buttons, today's day). */
   onInk: '#FFFFFF',
   /** Frosted surface over a picture (the Symbol chip on a Termin). */
   glass: 'rgba(255,255,255,0.7)',
   /** The calm cover while the assistant works. */
-  veil: 'rgba(250,249,246,0.95)',
+  veil: 'rgba(245,245,247,0.95)',
+  /** The one interaction colour (Julian 14.11.): the plus, the record dot, today, the line of now. Never a surface. */
+  accent: '#F86443',
+  /** Its shadow under the plus. */
+  accentGlow: 'rgba(248,100,67,0.34)',
 };
 export type Tokens = Record<keyof typeof LIGHT, string>;
 
@@ -57,6 +64,7 @@ const DARK: Tokens = {
   done: '#5FB7AE', doneSoft: '#1E4F49', frist: '#F08A4B', vac: '#8C6A1F', vacInk: '#FFF4D6', segBg: '#151C20', segOn: '#3B4B53', pillOn: '#3B4B53', chipBg: '#2A363C',
   circleLine: '#3A464C', dotOff: '#3A464C', danger: '#F0766C', select: 'rgba(95,183,174,0.32)', ok: '#4CC28E',
   scrim: 'rgba(0,0,0,0.55)', noteBg: '#1F272B', paper: '#1C2326', onInk: '#16232A', glass: 'rgba(26,35,40,0.72)', veil: 'rgba(15,21,24,0.95)',
+  accent: '#FF7A59', accentGlow: 'rgba(255,122,89,0.3)',
 };
 
 /** The live palette. Values swap in place with `applyPalette`, so every style reads the current one. */
@@ -76,9 +84,40 @@ export const nightFg = (c: string) => (dark ? blend(c, '#FFFFFF', 0.45) : c);
 /** At night a person's tint comes from their strong colour, so pink stays pink (a pale pastel turned grey, Julian 28.10.). */
 export const shade = (c: { name: string; bg: string; fg: string }) => ({ name: c.name, bg: dark ? blend(c.fg, '#0F1518', 0.45) : c.bg, fg: nightFg(c.fg) });
 
+/** A person's colour as one solid tone: the bar on a Termin, the dot, the filled check (klar look, Julian 13.11.). */
+export const vivid = (fg: string) => blend(fg, '#FFFFFF', dark ? 0.35 : 0.2);
+
+/**
+ * Glass, only on things you press (nav, input, buttons, chips): white with an inner light, a hairline and a soft
+ * shadow. The recipe is Wabi's inner light (Julian 13.11.). boxShadow draws on the new architecture and on the web.
+ */
+const G_IN = 'inset 0 1px 4px rgba(255,255,255,0.67), inset 0 -4px 4px rgba(255,255,255,0.85), inset 0 0 14px rgba(229,229,229,0.55)';
+// At night the same shapes: a lifted dark surface, a faint light on the top edge, a deeper shadow.
+const G_IN_N = 'inset 0 1px 0 rgba(255,255,255,0.10), inset 0 0 14px rgba(255,255,255,0.03)';
+const glassOf = (night: boolean) => {
+  const bg = night ? '#222C32' : '#FFFFFF';
+  const inn = night ? G_IN_N : G_IN;
+  const line = (a: number) => (night ? `0 0 0 1px rgba(255,255,255,${a})` : `0 0 0 1px rgba(17,20,23,${a})`);
+  const drop = (y: number, r: number, a: number) => `0 ${y}px ${r}px rgba(${night ? '0,0,0' : '17,20,23'},${night ? Math.min(0.6, a * 3.2) : a})`;
+  return {
+    /** Small controls: round buttons, chips, the chosen segment. */
+    sm: { backgroundColor: bg, boxShadow: `${inn}, ${line(0.07)}, ${drop(2, 6, 0.05)}` } as any,
+    /** The floating nav pill. */
+    nav: { backgroundColor: bg, boxShadow: `${inn}, ${line(0.05)}, ${drop(10, 30, 0.1)}` } as any,
+    /** The input card that grows out of Memo, and sheets. */
+    card: { backgroundColor: bg, boxShadow: `${inn}, ${line(0.06)}, ${drop(14, 40, 0.14)}` } as any,
+    /** A flat card in the content: only a hairline. */
+    line: { backgroundColor: night ? '#1A2328' : '#FFFFFF', boxShadow: line(0.08) } as any,
+  };
+};
+/** The live glass styles; like `tokens` they swap in place, so every style reads the current ones. */
+export const glass = glassOf(false);
+
 export function applyPalette(isDark: boolean) {
   dark = isDark;
   Object.assign(tokens, isDark ? DARK : LIGHT);
+  const g = glassOf(isDark);
+  (Object.keys(g) as (keyof typeof g)[]).forEach((k) => Object.assign(glass[k], g[k]));
 }
 
 export type PersonId = 'J' | 'T';
@@ -163,10 +202,11 @@ export function applyColorTheme(id: ThemeId) {
 
 export const radii = { tile: 16, row: 20, card: 24, sheet: 32, pill: 999 } as const;
 
+// Inter (Julian 13.11., klar look). Custom fonts on native ignore fontWeight, so each weight is its own file.
 export const fonts = {
-  400: 'Geist_400Regular',
-  500: 'Geist_500Medium',
-  600: 'Geist_600SemiBold',
-  700: 'Geist_700Bold',
+  400: 'Inter_400Regular',
+  500: 'Inter_500Medium',
+  600: 'Inter_600SemiBold',
+  700: 'Inter_700Bold',
 } as const;
 export type Weight = keyof typeof fonts;

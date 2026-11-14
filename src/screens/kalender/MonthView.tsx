@@ -1,38 +1,34 @@
 /**
- * Kalender · Monat: day cells tinted by their first event, list for the selected
- * day. The grid fills the screen height (Julian 27.10.), the icon sits in the
- * middle of its cell and further Termine show as a small count under it.
- * Today is green like in the day strip, the chosen day has the outline.
+ * Kalender · Monat: the flat month. Every day is its number with one dot per Termin in the colour of who goes
+ * (Julian 04.11.: the simple month with dots). Today is the orange circle, the chosen day has the ring.
+ * Feiertage colour their number and Urlaub lies as a soft band behind its days, so you can tell where they were
+ * (Julian 14.11.); both are named under the grid. Work shows as the person's stripe along the day's foot.
+ * The chosen day's Termine follow as the same rows as on Heute. Swipe sideways for the month before or after.
  */
-import Origin from '../../components/ui/Origin';
 import React, { useMemo } from 'react';
 import { View, useWindowDimensions } from 'react-native';
-import { router } from 'expo-router';
-import { H2, Group, Row, RoundButton } from '../../components/ui/kit';
-import SwipeRow, { justSwiped } from '../../components/SwipeRow';
-import { dropEvent } from './DayView';
+import { H2 } from '../../components/ui/kit';
 import Txt from '../../components/ui/Txt';
-import { ClayIcon } from '../../components/ui/Clay';
-import { Owner } from '../../components/ui/Person';
-import { tokens, tint, persons } from '../../theme';
-import { evTint, evShared, sharedBorder, evInk } from '../../lib/evColor';
+import { tokens, persons, springs } from '../../theme';
+import { evInk } from '../../lib/evColor';
 import { useStore, actions } from '../../state/store';
-import { eventsOn } from '../../lib/selectors';
-import { addDays, monday, dayNum, monthIdx, year, parse, iso, WD_SHORT, weekday, MONTHS_SHORT, hm, TODAY, MONTHS, short } from '../../lib/dates';
+import { addDays, monday, dayNum, monthIdx, year, parse, iso, TODAY, MONTHS, short } from '../../lib/dates';
 import PressScale from '../../components/ui/PressScale';
 import { tx } from '../../i18n/lang';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
-import Animated, { useAnimatedStyle, useSharedValue, withSpring, withTiming, FadeIn } from 'react-native-reanimated';
+import Animated, { useAnimatedStyle, useSharedValue, withSpring, withTiming } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
 import { haptics } from '../../lib/haptics';
-import { springs } from '../../theme';
 import type { CalEvent } from '../../state/types';
 import { useCalEvents } from '../../lib/useEvents';
 import { isInfoDay } from '../../lib/feiertage';
 import { isVacation } from '../../lib/urlaub';
 import Stripes from '../../components/Stripes';
+import { AgendaRow } from './AgendaView';
 
 const HEAD = tx('Mo Di Mi Do Fr Sa So', 'Mo Tu We Th Fr Sa Su').split(' ');
+/** The number's circle and the band behind it. */
+const NUM = 30;
 
 export function monthTitle(day: string) {
   return { month: MONTHS[monthIdx(day)], year: year(day) };
@@ -43,9 +39,16 @@ export function shiftMonth(day: string, n: number): string {
   return iso(new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + n, 1)));
 }
 
+/** The soft colour of an Urlaub band: the person's tint, the family's quiet grey for everyone. */
+const bandOf = (e: CalEvent) => (e.who === 'J' || e.who === 'T' ? persons[e.who].tint : tokens.doneSoft);
+const byStart = (a: CalEvent, b: CalEvent) => (a.allDay === b.allDay ? a.start.localeCompare(b.start) : a.allDay ? -1 : 1);
+
+type Cell = { evs: CalEvent[]; shifts: ('J' | 'T')[]; hol?: CalEvent; vac?: CalEvent };
+
 export default function MonthView() {
   const day = useStore((s) => s.calDay);
   const events = useCalEvents();
+  const people = useStore((s) => s.people);
   const m = monthIdx(day);
   const first = iso(new Date(Date.UTC(year(day), m, 1)));
   const start = monday(first);
@@ -57,12 +60,33 @@ export default function MonthView() {
     while (out.length > 28 && monthIdx(out[out.length - 7]) !== m) out.splice(out.length - 7, 7);
     return out;
   }, [start, m]);
-  const list = useMemo(() => eventsOn(events, day, true), [events, day]);
+
+  // One pass over the Termine: what each day of this month carries. Multi-day ones (Urlaub bis Sonntag) count on every day they cover.
+  const { at, holidays, vacations } = useMemo(() => {
+    const from = first, to = iso(new Date(Date.UTC(year(day), m + 1, 0)));
+    const at = new Map<string, Cell>();
+    const cell = (d: string) => { let c = at.get(d); if (!c) { c = { evs: [], shifts: [] }; at.set(d, c); } return c; };
+    const holidays: CalEvent[] = [], vacations: CalEvent[] = [];
+    for (const e of events) {
+      const last = e.endDate && e.endDate > e.date ? e.endDate : e.date;
+      if (last < from || e.date > to) continue;
+      if (e.work) { const c = cell(e.date), p = e.who === 'J' ? 'J' : 'T'; if (e.date >= from && !c.shifts.includes(p)) c.shifts.push(p); continue; }
+      if (isInfoDay(e)) { if (e.date >= from) { cell(e.date).hol = e; holidays.push(e); } continue; }
+      const vac = isVacation(e);
+      if (vac) vacations.push(e);
+      for (let d = e.date < from ? from : e.date; d <= last && d <= to; d = addDays(d, 1)) { const c = cell(d); if (vac) c.vac = c.vac ?? e; else c.evs.push(e); }
+    }
+    holidays.sort((a, b) => a.date.localeCompare(b.date));
+    return { at, holidays, vacations };
+  }, [events, first, m]);
+
+  const list = useMemo(() => events.filter((e) => e.date === day || (!!e.endDate && e.date < day && day <= e.endDate)).sort(byStart), [events, day]);
+  const real = list.filter((e) => !isInfoDay(e));
+  const info = list.filter(isInfoDay).map((e) => e.title).join(' · ');
   // Title, switch and weekday row take about 290, the talk field and tabs about 200.
   const { height: H } = useWindowDimensions();
   const rows = cells.length / 7;
-  const cellH = Math.round(Math.max(52, Math.min(64, (H - 490) / rows)));
-  const icon = Math.round(Math.min(40, cellH * 0.4));
+  const cellH = Math.round(Math.max(52, Math.min(62, (H - 500) / rows)));
 
   // Swipe left or right for the next or previous month (Julian 30.10.), like in the week.
   const W = useSharedValue(360);
@@ -95,38 +119,43 @@ export default function MonthView() {
   return (
     <>
       <GestureDetector gesture={pan} touchAction="pan-y">
-      <Animated.View onLayout={(e) => { W.value = e.nativeEvent.layout.width; }} style={[{ flexDirection: 'row', flexWrap: 'wrap', rowGap: 5 }, slide]}>
+      <Animated.View onLayout={(e) => { W.value = e.nativeEvent.layout.width; }} style={[{ flexDirection: 'row', flexWrap: 'wrap' }, slide]}>
         {HEAD.map((h) => (
-          <View key={h} style={{ width: `${100 / 7}%`, alignItems: 'center', paddingBottom: 2 }}>
+          <View key={h} style={{ width: `${100 / 7}%`, alignItems: 'center', paddingBottom: 6 }}>
             <Txt size={12} weight={600} color={tokens.sub}>{h}</Txt>
           </View>
         ))}
         {cells.map((d, ci) => {
           const inMonth = monthIdx(d) === m;
-          // Multi-day ones (Urlaub bis Sonntag) show on every day they cover.
-          const evs = inMonth ? events.filter((e) => !e.work && !isInfoDay(e) && (e.date === d || (!!e.endDate && e.date < d && d <= e.endDate))) : [];
-          // Julian 30.10.: work must show in the month too, as the person's stripe along the cell's foot.
-          const shifts = inMonth ? [...new Set(events.filter((e) => e.work && e.date === d).map((e): 'J' | 'T' => (e.who === 'J' ? 'J' : 'T')))] : [];
+          const c = inMonth ? at.get(d) : undefined;
           const sel = d === day;
           const isToday = d === TODAY;
-          // A holiday colours the date like the year view, no dot (Julian 30.10.).
-          const hol = inMonth && events.some((e) => e.date === d && isInfoDay(e));
+          const evs = c?.evs ?? [];
+          // The band runs on to the next day inside the week's row and ends round where the Urlaub or the row ends.
+          const on = (o: number) => !!c?.vac && monthIdx(addDays(d, o)) === m && at.get(addDays(d, o))?.vac === c.vac;
+          const joinL = ci % 7 !== 0 && on(-1), joinR = ci % 7 !== 6 && on(1);
           return (
-            <View key={d} style={{ width: `${100 / 7}%`, paddingHorizontal: 1.5 }}>
+            <View key={d} style={{ width: `${100 / 7}%` }}>
               <PressScale
-                onPress={() => inMonth && actions.setCalDay(d)}
-                style={{
-                  height: cellH, borderRadius: 12, alignItems: 'center', paddingTop: 5, overflow: 'hidden',
-                  backgroundColor: isToday ? tokens.doneSoft : inMonth ? tokens.row : 'transparent',
-                  borderWidth: 1.5, borderColor: sel ? tokens.ink : 'transparent',
-                }}
+                scale={0.94}
+                onPress={() => { if (inMonth && !sel) { haptics.select(); actions.setCalDay(d); } }}
+                accessibilityLabel={short(d)}
+                accessibilityState={{ selected: sel }}
+                style={{ height: cellH, alignItems: 'center', paddingTop: 6 }}
               >
-                <Txt size={14} line={18} weight={isToday ? 700 : 500} color={isToday ? tokens.done : hol ? tokens.frist : inMonth ? tokens.ink : tokens.circleLine}>{String(dayNum(d))}</Txt>
-                {/* Julian 04.11.: titles cannot be read without zooming; back to the simple month with dots, the day's list sits below. */}
-                <DayIcons evs={evs} size={0} delay={0} />
-                {shifts.length ? (
-                  <View style={{ position: 'absolute', left: 4, right: 4, bottom: 4, gap: 2 }}>
-                    {shifts.map((p) => <Stripes key={p} p={p} radius={3} style={{ height: 5 }} />)}
+                {c?.vac ? <View style={{ position: 'absolute', top: 6, height: NUM, left: joinL ? 0 : 5, right: joinR ? 0 : 5, backgroundColor: bandOf(c.vac), borderTopLeftRadius: joinL ? 0 : NUM / 2, borderBottomLeftRadius: joinL ? 0 : NUM / 2, borderTopRightRadius: joinR ? 0 : NUM / 2, borderBottomRightRadius: joinR ? 0 : NUM / 2 }} /> : null}
+                <View style={{ width: NUM, height: NUM, borderRadius: NUM / 2, alignItems: 'center', justifyContent: 'center', backgroundColor: isToday ? tokens.accent : 'transparent', borderWidth: sel && !isToday ? 1.5 : 0, borderColor: tokens.ink }}>
+                  <Txt size={15} line={19} weight={isToday || c?.hol ? 700 : 500} color={isToday ? '#FFFFFF' : c?.hol ? tokens.frist : inMonth ? tokens.ink : tokens.circleLine}>{String(dayNum(d))}</Txt>
+                </View>
+                {evs.length ? (
+                  <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 3, height: 7, marginTop: 4 }}>
+                    {evs.slice(0, 3).map((e, i) => <View key={i} style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: evInk(e) }} />)}
+                    {evs.length > 3 ? <Txt size={9} line={9} weight={700} color={tokens.sub}>+</Txt> : null}
+                  </View>
+                ) : null}
+                {c?.shifts.length ? (
+                  <View style={{ position: 'absolute', left: 7, right: 7, bottom: 3, gap: 1.5 }}>
+                    {c.shifts.map((p) => <Stripes key={p} p={p} radius={2} style={{ height: 4 }} />)}
                   </View>
                 ) : null}
               </PressScale>
@@ -135,88 +164,32 @@ export default function MonthView() {
         })}
       </Animated.View>
       </GestureDetector>
-      <H2 right={`${list.length} ${list.length === 1 ? tx('Termin', 'event') : tx('Termine', 'events')}`}>{short(day)}</H2>
-      {list.length ? (
-        <Group>
-          {list.map((e) => (
-            // Swipe left deletes, like in Tage (Julian 31.10. 18:21); holidays stay.
-            isInfoDay(e) ? <Row key={e.id} icon={e.icon} title={e.title} sub={e.sub} time={hm(e.start)} right={<View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}><Origin e={e} /><Owner who={e.who} /></View>} onPress={() => router.push(`/termin/${e.id}`)} /> : (
-              <SwipeRow key={e.id} onDelete={() => dropEvent(e)}>
-                <Row icon={e.icon} title={e.title} sub={e.sub} time={hm(e.start)} right={<View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}><Origin e={e} /><Owner who={e.who} /></View>} onPress={() => { if (!justSwiped()) router.push(`/termin/${e.id}`); }} />
-              </SwipeRow>
-            )
+      {holidays.length || vacations.length ? (
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', columnGap: 14, rowGap: 4, paddingHorizontal: 2 }}>
+          {holidays.map((e) => (
+            <View key={e.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
+              <Txt size={12.5} weight={700} color={tokens.frist}>{String(dayNum(e.date))}</Txt>
+              <Txt size={12.5} color={tokens.sub}>{e.title}</Txt>
+            </View>
           ))}
-        </Group>
-      ) : (
-        <Txt size={14} color={tokens.sub}>{tx('Nichts eingetragen.', 'Nothing planned.')}</Txt>
-      )}
-    </>
-  );
-}
-
-export function MonthArrows() {
-  const day = useStore((s) => s.calDay);
-  return (
-    <View style={{ flexDirection: 'row', gap: 6 }}>
-      <RoundButton icon="back" label={tx('Voriger Monat', 'Previous month')} size={34} onPress={() => actions.setCalDay(shiftMonth(day, -1))} />
-      <View style={{ transform: [{ scaleX: -1 }] }}>
-        <RoundButton icon="back" label={tx('Nächster Monat', 'Next month')} size={34} onPress={() => actions.setCalDay(shiftMonth(day, 1))} />
-      </View>
-    </View>
-  );
-}
-
-/**
- * Short titles in each cell, like Google and Apple's month (Julian 30.10.: "nur
- * kleine Bubbles hilft nicht viel"): one tinted line per Termin in the colour of
- * who goes, as many as fit, then "+2". The chosen day's full list sits below.
- */
-function DayTitles({ evs, lines }: { evs: CalEvent[]; lines: number }) {
-  if (!evs.length) return <View style={{ flex: 1 }} />;
-  const sorted = [...evs].sort((a, b) => (a.allDay ? -1 : b.allDay ? 1 : a.start.localeCompare(b.start)));
-  const room = sorted.length > lines ? lines - 1 : lines;
-  return (
-    <View style={{ flex: 1, alignSelf: 'stretch', gap: 2, paddingTop: 2, paddingHorizontal: 2 }}>
-      {sorted.slice(0, Math.max(0, room)).map((e) => (
-        <View key={e.id} style={{ height: 13, borderRadius: 4, paddingHorizontal: 3, justifyContent: 'center', backgroundColor: isVacation(e) ? tokens.vac : evTint(e), ...(!isVacation(e) && evShared(e) ? { ...sharedBorder(), borderWidth: 1 } : null) }}>
-          <Txt size={9.5} line={12} weight={600} numberOfLines={1} ellipsizeMode="clip" color={isVacation(e) ? tokens.vacInk : e.who === 'J' || e.who === 'T' ? persons[e.who].ink : tokens.ink}>{e.title}</Txt>
-        </View>
-      ))}
-      {sorted.length > room ? <Txt size={9.5} line={12} weight={700} color={tokens.sub} style={{ paddingHorizontal: 3 }}>{`+${sorted.length - Math.max(0, room)}`}</Txt> : null}
-    </View>
-  );
-}
-
-/**
- * One clean icon per cell (Julian 30.10.: several small icons looked messy):
- * the first Termin as clay object, every further one as a small dot below,
- * like in the Apple calendar. The icon pops in when the month appears, so the
- * grid feels alive instead of rigid.
- */
-const SHOW_ICONS = false;
-function DayIcons({ evs, size, delay }: { evs: CalEvent[]; size: number; delay: number }) {
-  // Julian 30.10. 22:19: no icons in the month, keep it simple. One dot per Termin in the colour of who goes.
-  if (!evs.length) return <View style={{ flex: 1 }} />;
-  if (!SHOW_ICONS) {
-    return (
-      <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 3, paddingBottom: 6 }}>
-        {evs.slice(0, 3).map((e, i) => <View key={i} style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: isVacation(e) ? tokens.vacInk : evInk(e) }} />)}
-        {evs.length > 3 ? <Txt size={9} line={9} weight={700} color={tokens.sub}>+</Txt> : null}
-      </View>
-    );
-  }
-  const more = Math.min(3, evs.length - 1);
-  return (
-    <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', gap: 3, paddingBottom: 4 }}>
-      <Animated.View entering={FadeIn.duration(140).delay(Math.min(delay, 80))}>
-        <ClayIcon name={evs[0].icon} size={size} />
-      </Animated.View>
-      {more ? (
-        <View style={{ flexDirection: 'row', gap: 3, height: 5 }}>
-          {Array.from({ length: more }, (_, i) => <View key={i} style={{ width: 5, height: 5, borderRadius: 3, backgroundColor: tokens.sub, opacity: 0.55 }} />)}
-          {evs.length > 4 ? <Txt size={9} line={9} weight={700} color={tokens.sub}>+</Txt> : null}
+          {vacations.map((e) => (
+            <View key={e.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
+              <View style={{ width: 16, height: 9, borderRadius: 5, backgroundColor: bandOf(e) }} />
+              <Txt size={12.5} color={tokens.sub}>{e.title}</Txt>
+            </View>
+          ))}
         </View>
       ) : null}
-    </View>
+      <View>
+        <H2 right={`${real.length} ${real.length === 1 ? tx('Termin', 'event') : tx('Termine', 'events')}`}>{short(day)}</H2>
+        {info ? <Txt size={13} line={18} color={tokens.mute} numberOfLines={1} style={{ paddingTop: 6 }}>{info}</Txt> : null}
+        {real.length ? (
+          // The same rows as on Heute: a tap opens, a swipe to the left deletes (Julian 31.10. 18:21).
+          <View style={{ paddingTop: 4 }}>{real.map((e) => <AgendaRow key={e.id} e={e} date={day} over={false} people={people} />)}</View>
+        ) : (
+          <Txt size={14} color={tokens.sub} style={{ paddingTop: 8 }}>{tx('Nichts eingetragen.', 'Nothing planned.')}</Txt>
+        )}
+      </View>
+    </>
   );
 }

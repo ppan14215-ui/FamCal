@@ -8,9 +8,9 @@
  */
 import { track, firstTime, type EntryKind, type Input } from '../lib/analytics';
 import SessionPill from './SessionPill';
-import { useBuddyTalk, setBuddy } from '../lib/buddy';
+import { useBuddyTalk, useBuddyKeys, getBuddy, setBuddy } from '../lib/buddy';
 import React, { useEffect, useRef, useState } from 'react';
-import { View, ScrollView, Platform, BackHandler, useWindowDimensions, TextInput } from 'react-native';
+import { View, ScrollView, Platform, BackHandler, useWindowDimensions, TextInput, Pressable, Keyboard } from 'react-native';
 import { router, usePathname } from 'expo-router';
 import Animated, { FadeIn, FadeInDown, FadeOut, useSharedValue, useAnimatedStyle, withSpring, withTiming, withDelay, Easing } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -27,7 +27,7 @@ import MemoMic from './buddy/MemoMic';
 import { setSpeak, getSpeak, useSpeak, speakOpen, speakDone, parseHour } from '../lib/speak';
 import { settle as settleTime } from './ChatCards';
 import { setVeil } from './Veil';
-import { tokens, persons, fonts, easing } from '../theme';
+import { tokens, persons, fonts, easing, glass } from '../theme';
 import { useStore, actions, get, toast } from '../state/store';
 import { plan, splitItems, claudeSays, replyPlan, listFromClaude, asksNewList, thinksOnline, revisePlan, reviseOffline, draftOf, cutOff, addPicks, settleWork, clashLine, dishy, linkPlan, Ctx, Plan, Result, Said, SPOKEN, PLACEHOLDER } from '../lib/act';
 import { canUnderstand, type Convo, type Glimpse } from '../lib/verstehen';
@@ -39,7 +39,7 @@ import { light, lightOneByOne } from '../lib/landing';
 import { setDockTop, setDockSpace, setFieldTop } from '../lib/dockSpace';
 import { useKeyboardInset, useTyping, useInlineEditing } from '../lib/keyboard';
 import { setTalkOpen, useTalkOpen } from '../lib/talkOpen';
-import { navH, navTop, TABS, BarTab, floatShadow } from './NavBar';
+import { navH, navTop, klarFoot, TABS, BarTab, floatShadow } from './NavBar';
 import { useNavFolded } from '../lib/navFold';
 import { getResume, setResume, useResume } from '../lib/session';
 import { navStyle, useBarMode, setBarMode, useBarNav, BAR_SPRING } from '../lib/navStyle';
@@ -436,7 +436,7 @@ export default function Dock() {
   const other = React.useCallback(() => { haptics.select(); setFocusKey((k) => k + 1); }, []);
   // Picking up a thread from the session sheet puts the cursor in the field.
   const resumed = useResume();
-  useEffect(() => { if (resumed) { setFocusKey((k) => k + 1); if (navStyle() === 'bar') setBarMode('input'); } }, [resumed]);
+  useEffect(() => { if (resumed) { setFocusKey((k) => k + 1); if (navStyle() === 'bar' || navStyle() === 'klar') setBarMode('input'); } }, [resumed]);
   const spoke = useRef(false);
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
   /** Counts sentences, so a slow answer for an older one never lands. */
@@ -454,7 +454,10 @@ export default function Dock() {
   useEffect(() => { if (talking) setListenKey(Date.now()); }, [talking]);
   // Tapping Memo is the same as tapping the mic (Julian 08.11.: Memo needs a purpose).
   const buddyTalkN = useBuddyTalk();
-  useEffect(() => { if (!buddyTalkN) return; if (navStyle() === 'bar') setBarMode('input'); setListenKey(Date.now()); }, [buddyTalkN]);
+  useEffect(() => { if (!buddyTalkN) return; if (navStyle() === 'bar' || navStyle() === 'klar') setBarMode('input'); setListenKey(Date.now()); }, [buddyTalkN]);
+  // A long press on Memo goes straight to the keyboard (klar).
+  const buddyKeysN = useBuddyKeys();
+  useEffect(() => { if (!buddyKeysN) return; setBarMode('input'); setFocusKey((k) => k + 1); }, [buddyKeysN]);
   useEffect(() => {
     if (!talking) return;
     const sub = BackHandler.addEventListener('hardwareBackPress', () => { setTalkOpen(false); setTurn(null); light(null); return true; });
@@ -467,7 +470,9 @@ export default function Dock() {
   // Tab screens already leave room for the tabs; the chat scrolls past both.
   // Julian 31.10. 15:40: with the tabs folded into the handle, the field drops into their place.
   const folded = useNavFolded();
-  useEffect(() => { setDockSpace(where && shown ? h + (where.chat ? (folded ? 0 : navH() + 10) : where.tab ? 0 : 8) : 0); }, [h, !!where, shown, folded]);
+  // Klar: the input lies over the nav pill instead of above it, so only what is taller than the pill needs extra room.
+  const klarTabs = !!where && (where.tab || !!where.chat) && navStyle() === 'klar';
+  useEffect(() => { setDockSpace(!where || !shown ? 0 : klarTabs ? Math.max(0, h - navH()) + (where.chat ? navH() + 18 : 0) : h + (where.chat ? (folded ? 0 : navH() + 10) : where.tab ? 0 : 8)); }, [h, !!where, shown, folded, klarTabs]);
   useEffect(() => () => timers.current.forEach(clearTimeout), []);
   // Shared to FamCal from the browser or another app (Julian 28.10.): as if typed into the field.
   const hearRef = useRef<(raw: string, how?: { voice?: boolean }) => void>(() => {});
@@ -480,7 +485,8 @@ export default function Dock() {
 
   // Examples only while the calendar is still empty; after that they are clutter (Julian 27.10.).
   const onTabs = !!where && (where.tab || !!where.chat);
-  const above = navStyle() === 'bar' && onTabs ? Math.max(insets.bottom, 8) + 4 : folded && onTabs ? Math.max(insets.bottom, 12) + 10 : navTop(insets.bottom) + (navStyle() === 'strip' && onTabs ? 4 : 10);
+  const klar = onTabs && navStyle() === 'klar';
+  const above = klar ? klarFoot(insets.bottom) : navStyle() === 'bar' && onTabs ? Math.max(insets.bottom, 8) + 4 : folded && onTabs ? Math.max(insets.bottom, 12) + 10 : navTop(insets.bottom) + (navStyle() === 'strip' && onTabs ? 4 : 10);
   // One bar (Julian 05.11. 08:10, like the Dynamic Island): at rest the field sits beside the tab circle;
   // the open tabs squeeze it into a mic; using it pushes the circle away and it takes the whole width.
   const bar = onTabs && navStyle() === 'bar';
@@ -512,7 +518,7 @@ export default function Dock() {
   useEffect(() => { wAnim.value = withTiming(tabsW, { duration: 240, easing: Easing.bezier(0.23, 1, 0.32, 1) }); }, [tabsW]);
   const wStyle = useAnimatedStyle(() => ({ width: wAnim.value }));
   // Typing hides the tabs, so the field drops into their place right above the keyboard.
-  const bottom = !where ? 0 : kb > 0 ? kb + 8 : onTabs ? (typing && Platform.OS === 'web' ? Math.max(insets.bottom, 12) + 10 : above) : insets.bottom + 12 + where.lift;
+  const bottom = !where ? 0 : kb > 0 ? kb + 8 : onTabs ? (typing && Platform.OS === 'web' && !klar ? Math.max(insets.bottom, 12) + 10 : above) : insets.bottom + 12 + where.lift;
   useEffect(() => { setDockTop(where ? bottom + (shown ? h : 0) : 0); }, [bottom, h, !!where, shown]);
   // The field's own top edge (cards and pills above it don't count): Memo sits right on it (Julian 08.11.).
   // The field is the last row, flush with the bottom, so its top is bottom + its own height. Its y from onLayout went stale
@@ -533,6 +539,13 @@ export default function Dock() {
   // Sprechkarte, with its answers to tap. The handlers are read at tap time, so they always see the current card.
   const sp = useSpeak();
   const cardOpen = speakOpen(sp);
+  // Klar (Julian 13.11.): at rest only the nav pill shows. Tapping Memo, typing or a waiting sentence opens the input,
+  // which lies over the pill; speaking shows the Sprechkarte in the same place.
+  const klarOpen = klar && (typing || barRaw === 'input');
+  const klarShow = klarOpen && !cardOpen;
+  const kA = useSharedValue(klarShow ? 1 : 0);
+  useEffect(() => { kA.value = withTiming(klarShow ? 1 : 0, { duration: klarShow ? 240 : 140, easing: Easing.bezier(0.23, 1, 0.32, 1) }); }, [klarShow]);
+  const klarStyle = useAnimatedStyle((): any => ({ opacity: kA.value, transform: [{ scale: 0.92 + 0.08 * kA.value }] }));
   const liveQ = useRef<any>({});
   // Memo never sits on a card above the field (Julian 08.11.: "make sure the mascot doesn't overlap").
   useEffect(() => { setBuddy({ covered: !!turn && !cardOpen }); return () => setBuddy({ covered: false }); }, [!!turn, cardOpen]);
@@ -954,12 +967,14 @@ export default function Dock() {
     {/* Julian 31.10. 17:02: a short, tight fade (the long soft one covered too much of small screens), solid from just above the card down, so nothing shines through. */}
     {/* On the tabs the nav bar paints the ground under field and pill (NavBar.tsx); here only while typing, when the bar is away. */}
     {/* Julian 05.11.: no soft fade above the field; a solid ground up to the middle of the field, which hides its edge. */}
-    {onTabs && !kb && !(typing && Platform.OS === 'web') ? null : <View pointerEvents="none" style={{ position: 'absolute', left: 0, right: 0, bottom: fadeFrom, height: bottom - fadeFrom + 27, backgroundColor: tokens.bg }} />}
+    {klar || (onTabs && !kb && !(typing && Platform.OS === 'web')) ? null : <View pointerEvents="none" style={{ position: 'absolute', left: 0, right: 0, bottom: fadeFrom, height: bottom - fadeFrom + 27, backgroundColor: tokens.bg }} />}
+    {/* Klar: a tap beside the open input puts it away; words already typed stay in it. */}
+    {klarShow ? <Pressable accessibilityLabel={tx('Eingabe schließen', 'Close input')} onPress={() => { Keyboard.dismiss(); const b = getBuddy(); if (!b.typed && !b.listening) setBarMode('rest'); }} style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0 }} /> : null}
     <Animated.View pointerEvents="box-none" onLayout={(e) => setH(e.nativeEvent.layout.height)} style={[{ position: 'absolute', left: onTabs ? 14 : 18, right: onTabs ? 14 : 18, gap: 10 }, bStyle]}>
       {where.chat || turn ? null : <Peek />}
       {turn || !onTabs ? null : <SessionPill />}
       {turn && !cardOpen ? (
-        <Animated.View key={turn.id} entering={FadeInDown.duration(220).easing(easing.out)} exiting={FadeOut.duration(150).easing(easing.out)} style={[{ maxHeight: 420, borderRadius: 26, backgroundColor: tokens.row }, shadow]}>
+        <Animated.View key={turn.id} entering={FadeInDown.duration(220).easing(easing.out)} exiting={FadeOut.duration(150).easing(easing.out)} style={[{ maxHeight: 420, borderRadius: 26 }, klar ? glass.card : [{ backgroundColor: tokens.row }, shadow]]}>
           <ScrollView ref={scroller} onContentSizeChange={() => scroller.current?.scrollToEnd({ animated: false })} contentContainerStyle={{ padding: 18, gap: 12 }} showsVerticalScrollIndicator={false}>
             {turn.result.kind === 'cut' ? (
               <>
@@ -1038,7 +1053,7 @@ export default function Dock() {
           </ScrollView>
         </Animated.View>
       ) : null}
-      {where.chat && !simple ? (
+      {where.chat && !simple && (!klar || klarShow) ? (
         <View accessibilityRole="radiogroup" style={{ alignSelf: 'flex-start', flexDirection: 'row', padding: 3, borderRadius: 999, backgroundColor: tokens.segBg }}>
           {(['card', 'msg'] as const).map((m) => (
             <PressScale key={m} accessibilityRole="radio" accessibilityState={{ checked: mode === m }} onPress={() => { haptics.select(); setMode(m); }} style={{ height: 32, paddingHorizontal: 14, borderRadius: 999, justifyContent: 'center', backgroundColor: mode === m ? tokens.row : 'transparent' }}>
@@ -1047,7 +1062,30 @@ export default function Dock() {
           ))}
         </View>
       ) : null}
-      {bar ? (
+      {klar ? (
+      // The spot of the nav pill: empty at rest (the pill shows through), the typing card when the input is open.
+      <View onLayout={(e) => setFieldH(e.nativeEvent.layout.height)} pointerEvents={klarShow ? 'box-none' : 'none'} style={{ minHeight: navH(), justifyContent: 'flex-end' }}>
+        {priv.ohneKi ? null : (
+          <Animated.View style={[{ transformOrigin: '82% 100%' } as any, klarStyle]}>
+            <TalkBar
+              key="tabs"
+              split
+              card
+              klar
+              speakCard
+              onIdle={() => setBarMode('rest')}
+              onBusy={() => setBarMode('input')}
+              onSend={hear}
+              onPlus={() => router.push('/neu')}
+              spoken={SPOKEN[kind]}
+              listenKey={listenKey}
+              focusKey={focusKey}
+              placeholder={resumed ? tx(`Weiter zu „${resumed.said.slice(0, 24)}“ …`, `More on “${resumed.said.slice(0, 24)}” …`) : where.chat && mode === 'msg' ? tx('Nachricht an die Familie …', 'Message to the family …') : turn?.result.kind === 'cut' ? tx('Sprich einfach weiter …', 'Just keep talking …') : turn && kind === 'kalender' ? tx('Antworten oder ergänzen …', 'Reply or add …') : tx('Was steht an?', "What's coming up?")}
+            />
+          </Animated.View>
+        )}
+      </View>
+      ) : bar ? (
       // Julian 05.11. 08:48: one dark shape at the bottom; tab icon and field share it and it morphs as one piece.
       <View onLayout={(e) => setFieldH(e.nativeEvent.layout.height)} style={[{ alignSelf: 'flex-end', width: W - 28, borderRadius: 27, backgroundColor: tokens.ink }, floatShadow]}>
       <View style={{ flexDirection: 'row', alignItems: 'flex-end', borderRadius: 27, overflow: 'hidden' }}>
@@ -1115,7 +1153,7 @@ export default function Dock() {
       </Animated.View>
       </Animated.View>
       )}
-      {onTabs && !priv.ohneKi ? <SpeakCard barH={bar ? D : 52} from={bar ? tokens.ink : tokens.row} /> : null}
+      {onTabs && !priv.ohneKi ? <SpeakCard klar={klar} barH={bar ? D : 52} from={bar ? tokens.ink : tokens.row} /> : null}
     </Animated.View>
     </Other.Provider>
   );

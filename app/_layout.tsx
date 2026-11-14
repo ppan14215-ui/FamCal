@@ -6,11 +6,11 @@ import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider, SafeAreaInsetsContext } from 'react-native-safe-area-context';
 import { useFonts } from 'expo-font';
-// Per-weight imports so only the four weights we use get bundled.
-import { Geist_400Regular } from '@expo-google-fonts/geist/400Regular';
-import { Geist_500Medium } from '@expo-google-fonts/geist/500Medium';
-import { Geist_600SemiBold } from '@expo-google-fonts/geist/600SemiBold';
-import { Geist_700Bold } from '@expo-google-fonts/geist/700Bold';
+// Per-weight imports so only the four weights we use get bundled. Inter since the klar look (Julian 13.11.).
+import { Inter_400Regular } from '@expo-google-fonts/inter/400Regular';
+import { Inter_500Medium } from '@expo-google-fonts/inter/500Medium';
+import { Inter_600SemiBold } from '@expo-google-fonts/inter/600SemiBold';
+import { Inter_700Bold } from '@expo-google-fonts/inter/700Bold';
 import ToastHost from '../src/components/ToastHost';
 import { initSentry, wrapRoot } from '../src/lib/sentry';
 import { initAnalytics } from '../src/lib/analytics';
@@ -26,6 +26,7 @@ import BuddyIntro from '../src/components/buddy/BuddyIntro';
 import { tokens } from '../src/theme';
 import { useThemeGen, Keyed } from '../src/theme/mode';
 import { isDark } from '../src/theme/tokens';
+import { navStyle } from '../src/lib/navStyle';
 
 // Crashes first, so a crash during start is caught; then analytics (both no-ops on the web link and in dev).
 initSentry();
@@ -39,9 +40,11 @@ const WebInsets = ({ children }: { children: React.ReactNode }) =>
   Platform.OS === 'web' ? <SafeAreaInsetsContext.Provider value={ZERO}>{children}</SafeAreaInsetsContext.Provider> : <>{children}</>;
 
 const sheet = { presentation: 'transparentModal', animation: 'fade', contentStyle: { backgroundColor: 'transparent' } } as const;
+// Klar look: the plus menu grows out of the plus by itself, so the screen under it must not fade as well.
+const plusMenu = { ...sheet, animation: 'none' } as const;
 
 function RootLayout() {
-  const [loaded, error] = useFonts({ Geist_400Regular, Geist_500Medium, Geist_600SemiBold, Geist_700Bold });
+  const [loaded, error] = useFonts({ Inter_400Regular, Inter_500Medium, Inter_600SemiBold, Inter_700Bold });
   // Darkmode: a new palette remounts the tree once; the page that switched opens again.
   // Darkmode: a new palette redraws every screen; where you are stays as it is.
   const gen = useThemeGen();
@@ -64,7 +67,7 @@ function RootLayout() {
             <Stack.Screen name="index" />
             <Stack.Screen name="onboarding" options={{ animation: 'fade' }} />
             <Stack.Screen name="(tabs)" options={{ animation: 'fade' }} />
-            <Stack.Screen name="neu" options={sheet} />
+            <Stack.Screen name="neu" options={navStyle() === 'klar' ? plusMenu : sheet} />
             <Stack.Screen name="symbol" options={sheet} />
             <Stack.Screen name="meilenstein/[id]" options={sheet} />
             <Stack.Screen name="titel" options={sheet} />
