@@ -46,6 +46,7 @@ Alle sichtbaren Änderungen an FamCal. Neueste oben. Agenten und Menschen: Ände
 - Neuer Termin sieht aus wie im Entwurf: oben Schließen, Name der Seite und Sichern, das Symbol neben dem großen Titel, darunter je eine ruhige Zeile für Wann, Wer, Wo, Erinnern, Mitbringen, Wiederholen und Notiz. Die vier Kacheln und der Link Mehr sind weg.
 - Termin ändern ist aus denselben Zeilen gebaut wie Neuer Termin. Löschen liegt auf dem Blatt hinter den drei Punkten.
 - Ein neu gesicherter Termin steht in Heute und im Monat wieder an der richtigen Stelle nach Uhrzeit.
+- Familie sieht aus wie im Entwurf: oben Zurück und Einladen, darunter je Person eine ruhige Zeile mit Kreis, Name, einem kurzen grauen Wort (Alter beim Kind) und der Farbe als Punkt. Hinzufügen und der Familiencode liegen hinter Einladen, entfernt wird mit einem Wisch nach links.
 
 ### App funktioniert zuverlässig (09.11. Audit)
 - Nach längerer Pause im Hintergrund klappen Assistent und Spracheingabe gleich beim ersten Satz, statt "Ich komme gerade nicht an den Assistenten".
