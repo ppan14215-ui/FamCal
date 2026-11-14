@@ -16,7 +16,7 @@ import PressScale from './ui/PressScale';
 import LineIcon from './ui/LineIcon';
 import { tokens, persons as basePersons } from '../theme';
 import { useBubble } from '../lib/look';
-import { HEAD_SHADOW } from './ui/HeaderRight';
+import { HEAD_SHADOW, CARD_SHADOW } from './ui/HeaderRight';
 import { swapIn, rowLayout } from '../theme/motion';
 import { useStore, actions } from '../state/store';
 import { useDockSpace } from '../lib/dockSpace';
@@ -41,7 +41,8 @@ import type { When } from '../lib/when';
 import type { CalEvent } from '../state/types';
 import { haptics } from '../lib/haptics';
 import PlaceAsk, { PinChip } from './PlaceAsk';
-import { isPoints, total } from '../lib/points';
+import { isPoints, total, listIcon } from '../lib/points';
+import type { ClayName } from '../lib/clayIcons';
 
 
 export const at = (s: string) => { const d = new Date(s); return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`; };
@@ -71,6 +72,28 @@ function WhoDots({ who }: { who?: CalEvent['who'] }) {
   return <View style={{ flexDirection: 'row', gap: 3 }}>{cs.map((c, i) => <View key={i} style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: c }} />)}</View>;
 }
 
+/**
+ * What was made, as one object like Wabi's cards (Julian 14.11.: "cards and shadow like wabi"): its picture on the
+ * left, its name in bold, one grey line below, and a small arrow when a tap opens it.
+ */
+function Made({ icon, title, sub, onPress, right, celebrate }: { icon: ClayName; title: string; sub?: string; onPress?: () => void; right?: React.ReactNode; celebrate?: boolean }) {
+  const row = (
+    <>
+      <Tile name={icon} size={48} radius={12} ratio={0.66} bg={tokens.chipBg} celebrate={celebrate} />
+      <View style={{ flex: 1, minWidth: 0 }}>
+        <Txt size={17} line={22} weight={600} numberOfLines={2}>{title}</Txt>
+        {sub ? <Txt size={14.5} line={20} color={tokens.sub} numberOfLines={1}>{sub}</Txt> : null}
+      </View>
+      {right}
+      {onPress ? <LineIcon name="arrow" size={18} color={tokens.mute} /> : null}
+    </>
+  );
+  const box = { flexDirection: 'row' as const, alignItems: 'center' as const, gap: 12, padding: 10, paddingRight: 14 };
+  return onPress
+    ? <PressScale scale={0.99} accessibilityRole="button" accessibilityLabel={sub ? `${title}, ${sub}` : title} onPress={onPress} style={box}>{row}</PressScale>
+    : <View style={box}>{row}</View>;
+}
+
 export function Termine({ ids, snap, changed, ask, timeQ, fresh, placeQ }: { ids: string[]; snap?: EventSnap[]; changed?: boolean; ask?: 'J' | 'T'; timeQ?: string; fresh?: boolean; placeQ?: boolean }) {
   const events = useStore((s) => s.events);
   const still = useStill();
@@ -86,15 +109,10 @@ export function Termine({ ids, snap, changed, ask, timeQ, fresh, placeQ }: { ids
   return (
     <>
       {live.map((e) => (
-        <PressScale key={e.id} scale={0.99} onPress={still ? noop : () => router.push(`/termin/${e.id}`)} style={{ flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 44, paddingVertical: 8, paddingHorizontal: 14 }}>
-          <ClayIcon name={e.icon} size={26} celebrate={play} />
-          <Txt size={17} line={22} numberOfLines={2} style={{ flex: 1, minWidth: 0 }}>
-            {e.title}
-            <Txt size={14.5} line={22} color={tokens.sub}>{`  ${[(e as CalEvent).endDate && (e as CalEvent).endDate! > e.date ? tx(`${short(e.date)} bis ${short((e as CalEvent).endDate!)}`, `${short(e.date)} to ${short((e as CalEvent).endDate!)}`) : short(e.date), e.allDay ? tx('ganztägig', 'all day') : e.end ? tx(`${hm(e.start)} bis ${hm(e.end)}`, `${hm(e.start)} to ${hm(e.end)}`) : hm(e.start), e.place].filter(Boolean).join(' · ')}`}</Txt>
-          </Txt>
-          {e.place ? <PinChip place={e.place} still={still} /> : null}
-          <WhoDots who={e.who} />
-        </PressScale>
+        <Made key={e.id} icon={e.icon} celebrate={play} title={e.title}
+          sub={[(e as CalEvent).endDate && (e as CalEvent).endDate! > e.date ? tx(`${short(e.date)} bis ${short((e as CalEvent).endDate!)}`, `${short(e.date)} to ${short((e as CalEvent).endDate!)}`) : short(e.date), e.allDay ? tx('ganztägig', 'all day') : e.end ? tx(`${hm(e.start)} bis ${hm(e.end)}`, `${hm(e.start)} to ${hm(e.end)}`) : hm(e.start), e.place].filter(Boolean).join(' · ')}
+          onPress={still ? noop : () => router.push(`/termin/${e.id}`)}
+          right={<>{e.place ? <PinChip place={e.place} still={still} /> : null}<WhoDots who={e.who} /></>} />
       ))}
       {!still && timeQ && live.length === 1 ? <TimeAsk e={live[0]} q={timeQ} /> : null}
       {/* Julian 31.10.: "Welcher Kinderarzt ist das?", then remembered for next time. */}
@@ -201,41 +219,16 @@ function EditTermine({ ids, me }: { ids: string[]; me: 'J' | 'T' }) {
 export function Items({ list, ids, name, names }: { list: string; ids: string[]; name?: string; names?: string[] }) {
   const l = useStore((s) => s.lists.find((x) => x.id === list));
   const still = useStill();
-  // Lists still live on each phone: on the partner's phone the card shows what was added.
-  if (!l || !ids.some((id) => l.sections.some((sec) => sec.items.some((i) => i.id === id)))) return (
-    <>
-      <Txt size={15} weight={600} style={{ paddingHorizontal: 14, paddingTop: 12, paddingBottom: 4 }}>{name ?? l?.name ?? tx('Liste', 'List')}</Txt>
-      {(names ?? []).map((n, k) => (
-        <View key={k} style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 14, paddingVertical: 7 }}>
-          <Check size={22} done={false} />
-          <Txt size={15} style={{ flex: 1 }}>{n}</Txt>
-        </View>
-      ))}
-      <View style={{ height: 6 }} />
-    </>
-  );
-  const all = l.sections.flatMap((s) => s.items);
+  const all = l ? l.sections.flatMap((s) => s.items) : [];
   const live = ids.map((id) => all.find((i) => i.id === id)).filter(Boolean) as typeof all;
+  // Lists still live on each phone: on the partner's phone the card says what was added, and opens nothing.
+  const said = live.length && l
+    ? live.map((i) => (isPoints(l) ? tx(`${i.name} ${total(i)} Punkte`, `${i.name} ${total(i)} points`) : `${i.qty ? `${i.qty} ` : ''}${i.name}`))
+    : names ?? [];
+  const sub = said.slice(0, 3).join(', ') + (said.length > 3 ? ` +${said.length - 3}` : '');
   return (
-    <>
-      <PressScale scale={0.99} onPress={still ? noop : () => { actions.setActiveList(l.id); router.navigate('/listen'); }} style={{ paddingHorizontal: 14, paddingTop: 12, paddingBottom: 4 }}>
-        <Txt size={15} weight={600}>{l.name}</Txt>
-      </PressScale>
-      {/* A game shows the score, not checkboxes (Julian 31.10. 13:59). */}
-      {isPoints(l) ? live.map((i) => (
-        <View key={i.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 14, paddingVertical: 7 }}>
-          <Txt size={15} style={{ flex: 1 }}>{i.name}</Txt>
-          <Txt size={15} weight={600}>{tx(`${total(i)} Punkte`, `${total(i)} points`)}</Txt>
-        </View>
-      )) : live.map((i) => (
-        <View key={i.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 14, paddingVertical: 7 }}>
-          <Check size={22} done={i.done} onPress={still ? undefined : () => actions.toggleItem(l.id, i.id)} />
-          <Txt size={15} style={{ flex: 1 }} color={i.done ? tokens.mute : tokens.ink}>{i.qty ? `${i.qty} ` : ''}{i.name}</Txt>
-        </View>
-      ))}
-      {live.length < ids.length ? <Txt size={13} color={tokens.mute} style={{ paddingHorizontal: 14, paddingVertical: 4 }}>{tx('Ein Teil ist nicht mehr auf der Liste.', 'Some are no longer on the list.')}</Txt> : null}
-      <View style={{ height: 6 }} />
-    </>
+    <Made icon={l ? listIcon(l) : 'checkliste'} title={l?.name ?? name ?? tx('Liste', 'List')} sub={sub || undefined}
+      onPress={!l ? undefined : still ? noop : () => { actions.setActiveList(l.id); router.navigate('/listen'); }} />
   );
 }
 
@@ -407,7 +400,7 @@ export function Ask({ f, me, answer }: { f: FeedEntry; me: 'J' | 'T'; answer?: F
  * it did grows in below. Thinking and the finished entry draw the same frame,
  * so nothing jumps when one becomes the other.
  */
-export const cardFrame = { alignSelf: 'stretch' as const, borderRadius: 16, overflow: 'hidden' as const, backgroundColor: tokens.row, borderWidth: 1, borderColor: tokens.hair };
+export const cardFrame = { alignSelf: 'stretch' as const, borderRadius: 20, overflow: 'hidden' as const, backgroundColor: tokens.row, borderWidth: 1, borderColor: tokens.hair, boxShadow: CARD_SHADOW };
 /**
  * Memo is the assistant's face (Julian 01.11.): thinks with a "?" while working, happy eyes when it has answered,
  * just entered something. Older cards in the log stay still, so a long chat never twitches.

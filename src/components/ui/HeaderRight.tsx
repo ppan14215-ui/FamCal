@@ -17,6 +17,8 @@ import { setPlusFrom } from '../../lib/plusFrom';
 export const HEAD_BTN = 40;
 /** The soft lift of white controls on the ground. */
 export const HEAD_SHADOW = '0 0 0 1px rgba(17,20,23,0.06), 0 2px 6px rgba(17,20,23,0.05)';
+/** A card that lies on the ground (Julian 14.11.: "cards and shadow like wabi"): soft and low, it lifts a little and never glows. */
+export const CARD_SHADOW = '0 1px 2px rgba(17,20,23,0.04), 0 6px 16px rgba(17,20,23,0.06)';
 
 /** One round white button of the head. */
 export function HeadBtn({ icon, label, onPress, size = 21 }: { icon: LineName; label: string; onPress: () => void; size?: number }) {

@@ -10,7 +10,7 @@ import { tokens } from '../../theme';
 export type LineName =
   | 'home' | 'cal' | 'list' | 'inbox' | 'plus' | 'mic' | 'sync' | 'camera' | 'back' | 'chev'
   | 'check' | 'x' | 'lock' | 'clock' | 'copy' | 'send' | 'flash' | 'pin' | 'sparkle' | 'settings'
-  | 'papier' | 'users' | 'undo' | 'trash' | 'warn' | 'chat' | 'grid' | 'file' | 'image' | 'up' | 'search' | 'edit' | 'more';
+  | 'papier' | 'users' | 'undo' | 'trash' | 'warn' | 'chat' | 'grid' | 'file' | 'image' | 'up' | 'search' | 'edit' | 'more' | 'arrow';
 
 type Props = { name: LineName; size?: number; color?: string; stroke?: number };
 
@@ -56,6 +56,7 @@ function shape(n: LineName, p: any) {
     case 'image': return <><Rect {...p} x={4} y={5} width={16} height={14} rx={2} /><Circle {...p} cx={9} cy={10} r={1.5} /><Path {...p} d="M4 17l5-4 4 3 3-2 4 3" /></>;
     case 'up': return <Path {...p} d="M12 19V5M6 11l6-6 6 6" />;
     case 'search': return <><Circle {...p} cx={11} cy={11} r={6.5} /><Path {...p} d="M16 16l4 4" /></>;
+    case 'arrow': return <Path {...p} d="M7 17L17 7M9 7h8v8" />;
     case 'more': return <><Circle cx={6} cy={12} r={1.4} fill={p.stroke} /><Circle cx={12} cy={12} r={1.4} fill={p.stroke} /><Circle cx={18} cy={12} r={1.4} fill={p.stroke} /></>;
     case 'edit': return <><Path {...p} d="M4 20l1-4.5L16.5 4a2 2 0 0 1 3 0l.5.5a2 2 0 0 1 0 3L8.5 19z" /><Path {...p} d="M14.5 6l3.5 3.5" /></>;
     case 'undo': return <><Path {...p} d="M9 14L4 9l5-5" /><Path {...p} d="M4 9h10a6 6 0 0 1 0 12h-3" /></>;
