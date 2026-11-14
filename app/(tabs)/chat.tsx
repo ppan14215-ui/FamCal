@@ -47,7 +47,6 @@ export default function Chat() {
   const insets = useSafeAreaInsets();
   const dock = useDockSpace();
   const feed = useFeed();
-  const people = useStore((s) => s.people.length);
   const scroller = useRef<ScrollView>(null);
   const trackY = useScroller(scroller);
   const me = getFamily() ? myRole() : 'J';
@@ -72,7 +71,7 @@ export default function Chat() {
       {simple ? null : <Jumps />}
       {/* The title stays put while the messages scroll under it (Julian 30.10. 22:15). */}
       <Head>
-        <H1 sub={tx(`Familie · ${2 + people} Personen`, `Family · ${2 + people} people`)} right={<HeaderRight />}>Chat</H1>
+        <H1 right={<HeaderRight people />}>Chat</H1>
       </Head>
       <ScrollView ref={scroller} onScroll={(e) => trackY(e.nativeEvent.contentOffset.y)} scrollEventThrottle={32} onContentSizeChange={() => { if (!more) scroller.current?.scrollToEnd({ animated: false }); }} contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 18, paddingTop: 8, paddingBottom: dock + (kb > 0 ? kb : insets.bottom) + 40, gap: 12 }} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
         {feed.length > shown.length ? (

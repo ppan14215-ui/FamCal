@@ -1,7 +1,7 @@
 /**
  * A place a spoken change can land on. It registers under its id and, when
  * the change arrives there, glows and keeps a
- * mark on its left edge until the receipt is closed (Julian 27.10.:
+ * teal mark on its left edge until the receipt is closed (Julian 27.10.:
  * adding is the core of the app, nobody may wonder what the machine did).
  */
 import React, { useEffect } from 'react';
@@ -23,15 +23,13 @@ export default function Fresh({ id, children, style, radius = 0, bleed = 0 }: { 
     glow.value = withSequence(withTiming(1, { duration: 120 }), withDelay(900, withTiming(0.35, { duration: 700 })));
     mark.value = withTiming(1, { duration: still ? 0 : 180, easing: Easing.out(Easing.cubic) });
   }, [on]);
-  // Klar look (Julian 14.11.): the new line itself is the confirmation. It is washed in the one interaction colour
-  // for a moment, thin enough that the words under it stay dark, and the mark on its edge wears the same colour.
-  const shade = useAnimatedStyle(() => ({ opacity: glow.value * 0.16 }));
+  const shade = useAnimatedStyle(() => ({ opacity: glow.value * 0.5 }));
   const bar = useAnimatedStyle(() => ({ opacity: mark.value, transform: [{ scaleY: mark.value }] }));
   return (
     <Animated.View ref={ref as any} collapsable={false} style={style}>
       {children}
-      <Animated.View pointerEvents="none" style={[{ position: 'absolute', left: -bleed, right: -bleed, top: 0, bottom: 0, borderRadius: radius, backgroundColor: tokens.accent }, shade]} />
-      <Animated.View pointerEvents="none" style={[{ position: 'absolute', left: 3 - bleed, top: '22%', bottom: '22%', width: 4, borderRadius: 999, backgroundColor: tokens.accent }, bar]} />
+      <Animated.View pointerEvents="none" style={[{ position: 'absolute', left: -bleed, right: -bleed, top: 0, bottom: 0, borderRadius: radius, backgroundColor: tokens.doneSoft }, shade]} />
+      <Animated.View pointerEvents="none" style={[{ position: 'absolute', left: 3 - bleed, top: '22%', bottom: '22%', width: 4, borderRadius: 999, backgroundColor: tokens.done }, bar]} />
     </Animated.View>
   );
 }

@@ -12,8 +12,8 @@
  */
 const LIGHT = {
   // Klar (Julian 13.11.): white, near black and greys. Colour comes from people only, never from the app.
-  // Ground and accent are measured from the "Recordings" reference (Julian 14.11.).
-  bg: '#F5F5F7',
+  // Julian 14.11. 09:33: the look from before the Recordings style, so the ground is the near white again and nothing is orange.
+  bg: '#FAFAFA',
   row: '#FFFFFF',
   ink: '#111417',
   sub: '#6B7176',
@@ -46,11 +46,11 @@ const LIGHT = {
   /** Frosted surface over a picture (the Symbol chip on a Termin). */
   glass: 'rgba(255,255,255,0.7)',
   /** The calm cover while the assistant works. */
-  veil: 'rgba(245,245,247,0.95)',
-  /** The one interaction colour (Julian 14.11.): the plus, the record dot, today, the line of now. Never a surface. */
-  accent: '#F86443',
-  /** Its shadow under the plus. */
-  accentGlow: 'rgba(248,100,67,0.34)',
+  veil: 'rgba(250,250,250,0.95)',
+  /** What marks today and now. It was orange for one night (the Recordings style); Julian chose the look before it, so it is ink. */
+  accent: '#111417',
+  /** Its soft shadow. */
+  accentGlow: 'rgba(17,20,23,0.14)',
 };
 export type Tokens = Record<keyof typeof LIGHT, string>;
 
@@ -64,7 +64,7 @@ const DARK: Tokens = {
   done: '#5FB7AE', doneSoft: '#1E4F49', frist: '#F08A4B', vac: '#8C6A1F', vacInk: '#FFF4D6', segBg: '#151C20', segOn: '#3B4B53', pillOn: '#3B4B53', chipBg: '#2A363C',
   circleLine: '#3A464C', dotOff: '#3A464C', danger: '#F0766C', select: 'rgba(95,183,174,0.32)', ok: '#4CC28E',
   scrim: 'rgba(0,0,0,0.55)', noteBg: '#1F272B', paper: '#1C2326', onInk: '#16232A', glass: 'rgba(26,35,40,0.72)', veil: 'rgba(15,21,24,0.95)',
-  accent: '#FF7A59', accentGlow: 'rgba(255,122,89,0.3)',
+  accent: '#F2F4F4', accentGlow: 'rgba(0,0,0,0.3)',
 };
 
 /** The live palette. Values swap in place with `applyPalette`, so every style reads the current one. */

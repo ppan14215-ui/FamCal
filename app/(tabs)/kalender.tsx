@@ -10,8 +10,8 @@ import Animated, { FadeInDown, FadeOut, useAnimatedStyle, useSharedValue, withSp
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { scheduleOnRN } from 'react-native-worklets';
 import { tokens, build, easing, springs, persons, personPalette, shade, PersonId } from '../../src/theme';
-import { Screen, Seg, Head } from '../../src/components/ui/kit';
-import Txt, { Dot } from '../../src/components/ui/Txt';
+import { Screen, Tabs, Head } from '../../src/components/ui/kit';
+import Txt from '../../src/components/ui/Txt';
 import LineIcon from '../../src/components/ui/LineIcon';
 import HeaderRight, { HeadArrows } from '../../src/components/ui/HeaderRight';
 import { useStore, actions, get, CalView } from '../../src/state/store';
@@ -20,12 +20,10 @@ import WeekView from '../../src/screens/kalender/WeekView';
 import MonthView, { monthTitle, shiftMonth } from '../../src/screens/kalender/MonthView';
 import YearView, { shiftYear } from '../../src/screens/kalender/YearView';
 import PressScale from '../../src/components/ui/PressScale';
-import { TODAY, WD_LONG, weekday, dayNum, MONTHS_SHORT, monthIdx, addDays, monday, isoWeek, daysBetween, dmShort, iso } from '../../src/lib/dates';
+import { TODAY, WD_LONG, weekday, dayNum, MONTHS_SHORT, monthIdx, addDays, monday, isoWeek, dmShort, iso } from '../../src/lib/dates';
 import { haptics } from '../../src/lib/haptics';
 import { tx, EN } from '../../src/i18n/lang';
 import { useSimple } from '../../src/lib/simple';
-import { useCalEvents } from '../../src/lib/useEvents';
-import { isInfoDay } from '../../src/lib/feiertage';
 
 const VIEWS: { key: CalView; label: string }[] = [
   { key: 'heute', label: tx('Heute', 'Today') },
@@ -78,29 +76,29 @@ function WhoFilter({ only }: { only?: boolean }) {
   );
 }
 
-/** The page title: tight and bold with a period, the grey info line below it (Julian 14.11., after the reference). */
+/**
+ * The page title as in the klar draft Julian approved (14.11. 09:33, the look before the Recordings style):
+ * semibold, no period, and the short grey info stands behind it on the same line ("Donnerstag 29. Okt").
+ */
 function Title({ text, sub, open, onPress, right }: { text: string; sub?: string; open: boolean; onPress: () => void; right?: React.ReactNode }) {
   const simple = useSimple();
   const view = useStore((s) => s.calView);
   const toggles = simple && (view === 'monat' || view === 'jahr');
   const name = (
-    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-      <Txt size={34} line={38} weight={700} tracking={-1.4} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8} style={{ flexShrink: 1 }}>{text}<Dot /></Txt>
+    <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 9 }}>
+      <Txt size={29} line={34} weight={600} tracking={-0.72} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8} style={{ flexShrink: 1 }}>{text}</Txt>
+      {sub ? <Txt size={16} line={21} color={tokens.sub} numberOfLines={1} style={{ flexShrink: 2 }}>{sub}</Txt> : null}
       {/* With the person filter the title opens the switch; the chevron shows which way. */}
-      {simple ? null : <View style={{ transform: [{ rotate: open ? '-90deg' : '90deg' }], marginTop: 4 }}><LineIcon name="chev" size={16} color={tokens.sub} stroke={2.2} /></View>}
+      {simple ? null : <View style={{ transform: [{ rotate: open ? '-90deg' : '90deg' }] }}><LineIcon name="chev" size={15} color={tokens.sub} stroke={2.2} /></View>}
     </View>
   );
   return (
-    <View style={{ gap: 3 }}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
-        {simple && !toggles ? <View style={{ flex: 1 }}>{name}</View> : (
-          // Simple: the name of the month opens the year, the year's number goes back to the month.
-          <PressScale scale={0.97} onPress={onPress} accessibilityLabel={simple ? (view === 'monat' ? tx('Jahr zeigen', 'Show year') : tx('Monat zeigen', 'Show month')) : tx('Ansicht wechseln', 'Change view')} accessibilityState={simple ? undefined : { expanded: open }} style={{ flex: 1 }}>{name}</PressScale>
-        )}
-        {right}
-      </View>
-      {/* The info line runs the whole width, under the buttons too. */}
-      {sub ? <Txt size={14} line={19} color={tokens.sub} numberOfLines={1}>{sub}</Txt> : null}
+    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12, minHeight: 40 }}>
+      {simple && !toggles ? <View style={{ flex: 1, minWidth: 0 }}>{name}</View> : (
+        // Simple: the name of the month opens the year, the year's number goes back to the month.
+        <PressScale scale={0.97} onPress={onPress} accessibilityLabel={simple ? (view === 'monat' ? tx('Jahr zeigen', 'Show year') : tx('Monat zeigen', 'Show month')) : tx('Ansicht wechseln', 'Change view')} accessibilityState={simple ? undefined : { expanded: open }} style={{ flex: 1, minWidth: 0 }}>{name}</PressScale>
+      )}
+      {right}
     </View>
   );
 }
@@ -147,7 +145,6 @@ export default function Kalender() {
   const simple = useSimple();
   const view = useStore((s) => s.calView);
   const day = useStore((s) => s.calDay);
-  const events = useCalEvents();
   // The view switch starts open and stays open after a pick (Julian 28.10.); the chevron folds it away.
   const [open, setOpen] = useState(true);
   // The switch fades in only when the chevron opens it; a view change that redraws the head keeps it still (Julian 01.11.).
@@ -189,15 +186,15 @@ export default function Kalender() {
   };
   const choose = (v: CalView) => { actions.setCalView(v); if (v === 'heute') actions.setCalDay(TODAY); };
   const seg = simple ? (
-    <Seg items={VIEWS} value={view} onChange={choose} />
+    <Tabs items={VIEWS} value={view} onChange={choose} bleed={18} />
   ) : open ? (
     <Animated.View entering={fadeIn} exiting={FadeOut.duration(120)} style={{ gap: 10 }}>
-      <Seg items={VIEWS} value={view} onChange={choose} />
+      <Tabs items={VIEWS} value={view} onChange={choose} bleed={18} />
       <WhoFilter />
     </Animated.View>
   ) : <WhoFilter only />;
 
-  // What the view shows, for the info line under the title.
+  // What the view shows, for the short info behind the title.
   const yr = Number(day.slice(0, 4));
   const [first, lastDay] = useMemo((): [string, string] => {
     if (view === 'heute') return [TODAY, TODAY];
@@ -206,30 +203,25 @@ export default function Kalender() {
     if (view === 'monat') return [`${day.slice(0, 7)}-01`, iso(new Date(Date.UTC(yr, monthIdx(day) + 1, 0)))];
     return [`${yr}-01-01`, `${yr}-12-31`];
   }, [view, day, yr]);
-  const n = useMemo(() => events.reduce((k, e) => k + (!e.work && !isInfoDay(e) && e.date <= lastDay && (e.endDate && e.endDate > e.date ? e.endDate : e.date) >= first ? 1 : 0), 0), [events, first, lastDay]);
-  const termine = tx(`${n} ${n === 1 ? 'Termin' : 'Termine'}`, `${n} ${n === 1 ? 'event' : 'events'}`);
 
   if (view === 'heute') {
     return (
       <View style={{ flex: 1, backgroundColor: tokens.bg, paddingTop: insets.top }}>
-        <Head><Title text={WD_LONG[weekday(TODAY)]} sub={`${dmShort(TODAY)} · ${termine}`} open={open} onPress={toggle} right={<HeaderRight />} />{seg}</Head>
+        <Head end={0}><Title text={WD_LONG[weekday(TODAY)]} sub={dmShort(TODAY)} open={open} onPress={toggle} right={<HeaderRight />} />{seg}</Head>
         <Animated.View entering={build} style={{ flex: 1 }}><AgendaView /></Animated.View>
       </View>
     );
   }
 
-  const left = daysBetween(TODAY, `${TODAY.slice(0, 4)}-12-31`);
-  const thisYear = Number(TODAY.slice(0, 4));
   const title = view === 'tag' ? tx('Tage', 'Days')
     : view === 'woche' ? tx(`KW ${isoWeek(day)}`, `Week ${isoWeek(day)}`)
     : view === 'monat' ? monthTitle(day).month
     : String(yr);
-  const sub = view === 'tag' || view === 'woche' ? `${span(first, lastDay)} · ${termine}`
-    : view === 'monat' ? `${yr} · ${termine}`
-    : yr === thisYear ? tx(`Noch ${left} Tage im Jahr`, `${left} days left this year`) : yr < thisYear ? tx('Rückblick', 'Looking back') : tx('Vorschau', 'Looking ahead');
+  // Short, so it fits behind the title beside the arrows and the two buttons.
+  const sub = view === 'tag' || view === 'woche' ? span(first, lastDay) : view === 'monat' ? String(yr) : undefined;
   const arrows = <HeadArrows onStep={(dir) => step(view, dir)} prev={STEP_LABEL[view][0]} next={STEP_LABEL[view][1]} />;
   return (
-    <Screen tab gap={14} head={<><Title text={title} sub={sub} open={open} onPress={toggle} right={<HeaderRight before={arrows} />} />{seg}</>}>
+    <Screen tab gap={14} headEnd={0} head={<><Title text={title} sub={sub} open={open} onPress={toggle} right={<HeaderRight before={arrows} />} />{seg}</>}>
       <GestureDetector gesture={pinch} touchAction="pan-y">
         <Animated.View style={zoomed}>
           <Arrive key={view} from={from.current}>
