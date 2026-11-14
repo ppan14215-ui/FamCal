@@ -5,7 +5,7 @@
  * Everything that belongs to today sits in today's block: what is open, deadlines coming close and what the app
  * thought of. Rows open on a tap, a swipe to the left deletes.
  */
-import React, { useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { View, ScrollView } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
@@ -231,7 +231,8 @@ function TodayExtras({ events }: { events: CalEvent[] }) {
   );
 }
 
-export default function AgendaView() {
+/** `reach`: the list covers at least this many days from today (the onboarding shows a day that may lie further out). */
+export default function AgendaView({ reach }: { reach?: number } = {}) {
   const events = useCalEvents();
   const tasks = useStore((s) => s.tasks);
   const docs = useStore((s) => s.docs);
@@ -242,7 +243,8 @@ export default function AgendaView() {
   const track = useScroller(ref);
   const view = useRef(0);
   const now = useNowMin();
-  const [count, setCount] = useState(FIRST_DAYS);
+  const [count, setCount] = useState(Math.max(FIRST_DAYS, reach ?? 0));
+  useEffect(() => { if (reach) setCount((c) => Math.max(c, Math.min(730, reach))); }, [reach]);
 
   const days = useMemo(() => {
     const end = addDays(TODAY, count);

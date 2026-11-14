@@ -145,12 +145,16 @@ function KlarCard() {
   const want: Stage = open ? 'card' : thinking && !late && !typing && mode !== 'input' ? 'think' : 'rest';
   const [stage, setStage] = useState<Stage>('rest');
   const thinkSince = useRef(0);
+  // When the thinking began. If it is already going on when the bubble may show (the keyboard just closed after a
+  // typed sentence), the bubble comes at once instead of waiting the beat again, so the nav never peeks in between.
+  const thinkFrom = useRef(0);
+  useEffect(() => { if (thinking) thinkFrom.current = Date.now(); }, [thinking]);
   useEffect(() => {
     if (want === stage) return;
     // The card opens at once. Everything else waits a beat: the card closes a moment before the thinking shows (two
     // stores, two renders), so the shape never starts back to the nav first; an answer that is there at once gets no
     // bubble at all; and a bubble that has started is seen for a moment before it goes home.
-    const wait = want === 'card' ? 0 : want === 'think' ? THINK_GATE : stage === 'card' ? 90 : Math.max(0, THINK_MIN - (Date.now() - thinkSince.current));
+    const wait = want === 'card' ? 0 : want === 'think' ? (stage === 'card' ? THINK_GATE : Math.max(0, THINK_GATE - (Date.now() - thinkFrom.current))) : stage === 'card' ? 90 : Math.max(0, THINK_MIN - (Date.now() - thinkSince.current));
     if (!wait) { setStage(want); return; }
     const t = setTimeout(() => { if (want === 'think') thinkSince.current = Date.now(); setStage(want); }, wait);
     return () => clearTimeout(t);

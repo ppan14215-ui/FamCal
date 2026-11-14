@@ -28,6 +28,9 @@ Alle sichtbaren Änderungen an FamCal. Neueste oben. Agenten und Menschen: Ände
 - Listen im klaren Look: Die Listen stehen oben als Chips mit kleinem Zeichen und Zahl der offenen Dinge, die gewählte ist dunkel. Die Zeilen liegen flach auf dem Grund, nur feine Linien.
 - Hinzufügen ist jetzt die nächste Zeile der Liste: leerer Kreis und Text. Was du dort schreibst, wird zur Zeile darüber, die Zeile bleibt für den nächsten Eintrag offen.
 - Einstellungen im klaren Look: Zeilen liegen flach auf dem Grund mit feinen Linien, keine weißen Blöcke mehr.
+- Onboarding, Ausprobieren: zeigt die App, wie sie jetzt ist. Kalender als Liste, Leiste mit Memo, dunkle Sprechkarte mit großen Worten, Ladeblase, die neue Zeile leuchtet auf.
+- Neue Zeilen leuchten überall in Orange auf statt in Grau.
+- Nach einem getippten Satz kommt die Ladeblase sofort, die Leiste blitzt nicht mehr dazwischen auf.
 
 ### App funktioniert zuverlässig (09.11. Audit)
 - Nach längerer Pause im Hintergrund klappen Assistent und Spracheingabe gleich beim ersten Satz, statt "Ich komme gerade nicht an den Assistenten".

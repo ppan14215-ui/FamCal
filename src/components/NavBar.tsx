@@ -340,9 +340,15 @@ export function BarTab({ on, icon, label, onPress, onW, offW }: { on: boolean; i
 const KLAR_ON = 118;
 const KLAR_OFF = 46;
 function KlarNav({ state, navigation }: BottomTabBarProps) {
+  return <KlarPill current={state.routes[state.index]?.name} onTab={(name) => navigation.navigate(name)} />;
+}
+/**
+ * The pill itself. The tabs use it through KlarNav; the onboarding shows the same pill in its try step, where the
+ * tabs are only to be seen (no `onTab`) and Memo is the one thing to tap.
+ */
+export function KlarPill({ current, onTab }: { current?: string; onTab?: (name: string) => void }) {
   const insets = useSafeAreaInsets();
   const { t } = useTranslation();
-  const current = state.routes[state.index]?.name;
   const focus = useFocus();
   const kb = useKeyboardInset();
   const typing = focus && (Platform.OS === 'web' || kb > 0);
@@ -363,10 +369,10 @@ function KlarNav({ state, navigation }: BottomTabBarProps) {
     <View pointerEvents="box-none" style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0 }}>
       <Animated.View pointerEvents={away ? 'none' : 'box-none'} style={[{ position: 'absolute', left: 0, right: 0, bottom: klarFoot(insets.bottom), alignItems: 'center' }, hide]}>
         <View onLayout={(e) => { pillW.current = e.nativeEvent.layout.width; tell(); }} style={[{ height: navH(), borderRadius: navH() / 2, padding: 5, flexDirection: 'row', alignItems: 'center' }, glass.nav]}>
-          <View accessibilityRole="tablist" style={{ flexDirection: 'row', alignItems: 'center', gap: 2 }}>
+          <View accessibilityRole="tablist" pointerEvents={onTab ? 'auto' : 'none'} style={{ flexDirection: 'row', alignItems: 'center', gap: 2 }}>
             {TABS.map((tab) => {
               const on = current === tab.name;
-              return <KlarTab key={tab.name} on={on} icon={tab.icon} label={t(tab.key)} onPress={() => { if (!on) { haptics.select(); navigation.navigate(tab.name); } }} />;
+              return <KlarTab key={tab.name} on={on} icon={tab.icon} label={t(tab.key)} onPress={() => { if (!on) { haptics.select(); onTab?.(tab.name); } }} />;
             })}
           </View>
           <View style={{ width: 1, height: 20, marginHorizontal: 6, backgroundColor: tokens.hair }} />

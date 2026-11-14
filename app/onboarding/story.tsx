@@ -26,7 +26,7 @@ import { View, TextInput, Pressable, ScrollView, useWindowDimensions, Platform }
 import Animated, { useSharedValue, useAnimatedStyle, withTiming, withDelay, Easing, useReducedMotion, FadeIn, FadeOut } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
-import Txt from '../../src/components/ui/Txt';
+import Txt, { Dot } from '../../src/components/ui/Txt';
 import { Btn, TextLink } from '../../src/components/ui/kit';
 import LineIcon from '../../src/components/ui/LineIcon';
 import PressScale from '../../src/components/ui/PressScale';
@@ -35,9 +35,10 @@ import type { ClayName } from '../../src/lib/clayIcons';
 import Mascot, { type Pose } from '../../src/components/onboarding/Mascot';
 import LiveMemo, { BIG } from '../../src/components/onboarding/LiveMemo';
 import SignInSheet from '../../src/components/onboarding/SignInSheet';
-import TalkBar from '../../src/components/TalkBar';
-import DayView from '../../src/screens/kalender/DayView';
-import { monthTitle } from '../../src/screens/kalender/MonthView';
+import KlarTalk from '../../src/components/onboarding/KlarTalk';
+import AgendaView from '../../src/screens/kalender/AgendaView';
+import { navH, klarFoot } from '../../src/components/NavBar';
+import { light, locate } from '../../src/lib/landing';
 import { StoreContext, createStore, type Store } from '../../src/state/store';
 import { PersonsContext, type Persons } from '../../src/components/ui/Person';
 import { StillContext } from '../../src/components/ChatCards';
@@ -45,7 +46,7 @@ import { buildDemoState, demoEvents } from '../../src/data/demoFamily';
 import { buddyJoy, buddyPoke, setBuddy, useBuddy } from '../../src/lib/buddy';
 import { understand } from '../../src/lib/talk';
 import type { CalEvent } from '../../src/state/types';
-import { TODAY, addDays, weekday, WD_LONG, hm } from '../../src/lib/dates';
+import { TODAY, addDays, weekday, WD_LONG, hm, dmShort, daysBetween } from '../../src/lib/dates';
 import { tokens, persons as appPersons } from '../../src/theme';
 import { haptics } from '../../src/lib/haptics';
 import { tx } from '../../src/i18n/lang';
@@ -55,7 +56,9 @@ import { setPref } from '../../src/lib/prefs';
 import { isPreview } from '../../src/lib/vorschau';
 import { startNotifications } from '../../src/lib/notify';
 import { stepViewed, onboardingDone } from '../../src/lib/funnel';
-import { useKeyboardInset } from '../../src/lib/keyboard';
+import { useKeyboardInset, useTyping } from '../../src/lib/keyboard';
+import { useSpeak, speakOpen } from '../../src/lib/speak';
+import { useBarMode } from '../../src/lib/navStyle';
 
 /** The mascot's name on screen; one place to change it. */
 const NAME = 'Memo';
@@ -87,7 +90,8 @@ const SAG: Record<string, [string, string][]> = {
   zwei: [['Freitag 19 Uhr Essen mit Freunden', 'Friday 7pm dinner with friends'], ['Montag 8 Uhr Zahnarzt', 'Monday 8am dentist'], ['Samstag 10 Uhr Wocheneinkauf', 'Saturday 10am weekly shop']],
 };
 const label = (o: Opt) => tx(o.de, o.en);
-const whenOf = (e: CalEvent) => `${WD_LONG[weekday(e.date)]}${e.allDay ? '' : `, ${hm(e.start)}`}`;
+// Within a week the weekday says it; further out the date belongs to it ("Donnerstag, 24. Dez, 16:00").
+const whenOf = (e: CalEvent) => `${WD_LONG[weekday(e.date)]}${daysBetween(TODAY, e.date) > 6 ? `, ${dmShort(e.date)}` : ''}${e.allDay ? '' : `, ${hm(e.start)}`}`;
 
 const out = Easing.bezier(0.23, 1, 0.32, 1);
 /** Text first, then what it is about: rises 12 pt, the second thing 120 ms later (film motion rule 2). */
@@ -453,35 +457,49 @@ function Say({ text }: { text: string }) {
 }
 
 /**
- * The try step, as a sequence of states (vault pattern 7 and 9):
- *   intro   Pin sits in his slot and says what comes
- *   wait    he has flown into the bar and is the talk button; a label names it; three examples to tap
- *   think   the examples are gone, your sentence stays, he thinks
- *   landed  the card is there with both of you on it; he comes back out, glad
- *   notif   your partner's phone: the notification is the question about reminders
+ * The try step, as a sequence of states (vault pattern 7 and 9). Since the klar look (Julian 14.11.2026) it is the
+ * app as it is: the Kalender list of the Heute tab and the glass pill with Memo, the dark Sprechkarte with the live
+ * words, the loading bubble (KlarTalk).
+ *   intro   Memo sits in his slot and says what comes
+ *   wait    he has flown into the pill and is the talk button; a label names it; three examples to tap
+ *   think   the examples are gone, he is the loading bubble
+ *   landed  the new line lights up in the list; he glides back to his seat in the pill, glad
+ *   notif   the pill leaves, he comes back out; your partner's phone: the notification is the question about reminders
  */
 function Probe({ me, du, familie, ev, setEv, docked, setDocked, pad, onDone }: {
   me: string; du: string; familie: string | null; ev: CalEvent | null; setEv: (e: CalEvent) => void;
   docked: boolean; setDocked: (v: boolean) => void; pad: number; onDone: () => void;
 }) {
   const [phase, setPhase] = useState<'intro' | 'wait' | 'think' | 'landed' | 'notif'>(ev ? 'notif' : 'intro');
-  const [said, setSaid] = useState('');
   const [miss, setMiss] = useState(false);
   const [hint, setHint] = useState(false);
   const b = useBuddy();
+  // The label and the examples step aside while the Sprechkarte or the typing card is open.
+  const speak = useSpeak(), barMode = useBarMode(), keys = useTyping();
+  const talking = speakOpen(speak) || barMode === 'input' || keys;
   // The real calendar in a world of its own (Julian 12.11.: "too empty, doesn't show the app interface"): a calm
   // example week with your two names on it, and what you say lands in it. Nothing here touches the real store.
   const world: Store = useMemo(() => {
     const base = buildDemoState(TODAY);
     const keep = new Set(['ev_fussball', 'ev_markt', 'ev_film']);
-    const seed = demoEvents(TODAY).filter((e) => keep.has(e.id)).map((e) => ({ ...e, people: undefined, place: undefined }));
-    return createStore({ ...base, people: [], events: ev ? [...seed, ev] : seed, calView: 'tag' as const, calDay: ev ? ev.date : TODAY, names: { J: me || tx('Du', 'You'), T: du || tx('Partner', 'Partner') } });
+    // One of each: in the endless list a weekly series would fill every week.
+    const seed = demoEvents(TODAY).filter((e) => keep.has(e.id)).map((e) => ({ ...e, people: undefined, place: undefined, repeat: undefined }));
+    // Only appointments: no open things, deadlines or hints of the demo family in the list.
+    return createStore({ ...base, people: [], tasks: [], docs: [], lists: [], events: ev ? [...seed, ev] : seed, calView: 'tag' as const, calDay: ev ? ev.date : TODAY, names: { J: me || tx('Du', 'You'), T: du || tx('Partner', 'Partner') } });
   }, []);
   const people: Persons = useMemo(() => ({ J: { ...appPersons.J, name: me || tx('Du', 'You') }, T: { ...appPersons.T, name: du || tx('Partner', 'Partner') } }), [me, du]);
-  const [calKey, setCalKey] = useState(0);
+  const insets = useSafeAreaInsets();
+  // Where the calendar box sits on the screen, so the new line can be brought into view inside it.
+  const frame = useRef<View>(null);
+  const showLine = (id: string) => {
+    light(id);
+    const f = frame.current as any;
+    if (!f?.measureInWindow) return;
+    f.measureInWindow((_x: number, y: number, _w: number, h: number) => locate(id, { top: y + 96, floor: y + h - 24, height: h }, () => {}));
+  };
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
   const later = (ms: number, fn: () => void) => { timers.current.push(setTimeout(fn, ms)); };
-  useEffect(() => () => { timers.current.forEach(clearTimeout); setBuddy({ thinking: false }); }, []);
+  useEffect(() => () => { timers.current.forEach(clearTimeout); setBuddy({ thinking: false }); light(null); }, []);
   useEffect(() => {
     if (phase !== 'intro') return;
     // Only one Pin: the bar's own stays hidden until this one has flown into its place.
@@ -496,7 +514,7 @@ function Probe({ me, du, familie, ev, setEv, docked, setDocked, pad, onDone }: {
   const send = (text: string) => {
     const t = text.trim();
     if (!t || phase === 'think') return;
-    setHint(false); setMiss(false); setSaid(t); setPhase('think'); setBuddy({ thinking: true });
+    setHint(false); setMiss(false); setPhase('think'); setBuddy({ thinking: true });
     later(750, () => {
       setBuddy({ thinking: false });
       const r = understand(t, [], null, () => 'ev_mine');
@@ -505,14 +523,14 @@ function Probe({ me, du, familie, ev, setEv, docked, setDocked, pad, onDone }: {
         ? { ...r.event, who: r.event.who ?? 'J' }
         : { id: 'ev_mine', title: (r as any).title ?? t, icon: 'kalender', date: addDays(TODAY, 1), start: '00:00', allDay: true, who: 'J' } as CalEvent;
       setEv(e);
-      // It moves into the calendar and the calendar opens on its day.
+      // It moves into the calendar: the new line lights up in the list and comes into view. Memo glides from the
+      // loading bubble back to his seat in the pill and is glad there; he leaves the bar when the next question comes.
       world.set((st) => ({ events: [...st.events.filter((x) => x.id !== e.id), e], calDay: e.date }));
-      setCalKey((k) => k + 1);
       setPhase('landed');
-      setDocked(false);
       haptics.success();
-      later(420, () => buddyJoy());
-      later(1900, () => { setPhase('notif'); haptics.tap(); });
+      later(120, () => showLine(e.id));
+      later(760, () => buddyJoy());
+      later(2300, () => { setBuddy({ dockHidden: true }); setDocked(false); setPhase('notif'); haptics.tap(); });
     });
   };
 
@@ -521,17 +539,22 @@ function Probe({ me, du, familie, ev, setEv, docked, setDocked, pad, onDone }: {
       : phase === 'think' ? tx('Moment …', 'One moment …')
         : phase === 'landed' ? tx(`Steht drin. ${ev ? whenOf(ev) : ''}.`, `It’s in. ${ev ? whenOf(ev) : ''}.`)
           : tx(du ? `${du} sieht es auch sofort. Soll ich euch Bescheid sagen, wenn sich was ändert?` : 'Dein Partner sieht es auch sofort. Soll ich euch Bescheid sagen, wenn sich was ändert?', du ? `${du} sees it right away too. Should I tell you both when something changes?` : 'Your partner sees it right away too. Should I tell you both when something changes?');
-  const bar = phase === 'intro' || phase === 'wait' || phase === 'think';
+  // The pill with Memo stays through 'landed', so he can come home to it; it leaves when the buttons come.
+  const bar = phase !== 'notif';
+  const foot = klarFoot(insets.bottom) + navH() + 12;
+  const reach = ev ? daysBetween(TODAY, ev.date) + 8 : undefined;
+  const n = world.get().events.filter((x) => x.date === TODAY).length;
 
   return (
     <View style={{ flex: 1 }}>
       <Say text={line} />
-      <View style={{ flex: 1, marginHorizontal: 14, marginTop: 14, marginBottom: 10, borderRadius: 26, overflow: 'hidden', borderWidth: 1, borderColor: tokens.hair, backgroundColor: tokens.bg }}>
+      <View ref={frame} collapsable={false} style={{ flex: 1, marginHorizontal: 14, marginTop: 14, marginBottom: 10, borderRadius: 26, overflow: 'hidden', borderWidth: 1, borderColor: tokens.hair, backgroundColor: tokens.bg }}>
         <View pointerEvents="none" style={{ flex: 1 }}>
           <StoreContext.Provider value={world}>
             <PersonsContext.Provider value={people}>
               <StillContext.Provider value>
-                <DayView key={calKey} header={() => <CalTitle />} />
+                <CalHead n={n} />
+                <AgendaView reach={reach} />
               </StillContext.Provider>
             </PersonsContext.Provider>
           </StoreContext.Provider>
@@ -540,11 +563,6 @@ function Probe({ me, du, familie, ev, setEv, docked, setDocked, pad, onDone }: {
           <View pointerEvents="none" style={{ position: 'absolute', right: 12, top: 12, backgroundColor: tokens.chipBg, borderRadius: 999, paddingHorizontal: 10, height: 26, justifyContent: 'center' }}>
             <Txt size={12} weight={600} color={tokens.sub}>{tx('Beispielwoche', 'Example week')}</Txt>
           </View>
-        ) : null}
-        {phase === 'think' ? (
-          <Rise style={{ position: 'absolute', right: 12, bottom: 12, maxWidth: '84%', backgroundColor: tokens.ink, borderRadius: 20, borderBottomRightRadius: 6, paddingHorizontal: 16, paddingVertical: 11 }}>
-            <Txt size={16.5} line={22} color={tokens.onInk}>{said}</Txt>
-          </Rise>
         ) : null}
         {ev && phase === 'notif' ? (
           <Rise delay={120} style={{ position: 'absolute', left: 10, right: 10, bottom: 10, borderRadius: 24, backgroundColor: '#2E4650', padding: 10, paddingTop: 8, gap: 6, boxShadow: '0 14px 30px rgba(22,35,42,0.25)' } as any}>
@@ -565,7 +583,7 @@ function Probe({ me, du, familie, ev, setEv, docked, setDocked, pad, onDone }: {
       </View>
 
       {phase === 'wait' ? (
-        <Rise style={{ paddingHorizontal: 16, paddingBottom: 50, gap: 8 }}>
+        <Rise style={{ paddingHorizontal: 16, paddingBottom: 46, gap: 8 }}>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 4 }}>
             <Txt size={13} color={tokens.mute}>{tx('Oder tipp ein Beispiel an', 'Or tap an example')}</Txt>
             <PressScale onPress={onDone} hitSlop={10}><Txt size={13} color={tokens.mute}>{tx('Überspringen', 'Skip')}</Txt></PressScale>
@@ -579,31 +597,33 @@ function Probe({ me, du, familie, ev, setEv, docked, setDocked, pad, onDone }: {
           </View>
         </Rise>
       ) : null}
-      {bar ? (
-        <View style={{ paddingBottom: pad, opacity: phase === 'think' ? 0.5 : 1 }} pointerEvents={phase === 'think' ? 'none' : 'auto'}>
-          <TalkBar split onSend={(t) => send(t)} spoken={ex} placeholder={tx('Sprich oder schreib einfach …', 'Just say or type it …')} />
-        </View>
-      ) : null}
-      {phase === 'landed' ? <View style={{ height: 54 + 34 + pad }} /> : null}
+      {/* Room for the pill, which floats over the page like on the tabs. */}
+      {bar ? <View style={{ height: foot }} /> : null}
       {phase === 'notif' ? (
         <Rise delay={260} style={{ paddingHorizontal: 20, paddingTop: 10, paddingBottom: pad, gap: 12 }}>
           <Btn label={tx('Ja, sag Bescheid', 'Yes, tell us')} onPress={() => { if (!isPreview()) void startNotifications(); buddyJoy(); onDone(); }} />
           <TextLink label={tx('Später', 'Later')} weight={400} onPress={onDone} />
         </Rise>
       ) : null}
-      {/* The label over Pin in the bar: this is the talk button. */}
-      {hint && phase === 'wait' && b.dockAt ? <TapHint x={b.dockAt.x} y={b.dockAt.y} /> : null}
+      {/* The app's own input (Julian 02.11.: show the app in its final form): the pill with Memo, the dark Sprechkarte
+          with the live words, the loading bubble. What is said stays here, nothing goes to the assistant. */}
+      {bar ? (
+        <Animated.View exiting={FadeOut.duration(160)} pointerEvents={phase === 'think' || phase === 'landed' ? 'none' : 'box-none'} style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0 }}>
+          <KlarTalk onSend={send} spoken={ex} placeholder={tx('Sprich oder schreib einfach …', 'Just say or type it …')} />
+        </Animated.View>
+      ) : null}
+      {/* The label over Memo in the pill: this is the talk button. */}
+      {hint && phase === 'wait' && b.dockAt && !talking ? <TapHint x={b.dockAt.x} y={b.dockAt.y} /> : null}
     </View>
   );
 }
 
-function CalTitle() {
-  const day = React.useContext(StoreContext)!.get().calDay;
-  const { month } = monthTitle(day);
+/** The head of the Kalender tab as it is in the app: the weekday tight and bold with a period, the grey line below. */
+function CalHead({ n }: { n: number }) {
   return (
-    <View style={{ gap: 2 }}>
-      <Txt size={15} color={tokens.sub}>{tx(`${WD_LONG[weekday(day)]}, ${Number(day.slice(8))}.`, `${WD_LONG[weekday(day)]} ${Number(day.slice(8))}`)}</Txt>
-      <Txt size={30} line={36} weight={700} tracking={-1}>{month}</Txt>
+    <View style={{ paddingHorizontal: 18, paddingTop: 16, paddingBottom: 4, gap: 2 }}>
+      <Txt size={30} line={34} weight={700} tracking={-1.2} numberOfLines={1}>{WD_LONG[weekday(TODAY)]}<Dot /></Txt>
+      <Txt size={13.5} line={18} color={tokens.sub}>{n ? `${dmShort(TODAY)} · ${tx(`${n} ${n === 1 ? 'Termin' : 'Termine'}`, `${n} ${n === 1 ? 'event' : 'events'}`)}` : dmShort(TODAY)}</Txt>
     </View>
   );
 }
