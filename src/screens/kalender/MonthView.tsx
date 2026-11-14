@@ -42,7 +42,7 @@ export function shiftMonth(day: string, n: number): string {
 
 /** The soft colour of an Urlaub band: the person's tint, the family's quiet grey for everyone. */
 const bandOf = (e: CalEvent) => (e.who === 'J' || e.who === 'T' ? persons[e.who].tint : tokens.doneSoft);
-const byStart = (a: CalEvent, b: CalEvent) => (a.allDay === b.allDay ? a.start.localeCompare(b.start) : a.allDay ? -1 : 1);
+const byStart = (a: CalEvent, b: CalEvent) => (!a.allDay === !b.allDay ? a.start.localeCompare(b.start) : a.allDay ? -1 : 1);
 
 type Cell = { evs: CalEvent[]; hol?: CalEvent; vac?: CalEvent };
 

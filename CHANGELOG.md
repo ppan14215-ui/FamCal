@@ -43,6 +43,9 @@ Alle sichtbaren Änderungen an FamCal. Neueste oben. Agenten und Menschen: Ände
 - Im Kalender Kopf stehen nur noch Suchen und Plus, die Pfeile sind weg. Geblättert wird durch Wischen zur Seite.
 - Listen zum Abhaken wie im Entwurf: oben steht „4 von 9 gepackt“ mit Prozent über der Linie, Abgehaktes sammelt sich unten unter Erledigt, die Abschnitte zeigen nur noch, was offen ist.
 - Ein Termin öffnet jetzt als Blatt über dem Kalender wie im Entwurf: Symbol, Titel und Zeit, darunter ruhige Zeilen (Für, Wer geht, Wo, Mitbringen, Erinnern), woher er kommt, und drei Knöpfe: Ändern, Verschieben und Mehr (dort steht Löschen). Bearbeitet wird auf der Seite hinter „Ändern“; „Verschieben“ öffnet dort gleich Tag und Zeit. Das Sprechfeld sitzt auf der Seite hinter „Ändern“.
+- Neuer Termin sieht aus wie im Entwurf: oben Schließen, Name der Seite und Sichern, das Symbol neben dem großen Titel, darunter je eine ruhige Zeile für Wann, Wer, Wo, Erinnern, Mitbringen, Wiederholen und Notiz. Die vier Kacheln und der Link Mehr sind weg.
+- Termin ändern ist aus denselben Zeilen gebaut wie Neuer Termin. Löschen liegt auf dem Blatt hinter den drei Punkten.
+- Ein neu gesicherter Termin steht in Heute und im Monat wieder an der richtigen Stelle nach Uhrzeit.
 
 ### App funktioniert zuverlässig (09.11. Audit)
 - Nach längerer Pause im Hintergrund klappen Assistent und Spracheingabe gleich beim ersten Satz, statt "Ich komme gerade nicht an den Assistenten".

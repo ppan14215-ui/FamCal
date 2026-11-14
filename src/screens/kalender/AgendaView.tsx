@@ -33,7 +33,7 @@ export const FIRST_DAYS = 28;
 /** Whether a Termin on this day shows on the Heute page right away, so a spoken one can land there. */
 export const onToday = (date: string) => date >= TODAY && daysBetween(TODAY, date) < FIRST_DAYS;
 
-const byStart = (a: CalEvent, b: CalEvent) => (a.allDay === b.allDay ? a.start.localeCompare(b.start) : a.allDay ? -1 : 1);
+const byStart = (a: CalEvent, b: CalEvent) => (!a.allDay === !b.allDay ? a.start.localeCompare(b.start) : a.allDay ? -1 : 1);
 /** Over for today: it has ended, or started and has no end. */
 const isOver = (e: CalEvent, now: number) => !e.allDay && !(e.endDate && e.endDate > e.date) && minutes(e.end && e.end > e.start ? e.end : e.start) <= now;
 

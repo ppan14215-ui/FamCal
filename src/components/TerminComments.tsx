@@ -5,7 +5,7 @@ import Txt from './ui/Txt';
 import PressScale from './ui/PressScale';
 import LineIcon from './ui/LineIcon';
 import { Avatar } from './ui/Person';
-import { Card } from './ui/kit';
+import { Card, H2 } from './ui/kit';
 import { tokens, fonts, persons } from '../theme';
 import { useStore } from '../state/store';
 import { loadComments, addComment, deleteComment } from '../lib/comments';
@@ -17,16 +17,17 @@ import { tx } from '../i18n/lang';
 const noOutline = Platform.OS === 'web' ? ({ outlineStyle: 'none' } as any) : null;
 const clock = (iso: string) => { const d = new Date(iso); return `${d.getDate()}.${d.getMonth() + 1}. ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`; };
 
-export default function TerminComments({ eventId }: { eventId: string }) {
+export default function TerminComments({ eventId, flat }: { eventId: string; /** Klar look: straight on the ground under the form, no white block. */ flat?: boolean }) {
   const eid = seriesId(eventId);
   const list = useStore((s) => s.comments[eid]) ?? [];
   const [text, setText] = useState('');
   useEffect(() => { void loadComments(eid); }, [eid]);
   const me = getFamily() ? myRole() : 'J';
   const send = () => { const t = text.trim(); if (!t) return; haptics.commit(); setText(''); void addComment(eid, t); };
+  const Box = flat ? Flat : Block;
   return (
-    <Card pad={14} gap={10}>
-      <Txt size={13} weight={600} color={tokens.sub}>{tx('Kommentare', 'Comments')}</Txt>
+    <Box>
+      {flat ? <H2>{tx('Kommentare', 'Comments')}</H2> : <Txt size={13} weight={600} color={tokens.sub}>{tx('Kommentare', 'Comments')}</Txt>}
       {list.map((c) => (
         <View key={c.id} style={{ flexDirection: 'row', gap: 10, alignItems: 'flex-start' }}>
           <Avatar p={c.role} size={26} />
@@ -59,6 +60,9 @@ export default function TerminComments({ eventId }: { eventId: string }) {
           </PressScale>
         ) : null}
       </View>
-    </Card>
+    </Box>
   );
 }
+
+const Block = ({ children }: { children: React.ReactNode }) => <Card pad={14} gap={10}>{children}</Card>;
+const Flat = ({ children }: { children: React.ReactNode }) => <View style={{ gap: 10 }}>{children}</View>;
