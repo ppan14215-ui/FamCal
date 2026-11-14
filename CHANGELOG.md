@@ -36,6 +36,7 @@ Alle sichtbaren Änderungen an FamCal. Neueste oben. Agenten und Menschen: Ände
 - Im Kalender sind die Ansichten wieder Wörter auf einer feinen Linie (Heute, Tage, Woche, Monat, Jahr); ein kurzer Strich gleitet zum gewählten Wort.
 - Oben rechts sitzen zwei runde weiße Knöpfe: Suchen und Plus. Im Chat stehen dort die Familie und die Einstellungen.
 - Neue Suche: ein Feld über Termine, Listen und Aufgaben. Sie liest nur, was schon auf dem Handy ist.
+- Kalender Heute ist so dicht wie im Entwurf: kleinere Zeilen, Zeit in der Farbe der Person, der nächste Termin steht fett. Englische Zeiten („9:30am“) haben genug Platz und werden nicht mehr abgeschnitten.
 
 ### App funktioniert zuverlässig (09.11. Audit)
 - Nach längerer Pause im Hintergrund klappen Assistent und Spracheingabe gleich beim ersten Satz, statt "Ich komme gerade nicht an den Assistenten".

@@ -31,7 +31,7 @@ import { evInk } from '../../lib/evColor';
 import { dueItems, kidsOf, useHandled } from '../../lib/mitdenken';
 import { haptics } from '../../lib/haptics';
 import { TODAY, addDays, daysBetween, dayNum, weekday, WD_SHORT, MONTHS, monthIdx, minutes, hm, until } from '../../lib/dates';
-import { tx } from '../../i18n/lang';
+import { tx, EN } from '../../i18n/lang';
 import type { CalEvent, Task, Doc, Person } from '../../state/types';
 import { dropEvent } from './DayView';
 
@@ -47,7 +47,11 @@ const byStart = (a: CalEvent, b: CalEvent) => (a.allDay === b.allDay ? a.start.l
 /** Over for today: it has ended, or started and has no end. */
 const isOver = (e: CalEvent, now: number) => !e.allDay && !(e.endDate && e.endDate > e.date) && minutes(e.end && e.end > e.start ? e.end : e.start) <= now;
 
-const LEAD = 54; // bar, gap and time: the column every row starts with
+// Bar, gap and time: the column every row starts with. English times are longer ("10:30am"), so they get more room
+// instead of shrinking or being cut (Julian's phone is set to English).
+const LEAD = EN ? 68 : 54;
+/** One line of the list. Dense like the klar draft (22 of 284 there), Julian 14.11.: the app must look like the concept. */
+const ROW = 32;
 const GUTTER = 42;
 
 /** Who a Termin belongs to, as small dots in the person's colour. */
@@ -69,7 +73,7 @@ function Dots({ e, people }: { e: CalEvent; people: Person[] }) {
 }
 
 /** One Termin as a flat row: the person's bar, time, icon, title with its place behind it, who as dots. Also used under the month. */
-export const AgendaRow = React.memo(function AgendaRow({ e, date, over, people }: { e: CalEvent; date: string; over: boolean; people: Person[] }) {
+export const AgendaRow = React.memo(function AgendaRow({ e, date, over, people, next }: { e: CalEvent; date: string; over: boolean; people: Person[]; /** The next one today: its time stands out. */ next?: boolean }) {
   const span = !!e.endDate && e.endDate > e.date;
   const ink = evInk(e);
   const open = (e.bring ?? []).filter((b) => !b.done);
@@ -81,14 +85,14 @@ export const AgendaRow = React.memo(function AgendaRow({ e, date, over, people }
   return (
     <Fresh id={e.id} radius={10}>
       <SwipeRow bg={tokens.bg} onDelete={() => dropEvent(e)}>
-        <PressScale scale={0.985} onPress={() => { if (!justSwiped()) router.push(`/termin/${e.id}`); }} accessibilityLabel={`${e.title}, ${lead}`} style={{ flexDirection: 'row', alignItems: 'center', gap: 9, minHeight: 40, paddingVertical: open.length ? 5 : 0, opacity: over ? 0.42 : 1 }}>
-          <View style={{ width: 3, alignSelf: 'stretch', marginVertical: open.length ? 2 : 9, borderRadius: 2, backgroundColor: ink }} />
-          <Txt size={13.5} line={18} weight={600} color={ink} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8} style={{ width: LEAD - 12, fontVariant: ['tabular-nums'] }}>{lead}</Txt>
-          {e.work ? null : <ClayIcon name={e.icon} size={24} />}
+        <PressScale scale={0.985} onPress={() => { if (!justSwiped()) router.push(`/termin/${e.id}`); }} accessibilityLabel={`${e.title}, ${lead}`} style={{ flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: ROW, paddingVertical: open.length ? 4 : 0, opacity: over ? 0.45 : 1 }}>
+          <View style={{ width: 3, alignSelf: 'stretch', marginVertical: open.length ? 2 : 6, borderRadius: 2, backgroundColor: ink }} />
+          <Txt size={14} line={18} weight={next ? 600 : 400} color={next ? tokens.accent : ink} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8} style={{ width: LEAD - 11, fontVariant: ['tabular-nums'] }}>{lead}</Txt>
+          {e.work ? null : <ClayIcon name={e.icon} size={22} />}
           <View style={{ flex: 1, minWidth: 0 }}>
-            <Txt size={16} line={21} weight={500} color={e.work ? tokens.sub : tokens.ink} numberOfLines={1}>
+            <Txt size={16.5} line={21} weight={400} color={e.work ? tokens.sub : tokens.ink} numberOfLines={1}>
               {e.title}
-              {sub ? <Txt size={13} line={21} color={tokens.mute}>{`  ${sub}`}</Txt> : null}
+              {sub ? <Txt size={13.5} line={21} color={tokens.mute}>{`  ${sub}`}</Txt> : null}
             </Txt>
             {/* What to bring belongs to the Termin, right under it (Julian 27.10.). */}
             {open.length ? <Txt size={13} line={17} color={tokens.sub} numberOfLines={1}>{tx(`Mitbringen: ${open.map((b) => b.t).join(', ')}`, `Bring: ${open.map((b) => b.t).join(', ')}`)}</Txt> : null}
@@ -105,9 +109,9 @@ export const AgendaRow = React.memo(function AgendaRow({ e, date, over, people }
 function TickRow({ id, title, done, onTick, right }: { id: string; title: string; done: boolean; onTick: () => void; right?: React.ReactNode }) {
   return (
     <Fresh id={id} radius={10}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 9, minHeight: 40 }}>
-        <View style={{ width: LEAD, alignItems: 'flex-start' }}><Check done={done} size={22} onPress={onTick} /></View>
-        <Txt size={16} line={21} weight={500} strike={done} color={done ? tokens.mute : tokens.ink} numberOfLines={1} style={{ flex: 1 }}>{title}</Txt>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: ROW }}>
+        <View style={{ width: LEAD, alignItems: 'flex-start' }}><Check done={done} size={20} onPress={onTick} /></View>
+        <Txt size={16.5} line={21} weight={400} strike={done} color={done ? tokens.mute : tokens.ink} numberOfLines={1} style={{ flex: 1 }}>{title}</Txt>
         {right}
       </View>
     </Fresh>
@@ -144,10 +148,10 @@ const Day = React.memo(function Day({ d, first, now, people, extra }: { d: DayDa
   const nowAt = today && timed ? d.events.findIndex((e) => !e.allDay && !(e.endDate && e.endDate > e.date) && minutes(e.start) > now) : -2;
   const empty = !d.events.length && !d.tasks.length && !d.docs.length;
   return (
-    <View style={{ flexDirection: 'row', gap: 8, paddingTop: first ? 2 : 10, paddingBottom: 10, borderTopWidth: first ? 0 : 1, borderTopColor: tokens.hair }}>
+    <View style={{ flexDirection: 'row', gap: 8, paddingTop: first ? 2 : 8, paddingBottom: 8, borderTopWidth: first ? 0 : 1, borderTopColor: tokens.hair }}>
       <View style={{ width: GUTTER, paddingTop: 2 }} accessibilityLabel={today ? tx('Heute', 'Today') : undefined}>
-        <Txt size={12} line={15} weight={today ? 600 : 400} color={today ? tokens.accent : tokens.sub}>{WD_SHORT[weekday(d.date)]}</Txt>
-        <Txt size={23} line={27} weight={700} tracking={-0.6} color={colour}>{String(dayNum(d.date))}</Txt>
+        <Txt size={13} line={16} weight={400} color={tokens.sub}>{WD_SHORT[weekday(d.date)]}</Txt>
+        <Txt size={21} line={24} weight={600} tracking={-0.4} color={colour}>{String(dayNum(d.date))}</Txt>
         {today || away === 1 ? <Txt size={11} line={14} weight={600} color={today ? tokens.accent : tokens.mute} numberOfLines={1}>{today ? tx('Heute', 'Today') : tx('Morgen', 'Tmrw')}</Txt> : null}
       </View>
       <View style={{ flex: 1, minWidth: 0 }}>
@@ -155,7 +159,7 @@ const Day = React.memo(function Day({ d, first, now, people, extra }: { d: DayDa
         {d.events.map((e, i) => (
           <React.Fragment key={e.id}>
             {i === nowAt ? <NowLine /> : null}
-            <AgendaRow e={e} date={d.date} over={today && isOver(e, now)} people={people} />
+            <AgendaRow e={e} date={d.date} over={today && isOver(e, now)} people={people} next={i === nowAt} />
           </React.Fragment>
         ))}
         {nowAt === -1 ? <NowLine /> : null}
@@ -163,9 +167,9 @@ const Day = React.memo(function Day({ d, first, now, people, extra }: { d: DayDa
           <TickRow key={t.id} id={t.id} title={t.title} done={t.done} onTick={() => actions.toggleTask(t.id)} right={t.due && t.due < d.date ? <Txt size={12.5} color={tokens.frist}>{tx('überfällig', 'overdue')}</Txt> : undefined} />
         ))}
         {d.docs.map((doc) => (
-          <PressScale key={doc.id} onPress={doc.route ? () => router.push(doc.route as any) : undefined} style={{ flexDirection: 'row', alignItems: 'center', gap: 9, minHeight: 40 }}>
+          <PressScale key={doc.id} onPress={doc.route ? () => router.push(doc.route as any) : undefined} style={{ flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: ROW }}>
             <View style={{ width: LEAD }}><LineIcon name="clock" size={17} color={tokens.frist} /></View>
-            <Txt size={16} line={21} weight={500} numberOfLines={1} style={{ flex: 1 }}>{doc.title}</Txt>
+            <Txt size={16.5} line={21} weight={400} numberOfLines={1} style={{ flex: 1 }}>{doc.title}</Txt>
             <Txt size={12.5} color={tokens.frist}>{tx('Frist', 'Due')}</Txt>
           </PressScale>
         ))}
@@ -209,16 +213,16 @@ function TodayExtras({ events }: { events: CalEvent[] }) {
         </>
       ) : null}
       {fristen.map((d) => (
-        <PressScale key={d.id} onPress={d.route ? () => router.push(d.route as any) : undefined} style={{ flexDirection: 'row', alignItems: 'center', gap: 9, minHeight: 40 }}>
+        <PressScale key={d.id} onPress={d.route ? () => router.push(d.route as any) : undefined} style={{ flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: ROW }}>
           <View style={{ width: LEAD }}><LineIcon name="clock" size={17} color={tokens.frist} /></View>
-          <Txt size={16} line={21} weight={500} numberOfLines={1} style={{ flex: 1 }}>{d.title}</Txt>
+          <Txt size={16.5} line={21} weight={400} numberOfLines={1} style={{ flex: 1 }}>{d.title}</Txt>
           <Txt size={12.5} color={tokens.frist}>{`${tx('Frist', 'Due')} ${until(d.frist!)}`}</Txt>
         </PressScale>
       ))}
       {soon.map((e) => (
-        <PressScale key={e.id} onPress={() => { haptics.select(); router.push(`/termin/${e.id}`); }} style={{ flexDirection: 'row', alignItems: 'center', gap: 9, minHeight: 40 }}>
+        <PressScale key={e.id} onPress={() => { haptics.select(); router.push(`/termin/${e.id}`); }} style={{ flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: ROW }}>
           <View style={{ width: LEAD }}><ClayIcon name={e.icon} size={24} /></View>
-          <Txt size={16} line={21} weight={500} numberOfLines={1} style={{ flex: 1 }}>{e.title}</Txt>
+          <Txt size={16.5} line={21} weight={400} numberOfLines={1} style={{ flex: 1 }}>{e.title}</Txt>
           <Txt size={12.5} weight={600} color={tokens.sub}>{daysTo(e.date)}</Txt>
         </PressScale>
       ))}
