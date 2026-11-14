@@ -7,6 +7,10 @@ Alle sichtbaren Änderungen an FamCal. Neueste oben. Agenten und Menschen: Ände
 ### Klarer Look (14.11.)
 - Die App ist jetzt ruhig und neutral: Weiß, fast Schwarz und Grau. Farbe kommt nur noch von den Personen. Schrift ist Inter.
 - Inhalte sind flach und dicht mit feinen Linien statt weißer Blöcke. Glas gibt es nur auf dem, was man drückt: Knöpfe, Chips, Leiste.
+- Memo bewegt sich neu: er bleibt rund und fast still, die Augen tragen das Gefühl. Jeder Zustand fließt in den nächsten, er schaut zur Seite, Denken und Nacht sind langsam, keine Sprünge mehr.
+- Memo verwandelt sich bei echten Ergebnissen kurz in ein passendes Zeichen und zurück: Termin, Geburtstag, Urlaub, Einkauf, verschoben, gelöscht, Liste fertig, neues Familienmitglied. Häufiges wie Abhaken bekommt nur ein kurzes Lächeln.
+- Wenn etwas nicht klappt, schaut Memo kurz betrübt.
+- Neue Seite "Memo" (Testlink) zeigt alle Zustände, kleinen Antworten und 20 Verwandlungen.
 
 ### App funktioniert zuverlässig (09.11. Audit)
 - Nach längerer Pause im Hintergrund klappen Assistent und Spracheingabe gleich beim ersten Satz, statt "Ich komme gerade nicht an den Assistenten".

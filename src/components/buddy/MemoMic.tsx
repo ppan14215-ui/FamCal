@@ -17,7 +17,7 @@ import { tokens } from '../../theme';
 import { haptics } from '../../lib/haptics';
 import { tx } from '../../i18n/lang';
 
-export default function MemoMic({ onPress, box = 34, size = 40, label }: { onPress: () => void; box?: number; size?: number; label?: string }) {
+export default function MemoMic({ onPress, onLongPress, box = 34, size = 40, label, ground }: { onPress: () => void; onLongPress?: () => void; box?: number; size?: number; label?: string; ground?: string }) {
   const b = useBuddy();
   const minimal = useMascot() === 'minimal';
   const typing = useTyping();
@@ -38,6 +38,8 @@ export default function MemoMic({ onPress, box = 34, size = 40, label }: { onPre
   // Typing: the text sits left of him on one line, above him once it grows into the card; his eyes follow it as it gets longer.
   const typeAt = { x: Math.round((-1 + 0.5 * Math.min(1, b.typed / 40)) * 10) / 10, y: b.typed > 0 ? -0.85 : -0.15 };
   const ask = b.waiting && mood !== 'listen' && mood !== 'think';
+  // Tapped: he squints for a moment, then listens.
+  const [tap, setTap] = useState(0);
   // Minimal (Julian 11.11.): the plain mic as before, no mascot.
   if (minimal) return (
     <Pressable onPress={() => { haptics.select(); onPress(); }} hitSlop={6} accessibilityRole="button" accessibilityLabel={tx('Sprechen', 'Speak')}
@@ -46,11 +48,11 @@ export default function MemoMic({ onPress, box = 34, size = 40, label }: { onPre
     </Pressable>
   );
   return (
-    <Pressable ref={me as any} onLayout={measure} onPress={() => { haptics.select(); onPress(); }} hitSlop={6}
+    <Pressable ref={me as any} onLayout={measure} onPress={() => { haptics.select(); setTap((n) => n + 1); onPress(); }} onLongPress={onLongPress ? () => { haptics.select(); onLongPress(); } : undefined} hitSlop={6}
       accessibilityRole="button" accessibilityLabel={label ?? tx('Memo, tippen zum Sprechen', 'Memo, tap to talk')}
       style={{ width: box, height: box, alignItems: 'center', justifyContent: 'center', overflow: 'visible' }}>
       <View pointerEvents="none" style={{ width: size, height: size, marginTop: -3, opacity: b.landed && !b.dockHidden ? 1 : 0 }}>
-        <Pin size={size} mood={mood} joy={b.joy} poke={b.poke} level={voiceLevel} glance={glance} typeAt={typeAt} shadow={false} />
+        <Pin size={size} mood={mood} joy={b.joy} joyKind={b.joyKind} poke={b.poke} tap={tap} sad={b.sad} wink={b.wink} level={voiceLevel} glance={glance} typeAt={typeAt} ground={ground} />
       </View>
       {ask ? (
         <View pointerEvents="none" style={{ position: 'absolute', right: -5, top: -5, width: 15, height: 15, borderRadius: 8, alignItems: 'center', justifyContent: 'center', backgroundColor: tokens.row, boxShadow: `0 0 0 1px ${tokens.hair}` } as any}>

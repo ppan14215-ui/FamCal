@@ -1,24 +1,33 @@
 /**
- * Memo, flat (Julian 13.11.2026: the clay Pin "doesn't fit into a flat app style"; he picked direction A "Punkt"
- * from the Pumpy reference: one solid shape in one colour, two white oval eyes, no shading, no 3D).
- * He is the period after every headline, come alive: an ink circle (light in dark mode, it follows `tokens.ink`),
- * the one dark element on the screen, sitting where the mic was. All feeling lives in the eyes (open, ^^, closed)
- * and in motion; the body only moves, squashes and turns. Pure vector, sharp at every size, no rendered assets.
+ * Memo, flat (Julian 13.11.2026: direction "Punkt": one solid round shape in one colour, two eyes, no shading).
+ * He is the period after every headline, come alive. Pure vector, sharp at every size, no rendered assets.
  *
- * Same props as Blob, so any Memo on screen can switch by import. Extra:
- *   heard  bumps when new words came in while listening: a small nod, as if he follows along
- *   pose   for the onboarding: 'peek' (look up from the bottom edge, gentle sway), 'wave' (rocks hello, he has
- *          no arms), 'jump' (one big happy jump with a salto and ^^)
+ * Klar look (Julian 13.11. to 14.11.): no hops, no salto. The body is exactly round at rest and almost still;
+ * the eyes carry the feeling. Every state flows into the next, looking aside slides the eyes over ("3D", but
+ * strictly flat), thinking and night are slow, and on a real result he melts into a small object and back.
+ * The motion itself lives in rig.ts (states, events) and morphs.ts (objects); this file only draws the pose.
+ *
+ * Frames only run while something moves: at rest he costs nothing.
+ *
+ *   mood     what the app does right now (lib/buddy)
+ *   joy      bumps when something landed: ^^ and the smallest squash; with joyKind he becomes that thing
+ *   poke     bumps when something wants his attention: a blink, eyes a touch wider
+ *   tap      bumps when he is tapped: a squint
+ *   wink, sad   bump for a wink, and for "klappt nicht"
+ *   heard    bumps when new words came in while listening: a small nod
+ *   glance   eyes go where you touched, then drift back
+ *   gaze     where the eyes rest (reading along); typeAt where they look while you type
+ *   pose     for the onboarding: 'peek' looks up with a slow sway, 'wave' tips his head hello, 'jump' is one long ^^
+ *   color    his body colour (default: ink, or your bubble colour if you chose that); ground is what lies behind him
  */
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useMemo, useRef } from 'react';
 import { View, StyleProp, ViewStyle } from 'react-native';
-import Animated, {
-  useSharedValue, useAnimatedStyle, useFrameCallback, withTiming, withSequence, withRepeat, withDelay,
-  cancelAnimation, Easing, useReducedMotion, type SharedValue,
-} from 'react-native-reanimated';
-import Svg, { Defs, RadialGradient, Stop, Ellipse } from 'react-native-svg';
+import Animated, { useSharedValue, useAnimatedStyle, useFrameCallback, useReducedMotion, type SharedValue } from 'react-native-reanimated';
 import type { Mood } from '../../lib/buddy';
+import { useMemoColor } from '../../lib/look';
 import { tokens } from '../../theme';
+import { frame, firstIn, firstRt, sync, cl, lerp, ST, RUN, type Frame, type In } from './rig';
+import { morph, MORPH, PARTS, type MorphKind, type Part } from './morphs';
 
 /** Colours of Memo, for anything drawn next to him (the intro drip). Read live, so dark mode follows. */
 export const PIN = {
@@ -28,13 +37,9 @@ export const PIN = {
   get ink() { return tokens.onInk; },
 };
 
-/** The body circle and where the eyes sit, as shares of the box. Bottom edge at 94 % so squash stays grounded. */
+/** The body circle as a share of the box. He sits a little low in it, as before, so every caller's layout holds. */
 const BODY_D = 0.8;
 const BODY_TOP = 0.14;
-const EYE_X = 0.1; // from the centre
-const EYE_Y = 0.5;
-const EYE_W = 0.104;
-const EYE_H = 0.164;
 
 export type PinPose = 'peek' | 'wave' | 'jump';
 
@@ -42,281 +47,259 @@ export type PinProps = {
   size?: number;
   mood?: Mood;
   joy?: number;
+  /** With a kind, a joy plays that morph (only for real results). */
+  joyKind?: MorphKind | null;
+  /** How long the ^^ of a plain joy stays, in ms. */
+  joyLong?: number;
   poke?: number;
+  tap?: number;
+  wink?: number;
+  sad?: number;
   glance?: { x: number; y: number; n: number };
   level?: SharedValue<number>;
   still?: boolean;
   typeAt?: { x: number; y: number };
   gaze?: { x: number; y: number } | null;
+  /** Kept for callers; he is flat and casts no shadow. */
   shadow?: boolean;
-  /** Bumps each time new words arrive while listening. */
   heard?: number;
   pose?: PinPose;
+  /** Breathes while at rest (1 %, evenly). Only for a big Memo: it keeps the frames running. */
+  breathe?: boolean;
+  color?: string;
+  ground?: string;
   style?: StyleProp<ViewStyle>;
 };
 
-let seq = 0;
-const OUT = Easing.bezier(0.23, 1, 0.32, 1);
-const OVER = Easing.bezier(0.34, 1.56, 0.64, 1);
-const SINE = Easing.inOut(Easing.sin);
+const TYPE_AT = { x: -0.55, y: 0.75 };
+const REST = { x: 0, y: 0 };
 
-export default function Pin({ size = 40, mood = 'idle', joy = 0, poke = 0, glance, level, still, shadow = false, style, typeAt, gaze, heard = 0, pose }: PinProps) {
-  const S = size;
-  const tAt = gaze ?? typeAt ?? { x: -0.55, y: 0.75 };
-  const restRef = useRef(gaze ?? { x: 0, y: 0 }); restRef.current = gaze ?? { x: 0, y: 0 };
-  const tAtRef = useRef(tAt); tAtRef.current = tAt;
+export default function Pin(props: PinProps) {
   const reduced = useReducedMotion();
-  const live = !still && !reduced;
-  const id = useRef(`pin${++seq}`).current;
+  const own = useMemoColor();
+  const color = props.color ?? own;
+  // On ink the eyes take the page colour (so dark mode flips); on a bubble colour they are white.
+  const eye = color === tokens.ink ? tokens.onInk : '#FFFFFF';
+  if (props.still || reduced) return <Still size={props.size ?? 40} mood={props.mood ?? 'idle'} color={color} eye={eye} gaze={props.gaze} style={props.style} />;
+  return <Live {...props} color={color} eye={eye} ground={props.ground ?? tokens.row} />;
+}
 
-  const ph = useSharedValue(0);
-  const bf = useSharedValue(2.2);
-  const ba = useSharedValue(0.014);
-  const lvlOn = useSharedValue(0);
-  const sx = useSharedValue(1);
-  const sy = useSharedValue(1);
-  const grow = useSharedValue(1);
-  const ty = useSharedValue(0);
-  const tx = useSharedValue(0);
-  const rot = useSharedValue(0);
-  const gx = useSharedValue(0);
-  const gy = useSharedValue(0);
-  const blink = useSharedValue(1);
-  const wide = useSharedValue(1);
-  const happy = useSharedValue(mood === 'happy' ? 1 : 0);
-  const zero = useSharedValue(0);
-  const lv = level ?? zero;
-  // The voice shakes him a little, smoothed so it reads as bobbing along, not jitter.
+/** One settled picture: for reduced motion, and for the small Memo next to old answers. */
+function Still({ size: S, mood, color, eye, gaze, style }: { size: number; mood: Mood; color: string; eye: string; gaze?: { x: number; y: number } | null; style?: StyleProp<ViewStyle> }) {
+  const D = S * BODY_D, u = D / 34, c = D / 2;
+  const ew = 4 * u, eh = 7 * u, aw = 7 * u, at = Math.max(1.4, 2 * u);
+  const gx = (gaze?.x ?? 0) * 3 * u, gy = (mood === 'think' ? -0.6 : (gaze?.y ?? 0)) * 3 * u;
+  return (
+    <View pointerEvents="none" style={[{ width: S, height: S }, style]}>
+      <View style={{ position: 'absolute', left: (S - D) / 2, top: S * BODY_TOP, width: D, height: D, borderRadius: c, backgroundColor: color }}>
+        {[-1, 1].map((side) => mood === 'happy' ? (
+          <View key={side} style={{ position: 'absolute', left: c + side * 4 * u - aw / 2, top: c - aw / 4 - at / 4, width: aw, height: aw / 2 + at / 2, overflow: 'hidden' }}>
+            <View style={{ width: aw, height: aw, borderRadius: aw / 2, borderWidth: at, borderColor: eye }} />
+          </View>
+        ) : (
+          <View key={side} style={{ position: 'absolute', left: c + side * 4 * u - ew / 2, top: c - eh / 2, width: ew, height: eh, borderRadius: ew / 2, backgroundColor: eye,
+            transform: [{ translateX: gx }, { translateY: gy }, { scaleX: mood === 'sleep' ? 1.5 : 1 }, { scaleY: mood === 'sleep' ? 0.28 : 1 }] }} />
+        ))}
+      </View>
+    </View>
+  );
+}
+
+type LiveProps = PinProps & { color: string; eye: string; ground: string };
+
+function Live({ size: S = 40, mood = 'idle', joy = 0, joyKind, joyLong, poke = 0, tap = 0, wink = 0, sad = 0, glance, level, typeAt, gaze, heard = 0, pose, breathe, color, eye, ground, style }: LiveProps) {
+  const D = S * BODY_D, u = D / 34;
+  const st = ST[mood];
+  const rest = gaze ?? REST, ty = typeAt ?? TYPE_AT;
+  const poseId = pose === 'peek' ? 1 : pose === 'wave' ? 2 : 0;
+  const kindId = joyKind ? MORPH[joyKind] : 0;
+
+  // The first picture is worked out here once, with the same functions the frames use.
+  const start = useRef<{ i: In; f: Frame } | null>(null);
+  if (!start.current) {
+    const i = firstIn({ st, pose: poseId, breathe: breathe ? 1 : 0, restX: rest.x, restY: rest.y, typeX: ty.x, typeY: ty.y });
+    start.current = { i, f: frame(0, i, firstRt(i), 0, st === 1 ? ty.x : rest.x, st === 1 ? ty.y : rest.y) };
+  }
+  const cur = useRef(start.current.i);
+  const now = useSharedValue(0);
+  const inp = useSharedValue(start.current.i);
+  const rt = useSharedValue(firstRt(start.current.i));
+  const P = useSharedValue(start.current.f);
   const vs = useSharedValue(0);
+  const gzx = useSharedValue(st === 1 ? ty.x : rest.x);
+  const gzy = useSharedValue(st === 1 ? ty.y : rest.y);
+  const quiet = useSharedValue(0);
+  const lv = level ?? quiet;
 
-  useFrameCallback((f) => {
-    const dt = Math.min(0.05, (f.timeSincePreviousFrame ?? 16) / 1000);
-    ph.value += dt * bf.value;
-    const target = lv.value * lvlOn.value;
-    vs.value += (target - vs.value) * Math.min(1, dt * 14);
-  }, live);
+  const fc = useFrameCallback((f) => {
+    const dt = Math.min(50, f.timeSincePreviousFrame ?? 16);
+    const t = now.value + dt;
+    now.value = t;
+    const i = inp.value, r0 = rt.value;
+    const r = sync(i, r0, t, P.value.b);
+    if (r !== r0) rt.value = r;
+    const k = dt / 1000;
+    // The voice and the resting gaze are smoothed, so he bobs along and his eyes travel instead of jumping.
+    vs.value += ((i.st === 2 ? lv.value : 0) - vs.value) * Math.min(1, k * 14);
+    gzx.value += ((i.st === 1 ? i.typeX : i.restX) - gzx.value) * Math.min(1, k * 10);
+    gzy.value += ((i.st === 1 ? i.typeY : i.restY) - gzy.value) * Math.min(1, k * 10);
+    P.value = frame(t, i, r, vs.value, gzx.value, gzy.value);
+  }, false);
 
-  const bodyStyle = useAnimatedStyle(() => {
-    const b = Math.sin(ph.value) * ba.value;
-    const v = vs.value;
-    return {
-      transform: [
-        { translateX: tx.value + gx.value * S * 0.03 },
-        { translateY: ty.value - v * S * 0.05 },
-        { rotate: `${rot.value + gx.value * 2.5 + Math.sin(ph.value * 1.7) * v * 5}deg` },
-        { scaleX: sx.value * grow.value * (1 - b * 0.6 + v * 0.04) },
-        { scaleY: sy.value * grow.value * (1 + b + v * 0.06) },
-      ] as any,
-    };
-  });
-  const eyeStyle = useAnimatedStyle(() => ({
-    opacity: 1 - happy.value,
-    transform: [{ translateX: gx.value * S * 0.075 }, { translateY: gy.value * S * 0.07 }, { scaleX: 1 + (wide.value - 1) * 0.6 }, { scaleY: blink.value * wide.value }] as any,
-  }));
-  const arcStyle = useAnimatedStyle(() => ({
-    opacity: happy.value,
-    transform: [{ translateX: gx.value * S * 0.03 }, { translateY: -happy.value * S * 0.01 }, { scale: 0.85 + happy.value * 0.15 }] as any,
-  }));
-  const shadowStyle = useAnimatedStyle(() => {
-    const up = Math.min(1, Math.max(0, -ty.value / (S * 0.5)));
-    return { opacity: 1 - up * 0.65, transform: [{ scaleX: sx.value * grow.value * (1 - up * 0.4) }] as any };
-  });
-
-  const timers2 = useRef<ReturnType<typeof setTimeout>[]>([]);
-  const later2 = (ms: number, f: () => void) => { timers2.current.push(setTimeout(f, ms)); };
-  useEffect(() => () => timers2.current.forEach(clearTimeout), []);
-
-  // Mood: set the targets, then keep small life going with timers. No springs (Julian 08.11.), ease out and settle.
-  useEffect(() => {
-    [sx, sy, grow, rot, gx, gy, blink, wide, bf, ba, lvlOn, tx].forEach(cancelAnimation);
-    const timers: ReturnType<typeof setTimeout>[] = [];
-    const later = (ms: number, fn: () => void) => timers.push(setTimeout(fn, ms));
-    const sp = { duration: 260, easing: OUT };
-    const look = (x: number, y: number, ms = 260) => { gx.value = withTiming(x, { duration: ms, easing: OUT }); gy.value = withTiming(y, { duration: ms, easing: OUT }); };
-    const blinkOnce = (twice = false) => {
-      const one = [withTiming(0.1, { duration: 70 }), withTiming(1, { duration: 110 })];
-      blink.value = twice ? withSequence(...one, withTiming(1, { duration: 90 }), ...one) : withSequence(...one);
-    };
-
-    if (mood !== 'happy') happy.value = withTiming(0, { duration: 160 });
-    lvlOn.value = withTiming(mood === 'listen' ? 1 : 0, { duration: 250 });
-    wide.value = withTiming(mood === 'listen' ? 1.12 : 1, sp);
-    grow.value = withTiming(mood === 'listen' ? 1.1 : 1, { duration: 320, easing: OUT });
-    bf.value = mood === 'sleep' ? 0.9 : mood === 'listen' ? 3 : 2.2;
-    ba.value = withTiming(mood === 'sleep' ? 0.028 : 0.014, { duration: 400 });
-    rot.value = withTiming(0, sp);
-    tx.value = withTiming(0, sp);
-
-    if (mood === 'think') {
-      // Rocks from side to side and sinks a little, like turning it over; eyes up and wandering.
-      sx.value = withTiming(1.05, sp);
-      sy.value = withTiming(0.94, sp);
-      blink.value = withTiming(1, { duration: 100 });
-      look(0.7, -0.6);
-      if (live) {
-        let k = 0;
-        const wander = () => { k++; look(k % 2 ? -0.7 : 0.7, -0.6, 420); rot.value = withTiming(k % 2 ? -6 : 6, { duration: 520, easing: SINE }); later(950, wander); };
-        later(600, wander);
-      }
-    } else {
-      sx.value = withTiming(1, sp);
-      sy.value = withTiming(1, sp);
-      if (mood === 'listen') { look(0, -0.45); blink.value = withTiming(1, { duration: 100 }); }
-      else if (mood === 'type') look(tAtRef.current.x, tAtRef.current.y);
-      else if (mood === 'sleep') { look(0, 0.3); blink.value = withTiming(0.1, { duration: 300 }); }
-      else look(restRef.current.x, restRef.current.y);
-      if (mood !== 'sleep' && mood !== 'listen') blink.value = withTiming(1, { duration: 160 });
-    }
-
-    if (live && mood !== 'sleep' && mood !== 'think') {
-      const nextBlink = () => later(2200 + Math.random() * 3300, () => { blinkOnce(Math.random() < 0.18); nextBlink(); });
-      nextBlink();
-    }
-    if (live && mood === 'idle' && !gaze) {
-      const spots: [number, number][] = [[-0.9, 0.1], [-0.6, -0.6], [0.7, -0.4], [0, 0], [0, 0], [-0.9, 0.5]];
-      const around = () => later(3500 + Math.random() * 4500, () => {
-        const [x, y] = spots[Math.floor(Math.random() * spots.length)];
-        look(x, y, 300);
-        if (Math.random() < 0.3) later(1200 + Math.random() * 800, () => look(0, 0, 300));
-        around();
-      });
-      around();
-      const dart = () => later(700 + Math.random() * 1400, () => {
-        const bx = gx.value, by = gy.value;
-        gx.value = withSequence(withTiming(bx + (Math.random() - 0.5) * 0.3, { duration: 60 }), withDelay(220 + Math.random() * 300, withTiming(bx, { duration: 90 })));
-        gy.value = withSequence(withTiming(by + (Math.random() - 0.5) * 0.2, { duration: 60 }), withDelay(220 + Math.random() * 300, withTiming(by, { duration: 90 })));
-        dart();
-      });
-      dart();
-    }
-    if (live && mood === 'type') {
-      const nod = () => later(900 + Math.random() * 700, () => { const y = tAtRef.current.y; gy.value = withSequence(withTiming(y + 0.2, { duration: 140 }), withTiming(y, { duration: 220 })); nod(); });
-      nod();
-    }
-    return () => { timers.forEach(clearTimeout); };
-  }, [mood, live]);
-
-  // Poses for the onboarding.
-  useEffect(() => {
-    if (!pose || !live) return;
-    const timers: ReturnType<typeof setTimeout>[] = [];
-    if (pose === 'peek') {
-      gx.value = withTiming(0, { duration: 300, easing: OUT }); gy.value = withTiming(-0.7, { duration: 300, easing: OUT });
-      rot.value = withRepeat(withSequence(withTiming(-4, { duration: 1400, easing: SINE }), withTiming(4, { duration: 1400, easing: SINE })), -1, true);
-    } else if (pose === 'wave') {
-      // Hello: rocks on his bottom edge three times, easing out, then waits and does it again.
-      const hello = () => {
-        rot.value = withSequence(
-          withTiming(-12, { duration: 180, easing: OUT }), withTiming(10, { duration: 220, easing: SINE }),
-          withTiming(-8, { duration: 220, easing: SINE }), withTiming(5, { duration: 220, easing: SINE }), withTiming(0, { duration: 260, easing: OUT }),
-        );
-        happy.value = withSequence(withTiming(1, { duration: 140 }), withDelay(900, withTiming(0, { duration: 200 })));
-        timers.push(setTimeout(hello, 2600));
-      };
-      hello();
-    } else if (pose === 'jump') {
-      jump();
-    }
-    return () => { timers.forEach(clearTimeout); cancelAnimation(rot); rot.value = withTiming(0, { duration: 200 }); if (pose === 'peek') gy.value = withTiming(0, { duration: 260 }); };
-  }, [pose, live]);
-
-  /** One big happy jump: gathers, flies up stretched, lands squashed, settles. */
-  const jump = () => {
-    happy.value = withSequence(withTiming(1, { duration: 120 }), withDelay(1100, withTiming(0, { duration: 220 })));
-    if (!live) return;
-    [ty, sx, sy].forEach(cancelAnimation);
-    ty.value = withSequence(withDelay(110, withTiming(-S * 0.5, { duration: 260, easing: Easing.out(Easing.quad) })), withTiming(0, { duration: 230, easing: Easing.in(Easing.quad) }));
-    sy.value = withSequence(withTiming(0.86, { duration: 110, easing: OUT }), withTiming(1.1, { duration: 160, easing: OUT }), withTiming(1, { duration: 330 }), withTiming(0.85, { duration: 70, easing: OUT }), withTiming(1.04, { duration: 160, easing: OVER }), withTiming(1, { duration: 200, easing: OUT }));
-    sx.value = withSequence(withTiming(1.1, { duration: 110, easing: OUT }), withTiming(0.93, { duration: 160, easing: OUT }), withTiming(1, { duration: 330 }), withTiming(1.12, { duration: 70, easing: OUT }), withTiming(0.98, { duration: 160, easing: OVER }), withTiming(1, { duration: 200, easing: OUT }));
-    // The salto (Pumpy's mortalzinho): one full turn while in the air, then back to 0 without a visible jump.
-    rot.value = withSequence(withDelay(110, withTiming(-360, { duration: 490, easing: Easing.bezier(0.2, 0.7, 0.3, 1) })), withTiming(0, { duration: 0 }));
+  // Frames run only while something moves. These states never rest: he listens, thinks, breathes or sways.
+  const always = st === ST.listen || st === ST.think || !!breathe || poseId > 0;
+  const alwaysRef = useRef(always); alwaysRef.current = always;
+  const until = useRef(0);
+  const off = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const wake = (ms: number) => {
+    fc.setActive(true);
+    const end = Date.now() + ms;
+    if (end <= until.current) return;
+    until.current = end;
+    if (off.current) clearTimeout(off.current);
+    off.current = setTimeout(() => { until.current = 0; if (!alwaysRef.current) fc.setActive(false); }, ms + 80);
   };
+  const push = (patch: Partial<In>, ms: number) => { cur.current = { ...cur.current, ...patch }; inp.value = cur.current; wake(ms); };
+  useEffect(() => () => { if (off.current) clearTimeout(off.current); fc.setActive(false); }, []);
 
-  // A joy or a poke: gather, stretch, a little counter squash as the clay settles (follow-through). No springs.
-  const react = (big: boolean, eyes: number) => {
-    happy.value = withSequence(withDelay(big ? 90 : 0, withTiming(1, { duration: 120 })), withDelay(eyes, withTiming(0, { duration: 220 })));
-    gx.value = withTiming(0, { duration: 160 }); gy.value = withTiming(big ? -0.25 : 0, { duration: 160 });
-    if (!live) return;
-    cancelAnimation(sx); cancelAnimation(sy); cancelAnimation(rot);
-    const k = big ? 1 : 0.55;
-    sx.value = withSequence(withTiming(1 + 0.08 * k, { duration: 90, easing: OUT }), withTiming(1 - 0.07 * k, { duration: 170, easing: OVER }), withTiming(1 + 0.02 * k, { duration: 160, easing: OUT }), withTiming(1, { duration: 260, easing: OUT }));
-    sy.value = withSequence(withTiming(1 - 0.1 * k, { duration: 90, easing: OUT }), withTiming(1 + 0.1 * k, { duration: 170, easing: OVER }), withTiming(1 - 0.03 * k, { duration: 160, easing: OUT }), withTiming(1, { duration: 260, easing: OUT }));
-    if (big) {
-      ty.value = withSequence(withDelay(90, withTiming(-S * 0.12, { duration: 170, easing: OUT })), withTiming(0, { duration: 200, easing: Easing.in(Easing.quad) }));
-      rot.value = withSequence(withDelay(90, withTiming(-6, { duration: 170, easing: OVER })), withTiming(3, { duration: 200, easing: OUT }), withTiming(0, { duration: 300, easing: OUT }));
-      later2(eyes + 260, () => { gy.value = withTiming(0, { duration: 300, easing: OUT }); });
-    }
-  };
-  // Perks up when something starts (keyboard, mic): blink, rise, eyes pop open.
-  const prevMood = useRef(mood);
   const first = useRef(true);
+  useEffect(() => { if (always) fc.setActive(true); else if (!first.current) wake(RUN.state); }, [always]);
+  useEffect(() => { if (!first.current) push({ st, pose: poseId, breathe: breathe ? 1 : 0 }, st === ST.sleep ? RUN.sleep : RUN.state); }, [st, poseId, !!breathe]);
+  useEffect(() => { if (!first.current) push({ restX: rest.x, restY: rest.y, typeX: ty.x, typeY: ty.y }, RUN.gaze); }, [rest.x, rest.y, ty.x, ty.y]);
+  useEffect(() => { if (!first.current) push({ joyN: cur.current.joyN + 1, joyKind: kindId, joyLong: joyLong ?? 900 }, kindId ? RUN.morph : (joyLong ?? 900) + 500); }, [joy]);
+  useEffect(() => { if (!first.current) push({ pokeN: cur.current.pokeN + 1 }, RUN.poke); }, [poke]);
+  useEffect(() => { if (!first.current) push({ tapN: cur.current.tapN + 1 }, RUN.tap); }, [tap]);
+  useEffect(() => { if (!first.current) push({ winkN: cur.current.winkN + 1 }, RUN.wink); }, [wink]);
+  useEffect(() => { if (!first.current) push({ sadN: cur.current.sadN + 1 }, RUN.sad); }, [sad]);
+  useEffect(() => { if (!first.current && heard) push({ nodN: cur.current.nodN + 1 }, RUN.nod); }, [heard]);
   useEffect(() => {
-    const was = prevMood.current; prevMood.current = mood;
-    if (!live || first.current || was === mood) return;
-    if (!((mood === 'type' || mood === 'listen') && (was === 'idle' || was === 'sleep'))) return;
-    const k = was === 'sleep' ? 1.2 : 1;
-    blink.value = withSequence(withTiming(0.2, { duration: 70 }), withTiming(1.15, { duration: 140, easing: OVER }), withTiming(1, { duration: 200 }));
-    sy.value = withSequence(withTiming(1 - 0.07 * k, { duration: 80, easing: OUT }), withTiming(1 + 0.07 * k, { duration: 160, easing: OVER }), withTiming(1, { duration: 280, easing: OUT }));
-    sx.value = withSequence(withTiming(1 + 0.05 * k, { duration: 80, easing: OUT }), withTiming(1 - 0.04 * k, { duration: 160, easing: OVER }), withTiming(1, { duration: 280, easing: OUT }));
-  }, [mood]);
-  // Follows along while you speak: each new bit of text, a small nod and a blink of attention.
-  useEffect(() => {
-    if (first.current || !heard || mood !== 'listen' || !live) return;
-    gy.value = withSequence(withTiming(-0.2, { duration: 90, easing: OUT }), withTiming(-0.45, { duration: 240, easing: OUT }));
-    rot.value = withSequence(withTiming((heard % 2 ? 1 : -1) * 3, { duration: 120, easing: OUT }), withTiming(0, { duration: 260, easing: OUT }));
-  }, [heard]);
-  // Eyes go where you touched, then drift back; the body leans in a beat later.
-  useEffect(() => {
-    if (!glance || (mood !== 'idle' && mood !== 'type')) return;
-    gx.value = withSequence(withTiming(glance.x, { duration: 90, easing: OUT }), withDelay(1300, withTiming(mood === 'type' ? tAtRef.current.x : restRef.current.x, { duration: 420, easing: OUT })));
-    gy.value = withSequence(withTiming(glance.y, { duration: 90, easing: OUT }), withDelay(1300, withTiming(mood === 'type' ? tAtRef.current.y : restRef.current.y, { duration: 420, easing: OUT })));
-    if (live) {
-      rot.value = withSequence(withDelay(60, withTiming(glance.x * 7, { duration: 260, easing: OVER })), withDelay(1050, withTiming(0, { duration: 480, easing: OUT })));
-      tx.value = withSequence(withDelay(60, withTiming(glance.x * S * 0.05, { duration: 260, easing: OVER })), withDelay(1050, withTiming(0, { duration: 480, easing: OUT })));
-    }
+    if (first.current || !glance || (st !== ST.idle && st !== ST.type)) return;
+    push({ glN: cur.current.glN + 1, glX: glance.x, glY: glance.y, glHold: 1300 }, 2100);
   }, [glance?.n]);
-  // Reading along.
+  // Blinks come at uneven gaps (2.6 to 5 s), now and then twice. Not while he thinks or sleeps.
   useEffect(() => {
-    if (mood === 'idle' && gaze) { gx.value = withTiming(gaze.x, { duration: 200, easing: OUT }); gy.value = withTiming(gaze.y, { duration: 200, easing: OUT }); return; }
-    if (mood !== 'type') return;
-    gx.value = withTiming(tAt.x, { duration: 160, easing: OUT });
-    gy.value = withSequence(withTiming(tAt.y + 0.12, { duration: 90, easing: OUT }), withTiming(tAt.y, { duration: 200, easing: OUT }));
-    if (live) sy.value = withSequence(withTiming(0.98, { duration: 80, easing: OUT }), withTiming(1, { duration: 220, easing: OUT }));
-  }, [tAt.x, tAt.y]);
-  useEffect(() => { if (first.current) return; react(true, 1600); }, [joy]);
-  useEffect(() => { if (first.current) return; react(false, 450); }, [poke]);
-  useEffect(() => { first.current = false; if (mood === 'happy') happy.value = withTiming(1, { duration: 160 }); }, [mood]);
+    if (st === ST.sleep || st === ST.think) return;
+    let id: ReturnType<typeof setTimeout>;
+    const next = () => { id = setTimeout(() => { push({ blinkN: cur.current.blinkN + 1, blink2: Math.random() < 0.3 ? 1 : 0 }, RUN.blink); next(); }, 2600 + Math.random() * 2400); };
+    next();
+    return () => clearTimeout(id);
+  }, [st]);
+  // At rest he glances to one side at most every 12 s, sometimes a slow look up.
+  useEffect(() => {
+    if (st !== ST.idle || gaze || poseId) return;
+    let id: ReturnType<typeof setTimeout>;
+    const next = () => { id = setTimeout(() => { push({ glN: cur.current.glN + 1, glX: (Math.random() * 2 - 1) * 0.7, glY: Math.random() > 0.75 ? -0.55 : -0.1, glHold: 1000 }, 1800); next(); }, 12000 + Math.random() * 8000); };
+    next();
+    return () => clearTimeout(id);
+  }, [st, !!gaze, poseId]);
+  // 'jump' (the onboarding's happy moment): no hop any more, one long ^^.
+  useEffect(() => {
+    if (pose !== 'jump') return;
+    const id = setTimeout(() => push({ joyN: cur.current.joyN + 1, joyKind: 0, joyLong: 1600 }, 2200), 60);
+    return () => clearTimeout(id);
+  }, [pose]);
+  useEffect(() => { first.current = false; }, []);
 
-  const ew = S * EYE_W, eh = S * EYE_H;
-  const aw = S * 0.125, at = Math.max(1.5, S * 0.038);
-  const cx = S / 2, ey = S * EYE_Y, ex = S * EYE_X;
+  const body = useAnimatedStyle(() => {
+    const p = P.value, m = p.m, r = D / 2;
+    if (!m) return {
+      borderTopLeftRadius: r, borderTopRightRadius: r, borderBottomRightRadius: r, borderBottomLeftRadius: r,
+      transform: [{ translateX: p.tx * u }, { translateY: p.ty * u }, { rotate: `${p.rot}deg` }, { scaleX: p.sx }, { scaleY: p.sy }] as any,
+    };
+    return {
+      borderTopLeftRadius: m.tl * D, borderTopRightRadius: m.tr * D, borderBottomRightRadius: m.br * D, borderBottomLeftRadius: m.bl * D,
+      transform: [{ translateX: (p.tx + m.bx) * u }, { translateY: (p.ty + m.by) * u }, { rotate: `${p.rot}deg` }, { scaleX: p.sx * m.bsx }, { scaleY: p.sy * m.bsy }] as any,
+    };
+  });
+
+  // The parts of the current morph: their shapes are fixed, so they are laid out here; the frames only move them.
+  const geo = useMemo(() => (kindId ? morph(kindId, 1, 600).parts : []), [kindId]);
 
   return (
     <View pointerEvents="none" style={[{ width: S, height: S }, style]}>
-      {shadow ? (
-        <Animated.View style={[{ position: 'absolute', left: S * 0.16, right: S * 0.16, top: S * 0.92, height: S * 0.11 }, shadowStyle]}>
-          <Svg width="100%" height="100%" viewBox="0 0 100 20" preserveAspectRatio="none">
-            <Defs>
-              <RadialGradient id={`${id}s`} cx="50%" cy="50%" r="50%">
-                <Stop offset="0" stopColor="#16232A" stopOpacity={0.2} />
-                <Stop offset="1" stopColor="#16232A" stopOpacity={0} />
-              </RadialGradient>
-            </Defs>
-            <Ellipse cx={50} cy={10} rx={50} ry={10} fill={`url(#${id}s)`} />
-          </Svg>
-        </Animated.View>
-      ) : null}
-      <Animated.View style={[{ position: 'absolute', left: 0, top: 0, width: S, height: S, transformOrigin: ['50%', '92%', 0] }, bodyStyle]}>
-        <View style={{ position: 'absolute', left: S * (1 - BODY_D) / 2, top: S * BODY_TOP, width: S * BODY_D, height: S * BODY_D, borderRadius: S * BODY_D / 2, backgroundColor: tokens.ink }} />
-        {[-1, 1].map((side) => (
-          <React.Fragment key={side}>
-            <Animated.View style={[{ position: 'absolute', left: cx + side * ex - ew / 2, top: ey - eh / 2, width: ew, height: eh, borderRadius: ew / 2, backgroundColor: tokens.onInk }, eyeStyle]} />
-            <Animated.View style={[{ position: 'absolute', left: cx + side * ex - aw / 2, top: ey - aw / 2, width: aw, height: aw / 2 + at / 2, overflow: 'hidden' }, arcStyle]}>
-              <View style={{ width: aw, height: aw, borderRadius: aw / 2, borderWidth: at, borderColor: tokens.onInk }} />
-            </Animated.View>
-          </React.Fragment>
-        ))}
+      <Animated.View style={[{ position: 'absolute', left: (S - D) / 2, top: S * BODY_TOP, width: D, height: D, borderRadius: D / 2, backgroundColor: color }, body]}>
+        <Eye P={P} k={0} u={u} D={D} color={eye} />
+        <Eye P={P} k={1} u={u} D={D} color={eye} />
+        <Dot P={P} k={0} u={u} D={D} color={eye} />
+        <Dot P={P} k={1} u={u} D={D} color={eye} />
+        <Dot P={P} k={2} u={u} D={D} color={eye} />
+        {Array.from({ length: PARTS }, (_, i) => <Piece key={i} P={P} i={i} u={u} D={D} g={geo[i] ?? null} ink={color} cut={ground} eye={eye} />)}
       </Animated.View>
     </View>
   );
+}
+
+/** One eye: a pill that slides, blinks and squints, and the ^^ arch it swaps to when he is glad. */
+function Eye({ P, k, u, D, color }: { P: SharedValue<Frame>; k: 0 | 1; u: number; D: number; color: string }) {
+  const ew = 4 * u, eh = 7 * u, aw = 7 * u, at = Math.max(1.4, 2 * u);
+  const cx = D / 2 + (k ? 4 : -4) * u, cy = D / 2;
+  const pill = useAnimatedStyle(() => {
+    const p = P.value, tn = p.turn, a = Math.abs(tn), edge = (tn > 0) === (k === 1), h = p.happy;
+    // Looking aside: both eyes slide over, they move closer, and the outer one gets narrower (a turn, in 2D).
+    const x = (tn * 8.5 + (k ? -1 : 1) * 1.4 * a * (edge ? 1.4 : 1) + p.gx * 3) * u;
+    if (h >= 0.5) return { opacity: 0, transform: [{ translateX: x }, { translateY: p.gy * 3 * u }, { scaleX: 1 }, { scaleY: 0.02 }] as any };
+    const d = cl(k === 1 ? p.dash * (1 - 0.7 * p.peek) : p.dash);
+    let sy = p.blink * (k === 0 ? p.wl : p.wr) * p.wide * lerp(1, 0.28, d) * (1 - (edge ? 0.08 : 0) * a) * (1 - 2 * h);
+    if (p.tho > 0) sy *= lerp(1, 0.57, cl(p.tho * 2));
+    const sx = p.wide * (1 + 0.5 * d) * (1 - (edge ? 0.42 : 0.1) * a);
+    let o = 1 - p.tho;
+    if (p.m) o *= 1 - p.m.hide;
+    return { opacity: o, transform: [{ translateX: x }, { translateY: p.gy * 3 * u }, { scaleX: sx }, { scaleY: Math.max(0.02, sy) }] as any };
+  });
+  const arch = useAnimatedStyle(() => {
+    const p = P.value, tn = p.turn, a = Math.abs(tn), edge = (tn > 0) === (k === 1), h = p.happy;
+    const x = (tn * 8.5 + (k ? -1 : 1) * 1.4 * a * (edge ? 1.4 : 1)) * u;
+    if (h < 0.5) return { opacity: 0, transform: [{ translateX: x }, { scaleX: 1 }, { scaleY: 0.02 }] as any };
+    return { opacity: p.m ? 1 - p.m.hide : 1, transform: [{ translateX: x }, { scaleX: 1 - (edge ? 0.3 : 0.08) * a }, { scaleY: Math.max(0.02, cl((h - 0.5) * 2)) }] as any };
+  });
+  return (
+    <>
+      <Animated.View style={[{ position: 'absolute', left: cx - ew / 2, top: cy - eh / 2, width: ew, height: eh, borderRadius: ew / 2, backgroundColor: color }, pill]} />
+      <Animated.View style={[{ position: 'absolute', left: cx - aw / 2, top: cy - aw / 4 - at / 4, width: aw, height: aw / 2 + at / 2, overflow: 'hidden' }, arch]}>
+        <View style={{ width: aw, height: aw, borderRadius: aw / 2, borderWidth: at, borderColor: color }} />
+      </Animated.View>
+    </>
+  );
+}
+
+/** One of the three thinking dots: first "…" where the eyes were, then a slow orbit. */
+function Dot({ P, k, u, D, color }: { P: SharedValue<Frame>; k: number; u: number; D: number; color: string }) {
+  const s = 3.6 * u;
+  const st = useAnimatedStyle(() => {
+    const p = P.value;
+    if (p.tho <= 0.001) return { opacity: 0, transform: [{ translateX: 0 }, { translateY: 0 }, { scale: 1 }] as any };
+    const ca = p.tha + k * 2.0944;
+    const lx = (k - 1) * 5.6 + p.thx, ly = -p.thx * 0.5;
+    const ox = Math.cos(ca) * 4.4 + p.thx * 0.6, oy = Math.sin(ca) * 4.4 - p.thx * 0.3;
+    const sc = k === 1 ? lerp(0.5, 1, cl(p.tho * 1.6 - 0.4)) : 1;
+    return { opacity: p.tho, transform: [{ translateX: lerp(lx, ox, p.thm) * u }, { translateY: lerp(ly, oy, p.thm) * u }, { scale: lerp(sc, 1 - k * 0.18, p.thm) }] as any };
+  });
+  return <Animated.View style={[{ position: 'absolute', left: D / 2 - s / 2, top: D / 2 - s / 2, width: s, height: s, borderRadius: s / 2, backgroundColor: color }, st]} />;
+}
+
+/** One flat part of a morph. Its shape comes from g (fixed), its place and visibility from the frames. */
+function Piece({ P, i, u, D, g, ink, cut, eye }: { P: SharedValue<Frame>; i: number; u: number; D: number; g: Part | null; ink: string; cut: string; eye: string }) {
+  const st = useAnimatedStyle(() => {
+    const m = P.value.m;
+    const q = m && i < m.parts.length ? m.parts[i] : null;
+    if (!q) return { opacity: 0, transform: [{ translateX: 0 }, { translateY: 0 }, { rotate: '0deg' }, { scaleX: 1 }, { scaleY: 1 }] as any };
+    return { opacity: q.o, transform: [{ translateX: q.x * u }, { translateY: q.y * u }, { rotate: `${q.rot}deg` }, { scaleX: Math.max(0.02, q.sx) }, { scaleY: Math.max(0.02, q.sy) }] as any };
+  });
+  if (!g) return <Animated.View style={[{ position: 'absolute', left: D / 2, top: D / 2, width: 0, height: 0, opacity: 0 }, st]} />;
+  const w = g.w * u, h = g.h * u;
+  const col = g.col === 0 ? ink : g.col === 1 ? cut : eye;
+  const box = { position: 'absolute' as const, left: D / 2 - w / 2, top: D / 2 - h / 2, width: w, height: h, opacity: 0 };
+  const line = g.line ? ({ boxShadow: `0 0 0 ${g.line * u}px ${cut}` } as any) : null;
+  if (g.kind === 3) return (
+    <Animated.View style={[box, st]}>
+      <View style={{ width: 0, height: 0, borderLeftWidth: w, borderLeftColor: col, borderTopWidth: h / 2, borderBottomWidth: h / 2, borderTopColor: 'transparent', borderBottomColor: 'transparent' }} />
+    </Animated.View>
+  );
+  if (g.kind === 2) return (
+    <Animated.View style={[box, { overflow: 'hidden' }, st]}>
+      <View style={{ width: w, height: h * 2, borderRadius: g.rad * u, borderWidth: g.bw * u, borderColor: col }} />
+    </Animated.View>
+  );
+  if (g.kind === 1) return <Animated.View style={[box, { borderRadius: g.rad * u, borderWidth: g.bw * u, borderColor: col }, line, st]} />;
+  return <Animated.View style={[box, { borderRadius: g.rad * u, backgroundColor: col }, line, st]} />;
 }

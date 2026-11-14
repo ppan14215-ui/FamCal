@@ -14,7 +14,9 @@ import { Pressable, useWindowDimensions, View } from 'react-native';
 import Animated, { useSharedValue, useAnimatedStyle, withTiming, withSequence, withDelay, Easing, useReducedMotion } from 'react-native-reanimated';
 import Pin from './Pin';
 import { useMascot } from '../../lib/mascot';
-import { useBuddy, setBuddy, buddyJoy, buddyPoke, buddyTalk, voiceLevel, isNight, type Mood } from '../../lib/buddy';
+import { useBuddy, setBuddy, buddyJoy, buddyPoke, buddySad, buddyTalk, voiceLevel, isNight, type Mood } from '../../lib/buddy';
+import type { MorphKind } from './morphs';
+import type { CalEvent, List } from '../../state/types';
 import { getPref, setPref, onPrefsReady } from '../../lib/prefs';
 import Txt from '../ui/Txt';
 import { tokens } from '../../theme';
@@ -25,11 +27,15 @@ import { useFeed } from '../../lib/feed';
 import { getFamily, myRole } from '../../lib/sync';
 import { haptics } from '../../lib/haptics';
 import { usePathname } from 'expo-router';
-import { useStore } from '../../state/store';
+import { useStore, get } from '../../state/store';
 import { useSpeak, speakOpen } from '../../lib/speak';
 import { tx } from '../../i18n/lang';
 
 const SIZE = 38;
+const count = (lists: List[], pick: (l: List) => boolean) => lists.reduce((n, l) => n + (pick(l) ? l.sections.reduce((m, sec) => m + sec.items.length, 0) : 0), 0);
+/** Which thing a new Termin is to Memo. */
+const eventKind = (e: CalEvent): MorphKind =>
+  /geburtstag|birthday/i.test(e.title) ? 'kuchen' : /urlaub|ferien|holiday|vacation/i.test(e.title) || (e.endDate && e.endDate !== e.date) ? 'koffer' : e.allDay ? 'sonne' : 'termin';
 const RIGHT = 20;
 
 export default function BuddyHost() {
@@ -44,18 +50,38 @@ export default function BuddyHost() {
   const [night, setNight] = useState(isNight());
   useEffect(() => { const id = setInterval(() => setNight(isNight()), 60000); return () => clearInterval(id); }, []);
 
-  // Something landed (a happy jiggle in place): the assistant finished (think -> off/land) or answered in the chat.
-  // One hop per answer, even when the reply and the landing come close together.
+  // Something landed. One answer per action: what lands within a blink counts as one, and the most telling thing wins.
+  // With a kind Memo melts into that thing for a second (buddy/morphs.ts): only for a real result of something you just
+  // did, never while you type, never for changes that come in by themselves (sync). Everything else is a plain ^^.
   const lastJoy = useRef(0);
-  const joy = () => { if (Date.now() - lastJoy.current < 1500) return; lastJoy.current = Date.now(); buddyJoy(); };
+  const pend = useRef<{ kind: MorphKind | null; t: ReturnType<typeof setTimeout> | null }>({ kind: null, t: null });
+  const typingRef = useRef(typing); typingRef.current = typing;
+  const touchAt = useRef(0);
+  const thinkAt = useRef(0);
+  useEffect(() => { if (b.touch) touchAt.current = Date.now(); }, [b.touch?.n]);
+  /** You did something a moment ago (a touch, a sentence): then a change in the family's data is yours. */
+  const mine = () => Date.now() - Math.max(touchAt.current, thinkAt.current) < 8000;
+  const joy = (kind: MorphKind | null = null) => {
+    if (kind) pend.current.kind = kind;
+    if (pend.current.t) return;
+    pend.current.t = setTimeout(() => {
+      const k = pend.current.kind;
+      pend.current = { kind: null, t: null };
+      if (Date.now() - lastJoy.current < 1500) return;
+      lastJoy.current = Date.now();
+      buddyJoy(typingRef.current ? null : k);
+    }, 90);
+  };
+  useEffect(() => () => { if (pend.current.t) clearTimeout(pend.current.t); }, []);
   const was = useRef(veil.phase);
   useEffect(() => {
-    if (was.current === 'think' && veil.phase !== 'think') joy();
+    if (veil.phase === 'think') thinkAt.current = Date.now();
+    if (was.current === 'think' && veil.phase !== 'think') { thinkAt.current = Date.now(); joy(); }
     was.current = veil.phase;
   }, [veil.phase]);
   const replied = useRef<string | undefined>(undefined);
   useEffect(() => { if (veil.reply && !replied.current) joy(); replied.current = veil.reply; }, [veil.reply]);
-  // A message from someone else in the family: Memo looks up with a little squish.
+  // A message from someone else in the family: he pays attention (a blink, eyes a touch wider).
   const seen = useRef(feed.length);
   useEffect(() => {
     if (feed.length > seen.current) {
@@ -66,18 +92,51 @@ export default function BuddyHost() {
     seen.current = feed.length;
   }, [feed.length]);
 
-  // He notices what you do (Julian 08.11. 23:49: "react to everything I do inside the app"):
-  // another screen = a little look-up squish; something ticked off on a list or a task done = a small happy wiggle.
+  // He notices what you do (Julian 08.11. 23:49: "react to everything I do inside the app").
   const path = usePathname();
   const firstPath = useRef(true);
   useEffect(() => { if (firstPath.current) { firstPath.current = false; return; } buddyPoke(); }, [path]);
-  const doneCount = useStore((s) => s.tasks.filter((t) => t.done).length + s.lists.reduce((n, l) => n + l.sections.reduce((m, sec) => m + sec.items.filter((i) => i.done).length, 0), 0));
-  const allCount = useStore((s) => s.events.length + s.tasks.length + s.lists.reduce((n, l) => n + l.sections.reduce((m, sec) => m + sec.items.length, 0), 0));
-  const seenDone = useRef(doneCount);
-  const seenAll = useRef(allCount);
-  useEffect(() => { if (doneCount > seenDone.current) joy(); seenDone.current = doneCount; }, [doneCount]);
-  // Something removed: a small startled squish.
-  useEffect(() => { if (allCount < seenAll.current) buddyPoke(); seenAll.current = allCount; }, [allCount]);
+  // A new Termin: he becomes the sheet (a sun for a whole day, a cake for a birthday, a suitcase for a holiday).
+  // The same number of Termine but another day or time: one was moved, an arrow slides under the sheet.
+  const evN = useStore((s) => s.events.length);
+  const evSig = useStore((s) => s.events.reduce((n, e) => { const k = e.date + e.start; let h = 0; for (let i = 0; i < k.length; i++) h = (h * 31 + k.charCodeAt(i)) | 0; return (n + h) | 0; }, 0));
+  const evIds = useRef<Set<string> | null>(null);
+  if (!evIds.current) evIds.current = new Set(get().events.map((e) => e.id));
+  const seenEv = useRef(evN);
+  const seenSig = useRef(evSig);
+  useEffect(() => {
+    const all = get().events;
+    const d = evN - seenEv.current;
+    if (mine()) {
+      if (d === 1) { const e = all.find((x) => !evIds.current!.has(x.id)); joy(e ? eventKind(e) : 'termin'); }
+      else if (d === 0 && evSig !== seenSig.current) joy('pfeil');
+      else if (d < 0) joy('eimer');
+    }
+    seenEv.current = evN; seenSig.current = evSig; evIds.current = new Set(all.map((e) => e.id));
+  }, [evN, evSig]);
+  // Lists: something new on the shopping list is the basket; a list ticked off completely is the big check;
+  // one item ticked is only a quick ^^ (it happens too often for more); something removed is the bin.
+  const shopN = useStore((s) => count(s.lists, (l) => l.id === 'einkauf'));
+  const itemN = useStore((s) => count(s.lists, () => true) + s.tasks.length);
+  const doneN = useStore((s) => s.tasks.filter((t) => t.done).length + s.lists.reduce((n, l) => n + l.sections.reduce((m, sec) => m + sec.items.filter((i) => i.done).length, 0), 0));
+  const fullN = useStore((s) => s.lists.filter((l) => { const it = l.sections.flatMap((sec) => sec.items); return it.length > 1 && it.every((i) => i.done); }).length);
+  const peopleN = useStore((s) => s.people.length);
+  const seenL = useRef({ shopN, itemN, doneN, fullN, peopleN });
+  useEffect(() => {
+    const p = seenL.current;
+    if (mine()) {
+      if (fullN > p.fullN) joy('haken');
+      else if (doneN > p.doneN) joy();
+      else if (shopN > p.shopN) joy('korb');
+      else if (itemN > p.itemN) joy();
+      else if (itemN < p.itemN) joy('eimer');
+      if (peopleN > p.peopleN) joy('familie');
+    }
+    seenL.current = { shopN, itemN, doneN, fullN, peopleN };
+  }, [shopN, itemN, doneN, fullN, peopleN]);
+  // Something did not work (a warning toast): he looks down for a moment.
+  const warn = useStore((s) => (s.toast?.kind === 'warn' ? s.toast.id : 0));
+  useEffect(() => { if (warn) buddySad(); }, [warn]);
 
   const mood: Mood = b.listening ? 'listen' : veil.phase === 'think' ? 'think' : typing ? 'type' : night ? 'sleep' : 'idle';
 
@@ -180,7 +239,7 @@ export default function BuddyHost() {
       ) : null}
       <Animated.View style={bodyStyle}>
       <Pressable onPress={tap} hitSlop={{ top: 10, left: 10, right: 10, bottom: 0 }} accessibilityRole="button" accessibilityLabel={tx('Memo, tippen zum Sprechen', 'Memo, tap to talk')}>
-        <Pin size={SIZE} mood={mood} joy={b.joy} poke={b.poke} level={voiceLevel} glance={glance} />
+        <Pin size={SIZE} mood={mood} joy={b.joy} joyKind={b.joyKind} poke={b.poke} sad={b.sad} wink={b.wink} level={voiceLevel} glance={glance} />
       </Pressable>
       <Animated.View pointerEvents="none" style={[{ position: 'absolute', right: -4, top: -6, width: 16, height: 16, borderRadius: 8, alignItems: 'center', justifyContent: 'center', backgroundColor: tokens.row, boxShadow: `0 0 0 1px ${tokens.hair}` } as any, askStyle]}>
         <Txt size={11} weight={700} color={tokens.done} style={{ lineHeight: 13 }}>?</Txt>
