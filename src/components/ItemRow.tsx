@@ -13,7 +13,7 @@ import { Check, Meta } from './ui/kit';
 import { Owner } from './ui/Person';
 import { ClayIcon } from './ui/Clay';
 import SwipeRow from './SwipeRow';
-import { tokens, fonts } from '../theme';
+import { tokens, fonts, persons } from '../theme';
 import { haptics } from '../lib/haptics';
 import type { ClayName } from '../lib/clayIcons';
 import type { Who } from '../state/types';
@@ -45,11 +45,24 @@ type Props = {
   trailing?: React.ReactNode;
   /** Seen in a collection: dimmed, but stays in place. */
   dim?: boolean;
-  /** Klar look (Julian 14.11.): the line lies flat on the page ground, hairlines only, no white block. */
+  /**
+   * Klar look as Julian approved it (14.11.): the line lies flat on the page ground, hairlines only. Check, small
+   * icon, the title with its note behind it on the same line, and who as a small dot in the person's colour.
+   */
   flat?: boolean;
+  /** Flat: keep the icon's place free on a line without one, so the titles of a list stand in one column. */
+  iconSlot?: boolean;
 };
 
-export default function ItemRow({ title, editText, meta, metaColor, done, who, icon, onToggle, onEdit, onCycleWho, onDelete, onPressTitle, noCheck, lead, below, trailing, dim, flat, editHint = tx('Menge und Notiz einfach mitschreiben', 'Just add amount and note') }: Props) {
+/** Who is on it, as a dot in the person's colour; nobody yet is a faint ring you can tap. */
+function WhoDots({ who, empty }: { who: Who; empty: boolean }) {
+  const dot = (c: string, k: number) => <View key={k} style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: c }} />;
+  if (who === 'both') return <View style={{ flexDirection: 'row', gap: 3 }}>{dot(persons.J.ink, 0)}{dot(persons.T.ink, 1)}</View>;
+  if (who) return dot(persons[who].ink, 0);
+  return empty ? <View style={{ width: 8, height: 8, borderRadius: 4, borderWidth: 1.5, borderColor: tokens.circleLine }} /> : null;
+}
+
+export default function ItemRow({ title, editText, meta, metaColor, done, who, icon, onToggle, onEdit, onCycleWho, onDelete, onPressTitle, noCheck, lead, below, trailing, dim, flat, iconSlot, editHint = tx('Menge und Notiz einfach mitschreiben', 'Just add amount and note') }: Props) {
   const [editing, setEditing] = useState(false);
   const [text, setText] = useState(editText ?? title);
 
@@ -65,12 +78,16 @@ export default function ItemRow({ title, editText, meta, metaColor, done, who, i
     if (onEdit && t !== (editText ?? title)) onEdit(t);
   };
 
+  // Flat: the note stands behind the title on the same line, unless the row carries more (a cover, stars).
+  const inline = !!flat && !lead && !below;
+  const ink = who && who !== 'both' ? persons[who].ink : tokens.ink;
   const body = (
-    <View style={{ paddingVertical: editing ? 12 : 10, paddingHorizontal: flat ? 2 : 14, backgroundColor: flat ? tokens.bg : tokens.row, gap: 6 }}>
+    <View style={flat ? { minHeight: 48, justifyContent: 'center', paddingVertical: editing ? 10 : 6, paddingHorizontal: 2, backgroundColor: tokens.bg, gap: 6 } : { paddingVertical: editing ? 12 : 10, paddingHorizontal: 14, backgroundColor: tokens.row, gap: 6 }}>
       <View style={{ flexDirection: 'row', alignItems: lead ? 'flex-start' : 'center', gap: 12 }}>
-        {noCheck ? null : <Check done={done} onPress={onToggle} />}
+        {noCheck ? null : flat ? <Check done={done} onPress={onToggle} color={ink} /> : <Check done={done} onPress={onToggle} />}
         {lead}
-        {icon ? <ClayIcon name={icon} size={42} celebrate={done} /> : null}
+        {flat ? (icon || iconSlot ? <View style={{ width: 26, height: 26, opacity: done ? 0.45 : 1 }}>{icon ? <ClayIcon name={icon} size={26} celebrate={done} /> : null}</View> : null)
+          : icon ? <ClayIcon name={icon} size={42} celebrate={done} /> : null}
         {editing ? (
           <TextInput
             value={text}
@@ -80,7 +97,7 @@ export default function ItemRow({ title, editText, meta, metaColor, done, who, i
             onSubmitEditing={commit}
             returnKeyType="done"
             selectionColor={tokens.select} cursorColor={tokens.ink}
-            style={[{ flex: 1, minWidth: 0, fontFamily: fonts[500], fontSize: 17, color: tokens.ink, paddingVertical: 2 }, Platform.OS === 'web' ? ({ outlineStyle: 'none' } as any) : null]}
+            style={[{ flex: 1, minWidth: 0, fontFamily: fonts[flat ? 400 : 500], fontSize: 17, color: tokens.ink, paddingVertical: 2 }, Platform.OS === 'web' ? ({ outlineStyle: 'none' } as any) : null]}
           />
         ) : (
           <View style={{ flex: 1, minWidth: 0, gap: 6 }}>
@@ -94,23 +111,28 @@ export default function ItemRow({ title, editText, meta, metaColor, done, who, i
               setEditing(true);
             }}
           >
-            <Txt size={16} weight={500} strike={done} color={done || dim ? tokens.mute : tokens.ink}>{title}</Txt>
-            {meta ? <Meta color={metaColor}>{meta}</Meta> : null}
+            {flat ? (
+              <Txt size={17} line={22} weight={400} strike={done} color={done || dim ? tokens.sub : tokens.ink}>
+                {title}
+                {meta && inline ? <Txt size={14.5} line={22} color={metaColor ?? tokens.sub}>{`  ${meta}`}</Txt> : null}
+              </Txt>
+            ) : <Txt size={16} weight={500} strike={done} color={done || dim ? tokens.mute : tokens.ink}>{title}</Txt>}
+            {meta && !inline ? <Meta color={metaColor}>{meta}</Meta> : null}
           </PressScale>
           {below}
           </View>
         )}
         {trailing}
         <PressScale
-          hitSlop={10}
+          hitSlop={flat ? 16 : 10}
           disabled={!onCycleWho}
           accessibilityLabel={tx('Zuständig wechseln', 'Change who\'s on it')}
           onPress={() => { haptics.select(); onCycleWho?.(); }}
         >
-          {who || (onCycleWho && !done) ? <Owner who={who} size={editing ? 26 : 22} /> : null}
+          {flat ? <WhoDots who={who} empty={!!onCycleWho && !done} /> : who || (onCycleWho && !done) ? <Owner who={who} size={editing ? 26 : 22} /> : null}
         </PressScale>
       </View>
-      {editing ? <Txt size={13} color={tokens.mute} style={{ paddingLeft: noCheck ? 0 : 38 }}>{editHint}</Txt> : null}
+      {editing ? <Txt size={13} color={tokens.mute} style={{ paddingLeft: noCheck ? 0 : flat && (icon || iconSlot) ? 74 : 38 }}>{editHint}</Txt> : null}
     </View>
   );
 

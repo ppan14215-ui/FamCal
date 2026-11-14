@@ -37,6 +37,8 @@ Alle sichtbaren Änderungen an FamCal. Neueste oben. Agenten und Menschen: Ände
 - Oben rechts sitzen zwei runde weiße Knöpfe: Suchen und Plus. Im Chat stehen dort die Familie und die Einstellungen.
 - Neue Suche: ein Feld über Termine, Listen und Aufgaben. Sie liest nur, was schon auf dem Handy ist.
 - Kalender Heute ist so dicht wie im Entwurf: kleinere Zeilen, Zeit in der Farbe der Person, der nächste Termin steht fett. Englische Zeiten („9:30am“) haben genug Platz und werden nicht mehr abgeschnitten.
+- Listen wie im Entwurf: die gewählte Liste ist ein weißer Chip, die anderen stehen schlicht daneben. Jede Zeile hat ihr kleines Symbol, die Notiz steht grau hinter dem Titel, die Person ist ein Farbpunkt. Gekauftes sammelt sich unten unter „Erledigt“.
+- Hinweise wie „Windeln kauft ihr etwa alle 12 Tage“ sind jetzt eine ruhige graue Zeile mit „Ansehen“.
 
 ### App funktioniert zuverlässig (09.11. Audit)
 - Nach längerer Pause im Hintergrund klappen Assistent und Spracheingabe gleich beim ersten Satz, statt "Ich komme gerade nicht an den Assistenten".
