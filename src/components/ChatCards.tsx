@@ -11,10 +11,12 @@ import { router } from 'expo-router';
 import { H1, Check, Head } from './ui/kit';
 import Txt from './ui/Txt';
 import { Avatar, Pair, usePersons } from './ui/Person';
-import { Tile } from './ui/Clay';
+import { Tile, ClayIcon } from './ui/Clay';
 import PressScale from './ui/PressScale';
 import LineIcon from './ui/LineIcon';
-import { tokens } from '../theme';
+import { tokens, persons as basePersons } from '../theme';
+import { useBubble } from '../lib/look';
+import { HEAD_SHADOW } from './ui/HeaderRight';
 import { swapIn, rowLayout } from '../theme/motion';
 import { useStore, actions } from '../state/store';
 import { useDockSpace } from '../lib/dockSpace';
@@ -61,6 +63,14 @@ function useCalendarReady() {
 const useStill = () => useContext(StillContext);
 const noop = () => {};
 
+/** Who goes, as dots in the persons' colours (klar draft: no faces in the cards). */
+function WhoDots({ who }: { who?: CalEvent['who'] }) {
+  const persons = usePersons();
+  const cs = who === 'both' ? [persons.J.ink, persons.T.ink] : who === 'J' || who === 'T' ? [persons[who].ink] : [];
+  if (!cs.length) return null;
+  return <View style={{ flexDirection: 'row', gap: 3 }}>{cs.map((c, i) => <View key={i} style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: c }} />)}</View>;
+}
+
 export function Termine({ ids, snap, changed, ask, timeQ, fresh, placeQ }: { ids: string[]; snap?: EventSnap[]; changed?: boolean; ask?: 'J' | 'T'; timeQ?: string; fresh?: boolean; placeQ?: boolean }) {
   const events = useStore((s) => s.events);
   const still = useStill();
@@ -76,14 +86,14 @@ export function Termine({ ids, snap, changed, ask, timeQ, fresh, placeQ }: { ids
   return (
     <>
       {live.map((e) => (
-        <PressScale key={e.id} scale={0.99} onPress={still ? noop : () => router.push(`/termin/${e.id}`)} style={{ flexDirection: 'row', alignItems: 'center', gap: 12, padding: 10, paddingRight: 12 }}>
-          <Tile bg="transparent" name={e.icon} size={48} radius={14} celebrate={play} />
-          <View style={{ flex: 1, minWidth: 0, gap: 1 }}>
-            <Txt size={16} line={21} weight={600} numberOfLines={2}>{e.title}</Txt>
-            <Txt size={13.5} color={tokens.sub} numberOfLines={1}>{[(e as CalEvent).endDate && (e as CalEvent).endDate! > e.date ? tx(`${short(e.date)} bis ${short((e as CalEvent).endDate!)}`, `${short(e.date)} to ${short((e as CalEvent).endDate!)}`) : short(e.date), e.allDay ? tx('ganztägig', 'all day') : e.end ? tx(`${hm(e.start)} bis ${hm(e.end)}`, `${hm(e.start)} to ${hm(e.end)}`) : hm(e.start), e.place].filter(Boolean).join(' · ')}</Txt>
-          </View>
+        <PressScale key={e.id} scale={0.99} onPress={still ? noop : () => router.push(`/termin/${e.id}`)} style={{ flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 44, paddingVertical: 8, paddingHorizontal: 14 }}>
+          <ClayIcon name={e.icon} size={26} celebrate={play} />
+          <Txt size={17} line={22} numberOfLines={2} style={{ flex: 1, minWidth: 0 }}>
+            {e.title}
+            <Txt size={14.5} line={22} color={tokens.sub}>{`  ${[(e as CalEvent).endDate && (e as CalEvent).endDate! > e.date ? tx(`${short(e.date)} bis ${short((e as CalEvent).endDate!)}`, `${short(e.date)} to ${short((e as CalEvent).endDate!)}`) : short(e.date), e.allDay ? tx('ganztägig', 'all day') : e.end ? tx(`${hm(e.start)} bis ${hm(e.end)}`, `${hm(e.start)} to ${hm(e.end)}`) : hm(e.start), e.place].filter(Boolean).join(' · ')}`}</Txt>
+          </Txt>
           {e.place ? <PinChip place={e.place} still={still} /> : null}
-          {e.who === 'J' || e.who === 'T' ? <Avatar p={e.who} size={26} /> : e.who === 'both' ? <Pair size={22} ring={tokens.row} /> : null}
+          <WhoDots who={e.who} />
         </PressScale>
       ))}
       {!still && timeQ && live.length === 1 ? <TimeAsk e={live[0]} q={timeQ} /> : null}
@@ -397,15 +407,21 @@ export function Ask({ f, me, answer }: { f: FeedEntry; me: 'J' | 'T'; answer?: F
  * it did grows in below. Thinking and the finished entry draw the same frame,
  * so nothing jumps when one becomes the other.
  */
-export const cardFrame = { alignSelf: 'stretch' as const, borderRadius: 18, overflow: 'hidden' as const, backgroundColor: tokens.row };
+export const cardFrame = { alignSelf: 'stretch' as const, borderRadius: 16, overflow: 'hidden' as const, backgroundColor: tokens.row, borderWidth: 1, borderColor: tokens.hair };
 /**
  * Memo is the assistant's face (Julian 01.11.): thinks with a "?" while working, happy eyes when it has answered,
  * just entered something. Older cards in the log stay still, so a long chat never twitches.
  */
-export function Reply({ text, live, fresh }: { text?: string; live?: boolean; fresh?: boolean }) {
+export function Reply({ text, live, fresh, bare }: { text?: string; live?: boolean; fresh?: boolean; /** In the chat log: Memo and his words as one plain line on the ground, as in the klar draft. */ bare?: boolean }) {
   // The blob (Julian 07.11.): squashes while it thinks, ^^ when it has answered; older cards hold still.
   const mood = live ? (text ? 'happy' : 'think') : 'idle';
   const minimal = useMascot() === 'minimal';
+  if (bare) return (
+    <View style={{ alignSelf: 'stretch', flexDirection: 'row', alignItems: 'flex-start', gap: 8, paddingRight: 8 }}>
+      {minimal ? null : <View style={{ marginTop: -1 }}><Pin mood={mood} size={26} shadow={false} still={!live} /></View>}
+      {text ? <Animated.View entering={swapIn} style={{ flex: 1, minWidth: 0 }}><Txt size={17} line={24}>{text}</Txt></Animated.View> : <View style={{ paddingVertical: 8 }}><Dots /></View>}
+    </View>
+  );
   return (
     <View style={{ paddingTop: 10, paddingHorizontal: 14, paddingBottom: 4, gap: 4 }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
@@ -441,10 +457,22 @@ function EntryRow({ showcase, ...props }: EntryProps) {
   return <EntryBody {...props} />;
 }
 
+/** A button in a result card: the ink pill for the main step, a white pill for the other (klar draft). */
+function CardBtn({ label, icon, primary, onPress }: { label: string; icon?: 'edit' | 'chev'; primary?: boolean; onPress: () => void }) {
+  return (
+    <PressScale scale={0.97} accessibilityRole="button" accessibilityLabel={label} onPress={onPress}
+      style={[{ flex: 1, height: 40, borderRadius: 999, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingHorizontal: 10 }, primary ? { backgroundColor: tokens.ink } : ({ backgroundColor: tokens.row, boxShadow: HEAD_SHADOW } as any)]}>
+      {icon === 'edit' ? <LineIcon name="edit" size={16} color={primary ? tokens.onInk : tokens.ink} stroke={2} /> : null}
+      <Txt size={15.5} weight={600} color={primary ? tokens.onInk : tokens.ink} numberOfLines={1}>{label}</Txt>
+    </PressScale>
+  );
+}
+
 function EntryBody({ f, mine: own, me, answer, side }: Omit<EntryProps, 'showcase'>) {
   const [open, setOpen] = useState(false);
   const still = useStill();
   const persons = usePersons();
+  const mineSoft = useBubble().soft;
   // Side and the "Du" label follow `side` when given; the follow-up questions still need `own`.
   const mine = side ? side === 'right' : own;
   const asks = own && !still;
@@ -453,45 +481,59 @@ function EntryBody({ f, mine: own, me, answer, side }: Omit<EntryProps, 'showcas
   const allEvents = useStore((st) => st.events);
   const ready = useCalendarReady();
   const gone = !!f.events?.length && ready && !f.events.some((id) => allEvents.some((e) => e.id === id));
-  const name = mine ? tx('Du', 'You') : p.name || f.by;
+  // My own words sit in my bubble colour (Deine Farbe); the others keep the colour they have in the calendar.
+  // In the onboarding showcase the people are examples, so the bubble keeps the example person's colour there.
   const bubble = f.kind === 'msg'
     ? { backgroundColor: tokens.row, borderWidth: 1, borderColor: tokens.hair }
-    : { backgroundColor: p.tint };
+    : { backgroundColor: mine && persons === basePersons ? mineSoft : p.tint };
+  const fresh = Date.now() - Date.parse(f.at) < 60000;
+  const recent = Date.now() - Date.parse(f.at) < 15 * 60000;
+  const made = f.kind === 'made' && !!(f.events || f.items || f.tasks || f.undone);
+  // What Memo says under the sentence: his own words, or else where it went.
+  const where = f.changed ? tx('Geändert.', 'Changed.') : f.events ? tx('Steht im Kalender.', 'It is in the calendar.') : f.tasks ? tx('Steht bei den Aufgaben.', 'It is on your tasks.') : tx('Steht auf der Liste.', 'It is on the list.');
+  const says = f.undone ? undefined : f.say ?? (made && !gone ? where : undefined);
+  const canChange = f.events?.length === 1 && !f.undone && !gone;
+  const hasWhy = !!f.why && !f.events && !f.items && !f.tasks;
+  const undo = !still && !f.undone && canUndo(f.id);
   return (
     <View style={{ flexDirection: 'row', gap: 8, alignItems: 'flex-start', justifyContent: mine ? 'flex-end' : 'flex-start' }}>
       {mine ? null : <View style={{ marginTop: 20 }}><Avatar p={f.by} size={28} /></View>}
-      <View style={{ flex: 1, minWidth: 0, gap: 6, alignItems: mine ? 'flex-end' : 'flex-start' }}>
-        <Txt size={12.5} color={tokens.sub}>{[name, f.kind === 'msg' ? tx('Nachricht', 'Message') : null, at(f.at)].filter(Boolean).join(' · ')}</Txt>
-        <View style={[{ maxWidth: '86%', borderRadius: 18, paddingVertical: 9, paddingHorizontal: 13 }, mine ? { borderBottomRightRadius: 6 } : { borderBottomLeftRadius: 6 }, bubble]}>
+      <View style={{ flex: 1, minWidth: 0, gap: 8, alignItems: mine ? 'flex-end' : 'flex-start' }}>
+        {/* Mine needs no name; the others say who and when. */}
+        {mine && f.kind !== 'msg' ? null : <Txt size={12.5} color={tokens.sub}>{[mine ? tx('Du', 'You') : p.name || f.by, f.kind === 'msg' ? tx('Nachricht', 'Message') : null, at(f.at)].filter(Boolean).join(' · ')}</Txt>}
+        <View style={[{ maxWidth: '84%', borderRadius: 20, paddingVertical: 9, paddingHorizontal: 14 }, mine ? { borderBottomRightRadius: 6 } : { borderBottomLeftRadius: 6 }, bubble]}>
           {f.ask ? <Txt size={12} weight={600} tracking={0.6} color={tokens.done}>{tx(`FRAGE AN ${persons[f.ask.to].name.toUpperCase()}`, `QUESTION FOR ${persons[f.ask.to].name.toUpperCase()}`)}</Txt> : null}
-          <Txt size={15} line={21}>{f.ask ? f.ask.q : shortSaid(f.said)}</Txt>
+          <Txt size={17} line={24}>{f.ask ? f.ask.q : shortSaid(f.said)}</Txt>
         </View>
         {f.ask ? <Ask f={f} me={me} answer={answer} /> : null}
-        {f.say && !f.undone && !(f.kind === 'made' && (f.events || f.items || f.tasks)) ? <View style={cardFrame}><Reply text={f.say} fresh={Date.now() - Date.parse(f.at) < 60000} /><View style={{ height: 10 }} /></View> : null}
-        {f.kind === 'made' && (f.events || f.items || f.tasks || f.undone) ? (
+        {says ? <Reply bare text={says} fresh={fresh} /> : null}
+        {made ? (
           <Animated.View layout={rowLayout} style={[cardFrame, { opacity: f.undone ? 0.55 : 1 }]}>
-            {f.say && !f.undone ? <Reply text={f.say} fresh={Date.now() - Date.parse(f.at) < 60000} /> : null}
-            {f.undone ? null : f.events ? <Termine ids={f.events} snap={f.snap?.events} changed={f.changed} fresh={Date.now() - Date.parse(f.at) < 60000} ask={asks && !open && Date.now() - Date.parse(f.at) < 15 * 60000 ? me : undefined} timeQ={asks && !open && Date.now() - Date.parse(f.at) < 15 * 60000 ? f.timeQ : undefined} placeQ={asks && !open && Date.now() - Date.parse(f.at) < 15 * 60000} /> : null}
+            {f.undone ? null : f.events ? <Termine ids={f.events} snap={f.snap?.events} changed={f.changed} fresh={fresh} ask={asks && !open && recent ? me : undefined} timeQ={asks && !open && recent ? f.timeQ : undefined} placeQ={asks && !open && recent} /> : null}
             {f.undone ? null : f.events ? <VacationLeft ids={f.events} /> : null}
             {f.undone || HIDDEN.suggestions ? null : f.events ? <PackOffer ids={f.events} /> : null}
             {f.undone || !f.suggest || HIDDEN.suggestions ? null : <BringOffer suggest={f.suggest} />}
             {f.undone ? null : f.items ? <Items list={f.items.list} ids={f.items.ids} name={f.snap?.list} names={f.snap?.items} /> : null}
             {f.undone ? null : f.tasks ? <Tasks ids={f.tasks} titles={f.snap?.tasks} /> : null}
-            {open && !f.events && !f.items && !f.tasks && f.why ? <Why why={f.why} /> : null}
-            {gone && !f.undone ? null : <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 8, paddingHorizontal: 14, borderTopWidth: f.undone ? 0 : 1, borderTopColor: tokens.hair }}>
-              <Txt size={13} weight={600} color={f.undone || f.changed ? tokens.sub : tokens.done}>{f.undone ? tx('Rückgängig gemacht', 'Undone') : f.changed ? tx('Geändert', 'Changed') : `✓ ${f.events ? tx('Im Kalender', 'In the calendar') : f.tasks ? tx('Bei den Aufgaben', 'On your tasks') : tx('Auf der Liste', 'On the list')}`}</Txt>
-              <View style={{ flex: 1 }} />
-              {(f.why && !f.events && !f.items && !f.tasks) || (f.events?.length === 1 && !f.undone) ? (
-                <PressScale hitSlop={8} accessibilityLabel={open ? tx('Zuklappen', 'Close') : f.events ? tx('Ändern', 'Change') : tx('Schritte zeigen', 'Show steps')} onPress={still ? noop : () => { if (f.events && !f.undone) { haptics.select(); router.push(`/termin/${f.events[0]}`); } else setOpen((o) => !o); }} style={{ flexDirection: 'row', alignItems: 'center', gap: 2, marginRight: !still && canUndo(f.id) && !f.undone ? 14 : 0 }}>
-                  <Txt size={13} color={f.events ? tokens.ink : tokens.sub} weight={f.events ? 600 : 400}>{f.events ? tx('Ändern', 'Change') : tx('Details', 'Details')}</Txt>
-                  <View style={{ transform: [{ rotate: f.events ? '0deg' : open ? '-90deg' : '90deg' }] }}><LineIcon name="chev" size={14} color={tokens.sub} /></View>
-                </PressScale>
-              ) : null}
-              {!still && !f.undone && canUndo(f.id) ? (
-                <PressScale hitSlop={8} onPress={() => undoEntry(f.id)}><Txt size={13} color={tokens.sub}>{tx('Rückgängig', 'Undo')}</Txt></PressScale>
-              ) : null}
-            </View>}
+            {f.undone ? <Txt size={14.5} weight={600} color={tokens.sub} style={{ paddingVertical: 10, paddingHorizontal: 14 }}>{tx('Rückgängig gemacht', 'Undone')}</Txt> : null}
+            {/* The two steps you may want next, as real buttons: change it, or take it back. */}
+            {!f.undone && !still && (canChange || undo) ? (
+              <View style={{ flexDirection: 'row', gap: 8, paddingHorizontal: 12, paddingTop: 4, paddingBottom: 12 }}>
+                {canChange ? <CardBtn primary icon="edit" label={tx('Ändern', 'Change')} onPress={() => { haptics.select(); router.push(`/termin/${f.events![0]}`); }} /> : null}
+                {undo ? <CardBtn label={tx('Rückgängig', 'Undo')} onPress={() => undoEntry(f.id)} /> : null}
+              </View>
+            ) : !f.undone ? <View style={{ height: 4 }} /> : null}
           </Animated.View>
+        ) : null}
+        {/* An answer without a card can show how it came about. */}
+        {hasWhy && !f.undone ? (
+          <View style={{ alignSelf: 'stretch', gap: 6 }}>
+            <PressScale hitSlop={8} accessibilityLabel={open ? tx('Zuklappen', 'Close') : tx('Schritte zeigen', 'Show steps')} onPress={still ? noop : () => setOpen((o) => !o)} style={{ alignSelf: 'flex-start', flexDirection: 'row', alignItems: 'center', gap: 2, paddingLeft: 34 }}>
+              <Txt size={13.5} color={tokens.sub}>{tx('Details', 'Details')}</Txt>
+              <View style={{ transform: [{ rotate: open ? '-90deg' : '90deg' }] }}><LineIcon name="chev" size={14} color={tokens.sub} /></View>
+            </PressScale>
+            {open ? <View style={cardFrame}><Why why={f.why!} /></View> : null}
+          </View>
         ) : null}
       </View>
     </View>
@@ -502,33 +544,35 @@ function EntryBody({ f, mine: own, me, answer, side }: Omit<EntryProps, 'showcas
 export function Thinking({ by }: { by: 'J' | 'T' }) {
   const v = useVeil();
   const persons = usePersons();
+  const mineSoft = useBubble().soft;
   if (!v.inline || v.phase === 'off') return null;
   return (
-    <View style={{ gap: 6, alignItems: 'flex-end' }}>
+    <View style={{ gap: 8, alignItems: 'flex-end' }}>
       {v.said ? (
         <>
-          <Txt size={12.5} color={tokens.sub}>{tx('Du', 'You')} · {at(new Date().toISOString())}</Txt>
-          <View style={{ maxWidth: '86%', borderRadius: 18, borderBottomRightRadius: 6, paddingVertical: 9, paddingHorizontal: 13, backgroundColor: persons[by].tint }}>
-            <Txt size={15} line={21}>{shortSaid(v.said)}</Txt>
+          <View style={{ maxWidth: '84%', borderRadius: 20, borderBottomRightRadius: 6, paddingVertical: 9, paddingHorizontal: 14, backgroundColor: persons === basePersons ? mineSoft : persons[by].tint }}>
+            <Txt size={17} line={24}>{shortSaid(v.said)}</Txt>
           </View>
         </>
       ) : null}
-      <Animated.View layout={rowLayout} style={cardFrame}>
-      <Reply text={v.reply} live />
+      <Reply bare text={v.reply} live />
       {/* Julian 31.10.: one thinking sign only. The typing dots in Reply say it; steps show only once there is a plan. */}
-      {v.head || v.lines.length ? <View style={{ paddingHorizontal: 14, paddingTop: 6, paddingBottom: 14, gap: 10 }}>
-        {v.head ? <Txt size={12} weight={600} tracking={0.6} color={tokens.done}>{v.head.toUpperCase()}</Txt> : null}
-        {v.lines.map((l, i) => <Step key={i} label={l} state={i < v.shown ? 'done' : i === v.shown ? 'now' : 'next'} />)}
-        {v.head && v.onCancel && v.phase === 'think' ? (
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-            <Txt size={13} color={tokens.sub}>{tx('Passiert gleich von selbst', 'Happens in a moment')}</Txt>
-            <PressScale onPress={v.onCancel} hitSlop={8} accessibilityLabel={tx('Halt, nicht ausführen', "Stop, don't do it")} style={{ height: 36, paddingHorizontal: 14, borderRadius: 999, backgroundColor: tokens.chipBg, alignItems: 'center', justifyContent: 'center' }}>
-              <Txt size={14} weight={600}>{tx('Halt, anders', 'Stop')}</Txt>
-            </PressScale>
+      {v.head || v.lines.length ? (
+        <Animated.View layout={rowLayout} style={cardFrame}>
+          <View style={{ paddingHorizontal: 14, paddingTop: 12, paddingBottom: 14, gap: 10 }}>
+            {v.head ? <Txt size={12} weight={600} tracking={0.6} color={tokens.done}>{v.head.toUpperCase()}</Txt> : null}
+            {v.lines.map((l, i) => <Step key={i} label={l} state={i < v.shown ? 'done' : i === v.shown ? 'now' : 'next'} />)}
+            {v.head && v.onCancel && v.phase === 'think' ? (
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                <Txt size={13} color={tokens.sub}>{tx('Passiert gleich von selbst', 'Happens in a moment')}</Txt>
+                <PressScale onPress={v.onCancel} hitSlop={8} accessibilityLabel={tx('Halt, nicht ausführen', "Stop, don't do it")} style={{ height: 36, paddingHorizontal: 14, borderRadius: 999, backgroundColor: tokens.chipBg, alignItems: 'center', justifyContent: 'center' }}>
+                  <Txt size={14} weight={600}>{tx('Halt, anders', 'Stop')}</Txt>
+                </PressScale>
+              </View>
+            ) : null}
           </View>
-        ) : null}
-      </View> : <View style={{ height: 10 }} />}
-      </Animated.View>
+        </Animated.View>
+      ) : null}
     </View>
   );
 }

@@ -35,6 +35,7 @@ Alle sichtbaren Änderungen an FamCal. Neueste oben. Agenten und Menschen: Ände
 - Kalender Heute ist so dicht wie im Entwurf: kleinere Zeilen, Zeit in der Farbe der Person, der nächste Termin steht fett. Englische Zeiten („9:30am“) haben genug Platz und werden nicht mehr abgeschnitten.
 - Listen wie im Entwurf: die gewählte Liste ist ein weißer Chip, die anderen stehen schlicht daneben. Jede Zeile hat ihr kleines Symbol, die Notiz steht grau hinter dem Titel, die Person ist ein Farbpunkt. Gekauftes sammelt sich unten unter „Erledigt“.
 - Hinweise wie „Windeln kauft ihr etwa alle 12 Tage“ sind jetzt eine ruhige graue Zeile mit „Ansehen“.
+- Chat wie im Entwurf: deine Sätze stehen in deiner Blasenfarbe, Memo antwortet als schlichte Zeile mit seinem Gesicht, das Ergebnis ist eine weiße Karte mit zwei echten Knöpfen: „Ändern“ in Schwarz und „Rückgängig“.
 
 ### App funktioniert zuverlässig (09.11. Audit)
 - Nach längerer Pause im Hintergrund klappen Assistent und Spracheingabe gleich beim ersten Satz, statt "Ich komme gerade nicht an den Assistenten".
