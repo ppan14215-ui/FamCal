@@ -4,6 +4,10 @@ Alle sichtbaren Änderungen an FamCal. Neueste oben. Agenten und Menschen: Ände
 
 ## Unreleased
 
+### Klarer Look (14.11.)
+- Die App ist jetzt ruhig und neutral: Weiß, fast Schwarz und Grau. Farbe kommt nur noch von den Personen. Schrift ist Inter.
+- Inhalte sind flach und dicht mit feinen Linien statt weißer Blöcke. Glas gibt es nur auf dem, was man drückt: Knöpfe, Chips, Leiste.
+
 ### App funktioniert zuverlässig (09.11. Audit)
 - Nach längerer Pause im Hintergrund klappen Assistent und Spracheingabe gleich beim ersten Satz, statt "Ich komme gerade nicht an den Assistenten".
 - "Heute" und "morgen" stimmen auch, wenn die App seit gestern offen war. Am neuen Tag lädt sie sich beim Zurückkommen einmal neu.
@@ -13,6 +17,8 @@ Alle sichtbaren Änderungen an FamCal. Neueste oben. Agenten und Menschen: Ände
 - Kalender und Listen liegen jetzt auch auf dem Handy: die App öffnet sofort, auch ohne Netz, und was du ohne Netz einträgst, geht nicht verloren.
 - Klappt das erste Laden nicht, zeigt die App das an und bietet "Nochmal versuchen" statt eines leeren Bildschirms.
 - Abmelden räumt Kalender, Listen und Chat vom Handy.
+- Die App ist jetzt ruhig und neutral: Weiß, fast Schwarz und Grau. Farbe kommt nur noch von den Personen. Schrift ist Inter.
+- Inhalte sind flach und dicht mit feinen Linien statt weißer Blöcke. Glas gibt es nur auf dem, was man drückt: Knöpfe, Chips, Leiste.
 
 ### Memo lebt (08.11. Nacht)
 - Beim Tippen schaut Memo hoch auf den Text und liest mit; jeder neue Buchstabe ein kleines Nicken.

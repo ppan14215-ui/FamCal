@@ -11,39 +11,41 @@
  * - `done` (teal) is for "erledigt" and the period after headlines.
  */
 const LIGHT = {
-  bg: '#F5F5F4',
+  // Klar (Julian 13.11.): white, near black and greys. Colour comes from people only, never from the app.
+  bg: '#FAFAFA',
   row: '#FFFFFF',
-  ink: '#16232A',
-  sub: '#5B666B',
-  mute: '#8A9397',
-  hair: '#E7E7E4',
-  done: '#075056',
-  doneSoft: '#E2EEEC',
+  ink: '#111417',
+  sub: '#6B7176',
+  mute: '#9AA0A5',
+  hair: '#E9EAEB',
+  /** Was teal. The klar look has no accent of its own, so "erledigt" and chosen things are ink. */
+  done: '#111417',
+  doneSoft: '#E6E8EA',
   frist: '#C2410C',
   /** Urlaub, sunny and clearly its own (Julian 31.10.: "Vacation kaum zu erkennen"). */
   vac: '#F6CD6A',
   vacInk: '#5B4100',
-  segBg: '#EAEAE7',
+  segBg: '#F0F1F2',
   /** The chosen pill in a segmented control: it must stand out from segBg in both modes. */
   segOn: '#FFFFFF',
-  /** The chosen tab in the bottom bar, on a white pill. */
-  pillOn: '#EFEFEC',
-  chipBg: '#EFEFEC',
-  circleLine: '#C9CDCF',
-  dotOff: '#D5D8D9',
+  /** The chosen tab in the bottom bar. */
+  pillOn: '#F0F1F2',
+  chipBg: '#F0F1F2',
+  circleLine: '#C8CCCF',
+  dotOff: '#D9DCDE',
   danger: '#C7372F',
-  /** Marked text: light teal, so the selected words stay readable (a dark highlight hid them on Android, Julian 28.10.). */
-  select: 'rgba(7,80,86,0.22)',
+  /** Marked text: a light grey wash, so the selected words stay readable. */
+  select: 'rgba(17,20,23,0.16)',
   ok: '#2F9E6E',
-  scrim: 'rgba(22,35,42,0.28)',
-  noteBg: '#ECEBE7',
+  scrim: 'rgba(17,20,23,0.28)',
+  noteBg: '#F0F1F2',
   paper: '#F4F1EA',
-  /** Text and icons on an ink surface (the mic bubble, primary buttons, today's day). */
+  /** Text and icons on an ink surface (primary buttons, today's day). */
   onInk: '#FFFFFF',
   /** Frosted surface over a picture (the Symbol chip on a Termin). */
   glass: 'rgba(255,255,255,0.7)',
   /** The calm cover while the assistant works. */
-  veil: 'rgba(250,249,246,0.95)',
+  veil: 'rgba(250,250,250,0.95)',
 };
 export type Tokens = Record<keyof typeof LIGHT, string>;
 
@@ -75,6 +77,25 @@ export const nightFg = (c: string) => (dark ? blend(c, '#FFFFFF', 0.45) : c);
 /** A palette entry as it shows right now. */
 /** At night a person's tint comes from their strong colour, so pink stays pink (a pale pastel turned grey, Julian 28.10.). */
 export const shade = (c: { name: string; bg: string; fg: string }) => ({ name: c.name, bg: dark ? blend(c.fg, '#0F1518', 0.45) : c.bg, fg: nightFg(c.fg) });
+
+/** A person's colour as one solid tone: the bar on a Termin, the dot, the filled check (klar look, Julian 13.11.). */
+export const vivid = (fg: string) => blend(fg, '#FFFFFF', dark ? 0.35 : 0.2);
+
+/**
+ * Glass, only on things you press (nav, input, buttons, chips): white with an inner light, a hairline and a soft
+ * shadow. The recipe is Wabi's inner light (Julian 13.11.). boxShadow draws on the new architecture and on the web.
+ */
+const G_IN = 'inset 0 1px 4px rgba(255,255,255,0.67), inset 0 -4px 4px rgba(255,255,255,0.85), inset 0 0 14px rgba(229,229,229,0.55)';
+export const glass = {
+  /** Small controls: round buttons, chips, the chosen segment. */
+  sm: { backgroundColor: '#FFFFFF', boxShadow: `${G_IN}, 0 0 0 1px rgba(17,20,23,0.07), 0 2px 6px rgba(17,20,23,0.05)` } as any,
+  /** The floating nav pill. */
+  nav: { backgroundColor: '#FFFFFF', boxShadow: `${G_IN}, 0 0 0 1px rgba(17,20,23,0.05), 0 10px 30px rgba(17,20,23,0.10)` } as any,
+  /** The input card that grows out of Memo, and sheets. */
+  card: { backgroundColor: '#FFFFFF', boxShadow: `${G_IN}, 0 0 0 1px rgba(17,20,23,0.06), 0 14px 40px rgba(17,20,23,0.14)` } as any,
+  /** A flat card in the content: only a hairline. */
+  line: { backgroundColor: '#FFFFFF', boxShadow: '0 0 0 1px rgba(17,20,23,0.08)' } as any,
+};
 
 export function applyPalette(isDark: boolean) {
   dark = isDark;
@@ -163,10 +184,11 @@ export function applyColorTheme(id: ThemeId) {
 
 export const radii = { tile: 16, row: 20, card: 24, sheet: 32, pill: 999 } as const;
 
+// Inter (Julian 13.11., klar look). Custom fonts on native ignore fontWeight, so each weight is its own file.
 export const fonts = {
-  400: 'Geist_400Regular',
-  500: 'Geist_500Medium',
-  600: 'Geist_600SemiBold',
-  700: 'Geist_700Bold',
+  400: 'Inter_400Regular',
+  500: 'Inter_500Medium',
+  600: 'Inter_600SemiBold',
+  700: 'Inter_700Bold',
 } as const;
 export type Weight = keyof typeof fonts;
