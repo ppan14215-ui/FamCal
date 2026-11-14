@@ -49,6 +49,8 @@ type State = {
   docked: number;
   /** Where the docked Memo sits on screen (its centre), so the arrival glides there and he glances from there. */
   dockAt: { x: number; y: number } | null;
+  /** The size Memo is drawn at in the bar, so whoever flies to him arrives at his size. */
+  dockS?: number;
   /** How long the text in the field is: Memo reads along while you type. */
   typed: number;
   /** The start glide has reached the bar: from now on the bar's Memo shows (a clean handover, never two). */

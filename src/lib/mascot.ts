@@ -9,12 +9,15 @@ import { useSyncExternalStore } from 'react';
 import { getPref, setPref, onPrefsReady } from './prefs';
 
 export type Mascot = 'pin' | 'minimal';
-let mode: Mascot = getPref('mascot') === 'minimal' ? 'minimal' : 'pin';
+// A new key with the klar look (Julian 14.11.: "Memo is missing"): every phone starts with Memo again, since the look is
+// built around him. A "Minimal" chosen before does not carry over; choosing it again in the settings still works.
+const KEY = 'mascot2';
+let mode: Mascot = getPref(KEY) === 'minimal' ? 'minimal' : 'pin';
 const subs = new Set<() => void>();
 // The saved choice arrives a moment after start.
-onPrefsReady(() => { const v: Mascot = getPref('mascot') === 'minimal' ? 'minimal' : 'pin'; if (v !== mode) { mode = v; subs.forEach((l) => l()); } });
+onPrefsReady(() => { const v: Mascot = getPref(KEY) === 'minimal' ? 'minimal' : 'pin'; if (v !== mode) { mode = v; subs.forEach((l) => l()); } });
 
-export function setMascot(v: Mascot) { mode = v; setPref('mascot', v); subs.forEach((l) => l()); }
+export function setMascot(v: Mascot) { mode = v; setPref(KEY, v); subs.forEach((l) => l()); }
 // The onboarding always shows Memo, whatever is saved (it teaches that tapping him starts speaking; with the plain mic
 // he had no seat to fly to and vanished, Julian's phone 14.11.). Nothing is saved; null gives the saved choice back.
 let forced: Mascot | null = null;

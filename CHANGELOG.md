@@ -31,6 +31,7 @@ Alle sichtbaren Änderungen an FamCal. Neueste oben. Agenten und Menschen: Ände
 - Onboarding, Ausprobieren: zeigt die App, wie sie jetzt ist. Kalender als Liste, Leiste mit Memo, dunkle Sprechkarte mit großen Worten, Ladeblase, die neue Zeile leuchtet auf.
 - Neue Zeilen leuchten überall in Orange auf statt in Grau.
 - Nach einem getippten Satz kommt die Ladeblase sofort, die Leiste blitzt nicht mehr dazwischen auf.
+- Zurück zum klaren Look, den Julian abgesegnet hat (vor dem orangen Stil): Memo sitzt wieder groß und schwarz in der Leiste unten, auch auf Handys, auf denen früher das einfache Mikrofon gewählt war. Die kleine Pille „1 neu“ über der Leiste ist weg.
 
 ### App funktioniert zuverlässig (09.11. Audit)
 - Nach längerer Pause im Hintergrund klappen Assistent und Spracheingabe gleich beim ersten Satz, statt "Ich komme gerade nicht an den Assistenten".
