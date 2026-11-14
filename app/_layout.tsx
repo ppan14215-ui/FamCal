@@ -26,6 +26,7 @@ import BuddyIntro from '../src/components/buddy/BuddyIntro';
 import { tokens } from '../src/theme';
 import { useThemeGen, Keyed } from '../src/theme/mode';
 import { isDark } from '../src/theme/tokens';
+import { navStyle } from '../src/lib/navStyle';
 
 // Crashes first, so a crash during start is caught; then analytics (both no-ops on the web link and in dev).
 initSentry();
@@ -39,6 +40,8 @@ const WebInsets = ({ children }: { children: React.ReactNode }) =>
   Platform.OS === 'web' ? <SafeAreaInsetsContext.Provider value={ZERO}>{children}</SafeAreaInsetsContext.Provider> : <>{children}</>;
 
 const sheet = { presentation: 'transparentModal', animation: 'fade', contentStyle: { backgroundColor: 'transparent' } } as const;
+// Klar look: the plus menu grows out of the plus by itself, so the screen under it must not fade as well.
+const plusMenu = { ...sheet, animation: 'none' } as const;
 
 function RootLayout() {
   const [loaded, error] = useFonts({ Inter_400Regular, Inter_500Medium, Inter_600SemiBold, Inter_700Bold });
@@ -64,7 +67,7 @@ function RootLayout() {
             <Stack.Screen name="index" />
             <Stack.Screen name="onboarding" options={{ animation: 'fade' }} />
             <Stack.Screen name="(tabs)" options={{ animation: 'fade' }} />
-            <Stack.Screen name="neu" options={sheet} />
+            <Stack.Screen name="neu" options={navStyle() === 'klar' ? plusMenu : sheet} />
             <Stack.Screen name="symbol" options={sheet} />
             <Stack.Screen name="meilenstein/[id]" options={sheet} />
             <Stack.Screen name="titel" options={sheet} />
