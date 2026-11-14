@@ -337,6 +337,8 @@ export function BarTab({ on, icon, label, onPress, onW, offW }: { on: boolean; i
  * fill, the others only their icon; after a hairline sits Memo. Tap him and the input grows out of him and lies over
  * the pill (Dock.tsx); a long press goes straight to the keyboard. Content scrolls under the pill, there is no ground.
  */
+/** Memo in the klar pill: his body fills the pill up to its padding, like in the draft (34 of 42 there). Pin draws its body at 0.8 of its size. */
+export const memoS = () => (navH() - 10) / 0.8;
 const KLAR_ON = 118;
 const KLAR_OFF = 46;
 function KlarNav({ state, navigation }: BottomTabBarProps) {
@@ -378,7 +380,7 @@ export function KlarPill({ current, onTab }: { current?: string; onTab?: (name: 
           <View style={{ width: 1, height: 20, marginHorizontal: 6, backgroundColor: tokens.hair }} />
           {/* Ohne KI there is nothing to talk to: Memo opens the plus sheet instead. */}
           <View onLayout={(e) => { memoAt.current = e.nativeEvent.layout.x + e.nativeEvent.layout.width / 2; tell(); }}>
-            <MemoMic box={navH() - 10} size={navH() - 10} ground={tokens.row}
+            <MemoMic box={navH() - 10} size={memoS()} ground={tokens.row}
               onPress={() => (priv.ohneKi ? router.push('/neu') : buddyTalk())}
               onLongPress={priv.ohneKi ? undefined : buddyKeys} />
           </View>

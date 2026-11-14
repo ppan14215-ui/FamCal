@@ -14,23 +14,27 @@ Alle sichtbaren Änderungen an FamCal. Neueste oben. Agenten und Menschen: Ände
 - Unten sitzt jetzt eine kleine Glas Pille mit den Tabs und Memo. Tippst du Memo an, wächst die Eingabe aus ihm heraus, legt sich über die Pille und hört sofort zu. „Aa“ holt die Tastatur, der Text bleibt. Lange auf Memo drücken geht direkt zur Tastatur.
 - Beim Sprechen stehen die Worte live in der Karte, sichere dunkel, unsichere grau. Gesendet wird weiter erst, wenn du auf Senden tippst.
 - Die alte Leiste bleibt unter „Zum Testen“ in den Einstellungen umschaltbar.
-- Neuer Stil nach der Referenz: heller grauer Grund, Titel groß und fett mit Punkt, die graue Infozeile steht darunter.
-- Die Umschalter (Heute, Tage, Woche ...) sind jetzt einzelne weiße Chips, der gewählte ist dunkel und gleitet beim Wechsel.
-- Oben rechts sitzen auf jeder Seite zwei runde Knöpfe: Einstellungen und ein oranges Plus für Neues. Orange ist die eine Farbe für das, was man antippt.
-- Kalender Heute ist jetzt eine endlose, dichte Liste nach Tagen: links der Tag, rechts die Termine mit Farbstrich der Person, Zeit und Symbol. Was heute vorbei ist, wird grau, eine orange Linie zeigt jetzt. Freie Tage fallen weg. Offenes, Fristen und Vorschläge stehen im Block von heute.
-- Tage und Woche sind dasselbe Stundenraster, flach mit feinen Linien: Woche zeigt sieben Tage, Tage zeigt drei Tage größer mit ganzen Titeln und Zeiten. Heute und die Jetzt Linie sind orange.
+- Kalender Heute ist jetzt eine endlose, dichte Liste nach Tagen: links der Tag, rechts die Termine mit Farbstrich der Person, Zeit und Symbol. Was heute vorbei ist, wird grau, eine feine dunkle Linie zeigt jetzt. Freie Tage fallen weg. Offenes, Fristen und Vorschläge stehen im Block von heute.
+- Tage und Woche sind dasselbe Stundenraster, flach mit feinen Linien: Woche zeigt sieben Tage, Tage zeigt drei Tage größer mit ganzen Titeln und Zeiten. Heute und die Jetzt Linie sind dunkel.
 - Zoomen mit zwei Fingern wechselt die Ansicht und rastet ein: auseinander geht es näher heran (Jahr, Monat, Woche, Tage), zusammen weiter weg. Die Chips oben machen dasselbe per Tipp.
-- Monat ist flach: Zahl mit Punkten, heute als oranger Kreis. Feiertage färben die Zahl, Urlaub liegt als weiches Band hinter seinen Tagen, beides steht unter dem Raster mit Namen.
+- Monat ist flach: Zahl mit Punkten, heute als dunkler Kreis. Feiertage färben die Zahl, Urlaub liegt als weiches Band hinter seinen Tagen, beides steht unter dem Raster mit Namen.
 - Im Kopf stehen bei Tagen, Woche, Monat und Jahr zwei kleine Pfeile zum Blättern; die Infozeile zeigt Zeitraum und Zahl der Termine.
-- Sprechen im klaren Look: Die Karte ist jetzt dunkel und wächst aus Memo heraus. Was du sagst, steht groß darin, sichere Worte hell, unsichere grau. Unten läuft die Aufnahme mit orangem Punkt, Zeit und Stopp.
+- Sprechen im klaren Look: Die Karte ist jetzt dunkel und wächst aus Memo heraus. Was du sagst, steht groß darin, sichere Worte hell, unsichere grau. Unten läuft die Aufnahme mit weißem Punkt, Zeit und Stopp.
 - Nach dem Senden schrumpft die Karte zu einer kleinen Blase, Memos Augen werden drei Ladepunkte. Ist die Antwort da, gleitet Memo an seinen Platz zurück und die Leiste schiebt sich wieder herein. Nichts verschwindet und taucht neu auf.
 - Plus Menü im klaren Look: kein Blatt von unten mehr. Eine kleine dunkle Karte wächst aus dem Plus, das Plus dreht sich zum Kreuz und schließt wieder, der Bildschirm dahinter tritt zurück. Aus dem Tippfeld geöffnet steigt die Karte über der Navigation auf.
-- Listen im klaren Look: Die Listen stehen oben als Chips mit kleinem Zeichen und Zahl der offenen Dinge, die gewählte ist dunkel. Die Zeilen liegen flach auf dem Grund, nur feine Linien.
 - Hinzufügen ist jetzt die nächste Zeile der Liste: leerer Kreis und Text. Was du dort schreibst, wird zur Zeile darüber, die Zeile bleibt für den nächsten Eintrag offen.
 - Einstellungen im klaren Look: Zeilen liegen flach auf dem Grund mit feinen Linien, keine weißen Blöcke mehr.
 - Onboarding, Ausprobieren: zeigt die App, wie sie jetzt ist. Kalender als Liste, Leiste mit Memo, dunkle Sprechkarte mit großen Worten, Ladeblase, die neue Zeile leuchtet auf.
 - Neue Zeilen leuchten überall in Orange auf statt in Grau.
 - Nach einem getippten Satz kommt die Ladeblase sofort, die Leiste blitzt nicht mehr dazwischen auf.
+- Zurück zum klaren Look, den Julian abgesegnet hat (vor dem orangen Stil): Memo sitzt wieder groß und schwarz in der Leiste unten, auch auf Handys, auf denen früher das einfache Mikrofon gewählt war. Die kleine Pille „1 neu“ über der Leiste ist weg.
+- Aussehen wie im abgesegneten Entwurf: heller Grund, kein Orange mehr, alles Betonte ist fast Schwarz. Titel ruhig und halbfett ohne Punkt, die kurze Info steht grau dahinter („Donnerstag 29. Okt“).
+- Im Kalender sind die Ansichten wieder Wörter auf einer feinen Linie (Heute, Tage, Woche, Monat, Jahr); ein kurzer Strich gleitet zum gewählten Wort.
+- Oben rechts sitzen zwei runde weiße Knöpfe: Suchen und Plus. Im Chat stehen dort die Familie und die Einstellungen.
+- Neue Suche: ein Feld über Termine, Listen und Aufgaben. Sie liest nur, was schon auf dem Handy ist.
+- Kalender Heute ist so dicht wie im Entwurf: kleinere Zeilen, Zeit in der Farbe der Person, der nächste Termin steht fett. Englische Zeiten („9:30am“) haben genug Platz und werden nicht mehr abgeschnitten.
+- Listen wie im Entwurf: die gewählte Liste ist ein weißer Chip, die anderen stehen schlicht daneben. Jede Zeile hat ihr kleines Symbol, die Notiz steht grau hinter dem Titel, die Person ist ein Farbpunkt. Gekauftes sammelt sich unten unter „Erledigt“.
+- Hinweise wie „Windeln kauft ihr etwa alle 12 Tage“ sind jetzt eine ruhige graue Zeile mit „Ansehen“.
 
 ### App funktioniert zuverlässig (09.11. Audit)
 - Nach längerer Pause im Hintergrund klappen Assistent und Spracheingabe gleich beim ersten Satz, statt "Ich komme gerade nicht an den Assistenten".

@@ -972,7 +972,8 @@ export default function Dock() {
     {klarShow ? <Pressable accessibilityLabel={tx('Eingabe schließen', 'Close input')} onPress={() => { Keyboard.dismiss(); const b = getBuddy(); if (!b.typed && !b.listening) setBarMode('rest'); }} style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0 }} /> : null}
     <Animated.View pointerEvents="box-none" onLayout={(e) => setH(e.nativeEvent.layout.height)} style={[{ position: 'absolute', left: onTabs ? 14 : 18, right: onTabs ? 14 : 18, gap: 10 }, bStyle]}>
       {where.chat || turn ? null : <Peek />}
-      {turn || !onTabs ? null : <SessionPill />}
+      {/* Klar: no pill above the nav; the new row itself and the chat are the record (Julian 14.11.). */}
+      {turn || !onTabs || klar ? null : <SessionPill />}
       {turn && !cardOpen ? (
         <Animated.View key={turn.id} entering={FadeInDown.duration(220).easing(easing.out)} exiting={FadeOut.duration(150).easing(easing.out)} style={[{ maxHeight: 420, borderRadius: 26 }, klar ? glass.card : [{ backgroundColor: tokens.row }, shadow]]}>
           <ScrollView ref={scroller} onContentSizeChange={() => scroller.current?.scrollToEnd({ animated: false })} contentContainerStyle={{ padding: 18, gap: 12 }} showsVerticalScrollIndicator={false}>

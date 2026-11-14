@@ -1,7 +1,8 @@
 /**
  * Listen: the only place with content tabs (Julian 26.10.): Aufgaben, Einkauf, own lists (Kliniktasche,
- * Geschenke), + Neu. Since the klar look (Julian 14.11.) the tabs are chips like in the "Recordings" reference,
- * the lines lie flat on the ground and "Hinzufügen" is the next line of the list.
+ * Geschenke), + Neu. Built after the klar draft Julian approved (14.11. 09:33, the look before the Recordings
+ * style): the chosen list is a white chip among plain words, the lines lie flat on the ground with a small icon,
+ * the note behind the title and who as a dot, and what is done gathers at the end.
  */
 import React, { useEffect, useMemo, useRef } from 'react';
 import { View, ScrollView } from 'react-native';
@@ -15,8 +16,8 @@ import { Pair, Avatar } from '../../src/components/ui/Person';
 import PressScale from '../../src/components/ui/PressScale';
 import ItemRow from '../../src/components/ItemRow';
 import AddInline from '../../src/components/AddInline';
-import HintCard from '../../src/components/HintCard';
-import { tokens, fonts, blend, motion, easing, swapIn, persons } from '../../src/theme';
+import { HintLine } from '../../src/components/HintCard';
+import { tokens, fonts, motion, easing, swapIn, persons } from '../../src/theme';
 import { useStore, actions, toast } from '../../src/state/store';
 import { itemMeta, itemText, aisleOf } from '../../src/data/sample';
 import { haptics } from '../../src/lib/haptics';
@@ -31,6 +32,7 @@ import HeaderRight, { HEAD_SHADOW } from '../../src/components/ui/HeaderRight';
 import { tx } from '../../src/i18n/lang';
 import { HIDDEN } from '../../src/lib/core';
 import { isWissen } from '../../src/lib/wissen';
+import { itemIcon, listHasIcons } from '../../src/lib/itemIcon';
 
 export default function Listen() {
   const all = useStore((s) => s.lists);
@@ -41,21 +43,8 @@ export default function Listen() {
   const active = (HIDDEN.tasks && chosen === 'aufgaben') || (chosen !== 'aufgaben' && !lists.some((l) => l.id === chosen)) ? lists[0]?.id ?? 'aufgaben' : chosen;
   const list = lists.find((l) => l.id === active);
 
-  const sub = useMemo(() => {
-    if (active === 'aufgaben') {
-      const mine = tasks.filter((t) => t.who);
-      return tx(`${mine.filter((t) => !t.done).length} offen, ${mine.filter((t) => t.done).length} erledigt`, `${mine.filter((t) => !t.done).length} open, ${mine.filter((t) => t.done).length} done`);
-    }
-    if (!list) return '';
-    const items = list.sections.flatMap((s) => s.items);
-    if (list.blueprint && list.blueprint.blocks.includes('seen')) { const n = items.filter((i) => i.data?.seen).length; return tx(`${list.name} · ${items.length} ${items.length === 1 ? 'Eintrag' : 'Einträge'}, ${n} ${(list.blueprint.seenLabel ?? 'erledigt').toLowerCase()}`, `${list.name} · ${items.length} ${items.length === 1 ? 'entry' : 'entries'}, ${n} ${(list.blueprint.seenLabel ?? 'done').toLowerCase()}`); }
-    if (list.kind === 'collection' || list.blueprint) return tx(`${list.name} · ${items.length} ${items.length === 1 ? 'Eintrag' : 'Einträge'}`, `${list.name} · ${items.length} ${items.length === 1 ? 'entry' : 'entries'}`);
-    if (list.kind === 'shopping') return tx(`${list.name} · ${items.filter((i) => !i.done).length} Dinge`, `${list.name} · ${items.filter((i) => !i.done).length} items`);
-    return tx(`${list.name} · ${items.filter((i) => i.done).length} von ${items.length} gepackt`, `${list.name} · ${items.filter((i) => i.done).length} of ${items.length} packed`);
-  }, [active, tasks, list]);
-
   return (
-    <Screen tab gap={12} head={<><H1 sub={sub} right={<HeaderRight />}>{tx('Listen', 'Lists')}</H1><ListChips lists={lists} tasks={tasks} active={active} /></>}>
+    <Screen tab gap={12} head={<><H1 right={<HeaderRight />}>{tx('Listen', 'Lists')}</H1><ListChips lists={lists} tasks={tasks} active={active} /></>}>
       <Animated.View key={active} entering={swapIn} style={{ gap: 12 }}>
         {active === 'aufgaben' ? <Aufgaben tasks={tasks} /> : list?.kind === 'shopping' ? <Einkauf list={list} /> : list ? <Packliste list={list} /> : null}
       </Animated.View>
@@ -63,12 +52,12 @@ export default function Listen() {
   );
 }
 
-const CHIP_H = 38;
+const CHIP_H = 40;
 
 /**
- * The lists as chips (Julian 14.11.: tab style of the reference): the chosen list is the dark chip, the others are
- * white with a whisper of shadow. Each carries its small icon and how much is still open. More lists than fit scroll
- * sideways and the chosen one slides into view (Julian 26.10.: "Schrift überlappt").
+ * The lists in a row: the chosen one is a white chip with a soft lift, the others are plain grey words. Each
+ * carries its small icon and how much is still open. More lists than fit scroll sideways and the chosen one slides
+ * into view (Julian 26.10.: "Schrift überlappt").
  */
 function ListChips({ lists, tasks, active }: { lists: List[]; tasks: Task[]; active: string }) {
   const tabs: { id: string; name: string; icon: ClayName; n: number }[] = [
@@ -87,9 +76,9 @@ function ListChips({ lists, tasks, active }: { lists: List[]; tasks: Task[]; act
   };
   useEffect(() => reveal(active), [active, lists.length]);
   return (
-    // The scroll view clips, so the chips get a little room below for their shadow.
-    <View style={{ marginHorizontal: -18, marginBottom: -8 }} onLayout={(e) => { width.current = e.nativeEvent.layout.width; }}>
-      <ScrollView ref={scroller} horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 18, paddingTop: 2, paddingBottom: 10, gap: 8, alignItems: 'center' }}>
+    // The scroll view clips, so the chips get a little room around for the lift of the chosen one.
+    <View style={{ marginHorizontal: -18, marginTop: -4, marginBottom: -8 }} onLayout={(e) => { width.current = e.nativeEvent.layout.width; }}>
+      <ScrollView ref={scroller} horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 18, paddingTop: 4, paddingBottom: 10, gap: 6, alignItems: 'center' }}>
         {tabs.map((t) => {
           const on = t.id === active;
           return (
@@ -106,27 +95,21 @@ function ListChips({ lists, tasks, active }: { lists: List[]; tasks: Task[]; act
             />
           );
         })}
-        <PressScale
-          accessibilityLabel={tx('Neue Liste', 'New list')}
-          scale={0.92}
-          onPress={() => router.push('/liste-neu')}
-          style={{ width: CHIP_H, height: CHIP_H, borderRadius: 999, backgroundColor: tokens.row, alignItems: 'center', justifyContent: 'center', boxShadow: HEAD_SHADOW } as any}
-        >
-          <LineIcon name="plus" size={19} color={tokens.ink} />
+        <PressScale accessibilityLabel={tx('Neue Liste', 'New list')} scale={0.92} hitSlop={6} onPress={() => router.push('/liste-neu')} style={{ width: CHIP_H, height: CHIP_H, alignItems: 'center', justifyContent: 'center' }}>
+          <LineIcon name="plus" size={19} color={tokens.sub} />
         </PressScale>
       </ScrollView>
     </View>
   );
 }
 
-/** One list chip. The dark fill fades in over the white chip and the words change colour with it (180 ms). */
+/** One list in the row. The white chip fades in under the chosen one and its name turns from grey to ink (180 ms). */
 function ListChip({ on, name, icon, n, onPress, onLongPress, onLayout }: { on: boolean; name: string; icon: ClayName; n: number; onPress: () => void; onLongPress?: () => void; onLayout: (x: number, w: number) => void }) {
   const v = useSharedValue(on ? 1 : 0);
   useEffect(() => { v.value = withTiming(on ? 1 : 0, { duration: motion.micro, easing: easing.out }); }, [on]);
-  const ink = tokens.ink, onInk = tokens.onInk, sub = tokens.sub, soft = blend(tokens.ink, tokens.onInk, 0.62);
+  const ink = tokens.ink, sub = tokens.sub;
   const fill = useAnimatedStyle(() => ({ opacity: v.value }));
-  const label = useAnimatedStyle(() => ({ color: interpolateColor(v.value, [0, 1], [ink, onInk]) }));
-  const count = useAnimatedStyle(() => ({ color: interpolateColor(v.value, [0, 1], [sub, soft]) }));
+  const label = useAnimatedStyle(() => ({ color: interpolateColor(v.value, [0, 1], [sub, ink]) }));
   return (
     <PressScale
       accessibilityRole="tab"
@@ -136,13 +119,13 @@ function ListChip({ on, name, icon, n, onPress, onLongPress, onLayout }: { on: b
       onPress={onPress}
       onLongPress={onLongPress}
       onLayout={(e) => onLayout(e.nativeEvent.layout.x, e.nativeEvent.layout.width)}
-      style={{ height: CHIP_H, borderRadius: 999, backgroundColor: tokens.row, boxShadow: HEAD_SHADOW } as any}
+      style={{ height: CHIP_H, borderRadius: 999 }}
     >
-      <Animated.View pointerEvents="none" style={[{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, borderRadius: 999, backgroundColor: tokens.ink }, fill]} />
-      <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 6, paddingLeft: 8, paddingRight: 14 }}>
-        <ClayIcon name={icon} size={24} />
-        <Animated.Text numberOfLines={1} maxFontSizeMultiplier={1.2} style={[{ fontFamily: fonts[600], fontSize: 14.5, lineHeight: 19 }, label]}>{name}</Animated.Text>
-        {n ? <Animated.Text maxFontSizeMultiplier={1.2} style={[{ fontFamily: fonts[500], fontSize: 13, lineHeight: 19, fontVariant: ['tabular-nums'] }, count]}>{n}</Animated.Text> : null}
+      <Animated.View pointerEvents="none" style={[{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, borderRadius: 999, backgroundColor: tokens.row, boxShadow: HEAD_SHADOW } as any, fill]} />
+      <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 7, paddingLeft: 8, paddingRight: 14 }}>
+        <ClayIcon name={icon} size={26} />
+        <Animated.Text numberOfLines={1} maxFontSizeMultiplier={1.2} style={[{ fontFamily: fonts[on ? 600 : 400], fontSize: 16.5, lineHeight: 21 }, label]}>{name}</Animated.Text>
+        {n ? <Txt size={15} line={21} color={tokens.sub} style={{ fontVariant: ['tabular-nums'] }}>{n}</Txt> : null}
       </View>
     </PressScale>
   );
@@ -156,17 +139,7 @@ function Aufgaben({ tasks }: { tasks: Task[] }) {
   return (
     <>
       {hints.urlaub ? (
-        <HintCard
-          icon="reise"
-          tile
-          kicker={tx('Neu im Kalender: Ostsee, 20.–27. März', 'New in the calendar: Baltic Sea, March 20 to 27')}
-          title={tx('Packliste für Urlaub mit Baby anlegen?', 'Make a packing list for a trip with the baby?')}
-          body={tx('24 Dinge als Vorlage, ihr streicht, was ihr nicht braucht.', '24 things to start with, you cross out what you don\'t need.')}
-          yes={tx('Ansehen', 'View')}
-          no={tx('Später', 'Later')}
-          onYes={() => router.push({ pathname: '/liste-neu', params: { vorschlag: 'urlaub' } })}
-          onNo={() => actions.dismissHint('urlaub')}
-        />
+        <HintLine icon="reise" bold={tx('Ostsee', 'Baltic Sea')} text={tx(' steht im Kalender. Packliste anlegen?', ' is in the calendar. Make a packing list?')} go={tx('Ansehen', 'View')} onGo={() => router.push({ pathname: '/liste-neu', params: { vorschlag: 'urlaub' } })} onNo={() => actions.dismissHint('urlaub')} />
       ) : null}
       {nobody.length ? (
         <PressScale scale={0.985} onPress={() => router.push('/aufteilen')} style={{ flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 14, paddingHorizontal: 16, borderRadius: 24, backgroundColor: tokens.row }}>
@@ -252,20 +225,11 @@ function Einkauf({ list }: { list: List }) {
   useEffect(() => { actions.mergeTwins(list.id); }, [list.id]);
   return (
     <>
-      <AddInline flat placeholder={tx('Hinzufügen …', 'Add …')} mic onPress={() => router.push('/einkauf-neu')} />
       {hints.abo ? (
-        <HintCard
-          icon="windeln"
-          kicker={tx('Aufgefallen', 'Noticed')}
-          title={tx('Windeln und Feuchttücher kauft ihr etwa alle 12 Tage.', 'You buy diapers and wipes about every 12 days.')}
-          body={tx('Soll ich ein Abo für euch aufsetzen? Dann kommen sie von selbst, meist etwas günstiger. Ihr bestätigt vorher.', 'Should I set up a subscription? Then they arrive on their own, usually a bit cheaper. You confirm first.')}
-          yes={tx('Ja, aufsetzen', 'Yes, set it up')}
-          no={tx('Nein, danke', 'No, thanks')}
-          onYes={() => router.push('/abo')}
-          onNo={() => actions.dismissHint('abo')}
-        />
+        <HintLine icon="windeln" bold={tx('Windeln', 'Diapers')} text={tx(' kauft ihr etwa alle 12 Tage. Abo?', ': you buy them about every 12 days. Subscribe?')} go={tx('Ansehen', 'View')} onGo={() => router.push('/abo')} onNo={() => actions.dismissHint('abo')} />
       ) : null}
-      <Sections list={list} />
+      {/* The add row is the next line of the list, after what is still open. */}
+      <Sections list={list} footer={<AddInline key="add" flat placeholder={tx('Hinzufügen …', 'Add …')} mic onPress={() => router.push('/einkauf-neu')} />} />
       <Txt size={13.5} line={19} color={tokens.sub}>{tx('Haken antippen: erledigt. Text antippen: bearbeiten. Nach links wischen: löschen.', 'Tap the check: done. Tap the text: edit. Swipe left: delete.')}</Txt>
     </>
   );
@@ -341,45 +305,53 @@ function Scoreboard({ list }: { list: List }) {
 }
 
 function Sections({ list, counts, footer }: { list: List; counts?: boolean; footer?: React.ReactElement }) {
+  const shop = list.kind === 'shopping';
+  const plain = list.kind === 'collection' || !!list.blueprint;
+  const bp = list.blueprint;
+  // Every line starts with a small icon of what it is, when the list is one where most things have one.
+  const icons = useMemo(() => !bp && listHasIcons(list.sections.flatMap((x) => x.items.map((i) => i.name))), [list, bp]);
+  const line = (i: Item) => (
+    <Fresh key={i.id} id={i.id}>
+      <ItemRow
+        title={i.name}
+        editText={itemText(i)}
+        meta={bp ? factLine(bp, i.data) : itemMeta(i)}
+        done={plain ? false : i.done}
+        noCheck={plain}
+        dim={bp ? !!i.data?.seen : false}
+        icon={icons ? itemIcon(i.name) ?? undefined : undefined}
+        iconSlot={icons}
+        lead={bp && hasBlock(bp, 'cover') ? <Cover title={i.name} data={i.data} onPress={bp.source ? () => router.push({ pathname: '/titel', params: { l: list.id, i: i.id } }) : undefined} /> : undefined}
+        below={bp ? <BlockBelow listId={list.id} bp={bp} item={i} /> : undefined}
+        trailing={bp && hasBlock(bp, 'seen') ? <SeenPill label={bp.seenLabel ?? tx('Erledigt', 'Done')} seen={i.data?.seen} onToggle={() => actions.setItemData(list.id, i.id, { seen: !i.data?.seen })} /> : undefined}
+        who={i.who}
+        onToggle={() => actions.toggleItem(list.id, i.id)}
+        onEdit={(t) => actions.editItem(list.id, i.id, t)}
+        onCycleWho={plain ? undefined : () => actions.cycleItemWho(list.id, i.id)}
+        onDelete={() => actions.deleteItem(list.id, i.id)}
+        flat
+      />
+    </Fresh>
+  );
+  // Einkauf: what is bought leaves its aisle and gathers under "Erledigt" at the end.
+  const bought = shop ? list.sections.flatMap((x) => x.items.filter((i) => i.done)) : [];
   return (
     <>
       {list.sections.map((sec, at) => {
         // The add row closes the last section, where new entries land.
-        const tail = footer && at === list.sections.length - 1 ? footer : null;
+        const tail = !shop && footer && at === list.sections.length - 1 ? footer : null;
         const open = sec.items.filter((i) => !i.done);
         const done = sec.items.filter((i) => i.done);
-        if (!sec.items.length && list.kind === 'shopping') return null;
-        const plain = list.kind === 'collection' || !!list.blueprint;
-        const bp = list.blueprint;
+        if (shop && !open.length) return null;
         const right = plain ? String(sec.items.length) : counts ? tx(`${done.length} von ${sec.items.length}`, `${done.length} of ${sec.items.length}`) : String(open.length);
         // The shop's own order: vegetables together, then bread, fridge, meat, shelves (Julian 30.10.).
-        const ordered = list.kind === 'shopping' ? [...open.map((i, k) => ({ i, k, a: aisleOf(i.name) })).sort((x, y) => x.a - y.a || x.k - y.k).map((x) => x.i), ...done] : sec.items;
+        const ordered = shop ? open.map((i, k) => ({ i, k, a: aisleOf(i.name) })).sort((x, y) => x.a - y.a || x.k - y.k).map((x) => x.i) : sec.items;
         return (
-          <View key={sec.id} style={{ gap: 12 }}>
+          <View key={sec.id} style={{ gap: 6 }}>
             {plain && list.sections.length === 1 ? null : <H2 right={right}>{sec.title}</H2>}
             {ordered.length || tail ? (
               <Group>
-                {ordered.map((i) => (
-                  <Fresh key={i.id} id={i.id}>
-                  <ItemRow
-                    title={i.name}
-                    editText={itemText(i)}
-                    meta={bp ? factLine(bp, i.data) : itemMeta(i)}
-                    done={plain ? false : i.done}
-                    noCheck={plain}
-                    dim={bp ? !!i.data?.seen : false}
-                    lead={bp && hasBlock(bp, 'cover') ? <Cover title={i.name} data={i.data} onPress={bp.source ? () => router.push({ pathname: '/titel', params: { l: list.id, i: i.id } }) : undefined} /> : undefined}
-                    below={bp ? <BlockBelow listId={list.id} bp={bp} item={i} /> : undefined}
-                    trailing={bp && hasBlock(bp, 'seen') ? <SeenPill label={bp.seenLabel ?? tx('Erledigt', 'Done')} seen={i.data?.seen} onToggle={() => actions.setItemData(list.id, i.id, { seen: !i.data?.seen })} /> : undefined}
-                    who={i.who}
-                    onToggle={() => actions.toggleItem(list.id, i.id)}
-                    onEdit={(t) => actions.editItem(list.id, i.id, t)}
-                    onCycleWho={plain ? undefined : () => actions.cycleItemWho(list.id, i.id)}
-                    onDelete={() => actions.deleteItem(list.id, i.id)}
-                    flat
-                  />
-                  </Fresh>
-                ))}
+                {ordered.map(line)}
                 {tail}
               </Group>
             ) : (
@@ -388,6 +360,13 @@ function Sections({ list, counts, footer }: { list: List; counts?: boolean; foot
           </View>
         );
       })}
+      {shop ? footer : null}
+      {bought.length ? (
+        <View style={{ gap: 6 }}>
+          <H2 right={String(bought.length)}>{tx('Erledigt', 'Done')}</H2>
+          <Group>{bought.map(line)}</Group>
+        </View>
+      ) : null}
     </>
   );
 }

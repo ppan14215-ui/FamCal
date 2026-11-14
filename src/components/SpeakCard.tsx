@@ -23,7 +23,7 @@ import { useVeil } from './Veil';
 import { useMemoOut, setMemoOut } from '../lib/memoOut';
 import { useTyping, useKeyboardInset } from '../lib/keyboard';
 import { useBarMode } from '../lib/navStyle';
-import { navH } from './NavBar';
+import { navH, memoS } from './NavBar';
 import { useSpeak, speakOpen, speakHandlers, setSpeak, type SpeakAsk } from '../lib/speak';
 import { hm } from '../lib/dates';
 import { haptics } from '../lib/haptics';
@@ -87,12 +87,12 @@ function Answers({ ask, dark }: { ask: SpeakAsk; dark?: boolean }) {
   );
 }
 
-/** The orange point of a running recording; it breathes slowly (opacity only). */
+/** The point of a running recording, light on the dark card; it breathes slowly (opacity only). */
 function RecDot() {
   const a = useSharedValue(1);
   useEffect(() => { a.value = withRepeat(withTiming(0.35, { duration: 800, easing: Easing.inOut(Easing.sin) }), -1, true); }, []);
   const st = useAnimatedStyle(() => ({ opacity: a.value }));
-  return <Animated.View style={[{ width: 8, height: 8, borderRadius: 4, backgroundColor: tokens.accent }, st]} />;
+  return <Animated.View style={[{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#FFFFFF' }, st]} />;
 }
 
 type Stage = 'rest' | 'card' | 'think';
@@ -181,11 +181,13 @@ function KlarCard() {
   const [CW, setCW] = useState(Math.max(0, winW - 28));
   const [CH, setCH] = useState(110);
   const NAV = navH();
-  const S = NAV - 10;
+  const S = memoS();
   const BODY = S * 0.8;
-  const geo = (st: Stage) => (st === 'card' ? { w: CW, h: CH, r: 26, cx: CW / 2, yb: 0, px: K_PAD.l + S / 2, py: K_PAD.b + K_ROW / 2 + 1.7 }
-    : st === 'think' ? { w: BUB_W, h: BUB_H, r: BUB_H / 2, cx: CW / 2, yb: (NAV - BUB_H) / 2, px: CW / 2, py: NAV / 2 + 1.7 }
-    : { w: BODY, h: BODY, r: BODY / 2, cx: CW / 2 + mo.dx, yb: NAV / 2 - 0.2 - BODY / 2, px: CW / 2 + mo.dx, py: NAV / 2 + 1.5 });
+  // Pin draws its body a little below the middle of its box (0.04 of its size).
+  const PIN_DY = S * 0.04;
+  const geo = (st: Stage) => (st === 'card' ? { w: CW, h: CH, r: 26, cx: CW / 2, yb: 0, px: K_PAD.l + S / 2, py: K_PAD.b + K_ROW / 2 + PIN_DY }
+    : st === 'think' ? { w: BUB_W, h: BUB_H, r: BUB_H / 2, cx: CW / 2, yb: (NAV - BUB_H) / 2, px: CW / 2, py: NAV / 2 + PIN_DY }
+    : { w: BODY, h: BODY, r: BODY / 2, cx: CW / 2 + mo.dx, yb: NAV / 2 - 0.2 - BODY / 2, px: CW / 2 + mo.dx, py: NAV / 2 - 0.2 + PIN_DY });
   const g0 = geo('rest');
   const w = useSharedValue(g0.w), h = useSharedValue(g0.h), r = useSharedValue(g0.r), cx = useSharedValue(g0.cx), yb = useSharedValue(g0.yb);
   const px = useSharedValue(g0.px), py = useSharedValue(g0.py);

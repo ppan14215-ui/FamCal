@@ -30,7 +30,7 @@ export default function MemoMic({ onPress, onLongPress, box = 34, size = 40, lab
   useEffect(() => { dockIn(); return () => { dockOut(); }; }, []);
   const me = useRef<View>(null);
   // Tell the floating Memo where to glide on start and where to glance from.
-  const measure = () => me.current?.measureInWindow?.((x, y, w, h) => { if (w) setBuddy({ dockAt: { x: x + w / 2, y: y + h / 2 } }); });
+  const measure = () => me.current?.measureInWindow?.((x, y, w, h) => { if (w) setBuddy({ dockAt: { x: x + w / 2, y: y + h / 2 }, dockS: size }); });
   useEffect(() => { const t = [setTimeout(measure, 60), setTimeout(measure, 700)]; return () => t.forEach(clearTimeout); }, []);
   const mood: Mood = b.listening ? 'listen' : veil.phase === 'think' || b.thinking ? 'think' : typing ? 'type' : night ? 'sleep' : 'idle';
   const glance = React.useMemo(() => {
@@ -54,7 +54,7 @@ export default function MemoMic({ onPress, onLongPress, box = 34, size = 40, lab
     <Pressable ref={me as any} onLayout={measure} onPress={() => { haptics.select(); setTap((n) => n + 1); onPress(); }} onLongPress={onLongPress ? () => { haptics.select(); onLongPress(); } : undefined} hitSlop={6}
       accessibilityRole="button" accessibilityLabel={label ?? tx('Memo, tippen zum Sprechen', 'Memo, tap to talk')}
       style={{ width: box, height: box, alignItems: 'center', justifyContent: 'center', overflow: 'visible' }}>
-      <View pointerEvents="none" style={{ width: size, height: size, marginTop: -3, opacity: b.landed && !b.dockHidden && !out ? 1 : 0 }}>
+      <View pointerEvents="none" style={{ width: size, height: size, marginTop: -(0.08 * size - 0.4), opacity: b.landed && !b.dockHidden && !out ? 1 : 0 }}>
         <Pin size={size} mood={mood} joy={b.joy} joyKind={b.joyKind} poke={b.poke} tap={tap} sad={b.sad} wink={b.wink} level={voiceLevel} glance={glance} typeAt={typeAt} ground={ground} />
       </View>
       {ask ? (

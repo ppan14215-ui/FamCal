@@ -38,20 +38,22 @@ type ScreenProps = {
   onScrollY?: (y: number) => void;
   /** Stays put above the scroll area: title and switches (Julian 30.10.: "Der Header Bereich sollte nicht mit scrollen"). */
   head?: React.ReactNode;
+  /** Room under the head, see Head. */
+  headEnd?: number;
 };
 
 /**
  * A screen's title and switches, standing still above what scrolls (Julian 30.10.: "padding im Header",
  * "sehr flach"): room above and below, and a soft fade where the content slides under it.
  */
-export function Head({ children, gap = 14, bg = tokens.bg, pad = 18 }: { children: React.ReactNode; gap?: number; bg?: string; pad?: number }) {
+export function Head({ children, gap = 14, bg = tokens.bg, pad = 18, end = 10 }: { children: React.ReactNode; gap?: number; bg?: string; pad?: number; /** Room under the last thing in the head; 0 when it ends on a hairline (the word tabs). */ end?: number }) {
   // Once content lies under the head, a very faint shadow shows the edge (Julian 31.10.: "sehr subtil").
   const under = useHeadUnder();
   const shade = useSharedValue(under ? 1 : 0);
   useEffect(() => { shade.value = withTiming(under ? 1 : 0, { duration: 220 }); }, [under]);
   const shadeStyle = useAnimatedStyle(() => ({ opacity: shade.value }));
   return (
-    <View style={{ zIndex: 2, paddingHorizontal: pad, paddingTop: 16, paddingBottom: 10, gap, backgroundColor: bg }}>
+    <View style={{ zIndex: 2, paddingHorizontal: pad, paddingTop: 16, paddingBottom: end, gap, backgroundColor: bg }}>
       {children}
       <Animated.View pointerEvents="none" style={[{ position: 'absolute', left: 0, right: 0, bottom: -10, height: 10, zIndex: 1 }, shadeStyle]}>
         <Svg width="100%" height="100%" preserveAspectRatio="none">
@@ -79,7 +81,7 @@ export function Head({ children, gap = 14, bg = tokens.bg, pad = 18 }: { childre
   );
 }
 
-export function Screen({ children, head, tab, footer, bg = tokens.bg, gap = 14, scroll = true, padTop = 8, padBottom = 0, scrollRef, onScrollY }: ScreenProps) {
+export function Screen({ children, head, headEnd, tab, footer, bg = tokens.bg, gap = 14, scroll = true, padTop = 8, padBottom = 0, scrollRef, onScrollY }: ScreenProps) {
   const insets = useSafeAreaInsets();
   // The talk dock floats over the end of every screen (Julian 27.10.), so leave room for it.
   const dock = useDockSpace();
@@ -93,7 +95,7 @@ export function Screen({ children, head, tab, footer, bg = tokens.bg, gap = 14, 
   );
   return (
     <View style={{ flex: 1, backgroundColor: bg, paddingTop: insets.top }}>
-      {head ? <Head gap={gap} bg={bg}>{head}</Head> : null}
+      {head ? <Head gap={gap} bg={bg} end={headEnd}>{head}</Head> : null}
       {scroll ? (
         <ScrollView ref={ref} onScroll={(e) => { track(e.nativeEvent.contentOffset.y); onScrollY?.(e.nativeEvent.contentOffset.y); }} scrollEventThrottle={16} style={{ flex: 1 }} contentContainerStyle={{ flexGrow: 1 }} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
           {content}
@@ -109,16 +111,20 @@ export function Screen({ children, head, tab, footer, bg = tokens.bg, gap = 14, 
 // ─── Type ──────────────────────────────────────────────────────────────────
 
 /**
- * Screen title after the "Recordings" reference (Julian 14.11.): tight and bold with a period, the grey info line
- * below it. A title that already ends in a mark keeps its own. `dot` is kept for callers and ignored.
+ * Screen title in the klar look as Julian approved it, before the Recordings style (14.11. 09:33: "das Design vor
+ * dem orangen Button Einfluss"): semibold, no period. A short info stands behind it on the same line, a long one
+ * under it. `dot` is kept for callers and ignored.
  */
-export function H1({ children, sub, right, size = 30 }: { children: React.ReactNode; sub?: string; right?: React.ReactNode; size?: number; dot?: string }) {
-  const period = typeof children === 'string' && !/[.?!…:]$/.test(children.trim());
+export function H1({ children, sub, right, size = 29 }: { children: React.ReactNode; sub?: string; right?: React.ReactNode; size?: number; dot?: string }) {
+  const inline = !!sub && sub.length <= 16;
   return (
-    <View style={{ flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
-      <View style={{ flex: 1, gap: 3 }}>
-        <Txt size={size} line={Math.round(size * 1.12)} weight={700} tracking={-size * 0.04}>{children}{period ? <Dot /> : null}</Txt>
-        {sub ? <Txt size={14} line={19} color={tokens.sub}>{sub}</Txt> : null}
+    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12, minHeight: 40 }}>
+      <View style={{ flex: 1, minWidth: 0 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 9 }}>
+          <Txt size={size} line={Math.round(size * 1.18)} weight={600} tracking={-size * 0.025} numberOfLines={1} style={{ flexShrink: 1 }}>{children}</Txt>
+          {inline ? <Txt size={16} line={21} color={tokens.sub} numberOfLines={1}>{sub}</Txt> : null}
+        </View>
+        {sub && !inline ? <Txt size={14} line={19} color={tokens.sub} numberOfLines={1}>{sub}</Txt> : null}
       </View>
       {right}
     </View>
@@ -268,23 +274,10 @@ export function StepDots({ i, n = 8 }: { i: number; n?: number }) {
 }
 
 /**
- * The view switch as chips, after the reference (Julian 14.11.): every item is a white chip with a whisper of
- * shadow, the chosen one is ink with white text. The ink chip glides to the tapped item on a spring.
+ * Segmented control on a grey track; the white pill slides to the tapped
+ * item on a spring instead of jumping.
  */
-const SEG_GAP = 6;
-/** A resting chip: white with a hairline and a whisper of shadow. */
-const CHIP_SHADOW = '0 0 0 1px rgba(17,20,23,0.035), 0 2px 8px rgba(17,20,23,0.06)';
-/** A label turns white while the ink chip is under it. */
-function SegLabel({ i, x, label }: { i: number; x: SharedValue<number>; label: string }) {
-  const ink = tokens.ink, on = tokens.onInk;
-  const st = useAnimatedStyle(() => ({ color: interpolateColor(Math.min(1, Math.abs(x.value - i)), [0.25, 0.6], [on, ink]) }));
-  return (
-    <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-      <Animated.Text numberOfLines={1} maxFontSizeMultiplier={1.2} style={[{ fontFamily: fonts[600], fontSize: 14, lineHeight: 19 }, st]}>{label}</Animated.Text>
-    </View>
-  );
-}
-export function Seg<T extends string>({ items, value, onChange, height = 36 }: { items: { key: T; label: string }[]; value: T; onChange: (k: T) => void; height?: number }) {
+export function Seg<T extends string>({ items, value, onChange, height = 34 }: { items: { key: T; label: string }[]; value: T; onChange: (k: T) => void; height?: number }) {
   const idx = Math.max(0, items.findIndex((it) => it.key === value));
   const [w, setW] = useState(0);
   // Julian 31.10. 18:20: on the phone a fresh switch (each Kalender view draws its own header) showed the pill at the
@@ -292,12 +285,13 @@ export function Seg<T extends string>({ items, value, onChange, height = 36 }: {
   // starts right on its tab; the tap glides the old one first (140 ms) before the new view takes over.
   const x = useSharedValue(idx);
   useEffect(() => { if (Math.abs(x.value - idx) > 0.001) x.value = withSpring(idx, springs.smooth); }, [idx]);
-  // The chip glides on the tap itself; the new view comes once the glide is mostly done, so building it never holds the glide (Julian 31.10.: "lag").
+  // The pill glides on the tap itself; the new view comes once the glide is mostly done, so building it never holds the glide (Julian 31.10.: "lag").
   const pick = (k: T, i: number) => { x.value = withSpring(i, springs.smooth); setTimeout(() => onChange(k), 140); };
-  const pill = useAnimatedStyle(() => ({ transform: [{ translateX: x.value * (w + SEG_GAP) }] }));
-  const onLayout = (e: LayoutChangeEvent) => setW((e.nativeEvent.layout.width - SEG_GAP * (items.length - 1)) / items.length);
+  const pill = useAnimatedStyle(() => ({ transform: [{ translateX: x.value * w }] }));
+  const onLayout = (e: LayoutChangeEvent) => setW((e.nativeEvent.layout.width - 8) / items.length);
   return (
-    <View onLayout={onLayout} style={{ flexDirection: 'row', gap: SEG_GAP, height }}>
+    <View onLayout={onLayout} style={{ flexDirection: 'row', padding: 4, borderRadius: 999, backgroundColor: tokens.segBg }}>
+      {w ? <Animated.View pointerEvents="none" style={[{ position: 'absolute', left: 4, top: 4, width: w, height, borderRadius: 999 }, glass.sm, pill]} /> : null}
       {items.map((it) => {
         const on = it.key === value;
         return (
@@ -308,13 +302,54 @@ export function Seg<T extends string>({ items, value, onChange, height = 36 }: {
             accessibilityState={{ selected: on }}
             scale={0.95}
             onPress={() => { if (!on) { haptics.select(); pick(it.key, items.indexOf(it)); } }}
-            style={{ flex: 1, height, borderRadius: 999, backgroundColor: tokens.row, boxShadow: CHIP_SHADOW } as any}
-          />
+            style={{
+              flex: 1, height, borderRadius: 999, alignItems: 'center', justifyContent: 'center',
+              backgroundColor: !w && on ? tokens.segOn : 'transparent',
+            }}
+          >
+            <Txt size={14} weight={on ? 600 : 500} color={on ? tokens.ink : tokens.sub}>{it.label}</Txt>
+          </PressScale>
         );
       })}
-      {w ? <Animated.View pointerEvents="none" style={[{ position: 'absolute', left: 0, top: 0, width: w, height, borderRadius: 999, backgroundColor: tokens.ink }, pill]} /> : null}
-      <View pointerEvents="none" style={{ position: 'absolute', left: 0, right: 0, top: 0, height, flexDirection: 'row', gap: SEG_GAP }}>
-        {items.map((it, i) => <SegLabel key={it.key} i={i} x={x} label={it.label} />)}
+    </View>
+  );
+}
+
+/**
+ * The view switch as words on a hairline, as in the klar draft Julian approved: the chosen word is ink and
+ * semibold, and a short ink line under it glides to the tapped word (transform only) before the new view comes.
+ */
+const TAB_LINE = 100;
+export function Tabs<T extends string>({ items, value, onChange, bleed = 0 }: { items: { key: T; label: string }[]; value: T; onChange: (k: T) => void; /** How far the hairline reaches past both sides, into the screen's gutter. */ bleed?: number }) {
+  const [at, setAt] = useState<Record<string, { x: number; w: number }>>({});
+  const cur = at[value];
+  const x = useSharedValue(0), w = useSharedValue(0);
+  const placed = useRef(false);
+  const glide = (p: { x: number; w: number }) => {
+    x.value = withTiming(p.x, { duration: motion.base, easing: easing.out });
+    w.value = withTiming(p.w, { duration: motion.base, easing: easing.out });
+  };
+  useEffect(() => {
+    if (!cur) return;
+    if (!placed.current) { placed.current = true; x.value = cur.x; w.value = cur.w; } else glide(cur);
+  }, [cur?.x, cur?.w]);
+  const line = useAnimatedStyle(() => ({ opacity: w.value > 0 ? 1 : 0, transform: [{ translateX: x.value }, { scaleX: w.value / TAB_LINE }] as const }));
+  return (
+    <View style={{ marginHorizontal: -bleed, paddingHorizontal: bleed, borderBottomWidth: 1, borderBottomColor: tokens.hair }}>
+      <View accessibilityRole="tablist" style={{ flexDirection: 'row', gap: 20 }}>
+        {items.map((it) => {
+          const on = it.key === value;
+          return (
+            <View key={it.key} onLayout={(e) => { const { x: lx, width } = e.nativeEvent.layout; setAt((m) => (m[it.key]?.x === lx && m[it.key]?.w === width ? m : { ...m, [it.key]: { x: lx, w: width } })); }}>
+              <PressScale accessibilityRole="tab" accessibilityLabel={it.label} accessibilityState={{ selected: on }} scale={0.96} hitSlop={{ top: 8, bottom: 6, left: 9, right: 9 }}
+                onPress={() => { if (on) return; haptics.select(); const p = at[it.key]; if (p) glide(p); setTimeout(() => onChange(it.key), 140); }}
+                style={{ paddingTop: 4, paddingBottom: 9 }}>
+                <Txt size={16.5} line={21} weight={on ? 600 : 400} color={on ? tokens.ink : tokens.sub}>{it.label}</Txt>
+              </PressScale>
+            </View>
+          );
+        })}
+        <Animated.View pointerEvents="none" style={[{ position: 'absolute', left: 0, bottom: -1, width: TAB_LINE, height: 2, borderRadius: 1, backgroundColor: tokens.ink, transformOrigin: '0% 50%' } as any, line]} />
       </View>
     </View>
   );
