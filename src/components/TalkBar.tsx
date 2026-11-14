@@ -41,7 +41,6 @@ import { readLines } from '../lib/screenshot';
 
 /** The cloud ears' day cap is said once per app launch. */
 let toldCap = false;
-let toldLokal = false;
 /** The last listen request a bar acted on, shared by every bar (only one Dock), so a remount never replays it. */
 let handledListen = 0;
 
@@ -394,9 +393,6 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, o
         const t = heard();
         track('voice_transcribed', { ok: !!t, engine: 'phone', ms });
         if (t) land(t); else fail();
-        // Julian 14.11.: 16 recordings in a row went to the phone's own recognizer only ("Speech on the phone only" was
-        // on) and 8 of them heard nothing. Nobody could see why. A miss in this mode now says so, once per app start.
-        if (!t && !keysNext.current && !toldLokal && cloudWhy() === 'lokal') { toldLokal = true; toast(tx('Nichts verstanden. „Sprache nur auf dem Handy“ ist an, das versteht schlechter.', 'Didn’t catch that. “Speech on the phone only” is on, which understands worse.'), undefined, { kind: 'info', sub: tx('Ausschalten unter Einstellungen, Datenschutz.', 'Turn it off under Settings, Privacy.') }); }
       };
       const hush = (ms: number) => { clearTimeout(quiet); quiet = setTimeout(() => SR.stop(), ms); };
       const subs = [

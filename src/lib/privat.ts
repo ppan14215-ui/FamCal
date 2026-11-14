@@ -7,8 +7,9 @@
  *   only manual entry stays, and nothing goes to Claude or ElevenLabs. The
  *   server refuses too (families.ohne_ki), so a partner's phone can't send the
  *   family's data either. Anyone can switch it on; switching it off asks first.
- * - Sprache nur auf dem Handy: the phone's own speech recognition, no recording
- *   leaves the phone. Less accurate, so cloud stays the default.
+ * - Sprache nur auf dem Handy: removed (Julian 14.11.). The switch was on by accident on his phone and every recording
+ *   went to the phone's weak recognizer, half of them heard nothing. Speech always goes to the cloud ears now; who does
+ *   not want that uses Ohne KI. A stored 'lokal' from before is ignored.
  * - Zustimmung: before the first sentence goes to the assistant, once per phone.
  */
 import { useSyncExternalStore } from 'react';
@@ -36,8 +37,6 @@ export async function setOhneKi(v: boolean): Promise<boolean> {
   return save ? save(v) : true;
 }
 
-export const spracheLokal = () => getPref('sprache') === 'lokal';
-export function setSpracheLokal(v: boolean) { setPref('sprache', v ? 'lokal' : 'cloud'); ping(); }
 
 /** Version of the text the person agreed to; a new version asks again. */
 export const CONSENT_V = '1';
@@ -47,10 +46,10 @@ export function stimmeZu() { setPref('kiZustimmung', CONSENT_V); ping(); }
 /** May anything go to an AI service from this phone right now? */
 export const kiErlaubt = () => !ohneKi() && zugestimmt();
 /** May the recording go to the cloud for speech recognition? */
-export const spracheCloud = () => kiErlaubt() && !spracheLokal();
+export const spracheCloud = () => kiErlaubt();
 
 export const usePrivat = () => {
-  const snap = () => `${ohneKi() ? 1 : 0}${spracheLokal() ? 1 : 0}${zugestimmt() ? 1 : 0}`;
+  const snap = () => `${ohneKi() ? 1 : 0}${zugestimmt() ? 1 : 0}`;
   const v = useSyncExternalStore(sub, snap, snap);
-  return { ohneKi: v[0] === '1', spracheLokal: v[1] === '1', zugestimmt: v[2] === '1' };
+  return { ohneKi: v[0] === '1', zugestimmt: v[1] === '1' };
 };

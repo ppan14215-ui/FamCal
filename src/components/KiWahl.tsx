@@ -17,8 +17,8 @@ import { haptics } from '../lib/haptics';
 export const KI_TEXT = () => [
   tx('Was du sagst oder schreibst, versteht Claude von Anthropic. Dafür geht dein Satz mit einem kleinen Ausschnitt eures Kalenders und eurer Listen raus: die nächsten zwei Wochen und was zum Satz passt.',
     'What you say or type is understood by Claude from Anthropic. For that, your sentence goes out with a small part of your calendar and lists: the next two weeks and whatever fits the sentence.'),
-  tx('Eure Namen ersetzt die App vorher durch Platzhalter. Private Kalender gehen nur als „belegt“ raus. Gesprochenes schreibt ElevenLabs mit, wenn du willst, nur auf dem Handy.',
-    'The app replaces your names with placeholders first. Private calendars only go out as "busy". Speech is transcribed by ElevenLabs, or on the phone only if you like.'),
+  tx('Eure Namen ersetzt die App vorher durch Platzhalter. Private Kalender gehen nur als „belegt“ raus. Gesprochenes schreibt ElevenLabs mit.',
+    'The app replaces your names with placeholders first. Private calendars only go out as "busy". Speech is transcribed by ElevenLabs.'),
   tx('Dazu können Arzttermine und Termine eurer Kinder gehören. Anthropic trainiert nicht mit euren Daten. Beide Dienste sitzen in den USA.',
     'This can include doctor appointments and your kids\' events. Anthropic doesn\'t train on your data. Both services are based in the US.'),
 ];

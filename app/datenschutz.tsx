@@ -2,7 +2,6 @@
  * Datenschutz (Julian 05.11.2026): what goes where, and three switches.
  * - Ohne KI, for the whole family: on at once; back on only after a second tap,
  *   because then sentences go out again.
- * - Sprache nur auf dem Handy: the recording stays on the phone, less accurate.
  * - Alle Daten löschen: the account and what only it holds; asks twice.
  */
 import React, { useState } from 'react';
@@ -13,7 +12,7 @@ import Txt from '../src/components/ui/Txt';
 import { tokens } from '../src/theme';
 import { tx } from '../src/i18n/lang';
 import { toast, actions } from '../src/state/store';
-import { usePrivat, setOhneKi, setSpracheLokal, stimmeZu } from '../src/lib/privat';
+import { usePrivat, setOhneKi, stimmeZu } from '../src/lib/privat';
 import { KI_TEXT } from '../src/components/KiWahl';
 import { supabase } from '../src/lib/cloud';
 import { getAuth, signOut } from '../src/lib/auth';
@@ -74,7 +73,6 @@ export default function Datenschutz() {
       <H1>{tx('Datenschutz', 'Privacy')}</H1>
       <Group>
         <Line t={tx('Ohne KI', 'Without AI')} sub={tx('Nur von Hand eintragen, das Sprechen fällt weg. Gilt für die ganze Familie.', 'Add by hand only, talking goes away. Holds for the whole family.')} value={p.ohneKi} onChange={(v) => void ohne(v)} />
-        {p.ohneKi ? null : <Line t={tx('Sprache nur auf dem Handy', 'Speech on the phone only')} sub={tx('Die Aufnahme bleibt auf dem Handy. Versteht schlechter als die Cloud.', 'The recording stays on the phone. Understands worse than the cloud.')} value={p.spracheLokal} onChange={(v) => { setSpracheLokal(v); track('voice_choice', { choice: v ? 'handy' : 'cloud' }); }} />}
       </Group>
       {kiBack ? (
         <Card>
