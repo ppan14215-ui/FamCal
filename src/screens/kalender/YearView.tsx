@@ -12,7 +12,7 @@ import { router } from 'expo-router';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring, withTiming } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
-import { H2, Group, Row, RoundButton } from '../../components/ui/kit';
+import { H2, Group, Row } from '../../components/ui/kit';
 import { isInfoDay } from '../../lib/feiertage';
 import SwipeRow, { justSwiped } from '../../components/SwipeRow';
 import { dropEvent } from './DayView';
@@ -35,18 +35,6 @@ export function shiftYear(day: string, n: number): string {
   const y = yearOf(day) + n;
   // Back in the current year, land on today; elsewhere on New Year.
   return y === yearOf(TODAY) ? TODAY : `${y}-01-01`;
-}
-
-export function YearArrows() {
-  const day = useStore((s) => s.calDay);
-  return (
-    <View style={{ flexDirection: 'row', gap: 6 }}>
-      <RoundButton icon="back" label={tx('Voriges Jahr', 'Previous year')} size={34} onPress={() => actions.setCalDay(shiftYear(day, -1))} />
-      <View style={{ transform: [{ scaleX: -1 }] }}>
-        <RoundButton icon="back" label={tx('Nächstes Jahr', 'Next year')} size={34} onPress={() => actions.setCalDay(shiftYear(day, 1))} />
-      </View>
-    </View>
-  );
 }
 
 /** Every day of the year with what happens on it; multi-day Termine mark each day they cover. */
@@ -77,7 +65,7 @@ function Mini({ y, m, marks, onPress }: { y: number; m: number; marks: Map<strin
   const now = yearOf(TODAY) === y && monthIdx(TODAY) === m;
   return (
     <PressScale scale={0.96} onPress={onPress} accessibilityLabel={`${MONTHS[m]} ${y}`} style={{ width: '33.333%', paddingHorizontal: 4, paddingVertical: 6 }}>
-      <Txt size={14} line={18} weight={700} color={now ? tokens.done : tokens.ink} style={{ paddingLeft: 2, paddingBottom: 3 }}>{MONTHS[m]}</Txt>
+      <Txt size={14} line={18} weight={700} color={now ? tokens.accent : tokens.ink} style={{ paddingLeft: 2, paddingBottom: 3 }}>{MONTHS[m]}</Txt>
       <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
         {cells.map((d, i) => {
           if (!d) return <View key={i} style={{ width: `${100 / 7}%`, height: 17 }} />;
@@ -96,8 +84,8 @@ function Mini({ y, m, marks, onPress }: { y: number; m: number; marks: Map<strin
               })() : null) }}>
               {/* Heatmap: the fuller the day, the deeper the teal behind its number. */}
               {k?.n && !today && !k.vac ? <View style={{ position: 'absolute', width: 15, height: 15, borderRadius: 8, backgroundColor: tokens.done, opacity: Math.min(0.5, 0.12 + (k.n - 1) * 0.13) }} /> : null}
-              <View style={{ width: 15, height: 15, borderRadius: 8, alignItems: 'center', justifyContent: 'center', backgroundColor: today ? tokens.ink : 'transparent' }}>
-                <Txt size={8.5} line={10} weight={today || k?.ev || k?.hol ? 700 : 500} color={today ? tokens.onInk : k?.hol ? tokens.frist : weekend && !k?.vac ? tokens.mute : tokens.ink}>{String(dayNum(d))}</Txt>
+              <View style={{ width: 15, height: 15, borderRadius: 8, alignItems: 'center', justifyContent: 'center', backgroundColor: today ? tokens.accent : 'transparent' }}>
+                <Txt size={8.5} line={10} weight={today || k?.ev || k?.hol ? 700 : 500} color={today ? '#FFFFFF' : k?.hol ? tokens.frist : weekend && !k?.vac ? tokens.mute : tokens.ink}>{String(dayNum(d))}</Txt>
               </View>
             </View>
           );

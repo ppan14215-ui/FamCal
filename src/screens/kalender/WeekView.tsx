@@ -1,29 +1,30 @@
 /**
- * Kalender · Woche: hour grid 8 to 19 (wider for earlier or later Termine),
- * work as stripes, events as tinted blocks.
- * Swipe sideways for the week before or after; pinch, or plus and minus, to
- * zoom the hours (Julian 27.10.). Zoomed in, blocks show their time; all the
- * way in, three days fill the width with whole titles. Hold a Termin and drag
- * it to another time or day, like in the Apple calendar (Julian 30.10.).
+ * Kalender · Woche and Tage: one hour grid, 8 to 19 (wider for earlier or later Termine), flat on the ground
+ * with hairlines. Work shows as stripes, Termine as tinted blocks with the person's bar.
+ * Woche shows seven days; Tage is the same grid one zoom step closer: three days from the chosen one, taller
+ * hours, whole titles and times (Julian 14.11.: zooming moves between the views, the pinch lives on the screen).
+ * Swipe sideways for the days before or after. Hold a Termin and drag it to another time or day, like in the
+ * Apple calendar (Julian 30.10.).
  */
 import Origin from '../../components/ui/Origin';
-import React, { useMemo, useState, useRef } from 'react';
-import { View, Pressable, LayoutChangeEvent } from 'react-native';
+import React, { useMemo, useState } from 'react';
+import { View, Pressable, LayoutChangeEvent, ViewStyle } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring, withTiming } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
-import LineIcon from '../../components/ui/LineIcon';
 import { haptics } from '../../lib/haptics';
 import { springs } from '../../theme';
-import { evTint, evShared, sharedBorder } from '../../lib/evColor';
+import { evTint, evShared, sharedBorder, evInk } from '../../lib/evColor';
 import { router } from 'expo-router';
 import Txt from '../../components/ui/Txt';
+import { ClayIcon } from '../../components/ui/Clay';
 import Stripes from '../../components/Stripes';
 import { tokens, tint, PersonId, persons } from '../../theme';
 import { useStore, actions, toast } from '../../state/store';
 import { keepPhoneEdit } from '../../lib/phoneSync';
 import type { CalEvent } from '../../state/types';
-import { addDays, monday, dayNum, WD_SHORT, weekday, minutes, TODAY, NOW, MONTHS_SHORT, monthIdx, hm, dmShort, short } from '../../lib/dates';
+import { addDays, monday, dayNum, WD_SHORT, weekday, minutes, TODAY, hm, short } from '../../lib/dates';
+import { useNowMin } from '../../lib/useNow';
 import PressScale from '../../components/ui/PressScale';
 import { tx } from '../../i18n/lang';
 import { useCalEvents } from '../../lib/useEvents';
@@ -34,19 +35,19 @@ import { lanes } from '../../lib/lanes';
 // (Julian 30.10.: "Wieso geht der Tag nur bis 18 Uhr?").
 const DAY_FROM = 8;
 const DAY_TO = 19;
-const HP_MIN = 30;
-const HP_MAX = 96;
-const ZOOMS = [30, 40, 60, 96];
+/** Height of an hour: a week fits the screen, three days get room for titles and times. */
+const HOUR = { 7: 40, 3: 60 } as const;
+/** The rail with the hours on the left. */
+const RAIL = 22;
 
 const SHORT: Record<string, string> = { 'U6 bei Dr. Weber': 'U6', 'Bürgeramt: Pass': 'Pass', 'Oma Renate kommt': 'Oma', 'Rückbildung': 'Kurs', 'Hebamme Sarah': 'Hebi', 'Wochenmarkt': 'Markt', 'Zoo mit Lena': 'Zoo' };
 
-export default function WeekView() {
+export default function WeekView({ n }: { n: 3 | 7 }) {
   const day = useStore((s) => s.calDay);
   const events = useCalEvents();
-  const [HP, setHP] = useState(40);
-  // Zoomed all the way in, three days fill the width so whole titles fit.
-  const n = HP >= 80 ? 3 : 7;
-  const start = n === 7 ? monday(day) : addDays(day, -1);
+  const HP = HOUR[n];
+  const nowMin = useNowMin();
+  const start = n === 7 ? monday(day) : day;
   const days = useMemo(() => Array.from({ length: n }, (_, i) => addDays(start, i)), [start, n]);
   const [FROM, TO] = useMemo(() => {
     let a = DAY_FROM, b = DAY_TO;
@@ -61,17 +62,6 @@ export default function WeekView() {
   const hours = Array.from({ length: TO - FROM }, (_, i) => FROM + i);
   const big = HP >= 60;
   const wide = n === 3;
-
-  // Zoom: pinch with two fingers, or the plus and minus buttons.
-  const base = useRef(HP);
-  const zoomTo = (v: number) => setHP(Math.round(Math.max(HP_MIN, Math.min(HP_MAX, v))));
-  const pinchStart = () => { base.current = HP; };
-  const pinchMove = (scale: number) => zoomTo(base.current * scale);
-  const step = (dir: 1 | -1) => {
-    haptics.select();
-    const next = dir > 0 ? ZOOMS.find((z) => z > HP) : [...ZOOMS].reverse().find((z) => z < HP);
-    if (next) setHP(next);
-  };
 
   // Swipe: the grid follows the finger, then the next week slides in from the side.
   const w = useSharedValue(360);
@@ -113,10 +103,6 @@ export default function WeekView() {
         op.value = withTiming(1, { duration: 160 });
       }
     });
-  const pinch = Gesture.Pinch()
-    .onStart(() => { scheduleOnRN(pinchStart); })
-    .onUpdate((e) => { scheduleOnRN(pinchMove, e.scale); });
-  const gestures = Gesture.Simultaneous(pan, pinch);
   const slide = useAnimatedStyle(() => ({ opacity: op.value, transform: [{ translateX: x.value }] }));
   const end = addDays(start, n - 1);
   // All-day and multi-day Termine run as one bar across their days, like
@@ -137,7 +123,6 @@ export default function WeekView() {
       });
   }, [events, start, end, n]);
   const laneRows = spans.reduce((m, x) => Math.max(m, x.row + 1), 0);
-  const label = `${dmShort(start)} ${tx('bis', 'to')} ${dmShort(end)}`;
   // Times outside the grid sit at its edge instead of disappearing.
   const top = (t: string) => ((Math.max(FROM * 60, Math.min(TO * 60 - 30, minutes(t))) - FROM * 60) / 60) * HP;
 
@@ -149,37 +134,27 @@ export default function WeekView() {
     haptics.select();
     router.push({ pathname: '/termin-neu', params: { date: d, start } });
   };
-  const round = { width: 36, height: 36, borderRadius: 999, backgroundColor: tokens.row, alignItems: 'center' as const, justifyContent: 'center' as const };
+  const hasWork = useMemo(() => events.some((e) => e.work && e.date >= start && e.date <= end), [events, start, end]);
+  const nowTop = ((Math.max(FROM * 60, Math.min(TO * 60, nowMin)) - FROM * 60) / 60) * HP;
   return (
     <>
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-        <PressScale accessibilityLabel={tx('Vorige Woche', 'Previous week')} onPress={() => slideTo(-1, 160)} style={round}>
-          <View style={{ transform: [{ rotate: '180deg' }] }}><LineIcon name="chev" size={16} color={tokens.ink} /></View>
-        </PressScale>
-        <Txt size={15} weight={600} style={{ flex: 1, textAlign: 'center' }}>{label}</Txt>
-        <PressScale accessibilityLabel={tx('Nächste Woche', 'Next week')} onPress={() => slideTo(1, 160)} style={round}>
-          <LineIcon name="chev" size={16} color={tokens.ink} />
-        </PressScale>
-      </View>
-      <GestureDetector gesture={gestures} touchAction="pan-y">
-      <View onLayout={(e: LayoutChangeEvent) => { w.value = e.nativeEvent.layout.width; }} style={{ borderRadius: 24, backgroundColor: tokens.row, overflow: 'hidden' }}>
-      <Animated.View style={[{ paddingTop: 12, paddingHorizontal: 10, paddingBottom: 10, gap: 10 }, slide]}>
-        <View style={{ flexDirection: 'row', paddingLeft: 22 }}>
+      <GestureDetector gesture={pan} touchAction="pan-y">
+      <View onLayout={(e: LayoutChangeEvent) => { w.value = e.nativeEvent.layout.width; }} style={{ overflow: 'hidden' }}>
+      <Animated.View style={[{ gap: 10 }, slide]}>
+        <View style={{ flexDirection: 'row', paddingLeft: RAIL, gap: 3 }}>
           {days.map((d) => {
-            const sel = d === day;
+            // Today is orange (Julian 14.11.: the one interaction colour); a tap on a day opens the three days from it.
+            const c = d === TODAY ? tokens.accent : tokens.ink;
             return (
-              <PressScale key={d} onPress={() => { actions.setCalDay(d); actions.setCalView('tag'); }} style={{ flex: 1, alignItems: 'center', gap: 2 }}>
-                <Txt size={11.5} color={tokens.sub}>{WD_SHORT[weekday(d)]}</Txt>
-                {/* Only today is the dark bubble (Julian 28.10.); a picked other day gets a ring. */}
-                <View style={{ width: 28, height: 28, borderRadius: 999, backgroundColor: d === TODAY ? tokens.ink : 'transparent', borderWidth: sel && d !== TODAY ? 1.5 : 0, borderColor: tokens.ink, alignItems: 'center', justifyContent: 'center' }}>
-                  <Txt size={15} weight={600} color={d === TODAY ? tokens.onInk : tokens.ink}>{String(dayNum(d))}</Txt>
-                </View>
+              <PressScale key={d} onPress={() => { haptics.select(); actions.setCalDay(d); actions.setCalView('tag'); }} accessibilityLabel={short(d)} style={wide ? { flex: 1, flexDirection: 'row', alignItems: 'baseline', gap: 5, paddingLeft: 4 } : { flex: 1, alignItems: 'center' }}>
+                <Txt size={11.5} line={15} weight={d === TODAY ? 600 : 400} color={d === TODAY ? tokens.accent : tokens.sub}>{WD_SHORT[weekday(d)]}</Txt>
+                <Txt size={wide ? 19 : 16} line={wide ? 24 : 21} weight={700} tracking={-0.3} color={c}>{String(dayNum(d))}</Txt>
               </PressScale>
             );
           })}
         </View>
         {laneRows ? (
-          <View style={{ marginLeft: 22, height: laneRows * 24 - 2 }}>
+          <View style={{ marginLeft: RAIL, height: laneRows * 24 - 2 }}>
             {spans.map(({ e, from, to, row, cutL, cutR }) => (
               <PressScale
                 key={e.id}
@@ -196,10 +171,10 @@ export default function WeekView() {
             ))}
           </View>
         ) : null}
-        <View style={{ paddingLeft: 22, height: hours.length * HP }}>
+        <View style={{ paddingLeft: RAIL, height: hours.length * HP }}>
           {hours.map((h, i) => (
             <View key={h} style={{ position: 'absolute', left: 0, right: 0, top: i * HP }}>
-              <View style={{ position: 'absolute', left: 22, right: 0, height: 1, backgroundColor: tokens.hair }} />
+              <View style={{ position: 'absolute', left: RAIL, right: 0, height: 1, backgroundColor: tokens.hair }} />
               <Txt size={10.5} line={14} color={tokens.mute} style={{ position: 'absolute', left: 0, top: -7 }}>{String(h)}</Txt>
             </View>
           ))}
@@ -222,6 +197,8 @@ export default function WeekView() {
               };
               return (
                 <View key={d} style={{ flex: 1, position: 'relative', zIndex: liftCol === days.indexOf(d) ? 5 : 0 }}>
+                  {/* A hairline between the days, like the lines between the hours. */}
+                  <View pointerEvents="none" style={{ position: 'absolute', left: -2, top: 0, bottom: 0, width: 1, backgroundColor: tokens.hair }} />
                   <Pressable accessibilityLabel={tx('Termin hier eintragen', 'Add an event here')} onPress={(ev: any) => slotAt(d, ev.nativeEvent.locationY ?? ev.nativeEvent.offsetY)} style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0 }} />
                   {list.filter((e) => e.work).map((e) => {
                     // Work without hours ("Arbeit bis Weihnachten") fills a usual working day, so it never vanishes (Julian 30.10.).
@@ -240,38 +217,50 @@ export default function WeekView() {
                     const l = evLane.get(e);
                     const slim = !!l && l.lanes > 1;
                     return (
-                      <Drag key={e.id} e={e} days={days} col={days.indexOf(d)} step={(colsW + 3) / n} HP={HP} dragging={dragging} onLift={setLiftCol} style={{ ...place(l, 3), top: top(e.start) + 2, height: h, backgroundColor: evTint(e), ...(slim ? { paddingHorizontal: 2 } : null), ...(evShared(e) ? sharedBorder() : null) }}>
+                      <Drag key={e.id} e={e} days={days} col={days.indexOf(d)} step={(colsW + 3) / n} HP={HP} dragging={dragging} onLift={setLiftCol} style={{ ...place(l, 2), top: top(e.start) + 2, height: h, backgroundColor: evTint(e), ...(slim ? { paddingHorizontal: 2 } : null), ...(evShared(e) ? sharedBorder() : { borderLeftWidth: 3, borderLeftColor: evInk(e) }) }}>
                         {/* Narrow columns clip one line like Apple and Google; a word is never broken into single letters (Julian 30.10.). */}
-                        <Txt size={wide ? 12.5 : 10.5} line={wide ? 16 : 13} weight={700} numberOfLines={wide && !slim ? Math.max(1, Math.floor(h / 17) - 1) : 1} ellipsizeMode={slim && wide ? 'tail' : 'clip'} textBreakStrategy="simple" android_hyphenationFrequency="none">{wide ? e.title : SHORT[e.title] ?? e.title.split(' ')[0]}</Txt>
+                        {wide ? (
+                          <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 4 }}>
+                            {!slim && h >= 24 ? <ClayIcon name={e.icon} size={16} /> : null}
+                            <Txt size={12.5} line={16} weight={600} numberOfLines={slim ? 1 : Math.max(1, Math.floor(h / 17) - 1)} ellipsizeMode="tail" textBreakStrategy="simple" android_hyphenationFrequency="none" style={{ flex: 1 }}>{e.title}</Txt>
+                          </View>
+                        ) : (
+                          <>
+                            {/* A week's columns are narrow: the icon says what it is, one short word under it when there is room. */}
+                            {!slim && h >= 36 ? <ClayIcon name={e.icon} size={15} /> : null}
+                            <Txt size={10.5} line={13} weight={700} numberOfLines={1} ellipsizeMode="clip" textBreakStrategy="simple" android_hyphenationFrequency="none">{SHORT[e.title] ?? e.title.split(' ')[0]}</Txt>
+                          </>
+                        )}
                         {!slim || wide ? <View pointerEvents="none" style={{ position: 'absolute', top: 2, right: 2 }}><Origin e={e} size={wide ? 12 : 10} /></View> : null}
                         {big && h >= 44 && !e.allDay ? <Txt size={wide ? 12 : 10} line={wide ? 15 : 12} color={tokens.sub} numberOfLines={1}>{wide && e.end ? `${hm(e.start)} ${tx('bis', 'to')} ${hm(e.end)}` : hm(e.start)}</Txt> : null}
                       </Drag>
                     );
                   })}
-                  {d === TODAY ? <View style={{ position: 'absolute', left: -2, right: -2, top: top(NOW), height: 2, backgroundColor: tokens.done }} /> : null}
                 </View>
               );
             })}
           </View>
+          {/* Now: one orange line across the days with its dot on the rail (Julian 14.11.). */}
+          {days.includes(TODAY) && nowMin >= FROM * 60 && nowMin <= TO * 60 ? (
+            <View pointerEvents="none" style={{ position: 'absolute', left: RAIL - 4, right: 0, top: nowTop }}>
+              <View style={{ position: 'absolute', left: 0, right: 0, top: -0.75, height: 1.5, borderRadius: 1, backgroundColor: tokens.accent }} />
+              <View style={{ position: 'absolute', left: -3, top: -3.5, width: 7, height: 7, borderRadius: 4, backgroundColor: tokens.accent }} />
+            </View>
+          ) : null}
         </View>
       </Animated.View>
       </View>
       </GestureDetector>
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
-        {(['T', 'J'] as PersonId[]).map((p) => (
-          <View key={p} style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-            <Stripes p={p} radius={4} style={{ width: 18, height: 12 }} />
-            <Txt size={13} color={tokens.sub}>{tx(`${persons[p].name} arbeitet`, `${persons[p].name} at work`)}</Txt>
-          </View>
-        ))}
-        <View style={{ flex: 1 }} />
-        <PressScale accessibilityLabel={tx('Kleiner', 'Smaller')} onPress={() => step(-1)} style={[round, { opacity: HP <= HP_MIN ? 0.4 : 1 }]}>
-          <View style={{ width: 12, height: 2, borderRadius: 2, backgroundColor: tokens.ink }} />
-        </PressScale>
-        <PressScale accessibilityLabel={tx('Größer', 'Larger')} onPress={() => step(1)} style={[round, { opacity: HP >= HP_MAX ? 0.4 : 1 }]}>
-          <LineIcon name="plus" size={16} color={tokens.ink} stroke={2} />
-        </PressScale>
-      </View>
+      {hasWork ? (
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
+          {(['T', 'J'] as PersonId[]).map((p) => (
+            <View key={p} style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+              <Stripes p={p} radius={4} style={{ width: 18, height: 12 }} />
+              <Txt size={13} color={tokens.sub}>{tx(`${persons[p].name} arbeitet`, `${persons[p].name} at work`)}</Txt>
+            </View>
+          ))}
+        </View>
+      ) : null}
     </>
   );
 }
@@ -288,7 +277,7 @@ const hhmm = (m: number) => `${pad(Math.floor(m / 60))}:${pad(m % 60)}`;
  */
 function Drag({ e, days, col, step, HP, dragging, onLift, style, children }: {
   e: CalEvent; days: string[]; col: number; step: number; HP: number;
-  dragging: { value: number }; onLift: (col: number) => void; style: { top: number; height: number; backgroundColor: string; left: number; width: number; paddingHorizontal?: number }; children: React.ReactNode;
+  dragging: { value: number }; onLift: (col: number) => void; style: ViewStyle & { top: number; height: number }; children: React.ReactNode;
 }) {
   const dx = useSharedValue(0);
   const dy = useSharedValue(0);
@@ -351,7 +340,7 @@ function Drag({ e, days, col, step, HP, dragging, onLift, style, children }: {
         accessibilityRole="button"
         accessibilityLabel={`${e.title}, ${hm(e.start)}`}
         accessibilityHint={series ? undefined : tx('Halten und ziehen zum Verschieben', 'Hold and drag to move')}
-        style={[{ position: 'absolute', borderRadius: 8, borderWidth: 1.5, borderColor: tokens.onInk, paddingVertical: 3, paddingHorizontal: 4, overflow: 'visible', shadowColor: '#000', shadowRadius: 10, shadowOffset: { width: 0, height: 4 } }, style, anim]}
+        style={[{ position: 'absolute', borderRadius: 7, paddingVertical: 3, paddingHorizontal: 4, overflow: 'visible', shadowColor: '#000', shadowRadius: 10, shadowOffset: { width: 0, height: 4 } }, style, anim]}
       >
         <View style={{ flex: 1, overflow: 'hidden' }}>{children}</View>
         {label ? (

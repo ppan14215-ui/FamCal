@@ -17,6 +17,11 @@ Alle sichtbaren Änderungen an FamCal. Neueste oben. Agenten und Menschen: Ände
 - Neuer Stil nach der Referenz: heller grauer Grund, Titel groß und fett mit Punkt, die graue Infozeile steht darunter.
 - Die Umschalter (Heute, Tage, Woche ...) sind jetzt einzelne weiße Chips, der gewählte ist dunkel und gleitet beim Wechsel.
 - Oben rechts sitzen auf jeder Seite zwei runde Knöpfe: Einstellungen und ein oranges Plus für Neues. Orange ist die eine Farbe für das, was man antippt.
+- Kalender Heute ist jetzt eine endlose, dichte Liste nach Tagen: links der Tag, rechts die Termine mit Farbstrich der Person, Zeit und Symbol. Was heute vorbei ist, wird grau, eine orange Linie zeigt jetzt. Freie Tage fallen weg. Offenes, Fristen und Vorschläge stehen im Block von heute.
+- Tage und Woche sind dasselbe Stundenraster, flach mit feinen Linien: Woche zeigt sieben Tage, Tage zeigt drei Tage größer mit ganzen Titeln und Zeiten. Heute und die Jetzt Linie sind orange.
+- Zoomen mit zwei Fingern wechselt die Ansicht und rastet ein: auseinander geht es näher heran (Jahr, Monat, Woche, Tage), zusammen weiter weg. Die Chips oben machen dasselbe per Tipp.
+- Monat ist flach: Zahl mit Punkten, heute als oranger Kreis. Feiertage färben die Zahl, Urlaub liegt als weiches Band hinter seinen Tagen, beides steht unter dem Raster mit Namen.
+- Im Kopf stehen bei Tagen, Woche, Monat und Jahr zwei kleine Pfeile zum Blättern; die Infozeile zeigt Zeitraum und Zahl der Termine.
 
 ### App funktioniert zuverlässig (09.11. Audit)
 - Nach längerer Pause im Hintergrund klappen Assistent und Spracheingabe gleich beim ersten Satz, statt "Ich komme gerade nicht an den Assistenten".
