@@ -8,6 +8,11 @@
  * Request (signed in, JWT checked by Supabase): multipart form with `audio` (wav).
  * Response: { text, lang } or { error }. The app falls back to the phone's text on any error.
  *
+ * Live (Julian 15.11.: words must appear while speaking, also German and English mixed): a JSON request
+ * `{ live: true }` returns `{ url }`, a ready websocket address for Scribe realtime with a single-use
+ * token that dies after 15 minutes. The phone streams the microphone straight there; the key never leaves
+ * this function. Model and settings are chosen here, so they can change without an app update.
+ *
  * The key lives only here, as the secret ELEVENLABS_API_KEY. Its own day cap
  * (use_hear_call) keeps a script from draining the budget. Nothing is stored,
  * and the log never holds what was said.
@@ -28,11 +33,42 @@ async function ohneKi(db: { from: (t: string) => any }): Promise<boolean> {
   return !error && !!(data?.[0] as { ohne_ki?: boolean } | undefined)?.ohne_ki;
 }
 
+/** Same gates as a recording (Ohne KI, day cap), then a one-time address for the live ears. */
+async function live(req: Request, key: string, json: (body: unknown, status?: number) => Response): Promise<Response> {
+  const body = await req.json().catch(() => null) as { live?: boolean } | null;
+  if (!body?.live) return json({ error: 'bad_request' }, 400);
+  const db = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_ANON_KEY') ?? req.headers.get('apikey') ?? '', {
+    global: { headers: { Authorization: req.headers.get('Authorization') ?? '' } },
+  });
+  if (await ohneKi(db)) return json({ error: 'ohne_ki' }, 403);
+  const { data: allowed, error: countError } = await db.rpc('use_hear_call');
+  if (countError) return json({ error: 'not_signed_in' }, 401);
+  if (!allowed?.ok) return json({ error: 'limit' }, 429);
+  const t0 = Date.now();
+  try {
+    const res = await fetch('https://api.elevenlabs.io/v1/single-use-token/realtime_scribe', { method: 'POST', headers: { 'xi-api-key': key }, signal: AbortSignal.timeout(6000) });
+    const r = res.ok ? await res.json() as { token?: string } : null;
+    if (!r?.token) { console.error('hoeren live', res.status, Date.now() - t0); return json({ error: 'token_failed' }, 502); }
+    // Scribe v3 Live follows a switch of language in the middle of a sentence (multilang_mode). Pauses settle a
+    // piece (grey turns to ink in the app); the app settles the rest itself when the person stops.
+    const model = Deno.env.get('HOEREN_LIVE_MODEL') || 'scribe_v3_live';
+    const q = new URLSearchParams({ model_id: model, token: r.token, audio_format: 'pcm_16000', commit_strategy: 'vad', vad_silence_threshold_secs: '0.8' });
+    if (model === 'scribe_v3_live') q.set('multilang_mode', 'true');
+    console.log(JSON.stringify({ live: true, ms: Date.now() - t0, model }));
+    return json({ url: `wss://api.elevenlabs.io/v1/speech-to-text/realtime?${q}` });
+  } catch (e) {
+    console.error('hoeren live', Date.now() - t0, e instanceof Error ? e.name : 'error');
+    return json({ error: 'token_failed' }, 502);
+  }
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors });
   const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { ...cors, 'Content-Type': 'application/json' } });
   const key = Deno.env.get('ELEVENLABS_API_KEY');
   if (!key) return json({ error: 'no_key' }, 503);
+
+  if ((req.headers.get('content-type') ?? '').includes('application/json')) return await live(req, key, json);
 
   let audio: File | null = null;
   let form: FormData;

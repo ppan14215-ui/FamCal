@@ -2,6 +2,11 @@
 
 Alle sichtbaren Änderungen an FamCal. Neueste oben. Agenten und Menschen: Änderung unter **Unreleased** in einfacher Sprache eintragen.
 
+### Live Wörter beim Sprechen (15.11.)
+- Das Mikrofon geht beim Sprechen direkt zu ElevenLabs Scribe Echtzeit. Die Sprechkarte zeigt die aktuelle Vermutung grau und bestätigte Wörter fest, auch wenn Deutsch und Englisch gemischt werden.
+- Fällt die Verbindung aus, geht dieselbe Aufnahme einmal den bisherigen Weg. Ohne das neue Mikrofon Modul (alte App) bleibt alles wie zuvor.
+- Braucht eine neue App (natives Modul expo-audio-stream-pcm), kein reines Update.
+
 ### Updates kommen von selbst an (14.11.)
 - Die App sucht bei jeder Rückkehr nach einem Update, lädt es still und startet es bei der nächsten Rückkehr nach einer Pause. Vorher brauchte es zwei komplette Neustarts.
 
