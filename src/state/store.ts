@@ -19,6 +19,7 @@ import { findCity } from '../data/cities';
 import { findPlace } from '../lib/places';
 import { dueLabel } from '../lib/when';
 import { tx } from '../i18n/lang';
+import { noteSplit } from '../lib/splitDay';
 
 /** Who uses this phone; the sync sets it once the family is known. */
 let meRole: PersonId = 'J';
@@ -295,6 +296,8 @@ export const actions = {
     const id = S.newId('e');
     const len = base.endDate ? Math.round((Date.parse(base.endDate) - Date.parse(base.date)) / 86400000) : 0;
     const one: CalEvent = { ...base, id, date: day, endDate: len ? new Date(Date.parse(day) + len * 86400000).toISOString().slice(0, 10) : undefined, repeat: undefined, repeatUntil: undefined, skipDates: undefined };
+    // The sheet that opened this day follows to the new Termin (lib/splitDay).
+    noteSplit(instanceId, id);
     set((s) => ({ events: [...s.events.map((e) => (e.id === sid ? { ...e, skipDates: [...new Set([...(e.skipDates ?? []), day])] } : e)), one] }));
     return id;
   },

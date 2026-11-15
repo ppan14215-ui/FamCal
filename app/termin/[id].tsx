@@ -15,6 +15,7 @@ import { ClayIcon } from '../../src/components/ui/Clay';
 import { tokens, persons, glass } from '../../src/theme';
 import { useStore, actions, toast, get } from '../../src/state/store';
 import { eventById } from '../../src/lib/useEvents';
+import { splitOf, dropSplit } from '../../src/lib/splitDay';
 import { seriesId, ruleOf } from '../../src/lib/repeat';
 import { whenLine } from '../../src/lib/when';
 import { reminderKey, reminderLabel } from '../../src/components/TerminDetails';
@@ -67,7 +68,9 @@ export default function Termin() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const all = useStore((s) => s.events);
   const people = useStore((s) => s.people);
-  const e = eventById(all, id);
+  // One day changed as "Nur dieser Termin" is a Termin of its own now: the sheet shows that one, not the series' day.
+  const e = eventById(all, splitOf(id) ?? id);
+  useEffect(() => () => dropSplit(id), [id]);
   const [more, setMore] = useState(false);
   // The sheet deleted the Termin itself and is already on its way out.
   const leaving = useRef(false);
