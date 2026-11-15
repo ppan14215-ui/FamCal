@@ -24,7 +24,7 @@ import { useMemoOut, setMemoOut } from '../lib/memoOut';
 import { useTyping, useKeyboardInset } from '../lib/keyboard';
 import { useBarMode } from '../lib/navStyle';
 import { navH, memoS } from './NavBar';
-import { useSpeak, speakOpen, speakHandlers, setSpeak, type SpeakAsk } from '../lib/speak';
+import { useSpeak, speakOpen, speakHandlers, setSpeak, getSpeak, type SpeakAsk } from '../lib/speak';
 import { hm } from '../lib/dates';
 import { haptics } from '../lib/haptics';
 import { tx } from '../i18n/lang';
@@ -94,6 +94,13 @@ function RecDot() {
   const st = useAnimatedStyle(() => ({ opacity: a.value }));
   return <Animated.View style={[{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#FFFFFF' }, st]} />;
 }
+
+/**
+ * A tap on the words in the card (Julian 15.11.): while he listens or writes it down, the recording stops and what was
+ * heard goes into the field with the keyboard up ("Aa"); on the finished sentence the field opens with it. Never sends.
+ */
+const intoText = () => { haptics.select(); if (getSpeak().phase === 'text') speakHandlers.edit(); else speakHandlers.keys(); };
+const tapLabel = () => tx('Text ändern', 'Edit the text');
 
 type Stage = 'rest' | 'card' | 'think';
 const MORPH = Easing.bezier(0.32, 0.72, 0, 1);
@@ -277,14 +284,18 @@ function KlarCard() {
             <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 8 }}>
               <View style={{ flex: 1, minWidth: 0, gap: 4, minHeight: 31 }}>
                 {s.ask && (listening || writing || s.ask.hold) && (words || s.phase === 'text') ? <Txt size={12.5} weight={500} color={dim(0.6)} numberOfLines={2}>{s.ask.text}</Txt> : null}
+                {/* Julian 15.11.: "I was expecting that I can tap into the text that is being shown". A tap on the words is a tap
+                    into them: the keyboard comes and they stand in the field, nothing is sent. */}
                 {words ? (
-                  <Txt {...T} numberOfLines={6} color={writing ? dim(0.6) : ON}>
-                    {sure}{sure && s.live!.part ? ' ' : ''}<Txt {...T} color={dim(0.45)}>{s.live!.part}</Txt>
-                  </Txt>
-                ) : s.phase === 'text' ? <Txt {...T} numberOfLines={7} color={ON}>{s.text}</Txt>
-                  : writing ? <Txt {...T} color={dim(0.45)}>{tx('Schreibe auf …', 'Writing it down …')}</Txt>
+                  <Pressable onPress={intoText} accessibilityRole="button" accessibilityLabel={tapLabel()}>
+                    <Txt {...T} numberOfLines={6} color={writing ? dim(0.6) : ON}>
+                      {sure}{sure && s.live!.part ? ' ' : ''}<Txt {...T} color={dim(0.45)}>{s.live!.part}</Txt>
+                    </Txt>
+                  </Pressable>
+                ) : s.phase === 'text' ? <Pressable onPress={intoText} accessibilityRole="button" accessibilityLabel={tapLabel()}><Txt {...T} numberOfLines={7} color={ON}>{s.text}</Txt></Pressable>
+                  : writing ? <Pressable onPress={intoText} accessibilityRole="button" accessibilityLabel={tapLabel()}><Txt {...T} color={dim(0.45)}>{tx('Schreibe auf …', 'Writing it down …')}</Txt></Pressable>
                   : s.ask ? <Txt size={s.ask.text.length > 44 ? 18 : 21} line={s.ask.text.length > 44 ? 24 : 27} weight={700} color={ON} numberOfLines={4}>{s.ask.text}</Txt>
-                  : <Txt {...T} color={dim(0.45)}>{tx('Ich höre zu …', "I'm listening …")}</Txt>}
+                  : <Pressable onPress={intoText} accessibilityRole="button" accessibilityLabel={tapLabel()}><Txt {...T} color={dim(0.45)}>{tx('Ich höre zu …', "I'm listening …")}</Txt></Pressable>}
               </View>
               <PressScale accessibilityLabel={tx('Abbrechen', 'Cancel')} hitSlop={10} onPress={() => { haptics.select(); speakHandlers.cancel(); }} style={{ width: 28, height: 28, borderRadius: 14, alignItems: 'center', justifyContent: 'center' }}>
                 <LineIcon name="x" size={16} color={dim(0.55)} stroke={2} />
@@ -401,11 +412,17 @@ function BigCard({ barH, from }: { barH: number; from: string }) {
           <View style={{ flex: 1, gap: 4, paddingTop: 4 }}>
             {label || words ? <Txt size={12.5} weight={600} tracking={0.4} color={tokens.done} numberOfLines={2}>{label ?? (writing ? tx('Schreibe auf …', 'Writing it down …') : tx('Ich höre zu …', "I'm listening …"))}</Txt> : null}
             {words ? (
-              <Txt size={18} line={25} weight={500} numberOfLines={4} color={writing ? tokens.sub : tokens.ink}>
-                {sure}{sure && s.live!.part ? ' ' : ''}<Txt size={18} line={25} weight={500} color={tokens.mute}>{s.live!.part}</Txt>
-              </Txt>
+              <Pressable onPress={intoText} accessibilityRole="button" accessibilityLabel={tapLabel()}>
+                <Txt size={18} line={25} weight={500} numberOfLines={4} color={writing ? tokens.sub : tokens.ink}>
+                  {sure}{sure && s.live!.part ? ' ' : ''}<Txt size={18} line={25} weight={500} color={tokens.mute}>{s.live!.part}</Txt>
+                </Txt>
+              </Pressable>
+            ) : s.phase === 'text' ? (
+              <Pressable onPress={intoText} accessibilityRole="button" accessibilityLabel={tapLabel()}>
+                <Txt size={18} line={25} weight={500} numberOfLines={4}>{main}</Txt>
+              </Pressable>
             ) : (
-              <Txt size={s.phase === 'text' ? 18 : 20} line={s.phase === 'text' ? 25 : 26} weight={s.phase === 'text' ? 500 : 600} numberOfLines={s.phase === 'text' ? 4 : 3}>{main}</Txt>
+              <Txt size={20} line={26} weight={600} numberOfLines={3}>{main}</Txt>
             )}
           </View>
           {s.phase === 'done' ? null : (
