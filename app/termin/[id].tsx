@@ -4,7 +4,7 @@
  * when there is something to say; where it came from; and three ways on: Ändern, Verschieben and the rest behind the
  * three dots (delete). Nothing is edited here: "Ändern" opens the page with every field.
  */
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { View } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import Sheet from '../../src/components/Sheet';
@@ -69,8 +69,11 @@ export default function Termin() {
   const people = useStore((s) => s.people);
   const e = eventById(all, id);
   const [more, setMore] = useState(false);
+  // The sheet deleted the Termin itself and is already on its way out.
+  const leaving = useRef(false);
   // Deleted from the page behind "Ändern", or moved to its own day: the sheet has nothing left to show.
-  useEffect(() => { if (!e && router.canGoBack()) router.back(); }, [e]);
+  // Not when the sheet closed itself: a second step back left the calendar for the chat (Julian 15.11.).
+  useEffect(() => { if (!e && !leaving.current && router.canGoBack()) router.back(); }, [e]);
   if (!e) return null;
 
   const series = !!ruleOf(e.repeat) && !e.work;
@@ -97,6 +100,7 @@ export default function Termin() {
     // Work comes in many blocks; one tap clears all of that person's from this day on (Julian 29.10.).
     haptics.commit();
     const gone = get().events.filter((x) => x.work && x.who === e.who && x.date >= e.date);
+    leaving.current = true;
     router.back();
     gone.forEach((x) => actions.removeEvent(x.id));
     void dropPhoneEvents(gone.map((x) => x.id));
@@ -104,6 +108,7 @@ export default function Termin() {
   };
   const removeOne = () => {
     haptics.commit();
+    leaving.current = true;
     router.back();
     const before = actions.skipOccurrence(e.id);
     toast(tx(`„${e.title}“ am ${WD_SHORT[weekday(e.date)]} gelöscht`, `“${e.title}” on ${WD_SHORT[weekday(e.date)]} deleted`), before ? () => actions.restoreEvent(before) : undefined);
@@ -111,6 +116,7 @@ export default function Termin() {
   const removeAll = () => {
     haptics.commit();
     const gone = get().events.find((x) => x.id === sid) ?? e;
+    leaving.current = true;
     router.back();
     actions.removeEvent(gone.id);
     void dropPhoneEvents([gone.id]);
