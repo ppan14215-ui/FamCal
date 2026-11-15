@@ -77,6 +77,7 @@ Alle sichtbaren Änderungen an FamCal. Neueste oben. Agenten und Menschen: Ände
 - Sprechkarte: ein Tipp auf den gezeigten Text öffnet ihn zum Ändern, beim Zuhören wie beim fertigen Satz. Die Tastatur kommt, gesendet wird nichts (Julian 15.11.).
 - Serie, „Nur dieser Termin“: nach dem Ändern zeigt das Blatt den geänderten Tag und nicht mehr Tag und Uhrzeit der Serie.
 - „Verschoben auf …“ zeigt einen Haken statt des Papierkorbs; Rückgängig bleibt.
+- Termin ändern und Neuer Termin: Das Symbol steht wieder groß oben als Kopf, ein Tipp wechselt es. Es gibt nur noch ein „Fertig“; in der Karte „Wann“ klappt ein kleiner Pfeil zu. Tag und Uhrzeit gelten auf jedem Weg hinaus, auch mit dem Pfeil zurück (Julian 15.11.).
 
 ### App funktioniert zuverlässig (09.11. Audit)
 - Nach längerer Pause im Hintergrund klappen Assistent und Spracheingabe gleich beim ersten Satz, statt "Ich komme gerade nicht an den Assistenten".

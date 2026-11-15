@@ -4,14 +4,14 @@
  * to bring, repeating and a note. A tap on the symbol opens every clay icon. Below it the reminder that saying it to
  * Memo does the same.
  */
-import React, { useEffect, useState } from 'react';
-import { View } from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import { View, type ScrollView } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { goBack } from '../src/lib/nav';
 import { Screen } from '../src/components/ui/kit';
 import Txt from '../src/components/ui/Txt';
 import Pin from '../src/components/buddy/Pin';
-import { FormBar, FormTitle, FormRow, FormValue, FormChip, FormPicks, FormInput, FormWho, whenChips } from '../src/components/TerminForm';
+import { FormBar, FormTitle, FormRow, FormValue, FormChip, FormPicks, FormInput, FormWho, whenChips, useWhenInView } from '../src/components/TerminForm';
 import { REMINDERS, reminderLabel, repeatOptions } from '../src/components/TerminDetails';
 import { tokens } from '../src/theme';
 import { useStore, actions, toast, get } from '../src/state/store';
@@ -49,6 +49,8 @@ export default function TerminNeu() {
   const [bring, setBring] = useState('');
   const [note, setNote] = useState('');
   const [open, setOpen] = useState<Open>(null);
+  const scroll = useRef<ScrollView>(null);
+  const linesAt = useWhenInView(scroll, open === 'wann');
   const toggle = (k: Open) => { haptics.select(); setOpen(open === k ? null : k); };
 
   useEffect(() => () => actions.clearDraftSymbol(), []);
@@ -94,11 +96,11 @@ export default function TerminNeu() {
 
   const rep = repeatOptions(when.date);
   return (
-    <Screen gap={18} padTop={10}>
-      <FormBar title={tx('Neuer Termin', 'New event')} icon="x" leftLabel={tx('Abbrechen', 'Cancel')} onLeft={goBack} action={tx('Sichern', 'Save')} onAction={save} />
-      <FormTitle icon={icon} value={title} onIcon={() => { haptics.select(); actions.pickSymbol(icon); router.push('/symbol'); }} onChange={(t) => { setTouched(true); setTitle(t); }} autoFocus={LIVE} />
-      <View>
-        <FormRow label={tx('Wann', 'When')} below={open === 'wann' ? <WhenField card startOpen value={when} onChange={setWhen} onDone={() => setOpen(null)} /> : undefined}>
+    <Screen gap={18} scrollRef={scroll}
+      head={<FormBar title={tx('Neuer Termin', 'New event')} icon="x" leftLabel={tx('Abbrechen', 'Cancel')} onLeft={goBack} action={tx('Sichern', 'Save')} onAction={save} />}>
+      <FormTitle hero icon={icon} value={title} onIcon={() => { haptics.select(); actions.pickSymbol(icon); router.push('/symbol'); }} onChange={(t) => { setTouched(true); setTitle(t); }} autoFocus={LIVE} />
+      <View onLayout={linesAt}>
+        <FormRow label={tx('Wann', 'When')} below={open === 'wann' ? <WhenField card fold startOpen value={when} onChange={setWhen} onDone={() => setOpen(null)} /> : undefined}>
           {open === 'wann' ? null : whenChips(when).map((c) => <FormChip key={c} label={c} onPress={() => toggle('wann')} />)}
         </FormRow>
         <FormRow label={tx('Wer', 'Who')}>

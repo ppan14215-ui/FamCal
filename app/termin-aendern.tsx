@@ -1,9 +1,11 @@
 /**
  * Termin ändern: the page behind "Ändern" on the Termin's sheet (app/termin/[id].tsx), built as the form of the klar
- * draft Julian approved (14.11.): the symbol beside the big title, then one line each for when, who, where, the
- * reminder, what to bring, repeating and a note. Everything stays editable (Julian 26.10.) and every change counts at
- * once; "Fertig" takes a day or time that is still open in the "Wann" card along and goes back (Julian 15.11.: the
- * upper "Done" closed the page and dropped the change). `verschieben` opens the day and time at once. Deleting sits on the sheet, under "Mehr".
+ * draft Julian approved (14.11.): the symbol large on top as the head of the page, to tap (Julian 15.11.: "a larger
+ * icon that you can click on and that kind of acted as the header"), the big title, then one line each for when, who,
+ * where, the reminder, what to bring, repeating and a note. Everything stays editable (Julian 26.10.) and every change
+ * counts at once. There is one "Fertig" (Julian 15.11.: "these two done buttons are confusing"): the "Wann" card only
+ * folds, and a day or time still open in it is taken along on every way out. `verschieben` opens the day and time at
+ * once. Deleting sits on the sheet, under "Mehr".
  */
 import React, { useEffect, useRef, useState } from 'react';
 import { View, ScrollView } from 'react-native';
@@ -15,7 +17,7 @@ import SourceLink from '../src/components/SourceLink';
 import Txt from '../src/components/ui/Txt';
 import AddInline from '../src/components/AddInline';
 import DateField from '../src/components/DateField';
-import { FormBar, FormTitle, FormRow, FormValue, FormChip, FormPicks, FormInput, FormWho, whenChips } from '../src/components/TerminForm';
+import { FormBar, FormTitle, FormRow, FormValue, FormChip, FormPicks, FormInput, FormWho, whenChips, useWhenInView } from '../src/components/TerminForm';
 import { tokens, persons } from '../src/theme';
 import { useStore, actions, toast, get } from '../src/state/store';
 import WhenField from '../src/components/WhenField';
@@ -30,6 +32,7 @@ import { REMINDERS, reminderKey, reminderLabel, repeatOptions, daysTo } from '..
 import TerminComments from '../src/components/TerminComments';
 import { eventById } from '../src/lib/useEvents';
 import { seriesId, ruleOf } from '../src/lib/repeat';
+import { evTint } from '../src/lib/evColor';
 
 type Open = 'wann' | 'erinnern' | 'mitbringen' | 'wiederholen' | null;
 
@@ -41,10 +44,16 @@ export default function Termin() {
   const e = eventById(all, id);
   // A series asks once what a change is for: this day or every day (TimeTree asks on save).
   const [scope, setScope] = useState<'one' | 'all'>('all');
-  const [draft, setDraft] = useState<When | null>(null);
+  const [draft, setDraftState] = useState<When | null>(null);
+  // The open day or time, also at hand when the page goes (Julian 15.11.: a change must never be lost, whichever way out).
+  const pending = useRef<When | null>(null);
+  const setDraft = (w: When | null) => { pending.current = w; setDraftState(w); };
+  const leave = useRef<() => void>(() => {});
+  useEffect(() => () => leave.current(), []);
   const [open, setOpen] = useState<Open>(verschieben ? 'wann' : null);
   // Spoken changes land on the fields below (Julian 27.10.).
   const scroll = useRef<ScrollView>(null);
+  const linesAt = useWhenInView(scroll, open === 'wann');
   // Symbol: the picker writes draftSymbol; we take it over when we asked.
   const picked = useStore((s) => s.draftSymbol);
   const picking = useRef(false);
@@ -60,15 +69,16 @@ export default function Termin() {
   const brings = e?.bring?.length ?? 0;
   const before = useRef(brings);
   useEffect(() => { if (brings > before.current) setOpen('mitbringen'); before.current = brings; }, [brings]);
-  if (!e) return null;
+  if (!e) { leave.current = () => {}; return null; }
   const series = !!ruleOf(e.repeat) && !e.work;
   const sid = seriesId(e.id);
   /** Where a change goes: the series, or this day split off as its own Termin. */
-  const target = (): string => {
+  const target = (stay = true): string => {
     if (!series || scope === 'all') return sid;
     const nid = actions.detachOccurrence(e.id);
     if (!nid) return sid;
-    router.setParams({ id: nid });
+    // The page follows the day that was split off; not when it is already leaving.
+    if (stay) router.setParams({ id: nid });
     return nid;
   };
   const patch = (p: Partial<CalEvent>) => {
@@ -87,9 +97,13 @@ export default function Termin() {
     const keep = w.start && !w.end && d > 0 ? { ...w, end: addMin(w.start, d) } : w;
     setDraft(keep);
   };
-  const done = () => {
-    if (!draft || whenLine(draft) === whenLine(now)) return setDraft(null);
-    const t = target();
+  /** Takes the open day or time over. Safe to call twice: what is open is taken once. */
+  const done = (stay = true) => {
+    const draft = pending.current;
+    if (!draft) return;
+    setDraft(null);
+    if (whenLine(draft) === whenLine(now)) return;
+    const t = target(stay);
     const base = get().events.find((x) => x.id === t);
     // Moving the whole series shifts its first day by as much as this day moved.
     const shift = t === sid && base && base.date !== e.date ? daysBetween(e.date, draft.date) : 0;
@@ -97,9 +111,10 @@ export default function Termin() {
     const before = actions.moveEvent(t, w);
     void keepPhoneEdit(t);
     if (!e.work && (draft.repeat ?? '') !== (e.repeat ?? '')) actions.updateEvent(sid, { repeat: draft.repeat || undefined });
-    setDraft(null);
     toast(`${tx('Verschoben auf', 'Moved to')} ${WD_SHORT[weekday(draft.date)]}${draft.start ? ' ' + hm(draft.start) : ''}`, before ? () => actions.restoreEvent(before) : undefined, { kind: 'done' });
   };
+  // The net under every way out (back gesture, the arrow, "Fertig"): the page never goes with a day still open.
+  leave.current = () => done(false);
   const overlap = (w: When) => {
     if (!w.start) return undefined;
     const a = minutes(w.start); const b = w.end ? minutes(w.end) : a + 30;
@@ -115,10 +130,10 @@ export default function Termin() {
   const toggle = (k: Open) => { haptics.select(); setOpen(open === k ? null : k); };
   const add = tx('Hinzufügen', 'Add');
   return (
-    <Screen gap={18} padTop={10} scrollRef={scroll}>
-      <FormBar title={tx('Termin ändern', 'Edit event')} icon="back" leftLabel={tx('Zurück', 'Back')} onLeft={goBack} action={tx('Fertig', 'Done')} onAction={() => { haptics.select(); done(); goBack(); }} />
+    <Screen gap={18} scrollRef={scroll}
+      head={<FormBar title={tx('Termin ändern', 'Edit event')} icon="back" leftLabel={tx('Zurück', 'Back')} onLeft={() => { done(); goBack(); }} action={tx('Fertig', 'Done')} onAction={() => { haptics.select(); done(); goBack(); }} />}>
       <Fresh id={`${e.id}:title`} radius={12}>
-        <FormTitle icon={e.icon} value={e.title} onIcon={pickIcon} onCommit={(t) => actions.updateEvent(target(), { title: t })} />
+        <FormTitle hero tint={evTint(e)} icon={e.icon} value={e.title} onIcon={pickIcon} onCommit={(t) => actions.updateEvent(target(), { title: t })} />
       </Fresh>
       {series ? (
         <View style={{ gap: 6 }}>
@@ -126,9 +141,9 @@ export default function Termin() {
           <Meta>{scope === 'one' ? tx('Änderungen gelten nur für diesen Tag.', 'Changes apply to this day only.') : tx('Änderungen gelten für jeden Termin der Serie.', 'Changes apply to every date in the series.')}</Meta>
         </View>
       ) : null}
-      <View>
+      <View onLayout={linesAt}>
         <Fresh id={`${e.id}:when`} radius={12}>
-          <FormRow label={tx('Wann', 'When')} below={open === 'wann' ? <WhenField card startOpen value={draft ?? now} onChange={change} onDone={() => { done(); setOpen(null); }} extra={overlap} /> : undefined}>
+          <FormRow label={tx('Wann', 'When')} below={open === 'wann' ? <WhenField card fold startOpen value={draft ?? now} onChange={change} onDone={() => { done(); setOpen(null); }} extra={overlap} /> : undefined}>
             {open === 'wann' ? null : whenChips(now).map((c) => <FormChip key={c} label={c} onPress={() => toggle('wann')} />)}
           </FormRow>
         </Fresh>
