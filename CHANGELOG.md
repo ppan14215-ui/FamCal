@@ -72,6 +72,7 @@ Alle sichtbaren Änderungen an FamCal. Neueste oben. Agenten und Menschen: Ände
 - Die Fotos liegen in einem privaten Speicher nur für die eigene Familie. Es gibt keinen öffentlichen Link, jedes Handy holt sie mit der eigenen Anmeldung. Beim Abmelden verschwinden sie vom Handy, beim Löschen des Kontos auch aus dem Speicher.
 - Kalender Heute beginnt jetzt mit „Neu und offen“: was der andere eingetragen oder geändert hat und was auf deine Antwort wartet, mit einem Punkt für alles, was du noch nicht gesehen hast. Darunter stehen die Tage wie bisher. Gibt es nichts Neues, beginnt Heute direkt mit den Tagen. Der Chat bleibt reiner Verlauf.
 - Wer im Kalender oder auf den Listen etwas sagt oder tippt, bleibt dort: Es legt sich keine Chat Karte mehr darüber, die neue oder geänderte Zeile kommt an und leuchtet kurz, Memo denkt in der Leiste. Eine Karte kommt nur noch, wenn die Antwort aus Worten besteht, eine Uhrzeit fehlt oder etwas unklar ist. Alles steht weiter im Chat.
+- Termin im Kalender löschen: Die App bleibt im Kalender (Julian 15.11.). Vorher ging sie nach dem Löschen im Termin Blatt zwei Schritte zurück und landete im Chat. Gilt auch für „Nur diesen Termin“, die ganze Serie und Arbeitstermine.
 
 ### App funktioniert zuverlässig (09.11. Audit)
 - Nach längerer Pause im Hintergrund klappen Assistent und Spracheingabe gleich beim ersten Satz, statt "Ich komme gerade nicht an den Assistenten".
