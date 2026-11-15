@@ -106,8 +106,10 @@ type Stage = 'rest' | 'card' | 'think';
 const MORPH = Easing.bezier(0.32, 0.72, 0, 1);
 const OUT = Easing.bezier(0.23, 1, 0.32, 1);
 /** The thinking bubble. */
-const BUB_W = 64;
-const BUB_H = 40;
+const BUB_W = 96;
+const BUB_H = 56;
+/** In the bubble his dots are drawn larger (Julian 15.11.: the thinking mascot was too small). */
+const BUB_PIN = 1.3;
 const K_PAD = { l: 14, r: 12, t: 14, b: 10 };
 const K_ROW = 44;
 /** How long Memo travels between the nav, the card and the bubble. */
@@ -198,6 +200,7 @@ function KlarCard() {
   const g0 = geo('rest');
   const w = useSharedValue(g0.w), h = useSharedValue(g0.h), r = useSharedValue(g0.r), cx = useSharedValue(g0.cx), yb = useSharedValue(g0.yb);
   const px = useSharedValue(g0.px), py = useSharedValue(g0.py);
+  const ps = useSharedValue(1);
   /** The shape and the travelling Memo show; the words show. */
   const so = useSharedValue(0), po = useSharedValue(0), co = useSharedValue(0);
   const prev = useRef<Stage>('rest');
@@ -211,6 +214,7 @@ function KlarCard() {
     const T = { duration: d, easing: MORPH };
     const to = (v: SharedValue<number>, x: number) => { v.value = d ? withTiming(x, T) : x; };
     to(w, g.w); to(h, g.h); to(r, g.r); to(cx, g.cx); to(yb, g.yb); to(px, g.px); to(py, g.py);
+    to(ps, stage === 'think' ? BUB_PIN : 1);
     if (!moved) return;
     if (stage === 'rest' && (typing || mode === 'input')) {
       // The keyboard's input takes over ("Aa"): there is no nav to go home to, so he simply fades on the way.
@@ -229,7 +233,7 @@ function KlarCard() {
     co.value = open && stage === 'card' ? withDelay(reduced ? 0 : 120, withTiming(1, { duration: reduced ? 0 : 200, easing: OUT })) : withTiming(0, { duration: reduced ? 0 : 90 });
   }, [open, stage]);
   const shape = useAnimatedStyle(() => ({ opacity: so.value, width: w.value, height: h.value, borderRadius: r.value, left: cx.value - w.value / 2, bottom: yb.value }));
-  const pin = useAnimatedStyle((): any => ({ opacity: po.value, transform: [{ translateX: px.value - S / 2 }, { translateY: -(py.value - S / 2) }] }));
+  const pin = useAnimatedStyle((): any => ({ opacity: po.value, transform: [{ translateX: px.value - S / 2 }, { translateY: -(py.value - S / 2) }, { scale: ps.value }] }));
   const content = useAnimatedStyle((): any => ({ opacity: co.value, transform: [{ translateY: 8 * (1 - co.value) }] }));
   // Something landed: the travelling Memo is glad together with the one in the pill, so they look the same when he
   // lands. Not inside the bubble (there are only the dots); a joy from just before he leaves it plays on the way home.

@@ -6,6 +6,7 @@
 import React, { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { View, ScrollView } from 'react-native';
 import Animated from 'react-native-reanimated';
+import { useMemoOut } from '../lib/memoOut';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { H1, Check, Head } from './ui/kit';
@@ -563,6 +564,13 @@ export function Thinking({ by }: { by: 'J' | 'T' }) {
   const persons = usePersons();
   const mineSoft = useBubble().soft;
   const inset = memoInset(useMascot() === 'minimal');
+  // Julian 15.11.: "double thinking dots, one in the chat bubble and one in our mascot bubble". While Memo is out as
+  // the thinking bubble he is the one sign; the dots here only show when he cannot be (keyboard open, a long wait).
+  const memoThinks = useMemoOut().away;
+  // He needs a beat to leave the nav; the dots wait that beat, so they never flash before he takes over.
+  const idle = v.phase === 'off';
+  const [waited, setWaited] = useState(false);
+  useEffect(() => { setWaited(false); if (idle) return; const t = setTimeout(() => setWaited(true), 320); return () => clearTimeout(t); }, [idle]);
   if (!v.inline || v.phase === 'off') return null;
   return (
     <View style={{ gap: 8, alignItems: 'flex-end' }}>
@@ -573,8 +581,8 @@ export function Thinking({ by }: { by: 'J' | 'T' }) {
           </View>
         </>
       ) : null}
-      <Reply bare text={v.reply} live />
-      {/* Julian 31.10.: one thinking sign only. The typing dots in Reply say it; steps show only once there is a plan. */}
+      {v.reply || (!memoThinks && waited) ? <Reply bare text={v.reply} live /> : null}
+      {/* Julian 31.10.: one thinking sign only. Steps show only once there is a plan. */}
       {v.head || v.lines.length ? (
         <Animated.View layout={rowLayout} style={[cardFrame, { marginLeft: inset }]}>
           <View style={{ paddingHorizontal: 14, paddingTop: 12, paddingBottom: 14, gap: 10 }}>

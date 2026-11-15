@@ -4,14 +4,14 @@
  * answer on the right, fine lines between. "Neuer Termin" and the page behind "Ändern" are both built from these
  * parts, so they look the same.
  */
-import React, { useEffect, useState } from 'react';
-import { View, TextInput, Platform } from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import { View, TextInput, Platform, useWindowDimensions, type ScrollView, type LayoutChangeEvent } from 'react-native';
 import Txt from './ui/Txt';
 import PressScale from './ui/PressScale';
 import { ClayIcon } from './ui/Clay';
 import { Avatar, PersonDot } from './ui/Person';
 import { HeadBtn } from './ui/HeaderRight';
-import type { LineName } from './ui/LineIcon';
+import LineIcon, { type LineName } from './ui/LineIcon';
 import { tokens, fonts, glass } from '../theme';
 import { useStore } from '../state/store';
 import { haptics } from '../lib/haptics';
@@ -25,8 +25,13 @@ const noOutline = Platform.OS === 'web' ? ({ outlineStyle: 'none' } as any) : nu
 
 /** One line of the form (40 of 284 in the draft). */
 export const FORM_ROW = 54;
+/** The bar stands still on top of the page: its room there. */
+const FORM_HEAD = 70;
 
-/** The bar: a round button on the left, the page's name in the middle, the dark pill on the right. */
+/**
+ * The bar: a round button on the left, the page's name in the middle, the dark pill on the right. It is the page's
+ * `head`, so it stands still while the lines scroll and the one "Fertig" is always there (Julian 15.11.).
+ */
 export function FormBar({ title, icon, leftLabel, onLeft, action, onAction }: { title: string; icon: LineName; leftLabel: string; onLeft: () => void; action: string; onAction: () => void }) {
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', minHeight: 44 }}>
@@ -46,7 +51,7 @@ export function FormBar({ title, icon, leftLabel, onLeft, action, onAction }: { 
  * The symbol and the big title. With `onCommit` the text is kept when the field is left (a Termin that exists: an
  * empty title puts the old one back); with `onChange` every letter goes out (a new Termin).
  */
-export function FormTitle({ icon, value, onIcon, onChange, onCommit, autoFocus }: { icon: ClayName; value: string; onIcon: () => void; onChange?: (t: string) => void; onCommit?: (t: string) => void; autoFocus?: boolean }) {
+export function FormTitle({ icon, value, onIcon, onChange, onCommit, autoFocus, hero, tint }: { icon: ClayName; value: string; onIcon: () => void; onChange?: (t: string) => void; onCommit?: (t: string) => void; autoFocus?: boolean; hero?: boolean; tint?: string }) {
   const [t, setT] = useState(value);
   // A spoken change arrives from outside.
   useEffect(() => { setT(value); }, [value]);
@@ -56,27 +61,64 @@ export function FormTitle({ icon, value, onIcon, onChange, onCommit, autoFocus }
     if (!v) return setT(value);
     if (v !== value) { haptics.commit(); onCommit(v); }
   };
+  const input = (
+    <TextInput
+      value={t}
+      onChangeText={(x) => { setT(x); onChange?.(x); }}
+      onBlur={commit}
+      onSubmitEditing={commit}
+      autoFocus={autoFocus}
+      returnKeyType="done"
+      blurOnSubmit
+      accessibilityLabel={tx('Titel', 'Title')}
+      placeholder={tx('Titel', 'Title')}
+      placeholderTextColor={tokens.mute}
+      selectionColor={tokens.select} cursorColor={tokens.ink}
+      style={[{ flex: 1, minWidth: 0, fontFamily: fonts[600], fontSize: 29, lineHeight: 35, letterSpacing: -0.5, color: tokens.ink, padding: 0 }, noOutline]}
+    />
+  );
+  // Julian 15.11.: the symbol large on top, to tap, as the head of the page; the details below.
+  if (hero) return (
+    <View style={{ gap: 14 }}>
+      <PressScale accessibilityRole="button" accessibilityLabel={tx('Symbol ändern', 'Change icon')} scale={0.97} onPress={onIcon}
+        style={{ height: 172, borderRadius: 22, backgroundColor: tint ?? tokens.row, alignItems: 'center', justifyContent: 'center' }}>
+        <ClayIcon key={icon} name={icon} size={124} />
+        <View style={{ position: 'absolute', right: 12, bottom: 12, flexDirection: 'row', alignItems: 'center', gap: 5, height: 30, paddingHorizontal: 11, borderRadius: 999, backgroundColor: tokens.chipBg }}>
+          <LineIcon name="sparkle" size={13} color={tokens.ink} />
+          <Txt size={13} weight={600}>{tx('Symbol', 'Icon')}</Txt>
+        </View>
+      </PressScale>
+      <View style={{ flexDirection: 'row' }}>{input}</View>
+    </View>
+  );
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
       <PressScale accessibilityLabel={tx('Symbol ändern', 'Change icon')} scale={0.9} hitSlop={10} onPress={onIcon}>
         <ClayIcon key={icon} name={icon} size={32} />
       </PressScale>
-      <TextInput
-        value={t}
-        onChangeText={(x) => { setT(x); onChange?.(x); }}
-        onBlur={commit}
-        onSubmitEditing={commit}
-        autoFocus={autoFocus}
-        returnKeyType="done"
-        blurOnSubmit
-        accessibilityLabel={tx('Titel', 'Title')}
-        placeholder={tx('Titel', 'Title')}
-        placeholderTextColor={tokens.mute}
-        selectionColor={tokens.select} cursorColor={tokens.ink}
-        style={[{ flex: 1, minWidth: 0, fontFamily: fonts[600], fontSize: 29, lineHeight: 35, letterSpacing: -0.5, color: tokens.ink, padding: 0 }, noOutline]}
-      />
+      {input}
     </View>
   );
+}
+
+/** About how high the open "Wann" card is with its line: head, sentence, the pills for start and length, one month. */
+const WHEN_OPEN = 634;
+
+/**
+ * With the symbol large on top, the open "Wann" card can end below a short screen. The page then moves up by just what
+ * is missing, never more. Put the returned handler on the box that holds the lines.
+ */
+export function useWhenInView(scroll: React.RefObject<ScrollView | null>, open: boolean) {
+  const { height } = useWindowDimensions();
+  const y = useRef(-1);
+  const show = () => {
+    if (!open || y.current < 0) return;
+    // What the page shows: the screen without the bar on top and the talk bar at the foot.
+    const over = y.current + WHEN_OPEN - (height - FORM_HEAD - 110);
+    if (over > 0) scroll.current?.scrollTo({ y: Math.min(Math.max(0, y.current - 8), over), animated: true });
+  };
+  useEffect(() => { const t = setTimeout(show, 120); return () => clearTimeout(t); }, [open]);
+  return (e: LayoutChangeEvent) => { const first = y.current < 0; y.current = e.nativeEvent.layout.y; if (first) show(); };
 }
 
 /** One line: the question on the left, the answer on the right; `below` opens under it (pills, a calendar, a list). */

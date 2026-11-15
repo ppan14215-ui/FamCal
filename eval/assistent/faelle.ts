@@ -333,7 +333,7 @@ export const FAELLE: Fall[] = [
 
   // ─── Große Familie (Julian 05.11.: sauber auch nach viel Nutzung und viel Kontext) ───
   { id: 'gross-zahnarzt-zuletzt', start: gross, saetze: ['Wann war Karlo zuletzt beim Zahnarzt?'],
-    pruefe: (e) => [...nichtsGeaendert(e), ...(/12\.?\s*(3\.|märz)|march 12|12th of march|2026-03-12/i.test(e.antwort) ? [] : [`nicht 12. März: "${e.antwort}"`]), ...(/fam\d/i.test(e.antwort) ? ['Platzhalter in der Antwort'] : []), ...deutsch(e)] },
+    pruefe: (e) => [...nichtsGeaendert(e), ...(/12\.?\s*(0?3\.|märz)|march 12|12th of march|2026-03-12/i.test(e.antwort) ? [] : [`nicht 12. März: "${e.antwort}"`]), ...(/fam\d/i.test(e.antwort) ? ['Platzhalter in der Antwort'] : []), ...deutsch(e)] },
   { id: 'gross-schuhgroesse', start: gross, saetze: ['Welche Schuhgröße hat Mia?'],
     pruefe: (e) => [...nichtsGeaendert(e), ...(/31/.test(e.antwort) ? [] : [`Antwort ohne 31: ${e.antwort}`]), ...deutsch(e)] },
   { id: 'gross-dezember-homeoffice', start: gross, saetze: ['Im Dezember bin ich freitags im Homeoffice'],

@@ -43,6 +43,8 @@ type Props = {
   closeOnPick?: boolean;
   /** Called when the field closes (Fertig, return key, pick). */
   onDone?: () => void;
+  /** On a page with its own "Fertig": no second one here, a small arrow folds the card (Julian 15.11.: two Done buttons confuse). */
+  fold?: boolean;
   /** Opens with the calendar already out ("Verschieben" on a Termin). */
   startOpen?: boolean;
 };
@@ -53,7 +55,7 @@ const plusMin = (t: string, m: number) => {
   return `${String(Math.floor(v / 60)).padStart(2, '0')}:${String(v % 60).padStart(2, '0')}`;
 };
 
-export default function WhenField({ value, onChange, kind = 'termin', past, icon = 'clock', label, placeholder = tx('Wann? Zum Beispiel morgen 15 Uhr', 'When? For example tomorrow 3pm'), right, extra, card, closeOnPick, onDone, startOpen }: Props) {
+export default function WhenField({ value, onChange, kind = 'termin', past, icon = 'clock', label, placeholder = tx('Wann? Zum Beispiel morgen 15 Uhr', 'When? For example tomorrow 3pm'), right, extra, card, closeOnPick, onDone, startOpen, fold }: Props) {
   const [open, setOpen] = useState(!!startOpen);
   // Julian 05.11.: the open calendar is the default; typing stays as the other way (pref 'wann': 'cal' | 'text').
   const [mode, setMode] = useState<Mode>('cal');
@@ -175,9 +177,16 @@ export default function WhenField({ value, onChange, kind = 'termin', past, icon
         )}
       </View>
       {open ? (
-        <PressScale hitSlop={10} scale={0.92} onPress={() => { haptics.select(); close(); }}>
-          <Txt size={15} weight={600}>{tx('Fertig', 'Done')}</Txt>
-        </PressScale>
+        fold ? (
+          <PressScale hitSlop={10} scale={0.9} accessibilityRole="button" accessibilityLabel={tx('Zuklappen', 'Fold')} onPress={() => { haptics.select(); close(); }}
+            style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: tokens.chipBg, alignItems: 'center', justifyContent: 'center' }}>
+            <View style={{ transform: [{ rotate: '-90deg' }] }}><LineIcon name="chev" size={16} color={tokens.ink} /></View>
+          </PressScale>
+        ) : (
+          <PressScale hitSlop={10} scale={0.92} onPress={() => { haptics.select(); close(); }}>
+            <Txt size={15} weight={600}>{tx('Fertig', 'Done')}</Txt>
+          </PressScale>
+        )
       ) : right}
     </View>
   );
