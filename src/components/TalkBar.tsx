@@ -31,6 +31,7 @@ import { usePrefill, takeFill } from '../lib/simple';
 import { tx } from '../i18n/lang';
 import { toast } from '../state/store';
 import { hearInCloud, cloudOn, cloudCapped, cloudWhy, lastHear } from '../lib/hoeren';
+import { liveEarsReady, startLiveEars } from '../lib/liveEars';
 import { reportNote } from '../lib/sentry';
 import { track } from '../lib/analytics';
 import { speechLocale, speechLang } from '../lib/speechLang';
@@ -299,6 +300,47 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, o
   };
 
   /**
+   * Live ears (Julian 14.11. 13:21: only "Listening", then the whole text at once; 15.11. "Echtzeit aus der Cloud").
+   * The microphone streams to the cloud while the person speaks; the speak card shows the current guess grey and
+   * settled words in ink, in whatever language is spoken. A tap stops, the last words settle, the text lands.
+   * Returns false when it could not start; the caller then hears the old way.
+   */
+  const listenLive = async (): Promise<boolean> => {
+    const { ExpoSpeechRecognitionModule: SR } = await import('expo-speech-recognition');
+    const ok = await SR.requestPermissionsAsync();
+    if (!ok.granted) return false;
+    lastSubs.current.forEach((x) => x.remove()); lastSubs.current = [];
+    const seq = ++recSeq;
+    setWavy(true);
+    const ears = startLiveEars({
+      hint: speechLang(),
+      level: (v) => { if (seq === recSeq) level.value = withTiming(v, { duration: 100 }); },
+      words: (sure, part) => { if (seq === recSeq && speakCard) setSpeak({ live: { sure, part, n: (getSpeak().live?.n ?? 0) + 1 } }); },
+    });
+    if (!ears) return false;
+    let finishing: Promise<void> | null = null;
+    const finish = () => (finishing ??= (async () => {
+      if (typed.current) { ears.cancel(); return; }
+      setWriting(true);
+      const r = await ears.stop();
+      setWriting(false);
+      // One line per recording for the error log, never what was said.
+      const outcome = r.via === 'live' ? 'live' : r.via === 'batch' ? 'live_batch' : 'live_none';
+      reportNote('voice_rec', r.via === 'none' ? 'warning' : 'info', { outcome }, { marks: r.info.marks, total_ms: r.info.ms, peak: r.info.peak, bytes: r.info.bytes, partials: r.info.partials, commits: r.info.commits, live_error: r.info.error, cloud: true, why: '', keys: keysNext.current, hear: r.via === 'live' ? '' : JSON.stringify(lastHear()) });
+      if (typed.current) return;
+      track('voice_transcribed', { ok: !!r.text, engine: r.via === 'batch' ? 'cloud' : 'live', ms: listenAt.current ? Date.now() - listenAt.current : undefined });
+      if (r.text) land(r.text);
+      else if (keysNext.current) sendAfter.current = false;
+      else { track('voice_failed', { reason: 'live_none' }); sendAfter.current = false; setText(''); haptics.tap(); toast(tx('Die Aufnahme kam nicht an. Tipp aufs Mikro und sag es bitte nochmal.', 'The recording didn\'t come through. Tap the mic and say it again.'), undefined, { kind: 'warn' }); }
+    })());
+    stopNative.current = () => { setListening(false); void finish(); };
+    toKeys.current = () => { ears.cancel(); setListening(false); };
+    // Only the user stops it; the cap is a safety net for a forgotten mic.
+    timers.current.push(setTimeout(() => { if (seq === recSeq && listeningRef.current) stopNative.current?.(); }, MAX_MS));
+    return true;
+  };
+
+  /**
    * The real app hears on the phone itself (Julian 27.10.: "Handy hört").
    * Apple and Google recognise German on the device; the text then goes to
    * "verstehen". Without the native module (Expo Go) or without permission it
@@ -307,6 +349,8 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, o
    */
   const listenNative = async (sentence: string) => {
     const fail = () => { setListening(false); if (LIVE) field.current?.focus(); else say(sentence); };
+    // Live ears first (Julian 15.11.); a build without them, or a microphone that will not start, hears the old way.
+    if (liveEarsReady()) { try { if (await listenLive()) return; } catch {} }
     try {
       const { ExpoSpeechRecognitionModule: SR } = await import('expo-speech-recognition');
       const ok = await SR.requestPermissionsAsync();
