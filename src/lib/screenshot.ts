@@ -10,6 +10,7 @@ import { supabase } from './cloud';
 import { getAuth } from './auth';
 import { LANG } from '../i18n/lang';
 import { kiErlaubt } from './privat';
+import { handOver } from './lifecycle';
 
 /** Builds before the picker and text reader simply say "kommt mit dem nächsten Update". */
 export const canRead = () => !!requireOptionalNativeModule('ExponentImagePicker') && !!requireOptionalNativeModule('ExpoTextExtractor');
@@ -21,12 +22,18 @@ export type ReadList = { name: string; source: 'movies' | 'books' | null; rating
 export async function pickImage(from: 'gallery' | 'camera'): Promise<string | null> {
   const P = await import('expo-image-picker');
   const opts = { mediaTypes: ['images' as const], quality: 0.9 };
-  if (from === 'camera') {
-    const ok = await P.requestCameraPermissionsAsync();
-    if (!ok.granted) return null;
+  // Camera and gallery are other screens of the phone: the way back must not restart the app.
+  const back = handOver();
+  try {
+    if (from === 'camera') {
+      const ok = await P.requestCameraPermissionsAsync();
+      if (!ok.granted) return null;
+    }
+    const r = from === 'camera' ? await P.launchCameraAsync(opts) : await P.launchImageLibraryAsync(opts);
+    return r.canceled ? null : r.assets?.[0]?.uri ?? null;
+  } finally {
+    back();
   }
-  const r = from === 'camera' ? await P.launchCameraAsync(opts) : await P.launchImageLibraryAsync(opts);
-  return r.canceled ? null : r.assets?.[0]?.uri ?? null;
 }
 
 /** IBAN, tax id, card and long account numbers never leave the phone. */

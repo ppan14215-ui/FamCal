@@ -30,6 +30,21 @@ async function reload() {
 let updateReady = false;
 let looking = false;
 
+let handed = 0;
+let handedBack = 0;
+/**
+ * The app itself sent the person away: the gallery or the camera is open. Coming back from there must
+ * never restart the app, or the photo that was just picked is gone. Call the returned function once
+ * the way back is done; a restart that was due waits for the next return.
+ */
+export function handOver(): () => void {
+  handed++;
+  let open = true;
+  return () => { if (open) { open = false; handed--; handedBack = Date.now(); } };
+}
+/** The result may land a moment before or after the app counts as active again. */
+const midHandOver = () => handed > 0 || Date.now() - handedBack < 5000;
+
 /** Looks for a newer version and loads it in the background. Never reloads by itself. */
 async function fetchUpdate() {
   if (Platform.OS === 'web' || __DEV__ || updateReady || looking) return;
@@ -69,7 +84,8 @@ export function startLifecycle() {
     const away = awaySince ? Date.now() - awaySince : 0;
     awaySince = 0;
     // A short hop to another app keeps a half written message; a real break starts the new version.
-    if (today() !== startedOn || (updateReady && away > 10000)) { void reload(); return; }
+    const due = today() !== startedOn || (updateReady && away > 10000);
+    if (due && !midHandOver()) { void reload(); return; }
     if (away > 3000) { void catchUpAll(); void fetchUpdate(); }
   });
 }

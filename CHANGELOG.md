@@ -4,6 +4,7 @@ Alle sichtbaren Änderungen an FamCal. Neueste oben. Agenten und Menschen: Ände
 
 ### Updates kommen von selbst an (14.11.)
 - Die App sucht bei jeder Rückkehr nach einem Update, lädt es still und startet es bei der nächsten Rückkehr nach einer Pause. Vorher brauchte es zwei komplette Neustarts.
+- Kommt man aus der Galerie oder der Kamera zurück, startet die App nie neu. Das gewählte Foto bleibt, der Neustart wartet auf die nächste Rückkehr.
 
 ## Unreleased
 
