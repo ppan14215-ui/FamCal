@@ -9,7 +9,8 @@
  * what we work on); it is handed in as `top` and scrolls with the list.
  */
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { View, ScrollView } from 'react-native';
+import { View, ScrollView, Platform } from 'react-native';
+import Animated from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import Txt from '../../components/ui/Txt';
@@ -17,7 +18,7 @@ import { ClayIcon } from '../../components/ui/Clay';
 import PressScale from '../../components/ui/PressScale';
 import Fresh from '../../components/Fresh';
 import SwipeRow, { justSwiped } from '../../components/SwipeRow';
-import { tokens, persons, allColors, shade } from '../../theme';
+import { tokens, persons, allColors, shade, rowOut, rowLayout } from '../../theme';
 import { useStore } from '../../state/store';
 import { useScroller } from '../../lib/landing';
 import { useDockSpace } from '../../lib/dockSpace';
@@ -105,6 +106,10 @@ function NowLine() {
 
 type DayData = { date: string; events: CalEvent[]; info: string };
 
+// A Termin that goes fades out and the lines below slide into the gap (docs/MOTION.md, rowOut and rowLayout). The web
+// link skips the slide: Reanimated's layout transition can pin a row out of place in mobile Safari.
+const slide = Platform.OS === 'web' ? undefined : rowLayout;
+
 const Day = React.memo(function Day({ d, first, now, people, month }: { d: DayData; first: boolean; now: number; people: Person[]; /** First day shown of a new month: its short name stands under the number, where today says "Heute". */ month?: string }) {
   const today = d.date === TODAY;
   const colour = today ? tokens.accent : tokens.ink;
@@ -113,7 +118,7 @@ const Day = React.memo(function Day({ d, first, now, people, month }: { d: DayDa
   const nowAt = today && timed ? d.events.findIndex((e) => !e.allDay && !(e.endDate && e.endDate > e.date) && minutes(e.start) > now) : -2;
   const under = today ? tx('Heute', 'Today') : month;
   return (
-    <View style={{ flexDirection: 'row', gap: 8, paddingTop: first ? 2 : 8, paddingBottom: 8, borderTopWidth: first ? 0 : 1, borderTopColor: tokens.hair }}>
+    <Animated.View exiting={rowOut} layout={slide} style={{ flexDirection: 'row', gap: 8, paddingTop: first ? 2 : 8, paddingBottom: 8, borderTopWidth: first ? 0 : 1, borderTopColor: tokens.hair }}>
       <View style={{ width: GUTTER, paddingTop: 2 }} accessibilityLabel={today ? tx('Heute', 'Today') : undefined}>
         <Txt size={13} line={16} weight={400} color={tokens.sub}>{WD_SHORT[weekday(d.date)]}</Txt>
         <Txt size={21} line={24} weight={600} tracking={-0.4} color={colour}>{String(dayNum(d.date))}</Txt>
@@ -122,15 +127,15 @@ const Day = React.memo(function Day({ d, first, now, people, month }: { d: DayDa
       <View style={{ flex: 1, minWidth: 0 }}>
         {d.info ? <Txt size={13} line={18} color={tokens.mute} numberOfLines={1} style={{ paddingTop: 6, paddingBottom: 2 }}>{d.info}</Txt> : null}
         {d.events.map((e, i) => (
-          <React.Fragment key={e.id}>
+          <Animated.View key={e.id} exiting={rowOut} layout={slide}>
             {i === nowAt ? <NowLine /> : null}
             <AgendaRow e={e} date={d.date} over={today && isOver(e, now)} people={people} next={i === nowAt} />
-          </React.Fragment>
+          </Animated.View>
         ))}
         {nowAt === -1 ? <NowLine /> : null}
         {today && !d.events.length ? <Txt size={14.5} line={20} color={tokens.sub} style={{ paddingVertical: 10 }}>{tx('Heute steht nichts an. Sag unten einfach, was ansteht.', 'Nothing today. Just say below what\'s coming up.')}</Txt> : null}
       </View>
-    </View>
+    </Animated.View>
   );
 });
 
