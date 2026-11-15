@@ -12,6 +12,7 @@ import { tx, LANG } from '../i18n/lang';
 import { identify, resetAnalytics } from './analytics';
 import { setSentryUser } from './sentry';
 import { startPurchases, stopPurchases } from './purchases';
+import { handOver } from './lifecycle';
 
 type Auth = { session: Session | null; ready: boolean };
 let auth: Auth = { session: null, ready: !supabase };
@@ -95,9 +96,16 @@ export async function signInWithApple(): Promise<SignIn> {
   try {
     // Loaded on tap so a build without the native module still starts.
     const Apple = await import('expo-apple-authentication');
-    const cred = await Apple.signInAsync({ requestedScopes: [Apple.AppleAuthenticationScope.FULL_NAME, Apple.AppleAuthenticationScope.EMAIL] });
-    if (!cred.identityToken) return { error: tx('Apple hat kein Token geschickt.', 'Apple sent no token.') };
-    const { error } = await supabase.auth.signInWithIdToken({ provider: 'apple', token: cred.identityToken });
+    const back = handOver();
+    let cred: Awaited<ReturnType<typeof Apple.signInAsync>>;
+    let error: { message: string } | null = null;
+    try {
+      cred = await Apple.signInAsync({ requestedScopes: [Apple.AppleAuthenticationScope.FULL_NAME, Apple.AppleAuthenticationScope.EMAIL] });
+      if (!cred.identityToken) return { error: tx('Apple hat kein Token geschickt.', 'Apple sent no token.') };
+      ({ error } = await supabase.auth.signInWithIdToken({ provider: 'apple', token: cred.identityToken }));
+    } finally {
+      back();
+    }
     // Apple shares the name only on the very first sign-in, so it is passed on right away.
     return { error: error?.message ?? null, name: cred.fullName?.givenName ?? undefined };
   } catch (e: any) {
@@ -123,6 +131,8 @@ export async function signInWithGoogle(): Promise<SignIn> {
       });
       googleReady = true;
     }
+    // The account picker is a foreign screen: an update that is ready must not restart the app in the middle of signing in.
+    const back = handOver();
     try {
       await GoogleSignin.hasPlayServices();
       // Show the account picker every time instead of silently reusing the last account.
@@ -136,6 +146,8 @@ export async function signInWithGoogle(): Promise<SignIn> {
     } catch (e) {
       if (isErrorWithCode(e) && (e.code === statusCodes.SIGN_IN_CANCELLED || e.code === statusCodes.IN_PROGRESS)) return { error: null };
       throw e;
+    } finally {
+      back();
     }
   } catch (e: any) {
     return { error: String(e?.message ?? e) };
