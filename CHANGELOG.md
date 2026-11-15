@@ -4,6 +4,11 @@ Alle sichtbaren Änderungen an FamCal. Neueste oben. Agenten und Menschen: Ände
 
 ## Unreleased
 
+### Live Wörter beim Sprechen (15.11.)
+- Das Mikrofon geht beim Sprechen direkt zu ElevenLabs Scribe Echtzeit. Die Sprechkarte zeigt die aktuelle Vermutung grau und bestätigte Wörter fest, auch wenn Deutsch und Englisch gemischt werden.
+- Fällt die Verbindung aus, geht dieselbe Aufnahme einmal den bisherigen Weg. Ohne das neue Mikrofon Modul (alte App) bleibt alles wie zuvor.
+- Braucht eine neue App (natives Modul expo-audio-stream-pcm), kein reines Update.
+
 ### Updates kommen von selbst an (14.11.)
 - Die App sucht bei jeder Rückkehr nach einem Update, lädt es still und startet es bei der nächsten Rückkehr nach einer Pause. Vorher brauchte es zwei komplette Neustarts.
 - Auch beim Anmelden mit Google oder Apple und beim Teilen der Einladung startet die App nicht mitten drin neu.
@@ -68,6 +73,10 @@ Alle sichtbaren Änderungen an FamCal. Neueste oben. Agenten und Menschen: Ände
 - Kalender Heute beginnt jetzt mit „Neu und offen“: was der andere eingetragen oder geändert hat und was auf deine Antwort wartet, mit einem Punkt für alles, was du noch nicht gesehen hast. Darunter stehen die Tage wie bisher. Gibt es nichts Neues, beginnt Heute direkt mit den Tagen. Der Chat bleibt reiner Verlauf.
 - Wer im Kalender oder auf den Listen etwas sagt oder tippt, bleibt dort: Es legt sich keine Chat Karte mehr darüber, die neue oder geänderte Zeile kommt an und leuchtet kurz, Memo denkt in der Leiste. Eine Karte kommt nur noch, wenn die Antwort aus Worten besteht, eine Uhrzeit fehlt oder etwas unklar ist. Alles steht weiter im Chat.
 - Termin im Kalender löschen: Die App bleibt im Kalender (Julian 15.11.). Vorher ging sie nach dem Löschen im Termin Blatt zwei Schritte zurück und landete im Chat. Gilt auch für „Nur diesen Termin“, die ganze Serie und Arbeitstermine.
+- Termin ändern: Das obere „Fertig“ übernimmt jetzt auch einen Tag oder eine Uhrzeit, die in der Karte „Wann“ noch offen ist (Julian 15.11.). Vorher schloss es die Seite und die Änderung war weg.
+- Sprechkarte: ein Tipp auf den gezeigten Text öffnet ihn zum Ändern, beim Zuhören wie beim fertigen Satz. Die Tastatur kommt, gesendet wird nichts (Julian 15.11.).
+- Serie, „Nur dieser Termin“: nach dem Ändern zeigt das Blatt den geänderten Tag und nicht mehr Tag und Uhrzeit der Serie.
+- „Verschoben auf …“ zeigt einen Haken statt des Papierkorbs; Rückgängig bleibt.
 
 ### App funktioniert zuverlässig (09.11. Audit)
 - Nach längerer Pause im Hintergrund klappen Assistent und Spracheingabe gleich beim ersten Satz, statt "Ich komme gerade nicht an den Assistenten".

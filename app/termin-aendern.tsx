@@ -2,7 +2,8 @@
  * Termin ändern: the page behind "Ändern" on the Termin's sheet (app/termin/[id].tsx), built as the form of the klar
  * draft Julian approved (14.11.): the symbol beside the big title, then one line each for when, who, where, the
  * reminder, what to bring, repeating and a note. Everything stays editable (Julian 26.10.) and every change counts at
- * once, "Fertig" only goes back. `verschieben` opens the day and time at once. Deleting sits on the sheet, under "Mehr".
+ * once; "Fertig" takes a day or time that is still open in the "Wann" card along and goes back (Julian 15.11.: the
+ * upper "Done" closed the page and dropped the change). `verschieben` opens the day and time at once. Deleting sits on the sheet, under "Mehr".
  */
 import React, { useEffect, useRef, useState } from 'react';
 import { View, ScrollView } from 'react-native';
@@ -97,7 +98,7 @@ export default function Termin() {
     void keepPhoneEdit(t);
     if (!e.work && (draft.repeat ?? '') !== (e.repeat ?? '')) actions.updateEvent(sid, { repeat: draft.repeat || undefined });
     setDraft(null);
-    toast(`${tx('Verschoben auf', 'Moved to')} ${WD_SHORT[weekday(draft.date)]}${draft.start ? ' ' + hm(draft.start) : ''}`, before ? () => actions.restoreEvent(before) : undefined);
+    toast(`${tx('Verschoben auf', 'Moved to')} ${WD_SHORT[weekday(draft.date)]}${draft.start ? ' ' + hm(draft.start) : ''}`, before ? () => actions.restoreEvent(before) : undefined, { kind: 'done' });
   };
   const overlap = (w: When) => {
     if (!w.start) return undefined;
@@ -115,7 +116,7 @@ export default function Termin() {
   const add = tx('Hinzufügen', 'Add');
   return (
     <Screen gap={18} padTop={10} scrollRef={scroll}>
-      <FormBar title={tx('Termin ändern', 'Edit event')} icon="back" leftLabel={tx('Zurück', 'Back')} onLeft={goBack} action={tx('Fertig', 'Done')} onAction={() => { haptics.select(); goBack(); }} />
+      <FormBar title={tx('Termin ändern', 'Edit event')} icon="back" leftLabel={tx('Zurück', 'Back')} onLeft={goBack} action={tx('Fertig', 'Done')} onAction={() => { haptics.select(); done(); goBack(); }} />
       <Fresh id={`${e.id}:title`} radius={12}>
         <FormTitle icon={e.icon} value={e.title} onIcon={pickIcon} onCommit={(t) => actions.updateEvent(target(), { title: t })} />
       </Fresh>

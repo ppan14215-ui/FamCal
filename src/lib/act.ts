@@ -309,7 +309,7 @@ function termin(said: string, id: string): Plan {
     const start = addMin(e.start, n);
     const end = e.end ? addMin(e.end, n) : undefined;
     steps.push(tx(`${later[3] === 'früher' ? 'Früher' : 'Später'}: ${hm(start)} statt ${hm(e.start)}.`, `${later[3] === 'früher' ? 'Earlier' : 'Later'}: ${hm(start)} instead of ${hm(e.start)}.`));
-    todo.push(() => { const b = actions.moveEvent(e.id, { date: e.date, start, end }); if (b) toast(tx(`Verschoben auf ${hm(start)}`, `Moved to ${hm(start)}`), () => actions.restoreEvent(b)); return `${e.id}:when`; });
+    todo.push(() => { const b = actions.moveEvent(e.id, { date: e.date, start, end }); if (b) toast(tx(`Verschoben auf ${hm(start)}`, `Moved to ${hm(start)}`), () => actions.restoreEvent(b), { kind: 'done' }); return `${e.id}:when`; });
   } else if (found) {
     const w: When = found.when;
     const len = e.end && !e.allDay ? minutes(e.end) - minutes(e.start) : 60;
@@ -320,7 +320,7 @@ function termin(said: string, id: string): Plan {
     const end = w.end ?? (start ? addMin(start, len) : undefined);
     const nw: When = { date, start, end };
     steps.push(tx(`Verschieben auf ${whenLine(nw)}.`, `Move to ${whenLine(nw)}.`));
-    todo.push(() => { const b = actions.moveEvent(e.id, nw); if (b) toast(`${tx('Verschoben auf', 'Moved to')} ${short(date)}${start ? ' ' + hm(start) : ''}`, () => actions.restoreEvent(b)); return `${e.id}:when`; });
+    todo.push(() => { const b = actions.moveEvent(e.id, nw); if (b) toast(`${tx('Verschoben auf', 'Moved to')} ${short(date)}${start ? ' ' + hm(start) : ''}`, () => actions.restoreEvent(b), { kind: 'done' }); return `${e.id}:when`; });
   }
 
   // Place: "Ort: Hauptstr. 3", "in der Praxis am Markt"
