@@ -24,6 +24,7 @@ import { getFamily } from '../../src/lib/sync';
 import { tokens } from '../../src/theme';
 import { stepViewed, onboardingDone, inviteSent, calendarConnected } from '../../src/lib/funnel';
 import { tx } from '../../src/i18n/lang';
+import { handOver } from '../../src/lib/lifecycle';
 
 const LINK = 'familie.app/j/huber-7Q2';
 /** The real app invites with the family's six letter code (Julian 27.10.); the test link keeps the sample link. */
@@ -50,7 +51,7 @@ export default function Partner() {
       title={tx(`Ab jetzt weiß ${names.T || 'ihr beide'} alles sofort`, `From now on ${names.T || 'you both'} know${names.T ? 's' : ''} right away`)}
       lead={tx(`Was du sagst, sieht ${you} sofort, und umgekehrt. Die App läuft auf iPhone und Android.`, `What you say, ${you} sees right away, and the other way round. Works on iPhone and Android.`)}
       footer={<>
-        <Btn label={tx('Einladung senden', 'Send invite')} icon="send" onPress={async () => { if (!preview) { const r = await Share.share({ message: invite().message(names.J) }).catch(() => null); if (r && r.action !== Share.dismissedAction) inviteSent('share', 'onboarding'); } done(); }} />
+        <Btn label={tx('Einladung senden', 'Send invite')} icon="send" onPress={async () => { if (!preview) { const back = handOver(); const r = await Share.share({ message: invite().message(names.J) }).catch(() => null).finally(back); if (r && r.action !== Share.dismissedAction) inviteSent('share', 'onboarding'); } done(); }} />
         <TextLink label={tx('Später einladen', 'Invite later')} weight={400} onPress={done} />
       </>}
     >
