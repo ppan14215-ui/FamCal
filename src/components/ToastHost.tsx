@@ -24,6 +24,7 @@ import { useDockTop } from '../lib/dockSpace';
 
 const LOOK: Record<ToastKind, { icon: LineName; tile: string; ink: string }> = {
   done: { icon: 'check', tile: tokens.doneSoft, ink: tokens.done },
+  // Something was removed and can come back. A change that can be undone ("Verschoben auf …") is 'done' with its Rückgängig.
   undo: { icon: 'trash', tile: tokens.chipBg, ink: tokens.sub },
   warn: { icon: 'warn', tile: '#F7EDE1', ink: '#9A5B13' },
   info: { icon: 'sparkle', tile: tokens.chipBg, ink: tokens.ink },
