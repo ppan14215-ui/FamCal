@@ -4,6 +4,11 @@ Alle sichtbaren Änderungen an FamCal. Neueste oben. Agenten und Menschen: Ände
 
 ## Unreleased
 
+### Updates kommen von selbst an (14.11.)
+- Die App sucht bei jeder Rückkehr nach einem Update, lädt es still und startet es bei der nächsten Rückkehr nach einer Pause. Vorher brauchte es zwei komplette Neustarts.
+- Auch beim Anmelden mit Google oder Apple und beim Teilen der Einladung startet die App nicht mitten drin neu.
+- Kommt man aus der Galerie oder der Kamera zurück, startet die App nie neu. Das gewählte Foto bleibt, der Neustart wartet auf die nächste Rückkehr.
+
 ### Sprechen und Tippen (14.11.)
 - „Aa“ beim Sprechen: Die Tastatur kommt sofort, nicht erst nach dem Aufschreiben. Was schon gesagt war, landet danach im Feld. Kein „Aufnahme kam nicht an“ mehr, wenn man nur tippen wollte.
 - Der Schalter „Sprache nur auf dem Handy“ ist weg (Julian 14.11.). Sprache geht immer über die Cloud und wird dadurch viel besser verstanden. Wer das nicht will, nutzt „Ohne KI“.
@@ -62,6 +67,7 @@ Alle sichtbaren Änderungen an FamCal. Neueste oben. Agenten und Menschen: Ände
 - Die Fotos liegen in einem privaten Speicher nur für die eigene Familie. Es gibt keinen öffentlichen Link, jedes Handy holt sie mit der eigenen Anmeldung. Beim Abmelden verschwinden sie vom Handy, beim Löschen des Kontos auch aus dem Speicher.
 - Kalender Heute beginnt jetzt mit „Neu und offen“: was der andere eingetragen oder geändert hat und was auf deine Antwort wartet, mit einem Punkt für alles, was du noch nicht gesehen hast. Darunter stehen die Tage wie bisher. Gibt es nichts Neues, beginnt Heute direkt mit den Tagen. Der Chat bleibt reiner Verlauf.
 - Wer im Kalender oder auf den Listen etwas sagt oder tippt, bleibt dort: Es legt sich keine Chat Karte mehr darüber, die neue oder geänderte Zeile kommt an und leuchtet kurz, Memo denkt in der Leiste. Eine Karte kommt nur noch, wenn die Antwort aus Worten besteht, eine Uhrzeit fehlt oder etwas unklar ist. Alles steht weiter im Chat.
+- Termin im Kalender löschen: Die App bleibt im Kalender (Julian 15.11.). Vorher ging sie nach dem Löschen im Termin Blatt zwei Schritte zurück und landete im Chat. Gilt auch für „Nur diesen Termin“, die ganze Serie und Arbeitstermine.
 
 ### App funktioniert zuverlässig (09.11. Audit)
 - Nach längerer Pause im Hintergrund klappen Assistent und Spracheingabe gleich beim ersten Satz, statt "Ich komme gerade nicht an den Assistenten".

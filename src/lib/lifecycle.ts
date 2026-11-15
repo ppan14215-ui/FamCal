@@ -5,6 +5,9 @@
  *   until the app was killed. Now Termine, lists and the chat are fetched again on every return.
  * - "Heute" and every relative day were frozen on the day the app was opened ("morgen" spoken the
  *   next morning landed a day too early). A new day reloads the app once, which resets every clock.
+ * - An update only arrived after the app was killed twice (14.11.: Julian's phone ran the old version
+ *   for hours after a fix went out). Now every return looks for an update, loads it quietly, and the
+ *   next return starts it.
  */
 import { AppState, Platform } from 'react-native';
 import { LIVE } from './live';
@@ -24,6 +27,42 @@ async function reload() {
   }
 }
 
+let updateReady = false;
+let looking = false;
+
+let handed = 0;
+let handedBack = 0;
+/**
+ * The app itself sent the person away: the gallery or the camera is open. Coming back from there must
+ * never restart the app, or the photo that was just picked is gone. Call the returned function once
+ * the way back is done; a restart that was due waits for the next return.
+ */
+export function handOver(): () => void {
+  handed++;
+  let open = true;
+  return () => { if (open) { open = false; handed--; handedBack = Date.now(); } };
+}
+/** The result may land a moment before or after the app counts as active again. */
+const midHandOver = () => handed > 0 || Date.now() - handedBack < 5000;
+
+/** Looks for a newer version and loads it in the background. Never reloads by itself. */
+async function fetchUpdate() {
+  if (Platform.OS === 'web' || __DEV__ || updateReady || looking) return;
+  looking = true;
+  try {
+    const Updates = await import('expo-updates');
+    if (!Updates.isEnabled) return;
+    const check = await Updates.checkForUpdateAsync();
+    if (!check.isAvailable) return;
+    const got = await Updates.fetchUpdateAsync();
+    updateReady = !!got.isNew;
+  } catch {
+    // No network or no update server: the next return tries again.
+  } finally {
+    looking = false;
+  }
+}
+
 async function catchUpAll() {
   try {
     const [sync, lists, feed] = await Promise.all([import('./sync'), import('./listSync'), import('./feed')]);
@@ -39,11 +78,14 @@ async function catchUpAll() {
 export function startLifecycle() {
   if (started || !LIVE) return;
   started = true;
+  void fetchUpdate();
   AppState.addEventListener('change', (st) => {
     if (st !== 'active') { if (!awaySince) awaySince = Date.now(); return; }
     const away = awaySince ? Date.now() - awaySince : 0;
     awaySince = 0;
-    if (today() !== startedOn) { void reload(); return; }
-    if (away > 3000) void catchUpAll();
+    // A short hop to another app keeps a half written message; a real break starts the new version.
+    const due = today() !== startedOn || (updateReady && away > 10000);
+    if (due && !midHandOver()) { void reload(); return; }
+    if (away > 3000) { void catchUpAll(); void fetchUpdate(); }
   });
 }
