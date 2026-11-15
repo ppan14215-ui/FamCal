@@ -6,6 +6,7 @@
 import { useSyncExternalStore } from 'react';
 import { Platform } from 'react-native';
 import { getPref, setPref, onPrefsReady } from './prefs';
+import { handOver } from './lifecycle';
 
 const KEY = 'photos';
 type Photos = Record<string, string>;
@@ -46,20 +47,26 @@ export const usePhotos = () => useSyncExternalStore(sub, read, read);
 /** The phone's own gallery with a square cut; null when the person backs out. */
 export async function pickPhoto(): Promise<string | null> {
   const P = await import('expo-image-picker');
-  const r = await P.launchImageLibraryAsync({ mediaTypes: ['images'], allowsEditing: true, aspect: [1, 1], quality: 0.5 });
-  const a = r.canceled ? null : r.assets?.[0];
-  if (!a?.uri) return null;
-  if (Platform.OS === 'web') return a.uri;
-  // The picker leaves its file in the cache, which the phone may empty: the photo gets a place of its own.
+  // The gallery is another screen of the phone: the way back must not restart the app.
+  const back = handOver();
   try {
-    const { File, Directory, Paths } = await import('expo-file-system');
-    const dir = new Directory(Paths.document, 'photos');
-    if (!dir.exists) dir.create({ intermediates: true });
-    const to = new File(dir, `${Date.now()}.jpg`);
-    new File(a.uri).copy(to);
-    return to.uri;
-  } catch {
-    return a.uri;
+    const r = await P.launchImageLibraryAsync({ mediaTypes: ['images'], allowsEditing: true, aspect: [1, 1], quality: 0.5 });
+    const a = r.canceled ? null : r.assets?.[0];
+    if (!a?.uri) return null;
+    if (Platform.OS === 'web') return a.uri;
+    // The picker leaves its file in the cache, which the phone may empty: the photo gets a place of its own.
+    try {
+      const { File, Directory, Paths } = await import('expo-file-system');
+      const dir = new Directory(Paths.document, 'photos');
+      if (!dir.exists) dir.create({ intermediates: true });
+      const to = new File(dir, `${Date.now()}.jpg`);
+      new File(a.uri).copy(to);
+      return to.uri;
+    } catch {
+      return a.uri;
+    }
+  } finally {
+    back();
   }
 }
 
