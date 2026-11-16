@@ -17,6 +17,7 @@ import type { CalEvent } from '../state/types';
 import { hasDeviceCalendars, listCalendars, importDeviceEvents, moveIn, phoneIdOf, phoneMeta, writePhoneEvent, deletePhoneEvent } from './deviceCalendars';
 import { getFamily, myRole } from './sync';
 import { TODAY, addDays } from './dates';
+import { markDropped, withMarked, onDropped } from './phoneDropped';
 
 const CALS = 'famcal.phoneCalendars';
 const SEEN = 'famcal.phoneSynced';
@@ -112,6 +113,8 @@ export async function syncPhoneCalendars(force = false): Promise<void> {
     });
     const byId = new Map(fresh.map((e) => [e.id, e]));
 
+    // Deleted while the phone was being read (16.11.): counted too, from here on nothing waits any more.
+    withMarked(dropped);
     const s = get();
     const store = new Map(s.events.map((e) => [e.id, e]));
     const nextBase: Record<string, string> = {};
@@ -205,14 +208,11 @@ export function startPhoneSync() {
   AppState.addEventListener('change', (st) => { if (st === 'active') void syncPhoneCalendars(); });
 }
 
-/** Deleting a synced Termin in FamCal keeps it out; undo lets it back in. */
-export async function dropPhoneEvents(ids: string[], back = false) {
-  if (Platform.OS === 'web' || !ids.length) return;
-  const now = new Set(await read(DROPPED));
-  ids.forEach((id) => (back ? now.delete(id) : now.add(id)));
-  await write(DROPPED, [...now].slice(-2000));
-  syncSoon();
+/** Deleting a synced Termin in FamCal keeps it out; undo lets it back in. The store does this itself for every delete (16.11.). */
+export function dropPhoneEvents(ids: string[], back = false) {
+  return markDropped(ids, back);
 }
+onDropped(() => syncSoon());
 
 /** A synced Termin edited in FamCal keeps the edit; the phone calendar no longer overwrites it. */
 export async function keepPhoneEdit(id: string) {
