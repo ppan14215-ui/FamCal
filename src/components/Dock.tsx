@@ -100,7 +100,8 @@ function useWhere(): { ctx: Ctx; tab: boolean; lift: number; chat?: boolean } | 
   const { id } = useGlobalSearchParams<{ id?: string }>();
   // The family chat (Julian 29.10.): the field is always there, a sentence becomes a card in the log.
   if (path === '/chat') return { ctx: { kind: 'kalender' }, tab: false, lift: 0, chat: true };
-  if (path === '/kalender' || path === '/eingang') return { ctx: { kind: 'kalender' }, tab: true, lift: 0 };
+  // The settings are a tab too (Julian 16.11.): Memo sits in its pill, so a sentence said there works like in the calendar.
+  if (path === '/kalender' || path === '/eingang' || path === '/einstellungen') return { ctx: { kind: 'kalender' }, tab: true, lift: 0 };
   if (path === '/listen') return { ctx: { kind: 'liste', id: active }, tab: true, lift: 0 };
   // The Termin's page (a tap on a Termin leads straight to it, Julian 16.11.): spoken changes land on its fields.
   if ((path === '/termin-aendern' || path.startsWith('/termin/')) && typeof id === 'string' && id) return { ctx: { kind: 'termin', id }, tab: false, lift: 0 };

@@ -63,7 +63,8 @@ function RootLayout() {
       <SafeAreaProvider>
         <WebInsets>
           <StatusBar style={isDark() ? 'light' : 'dark'} />
-          <Stack screenLayout={({ children }) => <Keyed>{children}</Keyed>} screenOptions={{ headerShown: false, contentStyle: { backgroundColor: tokens.bg }, animation: 'default' }}>
+          {/* Every page is drawn again with a new look. The tabs redraw their own pages and stay where they are. */}
+          <Stack screenLayout={({ children, route }) => (route.name === '(tabs)' ? <>{children}</> : <Keyed>{children}</Keyed>)} screenOptions={{ headerShown: false, contentStyle: { backgroundColor: tokens.bg }, animation: 'default' }}>
             <Stack.Screen name="index" />
             <Stack.Screen name="onboarding" options={{ animation: 'fade' }} />
             <Stack.Screen name="(tabs)" options={{ animation: 'fade' }} />

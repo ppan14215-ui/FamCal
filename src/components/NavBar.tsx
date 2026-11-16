@@ -41,6 +41,8 @@ export const TABS: { name: string; key: string; icon: LineName }[] = [
   { name: 'kalender', key: 'nav.kalender', icon: 'cal' },
   { name: 'listen', key: 'nav.listen', icon: 'list' },
   { name: 'chat', key: 'nav.chat', icon: 'chat' },
+  // Julian 16.11.: "Setting can only be acces via chat? Needs to be it's own tap." The settings are a tab of their own.
+  { name: 'einstellungen', key: 'nav.einstellungen', icon: 'settings' },
 ];
 
 /** Height of the bar; Dock.tsx puts the field right above it. */
@@ -48,7 +50,7 @@ export const navH = () => (navStyle() === 'klar' ? 52 : navStyle() === 'pill' ? 
 /** Width of the icon pill in the one-bar navigation. */
 // One bar (Julian 04.11.): the old dark pill's look, the light block sits on the active tab with its word.
 const BAR_ON_W = 100;
-export const BAR_TABS_W = BAR_ON_W + 40 * 2 + 8;
+export const BAR_TABS_W = BAR_ON_W + 40 * (TABS.length - 1) + 8;
 /** The open tab always has the same width, so the bar never changes size and recenters while the pill moves (Julian 31.10.: Listen overshot). */
 const ON_W = 128;
 /** Where the pill's top edge sits above the screen bottom. */
@@ -56,8 +58,8 @@ const ON_W = 128;
 export const klarFoot = (insetBottom: number) => Math.max(insetBottom, 10) + 8;
 export const navTop = (insetBottom: number) => (navStyle() === 'klar' ? klarFoot(insetBottom) + navH() : navStyle() === 'pill' ? Math.max(insetBottom, 12) + 10 + navH() : navStyle() === 'bar' ? Math.max(insetBottom, 8) + 4 + navH() : Math.max(insetBottom, 4) + navH());
 
-/** The pill's width before it is measured: one open tab and two icons. */
-const PILL_W = ON_W + 56 * 2 + 4 + 10;
+/** The pill's width before it is measured: one open tab and the others as icons. */
+const PILL_W = ON_W + 56 * (TABS.length - 1) + 4 + 10;
 const HANDLE_W = 8;
 const HANDLE_H = 44;
 const EDGE = 16;
@@ -340,6 +342,7 @@ export function BarTab({ on, icon, label, onPress, onW, offW }: { on: boolean; i
 /** Memo in the klar pill: his body fills the pill up to its padding, like in the draft (34 of 42 there). Pin draws its body at 0.8 of its size. */
 export const memoS = () => (navH() - 10) / 0.8;
 const KLAR_ON = 118;
+const KLAR_LONG = 146;
 const KLAR_OFF = 46;
 function KlarNav({ state, navigation }: BottomTabBarProps) {
   return <KlarPill current={state.routes[state.index]?.name} onTab={(name) => navigation.navigate(name)} />;
@@ -391,15 +394,20 @@ export function KlarPill({ current, onTab }: { current?: string; onTab?: (name: 
 }
 
 function KlarTab({ on, icon, label, onPress }: { on: boolean; icon: LineName; label: string; onPress: () => void }) {
-  const w = useSharedValue(on ? KLAR_ON : KLAR_OFF);
-  useEffect(() => { w.value = withTiming(on ? KLAR_ON : KLAR_OFF, SWITCH); }, [on]);
+  // A long word ("Einstellungen") gets the room it needs; on a narrow phone the open tab then shows its icon alone.
+  const { width: W } = useWindowDimensions();
+  const long = label.length > 10;
+  const word = !long || W >= 384;
+  const onW = !long ? KLAR_ON : word ? KLAR_LONG : KLAR_OFF;
+  const w = useSharedValue(on ? onW : KLAR_OFF);
+  useEffect(() => { w.value = withTiming(on ? onW : KLAR_OFF, SWITCH); }, [on, onW]);
   const size = useAnimatedStyle(() => ({ width: w.value }));
   return (
     <Animated.View style={[{ overflow: 'hidden', borderRadius: 999, backgroundColor: on ? tokens.pillOn : 'transparent' }, size]}>
       <PressScale scale={0.94} accessibilityRole="tab" accessibilityLabel={label} accessibilityState={{ selected: on }} onPress={onPress}
         style={{ height: navH() - 10, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7 }}>
         <LineIcon name={icon} size={20} color={on ? tokens.ink : tokens.sub} />
-        {on ? <Animated.View entering={FadeIn.duration(180).delay(90)}><Txt size={14} weight={600} color={tokens.ink} numberOfLines={1}>{label}</Txt></Animated.View> : null}
+        {on && word ? <Animated.View entering={FadeIn.duration(180).delay(90)}><Txt size={14} weight={600} color={tokens.ink} numberOfLines={1}>{label}</Txt></Animated.View> : null}
       </PressScale>
     </Animated.View>
   );

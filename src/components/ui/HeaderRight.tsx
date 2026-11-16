@@ -1,7 +1,7 @@
 /**
  * Top right of every tab, as in the klar draft Julian approved (the look before the Recordings style, 14.11. 09:33):
- * two round white buttons, the search and the plus. Chat shows the family and the settings there instead
- * (`people`). The plus menu grows out of the plus.
+ * two round white buttons, the search and the plus. Chat shows the family there instead (`people`); the settings
+ * are a tab of their own (Julian 16.11.). The plus menu grows out of the plus.
  */
 import React, { useRef } from 'react';
 import { View } from 'react-native';
@@ -25,7 +25,7 @@ export function HeadBtn({ icon, label, onPress, size = 21 }: { icon: LineName; l
   );
 }
 
-export default function HeaderRight({ before, people }: { before?: React.ReactNode; /** Chat: the family and the way to the settings instead of search and plus. */ people?: boolean }) {
+export default function HeaderRight({ before, people }: { before?: React.ReactNode; /** Chat: the family instead of search and plus. */ people?: boolean }) {
   // The plus menu grows out of the plus: note where it sits, then open. If the place cannot be read, it opens anyway.
   const plus = useRef<View>(null);
   const openNew = () => {
@@ -40,7 +40,6 @@ export default function HeaderRight({ before, people }: { before?: React.ReactNo
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
       {before}
       <PressScale accessibilityLabel={tx('Familie', 'Family')} scale={0.95} onPress={() => { haptics.select(); router.push('/personen'); }}><Family size={34} /></PressScale>
-      <HeadBtn icon="settings" label={tx('Einstellungen', 'Settings')} onPress={() => { haptics.select(); router.push('/einstellungen'); }} size={20} />
     </View>
   );
   return (

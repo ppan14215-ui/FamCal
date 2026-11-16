@@ -7,37 +7,37 @@ import React, { useState } from 'react';
 import { View } from 'react-native';
 import { router } from 'expo-router';
 import * as Clipboard from 'expo-clipboard';
-import { Screen, BackBar, H1, H2, Group, Chevron, Seg } from '../src/components/ui/kit';
-import Txt from '../src/components/ui/Txt';
-import LineIcon from '../src/components/ui/LineIcon';
-import PressScale from '../src/components/ui/PressScale';
-import Pin from '../src/components/buddy/Pin';
-import { tokens } from '../src/theme';
-import { actions, toast, useStore } from '../src/state/store';
-import { LIVE } from '../src/lib/live';
-import { getFamily, forgetLocal } from '../src/lib/sync';
-import { signOut, canTestSignIn, useAuth } from '../src/lib/auth';
-import { analyticsOff, setAnalyticsOff } from '../src/lib/analytics';
-import { chooseNav } from '../src/lib/funnel';
-import { runQualityTest, CASES } from '../src/lib/qualitaet';
-import { tx } from '../src/i18n/lang';
-import { speechLang, setSpeechLang } from '../src/lib/speechLang';
+import { Screen, H1, H2, Group, Chevron, Seg } from '../../src/components/ui/kit';
+import Txt from '../../src/components/ui/Txt';
+import LineIcon from '../../src/components/ui/LineIcon';
+import PressScale from '../../src/components/ui/PressScale';
+import Pin from '../../src/components/buddy/Pin';
+import { tokens } from '../../src/theme';
+import { actions, toast, useStore } from '../../src/state/store';
+import { LIVE } from '../../src/lib/live';
+import { getFamily, forgetLocal } from '../../src/lib/sync';
+import { signOut, canTestSignIn, useAuth } from '../../src/lib/auth';
+import { analyticsOff, setAnalyticsOff } from '../../src/lib/analytics';
+import { chooseNav } from '../../src/lib/funnel';
+import { runQualityTest, CASES } from '../../src/lib/qualitaet';
+import { tx } from '../../src/i18n/lang';
+import { speechLang, setSpeechLang } from '../../src/lib/speechLang';
 import * as Updates from 'expo-updates';
-import { useMicStyle, setMicStyle } from '../src/lib/micStyle';
-import { useMascot, setMascot } from '../src/lib/mascot';
-import { useSimple, setSimple } from '../src/lib/simple';
-import { useAgent, setAgent } from '../src/lib/assistent';
-import { usePrivat } from '../src/lib/privat';
-import { haptics } from '../src/lib/haptics';
-import { countryName, regionName } from '../src/lib/holidays';
-import { HIDDEN } from '../src/lib/core';
-import { startPreview } from '../src/lib/vorschau';
-import { THEMES } from '../src/theme/tokens';
-import { usePalette } from '../src/theme/mode';
-import { navStyle, setNavStyle } from '../src/lib/navStyle';
-import { seedDemoFeed } from '../src/lib/feed';
-import { BUBBLES, useBubble, setBubble, useMemoChoice, setMemoColor } from '../src/lib/look';
-import { HOME } from '../src/lib/home';
+import { useMicStyle, setMicStyle } from '../../src/lib/micStyle';
+import { useMascot, setMascot } from '../../src/lib/mascot';
+import { useSimple, setSimple } from '../../src/lib/simple';
+import { useAgent, setAgent } from '../../src/lib/assistent';
+import { usePrivat } from '../../src/lib/privat';
+import { haptics } from '../../src/lib/haptics';
+import { countryName, regionName } from '../../src/lib/holidays';
+import { HIDDEN } from '../../src/lib/core';
+import { startPreview } from '../../src/lib/vorschau';
+import { THEMES } from '../../src/theme/tokens';
+import { usePalette } from '../../src/theme/mode';
+import { navStyle, setNavStyle } from '../../src/lib/navStyle';
+import { seedDemoFeed } from '../../src/lib/feed';
+import { BUBBLES, useBubble, setBubble, useMemoChoice, setMemoColor } from '../../src/lib/look';
+import { HOME } from '../../src/lib/home';
 
 /** A plain row: name left, value right, like Apple's settings (Julian 03.11.). Flat on the ground, hairlines only. */
 function SRow({ t, v, right, onPress }: { t: string; v?: string; right?: React.ReactNode; onPress?: () => void }) {
@@ -127,8 +127,7 @@ export default function Einstellungen() {
   const openCals = () => router.push({ pathname: '/onboarding/kalender', params: { zurueck: '1' } });
   const copy = <LineIcon name="copy" size={18} color={tokens.sub} />;
   return (
-    <Screen gap={10}>
-      <BackBar />
+    <Screen gap={10} tab>
       <H1>{tx('Einstellungen', 'Settings')}</H1>
 
       <H2>{tx('Du', 'You')}</H2>
@@ -171,7 +170,7 @@ export default function Einstellungen() {
         <SRow key="plus" t={tx('Plus testen', 'Try Plus')} v={LIVE ? undefined : '7 von 10'} onPress={() => router.push('/plus')} />
         {LIVE ? <SRow key="daten" t={tx('Nutzungsdaten teilen', 'Share usage data')} v={noStats ? tx('Aus', 'Off') : tx('An', 'On')} right={null} onPress={() => { haptics.select(); const off = !noStats; setAnalyticsOff(off); setNoStats(off); }} /> : null}
         {LIVE ? (
-          <PressScale key="ab" scale={0.985} onPress={async () => { await forgetLocal(); await signOut(); router.dismissAll(); router.replace('/anmelden'); }} style={{ minHeight: 50, justifyContent: 'center', paddingHorizontal: 2 }}>
+          <PressScale key="ab" scale={0.985} onPress={async () => { await forgetLocal(); await signOut(); if (router.canDismiss()) router.dismissAll(); router.replace('/anmelden'); }} style={{ minHeight: 50, justifyContent: 'center', paddingHorizontal: 2 }}>
             <Txt size={17} line={22} color={tokens.danger}>{tx('Abmelden', 'Sign out')}</Txt>
           </PressScale>
         ) : null}
@@ -202,8 +201,8 @@ export default function Einstellungen() {
         {LIVE ? null : <SRow key="p1" t={tx('Hinweise · Sperrbildschirm', 'Notifications · lock screen')} onPress={() => router.push('/demo/sperrbildschirm')} />}
         {LIVE ? null : <SRow key="p2" t={tx('Teilen aus einem Chat', 'Share from a chat')} onPress={() => router.push('/demo/teilen')} />}
         {LIVE ? null : <SRow key="p3" t="Widgets" onPress={() => router.push('/demo/widgets')} />}
-        {LIVE ? null : <SRow key="p4" t={tx('Beispielfamilie laden', 'Load sample family')} onPress={() => { actions.loadDemo(); seedDemoFeed(); router.dismissAll(); router.replace(HOME); }} />}
-        {LIVE ? null : <SRow key="p5" t={tx('Onboarding neu starten', 'Restart onboarding')} onPress={() => { actions.reset(); router.dismissAll(); router.replace('/onboarding'); }} />}
+        {LIVE ? null : <SRow key="p4" t={tx('Beispielfamilie laden', 'Load sample family')} onPress={() => { actions.loadDemo(); seedDemoFeed(); if (router.canDismiss()) router.dismissAll(); router.replace(HOME); }} />}
+        {LIVE ? null : <SRow key="p5" t={tx('Onboarding neu starten', 'Restart onboarding')} onPress={() => { actions.reset(); if (router.canDismiss()) router.dismissAll(); router.replace('/onboarding'); }} />}
       </Group>
       {LIVE ? null : <Txt size={12.5} line={17} color={tokens.mute} center>{tx('Prototyp ohne Login und ohne echte KI. Alles bleibt auf diesem Gerät und ist nach dem Neuladen wieder wie am Anfang.', 'Prototype without login and without real AI. Everything stays on this device and resets when you reload.')}</Txt>}
       {HIDDEN.toggles ? null : <QualityTest />}
