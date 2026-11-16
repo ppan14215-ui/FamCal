@@ -22,6 +22,7 @@ import WeekView from '../../src/screens/kalender/WeekView';
 import MonthView, { monthTitle } from '../../src/screens/kalender/MonthView';
 import YearView from '../../src/screens/kalender/YearView';
 import PressScale from '../../src/components/ui/PressScale';
+import { navTop } from '../../src/components/NavBar';
 import { TODAY, WD_LONG, weekday, dayNum, MONTHS_SHORT, monthIdx, addDays, monday, isoWeek, dmShort, iso } from '../../src/lib/dates';
 import { haptics } from '../../src/lib/haptics';
 import { tx, EN } from '../../src/i18n/lang';
@@ -212,7 +213,8 @@ export default function Kalender() {
   // Short, so it fits behind the title beside the two buttons. No arrows, as in the draft: every view pages by a swipe.
   const sub = view === 'tag' || view === 'woche' ? span(first, lastDay) : view === 'monat' ? String(yr) : undefined;
   return (
-    <Screen tab gap={14} headEnd={0} head={<><Title text={title} sub={sub} open={open} onPress={toggle} right={<HeaderRight />} />{seg}</>}>
+    // The hour grids fill the screen down to the nav (Julian 16.11.), so they end right above it.
+    <Screen tab gap={14} headEnd={0} end={view === 'tag' || view === 'woche' ? navTop(insets.bottom) + 16 : undefined} head={<><Title text={title} sub={sub} open={open} onPress={toggle} right={<HeaderRight />} />{seg}</>}>
       <GestureDetector gesture={pinch} touchAction="pan-y">
         <Animated.View style={zoomed}>
           <Arrive key={view} from={from.current}>

@@ -85,6 +85,7 @@ Alle sichtbaren Änderungen an FamCal. Neueste oben. Agenten und Menschen: Ände
 - Die Karten in Heute sind die Karten der ganzen App: weiß, feine Linie, weicher Schatten, auf dem hellen Grund. Oben unter dem Kopf und unten vor der Leiste blendet die Seite weich aus. Der graue Grund aus der Referenz war kurz ausgeliefert und ist zurückgenommen (Julian 16.11.).
 - Ein Tipp auf einen Tag der Leiste zeigt diesen Tag, Wischen bringt die nächste oder letzte Woche, ein zweiter Tipp auf Heute führt zurück zu heute. Neu und offen steht unter den Terminen von heute.
 - Gesagtes, das an einem anderen Tag landet, nimmt die Heute Seite mit zu diesem Tag.
+- Kalender Heute, Tage und Woche nutzen die ganze Höhe: die Stunden teilen sich den Bildschirm gleichmäßig bis an die Leiste unten (8 bis 19 Uhr, weiter bei früheren oder späteren Terminen). In Heute steht ein Termin an seiner Zeit und ist so hoch, wie er dauert; nur wo eine Karte mehr Platz braucht, machen die Stunden daneben Platz. Ein voller Tag scrollt (Julian 16.11.: alles war gestaucht, die untere Hälfte leer).
 
 ### App funktioniert zuverlässig (09.11. Audit)
 - Nach längerer Pause im Hintergrund klappen Assistent und Spracheingabe gleich beim ersten Satz, statt "Ich komme gerade nicht an den Assistenten".
