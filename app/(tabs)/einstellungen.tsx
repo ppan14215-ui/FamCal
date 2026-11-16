@@ -1,21 +1,21 @@
 /**
  * Einstellungen, built after the klar draft Julian approved (14.11. 09:33, the look before the Recordings style):
- * the title, then "Du" with your bubble colour, Memo's colour, a small preview and how you talk; then the family,
+ * the title, then "Du" with your colour, Memo's colour, a small preview and how you talk; then the family,
  * then the account. Rows are plain words on the ground with hairlines, no icons.
  */
 import React, { useState } from 'react';
 import { View } from 'react-native';
-import { router } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import * as Clipboard from 'expo-clipboard';
 import { Screen, H1, H2, Group, Chevron, Seg } from '../../src/components/ui/kit';
 import Txt from '../../src/components/ui/Txt';
 import LineIcon from '../../src/components/ui/LineIcon';
 import PressScale from '../../src/components/ui/PressScale';
 import Pin from '../../src/components/buddy/Pin';
-import { tokens } from '../../src/theme';
+import { tokens, personPalette, shade, type PersonId } from '../../src/theme';
 import { actions, toast, useStore } from '../../src/state/store';
 import { LIVE } from '../../src/lib/live';
-import { getFamily, forgetLocal } from '../../src/lib/sync';
+import { getFamily, forgetLocal, myRole } from '../../src/lib/sync';
 import { signOut, canTestSignIn, useAuth } from '../../src/lib/auth';
 import { analyticsOff, setAnalyticsOff } from '../../src/lib/analytics';
 import { chooseNav } from '../../src/lib/funnel';
@@ -33,10 +33,10 @@ import { countryName, regionName } from '../../src/lib/holidays';
 import { HIDDEN } from '../../src/lib/core';
 import { startPreview } from '../../src/lib/vorschau';
 import { THEMES } from '../../src/theme/tokens';
-import { usePalette } from '../../src/theme/mode';
+import { usePalette, colorsTouched, redrawIfTouched } from '../../src/theme/mode';
 import { navStyle, setNavStyle } from '../../src/lib/navStyle';
 import { seedDemoFeed } from '../../src/lib/feed';
-import { BUBBLES, useBubble, setBubble, useMemoChoice, setMemoColor } from '../../src/lib/look';
+import { useBubble, useMemoChoice, setMemoColor } from '../../src/lib/look';
 import { HOME } from '../../src/lib/home';
 
 /** A plain row: name left, value right, like Apple's settings (Julian 03.11.). Flat on the ground, hairlines only. */
@@ -67,19 +67,29 @@ const CAL_SHORT: Record<string, string> = {
   outlook: 'Outlook',
 };
 
-/** Your colour: eight deep tones in a row, the chosen one wears a ring. */
+/**
+ * Your colour: the family theme's colours in a row, the chosen one wears a ring. It is the one colour I have
+ * everywhere (Julian 16.11.): my Termine and work in the calendar, my circle, and my bubble in the chat. The colour
+ * my partner has is taken.
+ */
 function Swatches() {
-  const me = useBubble();
+  const colors = useStore((s) => s.colors);
+  usePalette();
+  const me: PersonId = getFamily() ? myRole() : 'J';
+  const n = personPalette.length;
+  const sel = ((colors[me] % n) + n) % n;
+  const taken = ((colors[me === 'J' ? 'T' : 'J'] % n) + n) % n;
   return (
     <View style={{ gap: 10, paddingTop: 12, paddingBottom: 14, paddingHorizontal: 2 }}>
-      <Txt size={16.5} line={22} color={tokens.sub}>{tx('Deine Blasenfarbe', 'Your bubble colour')}</Txt>
+      <Txt size={16.5} line={22} color={tokens.sub}>{tx('Deine Farbe', 'Your colour')}</Txt>
       <View accessibilityRole="radiogroup" style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-        {BUBBLES.map((b) => {
-          const on = b.id === me.id;
+        {personPalette.map(shade).map((c, i) => {
+          const on = i === sel;
+          const off = i === taken && !on;
           return (
-            <PressScale key={b.id} scale={0.9} hitSlop={4} accessibilityRole="radio" accessibilityLabel={tx(b.de, b.en)} accessibilityState={{ selected: on }} onPress={() => { haptics.select(); setBubble(b.id); }}
-              style={{ width: 38, height: 38, borderRadius: 19, alignItems: 'center', justifyContent: 'center', borderWidth: 1.5, borderColor: on ? tokens.ink : 'transparent' }}>
-              <View style={{ width: 29, height: 29, borderRadius: 15, backgroundColor: b.c }} />
+            <PressScale key={c.name} scale={0.9} hitSlop={4} disabled={off} accessibilityRole="radio" accessibilityLabel={c.name.replace(/^[A-Z]-/, '')} accessibilityState={{ selected: on, disabled: off }} onPress={() => { haptics.select(); actions.setColor(me, i); colorsTouched(); }}
+              style={{ width: 38, height: 38, borderRadius: 19, alignItems: 'center', justifyContent: 'center', borderWidth: 1.5, borderColor: on ? tokens.ink : 'transparent', opacity: off ? 0.25 : 1 }}>
+              <View style={{ width: 29, height: 29, borderRadius: 15, backgroundColor: c.fg }} />
             </PressScale>
           );
         })}
@@ -109,6 +119,8 @@ function Preview() {
 }
 
 export default function Einstellungen() {
+  // A new colour shows everywhere once this tab is left.
+  useFocusEffect(React.useCallback(() => redrawIfTouched, []));
   const [sl, setSl] = React.useState(speechLang());
   const [noStats, setNoStats] = React.useState(analyticsOff());
   const mic = useMicStyle();

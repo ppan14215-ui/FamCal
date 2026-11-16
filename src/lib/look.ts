@@ -1,12 +1,15 @@
 /**
- * Deine Farbe (Julian 13.11.2026, klar look): the app itself is neutral. The one colour you choose is the colour
- * of your own chat bubbles, and Memo can wear it too. Black stays Memo's default ("minimalistisch schwarz falls
- * man das will"). Only deep tones, so a bubble colour is never mistaken for a person's calendar colour.
- * Kept per device.
+ * Deine Farbe (Julian 13.11.2026, klar look): the app itself is neutral; colour comes from the people. Memo can wear
+ * my colour too, black stays his default ("minimalistisch schwarz falls man das will").
+ * Since 16.11. my chat bubble wears the colour I have in the calendar (see useBubble); the eight bubble tones of
+ * before are only kept so a saved choice still reads.
  */
 import { useSyncExternalStore } from 'react';
 import { getPref, setPref, onPrefsReady } from './prefs';
-import { blend, tokens } from '../theme';
+import { tokens, persons, type PersonId } from '../theme';
+import { useStore } from '../state/store';
+import { usePalette } from '../theme/mode';
+import { getFamily, myRole } from './sync';
 
 export const BUBBLES = [
   { id: 'teal', de: 'Teal', en: 'Teal', c: '#13878C' },
@@ -35,16 +38,25 @@ export function setMemoColor(v: MemoColor) { if (v === state.memo) return; state
 
 const use = () => useSyncExternalStore((l) => { subs.add(l); return () => { subs.delete(l); }; }, () => state, () => state);
 
-const colorOf = (id: BubbleId) => BUBBLES.find((b) => b.id === id)!.c;
-/** Your bubble: its deep colour, the soft fill behind your words, and the text colour on that fill. */
+/** Who I am in the family; before there is one, the first parent. */
+const meId = (): PersonId => (getFamily() ? myRole() : 'J');
+/**
+ * Your colour: its deep tone, the soft fill behind your words, and the text colour on that fill.
+ * Julian 16.11.: "Bubble color and color in the calendar etc should be the same and choose able per person". So my
+ * bubble wears the colour I have in the calendar; there is no bubble colour of its own any more.
+ */
 export function useBubble() {
-  const s = use();
-  const c = colorOf(s.bubble);
-  return { id: s.bubble, color: c, soft: blend(c, '#FFFFFF', 0.86), ink: tokens.ink };
+  use();
+  useStore((st) => st.colors);
+  usePalette();
+  const p = persons[meId()];
+  return { id: p.colorName, color: p.ink, soft: p.tint, ink: tokens.ink };
 }
-/** Memo's body colour: ink, or your bubble colour. */
+/** Memo's body colour: ink, or my colour. */
 export function useMemoColor(): string {
   const s = use();
-  return s.memo === 'me' ? colorOf(s.bubble) : tokens.ink;
+  useStore((st) => st.colors);
+  usePalette();
+  return s.memo === 'me' ? persons[meId()].ink : tokens.ink;
 }
 export const useMemoChoice = () => use().memo;

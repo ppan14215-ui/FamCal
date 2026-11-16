@@ -101,6 +101,7 @@ Alle sichtbaren Änderungen an FamCal. Neueste oben. Agenten und Menschen: Ände
 - Heute: vergangene Termine sind nicht mehr blass. Das Ausblenden über der Leiste erscheint nur noch, wenn der Tag darunter weiterläuft.
 - Ein Tipp auf einen Termin öffnet ihn gleich zum Ändern, das Blatt dazwischen ist weg. Löschen steht am Ende der Seite, bei Serien für diesen einen Termin oder die ganze Serie.
 - Einstellungen sind ein eigener Tab in der Leiste (Julian 16.11.): Kalender, Listen, Chat, Einstellungen. Das Zahnrad oben im Chat entfällt. Nach einem neuen Farbthema oder einer anderen Navigation bleibt man in den Einstellungen statt im Kalender zu landen.
+- Jede Person hat eine Farbe, überall dieselbe (Julian 16.11.): Termine und Arbeit im Kalender, der Kreis und die eigene Blase im Chat. Wählbar in den Einstellungen unter „Deine Farbe“ und für jede Person unter Familie mit einem Tipp auf den Farbpunkt. Die eigene Blasenfarbe als getrennte Wahl entfällt.
 
 ### App funktioniert zuverlässig (09.11. Audit)
 - Nach längerer Pause im Hintergrund klappen Assistent und Spracheingabe gleich beim ersten Satz, statt "Ich komme gerade nicht an den Assistenten".

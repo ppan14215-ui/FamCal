@@ -7,7 +7,8 @@
  */
 import React, { useState } from 'react';
 import { View } from 'react-native';
-import { useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams, useFocusEffect } from 'expo-router';
+import { colorsTouched, redrawIfTouched } from '../src/theme/mode';
 import * as Clipboard from 'expo-clipboard';
 import { Screen, H1, H2, Group, Seg, Btn, Meta } from '../src/components/ui/kit';
 import { Field } from '../src/components/Field';
@@ -46,7 +47,7 @@ function note(p: Person) {
 }
 
 /** One person as one quiet line (40 of 284 in the draft). */
-function Line({ circle, name, word, dot, last, onCircle }: { circle: React.ReactNode; name: string; word?: string; dot: string; last: boolean; /** A tap on the circle: the person's photo. */ onCircle: () => void }) {
+function Line({ circle, name, word, dot, last, onCircle, onDot }: { circle: React.ReactNode; name: string; word?: string; dot: string; last: boolean; /** A tap on the circle: the person's photo. */ onCircle: () => void; /** A tap on the colour dot: the person's colour. */ onDot: () => void }) {
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 56, backgroundColor: tokens.bg, borderBottomWidth: last ? 0 : 1, borderBottomColor: tokens.hair }}>
       <PressScale scale={0.92} hitSlop={10} accessibilityRole="button" accessibilityLabel={tx(`Foto von ${name}`, `Photo of ${name}`)} onPress={onCircle}>{circle}</PressScale>
@@ -54,7 +55,10 @@ function Line({ circle, name, word, dot, last, onCircle }: { circle: React.React
         {name}
         {word ? <Txt size={14.5} line={22} color={tokens.sub}>{`  ${word}`}</Txt> : null}
       </Txt>
-      <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: dot }} />
+      <PressScale scale={0.88} hitSlop={14} accessibilityRole="button" accessibilityLabel={tx(`Farbe von ${name}`, `Colour of ${name}`)} onPress={onDot}
+        style={{ width: 28, height: 28, alignItems: 'center', justifyContent: 'center' }}>
+        <View style={{ width: 16, height: 16, borderRadius: 8, backgroundColor: dot }} />
+      </PressScale>
     </View>
   );
 }
@@ -95,13 +99,43 @@ export default function Personen() {
     setPhoto(key, uri);
     setPhotoOf(null);
   };
-  const circle = (key: string) => () => { haptics.select(); if (photos[key]) setPhotoOf((k) => (k === key ? null : key)); else void choose(key); };
+  const circle = (key: string) => () => { haptics.select(); setColorOf(null); if (photos[key]) setPhotoOf((k) => (k === key ? null : key)); else void choose(key); };
   const photoRow = (key: string) => photoOf === key ? (
     <View style={{ flexDirection: 'row', gap: 8, paddingLeft: 46, paddingBottom: 12, backgroundColor: tokens.bg, borderBottomWidth: 1, borderBottomColor: tokens.hair }}>
       <FormChip label={tx('Neues Foto', 'New photo')} onPress={() => void choose(key)} />
       <FormChip label={tx('Foto entfernen', 'Remove photo')} onPress={() => { haptics.select(); setPhoto(key, null); setPhotoOf(null); }} />
     </View>
   ) : null;
+
+  // A tap on the dot chooses that person's colour (Julian 16.11.: "choose able per person"). It is the one colour the
+  // person has everywhere: Termine and work in the calendar, the circle, the bubble in the chat.
+  const colors = useStore((s) => s.colors);
+  const [colorOf, setColorOf] = useState<string | null>(null);
+  // A new colour shows everywhere once this page is left.
+  useFocusEffect(React.useCallback(() => redrawIfTouched, []));
+  const dot = (key: string) => () => { haptics.select(); setPhotoOf(null); setColorOf((k) => (k === key ? null : key)); };
+  const colorRow = (key: string) => {
+    if (colorOf !== key) return null;
+    const parent = key === 'J' || key === 'T';
+    const n = personPalette.length;
+    const has = parent ? ((colors[key as 'J' | 'T'] % n) + n) % n : personPalette.findIndex((c) => c.name === people.find((x) => x.id === key)?.color);
+    const taken = parent ? ((colors[key === 'J' ? 'T' : 'J'] % n) + n) % n : -1;
+    return (
+      <View accessibilityRole="radiogroup" style={{ flexDirection: 'row', justifyContent: 'space-between', paddingLeft: 46, paddingBottom: 12, backgroundColor: tokens.bg, borderBottomWidth: 1, borderBottomColor: tokens.hair }}>
+        {personPalette.map(shade).map((c, i) => {
+          const on = i === has;
+          const off = i === taken && !on;
+          return (
+            <PressScale key={c.name} scale={0.9} hitSlop={3} disabled={off} accessibilityRole="radio" accessibilityLabel={c.name.replace(/^[A-Z]-/, '')} accessibilityState={{ selected: on, disabled: off }}
+              onPress={() => { haptics.select(); if (parent) actions.setColor(key as 'J' | 'T', i); else actions.updatePerson(key, { color: personPalette[i].name }); colorsTouched(); }}
+              style={{ width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center', borderWidth: 1.5, borderColor: on ? tokens.ink : 'transparent', opacity: off ? 0.25 : 1 }}>
+              <View style={{ width: 27, height: 27, borderRadius: 14, backgroundColor: c.fg }} />
+            </PressScale>
+          );
+        })}
+      </View>
+    );
+  };
 
   const add = () => {
     const n = name.trim();
@@ -134,8 +168,9 @@ export default function Personen() {
       <View style={{ marginTop: -6 }}>
         {parents.map((r, i) => (
           <React.Fragment key={r}>
-            <Line circle={<Avatar p={r} size={34} />} name={persons[r].name} dot={persons[r].ink} last={i === count - 1 || photoOf === r} onCircle={circle(r)} />
+            <Line circle={<Avatar p={r} size={34} />} name={persons[r].name} dot={persons[r].ink} last={i === count - 1 || photoOf === r || colorOf === r} onCircle={circle(r)} onDot={dot(r)} />
             {photoRow(r)}
+            {colorRow(r)}
           </React.Fragment>
         ))}
         {people.map((p, i) => {
@@ -143,13 +178,14 @@ export default function Personen() {
           return (
             <React.Fragment key={p.id}>
               <SwipeRow bg={tokens.bg} onDelete={() => remove(p)}>
-                <Line circle={<PersonDot name={p.name} color={p.color} size={34} id={p.id} />} name={p.name} word={note(p)} dot={c ? shade(c).fg : tokens.circleLine} last={parents.length + i === count - 1 || photoOf === p.id} onCircle={circle(p.id)} />
+                <Line circle={<PersonDot name={p.name} color={p.color} size={34} id={p.id} />} name={p.name} word={note(p)} dot={c ? shade(c).fg : tokens.circleLine} last={parents.length + i === count - 1 || photoOf === p.id || colorOf === p.id} onCircle={circle(p.id)} onDot={dot(p.id)} />
               </SwipeRow>
               {photoRow(p.id)}
+              {colorRow(p.id)}
             </React.Fragment>
           );
         })}
-        <View style={{ paddingTop: 12 }}><Meta>{tx('Tippe auf einen Kreis, um ein Foto zu wählen.', 'Tap a circle to choose a photo.')}</Meta></View>
+        <View style={{ paddingTop: 12 }}><Meta>{tx('Tippe auf einen Kreis für ein Foto, auf den Punkt für die Farbe.', 'Tap a circle for a photo, the dot for the colour.')}</Meta></View>
       </View>
       {adding ? (
         <>
