@@ -22,7 +22,7 @@ import { router } from 'expo-router';
 import Txt from '../../components/ui/Txt';
 import { ClayIcon } from '../../components/ui/Clay';
 import Stripes from '../../components/Stripes';
-import { tokens, tint, PersonId, persons } from '../../theme';
+import { tokens, tint } from '../../theme';
 import { useStore, actions, toast } from '../../state/store';
 import { keepPhoneEdit } from '../../lib/phoneSync';
 import type { CalEvent } from '../../state/types';
@@ -32,14 +32,16 @@ import PressScale from '../../components/ui/PressScale';
 import { tx } from '../../i18n/lang';
 import { useCalEvents } from '../../lib/useEvents';
 import { isInfoDay } from '../../lib/feiertage';
-import { lanes } from '../../lib/lanes';
+import { lanes, fold } from '../../lib/lanes';
 import { useRoom } from '../../components/ui/kit';
-import { isShift, shiftSpan } from '../../lib/shift';
+import { isShift, shiftSpan, shiftLook } from '../../lib/shift';
+import { hourRange } from '../../lib/hours';
 
-// The usual day; it grows to the earliest and latest Termin of the shown days
-// (Julian 30.10.: "Wieso geht der Tag nur bis 18 Uhr?").
-const DAY_FROM = 8;
-const DAY_TO = 19;
+// The hours follow the Termine of the shown days, from the earliest to the latest (lib/hours; Julian 30.10.: "Wieso
+// geht der Tag nur bis 18 Uhr?", 16.11.: "Müsste sich das nicht anpassen?"). Days with little on them still show these.
+const DAY_LEAST = 10;
+/** How many Termine stand side by side in one day; more fold into "+N" (a family of seven on a phone). */
+const SIDE = { 7: 2, 3: 3 } as const;
 /** The least height of an hour: three days need room for titles and times. On a taller screen the hours share its height. */
 const HOUR = { 7: 40, 3: 60 } as const;
 /** The rail with the hours on the left. */
@@ -54,14 +56,15 @@ export default function WeekView({ n }: { n: 3 | 7 }) {
   const start = n === 7 ? monday(day) : day;
   const days = useMemo(() => Array.from({ length: n }, (_, i) => addDays(start, i)), [start, n]);
   const [FROM, TO] = useMemo(() => {
-    let a = DAY_FROM, b = DAY_TO;
+    const spans: [number, number][] = [];
     for (const e of events) {
-      if (e.allDay || e.date < days[0] || e.date > days[days.length - 1] || (!!e.endDate && e.endDate > e.date)) continue;
-      a = Math.min(a, Math.floor(minutes(e.start) / 60));
-      const last = e.end && e.end > e.start ? minutes(e.end) : minutes(e.start) + 60;
-      b = Math.max(b, Math.min(24, Math.ceil(last / 60)));
+      if (e.date < days[0] || e.date > days[days.length - 1]) continue;
+      if (isShift(e)) { const [a, b] = shiftSpan(e); spans.push([minutes(a), minutes(b)]); continue; }
+      if (e.allDay || (!!e.endDate && e.endDate > e.date)) continue;
+      spans.push([minutes(e.start), e.end && e.end > e.start ? minutes(e.end) : minutes(e.start) + 60]);
     }
-    return [a, b];
+    const [a, b] = hourRange(spans, DAY_LEAST);
+    return [a / 60, b / 60];
   }, [events, days]);
   const hours = Array.from({ length: TO - FROM }, (_, i) => FROM + i);
   const wide = n === 3;
@@ -127,7 +130,13 @@ export default function WeekView({ n }: { n: 3 | 7 }) {
       });
   }, [events, start, end, n]);
   const laneRows = spans.reduce((m, x) => Math.max(m, x.row + 1), 0);
-  const hasWork = useMemo(() => events.some((e) => isShift(e) && e.date >= start && e.date <= end), [events, start, end]);
+  // Who works on the shown days, each once, for the legend: the parents first, then the others.
+  const workers = useMemo(() => {
+    const seen = new Map<string, ReturnType<typeof shiftLook>>();
+    for (const e of events) if (isShift(e) && e.date >= start && e.date <= end) { const l = shiftLook(e); if (!seen.has(l.key)) seen.set(l.key, l); }
+    return [...seen.values()].sort((a, b) => (a.key < b.key ? -1 : a.key > b.key ? 1 : 0));
+  }, [events, start, end]);
+  const hasWork = workers.length > 0;
   // The hours share what the screen has left under the days' row, the all-day bars and the legend.
   const room = useRoom();
   const [aboveH, setAboveH] = useState(0);
@@ -200,8 +209,11 @@ export default function WeekView({ n }: { n: 3 | 7 }) {
                 return [top(from), top(from) + Math.max(HP * 0.6, top(to) - top(from))];
               };
               const evH = (e: CalEvent) => Math.max(28, (e.end && top(e.end) > top(e.start) ? top(e.end) - top(e.start) : HP * 0.8) - 4);
-              const workLane = lanes(list.filter(isShift), workSpan, () => 0, (e) => e.who ?? '');
-              const evLane = lanes(list.filter((e) => !isShift(e)), (e) => [top(e.start) + 2, top(e.start) + 2 + evH(e)], (e) => (e.who === 'J' ? 0 : e.who === 'T' ? 1 : 2));
+              const workLane = lanes(list.filter(isShift), workSpan, () => 0, (e) => shiftLook(e).key);
+              const evSpan = (e: CalEvent): [number, number] => [top(e.start) + 2, top(e.start) + 2 + evH(e)];
+              // More at once than fit side by side: the first stay, the others wait behind "+N" (a tap shows the day).
+              const side = SIDE[n];
+              const { shown: evLane, more } = fold(lanes(list.filter((e) => !isShift(e)), evSpan, (e) => (e.who === 'J' ? 0 : e.who === 'T' ? 1 : 2)), evSpan, side);
               const place = (l: { lane: number; lanes: number } | undefined, pad: number) => {
                 const k = l?.lanes ?? 1, i = l?.lane ?? 0;
                 const inner = colW - 2 * pad, gap = k > 1 ? 2 : 0, w = (inner - gap * (k - 1)) / k;
@@ -215,16 +227,19 @@ export default function WeekView({ n }: { n: 3 | 7 }) {
                   {list.filter(isShift).map((e) => {
                     // Work without hours ("Arbeit bis Weihnachten") fills a usual working day, so it never vanishes (Julian 30.10.).
                     const [y0, y1] = workSpan(e);
+                    const look = shiftLook(e);
+                    const at = place(workLane.get(e), 1);
                     return (
                       // Work blocks open like any Termin (Julian 29.10.: they could not be seen or deleted).
-                      <PressScale key={e.id} scale={0.99} onPress={(ev: any) => { const y = ev?.nativeEvent?.locationY ?? ev?.nativeEvent?.offsetY ?? 0; if (y < 20) router.push(`/termin/${e.id}`); else slotAt(d, y0 + y); }} accessibilityLabel={`${e.title}, ${tx('ansehen oder Termin darin eintragen', 'view or add an event inside')}`} style={{ position: 'absolute', ...place(workLane.get(e), 1), top: y0, height: y1 - y0 }}>
-                        <Stripes p={(e.who === 'J' ? 'J' : 'T') as PersonId} radius={8} style={{ flex: 1, opacity: 0.9, padding: 3 }}>
-                          {wide || e.title !== tx('Arbeit', 'Work') ? <Txt size={10} line={12} weight={700} numberOfLines={1} ellipsizeMode="clip" color={persons[e.who === 'J' ? 'J' : 'T'].ink}>{wide ? e.title : SHORT[e.title] ?? e.title.split(' ')[0]}</Txt> : null}
+                      <PressScale key={e.id} scale={0.99} onPress={(ev: any) => { const y = ev?.nativeEvent?.locationY ?? ev?.nativeEvent?.offsetY ?? 0; if (y < 20) router.push(`/termin/${e.id}`); else slotAt(d, y0 + y); }} accessibilityLabel={`${e.title}, ${tx('ansehen oder Termin darin eintragen', 'view or add an event inside')}`} style={{ position: 'absolute', ...at, top: y0, height: y1 - y0 }}>
+                        <Stripes look={look} radius={8} style={{ flex: 1, opacity: 0.9, padding: 3 }}>
+                          {/* A lane too narrow for a word stays a stripe in its person's colour. */}
+                          {at.width >= 26 && (wide || e.title !== tx('Arbeit', 'Work')) ? <Txt size={10} line={12} weight={700} numberOfLines={1} ellipsizeMode="clip" color={look.ink}>{wide ? e.title : SHORT[e.title] ?? e.title.split(' ')[0]}</Txt> : null}
                         </Stripes>
                       </PressScale>
                     );
                   })}
-                  {list.filter((e) => !isShift(e)).map((e) => {
+                  {list.filter((e) => evLane.has(e)).map((e) => {
                     const h = evH(e);
                     const l = evLane.get(e);
                     const slim = !!l && l.lanes > 1;
@@ -248,6 +263,17 @@ export default function WeekView({ n }: { n: 3 | 7 }) {
                       </Drag>
                     );
                   })}
+                  {more.map((m, i) => (
+                    <PressScale key={`more${i}`} onPress={() => { haptics.select(); actions.setCalDay(d); actions.setCalView('heute'); }}
+                      accessibilityLabel={tx(`${m.items.length} weitere Termine, Tag zeigen`, `${m.items.length} more, show the day`)}
+                      style={{ position: 'absolute', ...place({ lane: side - 1, lanes: side }, 2), top: m.top, height: m.bottom - m.top, borderRadius: 7, paddingTop: 3, alignItems: 'center', gap: 3, backgroundColor: tokens.chipBg }}>
+                      <Txt size={wide ? 12.5 : 10.5} line={wide ? 16 : 13} weight={700} color={tokens.sub} numberOfLines={1}>{`+${m.items.length}`}</Txt>
+                      {/* Whose they are: one dot each in the Termin's colour. */}
+                      <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 2, paddingHorizontal: 2 }}>
+                        {m.items.map((e) => <View key={e.id} style={{ width: 5, height: 5, borderRadius: 3, backgroundColor: evInk(e) }} />)}
+                      </View>
+                    </PressScale>
+                  ))}
                 </View>
               );
             })}
@@ -264,11 +290,11 @@ export default function WeekView({ n }: { n: 3 | 7 }) {
       </View>
       </GestureDetector>
       {hasWork ? (
-        <View onLayout={(e: LayoutChangeEvent) => setLegendH(Math.round(e.nativeEvent.layout.height))} style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
-          {(['T', 'J'] as PersonId[]).map((p) => (
-            <View key={p} style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-              <Stripes p={p} radius={4} style={{ width: 18, height: 12 }} />
-              <Txt size={13} color={tokens.sub}>{tx(`${persons[p].name} arbeitet`, `${persons[p].name} at work`)}</Txt>
+        <View onLayout={(e: LayoutChangeEvent) => setLegendH(Math.round(e.nativeEvent.layout.height))} style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', columnGap: 14, rowGap: 4 }}>
+          {workers.map((p) => (
+            <View key={p.key} style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+              <Stripes look={p} radius={4} style={{ width: 18, height: 12 }} />
+              <Txt size={13} color={tokens.sub}>{tx(`${p.name} arbeitet`, `${p.name} at work`)}</Txt>
             </View>
           ))}
         </View>

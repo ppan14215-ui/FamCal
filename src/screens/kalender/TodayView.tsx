@@ -34,14 +34,15 @@ import Stripes from '../../components/Stripes';
 import Fresh from '../../components/Fresh';
 import SwipeRow, { justSwiped } from '../../components/SwipeRow';
 import { navTop } from '../../components/NavBar';
-import { tokens, glass, springs, motion, easing, rowOut, rowLayout, persons, PersonId } from '../../theme';
+import { tokens, glass, springs, motion, easing, rowOut, rowLayout } from '../../theme';
 import { useStore, actions } from '../../state/store';
 import { useScroller, useLitIds } from '../../lib/landing';
 import { useCalEvents } from '../../lib/useEvents';
 import { useNowMin } from '../../lib/useNow';
 import { isInfoDay } from '../../lib/feiertage';
 import { evInk } from '../../lib/evColor';
-import { isShift, shiftSpan } from '../../lib/shift';
+import { isShift, shiftSpan, shiftLook } from '../../lib/shift';
+import { hourRange } from '../../lib/hours';
 import { lanes } from '../../lib/lanes';
 import { seriesId } from '../../lib/repeat';
 import { haptics } from '../../lib/haptics';
@@ -59,12 +60,14 @@ const RAIL = 55;
 const RAIL_GAP = 8;
 /** Two Termine right after each other. */
 const GAP = 15;
-/** The usual day on the page, as in the week's grid; it grows to the earliest and the latest Termin. */
-const DAY_FROM = 8;
-const DAY_TO = 19;
-/** The room of one hour: as much as fills the page, never less than this (then the day scrolls), never more. */
+/** The hours follow the day's Termine (lib/hours); a day with little on it still shows this many. */
+const DAY_LEAST = 8;
+/**
+ * The room of one hour: as much as fills the page (Julian 16.11.: "immer Vollbild"), never less than this (then the
+ * day scrolls). The upper end only keeps a huge screen sane.
+ */
 const HOUR_MIN = 40;
-const HOUR_MAX = 96;
+const HOUR_MAX = 200;
 /** Room above the first hour and under the last one, where the page fades into the ground of the nav. */
 const TOP = 18;
 const END = 64;
@@ -73,7 +76,8 @@ const TITLE = 22, LINE = 20, FACE = 24, ROW_GAP = 8;
 const START_AT = PAD + TITLE / 2;
 const END_AT = PAD + FACE / 2;
 
-const byStart = (a: CalEvent, b: CalEvent) => a.start.localeCompare(b.start);
+/** By start; Termine at the same time keep one order (the shorter first, then by name), also after an undo. */
+const byStart = (a: CalEvent, b: CalEvent) => a.start.localeCompare(b.start) || (a.end ?? '').localeCompare(b.end ?? '') || a.title.localeCompare(b.title) || a.id.localeCompare(b.id);
 const spans = (e: CalEvent) => !!e.endDate && e.endDate > e.date;
 const onDay = (e: CalEvent, day: string) => e.date === day || (spans(e) && e.date < day && day <= e.endDate!);
 /** Where a Termin ends on the hours; one without an end is only its start. */
@@ -239,20 +243,22 @@ const TodayCard = React.memo(function TodayCard({ e, date, over, hour, onContent
 
 /**
  * Work on the day: a striped block in its person's colour behind the cards, as tall as it lasts (a card of the same
- * hours would cover it exactly). Its name and hours stand where a card's title stands, or at its foot (`low`) when a
- * Termin lies on that spot. A tap opens it like a Termin.
+ * hours would cover it exactly). Its name and hours stand where a card's title stands, or `label` further down when
+ * a Termin lies on that spot. A tap opens it like a Termin.
  */
-function Shift({ e, top, height, lane, of, over, low }: { e: CalEvent; top: number; height: number; lane: number; of: number; over: boolean; low: boolean }) {
-  const p = (e.who === 'J' ? 'J' : 'T') as PersonId;
+function Shift({ e, top, height, lane, of, over, label }: { e: CalEvent; top: number; height: number; lane: number; of: number; over: boolean; label: number }) {
+  const look = shiftLook(e);
   const [a, b] = shiftSpan(e);
   const when = !e.allDay && e.end && e.end > e.start ? `${hm(a)} ${tx('bis', 'to')} ${hm(b)}` : '';
   return (
-    <PressScale scale={0.99} onPress={() => router.push(`/termin/${e.id}`)} accessibilityLabel={when ? `${e.title}, ${when}` : e.title}
+    <PressScale scale={0.99} onPress={() => router.push(`/termin/${e.id}`)} accessibilityLabel={[look.name, e.title, when].filter(Boolean).join(', ')}
       style={{ position: 'absolute', top, height, left: `${(lane / of) * 100}%`, width: `${100 / of}%`, paddingLeft: lane ? 3 : 0, paddingRight: lane < of - 1 ? 3 : 0 }}>
-      <Stripes p={p} radius={R} style={{ flex: 1, opacity: over ? 0.45 : 0.9, paddingHorizontal: PAD + 4, paddingVertical: PAD, justifyContent: low ? 'flex-end' : 'flex-start' }}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: TITLE }}>
-          <Txt size={15} line={TITLE} weight={600} color={persons[p].ink} numberOfLines={1} style={{ flex: 1, minWidth: 0 }}>{e.title}</Txt>
-          {when && of === 1 ? <Txt size={14.5} line={LINE} color={persons[p].ink} numberOfLines={1} style={{ fontVariant: ['tabular-nums'] }}>{when}</Txt> : null}
+      <Stripes look={look} radius={R} style={{ flex: 1, opacity: over ? 0.45 : 0.9, paddingHorizontal: of > 2 ? 8 : PAD + 4, paddingTop: label }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: of > 2 ? 6 : 8, minHeight: TITLE }}>
+          <Txt size={15} line={TITLE} weight={600} color={look.ink} numberOfLines={1} style={{ flex: 1, minWidth: 0 }}>{e.title}</Txt>
+          {/* Alone it says its hours; side by side each block shows whose it is (a big family has more colours than two). */}
+          {of > 1 ? <Faces who={e.who} people={e.people} size={20} ring={look.tint} />
+            : when ? <Txt size={14.5} line={LINE} color={look.ink} numberOfLines={1} style={{ fontVariant: ['tabular-nums'] }}>{when}</Txt> : null}
         </View>
       </Stripes>
     </PressScale>
@@ -327,18 +333,11 @@ export default function TodayView({ bottom, band }: { bottom?: React.ReactNode; 
   const solid = band ?? navTop(insets.bottom);
   const under = today && bottom ? underH + (underH ? 22 : 0) : 0;
 
-  // The usual day, wider for an earlier or a later Termin (one without an end counts as an hour, as in the week)
-  // and for work.
-  const [from, to] = useMemo(() => {
-    let a = DAY_FROM * 60, b = DAY_TO * 60;
-    const reach = (first: number, last: number) => {
-      a = Math.min(a, Math.floor(first / 60) * 60);
-      b = Math.max(b, Math.min(24 * 60, Math.ceil(last / 60) * 60));
-    };
-    for (const e of timed) reach(minutes(e.start), e.end && e.end > e.start ? minutes(e.end) : minutes(e.start) + 60);
-    for (const e of shifts) reach(minutes(shiftSpan(e)[0]), minutes(shiftSpan(e)[1]));
-    return [a, b];
-  }, [timed, shifts]);
+  // The day's hours: from its first Termin to its last one, work included (one without an end counts as an hour).
+  const [from, to] = useMemo(() => hourRange([
+    ...timed.map((e): [number, number] => [minutes(e.start), e.end && e.end > e.start ? minutes(e.end) : minutes(e.start) + 60]),
+    ...shifts.map((e): [number, number] => [minutes(shiftSpan(e)[0]), minutes(shiftSpan(e)[1])]),
+  ], DAY_LEAST), [timed, shifts]);
 
   // The hours share what the page has left: its height less the fades, the info line and what stands under the day.
   // A card is as tall as its content or as its time, whichever is more.
@@ -350,7 +349,7 @@ export default function TodayView({ bottom, band }: { bottom?: React.ReactNode; 
     return { hour, ...lay(whole, timed, h(hour), hour, from, to, open) };
   }, [pageH, solid, info, under, whole, timed, shifts, own, from, to]);
   // Two who work at the same time stand side by side, each in their colour and always on the same side.
-  const sides = useMemo(() => lanes(shifts, (e) => [minutes(shiftSpan(e)[0]), minutes(shiftSpan(e)[1])], () => 0, (e) => e.who ?? ''), [shifts]);
+  const sides = useMemo(() => lanes(shifts, (e) => [minutes(shiftSpan(e)[0]), minutes(shiftSpan(e)[1])], () => 0, (e) => shiftLook(e).key), [shifts]);
 
   // The change must be seen where I am (Julian 14.11.): what just landed on another day takes the page to its day.
   const lit = useLitIds();
@@ -419,11 +418,11 @@ export default function TodayView({ bottom, band }: { bottom?: React.ReactNode; 
                 const top = Math.round(plan.at(minutes(a))) - START_AT;
                 const end = Math.round(plan.at(minutes(b))) + END_AT;
                 const side = sides.get(e);
-                // Its name must stay readable: under a card it moves to the block's foot (if that is free).
-                const under = (y0: number, y1: number) => plan.spots.some(([t, b2]) => t < y1 && b2 > y0);
-                const label = PAD + TITLE + 4;
-                const low = under(top, top + label) && !under(end - label, end);
-                return <Shift key={e.id} e={e} top={top} height={end - top} lane={side?.lane ?? 0} of={side?.lanes ?? 1} over={today && minutes(b) <= now} low={low} />;
+                // Its name must stay readable: under a card it moves down to the first free spot of the block.
+                const need = TITLE + 8;
+                const free = (y: number) => y + need <= end && !plan.spots.some(([t, b2]) => t < y + need && b2 > y);
+                const spot = [top + PAD - 4, ...plan.spots.filter(([t, b2]) => b2 > top && t < end).map(([, b2]) => b2 + 2)].find(free);
+                return <Shift key={e.id} e={e} top={top} height={end - top} lane={side?.lane ?? 0} of={side?.lanes ?? 1} over={today && minutes(b) <= now} label={(spot ?? top + PAD - 4) + 4 - top} />;
               })}
               {whole.map((e) => (
                 <Animated.View key={e.id} exiting={rowOut} layout={slide} style={{ marginBottom: GAP }}>
