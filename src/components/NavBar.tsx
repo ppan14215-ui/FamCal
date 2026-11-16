@@ -38,9 +38,9 @@ import { router } from 'expo-router';
 const EASE_OUT = Easing.bezier(0.23, 1, 0.32, 1);
 
 export const TABS: { name: string; key: string; icon: LineName }[] = [
-  { name: 'chat', key: 'nav.chat', icon: 'chat' },
   { name: 'kalender', key: 'nav.kalender', icon: 'cal' },
   { name: 'listen', key: 'nav.listen', icon: 'list' },
+  { name: 'chat', key: 'nav.chat', icon: 'chat' },
 ];
 
 /** Height of the bar; Dock.tsx puts the field right above it. */

@@ -25,6 +25,7 @@ import { haptics } from '../src/lib/haptics';
 import { toast } from '../src/state/store';
 import { tx } from '../src/i18n/lang';
 import PlusPreview from '../src/components/PlusPreview';
+import { HOME } from '../src/lib/home';
 
 type Plan = 'year' | 'month';
 
@@ -37,7 +38,7 @@ export default function Plus() {
   const [busy, setBusy] = useState(false);
   const [none, setNone] = useState(false);
 
-  const leave = () => { if (trigger === 'onboarding') router.replace('/chat'); else if (router.canGoBack()) router.back(); else router.replace('/chat'); };
+  const leave = () => { if (trigger === 'onboarding') router.replace(HOME); else if (router.canGoBack()) router.back(); else router.replace(HOME); };
 
   useEffect(() => {
     let live = true;
