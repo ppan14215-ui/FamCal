@@ -197,8 +197,11 @@ function GroundFade({ solid }: { solid: number }) {
 // Reanimated's layout transition can pin a row out of place in mobile Safari.
 const slide = Platform.OS === 'web' ? undefined : rowLayout;
 
-/** `bottom` stands under today's Termine and scrolls with them (the briefing "Neu und offen"). */
-export default function TodayView({ bottom }: { bottom?: React.ReactNode }) {
+/**
+ * `bottom` stands under today's Termine and scrolls with them (the briefing "Neu und offen").
+ * `band` is the height of the solid ground under the fade, where the nav floats; 0 inside a frame without a nav.
+ */
+export default function TodayView({ bottom, band }: { bottom?: React.ReactNode; band?: number }) {
   const day = useStore((s) => s.calDay);
   const events = useCalEvents();
   const insets = useSafeAreaInsets();
@@ -295,6 +298,7 @@ export default function TodayView({ bottom }: { bottom?: React.ReactNode }) {
   const shown = useAnimatedStyle(() => ({ opacity: fade.value }));
 
   const nowHour = today ? Math.floor(now / 60) : -1;
+  const solid = band ?? navTop(insets.bottom) + dock;
   const none = !whole.length && !timed.length;
 
   return (
@@ -306,7 +310,7 @@ export default function TodayView({ bottom }: { bottom?: React.ReactNode }) {
       keyboardShouldPersistTaps="handled"
       scrollEventThrottle={16}
       onScroll={(e) => track(e.nativeEvent.contentOffset.y)}
-      contentContainerStyle={{ paddingHorizontal: 18, paddingTop: 18, paddingBottom: 150 + insets.bottom + dock }}
+      contentContainerStyle={{ paddingHorizontal: 18, paddingTop: 18, paddingBottom: solid + FADE }}
     >
       <Animated.View style={shown}>
         {info ? <Txt size={13} line={18} color={tokens.mute} numberOfLines={1} style={{ paddingBottom: 10 }}>{info}</Txt> : null}
@@ -348,7 +352,7 @@ export default function TodayView({ bottom }: { bottom?: React.ReactNode }) {
         {today && bottom ? <View style={{ paddingTop: 22 }}>{bottom}</View> : null}
       </Animated.View>
     </ScrollView>
-    <GroundFade solid={navTop(insets.bottom) + dock} />
+    <GroundFade solid={solid} />
     </View>
   );
 }
