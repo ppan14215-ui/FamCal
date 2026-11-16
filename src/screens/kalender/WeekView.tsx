@@ -1,8 +1,11 @@
 /**
  * Kalender · Woche and Tage: one hour grid, 8 to 19 (wider for earlier or later Termine), flat on the ground
  * with hairlines. Work shows as stripes, Termine as tinted blocks with the person's bar.
- * Woche shows seven days; Tage is the same grid one zoom step closer: three days from the chosen one, taller
- * hours, whole titles and times (Julian 14.11.: zooming moves between the views, the pinch lives on the screen).
+ * The hours share the height of the screen, so the grid fills it down to the nav (Julian 16.11.: "Warum nutzen
+ * wir nicht den gesamten Screen", the week was squeezed into the upper half). On a small screen an hour keeps
+ * its least height and the grid scrolls.
+ * Woche shows seven days; Tage is the same grid one zoom step closer: three days from the chosen one, whole
+ * titles and times (Julian 14.11.: zooming moves between the views, the pinch lives on the screen).
  * Swipe sideways for the days before or after. Hold a Termin and drag it to another time or day, like in the
  * Apple calendar (Julian 30.10.).
  */
@@ -30,12 +33,13 @@ import { tx } from '../../i18n/lang';
 import { useCalEvents } from '../../lib/useEvents';
 import { isInfoDay } from '../../lib/feiertage';
 import { lanes } from '../../lib/lanes';
+import { useRoom } from '../../components/ui/kit';
 
 // The usual day; it grows to the earliest and latest Termin of the shown days
 // (Julian 30.10.: "Wieso geht der Tag nur bis 18 Uhr?").
 const DAY_FROM = 8;
 const DAY_TO = 19;
-/** Height of an hour: a week fits the screen, three days get room for titles and times. */
+/** The least height of an hour: three days need room for titles and times. On a taller screen the hours share its height. */
 const HOUR = { 7: 40, 3: 60 } as const;
 /** The rail with the hours on the left. */
 const RAIL = 22;
@@ -45,7 +49,6 @@ const SHORT: Record<string, string> = { 'U6 bei Dr. Weber': 'U6', 'Bürgeramt: P
 export default function WeekView({ n }: { n: 3 | 7 }) {
   const day = useStore((s) => s.calDay);
   const events = useCalEvents();
-  const HP = HOUR[n];
   const nowMin = useNowMin();
   const start = n === 7 ? monday(day) : day;
   const days = useMemo(() => Array.from({ length: n }, (_, i) => addDays(start, i)), [start, n]);
@@ -60,8 +63,8 @@ export default function WeekView({ n }: { n: 3 | 7 }) {
     return [a, b];
   }, [events, days]);
   const hours = Array.from({ length: TO - FROM }, (_, i) => FROM + i);
-  const big = HP >= 60;
   const wide = n === 3;
+  const big = wide;
 
   // Swipe: the grid follows the finger, then the next week slides in from the side.
   const w = useSharedValue(360);
@@ -123,6 +126,13 @@ export default function WeekView({ n }: { n: 3 | 7 }) {
       });
   }, [events, start, end, n]);
   const laneRows = spans.reduce((m, x) => Math.max(m, x.row + 1), 0);
+  const hasWork = useMemo(() => events.some((e) => e.work && e.date >= start && e.date <= end), [events, start, end]);
+  // The hours share what the screen has left under the days' row, the all-day bars and the legend.
+  const room = useRoom();
+  const [aboveH, setAboveH] = useState(0);
+  const [legendH, setLegendH] = useState(0);
+  const fit = room && aboveH ? Math.floor((room - aboveH - 10 - (hasWork ? 14 + (legendH || 18) : 0)) / (TO - FROM)) : 0;
+  const HP = Math.max(HOUR[n], fit);
   // Times outside the grid sit at its edge instead of disappearing.
   const top = (t: string) => ((Math.max(FROM * 60, Math.min(TO * 60 - 30, minutes(t))) - FROM * 60) / 60) * HP;
 
@@ -134,13 +144,13 @@ export default function WeekView({ n }: { n: 3 | 7 }) {
     haptics.select();
     router.push({ pathname: '/termin-neu', params: { date: d, start } });
   };
-  const hasWork = useMemo(() => events.some((e) => e.work && e.date >= start && e.date <= end), [events, start, end]);
   const nowTop = ((Math.max(FROM * 60, Math.min(TO * 60, nowMin)) - FROM * 60) / 60) * HP;
   return (
     <>
       <GestureDetector gesture={pan} touchAction="pan-y">
       <View onLayout={(e: LayoutChangeEvent) => { w.value = e.nativeEvent.layout.width; }} style={{ overflow: 'hidden' }}>
       <Animated.View style={[{ gap: 10 }, slide]}>
+        <View onLayout={(e: LayoutChangeEvent) => setAboveH(Math.round(e.nativeEvent.layout.height))} style={{ gap: 10 }}>
         <View style={{ flexDirection: 'row', paddingLeft: RAIL, gap: 3 }}>
           {days.map((d) => {
             // Today is orange (Julian 14.11.: the one interaction colour); a tap on a day opens the three days from it.
@@ -171,6 +181,7 @@ export default function WeekView({ n }: { n: 3 | 7 }) {
             ))}
           </View>
         ) : null}
+        </View>
         <View style={{ paddingLeft: RAIL, height: hours.length * HP }}>
           {hours.map((h, i) => (
             <View key={h} style={{ position: 'absolute', left: 0, right: 0, top: i * HP }}>
@@ -252,7 +263,7 @@ export default function WeekView({ n }: { n: 3 | 7 }) {
       </View>
       </GestureDetector>
       {hasWork ? (
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
+        <View onLayout={(e: LayoutChangeEvent) => setLegendH(Math.round(e.nativeEvent.layout.height))} style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
           {(['T', 'J'] as PersonId[]).map((p) => (
             <View key={p} style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
               <Stripes p={p} radius={4} style={{ width: 18, height: 12 }} />

@@ -33,6 +33,8 @@ type ScreenProps = {
   padTop?: number;
   /** Extra room at the end, e.g. for the talk field docked above the nav. */
   padBottom?: number;
+  /** The room at the end instead of the usual one, for a page that fills the screen down to the nav (the week's grid). */
+  end?: number;
   /** For screens that scroll something into view themselves. */
   scrollRef?: React.RefObject<ScrollView | null>;
   onScrollY?: (y: number) => void;
@@ -83,27 +85,35 @@ export function Head({ children, gap = 14, bg = tokens.bg, pad = 18, end = 10, f
   );
 }
 
-export function Screen({ children, head, headEnd, tab, footer, bg = tokens.bg, gap = 14, scroll = true, padTop = 8, padBottom = 0, scrollRef, onScrollY }: ScreenProps) {
+/** The height a screen's content has before it scrolls: its scroll area less the paddings. 0 until it is measured. */
+const Room = React.createContext(0);
+export const useRoom = () => React.useContext(Room);
+
+export function Screen({ children, head, headEnd, tab, footer, bg = tokens.bg, gap = 14, scroll = true, padTop = 8, padBottom = 0, end, scrollRef, onScrollY }: ScreenProps) {
   const insets = useSafeAreaInsets();
   // The talk dock floats over the end of every screen (Julian 27.10.), so leave room for it.
   const dock = useDockSpace();
   const own = useRef<ScrollView>(null);
   const ref = scrollRef ?? own;
   const track = useScroller(ref);
-  const bottom = (tab ? 110 + insets.bottom : footer ? 16 : 34 + insets.bottom) + padBottom + (footer ? 0 : dock);
+  const bottom = end ?? (tab ? 110 + insets.bottom : footer ? 16 : 34 + insets.bottom) + padBottom + (footer ? 0 : dock);
+  const [area, setArea] = useState(0);
+  const sized = (e: LayoutChangeEvent) => setArea(Math.round(e.nativeEvent.layout.height));
   // Content arrives instead of appearing (docs/MOTION.md).
   const content = (
-    <Animated.View entering={rise()} style={{ gap, paddingHorizontal: 18, paddingTop: padTop, paddingBottom: bottom, flexGrow: 1 }}>{children}</Animated.View>
+    <Animated.View entering={rise()} style={{ gap, paddingHorizontal: 18, paddingTop: padTop, paddingBottom: bottom, flexGrow: 1 }}>
+      <Room.Provider value={Math.max(0, area - padTop - bottom)}>{children}</Room.Provider>
+    </Animated.View>
   );
   return (
     <View style={{ flex: 1, backgroundColor: bg, paddingTop: insets.top }}>
       {head ? <Head gap={gap} bg={bg} end={headEnd}>{head}</Head> : null}
       {scroll ? (
-        <ScrollView ref={ref} onScroll={(e) => { track(e.nativeEvent.contentOffset.y); onScrollY?.(e.nativeEvent.contentOffset.y); }} scrollEventThrottle={16} style={{ flex: 1 }} contentContainerStyle={{ flexGrow: 1 }} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+        <ScrollView ref={ref} onLayout={sized} onScroll={(e) => { track(e.nativeEvent.contentOffset.y); onScrollY?.(e.nativeEvent.contentOffset.y); }} scrollEventThrottle={16} style={{ flex: 1 }} contentContainerStyle={{ flexGrow: 1 }} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
           {content}
         </ScrollView>
       ) : (
-        <View style={{ flex: 1 }}>{content}</View>
+        <View onLayout={sized} style={{ flex: 1 }}>{content}</View>
       )}
       {footer ? <Animated.View entering={rise(2)} style={{ paddingHorizontal: 18, paddingBottom: 18 + insets.bottom, paddingTop: 8, gap: 8 }}>{footer}</Animated.View> : null}
     </View>

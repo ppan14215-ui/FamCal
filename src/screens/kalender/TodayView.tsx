@@ -4,8 +4,10 @@
  * left, and every Termin is a card: the person's bar, the title, one grey line, the faces of who is in it and the
  * time span. The current hour stands in a pill. Nothing else is on a card (no second action, no sources).
  *
- * The hours follow the cards instead of a fixed grid: the hours a Termin covers spread over its card, free time
- * between two Termine is a gap that grows with it. So a card is never cut to fit and never lies over another one.
+ * The hours share the height of the page evenly, from 8 to 19 or as far as the day's Termine reach, so the day
+ * fills the screen (Julian 16.11.: "Warum nutzen wir nicht den gesamten Screen, alles ist gestaucht"). A Termin
+ * stands at its time and is as tall as it lasts. Only where a card needs more room than its time gives, the hours
+ * beside it make room: a card is never cut to fit and never lies over another one. A full day scrolls.
  * What is over today turns grey. A tap opens the Termin, a swipe to the left deletes (then Rückgängig).
  *
  * The cards are the app's own: white with a hairline and the soft shadow, on the usual ground (Julian 16.11.: the grey
@@ -31,7 +33,6 @@ import { navTop } from '../../components/NavBar';
 import { tokens, glass, springs, motion, easing, rowOut, rowLayout } from '../../theme';
 import { useStore, actions } from '../../state/store';
 import { useScroller, useLitIds } from '../../lib/landing';
-import { useDockSpace } from '../../lib/dockSpace';
 import { useCalEvents } from '../../lib/useEvents';
 import { useNowMin } from '../../lib/useNow';
 import { isInfoDay } from '../../lib/feiertage';
@@ -52,10 +53,15 @@ const RAIL = 55;
 const RAIL_GAP = 8;
 /** Two Termine right after each other. */
 const GAP = 15;
-/** One free hour between two Termine. */
-const FREE = 30;
-/** The least room one hour gets inside a card, so the hours beside a long Termin never touch. */
-const HOUR_MIN = 22;
+/** The usual day on the page, as in the week's grid; it grows to the earliest and the latest Termin. */
+const DAY_FROM = 8;
+const DAY_TO = 19;
+/** The room of one hour: as much as fills the page, never less than this (then the day scrolls), never more. */
+const HOUR_MIN = 40;
+const HOUR_MAX = 96;
+/** Room above the first hour and under the last one, where the page fades into the ground of the nav. */
+const TOP = 18;
+const END = 64;
 const TITLE = 22, LINE = 20, FACE = 24, ROW_GAP = 8;
 /** Where on a card its start stands (beside the title) and its end (beside the faces and the time, from the bottom). */
 const START_AT = PAD + TITLE / 2;
@@ -68,8 +74,57 @@ const onDay = (e: CalEvent, day: string) => e.date === day || (spans(e) && e.dat
 const endMin = (e: CalEvent) => (e.end && e.end > e.start ? minutes(e.end) : minutes(e.start));
 /** Over for today: it has ended, or started and has no end. */
 const isOver = (e: CalEvent, now: number) => minutes(e.end && e.end > e.start ? e.end : e.start) <= now;
-/** How tall a card is before it has been measured. */
+/** How tall a card's content is before it has been measured. */
 const guess = (e: CalEvent) => PAD * 2 + TITLE + (e.place ?? e.sub ? LINE : 0) + ROW_GAP + FACE + (e.note ? ROW_GAP + 66 : 0);
+/** The height a Termin's time gives its card: every hour it covers gets the hour's room. */
+const lasts = (e: CalEvent, hour: number) => (e.allDay || spans(e) ? 0 : Math.round(((endMin(e) - minutes(e.start)) / 60) * hour + START_AT + END_AT));
+
+type Plan = { gaps: number[]; hours: { h: number; y: number }[]; total: number };
+/**
+ * The day laid out for one hour's room: the gap above every card, the hours beside them and the height of it all.
+ * Time runs through fixed points: a Termin's start beside its title, its end beside its last row. Free time runs
+ * evenly at the hour's room; an hour between two points lies between them, so an hour is never named twice.
+ */
+function lay(whole: CalEvent[], timed: CalEvent[], h: (e: CalEvent) => number, hour: number, from: number, to: number): Plan {
+  let y = whole.reduce((sum, e) => sum + h(e) + GAP, 0);
+  if (!timed.length) return { gaps: [], hours: [], total: y };
+  const points: [number, number][] = [[from, y + 13]];
+  const gaps: number[] = [];
+  let covered = from;
+  timed.forEach((e, i) => {
+    const s = minutes(e.start), en = endMin(e);
+    // The last point is where the covered time stands. Two cards never touch.
+    const here = points[points.length - 1][1];
+    const top = Math.round(s < covered ? y + GAP : Math.max(y + (i ? GAP : 0), here + ((s - covered) / 60) * hour - START_AT));
+    gaps.push(top - y);
+    y = top + h(e);
+    if (s >= covered) { points.push([s, top + START_AT]); covered = s; }
+    if (en > covered) { covered = en; points.push([en, y - END_AT]); }
+    // A Termin inside another one's time: the hours wait until it is past.
+    else if (s < covered) points.push([covered, y]);
+  });
+  if (to > covered) points.push([to, points[points.length - 1][1] + ((to - covered) / 60) * hour]);
+  const at = (t: number) => {
+    let a = points[0];
+    for (let i = 1; i < points.length; i++) {
+      const b = points[i];
+      if (b[0] <= t) { a = b; continue; }
+      return a[1] + ((t - a[0]) / (b[0] - a[0])) * (b[1] - a[1]);
+    }
+    return a[1];
+  };
+  const hours: { h: number; y: number }[] = [];
+  for (let t = from; t <= to; t += 60) hours.push({ h: t / 60, y: Math.round(at(t)) });
+  return { gaps, hours, total: Math.max(y, Math.round(at(to)) + 13) };
+}
+/** The hour's room with which the day fills `room`; the day's height only grows with it. */
+function fill(room: number, total: (hour: number) => number) {
+  if (total(HOUR_MIN) >= room) return HOUR_MIN;
+  if (total(HOUR_MAX) <= room) return HOUR_MAX;
+  let lo = HOUR_MIN, hi = HOUR_MAX;
+  for (let i = 0; i < 12; i++) { const mid = (lo + hi) / 2; if (total(mid) > room) hi = mid; else lo = mid; }
+  return lo;
+}
 
 /**
  * The week of the chosen day (the reference's strip): the weekday above its number, the chosen day on a light tile.
@@ -127,14 +182,14 @@ export function WeekStrip() {
 }
 
 /** One Termin as a card of the reference: bar, title and one grey line, its icon, then the faces and the time span. */
-const TodayCard = React.memo(function TodayCard({ e, date, over }: { e: CalEvent; date: string; over: boolean }) {
+const TodayCard = React.memo(function TodayCard({ e, date, over, hour, onContent }: { e: CalEvent; date: string; over: boolean; hour: number; onContent: (id: string, h: number) => void }) {
   const ink = evInk(e);
   const when = spans(e) ? tx(`Tag ${daysBetween(e.date, date) + 1}`, `Day ${daysBetween(e.date, date) + 1}`)
     : e.allDay ? tx('Ganztags', 'All day')
     : e.end && e.end > e.start ? `${hm(e.start)} ${tx('bis', 'to')} ${hm(e.end)}` : hm(e.start);
   const line = e.place ?? e.sub ?? '';
-  // A long Termin is a tall card, so every hour it covers has room beside it.
-  const tall = e.allDay || spans(e) ? 0 : Math.round(((endMin(e) - minutes(e.start)) / 60) * HOUR_MIN + START_AT + END_AT);
+  // A Termin is as tall as it lasts, so every hour it covers has its room beside it.
+  const tall = lasts(e, hour);
   return (
     <Fresh id={e.id} radius={R} markAt={{ left: PAD, inset: PAD }}>
       {/* The app's one card: a hairline and the soft shadow (Julian 16.11.: the same shadows and cards in the whole app). */}
@@ -143,7 +198,8 @@ const TodayCard = React.memo(function TodayCard({ e, date, over }: { e: CalEvent
         <PressScale scale={0.985} onPress={() => { if (!justSwiped()) router.push(`/termin/${e.id}`); }} accessibilityLabel={`${e.title}, ${when}`}
           style={{ flexDirection: 'row', gap: 12, padding: PAD, minHeight: tall, borderRadius: R, backgroundColor: tokens.row, opacity: over ? 0.45 : 1 }}>
           <View style={{ width: 4, borderRadius: 2, backgroundColor: ink }} />
-          <View style={{ flex: 1, minWidth: 0, gap: ROW_GAP }}>
+          {/* The content says how tall it is on its own, apart from the time's height: the page needs it to share out the hours. */}
+          <View onLayout={(ev) => onContent(e.id, Math.round(ev.nativeEvent.layout.height) + PAD * 2)} style={{ flex: 1, minWidth: 0, gap: ROW_GAP, alignSelf: 'flex-start' }}>
             <View style={{ flexDirection: 'row', gap: 10 }}>
               <View style={{ flex: 1, minWidth: 0 }}>
                 <Txt size={17} line={TITLE} weight={500} numberOfLines={1}>{e.title}</Txt>
@@ -209,7 +265,6 @@ export default function TodayView({ bottom, band }: { bottom?: React.ReactNode; 
   const day = useStore((s) => s.calDay);
   const events = useCalEvents();
   const insets = useSafeAreaInsets();
-  const dock = useDockSpace();
   const ref = useRef<ScrollView>(null);
   const track = useScroller(ref);
   const now = useNowMin();
@@ -228,55 +283,36 @@ export default function TodayView({ bottom, band }: { bottom?: React.ReactNode; 
     return { whole, timed, info };
   }, [events, day]);
 
-  // Every card says how tall it is; where it stands follows from that, the same on the phone and on the web.
-  const [tall, setTall] = useState<Record<string, number>>({});
-  const measure = (id: string) => (ev: { nativeEvent: { layout: { height: number } } }) => {
-    const h = Math.round(ev.nativeEvent.layout.height);
-    setTall((m) => (m[id] === h ? m : { ...m, [id]: h }));
-  };
+  // Every card says how tall its content is; where it stands follows from that and from its time, the same on the
+  // phone and on the web. The page says how tall it is itself, and so does what stands under the day.
+  const [own, setOwn] = useState<Record<string, number>>({});
+  const content = useCallback((id: string, h: number) => setOwn((m) => (m[id] === h ? m : { ...m, [id]: h })), []);
+  const [pageH, setPageH] = useState(0);
+  const [underH, setUnderH] = useState(0);
 
-  /**
-   * The day laid out: the gap above every card, and the hours beside them. Time runs through fixed points: a
-   * Termin's start beside its title, its end beside its last row. An hour between two points lies between them,
-   * so free hours stand evenly in the gap and an hour is never named twice.
-   */
+  // Solid only where the nav floats: the day runs down to it (the talk card lies over the page when it opens).
+  const solid = band ?? navTop(insets.bottom);
+  const under = today && bottom ? underH + (underH ? 22 : 0) : 0;
+
+  // The usual day, wider for an earlier or a later Termin (one without an end counts as an hour, as in the week).
+  const [from, to] = useMemo(() => {
+    let a = DAY_FROM * 60, b = DAY_TO * 60;
+    for (const e of timed) {
+      a = Math.min(a, Math.floor(minutes(e.start) / 60) * 60);
+      const last = e.end && e.end > e.start ? minutes(e.end) : minutes(e.start) + 60;
+      b = Math.max(b, Math.min(24 * 60, Math.ceil(last / 60) * 60));
+    }
+    return [a, b];
+  }, [timed]);
+
+  // The hours share what the page has left: its height less the fades, the info line and what stands under the day.
+  // A card is as tall as its content or as its time, whichever is more.
   const plan = useMemo(() => {
-    const h = (e: CalEvent) => tall[e.id] ?? guess(e);
-    let y = whole.reduce((sum, e) => sum + h(e) + GAP, 0);
-    if (!timed.length) return { gaps: [] as number[], hours: [] as { h: number; y: number }[] };
-    const first = minutes(timed[0].start);
-    const last = timed.reduce((m, e) => Math.max(m, endMin(e)), 0);
-    // Today the hours start at the current one when it lies before the first Termin, so "now" is always on the page.
-    const from = Math.floor(Math.min(first, today && now < last ? now : first) / 60) * 60;
-    const points: [number, number][] = [[from, y + 13]];
-    const gaps: number[] = [];
-    let covered = from;
-    timed.forEach((e, i) => {
-      const s = minutes(e.start), en = endMin(e);
-      const gap = Math.round(i === 0 ? ((s - from) / 60) * FREE : Math.max(GAP, (Math.max(0, s - covered) / 60) * FREE));
-      gaps.push(gap);
-      y += gap;
-      const top = y;
-      y += h(e);
-      if (s >= covered) { points.push([s, top + START_AT]); covered = s; }
-      if (en > covered) { covered = en; points.push([en, y - END_AT]); }
-      // A Termin inside another one's time: the hours wait until it is past.
-      else if (s < covered) points.push([covered, y]);
-    });
-    const at = (t: number) => {
-      let a = points[0];
-      for (let i = 1; i < points.length; i++) {
-        const b = points[i];
-        if (b[0] <= t) { a = b; continue; }
-        return a[1] + ((t - a[0]) / (b[0] - a[0])) * (b[1] - a[1]);
-      }
-      return a[1];
-    };
-    // The hours end with the last Termin.
-    const hours: { h: number; y: number }[] = [];
-    for (let t = from; t <= covered; t += 60) hours.push({ h: t / 60, y: Math.round(at(t)) });
-    return { gaps, hours };
-  }, [whole, timed, tall, today, now]);
+    const h = (u: number) => (e: CalEvent) => Math.max(own[e.id] ?? guess(e), lasts(e, u));
+    const room = pageH - TOP - END - solid - (info ? 28 : 0) - under;
+    const hour = timed.length ? fill(room - 1, (u) => lay(whole, timed, h(u), u, from, to).total) : HOUR_MIN;
+    return { hour, ...lay(whole, timed, h(hour), hour, from, to) };
+  }, [pageH, solid, info, under, whole, timed, own, from, to]);
 
   // The change must be seen where I am (Julian 14.11.): what just landed on another day takes the page to its day.
   const lit = useLitIds();
@@ -302,11 +338,10 @@ export default function TodayView({ bottom, band }: { bottom?: React.ReactNode; 
   const shown = useAnimatedStyle(() => ({ opacity: fade.value }));
 
   const nowHour = today ? Math.floor(now / 60) : -1;
-  const solid = band ?? navTop(insets.bottom) + dock;
   const none = !whole.length && !timed.length;
 
   return (
-    <View style={{ flex: 1 }}>
+    <View onLayout={(e) => setPageH(Math.round(e.nativeEvent.layout.height))} style={{ flex: 1 }}>
     <ScrollView
       ref={ref}
       style={{ flex: 1 }}
@@ -314,7 +349,7 @@ export default function TodayView({ bottom, band }: { bottom?: React.ReactNode; 
       keyboardShouldPersistTaps="handled"
       scrollEventThrottle={16}
       onScroll={(e) => track(e.nativeEvent.contentOffset.y)}
-      contentContainerStyle={{ paddingHorizontal: 18, paddingTop: 18, paddingBottom: solid + FADE }}
+      contentContainerStyle={{ paddingHorizontal: 18, paddingTop: TOP, paddingBottom: solid + END }}
     >
       <Animated.View style={shown}>
         {info ? <Txt size={13} line={18} color={tokens.mute} numberOfLines={1} style={{ paddingBottom: 10 }}>{info}</Txt> : null}
@@ -322,8 +357,9 @@ export default function TodayView({ bottom, band }: { bottom?: React.ReactNode; 
           <Txt size={14.5} line={20} color={tokens.sub} style={{ paddingVertical: 10 }}>
             {today ? tx('Heute steht nichts an. Sag unten einfach, was ansteht.', 'Nothing today. Just say below what\'s coming up.') : tx('Nichts eingetragen.', 'Nothing planned.')}
           </Txt>
-        ) : (
-          <View style={{ flexDirection: 'row', gap: RAIL_GAP }}>
+        ) : !pageH ? null : (
+          // The day comes once the page knows its height, so the cards arrive where they stay.
+          <View style={{ flexDirection: 'row', gap: RAIL_GAP, minHeight: plan.total }}>
             <View style={{ width: RAIL }}>
               {plan.hours.map(({ h, y }) => {
                 const label = tx(`${h} Uhr`, hm(`${String(h).padStart(2, '0')}:00`));
@@ -341,19 +377,23 @@ export default function TodayView({ bottom, band }: { bottom?: React.ReactNode; 
             </View>
             <View style={{ flex: 1, minWidth: 0 }}>
               {whole.map((e) => (
-                <Animated.View key={e.id} exiting={rowOut} layout={slide} onLayout={measure(e.id)} style={{ marginBottom: GAP }}>
-                  <TodayCard e={e} date={day} over={false} />
+                <Animated.View key={e.id} exiting={rowOut} layout={slide} style={{ marginBottom: GAP }}>
+                  <TodayCard e={e} date={day} over={false} hour={plan.hour} onContent={content} />
                 </Animated.View>
               ))}
               {timed.map((e, i) => (
-                <Animated.View key={e.id} exiting={rowOut} layout={slide} onLayout={measure(e.id)} style={{ marginTop: plan.gaps[i] ?? GAP }}>
-                  <TodayCard e={e} date={day} over={today && isOver(e, now)} />
+                <Animated.View key={e.id} exiting={rowOut} layout={slide} style={{ marginTop: plan.gaps[i] ?? GAP }}>
+                  <TodayCard e={e} date={day} over={today && isOver(e, now)} hour={plan.hour} onContent={content} />
                 </Animated.View>
               ))}
             </View>
           </View>
         )}
-        {today && bottom ? <View style={{ paddingTop: 22 }}>{bottom}</View> : null}
+        {today && bottom ? (
+          <View style={{ paddingTop: underH ? 22 : 0 }}>
+            <View onLayout={(e) => setUnderH(Math.round(e.nativeEvent.layout.height))}>{bottom}</View>
+          </View>
+        ) : null}
       </Animated.View>
     </ScrollView>
     <GroundFade solid={solid} />
