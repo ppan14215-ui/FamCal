@@ -10,6 +10,9 @@
  * beside it make room: a card is never cut to fit and never lies over another one. A full day scrolls.
  * What is over today turns grey. A tap opens the Termin, a swipe to the left deletes (then Rückgängig).
  *
+ * Work is not one of the day's cards (Julian 16.11.: "Striped work blockers should show differently"): it is a
+ * striped block behind them, from its start to its end as in the week, and a Termin during work lies on it.
+ *
  * The cards are the app's own: white with a hairline and the soft shadow, on the usual ground (Julian 16.11.: the grey
  * ground of the reference was tried and taken back, "davor war es besser", the same shadows and cards in the whole app).
  * The page fades out under the head and before the nav ("We are missing the fade out").
@@ -27,6 +30,7 @@ import { ClayIcon } from '../../components/ui/Clay';
 import LineIcon from '../../components/ui/LineIcon';
 import PressScale from '../../components/ui/PressScale';
 import { Faces } from '../../components/ui/Person';
+import Stripes from '../../components/Stripes';
 import Fresh from '../../components/Fresh';
 import SwipeRow, { justSwiped } from '../../components/SwipeRow';
 import { navTop } from '../../components/NavBar';
@@ -37,6 +41,9 @@ import { useCalEvents } from '../../lib/useEvents';
 import { useNowMin } from '../../lib/useNow';
 import { isInfoDay } from '../../lib/feiertage';
 import { evInk } from '../../lib/evColor';
+import { isShift, shiftSpan, shiftLook } from '../../lib/shift';
+import { hourRange } from '../../lib/hours';
+import { lanes } from '../../lib/lanes';
 import { seriesId } from '../../lib/repeat';
 import { haptics } from '../../lib/haptics';
 import { TODAY, addDays, daysBetween, dayNum, weekday, monday, short, WD_SHORT, minutes, hm } from '../../lib/dates';
@@ -53,12 +60,14 @@ const RAIL = 55;
 const RAIL_GAP = 8;
 /** Two Termine right after each other. */
 const GAP = 15;
-/** The usual day on the page, as in the week's grid; it grows to the earliest and the latest Termin. */
-const DAY_FROM = 8;
-const DAY_TO = 19;
-/** The room of one hour: as much as fills the page, never less than this (then the day scrolls), never more. */
+/** The hours follow the day's Termine (lib/hours); a day with little on it still shows this many. */
+const DAY_LEAST = 8;
+/**
+ * The room of one hour: as much as fills the page (Julian 16.11.: "immer Vollbild"), never less than this (then the
+ * day scrolls). The upper end only keeps a huge screen sane.
+ */
 const HOUR_MIN = 40;
-const HOUR_MAX = 96;
+const HOUR_MAX = 200;
 /** Room above the first hour and under the last one, where the page fades into the ground of the nav. */
 const TOP = 18;
 const END = 64;
@@ -67,7 +76,8 @@ const TITLE = 22, LINE = 20, FACE = 24, ROW_GAP = 8;
 const START_AT = PAD + TITLE / 2;
 const END_AT = PAD + FACE / 2;
 
-const byStart = (a: CalEvent, b: CalEvent) => a.start.localeCompare(b.start);
+/** By start; Termine at the same time keep one order (the shorter first, then by name), also after an undo. */
+const byStart = (a: CalEvent, b: CalEvent) => a.start.localeCompare(b.start) || (a.end ?? '').localeCompare(b.end ?? '') || a.title.localeCompare(b.title) || a.id.localeCompare(b.id);
 const spans = (e: CalEvent) => !!e.endDate && e.endDate > e.date;
 const onDay = (e: CalEvent, day: string) => e.date === day || (spans(e) && e.date < day && day <= e.endDate!);
 /** Where a Termin ends on the hours; one without an end is only its start. */
@@ -79,17 +89,20 @@ const guess = (e: CalEvent) => PAD * 2 + TITLE + (e.place ?? e.sub ? LINE : 0) +
 /** The height a Termin's time gives its card: every hour it covers gets the hour's room. */
 const lasts = (e: CalEvent, hour: number) => (e.allDay || spans(e) ? 0 : Math.round(((endMin(e) - minutes(e.start)) / 60) * hour + START_AT + END_AT));
 
-type Plan = { gaps: number[]; hours: { h: number; y: number }[]; total: number };
+type Plan = { gaps: number[]; spots: [number, number][]; hours: { h: number; y: number }[]; total: number; at: (t: number) => number };
 /**
- * The day laid out for one hour's room: the gap above every card, the hours beside them and the height of it all.
+ * The day laid out for one hour's room: the gap above every card, where each card stands (`spots`), the hours beside
+ * them and the height of it all.
  * Time runs through fixed points: a Termin's start beside its title, its end beside its last row. Free time runs
  * evenly at the hour's room; an hour between two points lies between them, so an hour is never named twice.
+ * `open` lays the hours out without a card too (a day with only work on it).
  */
-function lay(whole: CalEvent[], timed: CalEvent[], h: (e: CalEvent) => number, hour: number, from: number, to: number): Plan {
+function lay(whole: CalEvent[], timed: CalEvent[], h: (e: CalEvent) => number, hour: number, from: number, to: number, open = false): Plan {
   let y = whole.reduce((sum, e) => sum + h(e) + GAP, 0);
-  if (!timed.length) return { gaps: [], hours: [], total: y };
+  if (!timed.length && !open) return { gaps: [], spots: [], hours: [], total: y, at: () => y };
   const points: [number, number][] = [[from, y + 13]];
   const gaps: number[] = [];
+  const spots: [number, number][] = [];
   let covered = from;
   timed.forEach((e, i) => {
     const s = minutes(e.start), en = endMin(e);
@@ -98,6 +111,7 @@ function lay(whole: CalEvent[], timed: CalEvent[], h: (e: CalEvent) => number, h
     const top = Math.round(s < covered ? y + GAP : Math.max(y + (i ? GAP : 0), here + ((s - covered) / 60) * hour - START_AT));
     gaps.push(top - y);
     y = top + h(e);
+    spots.push([top, y]);
     if (s >= covered) { points.push([s, top + START_AT]); covered = s; }
     if (en > covered) { covered = en; points.push([en, y - END_AT]); }
     // A Termin inside another one's time: the hours wait until it is past.
@@ -115,7 +129,7 @@ function lay(whole: CalEvent[], timed: CalEvent[], h: (e: CalEvent) => number, h
   };
   const hours: { h: number; y: number }[] = [];
   for (let t = from; t <= to; t += 60) hours.push({ h: t / 60, y: Math.round(at(t)) });
-  return { gaps, hours, total: Math.max(y, Math.round(at(to)) + 13) };
+  return { gaps, spots, hours, total: Math.max(y, Math.round(at(to)) + 13), at };
 }
 /** The hour's room with which the day fills `room`; the day's height only grows with it. */
 function fill(room: number, total: (hour: number) => number) {
@@ -227,6 +241,30 @@ const TodayCard = React.memo(function TodayCard({ e, date, over, hour, onContent
   );
 });
 
+/**
+ * Work on the day: a striped block in its person's colour behind the cards, as tall as it lasts (a card of the same
+ * hours would cover it exactly). Its name and hours stand where a card's title stands, or `label` further down when
+ * a Termin lies on that spot. A tap opens it like a Termin.
+ */
+function Shift({ e, top, height, lane, of, over, label }: { e: CalEvent; top: number; height: number; lane: number; of: number; over: boolean; label: number }) {
+  const look = shiftLook(e);
+  const [a, b] = shiftSpan(e);
+  const when = !e.allDay && e.end && e.end > e.start ? `${hm(a)} ${tx('bis', 'to')} ${hm(b)}` : '';
+  return (
+    <PressScale scale={0.99} onPress={() => router.push(`/termin/${e.id}`)} accessibilityLabel={[look.name, e.title, when].filter(Boolean).join(', ')}
+      style={{ position: 'absolute', top, height, left: `${(lane / of) * 100}%`, width: `${100 / of}%`, paddingLeft: lane ? 3 : 0, paddingRight: lane < of - 1 ? 3 : 0 }}>
+      <Stripes look={look} radius={R} style={{ flex: 1, opacity: over ? 0.45 : 0.9, paddingHorizontal: of > 2 ? 8 : PAD + 4, paddingTop: label }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: of > 2 ? 6 : 8, minHeight: TITLE }}>
+          <Txt size={15} line={TITLE} weight={600} color={look.ink} numberOfLines={1} style={{ flex: 1, minWidth: 0 }}>{e.title}</Txt>
+          {/* Alone it says its hours; side by side each block shows whose it is (a big family has more colours than two). */}
+          {of > 1 ? <Faces who={e.who} people={e.people} size={20} ring={look.tint} />
+            : when ? <Txt size={14.5} line={LINE} color={look.ink} numberOfLines={1} style={{ fontVariant: ['tabular-nums'] }}>{when}</Txt> : null}
+        </View>
+      </Stripes>
+    </PressScale>
+  );
+}
+
 const FADE = 88;
 /**
  * The page fades out into the ground before it reaches the nav, as in the reference (Julian 16.11.: "We are missing
@@ -270,17 +308,18 @@ export default function TodayView({ bottom, band }: { bottom?: React.ReactNode; 
   const now = useNowMin();
   const today = day === TODAY;
 
-  const { whole, timed, info } = useMemo(() => {
-    const whole: CalEvent[] = [], timed: CalEvent[] = [];
+  const { whole, timed, shifts, info } = useMemo(() => {
+    const whole: CalEvent[] = [], timed: CalEvent[] = [], shifts: CalEvent[] = [];
     let info = '';
     for (const e of events) {
-      // Work shifts stand in the hour grids (Tage, Woche); this page is for what the family has on.
-      if (e.work || !onDay(e, day)) continue;
+      // Work is no card: it stands behind the day as a striped block, on the day it starts (as in the week).
+      if (isShift(e)) { if (e.date === day) shifts.push(e); continue; }
+      if (!onDay(e, day)) continue;
       if (isInfoDay(e)) { info = info ? `${info} · ${e.title}` : e.title; continue; }
       (e.allDay || spans(e) ? whole : timed).push(e);
     }
     timed.sort(byStart);
-    return { whole, timed, info };
+    return { whole, timed, shifts, info };
   }, [events, day]);
 
   // Every card says how tall its content is; where it stands follows from that and from its time, the same on the
@@ -294,25 +333,23 @@ export default function TodayView({ bottom, band }: { bottom?: React.ReactNode; 
   const solid = band ?? navTop(insets.bottom);
   const under = today && bottom ? underH + (underH ? 22 : 0) : 0;
 
-  // The usual day, wider for an earlier or a later Termin (one without an end counts as an hour, as in the week).
-  const [from, to] = useMemo(() => {
-    let a = DAY_FROM * 60, b = DAY_TO * 60;
-    for (const e of timed) {
-      a = Math.min(a, Math.floor(minutes(e.start) / 60) * 60);
-      const last = e.end && e.end > e.start ? minutes(e.end) : minutes(e.start) + 60;
-      b = Math.max(b, Math.min(24 * 60, Math.ceil(last / 60) * 60));
-    }
-    return [a, b];
-  }, [timed]);
+  // The day's hours: from its first Termin to its last one, work included (one without an end counts as an hour).
+  const [from, to] = useMemo(() => hourRange([
+    ...timed.map((e): [number, number] => [minutes(e.start), e.end && e.end > e.start ? minutes(e.end) : minutes(e.start) + 60]),
+    ...shifts.map((e): [number, number] => [minutes(shiftSpan(e)[0]), minutes(shiftSpan(e)[1])]),
+  ], DAY_LEAST), [timed, shifts]);
 
   // The hours share what the page has left: its height less the fades, the info line and what stands under the day.
   // A card is as tall as its content or as its time, whichever is more.
   const plan = useMemo(() => {
     const h = (u: number) => (e: CalEvent) => Math.max(own[e.id] ?? guess(e), lasts(e, u));
     const room = pageH - TOP - END - solid - (info ? 28 : 0) - under;
-    const hour = timed.length ? fill(room - 1, (u) => lay(whole, timed, h(u), u, from, to).total) : HOUR_MIN;
-    return { hour, ...lay(whole, timed, h(hour), hour, from, to) };
-  }, [pageH, solid, info, under, whole, timed, own, from, to]);
+    const open = shifts.length > 0;
+    const hour = timed.length || open ? fill(room - 1, (u) => lay(whole, timed, h(u), u, from, to, open).total) : HOUR_MIN;
+    return { hour, ...lay(whole, timed, h(hour), hour, from, to, open) };
+  }, [pageH, solid, info, under, whole, timed, shifts, own, from, to]);
+  // Two who work at the same time stand side by side, each in their colour and always on the same side.
+  const sides = useMemo(() => lanes(shifts, (e) => [minutes(shiftSpan(e)[0]), minutes(shiftSpan(e)[1])], () => 0, (e) => shiftLook(e).key), [shifts]);
 
   // The change must be seen where I am (Julian 14.11.): what just landed on another day takes the page to its day.
   const lit = useLitIds();
@@ -338,7 +375,7 @@ export default function TodayView({ bottom, band }: { bottom?: React.ReactNode; 
   const shown = useAnimatedStyle(() => ({ opacity: fade.value }));
 
   const nowHour = today ? Math.floor(now / 60) : -1;
-  const none = !whole.length && !timed.length;
+  const none = !whole.length && !timed.length && !shifts.length;
 
   return (
     <View onLayout={(e) => setPageH(Math.round(e.nativeEvent.layout.height))} style={{ flex: 1 }}>
@@ -376,6 +413,17 @@ export default function TodayView({ bottom, band }: { bottom?: React.ReactNode; 
               })}
             </View>
             <View style={{ flex: 1, minWidth: 0 }}>
+              {shifts.map((e) => {
+                const [a, b] = shiftSpan(e);
+                const top = Math.round(plan.at(minutes(a))) - START_AT;
+                const end = Math.round(plan.at(minutes(b))) + END_AT;
+                const side = sides.get(e);
+                // Its name must stay readable: under a card it moves down to the first free spot of the block.
+                const need = TITLE + 8;
+                const free = (y: number) => y + need <= end && !plan.spots.some(([t, b2]) => t < y + need && b2 > y);
+                const spot = [top + PAD - 4, ...plan.spots.filter(([t, b2]) => b2 > top && t < end).map(([, b2]) => b2 + 2)].find(free);
+                return <Shift key={e.id} e={e} top={top} height={end - top} lane={side?.lane ?? 0} of={side?.lanes ?? 1} over={today && minutes(b) <= now} label={(spot ?? top + PAD - 4) + 4 - top} />;
+              })}
               {whole.map((e) => (
                 <Animated.View key={e.id} exiting={rowOut} layout={slide} style={{ marginBottom: GAP }}>
                   <TodayCard e={e} date={day} over={false} hour={plan.hour} onContent={content} />

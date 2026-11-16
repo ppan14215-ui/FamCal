@@ -20,6 +20,7 @@ import { findPlace } from '../lib/places';
 import { dueLabel } from '../lib/when';
 import { tx } from '../i18n/lang';
 import { noteSplit } from '../lib/splitDay';
+import { markDropped } from '../lib/phoneDropped';
 
 /** Who uses this phone; the sync sets it once the family is known. */
 let meRole: PersonId = 'J';
@@ -270,6 +271,8 @@ export const actions = {
   setCalWho(w: string | null) { set(() => ({ calWho: w })); },
   /** Saving the same title on the same day and time again replaces it. */
   addEvent(e: CalEvent) {
+    // Back from an undo: the phone calendar may show it again.
+    void markDropped([e.id], true);
     set((s) => ({ events: [...s.events.filter((x) => x.id !== e.id && !(x.title === e.title && x.date === e.date && x.start === e.start)), e] }));
   },
   /** Verschieben: new day and time, Rückgängig puts it back. */
@@ -326,7 +329,8 @@ export const actions = {
       set((s) => ({ events: [...s.events.filter((e) => e.cal !== 'feiertage'), ...days] }));
     });
   },
-  removeEvent(id: string) { set((s) => ({ events: s.events.filter((e) => e.id !== id) })); },
+  /** A Termin from the phone calendar stays gone however it was deleted (swipe, Termin page, assistant), or the next sync brings it back (Julian 16.11.). */
+  removeEvent(id: string) { void markDropped([id]); set((s) => ({ events: s.events.filter((e) => e.id !== id) })); },
   restoreEvent(e: CalEvent) { set((s) => ({ events: s.events.map((x) => (x.id === e.id ? e : x)) })); },
   /** Everything on a Termin stays editable (Julian 26.10.). */
   updateEvent(id: string, patch: Partial<CalEvent>) { set((s) => ({ events: s.events.map((e) => (e.id === id ? { ...e, ...patch } : e)) })); },

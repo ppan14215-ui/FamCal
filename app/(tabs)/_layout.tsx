@@ -4,7 +4,7 @@ import NavBar from '../../src/components/NavBar';
 import { tokens } from '../../src/theme';
 import { Keyed, usePaletteGen } from '../../src/theme/mode';
 
-/** Chat, Kalender, Listen (Julian 29.10.: the family chat is the start; Eingang lives in the chat now). */
+/** Kalender, Listen, Chat (Julian 16.11.: the calendar is the heart and the start, the chat is the log; Eingang lives in the chat). The first tab is also where Android's back leads. */
 export default function TabsLayout() {
   usePaletteGen();
   return (
@@ -16,9 +16,9 @@ export default function TabsLayout() {
         // sliding claims a depth that isn't there and is felt dozens of times a day (Emil Kowalski, animate-expo, 08.11.).
         animation: 'fade', transitionSpec: { animation: 'timing', config: { duration: 150 } } }}
     >
-      <Tabs.Screen name="chat" />
       <Tabs.Screen name="kalender" />
       <Tabs.Screen name="listen" />
+      <Tabs.Screen name="chat" />
       <Tabs.Screen name="eingang" options={{ href: null }} />
     </Tabs>
   );
