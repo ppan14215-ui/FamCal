@@ -200,7 +200,7 @@ export default function Kalender() {
   if (view === 'heute') {
     return (
       <View style={{ flex: 1, backgroundColor: tokens.bg, paddingTop: insets.top }}>
-        <Head end={8} fade={28}><Title text={WD_LONG[weekday(day)]} sub={dmShort(day)} open={open} onPress={toggle} right={<HeaderRight />} />{seg}<WeekStrip /></Head>
+        <Head end={8}><Title text={WD_LONG[weekday(day)]} sub={dmShort(day)} open={open} onPress={toggle} right={<HeaderRight />} />{seg}<WeekStrip /></Head>
         <Animated.View entering={build} style={{ flex: 1 }}><TodayView bottom={<Briefing />} /></Animated.View>
       </View>
     );

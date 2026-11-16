@@ -1,118 +1,137 @@
 /**
- * The start (Julian 07.11.): the whole screen is Memo, teal with two eyes. It
- * blinks, then melts upwards like paint running backwards, drips trailing at
- * its lower edge, and gathers into a small Memo at the top of the screen,
- * which glides down to its spot on the field (BuddyHost).
+ * The start (Julian 07.11.): the whole screen is Memo, his colour with two eyes, and he blinks.
  *
- * 08.11. (Julian: "not smooth enough"): everything moves by transform only, so
- * it runs on the UI thread at full frame rate even while the app loads behind
- * it. The paint is a plain view sliding up; the drips are one fixed shape that
- * stretches and pulls back; the eyes ride along and shrink into the small
- * Memo's eyes, and the small Memo takes over in the same spot without a gap.
- * Once per app start, about 1.4 s, a tap skips it, reduced motion skips it.
+ * 16.11. (Julian: "three different disconnected steps ... the black bg merge into memo after the blink, then have memo
+ * actually move into the bar below, well animated with no jump"): ONE motion. The colour draws itself together around
+ * the eyes until it is Memo, round, in the middle of the screen. While it still closes he already sets off: he looks
+ * where he is going and glides into his seat in the bar, getting smaller on the way. He arrives at exactly the size and
+ * the spot of the bar's Memo, which then stands under him as the same picture, so nothing jumps when this one goes.
+ *
+ * One shared value drives all of it, by transform only, so it runs on the UI thread at full frame rate even while the
+ * app loads behind it (Julian 08.11.: "not smooth enough"). Once per app start, about 1.4 s, a tap skips it, reduced
+ * motion skips it.
  */
-import React, { useEffect, useState } from 'react';
-import { Pressable, useWindowDimensions, View } from 'react-native';
-import Svg, { Path } from 'react-native-svg';
+import React, { useEffect, useRef, useState } from 'react';
+import { Pressable, useWindowDimensions } from 'react-native';
 import Animated, { useSharedValue, useAnimatedStyle, withTiming, withDelay, withSequence, Easing, runOnJS, useReducedMotion } from 'react-native-reanimated';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { usePathname } from 'expo-router';
-import Pin, { PIN } from './Pin';
 import { mascot } from '../../lib/mascot';
-import { setBuddy } from '../../lib/buddy';
+import { useMemoColor } from '../../lib/look';
+import { tokens } from '../../theme';
+import { setBuddy, useBuddy, buddyPoke } from '../../lib/buddy';
 import { useFieldTop } from '../../lib/dockSpace';
 
-/** Drips along the lower edge: x as a share of the width, half width, length as a share of DRIP. */
-const DRIPS = [
-  [0.05, 0.03, 0.7], [0.17, 0.028, 1.0], [0.3, 0.038, 0.55], [0.44, 0.026, 0.9],
-  [0.57, 0.036, 0.75], [0.7, 0.028, 1.0], [0.83, 0.034, 0.6], [0.95, 0.024, 0.85],
-];
-const DRIP = 120;
-const SMALL = 38; // the companion's size (BuddyHost)
+/** Memo as he stands in the middle before he sets off: his body's diameter. The start's eyes are his eyes at this size. */
+const HERO = 116;
+/** Pin's own measures (buddy/Pin.tsx): the body is 0.8 of his box wide, its middle sits 0.54 of the box below the top. */
+const BODY = 0.8, BODY_MID = 0.54;
+/** The floating Memo above the field (BuddyHost), for the nav styles without a seat in the bar. */
+const FLOAT = 38, FLOAT_RIGHT = 20, FLOAT_GAP = 6;
+/** When he blinks, when the motion begins, and how long it runs. */
+const BLINK = 220, START = 460, RUN = 980;
+/** Shares of the run: the colour closes from 0 to CLOSE, he travels from GO to the end. They overlap, so he never stands still. */
+const CLOSE = 0.56, GO = 0.42;
 
-function dripPath(W: number) {
-  let d = `M0 0L${W} 0`;
-  for (let i = DRIPS.length - 1; i >= 0; i--) {
-    const [fx, fw, fl] = DRIPS[i];
-    const L = DRIP * fl, xc = W * fx, hw = W * fw;
-    d += `L${xc + hw} 0C${xc + hw * 0.55} ${L * 0.35} ${xc + hw * 0.95} ${L} ${xc} ${L}C${xc - hw * 0.95} ${L} ${xc - hw * 0.55} ${L * 0.35} ${xc - hw} 0`;
-  }
-  return d + 'L0 0Z';
-}
+const cl = (v: number) => { 'worklet'; return v < 0 ? 0 : v > 1 ? 1 : v; };
+/** Slow out of rest, slow into rest. */
+const io = (t: number) => { 'worklet'; return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(2 - 2 * t, 3) / 2; };
 
 let played = false;
 
 export default function BuddyIntro() {
   const { width: W, height: H } = useWindowDimensions();
-  const insets = useSafeAreaInsets();
   const path = usePathname();
   const fieldTop = useFieldTop();
   const reduced = useReducedMotion();
+  const b = useBuddy();
+  const color = useMemoColor();
+  const eye = color === tokens.ink ? tokens.onInk : '#FFFFFF';
   const [on, setOn] = useState(!played);
   useEffect(() => { if (played && !on) setBuddy({ intro: false }); }, []);
-  const p = useSharedValue(0); // 0 full screen .. 1 gathered at the top
+  const p = useSharedValue(0); // 0 the whole screen .. 1 in his seat
   const blink = useSharedValue(1);
-  const small = useSharedValue(0); // the small Memo at the top appearing
-  const gone = useSharedValue(1);
-  const topY = insets.top + 24; // centre of the small Memo at the top
+  const [arrived, setArrived] = useState(false);
+  const started = useRef(false);
+
+  // He starts in the middle of the screen; D0 is how wide the colour must be to reach every corner from there.
+  const cx0 = W / 2, cy0 = H / 2;
+  const D0 = 2 * Math.hypot(cx0, cy0) + 16;
+  // Where he is going: his seat in the bar (its Memo's body, see MemoMic), else his place above the field.
+  const docked = b.docked > 0;
+  const seat = docked
+    ? (b.dockAt ? { x: b.dockAt.x, y: b.dockAt.y + 0.2, d: (b.dockS ?? 40) * BODY } : null)
+    : fieldTop ? { x: W - FLOAT_RIGHT - FLOAT / 2, y: H - fieldTop - FLOAT - FLOAT_GAP + FLOAT * BODY_MID, d: FLOAT * BODY } : null;
+  const tx = useSharedValue(cx0), ty = useSharedValue(cy0), td = useSharedValue(0); // td 0: nowhere to go, he fades where he stands
+  useEffect(() => { if (seat) { tx.value = seat.x; ty.value = seat.y; td.value = seat.d; } }, [seat?.x, seat?.y, seat?.d]);
 
   // Only where Memo lives (screens with the field), never over the onboarding or sign-in.
   const skip = /onboarding|anmelden/.test(path) || mascot() === 'minimal';
-  // It starts once the field is there (Memo's spot is known), or after a moment anyway.
+  // It starts once his seat is known, or after a moment anyway.
   const [late, setLate] = useState(false);
   useEffect(() => { const id = setTimeout(() => setLate(true), 900); return () => clearTimeout(id); }, []);
-  const go = !!fieldTop || late;
-  const handOver = () => { setBuddy({ intro: false, from: { x: W / 2, y: topY } }); };
-  const close = () => setOn(false);
+  const go = !!seat || late;
+  const arrive = () => { setArrived(true); setBuddy({ intro: false }); };
   useEffect(() => {
-    if (!on) return;
+    if (!on || started.current) return;
     if (skip || reduced) { played = true; setBuddy({ intro: false }); setOn(false); return; }
     if (!go) return;
-    played = true;
+    played = true; started.current = true;
     setBuddy({ intro: true });
-    blink.value = withDelay(220, withSequence(withTiming(0.1, { duration: 70 }), withTiming(1, { duration: 110 })));
-    // One continuous pull: slow start, long smooth glide, soft arrival.
-    p.value = withDelay(460, withTiming(1, { duration: 900, easing: Easing.bezier(0.55, 0, 0.25, 1) }));
-    small.value = withDelay(460 + 640, withTiming(1, { duration: 260, easing: Easing.out(Easing.cubic) }, (f) => {
-      if (!f) return;
-      runOnJS(handOver)();
-      // The companion now sits exactly here; this one fades out underneath it.
-      gone.value = withDelay(60, withTiming(0, { duration: 140 }, (g) => { if (g) runOnJS(close)(); }));
-    }));
+    blink.value = withDelay(BLINK, withSequence(withTiming(0.1, { duration: 70 }), withTiming(1, { duration: 110 })));
+    p.value = withDelay(START, withTiming(1, { duration: RUN, easing: Easing.linear }, (f) => { if (f) runOnJS(arrive)(); }));
   }, [on, skip, reduced, go]);
 
-  // The paint's lower edge goes from below the screen to the top, ending just above the small Memo.
-  const endEdge = topY - SMALL / 2;
-  const sheet = useAnimatedStyle(() => ({ transform: [{ translateY: -(H - endEdge) * p.value }] as any }));
-  // The drips stretch while the paint pulls, then snap back up as it arrives.
-  const drips = useAnimatedStyle(() => ({ transform: [{ scaleY: Math.sin(Math.PI * Math.min(1, p.value * 1.1)) }] as any }));
-  // The eyes ride in the middle of what is left and shrink into the small Memo's eyes.
-  const eyes = useAnimatedStyle(() => {
-    const edge = H - (H - endEdge) * p.value;
-    const yMid = Math.max(topY, edge / 2);
-    const s = 1.5 - 1.08 * p.value;
-    return { opacity: 1 - small.value, transform: [{ translateY: yMid - 8 }, { scale: s }, { scaleY: blink.value }] as any };
-  });
-  const drop = useAnimatedStyle(() => ({ opacity: small.value, transform: [{ scale: 0.6 + 0.4 * small.value }] as any }));
+  // Arrived: the bar's Memo shows from `landed` on (BuddyHost says so). This one lies over him as the same picture and
+  // fades, so not even half a pixel can tick; then he blinks once, as if he had just sat down.
+  const gone = useSharedValue(1);
+  const close = () => { setOn(false); if (docked) buddyPoke(); };
+  useEffect(() => {
+    if (!arrived) return;
+    const wait = docked ? (b.landed ? 40 : 600) : 440; // above the field the floating Memo fades in under this one
+    const t = setTimeout(() => { gone.value = withTiming(0, { duration: 120 }, (f) => { if (f) runOnJS(close)(); }); }, wait);
+    return () => clearTimeout(t);
+  }, [arrived, b.landed, docked]);
   const fade = useAnimatedStyle(() => ({ opacity: gone.value }));
 
+  const u = HERO / 34; // Pin's unit at this size
+  // The colour: a circle of Memo's size, blown up until it reaches every corner. It closes evenly (each frame the same
+  // share smaller), so it sweeps in and then settles slowly into his shape.
+  const body = useAnimatedStyle(() => {
+    const A = io(cl(p.value / CLOSE));
+    return { transform: [{ scale: Math.pow(D0 / HERO, 1 - A) }] as any };
+  });
+  // Memo as a whole, colour and eyes: where he is and how big. He leaves sideways first and comes down into his seat.
+  const whole = useAnimatedStyle(() => {
+    const B = io(cl((p.value - GO) / (1 - GO)));
+    const Bx = io(cl((p.value - GO) / (0.88 - GO)));
+    const end = td.value > 0 ? td.value : HERO * 0.6;
+    return { opacity: td.value > 0 ? 1 : 1 - B, transform: [{ translateX: (tx.value - cx0) * Bx }, { translateY: (ty.value - cy0) * B }, { scale: 1 + (end / HERO - 1) * B }] as any };
+  });
+  // He looks where he is going a moment before he sets off, and straight ahead again as he sits down.
+  const eyes = useAnimatedStyle(() => {
+    const dx = tx.value - cx0, dy = ty.value - cy0, len = Math.sqrt(dx * dx + dy * dy) || 1;
+    const look = io(cl((p.value - 0.3) / 0.22)) * (1 - io(cl((p.value - 0.74) / 0.24)));
+    return { transform: [{ translateX: (dx / len) * 2.6 * u * look }, { translateY: (dy / len) * 2.6 * u * look }, { scaleY: blink.value }] as any };
+  });
+
   if (!on || skip) return null;
-  const finish = () => { p.value = 1; small.value = 1; gone.value = 0; handOver(); setOn(false); };
+  // A tap skips it: he is in his seat at once. Tapped before it began, it never begins; with no seat known yet nothing
+  // of him is on screen, so this one leaves right away.
+  const finish = () => {
+    if (arrived) return;
+    played = true; started.current = true;
+    p.value = 1;
+    arrive();
+    if (!seat) setOn(false);
+  };
+  const eyeBox = { position: 'absolute' as const, top: HERO / 2 - 3.5 * u, width: 4 * u, height: 7 * u, borderRadius: 2 * u, backgroundColor: eye };
   return (
-    <Animated.View style={[{ position: 'absolute', left: 0, top: 0, width: W, height: H }, fade]}>
+    <Animated.View pointerEvents={arrived ? 'none' : 'auto'} style={[{ position: 'absolute', left: 0, top: 0, width: W, height: H, overflow: 'hidden' }, fade]}>
       <Pressable onPress={finish} style={{ flex: 1 }} accessibilityLabel="Intro überspringen">
-        <Animated.View style={[{ position: 'absolute', left: 0, top: 0, width: W, height: H }, sheet]}>
-          <View style={{ position: 'absolute', left: 0, top: -H, width: W, height: H * 2, backgroundColor: PIN.rim }} />
-          <Animated.View style={[{ position: 'absolute', left: 0, top: H - 1, width: W, height: DRIP + 1, transformOrigin: ['50%', '0%', 0] }, drips]}>
-            <Svg width={W} height={DRIP + 1}><Path d={dripPath(W)} fill={PIN.rim} /></Svg>
-          </Animated.View>
-        </Animated.View>
-        <Animated.View style={[{ position: 'absolute', left: W / 2 - SMALL / 2, top: topY - SMALL / 2, width: SMALL, height: SMALL }, drop]}>
-          <Pin size={SMALL} still shadow={false} />
-        </Animated.View>
-        <Animated.View style={[{ position: 'absolute', left: 0, right: 0, top: 0, flexDirection: 'row', justifyContent: 'center', gap: 14 }, eyes]}>
-          <View style={{ width: 9, height: 16, borderRadius: 5, backgroundColor: PIN.face }} />
-          <View style={{ width: 9, height: 16, borderRadius: 5, backgroundColor: PIN.face }} />
+        <Animated.View style={[{ position: 'absolute', left: cx0 - HERO / 2, top: cy0 - HERO / 2, width: HERO, height: HERO }, whole]}>
+          <Animated.View style={[{ position: 'absolute', left: 0, top: 0, width: HERO, height: HERO, borderRadius: HERO / 2, backgroundColor: color }, body]} />
+          <Animated.View style={[eyeBox, { left: HERO / 2 - 4 * u - 2 * u }, eyes]} />
+          <Animated.View style={[eyeBox, { left: HERO / 2 + 4 * u - 2 * u }, eyes]} />
         </Animated.View>
       </Pressable>
     </Animated.View>

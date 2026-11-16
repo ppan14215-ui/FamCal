@@ -96,6 +96,10 @@ Alle sichtbaren Änderungen an FamCal. Neueste oben. Agenten und Menschen: Ände
 - Chat: der schwarze Ändern Knopf auf den Karten ist weg, ein Tipp auf die Karte öffnet den Termin. Ein Wisch nach links löscht den Termin auch im Chat (danach Rückgängig), wie im Kalender. Zwischen Blasen, Antwort und Karte ist mehr Luft.
 - Eingabe (16.11.): Das Feld bleibt immer schwarz. Wer von der Sprechkarte auf Tippen wechselt („Aa“), bleibt in derselben schwarzen Karte, Memo bleibt an seinem Platz, Senden steht an derselben Stelle. Auf „Termin ändern“ und „Neue Liste“ ersetzt eine schmale schwarze Zeile das alte weiße Feld, und Einsprechen öffnet dort dieselbe schwarze Sprechkarte wie im Kalender.
 - Start (16.11.): Die App öffnet im Kalender mit „Heute“. In der Leiste steht der Kalender vorn, dann die Listen, der Chat rückt nach hinten und bleibt der Verlauf. Zurück führt jetzt immer in den Kalender. Nach der Einführung, nach Anmelden, Familie anlegen und Abo landet man ebenfalls im Kalender.
+- Start (16.11.): Der Start ist eine einzige Bewegung. Nach dem Blinzeln zieht sich das Schwarz um die Augen zu Memo zusammen, Memo gleitet in seinen Platz in der Leiste und kommt dort genau so groß an, wie er in der Leiste ist. Kein Sprung mehr, etwa 1,4 statt 2,3 Sekunden. Antippen überspringt den Start.
+- Heute: seitlich wischen blättert zum nächsten und zum vorigen Tag. Auf einem Termin löscht Wischen nach links wie bisher.
+- Heute: vergangene Termine sind nicht mehr blass. Das Ausblenden über der Leiste erscheint nur noch, wenn der Tag darunter weiterläuft.
+- Ein Tipp auf einen Termin öffnet ihn gleich zum Ändern, das Blatt dazwischen ist weg. Löschen steht am Ende der Seite, bei Serien für diesen einen Termin oder die ganze Serie.
 
 ### App funktioniert zuverlässig (09.11. Audit)
 - Nach längerer Pause im Hintergrund klappen Assistent und Spracheingabe gleich beim ersten Satz, statt "Ich komme gerade nicht an den Assistenten".
