@@ -322,7 +322,7 @@ export function Seg<T extends string>({ items, value, onChange, height = 34 }: {
  * semibold, and a short ink line under it glides to the tapped word (transform only) before the new view comes.
  */
 const TAB_LINE = 100;
-export function Tabs<T extends string>({ items, value, onChange, onAgain, bleed = 0, line: lineColor = tokens.hair }: { items: { key: T; label: string }[]; value: T; onChange: (k: T) => void; /** A tap on the word that is already chosen (Heute: back to today). */ onAgain?: (k: T) => void; /** How far the hairline reaches past both sides, into the screen's gutter. */ bleed?: number; /** The hairline's colour, for a ground that is not the usual one. */ line?: string }) {
+export function Tabs<T extends string>({ items, value, onChange, onAgain, bleed = 0 }: { items: { key: T; label: string }[]; value: T; onChange: (k: T) => void; /** A tap on the word that is already chosen (Heute: back to today). */ onAgain?: (k: T) => void; /** How far the hairline reaches past both sides, into the screen's gutter. */ bleed?: number }) {
   const [at, setAt] = useState<Record<string, { x: number; w: number }>>({});
   const cur = at[value];
   const x = useSharedValue(0), w = useSharedValue(0);
@@ -337,7 +337,7 @@ export function Tabs<T extends string>({ items, value, onChange, onAgain, bleed 
   }, [cur?.x, cur?.w]);
   const line = useAnimatedStyle(() => ({ opacity: w.value > 0 ? 1 : 0, transform: [{ translateX: x.value }, { scaleX: w.value / TAB_LINE }] as const }));
   return (
-    <View style={{ marginHorizontal: -bleed, paddingHorizontal: bleed, borderBottomWidth: 1, borderBottomColor: lineColor }}>
+    <View style={{ marginHorizontal: -bleed, paddingHorizontal: bleed, borderBottomWidth: 1, borderBottomColor: tokens.hair }}>
       <View accessibilityRole="tablist" style={{ flexDirection: 'row', gap: 20 }}>
         {items.map((it) => {
           const on = it.key === value;

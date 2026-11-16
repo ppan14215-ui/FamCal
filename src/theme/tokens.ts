@@ -51,12 +51,6 @@ const LIGHT = {
   accent: '#111417',
   /** Its soft shadow. */
   accentGlow: 'rgba(17,20,23,0.14)',
-  /** Kalender · Heute after the reference (Julian 16.11.: "the bg is grey"): a warm grey ground, cards a shade lighter, white inside a card. */
-  day: '#E8E4E2',
-  dayCard: '#F3F3F1',
-  /** A hairline on that ground. */
-  dayLine: '#D8D4D1',
-  dayNote: '#FFFFFF',
 };
 export type Tokens = Record<keyof typeof LIGHT, string>;
 
@@ -71,7 +65,6 @@ const DARK: Tokens = {
   circleLine: '#3A464C', dotOff: '#3A464C', danger: '#F0766C', select: 'rgba(95,183,174,0.32)', ok: '#4CC28E',
   scrim: 'rgba(0,0,0,0.55)', noteBg: '#1F272B', paper: '#1C2326', onInk: '#16232A', glass: 'rgba(26,35,40,0.72)', veil: 'rgba(15,21,24,0.95)',
   accent: '#F2F4F4', accentGlow: 'rgba(0,0,0,0.3)',
-  day: '#0F1518', dayCard: '#1A2328', dayLine: '#2C3840', dayNote: '#2A363C',
 };
 
 /** The live palette. Values swap in place with `applyPalette`, so every style reads the current one. */
