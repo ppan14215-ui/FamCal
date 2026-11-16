@@ -8,6 +8,7 @@ Alle sichtbaren Änderungen an FamCal. Neueste oben. Agenten und Menschen: Ände
 - Das Mikrofon geht beim Sprechen direkt zu ElevenLabs Scribe Echtzeit. Die Sprechkarte zeigt die aktuelle Vermutung grau und bestätigte Wörter fest, auch wenn Deutsch und Englisch gemischt werden.
 - Fällt die Verbindung aus, geht dieselbe Aufnahme einmal den bisherigen Weg. Ohne das neue Mikrofon Modul (alte App) bleibt alles wie zuvor.
 - Braucht eine neue App (natives Modul expo-audio-stream-pcm), kein reines Update.
+- 16.11.: Die Live Verbindung kam auf dem Handy nie zustande (AbortSignal.timeout fehlt in Hermes, der Abruf brach sofort ab). Jetzt mit AbortController; der Fehlertext steht im Protokoll.
 
 ### Updates kommen von selbst an (14.11.)
 - Die App sucht bei jeder Rückkehr nach einem Update, lädt es still und startet es bei der nächsten Rückkehr nach einer Pause. Vorher brauchte es zwei komplette Neustarts.
@@ -81,7 +82,7 @@ Alle sichtbaren Änderungen an FamCal. Neueste oben. Agenten und Menschen: Ände
 - Denken: nur noch eine Anzeige. Solange Memo als Blase denkt, zeigt der Chat keine zweiten Punkte. Die Blase ist größer (Julian 15.11.).
 - Kalender Heute: Ein gelöschter Termin blendet weich aus und die Zeilen darunter rutschen nach, statt hart zu verschwinden.
 - Kalender Heute nach Julians Referenz (16.11.): oben die Woche als Leiste, der gewählte Tag steht auf einer hellen Kachel. Darunter der eine Tag: links die Stunden, die aktuelle Stunde in einer Pille, rechts pro Termin eine Karte mit Balken in der Farbe der Person, Titel, Ort, Gesichtern und Zeitspanne. Freie Zeit ist eine Lücke, keine Karte wird abgeschnitten.
-- Heute liegt auf grauem Grund mit etwas helleren Karten. Oben unter dem Kopf und unten vor der Leiste blendet die Seite weich aus.
+- Die Karten in Heute sind die Karten der ganzen App: weiß, feine Linie, weicher Schatten, auf dem hellen Grund. Oben unter dem Kopf und unten vor der Leiste blendet die Seite weich aus. Der graue Grund aus der Referenz war kurz ausgeliefert und ist zurückgenommen (Julian 16.11.).
 - Ein Tipp auf einen Tag der Leiste zeigt diesen Tag, Wischen bringt die nächste oder letzte Woche, ein zweiter Tipp auf Heute führt zurück zu heute. Neu und offen steht unter den Terminen von heute.
 - Gesagtes, das an einem anderen Tag landet, nimmt die Heute Seite mit zu diesem Tag.
 

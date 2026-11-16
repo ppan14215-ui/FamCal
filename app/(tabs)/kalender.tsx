@@ -177,13 +177,11 @@ export default function Kalender() {
   const choose = (v: CalView) => { actions.setCalView(v); if (v === 'heute') actions.setCalDay(TODAY); };
   // Heute once more, while another day of the strip is chosen: back to today.
   const again = (v: CalView) => { if (v === 'heute' && get().calDay !== TODAY) { haptics.select(); actions.setCalDay(TODAY); } };
-  // Heute lies on the grey ground of the reference, so its hairline is the one for that ground.
-  const tabLine = view === 'heute' ? tokens.dayLine : tokens.hair;
   const seg = simple ? (
-    <Tabs items={VIEWS} value={view} onChange={choose} onAgain={again} bleed={18} line={tabLine} />
+    <Tabs items={VIEWS} value={view} onChange={choose} onAgain={again} bleed={18} />
   ) : open ? (
     <Animated.View entering={fadeIn} exiting={FadeOut.duration(120)} style={{ gap: 10 }}>
-      <Tabs items={VIEWS} value={view} onChange={choose} onAgain={again} bleed={18} line={tabLine} />
+      <Tabs items={VIEWS} value={view} onChange={choose} onAgain={again} bleed={18} />
       <WhoFilter />
     </Animated.View>
   ) : <WhoFilter only />;
@@ -200,8 +198,8 @@ export default function Kalender() {
 
   if (view === 'heute') {
     return (
-      <View style={{ flex: 1, backgroundColor: tokens.day, paddingTop: insets.top }}>
-        <Head end={8} bg={tokens.day} fade={28}><Title text={WD_LONG[weekday(day)]} sub={dmShort(day)} open={open} onPress={toggle} right={<HeaderRight />} />{seg}<WeekStrip /></Head>
+      <View style={{ flex: 1, backgroundColor: tokens.bg, paddingTop: insets.top }}>
+        <Head end={8} fade={28}><Title text={WD_LONG[weekday(day)]} sub={dmShort(day)} open={open} onPress={toggle} right={<HeaderRight />} />{seg}<WeekStrip /></Head>
         <Animated.View entering={build} style={{ flex: 1 }}><TodayView bottom={<Briefing />} /></Animated.View>
       </View>
     );

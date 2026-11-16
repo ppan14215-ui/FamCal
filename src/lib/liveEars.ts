@@ -157,12 +157,16 @@ export function startLiveEars(on: { words: (sure: string, part: string) => void;
     const session = getAuth().session;
     const base = process.env.EXPO_PUBLIC_SUPABASE_URL;
     if (!session || !base) { error = 'no_session'; dead = true; return; }
+    // The phone's engine has no AbortSignal.timeout (it threw at once, 15.11., and no sentence ever went live).
+    const ctrl = new AbortController();
+    const late = setTimeout(() => ctrl.abort(), OPEN_MS);
     try {
       const res = await fetch(`${base}/functions/v1/hoeren`, {
-        method: 'POST', body: JSON.stringify({ live: true }), signal: AbortSignal.timeout(OPEN_MS),
+        method: 'POST', body: JSON.stringify({ live: true }), signal: ctrl.signal,
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${(await freshToken()) ?? session.access_token}`, apikey: process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? '' },
       });
       const r = await res.json().catch(() => ({})) as { url?: string; error?: string };
+      clearTimeout(late);
       mark(`token:${res.status}`);
       if (!res.ok || !r.url) { error = r.error ?? `http_${res.status}`; dead = true; misses++; return; }
       if (stopped && !size) return;
@@ -194,7 +198,9 @@ export function startLiveEars(on: { words: (sure: string, part: string) => void;
       sock.onerror = () => { if (!open) misses++; error = error || 'socket'; mark('sockerr'); dead = true; settled?.(); };
       sock.onclose = (e) => { mark(`close:${e?.code ?? ''}`); dead = true; settled?.(); };
     } catch (e) {
-      error = e instanceof Error ? e.name : 'error';
+      clearTimeout(late);
+      // The message says what broke (never what was said); the name alone hid the cause on 15.11.
+      error = e instanceof Error ? `${e.name}: ${e.message}`.slice(0, 80) : 'error';
       dead = true;
       misses++;
       mark('tokenfail');

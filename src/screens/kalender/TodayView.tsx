@@ -8,8 +8,9 @@
  * between two Termine is a gap that grows with it. So a card is never cut to fit and never lies over another one.
  * What is over today turns grey. A tap opens the Termin, a swipe to the left deletes (then Rückgängig).
  *
- * The page lies on the reference's grey ground with cards a shade lighter (Julian 16.11.: "the bg is grey"), and it
- * fades out under the head and before the nav ("We are missing the fade out").
+ * The cards are the app's own: white with a hairline and the soft shadow, on the usual ground (Julian 16.11.: the grey
+ * ground of the reference was tried and taken back, "davor war es besser", the same shadows and cards in the whole app).
+ * The page fades out under the head and before the nav ("We are missing the fade out").
  */
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { View, ScrollView, Platform } from 'react-native';
@@ -27,7 +28,7 @@ import { Faces } from '../../components/ui/Person';
 import Fresh from '../../components/Fresh';
 import SwipeRow, { justSwiped } from '../../components/SwipeRow';
 import { navTop } from '../../components/NavBar';
-import { tokens, springs, motion, easing, rowOut, rowLayout } from '../../theme';
+import { tokens, glass, springs, motion, easing, rowOut, rowLayout } from '../../theme';
 import { useStore, actions } from '../../state/store';
 import { useScroller, useLitIds } from '../../lib/landing';
 import { useDockSpace } from '../../lib/dockSpace';
@@ -43,7 +44,7 @@ import type { CalEvent } from '../../state/types';
 import { dropEvent } from './DayView';
 
 /** The card's corners, as round as in the reference. */
-const R = 24;
+const R = 20;
 /** Room inside a card. */
 const PAD = 12;
 /** The column of the hours, and the gap to the cards. */
@@ -114,7 +115,7 @@ export function WeekStrip() {
           const today = d === TODAY;
           return (
             <PressScale key={d} scale={0.94} onPress={() => { if (!sel) { haptics.select(); actions.setCalDay(d); } }} accessibilityLabel={short(d)} accessibilityState={{ selected: sel }}
-              style={[{ flex: 1, height: 66, borderRadius: 20, alignItems: 'center', justifyContent: 'center', gap: 5 }, sel ? { backgroundColor: tokens.dayCard } : null]}>
+              style={[{ flex: 1, height: 66, borderRadius: 20, alignItems: 'center', justifyContent: 'center', gap: 5 }, sel ? glass.sm : null]}>
               <Txt size={15} line={19} weight={today ? 600 : 400} color={today ? tokens.ink : tokens.sub} numberOfLines={1}>{WD_SHORT[weekday(d)]}</Txt>
               <Txt size={16} line={20} weight={today ? 600 : 500} style={{ fontVariant: ['tabular-nums'] }}>{String(dayNum(d))}</Txt>
             </PressScale>
@@ -136,9 +137,11 @@ const TodayCard = React.memo(function TodayCard({ e, date, over }: { e: CalEvent
   const tall = e.allDay || spans(e) ? 0 : Math.round(((endMin(e) - minutes(e.start)) / 60) * HOUR_MIN + START_AT + END_AT);
   return (
     <Fresh id={e.id} radius={R} markAt={{ left: PAD, inset: PAD }}>
-      <SwipeRow bg={tokens.day} radius={R} onDelete={() => dropEvent(e)}>
+      {/* The app's one card: a hairline and the soft shadow (Julian 16.11.: the same shadows and cards in the whole app). */}
+      <View style={[{ borderRadius: R }, glass.lift]}>
+      <SwipeRow bg={tokens.row} radius={R} onDelete={() => dropEvent(e)}>
         <PressScale scale={0.985} onPress={() => { if (!justSwiped()) router.push(`/termin/${e.id}`); }} accessibilityLabel={`${e.title}, ${when}`}
-          style={{ flexDirection: 'row', gap: 12, padding: PAD, minHeight: tall, borderRadius: R, backgroundColor: tokens.dayCard, opacity: over ? 0.45 : 1 }}>
+          style={{ flexDirection: 'row', gap: 12, padding: PAD, minHeight: tall, borderRadius: R, backgroundColor: tokens.row, opacity: over ? 0.45 : 1 }}>
           <View style={{ width: 4, borderRadius: 2, backgroundColor: ink }} />
           <View style={{ flex: 1, minWidth: 0, gap: ROW_GAP }}>
             <View style={{ flexDirection: 'row', gap: 10 }}>
@@ -149,20 +152,21 @@ const TodayCard = React.memo(function TodayCard({ e, date, over }: { e: CalEvent
               <ClayIcon name={e.icon} size={28} />
             </View>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: FACE }}>
-              <Faces who={e.who} people={e.people} size={FACE} ring={tokens.dayCard} />
+              <Faces who={e.who} people={e.people} size={FACE} ring={tokens.row} />
               <View style={{ flex: 1, minWidth: 0, flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', gap: 5 }}>
                 <LineIcon name="clock" size={15} color={tokens.sub} />
                 <Txt size={14.5} line={LINE} color={tokens.sub} numberOfLines={1} style={{ flexShrink: 1, fontVariant: ['tabular-nums'] }}>{when}</Txt>
               </View>
             </View>
             {e.note ? (
-              <View style={{ borderRadius: 14, padding: 12, backgroundColor: tokens.dayNote }}>
+              <View style={{ borderRadius: 14, padding: 12, backgroundColor: tokens.chipBg }}>
                 <Txt size={15} line={21} numberOfLines={4}>{e.note}</Txt>
               </View>
             ) : null}
           </View>
         </PressScale>
       </SwipeRow>
+      </View>
     </Fresh>
   );
 });
@@ -179,16 +183,16 @@ function GroundFade({ solid }: { solid: number }) {
         <Svg width="100%" height="100%" preserveAspectRatio="none">
           <Defs>
             <LinearGradient id="dayfade" x1="0" y1="0" x2="0" y2="1">
-              <Stop offset="0" stopColor={tokens.day} stopOpacity={0} />
-              <Stop offset="0.45" stopColor={tokens.day} stopOpacity={0.5} />
-              <Stop offset="0.8" stopColor={tokens.day} stopOpacity={0.9} />
-              <Stop offset="1" stopColor={tokens.day} stopOpacity={1} />
+              <Stop offset="0" stopColor={tokens.bg} stopOpacity={0} />
+              <Stop offset="0.45" stopColor={tokens.bg} stopOpacity={0.5} />
+              <Stop offset="0.8" stopColor={tokens.bg} stopOpacity={0.9} />
+              <Stop offset="1" stopColor={tokens.bg} stopOpacity={1} />
             </LinearGradient>
           </Defs>
           <Rect x="0" y="0" width="100%" height="100%" fill="url(#dayfade)" />
         </Svg>
       </View>
-      <View style={{ height: solid + 1, marginTop: -1, backgroundColor: tokens.day }} />
+      <View style={{ height: solid + 1, marginTop: -1, backgroundColor: tokens.bg }} />
     </View>
   );
 }
@@ -197,8 +201,11 @@ function GroundFade({ solid }: { solid: number }) {
 // Reanimated's layout transition can pin a row out of place in mobile Safari.
 const slide = Platform.OS === 'web' ? undefined : rowLayout;
 
-/** `bottom` stands under today's Termine and scrolls with them (the briefing "Neu und offen"). */
-export default function TodayView({ bottom }: { bottom?: React.ReactNode }) {
+/**
+ * `bottom` stands under today's Termine and scrolls with them (the briefing "Neu und offen").
+ * `band` is the height of the solid ground under the fade, where the nav floats; 0 inside a frame without a nav.
+ */
+export default function TodayView({ bottom, band }: { bottom?: React.ReactNode; band?: number }) {
   const day = useStore((s) => s.calDay);
   const events = useCalEvents();
   const insets = useSafeAreaInsets();
@@ -295,6 +302,7 @@ export default function TodayView({ bottom }: { bottom?: React.ReactNode }) {
   const shown = useAnimatedStyle(() => ({ opacity: fade.value }));
 
   const nowHour = today ? Math.floor(now / 60) : -1;
+  const solid = band ?? navTop(insets.bottom) + dock;
   const none = !whole.length && !timed.length;
 
   return (
@@ -306,7 +314,7 @@ export default function TodayView({ bottom }: { bottom?: React.ReactNode }) {
       keyboardShouldPersistTaps="handled"
       scrollEventThrottle={16}
       onScroll={(e) => track(e.nativeEvent.contentOffset.y)}
-      contentContainerStyle={{ paddingHorizontal: 18, paddingTop: 18, paddingBottom: 150 + insets.bottom + dock }}
+      contentContainerStyle={{ paddingHorizontal: 18, paddingTop: 18, paddingBottom: solid + FADE }}
     >
       <Animated.View style={shown}>
         {info ? <Txt size={13} line={18} color={tokens.mute} numberOfLines={1} style={{ paddingBottom: 10 }}>{info}</Txt> : null}
@@ -323,7 +331,7 @@ export default function TodayView({ bottom }: { bottom?: React.ReactNode }) {
                 return (
                   <View key={h} pointerEvents="none" style={{ position: 'absolute', left: 0, right: 0, top: y - 13, height: 26, alignItems: 'center', justifyContent: 'center' }}>
                     {isNow ? (
-                      <View accessibilityLabel={tx('Jetzt', 'Now')} style={{ height: 26, paddingHorizontal: 7, borderRadius: 13, justifyContent: 'center', backgroundColor: tokens.dayCard, borderWidth: 1, borderColor: tokens.dayLine }}>
+                      <View accessibilityLabel={tx('Jetzt', 'Now')} style={[{ height: 26, paddingHorizontal: 8, borderRadius: 13, justifyContent: 'center' }, glass.line]}>
                         <Txt size={15} line={19} weight={500} numberOfLines={1}>{label}</Txt>
                       </View>
                     ) : <Txt size={15} line={19} color={tokens.sub} numberOfLines={1}>{label}</Txt>}
@@ -348,7 +356,7 @@ export default function TodayView({ bottom }: { bottom?: React.ReactNode }) {
         {today && bottom ? <View style={{ paddingTop: 22 }}>{bottom}</View> : null}
       </Animated.View>
     </ScrollView>
-    <GroundFade solid={navTop(insets.bottom) + dock} />
+    <GroundFade solid={solid} />
     </View>
   );
 }
