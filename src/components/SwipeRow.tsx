@@ -3,8 +3,11 @@
  * Rückgängig; nach rechts wischen gibt es nicht). A short swipe parks the row
  * on the red tx('Löschen', 'Delete') button; a long or fast swipe deletes right away.
  * Rightward drags meet rubber-band resistance and spring back.
+ *
+ * `pager`: the row lies on a page that itself pages sideways (the day in Heute). A closed row then takes only the
+ * drag to the left; the drag to the right is left to the page. A row parked on its button still closes to the right.
  */
-import React, { useCallback } from 'react';
+import React, { useCallback, useState } from 'react';
 import { View, Pressable, LayoutChangeEvent } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring, withTiming, interpolate, Extrapolation } from 'react-native-reanimated';
@@ -20,9 +23,13 @@ const OPEN = 96;
 /** A drag must not also count as a tap on the row: on web the press still fires after the swipe. */
 let swipedAt = 0;
 export const justSwiped = () => Date.now() - swipedAt < 400;
+/** For a page that pages sideways itself: its drag must not count as a tap on the row either. */
+export const markSwiped = () => { swipedAt = Date.now(); };
 
-export default function SwipeRow({ children, onDelete, bg = tokens.row, radius = 0 }: { children: React.ReactNode; onDelete: () => void; bg?: string; /** A card: the red button behind it takes the card's corners. */ radius?: number }) {
+export default function SwipeRow({ children, onDelete, bg = tokens.row, radius = 0, pager = false }: { children: React.ReactNode; onDelete: () => void; bg?: string; /** A card: the red button behind it takes the card's corners. */ radius?: number; /** On a page that pages sideways: a closed row leaves the drag to the right to it. */ pager?: boolean }) {
   const x = useSharedValue(0);
+  // Parked on the red button: only then a row on a pager also takes the drag to the right (it closes).
+  const [parked, setParked] = useState(false);
   const start = useSharedValue(0);
   const w = useSharedValue(360);
   const armed = useSharedValue(false);
@@ -31,11 +38,11 @@ export default function SwipeRow({ children, onDelete, bg = tokens.row, radius =
   const buzz = useCallback(() => haptics.commit(), []);
   const fire = useCallback(() => { onDelete(); }, [onDelete]);
   const tick = useCallback(() => haptics.select(), []);
-  const mark = useCallback(() => { swipedAt = Date.now(); }, []);
+  const mark = markSwiped;
 
-  const pan = Gesture.Pan()
-    .activeOffsetX([-12, 12])
-    .failOffsetY([-10, 10])
+  let pan = Gesture.Pan().failOffsetY([-10, 10]);
+  pan = pager && !parked ? pan.activeOffsetX(-12).failOffsetX(12) : pan.activeOffsetX([-12, 12]);
+  pan = pan
     .onBegin(() => { start.value = x.value; })
     .onStart(() => { scheduleOnRN(mark); })
     .onUpdate((e) => {
@@ -53,8 +60,10 @@ export default function SwipeRow({ children, onDelete, bg = tokens.row, radius =
         x.value = withTiming(-w.value, { duration: motion.micro, easing: easing.out }, (done) => { if (done) scheduleOnRN(fire); });
       } else if (-x.value > OPEN * 0.6) {
         x.value = withSpring(-OPEN, { ...springs.smooth, velocity: e.velocityX });
+        if (pager) scheduleOnRN(setParked, true);
       } else {
         x.value = withSpring(0, { ...springs.snapBack, velocity: e.velocityX });
+        if (pager) scheduleOnRN(setParked, false);
       }
       armed.value = false;
     });
