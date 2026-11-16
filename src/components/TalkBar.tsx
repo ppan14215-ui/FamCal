@@ -9,7 +9,7 @@
  * lines, then scrolls inside (Julian 27.10.).
  */
 import React, { useEffect, useRef, useState } from 'react';
-import { voiceLevel, setBuddy } from '../lib/buddy';
+import { voiceLevel, setBuddy, dockIn, dockOut } from '../lib/buddy';
 import { View, TextInput, Platform, Image } from 'react-native';
 import Txt from './ui/Txt';
 import LineIcon from './ui/LineIcon';
@@ -23,7 +23,7 @@ import Animated, { useSharedValue, withTiming, LinearTransition, FadeIn, FadeOut
 const MORPH = LinearTransition.duration(240).easing(Easing.bezier(0.23, 1, 0.32, 1));
 const SHOW = FadeIn.duration(180);
 const HIDE = FadeOut.duration(120);
-import { tokens, fonts, glass } from '../theme';
+import { tokens, fonts, blend } from '../theme';
 import { haptics } from '../lib/haptics';
 import { setTyping } from '../lib/keyboard';
 import { LIVE } from '../lib/live';
@@ -37,6 +37,8 @@ import { track } from '../lib/analytics';
 import { speechLocale, speechLang } from '../lib/speechLang';
 import { setSpeak, getSpeak, speakHandlers } from '../lib/speak';
 import MemoMic from './buddy/MemoMic';
+import Pin from './buddy/Pin';
+import { useMascot } from '../lib/mascot';
 import { usePics, dropPic, takePics } from '../lib/attach';
 import { readLines } from '../lib/screenshot';
 
@@ -61,8 +63,6 @@ const ANDROID_SILENCE_MS = MAX_MS;
 
 const LINE = 22;
 const PAD = 11;
-const MIN_H = LINE + PAD * 2;
-const MAX_H = LINE * 4 + PAD * 2;
 
 // A long hint stays on one line and ends in dots instead of growing the field.
 if (Platform.OS === 'web' && typeof document !== 'undefined') {
@@ -103,8 +103,13 @@ type Props = {
   onBusy?: () => void;
   /** Julian 08.11.: speaking turns the bar into the Sprechkarte (SpeakCard in the Dock) instead of a wave in the field. */
   speakCard?: boolean;
-  /** Klar (Julian 13.11.): the glass card that grows out of Memo. Text on top; below it plus, mic, a hint and send. */
+  /**
+   * Klar (Julian 13.11.): the card that grows out of Memo, for typing. Since 16.11. dark like the Sprechkarte, with Memo
+   * in the same place ("immer im schwarzen Feld bleiben"): the words on top; below Memo, a hint, plus and send.
+   */
   klar?: boolean;
+  /** Klar off the tabs (Termin ändern): with nothing in it and no cursor the card is one slim dark line. */
+  slim?: boolean;
 };
 
 // Listeners of the last recording, shared by every TalkBar: the phone has one recognizer, and a bar that was swapped
@@ -113,7 +118,7 @@ const lastSubs = { current: [] as { remove: () => void }[] };
 /** Counts recordings, so a timer or event of an older recording never touches the one running now (Julian 11.11.). */
 let recSeq = 0;
 
-export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, onClose, split, card, dark, onIdle, onBusy, speakCard, klar, placeholder = tx('Sag oder schreib, was ansteht …', 'Say or type what\'s coming up …') }: Props) {
+export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, onClose, split, card, dark, onIdle, onBusy, speakCard, klar, slim, placeholder = tx('Sag oder schreib, was ansteht …', 'Say or type what\'s coming up …') }: Props) {
   const [text, setText] = useState('');
   const pics = usePics();
   const [listening, setListening] = useState(false);
@@ -129,7 +134,15 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, o
   const level = voiceLevel;
   const micStyle = useMicStyle();
   const [demo, setDemo] = useState(false);
+  // Klar writes a little larger, on the dark card.
+  const LN = klar ? 24 : LINE;
+  const MIN_H = LN + PAD * 2;
+  const MAX_H = LN * 4 + PAD * 2;
   const [boxH, setBoxH] = useState(MIN_H);
+  const [focused, setFocused] = useState(false);
+  const minimal = useMascot() === 'minimal';
+  // Klar off the tabs: Memo lives in this field (at the end of the line, or in the open card), so the floating one stays away.
+  useEffect(() => { if (!klar || !slim) return; dockIn(); return () => { dockOut(); }; }, [klar, slim]);
   const field = useRef<TextInput>(null);
   const blurT = useRef<ReturnType<typeof setTimeout>>(undefined);
   const turn = useRef(0);
@@ -554,16 +567,20 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, o
     </PressScale>
   );
 
+  /** The words stand on ink: in the one dark bar, and in klar always (Julian 16.11.). */
+  const onDark = (card && dark) || !!klar;
+  // Klar off the tabs, at rest: one slim line. The field keeps its place in the tree, so the first tap does not lose the cursor.
+  const kLine = !!klar && !!slim && !text && !pics.length && !focused && !listening && !writing;
   const fieldBox = (
       <View style={card ? { alignSelf: 'stretch' } : { flex: 1, minWidth: 0 }}>
       <TextInput
         ref={field}
         onFocus={() => {
-          clearTimeout(blurT.current); setTyping(true);
+          clearTimeout(blurT.current); setTyping(true); setFocused(true);
           if (listening) { typed.current = true; timers.current.forEach(clearTimeout); setDemo(false); toKeys.current?.(); }
         }}
         // Tapping send blurs the field first; wait so the button does not move away under the finger.
-        onBlur={() => { blurT.current = setTimeout(() => { setTyping(false); if (onIdle && !textRef.current.trim() && !listeningRef.current) onIdle(); }, 350); }}
+        onBlur={() => { blurT.current = setTimeout(() => { setTyping(false); setFocused(false); if (onIdle && !textRef.current.trim() && !listeningRef.current) onIdle(); }, 350); }}
         multiline
         value={text}
         onChangeText={setText}
@@ -577,16 +594,17 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, o
         }}
         scrollEnabled={boxH >= MAX_H}
         editable={!demo}
-        placeholder={writing ? tx('Schreibe auf …', 'Writing it down …') : listening && wavy ? '' : listening ? tx('Ich höre zu … Tippe ✓ wenn fertig', 'Listening … Tap ✓ when done') : placeholder}
-        placeholderTextColor={dark ? 'rgba(255,255,255,0.55)' : tokens.mute}
-        selectionColor={tokens.select} cursorColor={card && dark ? tokens.onInk : tokens.ink}
+        // The slim line writes its hint itself (one line that ends in dots on every phone).
+        placeholder={kLine ? '' : writing ? tx('Schreibe auf …', 'Writing it down …') : listening && wavy ? '' : listening ? tx('Ich höre zu … Tippe ✓ wenn fertig', 'Listening … Tap ✓ when done') : placeholder}
+        placeholderTextColor={dark || klar ? 'rgba(255,255,255,0.55)' : tokens.mute}
+        selectionColor={tokens.select} cursorColor={onDark ? tokens.onInk : tokens.ink}
         returnKeyType={TOUCH ? 'default' : 'send'}
         accessibilityLabel={tx('Was steht an?', 'What\'s on?')}
-        style={[{ width: '100%', height: boxH, marginBottom: card && !text ? 0 : 2, fontFamily: fonts[400], fontSize: split ? 16 : 16.5, lineHeight: LINE, color: card && dark ? tokens.onInk : tokens.ink, paddingVertical: PAD, paddingHorizontal: split ? 3 : 8, textAlignVertical: 'top', includeFontPadding: false }, Platform.OS === 'web' ? ({ outlineStyle: 'none' } as any) : null]}
+        style={[{ width: '100%', height: boxH, marginBottom: (card && !text) || klar ? 0 : 2, fontFamily: fonts[klar ? 500 : 400], fontSize: klar ? 18 : split ? 16 : 16.5, lineHeight: LN, color: onDark ? tokens.onInk : tokens.ink, paddingVertical: PAD, paddingHorizontal: klar ? 0 : split ? 3 : 8, textAlignVertical: 'top', includeFontPadding: false }, Platform.OS === 'web' ? ({ outlineStyle: 'none' } as any) : null]}
       />
       {listening && wavy ? (
-        <View pointerEvents="none" style={{ position: 'absolute', left: split ? 3 : 8, right: 6, top: 0, bottom: 2, justifyContent: 'center' }}>
-          <VoiceWaves level={level} color={card && dark ? tokens.onInk : undefined} />
+        <View pointerEvents="none" style={{ position: 'absolute', left: klar ? 0 : split ? 3 : 8, right: 6, top: 0, bottom: 2, justifyContent: 'center' }}>
+          <VoiceWaves level={level} color={onDark ? tokens.onInk : undefined} />
         </View>
       ) : null}
       </View>
@@ -620,10 +638,10 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, o
     <Animated.View key="a" layout={MORPH} entering={SHOW} exiting={HIDE} style={{ flexDirection: 'row', gap: 8, paddingTop: 6, paddingHorizontal: card ? 2 : 6 }}>
       {pics.map((p) => (
         <Animated.View key={p.id} layout={MORPH} entering={SHOW} exiting={HIDE} style={{ width: 64, height: 64 }}>
-          <Image source={{ uri: p.uri }} style={{ width: 64, height: 64, borderRadius: 12, backgroundColor: tokens.chipBg, borderWidth: 1, borderColor: dark ? 'rgba(255,255,255,0.18)' : tokens.hair }} />
+          <Image source={{ uri: p.uri }} style={{ width: 64, height: 64, borderRadius: 12, backgroundColor: tokens.chipBg, borderWidth: 1, borderColor: dark || klar ? 'rgba(255,255,255,0.18)' : tokens.hair }} />
           <PressScale accessibilityLabel={tx('Bild entfernen', 'Remove picture')} hitSlop={8} onPress={() => { haptics.select(); dropPic(p.id); }}
-            style={{ position: 'absolute', right: -6, top: -6, width: 22, height: 22, borderRadius: 11, alignItems: 'center', justifyContent: 'center', backgroundColor: tokens.ink, borderWidth: 1.5, borderColor: dark ? tokens.ink : tokens.row }}>
-            <LineIcon name="x" size={12} color={tokens.onInk} stroke={2.4} />
+            style={{ position: 'absolute', right: -6, top: -6, width: 22, height: 22, borderRadius: 11, alignItems: 'center', justifyContent: 'center', backgroundColor: dark || klar ? tokens.onInk : tokens.ink, borderWidth: 1.5, borderColor: dark || klar ? tokens.ink : tokens.row }}>
+            <LineIcon name="x" size={12} color={dark || klar ? tokens.ink : tokens.onInk} stroke={2.4} />
           </PressScale>
         </Animated.View>
       ))}
@@ -649,26 +667,57 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, o
     </Animated.View>
   );
 
-  // Klar (Julian 13.11.): the same card Memo speaks in, now for typing. Text on top, the buttons in one row below.
-  const klarBtn = { width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center' } as const;
+  // Klar: the same dark card Memo speaks in, now for typing (Julian 16.11.: "immer im schwarzen Feld bleiben"). The
+  // words on top; below Memo in his place from the Sprechkarte (a tap and he listens), a hint, plus and send. Its
+  // edges, the row and Memo's place follow KlarCard in SpeakCard.tsx, so the change between the two is only the words.
+  const kDim = (a: number) => blend(tokens.ink, tokens.onInk, a);
+  const KS = 52.5;
+  const kChip = { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' } as const;
+  const kPlus = onPlus ? (
+    <PressScale accessibilityLabel={tx('Foto, Termin, Aufgabe', 'Photo, event, task')} onPress={() => onPlus()} style={[kChip, { backgroundColor: kDim(0.14) }]}>
+      <LineIcon name="plus" size={18} color={tokens.onInk} stroke={2} />
+    </PressScale>
+  ) : null;
   const klarInput = (
-    <View style={[{ borderRadius: 24, paddingTop: 6, paddingHorizontal: 12, paddingBottom: 10, gap: 2 }, glass.card]}>
-      {picRow}
-      <View style={{ alignSelf: 'stretch' }}>{fieldBox}</View>
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-        <PressScale accessibilityLabel={listening ? tx('Fertig gesprochen', 'Done speaking') : tx('Sprechen', 'Speak')} onPress={listen} style={[klarBtn, { backgroundColor: listening ? tokens.ink : tokens.chipBg }]}>
-          {listening ? <LineIcon name="check" size={18} color={tokens.onInk} stroke={2.4} /> : <LineIcon name="mic" size={18} color={tokens.ink} />}
-        </PressScale>
-        {onPlus ? (
-          <PressScale accessibilityLabel={tx('Foto, Termin, Aufgabe', 'Photo, event, task')} onPress={() => onPlus()} style={[klarBtn, { backgroundColor: tokens.chipBg }]}>
-            <LineIcon name="plus" size={18} color={tokens.ink} stroke={2} />
-          </PressScale>
-        ) : null}
-        <Txt size={13} color={tokens.mute} numberOfLines={1} style={{ flex: 1, minWidth: 0, paddingLeft: 2 }}>{tx('Sprechen oder tippen', 'Speak or type')}</Txt>
-        <PressScale accessibilityLabel={tx('Senden', 'Send')} disabled={!live} onPress={finishAndSend} style={[klarBtn, { backgroundColor: live ? tokens.ink : tokens.chipBg }]}>
-          <LineIcon name="up" size={18} color={live ? tokens.onInk : tokens.mute} stroke={2.2} />
-        </PressScale>
+    <View style={[{ backgroundColor: tokens.ink, borderRadius: 26, boxShadow: '0 12px 28px rgba(17,20,23,0.24)' } as any,
+      kLine ? { height: 52, flexDirection: 'row', alignItems: 'center', gap: 10, paddingLeft: 8, paddingRight: 5 } : { paddingTop: 4, paddingLeft: 14, paddingRight: 12, paddingBottom: 10 }]}>
+      {kLine ? <View key="p">{kPlus}</View> : picRow}
+      <View key="f" style={kLine ? { flex: 1, minWidth: 0, justifyContent: 'center' } : { alignSelf: 'stretch' }}>
+        {fieldBox}
+        {kLine ? <View pointerEvents="none" style={{ position: 'absolute', left: 0, right: 0 }}><Txt size={16.5} weight={500} color="rgba(255,255,255,0.55)" numberOfLines={1}>{placeholder}</Txt></View> : null}
       </View>
+      {kLine ? (
+        <View key="m"><MemoMic box={42} size={KS} ground={tokens.ink} onPress={listen} /></View>
+      ) : (
+        <View key="r" style={{ height: 44, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+          <PressScale scale={0.92} accessibilityLabel={listening ? tx('Fertig gesprochen', 'Done speaking') : minimal ? tx('Sprechen', 'Speak') : tx('Memo, tippen zum Sprechen', 'Memo, tap to talk')} onPress={listen} hitSlop={6}
+            style={{ width: KS, height: 44, alignItems: 'center', justifyContent: 'center' }}>
+            {/* Without the Sprechkarte (the first run's try step) the recording shows here, so its stop is a clear check. */}
+            {minimal || (listening && !speakCard) ? (
+              <View style={[kChip, { width: 34, height: 34, borderRadius: 17, backgroundColor: listening ? tokens.onInk : kDim(0.14) }]}>
+                {listening ? <LineIcon name="check" size={18} color={tokens.ink} stroke={2.4} /> : <LineIcon name="mic" size={17} color={tokens.onInk} />}
+              </View>
+            ) : (
+              <View pointerEvents="none" style={{ width: KS, height: KS, transform: [{ translateY: -KS * 0.04 }] }}>
+                <Pin size={KS} mood={listening ? 'listen' : writing ? 'think' : text ? 'type' : 'idle'} typeAt={{ x: Math.round(0.8 * Math.min(1, text.length / 40) * 10) / 10, y: -0.85 }} level={level} ground={tokens.ink} />
+              </View>
+            )}
+          </PressScale>
+          {/* With words in it the send button says what is next; the hint is for the empty card. */}
+          <Txt size={13} color={kDim(0.6)} numberOfLines={1} style={{ flex: 1, minWidth: 0 }}>{live ? '' : tx('Sprechen oder tippen', 'Speak or type')}</Txt>
+          {kPlus}
+          {live ? (
+            <PressScale accessibilityLabel={tx('Senden', 'Send')} onPress={finishAndSend} style={{ height: 36, paddingLeft: 15, paddingRight: 11, borderRadius: 18, flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: tokens.onInk }}>
+              <Txt size={14.5} weight={600} color={tokens.ink}>{tx('Senden', 'Send')}</Txt>
+              <LineIcon name="up" size={16} color={tokens.ink} stroke={2.3} />
+            </PressScale>
+          ) : (
+            <View accessibilityLabel={tx('Senden', 'Send')} style={[kChip, { backgroundColor: kDim(0.14) }]}>
+              <LineIcon name="up" size={18} color={kDim(0.45)} stroke={2.2} />
+            </View>
+          )}
+        </View>
+      )}
     </View>
   );
 

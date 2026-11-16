@@ -128,12 +128,17 @@ const THINK_MIN = 300;
  * Presentation only: what is recorded, written down and sent stays in TalkBar; this reads the state and calls the
  * handlers. The shape is one empty box that changes size; the words lie over it and only fade.
  */
-function KlarCard() {
-  const s = useSpeak();
+function KlarCard({ seat }: { seat?: 'right' }) {
+  const now = useSpeak();
   const b = useBuddy();
   const veil = useVeil();
   const mo = useMemoOut();
-  const open = speakOpen(s);
+  const open = speakOpen(now);
+  // What the card shows. While it closes it keeps its last words and buttons, so nothing else flashes up on the way
+  // out (Julian 16.11.: the dark card stays when typing takes over, only its words change).
+  const kept = useRef(now);
+  if (open) kept.current = now;
+  const s = open ? now : kept.current;
   const minimal = useMascot() === 'minimal';
   const reduced = useReducedMotion();
   const listening = s.phase === 'listen';
@@ -194,9 +199,11 @@ function KlarCard() {
   const BODY = S * 0.8;
   // Pin draws its body a little below the middle of its box (0.04 of its size).
   const PIN_DY = S * 0.04;
+  // Memo's seat, from the middle: in the nav pill, or (off the tabs, Termin ändern) at the right end of the dark line.
+  const home = seat === 'right' ? CW / 2 - 26 : mo.dx;
   const geo = (st: Stage) => (st === 'card' ? { w: CW, h: CH, r: 26, cx: CW / 2, yb: 0, px: K_PAD.l + S / 2, py: K_PAD.b + K_ROW / 2 + PIN_DY }
     : st === 'think' ? { w: BUB_W, h: BUB_H, r: BUB_H / 2, cx: CW / 2, yb: (NAV - BUB_H) / 2, px: CW / 2, py: NAV / 2 + PIN_DY }
-    : { w: BODY, h: BODY, r: BODY / 2, cx: CW / 2 + mo.dx, yb: NAV / 2 - 0.2 - BODY / 2, px: CW / 2 + mo.dx, py: NAV / 2 - 0.2 + PIN_DY });
+    : { w: BODY, h: BODY, r: BODY / 2, cx: CW / 2 + home, yb: NAV / 2 - 0.2 - BODY / 2, px: CW / 2 + home, py: NAV / 2 - 0.2 + PIN_DY });
   const g0 = geo('rest');
   const w = useSharedValue(g0.w), h = useSharedValue(g0.h), r = useSharedValue(g0.r), cx = useSharedValue(g0.cx), yb = useSharedValue(g0.yb);
   const px = useSharedValue(g0.px), py = useSharedValue(g0.py);
@@ -209,15 +216,27 @@ function KlarCard() {
     prev.current = stage;
     const g = geo(stage);
     const moved = from !== stage;
+    // The other way round (Memo tapped in the typing card): the dark card already stands there, so the shape is simply
+    // there too and does not grow out of his seat again.
+    const fromKeys = moved && from === 'rest' && stage === 'card' && typing;
     // A new place travels. A new width of the screen (or Memo's place measured) just sets it.
-    const d = reduced || !moved ? 0 : stage === 'card' ? 300 : TRAVEL;
+    const d = reduced || !moved || fromKeys ? 0 : stage === 'card' ? 300 : TRAVEL;
     const T = { duration: d, easing: MORPH };
     const to = (v: SharedValue<number>, x: number) => { v.value = d ? withTiming(x, T) : x; };
-    to(w, g.w); to(h, g.h); to(r, g.r); to(cx, g.cx); to(yb, g.yb); to(px, g.px); to(py, g.py);
+    // The keyboard's input takes over ("Aa"). Julian 16.11.: "immer im schwarzen Feld bleiben": the typing card is the
+    // same dark card in the same place, so the shape does not travel home. It stays until the typing card stands under
+    // it, then goes; only after that (unseen) it is set back to Memo's seat for the next time.
+    const handOver = moved && from === 'card' && stage === 'rest' && (typing || mode === 'input') && !reduced;
+    const hid = (v: SharedValue<number>, x: number) => { v.value = withDelay(260, withTiming(x, { duration: 1 })); };
+    const go = handOver ? hid : to;
+    go(w, g.w); go(h, g.h); go(r, g.r); go(cx, g.cx); go(yb, g.yb); go(px, g.px); go(py, g.py);
     to(ps, stage === 'think' ? BUB_PIN : 1);
     if (!moved) return;
-    if (stage === 'rest' && (typing || mode === 'input')) {
-      // The keyboard's input takes over ("Aa"): there is no nav to go home to, so he simply fades on the way.
+    if (handOver) {
+      so.value = withDelay(110, withTiming(0, { duration: 120 }));
+      po.value = withDelay(110, withTiming(0, { duration: 60 }));
+    } else if (stage === 'rest' && (typing || mode === 'input')) {
+      // No card to hand over from (the thinking bubble): there is no nav to go home to, so he simply fades on the way.
       so.value = withTiming(0, { duration: reduced ? 0 : 140 });
       po.value = withTiming(0, { duration: reduced ? 0 : 100 });
     } else if (stage === 'rest') {
@@ -225,7 +244,7 @@ function KlarCard() {
       so.value = withDelay(d, withTiming(0, { duration: 60 }));
       po.value = withDelay(d + 90, withTiming(0, { duration: 1 }));
     } else { so.value = 1; po.value = 1; }
-  }, [stage, CW, mo.dx]);
+  }, [stage, CW, home]);
   // The open card grows and shrinks with its words, like a text field. Only then: on the way out the words change
   // too, and that must not cut the journey short.
   useEffect(() => { if (prev.current === 'card' && stage === 'card') h.value = reduced ? CH : withTiming(CH, { duration: 180, easing: OUT }); }, [CH]);
@@ -253,13 +272,14 @@ function KlarCard() {
 
   // The recording's clock.
   const [sec, setSec] = useState(0);
+  const recording = now.phase === 'listen';
   useEffect(() => {
-    if (!listening) return;
+    if (!recording) return;
     const t0 = Date.now();
     setSec(0);
     const id = setInterval(() => setSec(Math.floor((Date.now() - t0) / 1000)), 500);
     return () => clearInterval(id);
-  }, [listening]);
+  }, [recording]);
 
   const tail = (t: string, max: number) => (t.length > max ? '… ' + t.slice(t.length - max).replace(/^\S*\s/, '') : t);
   const sure = words ? tail(s.live!.sure, Math.max(0, 170 - s.live!.part.length)) : '';
@@ -269,7 +289,7 @@ function KlarCard() {
   const ON = tokens.onInk;
   const dim = (a: number) => blend(tokens.ink, tokens.onInk, a);
   const night = stage === 'rest' && !thinking && isNight();
-  const mood = listening ? 'listen' : writing || thinking ? 'think' : done ? 'happy' : night ? 'sleep' : 'idle';
+  const mood = recording ? 'listen' : now.phase === 'write' || thinking ? 'think' : now.phase === 'done' ? 'happy' : night ? 'sleep' : 'idle';
   const clock = `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}`;
 
   return (
@@ -366,8 +386,8 @@ function KlarCard() {
   );
 }
 
-export default function SpeakCard(props: { barH: number; from: string; klar?: boolean }) {
-  return props.klar ? <KlarCard /> : <BigCard {...props} />;
+export default function SpeakCard(props: { barH: number; from: string; klar?: boolean; seat?: 'right' }) {
+  return props.klar ? <KlarCard seat={props.seat} /> : <BigCard {...props} />;
 }
 
 function BigCard({ barH, from }: { barH: number; from: string }) {

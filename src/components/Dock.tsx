@@ -27,6 +27,7 @@ import MemoMic from './buddy/MemoMic';
 import { setSpeak, getSpeak, useSpeak, speakOpen, speakDone, parseHour } from '../lib/speak';
 import { settle as settleTime } from './ChatCards';
 import { setVeil } from './Veil';
+import { useMemoOut } from '../lib/memoOut';
 import { tokens, persons, fonts, easing, glass } from '../theme';
 import { useStore, actions, get, toast } from '../state/store';
 import { plan, splitItems, claudeSays, replyPlan, listFromClaude, asksNewList, thinksOnline, revisePlan, reviseOffline, draftOf, cutOff, addPicks, settleWork, clashLine, dishy, linkPlan, Ctx, Plan, Result, Said, SPOKEN, PLACEHOLDER } from '../lib/act';
@@ -545,8 +546,26 @@ export default function Dock() {
   const klarOpen = klar && (typing || barRaw === 'input');
   const klarShow = klarOpen && !cardOpen;
   const kA = useSharedValue(klarShow ? 1 : 0);
-  useEffect(() => { kA.value = withTiming(klarShow ? 1 : 0, { duration: klarShow ? 240 : 140, easing: Easing.bezier(0.23, 1, 0.32, 1) }); }, [klarShow]);
-  const klarStyle = useAnimatedStyle((): any => ({ opacity: kA.value, transform: [{ scale: 0.92 + 0.08 * kA.value }] }));
+  // Julian 16.11.: "immer im schwarzen Feld bleiben". Between the Sprechkarte and typing the dark card stays where it
+  // is and only its words change, so the typing card neither grows out of Memo nor shrinks back then.
+  const kPop = useSharedValue(1);
+  const nearCard = useRef(false);
+  useEffect(() => { if (cardOpen) { nearCard.current = true; return; } const t = setTimeout(() => { nearCard.current = false; }, 400); return () => clearTimeout(t); }, [cardOpen]);
+  useEffect(() => {
+    const stay = nearCard.current || cardOpen;
+    kPop.value = stay ? 0 : 1;
+    kA.value = withTiming(klarShow ? 1 : 0, { duration: stay ? 120 : klarShow ? 240 : 140, easing: Easing.bezier(0.23, 1, 0.32, 1) });
+  }, [klarShow]);
+  const klarStyle = useAnimatedStyle((): any => ({ opacity: kA.value, transform: [{ scale: 1 - 0.08 * kPop.value * (1 - kA.value) }] }));
+  // Klar off the tabs (Termin ändern, Julian 16.11.: "dann kriegen wir wieder das alte Input Field"): the same dark
+  // field. There is no nav pill, so at rest it is one slim dark line with Memo at its right end; the Sprechkarte grows
+  // out of him there, and the line steps back while the card or the thinking bubble is out.
+  const klarOff = !!where && !onTabs && navStyle() === 'klar';
+  const memoOut = useMemoOut();
+  const offAway = klarOff && (cardOpen || memoOut.away);
+  const oA = useSharedValue(offAway ? 0 : 1);
+  useEffect(() => { oA.value = withTiming(offAway ? 0 : 1, { duration: offAway ? 120 : 260, easing: Easing.bezier(0.23, 1, 0.32, 1) }); }, [offAway]);
+  const offStyle = useAnimatedStyle(() => ({ opacity: oA.value }));
   const liveQ = useRef<any>({});
   // Memo never sits on a card above the field (Julian 08.11.: "make sure the mascot doesn't overlap").
   useEffect(() => { setBuddy({ covered: !!turn && !cardOpen }); return () => setBuddy({ covered: false }); }, [!!turn, cardOpen]);
@@ -1087,6 +1106,27 @@ export default function Dock() {
           </Animated.View>
         )}
       </View>
+      ) : klarOff ? (
+      <View onLayout={(e) => setFieldH(e.nativeEvent.layout.height)} pointerEvents={offAway ? 'none' : 'box-none'} style={{ minHeight: navH(), justifyContent: 'flex-end' }}>
+        <Animated.View style={offStyle}>
+          {priv.ohneKi ? <View style={{ borderRadius: 26, backgroundColor: tokens.ink }}><ManualField dark h={navH()} /></View> : (
+            <TalkBar
+              key={kind}
+              klar
+              slim
+              speakCard
+              onIdle={() => setBarMode('rest')}
+              onBusy={() => setBarMode('input')}
+              onSend={hear}
+              onPlus={() => router.push('/neu')}
+              spoken={SPOKEN[kind]}
+              listenKey={listenKey}
+              focusKey={focusKey}
+              placeholder={resumed ? tx(`Weiter zu „${resumed.said.slice(0, 24)}“ …`, `More on “${resumed.said.slice(0, 24)}” …`) : turn?.result.kind === 'cut' ? tx('Sprich einfach weiter …', 'Just keep talking …') : PLACEHOLDER[kind]}
+            />
+          )}
+        </Animated.View>
+      </View>
       ) : bar ? (
       // Julian 05.11. 08:48: one dark shape at the bottom; tab icon and field share it and it morphs as one piece.
       <View onLayout={(e) => setFieldH(e.nativeEvent.layout.height)} style={[{ alignSelf: 'flex-end', width: W - 28, borderRadius: 27, backgroundColor: tokens.ink }, floatShadow]}>
@@ -1155,7 +1195,7 @@ export default function Dock() {
       </Animated.View>
       </Animated.View>
       )}
-      {onTabs && !priv.ohneKi ? <SpeakCard klar={klar} barH={bar ? D : 52} from={bar ? tokens.ink : tokens.row} /> : null}
+      {(onTabs || klarOff) && !priv.ohneKi ? <SpeakCard klar={klar || klarOff} seat={klarOff ? 'right' : undefined} barH={bar ? D : 52} from={bar ? tokens.ink : tokens.row} /> : null}
     </Animated.View>
     </Other.Provider>
   );

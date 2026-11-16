@@ -188,7 +188,8 @@ export default function BuddyHost() {
   const away = useSharedValue(1);
   const hv = useSharedValue(1);
   useEffect(() => { away.value = withTiming(inCard ? 0 : 1, { duration: inCard ? (docked && !blocked ? 0 : 120) : 220, easing: Easing.bezier(0.23, 1, 0.32, 1) }); }, [inCard]);
-  useEffect(() => { hv.value = withTiming(blocked ? 0 : 1, { duration: 140 }); }, [blocked]);
+  // The hint also steps aside while you type: the typing card lies where it would stand (Julian 16.11., dark field).
+  useEffect(() => { hv.value = withTiming(blocked || typing ? 0 : 1, { duration: 140 }); }, [blocked, typing]);
   const st = useAnimatedStyle(() => ({ opacity: o.value, transform: [{ translateX: x.value }, { translateY: y.value }] as any }));
   const bodyStyle = useAnimatedStyle(() => ({ opacity: away.value }));
   // Glance at the last touch, relative to where Memo sits.
