@@ -492,12 +492,13 @@ function Probe({ me, du, familie, ev, setEv, docked, setDocked, pad, onDone }: {
   const people: Persons = useMemo(() => ({ J: { ...appPersons.J, name: me || tx('Du', 'You') }, T: { ...appPersons.T, name: du || tx('Partner', 'Partner') } }), [me, du]);
   const insets = useSafeAreaInsets();
   // Where the calendar box sits on the screen, so the new line can be brought into view inside it.
+  // locate puts a far target at 0.3 of `height` from the top of the window: here that must be just under the week strip of the box.
   const frame = useRef<View>(null);
   const showLine = (id: string) => {
     light(id);
     const f = frame.current as any;
     if (!f?.measureInWindow) return;
-    f.measureInWindow((_x: number, y: number, _w: number, h: number) => locate(id, { top: y + 96, floor: y + h - 24, height: h }, () => {}));
+    f.measureInWindow((_x: number, y: number, _w: number, h: number) => locate(id, { top: y + 140, floor: y + h - 24, height: (y + 150) / 0.3 }, () => {}));
   };
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
   const later = (ms: number, fn: () => void) => { timers.current.push(setTimeout(fn, ms)); };
