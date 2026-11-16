@@ -4,6 +4,10 @@ Alle sichtbaren Änderungen an FamCal. Neueste oben. Agenten und Menschen: Ände
 
 ## Unreleased
 
+### Gelöschte Termine aus dem Handykalender bleiben weg (16.11.)
+- Ein Termin aus Google, den der Assistent gelöscht hat (gesprochen oder getippt), kam beim nächsten Abgleich zurück. Jetzt merkt sich die App jedes Löschen an einer Stelle, egal auf welchem Weg, auch wenn gerade ein Abgleich läuft. Rückgängig holt ihn wieder.
+- Server: Termine sind jetzt je Familie eindeutig (Migration events_key_per_family). Vorher stießen Termine aus dem Handykalender mit gleichen Nummern einer anderen Familie zusammen und das Speichern wurde abgelehnt.
+
 ### Live Wörter beim Sprechen (15.11.)
 - Das Mikrofon geht beim Sprechen direkt zu ElevenLabs Scribe Echtzeit. Die Sprechkarte zeigt die aktuelle Vermutung grau und bestätigte Wörter fest, auch wenn Deutsch und Englisch gemischt werden.
 - Fällt die Verbindung aus, geht dieselbe Aufnahme einmal den bisherigen Weg. Ohne das neue Mikrofon Modul (alte App) bleibt alles wie zuvor.
