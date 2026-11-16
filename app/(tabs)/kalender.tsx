@@ -1,5 +1,6 @@
 /**
- * Kalender: everything with a time. Heute is the endless list by day. Tage, Woche, Monat and Jahr are zoom
+ * Kalender: everything with a time. Heute is one day under the strip of its week, after the reference Julian
+ * chose (16.11.: "screen 8 should be reference for our today view"). Tage, Woche, Monat and Jahr are zoom
  * steps of one calendar (Julian 14.11.: "zoom in and out should auto move between days and weeks view,
  * snap to next view"): a pinch moves one step closer or further and snaps there, the chips do the same by tap.
  */
@@ -15,7 +16,7 @@ import Txt from '../../src/components/ui/Txt';
 import LineIcon from '../../src/components/ui/LineIcon';
 import HeaderRight from '../../src/components/ui/HeaderRight';
 import { useStore, actions, get, CalView } from '../../src/state/store';
-import AgendaView from '../../src/screens/kalender/AgendaView';
+import TodayView, { WeekStrip } from '../../src/screens/kalender/TodayView';
 import Briefing from '../../src/screens/kalender/Briefing';
 import WeekView from '../../src/screens/kalender/WeekView';
 import MonthView, { monthTitle } from '../../src/screens/kalender/MonthView';
@@ -174,11 +175,15 @@ export default function Kalender() {
     setOpen((o) => !o);
   };
   const choose = (v: CalView) => { actions.setCalView(v); if (v === 'heute') actions.setCalDay(TODAY); };
+  // Heute once more, while another day of the strip is chosen: back to today.
+  const again = (v: CalView) => { if (v === 'heute' && get().calDay !== TODAY) { haptics.select(); actions.setCalDay(TODAY); } };
+  // Heute lies on the grey ground of the reference, so its hairline is the one for that ground.
+  const tabLine = view === 'heute' ? tokens.dayLine : tokens.hair;
   const seg = simple ? (
-    <Tabs items={VIEWS} value={view} onChange={choose} bleed={18} />
+    <Tabs items={VIEWS} value={view} onChange={choose} onAgain={again} bleed={18} line={tabLine} />
   ) : open ? (
     <Animated.View entering={fadeIn} exiting={FadeOut.duration(120)} style={{ gap: 10 }}>
-      <Tabs items={VIEWS} value={view} onChange={choose} bleed={18} />
+      <Tabs items={VIEWS} value={view} onChange={choose} onAgain={again} bleed={18} line={tabLine} />
       <WhoFilter />
     </Animated.View>
   ) : <WhoFilter only />;
@@ -195,9 +200,9 @@ export default function Kalender() {
 
   if (view === 'heute') {
     return (
-      <View style={{ flex: 1, backgroundColor: tokens.bg, paddingTop: insets.top }}>
-        <Head end={0}><Title text={WD_LONG[weekday(TODAY)]} sub={dmShort(TODAY)} open={open} onPress={toggle} right={<HeaderRight />} />{seg}</Head>
-        <Animated.View entering={build} style={{ flex: 1 }}><AgendaView top={<Briefing />} /></Animated.View>
+      <View style={{ flex: 1, backgroundColor: tokens.day, paddingTop: insets.top }}>
+        <Head end={8} bg={tokens.day} fade={28}><Title text={WD_LONG[weekday(day)]} sub={dmShort(day)} open={open} onPress={toggle} right={<HeaderRight />} />{seg}<WeekStrip /></Head>
+        <Animated.View entering={build} style={{ flex: 1 }}><TodayView bottom={<Briefing />} /></Animated.View>
       </View>
     );
   }

@@ -80,6 +80,10 @@ Alle sichtbaren Änderungen an FamCal. Neueste oben. Agenten und Menschen: Ände
 - Termin ändern und Neuer Termin: Das Symbol steht wieder groß oben als Kopf, ein Tipp wechselt es. Es gibt nur noch ein „Fertig“; in der Karte „Wann“ klappt ein kleiner Pfeil zu. Tag und Uhrzeit gelten auf jedem Weg hinaus, auch mit dem Pfeil zurück (Julian 15.11.).
 - Denken: nur noch eine Anzeige. Solange Memo als Blase denkt, zeigt der Chat keine zweiten Punkte. Die Blase ist größer (Julian 15.11.).
 - Kalender Heute: Ein gelöschter Termin blendet weich aus und die Zeilen darunter rutschen nach, statt hart zu verschwinden.
+- Kalender Heute nach Julians Referenz (16.11.): oben die Woche als Leiste, der gewählte Tag steht auf einer hellen Kachel. Darunter der eine Tag: links die Stunden, die aktuelle Stunde in einer Pille, rechts pro Termin eine Karte mit Balken in der Farbe der Person, Titel, Ort, Gesichtern und Zeitspanne. Freie Zeit ist eine Lücke, keine Karte wird abgeschnitten.
+- Heute liegt auf grauem Grund mit etwas helleren Karten. Oben unter dem Kopf und unten vor der Leiste blendet die Seite weich aus.
+- Ein Tipp auf einen Tag der Leiste zeigt diesen Tag, Wischen bringt die nächste oder letzte Woche, ein zweiter Tipp auf Heute führt zurück zu heute. Neu und offen steht unter den Terminen von heute.
+- Gesagtes, das an einem anderen Tag landet, nimmt die Heute Seite mit zu diesem Tag.
 
 ### App funktioniert zuverlässig (09.11. Audit)
 - Nach längerer Pause im Hintergrund klappen Assistent und Spracheingabe gleich beim ersten Satz, statt "Ich komme gerade nicht an den Assistenten".

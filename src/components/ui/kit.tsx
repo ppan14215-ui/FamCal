@@ -46,12 +46,14 @@ type ScreenProps = {
  * A screen's title and switches, standing still above what scrolls (Julian 30.10.: "padding im Header",
  * "sehr flach"): room above and below, and a soft fade where the content slides under it.
  */
-export function Head({ children, gap = 14, bg = tokens.bg, pad = 18, end = 10 }: { children: React.ReactNode; gap?: number; bg?: string; pad?: number; /** Room under the last thing in the head; 0 when it ends on a hairline (the word tabs). */ end?: number }) {
+export function Head({ children, gap = 14, bg = tokens.bg, pad = 18, end = 10, fade = 18 }: { children: React.ReactNode; gap?: number; bg?: string; pad?: number; /** Room under the last thing in the head; 0 when it ends on a hairline (the word tabs). */ end?: number; /** How far below the head the content fades out. */ fade?: number }) {
   // Once content lies under the head, a very faint shadow shows the edge (Julian 31.10.: "sehr subtil").
   const under = useHeadUnder();
   const shade = useSharedValue(under ? 1 : 0);
   useEffect(() => { shade.value = withTiming(under ? 1 : 0, { duration: 220 }); }, [under]);
   const shadeStyle = useAnimatedStyle(() => ({ opacity: shade.value }));
+  // On the web a gradient's name is shared by the whole page, so every ground has its own.
+  const fadeId = `headfade${bg.replace(/[^a-zA-Z0-9]/g, '')}`;
   return (
     <View style={{ zIndex: 2, paddingHorizontal: pad, paddingTop: 16, paddingBottom: end, gap, backgroundColor: bg }}>
       {children}
@@ -66,15 +68,15 @@ export function Head({ children, gap = 14, bg = tokens.bg, pad = 18, end = 10 }:
           <Rect x="0" y="0" width="100%" height="100%" fill="url(#headshade)" />
         </Svg>
       </Animated.View>
-      <View pointerEvents="none" style={{ position: 'absolute', left: 0, right: 0, bottom: -18, height: 18 }}>
+      <View pointerEvents="none" style={{ position: 'absolute', left: 0, right: 0, bottom: -fade, height: fade }}>
         <Svg width="100%" height="100%" preserveAspectRatio="none">
           <Defs>
-            <LinearGradient id="headfade" x1="0" y1="0" x2="0" y2="1">
+            <LinearGradient id={fadeId} x1="0" y1="0" x2="0" y2="1">
               <Stop offset="0" stopColor={bg} stopOpacity={1} />
               <Stop offset="1" stopColor={bg} stopOpacity={0} />
             </LinearGradient>
           </Defs>
-          <Rect x="0" y="0" width="100%" height="100%" fill="url(#headfade)" />
+          <Rect x="0" y="0" width="100%" height="100%" fill={`url(#${fadeId})`} />
         </Svg>
       </View>
     </View>
@@ -320,7 +322,7 @@ export function Seg<T extends string>({ items, value, onChange, height = 34 }: {
  * semibold, and a short ink line under it glides to the tapped word (transform only) before the new view comes.
  */
 const TAB_LINE = 100;
-export function Tabs<T extends string>({ items, value, onChange, bleed = 0 }: { items: { key: T; label: string }[]; value: T; onChange: (k: T) => void; /** How far the hairline reaches past both sides, into the screen's gutter. */ bleed?: number }) {
+export function Tabs<T extends string>({ items, value, onChange, onAgain, bleed = 0, line: lineColor = tokens.hair }: { items: { key: T; label: string }[]; value: T; onChange: (k: T) => void; /** A tap on the word that is already chosen (Heute: back to today). */ onAgain?: (k: T) => void; /** How far the hairline reaches past both sides, into the screen's gutter. */ bleed?: number; /** The hairline's colour, for a ground that is not the usual one. */ line?: string }) {
   const [at, setAt] = useState<Record<string, { x: number; w: number }>>({});
   const cur = at[value];
   const x = useSharedValue(0), w = useSharedValue(0);
@@ -335,14 +337,14 @@ export function Tabs<T extends string>({ items, value, onChange, bleed = 0 }: { 
   }, [cur?.x, cur?.w]);
   const line = useAnimatedStyle(() => ({ opacity: w.value > 0 ? 1 : 0, transform: [{ translateX: x.value }, { scaleX: w.value / TAB_LINE }] as const }));
   return (
-    <View style={{ marginHorizontal: -bleed, paddingHorizontal: bleed, borderBottomWidth: 1, borderBottomColor: tokens.hair }}>
+    <View style={{ marginHorizontal: -bleed, paddingHorizontal: bleed, borderBottomWidth: 1, borderBottomColor: lineColor }}>
       <View accessibilityRole="tablist" style={{ flexDirection: 'row', gap: 20 }}>
         {items.map((it) => {
           const on = it.key === value;
           return (
             <View key={it.key} onLayout={(e) => { const { x: lx, width } = e.nativeEvent.layout; setAt((m) => (m[it.key]?.x === lx && m[it.key]?.w === width ? m : { ...m, [it.key]: { x: lx, w: width } })); }}>
               <PressScale accessibilityRole="tab" accessibilityLabel={it.label} accessibilityState={{ selected: on }} scale={0.96} hitSlop={{ top: 8, bottom: 6, left: 9, right: 9 }}
-                onPress={() => { if (on) return; haptics.select(); const p = at[it.key]; if (p) glide(p); setTimeout(() => onChange(it.key), 140); }}
+                onPress={() => { if (on) { onAgain?.(it.key); return; } haptics.select(); const p = at[it.key]; if (p) glide(p); setTimeout(() => onChange(it.key), 140); }}
                 style={{ paddingTop: 4, paddingBottom: 9 }}>
                 <Txt size={16.5} line={21} weight={on ? 600 : 400} color={on ? tokens.ink : tokens.sub}>{it.label}</Txt>
               </PressScale>

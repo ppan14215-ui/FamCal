@@ -11,7 +11,7 @@ import { tokens } from '../theme';
 import { useLanding, useLit } from '../lib/landing';
 
 /** `bleed`: for rows without their own padding the glow reaches past the row and the mark sits left of the text, never on it. */
-export default function Fresh({ id, children, style, radius = 0, bleed = 0 }: { id?: string; children: React.ReactNode; style?: StyleProp<ViewStyle>; radius?: number; bleed?: number }) {
+export default function Fresh({ id, children, style, radius = 0, bleed = 0, markAt }: { id?: string; children: React.ReactNode; style?: StyleProp<ViewStyle>; radius?: number; bleed?: number; /** A card with a bar of its own: the mark draws over that bar instead of standing beside it. */ markAt?: { left: number; inset: number } }) {
   const ref = useLanding(id);
   const on = useLit(id);
   const still = useReducedMotion();
@@ -29,7 +29,7 @@ export default function Fresh({ id, children, style, radius = 0, bleed = 0 }: { 
     <Animated.View ref={ref as any} collapsable={false} style={style}>
       {children}
       <Animated.View pointerEvents="none" style={[{ position: 'absolute', left: -bleed, right: -bleed, top: 0, bottom: 0, borderRadius: radius, backgroundColor: tokens.doneSoft }, shade]} />
-      <Animated.View pointerEvents="none" style={[{ position: 'absolute', left: 3 - bleed, top: '22%', bottom: '22%', width: 4, borderRadius: 999, backgroundColor: tokens.done }, bar]} />
+      <Animated.View pointerEvents="none" style={[{ position: 'absolute', left: markAt ? markAt.left : 3 - bleed, top: markAt ? markAt.inset : '22%', bottom: markAt ? markAt.inset : '22%', width: 4, borderRadius: 999, backgroundColor: tokens.done }, bar]} />
     </Animated.View>
   );
 }

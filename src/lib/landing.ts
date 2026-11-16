@@ -91,6 +91,11 @@ export function lightOneByOne(ids: string[], each?: (i: number) => void, gap = 2
 export function useLit(id: string | undefined) {
   return useSyncExternalStore((l) => { subs.add(l); return () => { subs.delete(l); }; }, () => !!id && lit.has(id), () => false);
 }
+/** Everything that is lit right now, for a view that shows one day and must follow a change to its day. */
+const NONE = new Set<string>();
+export function useLitIds(): Set<string> {
+  return useSyncExternalStore((l) => { subs.add(l); return () => { subs.delete(l); }; }, () => lit, () => NONE);
+}
 export function useClearLitOnUnmount() {
   useEffect(() => () => light(null), []);
 }

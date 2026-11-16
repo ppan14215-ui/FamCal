@@ -109,13 +109,19 @@ export function Family({ size = 28, ring = tokens.bg, max = 4 }: { size?: number
     ...(['J', 'T'] as const).map((p) => ({ key: p, bg: pp[p].tint, ink: pp[p].ink, letter: pp[p].name.trim()[0]?.toUpperCase() || p })),
     ...people.map((p) => { const c = shade(allColors.find((x) => x.name === p.color) ?? personPalette[2]); return { key: p.id, bg: c.bg, ink: c.fg, letter: p.name.trim()[0]?.toUpperCase() ?? '?' }; }),
   ];
-  const shown = all.length > max ? all.slice(0, max - 1) : all;
-  const rest = all.length - shown.length;
+  return <FaceStack faces={all} size={size} ring={ring} max={max} photos={pp === persons ? photos : undefined} />;
+}
+
+type FaceOf = { key: string; bg: string; ink: string; letter: string };
+/** The overlapping row itself: each face cut out of the one beneath, the rest as +N. */
+function FaceStack({ faces, size, ring, max, photos }: { faces: FaceOf[]; size: number; ring: string; max: number; photos?: Record<string, string | undefined> }) {
+  const shown = faces.length > max ? faces.slice(0, max - 1) : faces;
+  const rest = faces.length - shown.length;
   const lap = -Math.round(size * 0.26);
   return (
     <View style={{ flexDirection: 'row', borderRadius: 999, boxShadow: shadows.face } as any}>
       {shown.map((f, i) => (
-        <View key={f.key} style={i ? { marginLeft: lap } : undefined}><Face size={size} bg={f.bg} ink={f.ink} letter={f.letter} cut={ring} photo={pp === persons ? photos[f.key] : undefined} /></View>
+        <View key={f.key} style={i ? { marginLeft: lap } : undefined}><Face size={size} bg={f.bg} ink={f.ink} letter={f.letter} cut={ring} photo={photos?.[f.key]} /></View>
       ))}
       {rest > 0 ? (
         <View style={{ marginLeft: lap, width: size, height: size, borderRadius: 999, backgroundColor: tokens.row, alignItems: 'center', justifyContent: 'center', boxShadow: `0 0 0 2px ${ring}` } as any}>
@@ -124,4 +130,27 @@ export function Family({ size = 28, ring = tokens.bg, max = 4 }: { size?: number
       ) : null}
     </View>
   );
+}
+
+/**
+ * The faces of one Termin (Julian 16.11.: his reference for Heute shows who is in it as a row of faces on every
+ * card): the parents it belongs to and every child or grandparent who comes along, in the same rings as the family
+ * on top of the tabs. Nobody yet: nothing.
+ */
+export function Faces({ who, people: ids, size = 26, ring = tokens.row, max = 4 }: { who: PersonId | 'both' | null; people?: string[]; size?: number; ring?: string; max?: number }) {
+  const stored = useStore((s) => s.people);
+  const pp = usePersons();
+  const photos = usePhotos();
+  const parents: PersonId[] = who === 'both' ? ['J', 'T'] : who ? [who] : [];
+  const all: FaceOf[] = [
+    ...parents.map((p) => ({ key: p as string, bg: pp[p].tint, ink: pp[p].ink, letter: pp[p].name.trim()[0]?.toUpperCase() || p })),
+    ...(ids ?? []).flatMap((id) => {
+      const p = stored.find((x) => x.id === id);
+      if (!p) return [];
+      const c = shade(allColors.find((x) => x.name === p.color) ?? personPalette[2]);
+      return [{ key: p.id, bg: c.bg, ink: c.fg, letter: p.name.trim()[0]?.toUpperCase() ?? '?' }];
+    }),
+  ];
+  if (!all.length) return null;
+  return <FaceStack faces={all} size={size} ring={ring} max={max} photos={pp === persons ? photos : undefined} />;
 }
