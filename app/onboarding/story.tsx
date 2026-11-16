@@ -37,8 +37,7 @@ import LiveMemo, { BIG } from '../../src/components/onboarding/LiveMemo';
 import SignInSheet from '../../src/components/onboarding/SignInSheet';
 import KlarTalk from '../../src/components/onboarding/KlarTalk';
 import TodayView, { WeekStrip } from '../../src/screens/kalender/TodayView';
-import { useDockSpace } from '../../src/lib/dockSpace';
-import { navH, klarFoot, navTop } from '../../src/components/NavBar';
+import { navH, klarFoot } from '../../src/components/NavBar';
 import { light, locate } from '../../src/lib/landing';
 import { StoreContext, createStore, useStore, type Store } from '../../src/state/store';
 import { PersonsContext, type Persons } from '../../src/components/ui/Person';
@@ -552,20 +551,18 @@ function Probe({ me, du, familie, ev, setEv, docked, setDocked, pad, onDone }: {
   const exA = useSharedValue(0);
   useEffect(() => { exA.value = withTiming(exOn ? 1 : 0, { duration: exOn ? 260 : 140, easing: out }); }, [exOn]);
   const exSt = useAnimatedStyle(() => ({ opacity: exA.value, transform: [{ translateY: (1 - exA.value) * 10 }] }));
-  // The Heute page keeps room for the app's nav under its fade; in this frame that band lies below the edge.
-  const under = navTop(insets.bottom) + useDockSpace();
 
   return (
     <View style={{ flex: 1 }}>
       <Say text={line} />
-      <View ref={frame} collapsable={false} style={{ flex: 1, marginHorizontal: 14, marginTop: 14, marginBottom: 10, borderRadius: 26, overflow: 'hidden', borderWidth: 1, borderColor: tokens.hair, backgroundColor: tokens.day }}>
+      <View ref={frame} collapsable={false} style={{ flex: 1, marginHorizontal: 14, marginTop: 14, marginBottom: 10, borderRadius: 26, overflow: 'hidden', borderWidth: 1, borderColor: tokens.hair, backgroundColor: tokens.bg }}>
         <View pointerEvents="none" style={{ flex: 1 }}>
           <StoreContext.Provider value={world}>
             <PersonsContext.Provider value={people}>
               <StillContext.Provider value>
                 <CalHead />
                 <View style={{ paddingHorizontal: 12, paddingTop: 4 }}><WeekStrip /></View>
-                <View style={{ flex: 1, marginBottom: -under }}><TodayView /></View>
+                <TodayView band={0} />
               </StillContext.Provider>
             </PersonsContext.Provider>
           </StoreContext.Provider>
