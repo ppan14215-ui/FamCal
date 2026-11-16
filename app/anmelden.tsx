@@ -15,13 +15,14 @@ import { tokens } from '../src/theme';
 import { haptics } from '../src/lib/haptics';
 import { tx } from '../src/i18n/lang';
 import { track, trackOnce } from '../src/lib/analytics';
+import { HOME } from '../src/lib/home';
 
 /** After any sign-in: load the family, then the calendar or, for a new family, onboarding. */
 export async function afterSignIn(name?: string): Promise<string | null> {
   // Known account on this phone: the calendar opens from the phone at once, the server catches up behind it (Audit 09.11.).
   const uid = getAuth().session?.user.id;
   if (uid && !name && await restoreFromCache(uid)) {
-    router.replace('/chat');
+    router.replace(HOME);
     void syncUntilLive();
     return null;
   }
@@ -29,7 +30,7 @@ export async function afterSignIn(name?: string): Promise<string | null> {
   if (res.error) return tx('Die Verbindung hat nicht geklappt. Bitte noch einmal versuchen.', 'Could not connect. Please try again.');
   const s = get();
   // A new account (no Termine, no partner) goes on to make or join a family.
-  router.replace(s.events.length || s.names.T ? '/chat' : '/familie');
+  router.replace(s.events.length || s.names.T ? HOME : '/familie');
   return null;
 }
 

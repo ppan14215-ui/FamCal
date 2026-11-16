@@ -14,6 +14,7 @@ import { tokens } from '../src/theme';
 import { haptics } from '../src/lib/haptics';
 import { tx } from '../src/i18n/lang';
 import { track, trackOnce } from '../src/lib/analytics';
+import { HOME } from '../src/lib/home';
 
 export default function Familie() {
   const [code, setCode] = useState('');
@@ -34,7 +35,7 @@ export default function Familie() {
     else track('family_joined');
     if (r.error) return setError(/unbekannt/i.test(r.error) ? tx('Diesen Code kennen wir nicht. Bitte noch einmal prüfen.', 'We do not know this code. Please check it again.') : /vollständig/i.test(r.error) ? tx('In dieser Familie sind schon zwei.', 'This family already has two members.') : tx('Das hat nicht geklappt. Bitte noch einmal.', 'That did not work. Please try again.'));
     haptics.success();
-    router.replace('/chat');
+    router.replace(HOME);
   };
 
   return (

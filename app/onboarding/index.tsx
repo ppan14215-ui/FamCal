@@ -13,6 +13,7 @@ import { actions, get, toast } from '../../src/state/store';
 import { LIVE } from '../../src/lib/live';
 import { isPreview } from '../../src/lib/vorschau';
 import { stepViewed, onboardingDone, inviteSent, calendarConnected } from '../../src/lib/funnel';
+import { HOME } from '../../src/lib/home';
 import { tx } from '../../src/i18n/lang';
 
 /** New families start in the story onboarding (Julian 11.11.2026); the film stays at /onboarding?film=1. */
@@ -36,9 +37,9 @@ function Hallo() {
     if (LIVE) return setSheet(true);
     // The link is on every chapter. A family that already has its own data (reached here through
     // +not-found mid session) keeps it: the demo is never written over a real store.
-    if (get().names.J) return router.replace('/chat');
+    if (get().names.J) return router.replace(HOME);
     actions.loadDemo();
-    router.replace('/chat');
+    router.replace(HOME);
   };
   return (
     <>

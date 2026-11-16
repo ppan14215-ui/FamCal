@@ -35,3 +35,33 @@ export function lanes<T>(items: T[], span: (x: T) => [number, number], order: (x
   close();
   return out;
 }
+
+/**
+ * More at once than fit side by side (a family of seven in a week's narrow column): the first `max - 1` lanes stay,
+ * the others fold into one "+N" in the last lane, from the first folded start to the last folded end.
+ */
+export type More<T> = { top: number; bottom: number; items: T[] };
+export function fold<T>(laneOf: Map<T, Lane>, span: (x: T) => [number, number], max: number): { shown: Map<T, Lane>; more: More<T>[] } {
+  const shown = new Map<T, Lane>();
+  const more: More<T>[] = [];
+  const crowded: T[] = [];
+  for (const [x, l] of laneOf) { if (l.lanes > max) crowded.push(x); else shown.set(x, l); }
+  crowded.sort((a, b) => span(a)[0] - span(b)[0]);
+  let group: T[] = [];
+  let end = -Infinity;
+  const close = () => {
+    const hidden = group.filter((x) => laneOf.get(x)!.lane >= max - 1);
+    for (const x of group) if (laneOf.get(x)!.lane < max - 1) shown.set(x, { lane: laneOf.get(x)!.lane, lanes: max });
+    if (hidden.length === 1) shown.set(hidden[0], { lane: max - 1, lanes: max });
+    else if (hidden.length) more.push({ top: Math.min(...hidden.map((x) => span(x)[0])), bottom: Math.max(...hidden.map((x) => span(x)[1])), items: hidden });
+    group = [];
+  };
+  for (const x of crowded) {
+    const [a, b] = span(x);
+    if (a >= end) { close(); end = -Infinity; }
+    group.push(x);
+    end = Math.max(end, b);
+  }
+  close();
+  return { shown, more };
+}

@@ -37,6 +37,7 @@ import { usePalette } from '../src/theme/mode';
 import { navStyle, setNavStyle } from '../src/lib/navStyle';
 import { seedDemoFeed } from '../src/lib/feed';
 import { BUBBLES, useBubble, setBubble, useMemoChoice, setMemoColor } from '../src/lib/look';
+import { HOME } from '../src/lib/home';
 
 /** A plain row: name left, value right, like Apple's settings (Julian 03.11.). Flat on the ground, hairlines only. */
 function SRow({ t, v, right, onPress }: { t: string; v?: string; right?: React.ReactNode; onPress?: () => void }) {
@@ -201,7 +202,7 @@ export default function Einstellungen() {
         {LIVE ? null : <SRow key="p1" t={tx('Hinweise · Sperrbildschirm', 'Notifications · lock screen')} onPress={() => router.push('/demo/sperrbildschirm')} />}
         {LIVE ? null : <SRow key="p2" t={tx('Teilen aus einem Chat', 'Share from a chat')} onPress={() => router.push('/demo/teilen')} />}
         {LIVE ? null : <SRow key="p3" t="Widgets" onPress={() => router.push('/demo/widgets')} />}
-        {LIVE ? null : <SRow key="p4" t={tx('Beispielfamilie laden', 'Load sample family')} onPress={() => { actions.loadDemo(); seedDemoFeed(); router.dismissAll(); router.replace('/chat'); }} />}
+        {LIVE ? null : <SRow key="p4" t={tx('Beispielfamilie laden', 'Load sample family')} onPress={() => { actions.loadDemo(); seedDemoFeed(); router.dismissAll(); router.replace(HOME); }} />}
         {LIVE ? null : <SRow key="p5" t={tx('Onboarding neu starten', 'Restart onboarding')} onPress={() => { actions.reset(); router.dismissAll(); router.replace('/onboarding'); }} />}
       </Group>
       {LIVE ? null : <Txt size={12.5} line={17} color={tokens.mute} center>{tx('Prototyp ohne Login und ohne echte KI. Alles bleibt auf diesem Gerät und ist nach dem Neuladen wieder wie am Anfang.', 'Prototype without login and without real AI. Everything stays on this device and resets when you reload.')}</Txt>}
