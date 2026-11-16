@@ -21,7 +21,7 @@ const OPEN = 96;
 let swipedAt = 0;
 export const justSwiped = () => Date.now() - swipedAt < 400;
 
-export default function SwipeRow({ children, onDelete, bg = tokens.row }: { children: React.ReactNode; onDelete: () => void; bg?: string }) {
+export default function SwipeRow({ children, onDelete, bg = tokens.row, radius = 0 }: { children: React.ReactNode; onDelete: () => void; bg?: string; /** A card: the red button behind it takes the card's corners. */ radius?: number }) {
   const x = useSharedValue(0);
   const start = useSharedValue(0);
   const w = useSharedValue(360);
@@ -68,7 +68,7 @@ export default function SwipeRow({ children, onDelete, bg = tokens.row }: { chil
   const onLayout = (e: LayoutChangeEvent) => { w.value = e.nativeEvent.layout.width; };
 
   return (
-    <View onLayout={onLayout} style={{ overflow: 'hidden', backgroundColor: bg }}>
+    <View onLayout={onLayout} style={{ overflow: 'hidden', backgroundColor: bg, borderRadius: radius }}>
       <Animated.View style={[{ position: 'absolute', right: 0, top: 0, bottom: 0, backgroundColor: tokens.danger }, action]}>
         <Pressable
           accessibilityLabel={tx('Löschen', 'Delete')}
@@ -81,7 +81,7 @@ export default function SwipeRow({ children, onDelete, bg = tokens.row }: { chil
       </Animated.View>
       {/* pan-y keeps vertical scrolling alive on mobile web */}
       <GestureDetector gesture={pan} touchAction="pan-y">
-        <Animated.View style={[{ backgroundColor: bg }, row]}>{children}</Animated.View>
+        <Animated.View style={[{ backgroundColor: bg, borderRadius: radius }, row]}>{children}</Animated.View>
       </GestureDetector>
     </View>
   );
