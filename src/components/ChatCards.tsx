@@ -41,6 +41,8 @@ import type { When } from '../lib/when';
 import type { CalEvent } from '../state/types';
 import { haptics } from '../lib/haptics';
 import PlaceAsk, { PinChip } from './PlaceAsk';
+import SwipeRow, { justSwiped } from './SwipeRow';
+import { dropEvent } from '../screens/kalender/DayView';
 import { isPoints, total, listIcon } from '../lib/points';
 import type { ClayName } from '../lib/clayIcons';
 
@@ -104,7 +106,7 @@ function Made({ icon, title, sub, onPress, right, celebrate }: { icon: ClayName;
     : <View style={box}>{row}</View>;
 }
 
-export function Termine({ ids, snap, changed, ask, timeQ, fresh, placeQ }: { ids: string[]; snap?: EventSnap[]; changed?: boolean; ask?: 'J' | 'T'; timeQ?: string; fresh?: boolean; placeQ?: boolean }) {
+export function Termine({ ids, snap, changed, ask, timeQ, fresh, placeQ, foot }: { ids: string[]; snap?: EventSnap[]; changed?: boolean; ask?: 'J' | 'T'; timeQ?: string; fresh?: boolean; placeQ?: boolean; /** Nothing follows in the card: the last row carries the card's lower edge. */ foot?: boolean }) {
   const events = useStore((s) => s.events);
   const still = useStill();
   const ready = useCalendarReady();
@@ -118,12 +120,20 @@ export function Termine({ ids, snap, changed, ask, timeQ, fresh, placeQ }: { ids
   if (!live.length) return <Txt size={13.5} color={tokens.mute} style={{ padding: 14 }}>{changed ? tx('Mit der nächsten Nachricht geändert, siehe unten.', 'Changed by the next message, see below.') : tx('Nicht mehr im Kalender.', 'No longer in the calendar.')}</Txt>;
   return (
     <>
-      {live.map((e) => (
-        <Made key={e.id} icon={e.icon} celebrate={play} title={e.title}
-          sub={[keep((e as CalEvent).endDate && (e as CalEvent).endDate! > e.date ? tx(`${short(e.date)} bis ${short((e as CalEvent).endDate!)}`, `${short(e.date)} to ${short((e as CalEvent).endDate!)}`) : short(e.date)), keep(e.allDay ? tx('ganztägig', 'all day') : e.end ? tx(`${hm(e.start)} bis ${hm(e.end)}`, `${hm(e.start)} to ${hm(e.end)}`) : hm(e.start)), e.place].filter(Boolean).join('\u00A0· ')}
-          onPress={still ? noop : () => router.push(`/termin/${e.id}`)}
-          right={<>{e.place ? <PinChip place={e.place} still={still} /> : null}<WhoDots who={e.who} /></>} />
-      ))}
+      {live.map((e, i) => {
+        const row = (
+          <Made icon={e.icon} celebrate={play} title={e.title}
+            sub={[keep((e as CalEvent).endDate && (e as CalEvent).endDate! > e.date ? tx(`${short(e.date)} bis ${short((e as CalEvent).endDate!)}`, `${short(e.date)} to ${short((e as CalEvent).endDate!)}`) : short(e.date)), keep(e.allDay ? tx('ganztägig', 'all day') : e.end ? tx(`${hm(e.start)} bis ${hm(e.end)}`, `${hm(e.start)} to ${hm(e.end)}`) : hm(e.start)), e.place].filter(Boolean).join('\u00A0· ')}
+            onPress={still ? noop : () => { if (!justSwiped()) router.push(`/termin/${e.id}`); }}
+            right={<>{e.place ? <PinChip place={e.place} still={still} /> : null}<WhoDots who={e.who} /></>} />
+        );
+        const edge = foot && i === live.length - 1 ? <View style={{ height: 4 }} /> : null;
+        // A swipe to the left deletes it from the calendar, here as in the calendar (Julian 16.11.: "Das soll sowohl im
+        // Kalender als auch im Chat funktionieren"); the toast brings it back. Only what is really in the calendar.
+        return !still && events.some((x) => x.id === e.id)
+          ? <SwipeRow key={e.id} bg={glass.lift.backgroundColor} onDelete={() => dropEvent(e as CalEvent)}>{row}{edge}</SwipeRow>
+          : <React.Fragment key={e.id}>{row}{edge}</React.Fragment>;
+      })}
       {!still && timeQ && live.length === 1 ? <TimeAsk e={live[0]} q={timeQ} /> : null}
       {/* Julian 31.10.: "Welcher Kinderarzt ist das?", then remembered for next time. */}
       {!still && placeQ && live.length === 1 ? <PlaceAsk e={live[0]} /> : null}
@@ -416,6 +426,8 @@ export const cardFrame = [{ alignSelf: 'stretch' as const, borderRadius: 20, ove
  * just entered something. Older cards in the log stay still, so a long chat never twitches.
  */
 /** One bubble in the log, mine or the assistant's: the same shape, only the side and the colour differ. */
+/** Between the parts of one turn: my words, Memo's answer, the card (Julian 16.11.: the bubbles lay too close). */
+const TURN = 12;
 const BUBBLE = { maxWidth: '84%' as const, flexShrink: 1, borderRadius: 20, paddingVertical: 10, paddingHorizontal: 15 };
 /** Memo beside his bubble, and how far his cards stand in so they line up with it. */
 const MEMO = 26;
@@ -471,13 +483,15 @@ function EntryRow({ showcase, ...props }: EntryProps) {
   return <EntryBody {...props} />;
 }
 
-/** A button in a result card: the ink pill for the main step, a white pill for the other (klar draft). */
-function CardBtn({ label, icon, primary, onPress }: { label: string; icon?: 'edit' | 'chev'; primary?: boolean; onPress: () => void }) {
+/**
+ * The one step a result card still offers: take it back, as a small white pill. Changing needs no button (Julian
+ * 16.11.: the black Change button is unnecessary), a tap on the card opens the Termin.
+ */
+function CardBtn({ label, onPress }: { label: string; onPress: () => void }) {
   return (
     <PressScale scale={0.97} accessibilityRole="button" accessibilityLabel={label} onPress={onPress}
-      style={[{ flex: 1, height: 40, borderRadius: 999, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingHorizontal: 10 }, primary ? { backgroundColor: tokens.ink } : glass.sm]}>
-      {icon === 'edit' ? <LineIcon name="edit" size={16} color={primary ? tokens.onInk : tokens.ink} stroke={2} /> : null}
-      <Txt size={15.5} weight={600} color={primary ? tokens.onInk : tokens.ink} numberOfLines={1}>{label}</Txt>
+      style={[{ height: 36, borderRadius: 999, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 16 }, glass.sm]}>
+      <Txt size={15} weight={600} numberOfLines={1}>{label}</Txt>
     </PressScale>
   );
 }
@@ -506,14 +520,13 @@ function EntryBody({ f, mine: own, me, answer, side }: Omit<EntryProps, 'showcas
   // What Memo says under the sentence: his own words, or else where it went.
   const where = f.changed ? tx('Geändert.', 'Changed.') : f.events ? tx('Steht im Kalender.', 'It is in the calendar.') : f.tasks ? tx('Steht bei den Aufgaben.', 'It is on your tasks.') : tx('Steht auf der Liste.', 'It is on the list.');
   const says = f.undone ? undefined : f.say ?? (made && !gone ? where : undefined);
-  const canChange = f.events?.length === 1 && !f.undone && !gone;
   const hasWhy = !!f.why && !f.events && !f.items && !f.tasks;
   const undo = !still && !f.undone && canUndo(f.id);
   const inset = memoInset(useMascot() === 'minimal');
   return (
     <View>
       {/* One column: my words on the right; the partner's, Memo's and the cards all start at the same line on the left. */}
-      <View style={{ gap: 8, alignItems: mine ? 'flex-end' : 'flex-start' }}>
+      <View style={{ gap: TURN, alignItems: mine ? 'flex-end' : 'flex-start' }}>
         {/* Mine needs no name; the others say who and when. */}
         {mine && f.kind !== 'msg' ? null : <Txt size={12.5} color={tokens.sub} style={mine ? undefined : { marginLeft: MEMO + MEMO_GAP, marginBottom: -3 }}>{[mine ? tx('Du', 'You') : p.name || f.by, f.kind === 'msg' ? tx('Nachricht', 'Message') : null, at(f.at)].filter(Boolean).join(' · ')}</Txt>}
         <View style={{ alignSelf: 'stretch', flexDirection: 'row', alignItems: 'flex-end', gap: MEMO_GAP, justifyContent: mine ? 'flex-end' : 'flex-start' }}>
@@ -527,20 +540,19 @@ function EntryBody({ f, mine: own, me, answer, side }: Omit<EntryProps, 'showcas
         {says ? <Reply bare text={says} fresh={fresh} /> : null}
         {made ? (
           <Animated.View layout={rowLayout} style={[cardFrame, { marginLeft: inset, opacity: f.undone ? 0.55 : 1 }]}>
-            {f.undone ? null : f.events ? <Termine ids={f.events} snap={f.snap?.events} changed={f.changed} fresh={fresh} ask={asks && !open && recent ? me : undefined} timeQ={asks && !open && recent ? f.timeQ : undefined} placeQ={asks && !open && recent} /> : null}
+            {f.undone ? null : f.events ? <Termine ids={f.events} snap={f.snap?.events} changed={f.changed} fresh={fresh} foot={!undo} ask={asks && !open && recent ? me : undefined} timeQ={asks && !open && recent ? f.timeQ : undefined} placeQ={asks && !open && recent} /> : null}
             {f.undone ? null : f.events ? <VacationLeft ids={f.events} /> : null}
             {f.undone || HIDDEN.suggestions ? null : f.events ? <PackOffer ids={f.events} /> : null}
             {f.undone || !f.suggest || HIDDEN.suggestions ? null : <BringOffer suggest={f.suggest} />}
             {f.undone ? null : f.items ? <Items list={f.items.list} ids={f.items.ids} name={f.snap?.list} names={f.snap?.items} /> : null}
             {f.undone ? null : f.tasks ? <Tasks ids={f.tasks} titles={f.snap?.tasks} /> : null}
             {f.undone ? <Txt size={14.5} weight={600} color={tokens.sub} style={{ paddingVertical: 10, paddingHorizontal: 14 }}>{tx('Rückgängig gemacht', 'Undone')}</Txt> : null}
-            {/* The two steps you may want next, as real buttons: change it, or take it back. */}
-            {!f.undone && !still && (canChange || undo) ? (
-              <View style={{ flexDirection: 'row', gap: 8, paddingHorizontal: EDGE, paddingTop: 2, paddingBottom: EDGE }}>
-                {canChange ? <CardBtn primary icon="edit" label={tx('Ändern', 'Change')} onPress={() => { haptics.select(); router.push({ pathname: '/termin-aendern', params: { id: f.events![0] } }); }} /> : null}
-                {undo ? <CardBtn label={tx('Rückgängig', 'Undo')} onPress={() => undoEntry(f.id)} /> : null}
+            {/* Fresh from Memo it can be taken back with one tap. */}
+            {undo ? (
+              <View style={{ flexDirection: 'row', paddingHorizontal: EDGE, paddingTop: 2, paddingBottom: EDGE }}>
+                <CardBtn label={tx('Rückgängig', 'Undo')} onPress={() => undoEntry(f.id)} />
               </View>
-            ) : !f.undone ? <View style={{ height: 4 }} /> : null}
+            ) : !f.undone && !f.events ? <View style={{ height: 4 }} /> : null}
           </Animated.View>
         ) : null}
         {/* An answer without a card can show how it came about. */}
@@ -573,7 +585,7 @@ export function Thinking({ by }: { by: 'J' | 'T' }) {
   useEffect(() => { setWaited(false); if (idle) return; const t = setTimeout(() => setWaited(true), 320); return () => clearTimeout(t); }, [idle]);
   if (!v.inline || v.phase === 'off') return null;
   return (
-    <View style={{ gap: 8, alignItems: 'flex-end' }}>
+    <View style={{ gap: TURN, alignItems: 'flex-end' }}>
       {v.said ? (
         <>
           <View style={[BUBBLE, { borderBottomRightRadius: 6, backgroundColor: persons === basePersons ? mineSoft : persons[by].tint }]}>

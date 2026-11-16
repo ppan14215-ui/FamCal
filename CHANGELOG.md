@@ -89,6 +89,7 @@ Alle sichtbaren Änderungen an FamCal. Neueste oben. Agenten und Menschen: Ände
 - Kalender Heute: Arbeit ist keine Karte mehr, sondern ein gestreifter Block in der Farbe der Person hinter dem Tag (wie in der Woche). Termine während der Arbeit liegen zu ihrer Zeit darauf, zwei Arbeitende stehen nebeneinander. Ein Termin, der nur Arbeit oder Work heißt, zählt auch als Arbeit (Heute, Tage, Woche).
 - Kalender Heute, Tage, Woche: die Stunden folgen den Terminen. Der Tag beginnt mit dem ersten und endet mit dem letzten Termin (auch um 22 Uhr), statt fest von 8 bis 19 Uhr. Ein ruhiger Tag zeigt trotzdem genug Stunden, und die Seite ist immer ganz gefüllt.
 - Kalender für große Familien: Arbeit steht in der Farbe der Person, auch bei Kindern und Großeltern, und zeigt nebeneinander das Gesicht dazu. In Woche und Tage stehen höchstens zwei oder drei Termine nebeneinander, weitere stecken in „+3“ (ein Tipp zeigt den Tag). Die Zeile unter der Woche nennt alle, die arbeiten.
+- Chat: der schwarze Ändern Knopf auf den Karten ist weg, ein Tipp auf die Karte öffnet den Termin. Ein Wisch nach links löscht den Termin auch im Chat (danach Rückgängig), wie im Kalender. Zwischen Blasen, Antwort und Karte ist mehr Luft.
 
 ### App funktioniert zuverlässig (09.11. Audit)
 - Nach längerer Pause im Hintergrund klappen Assistent und Spracheingabe gleich beim ersten Satz, statt "Ich komme gerade nicht an den Assistenten".
