@@ -34,6 +34,7 @@ import { useCalEvents } from '../../lib/useEvents';
 import { isInfoDay } from '../../lib/feiertage';
 import { lanes } from '../../lib/lanes';
 import { useRoom } from '../../components/ui/kit';
+import { isShift, shiftSpan } from '../../lib/shift';
 
 // The usual day; it grows to the earliest and latest Termin of the shown days
 // (Julian 30.10.: "Wieso geht der Tag nur bis 18 Uhr?").
@@ -110,7 +111,7 @@ export default function WeekView({ n }: { n: 3 | 7 }) {
   const end = addDays(start, n - 1);
   // All-day and multi-day Termine run as one bar across their days, like
   // Outlook (Julian 28.10.), clipped to the shown days and stacked in rows.
-  const isSpan = (e: (typeof events)[number]) => !e.work && (e.allDay || (!!e.endDate && e.endDate > e.date));
+  const isSpan = (e: (typeof events)[number]) => !isShift(e) && (e.allDay || (!!e.endDate && e.endDate > e.date));
   const spans = useMemo(() => {
     const rows: string[][] = [];
     return events
@@ -126,7 +127,7 @@ export default function WeekView({ n }: { n: 3 | 7 }) {
       });
   }, [events, start, end, n]);
   const laneRows = spans.reduce((m, x) => Math.max(m, x.row + 1), 0);
-  const hasWork = useMemo(() => events.some((e) => e.work && e.date >= start && e.date <= end), [events, start, end]);
+  const hasWork = useMemo(() => events.some((e) => isShift(e) && e.date >= start && e.date <= end), [events, start, end]);
   // The hours share what the screen has left under the days' row, the all-day bars and the legend.
   const room = useRoom();
   const [aboveH, setAboveH] = useState(0);
@@ -195,12 +196,12 @@ export default function WeekView({ n }: { n: 3 | 7 }) {
               // Two people at the same time (Julian 08.11.): side by side, each in their own colour, never one over the other.
               const colW = Math.max(20, (colsW - 3 * (n - 1)) / n);
               const workSpan = (e: CalEvent): [number, number] => {
-                const [from, to] = e.allDay || !e.end || e.end <= e.start ? ['08:00', '17:00'] : [e.start, e.end];
+                const [from, to] = shiftSpan(e);
                 return [top(from), top(from) + Math.max(HP * 0.6, top(to) - top(from))];
               };
               const evH = (e: CalEvent) => Math.max(28, (e.end && top(e.end) > top(e.start) ? top(e.end) - top(e.start) : HP * 0.8) - 4);
-              const workLane = lanes(list.filter((e) => e.work), workSpan, () => 0, (e) => e.who ?? '');
-              const evLane = lanes(list.filter((e) => !e.work), (e) => [top(e.start) + 2, top(e.start) + 2 + evH(e)], (e) => (e.who === 'J' ? 0 : e.who === 'T' ? 1 : 2));
+              const workLane = lanes(list.filter(isShift), workSpan, () => 0, (e) => e.who ?? '');
+              const evLane = lanes(list.filter((e) => !isShift(e)), (e) => [top(e.start) + 2, top(e.start) + 2 + evH(e)], (e) => (e.who === 'J' ? 0 : e.who === 'T' ? 1 : 2));
               const place = (l: { lane: number; lanes: number } | undefined, pad: number) => {
                 const k = l?.lanes ?? 1, i = l?.lane ?? 0;
                 const inner = colW - 2 * pad, gap = k > 1 ? 2 : 0, w = (inner - gap * (k - 1)) / k;
@@ -211,7 +212,7 @@ export default function WeekView({ n }: { n: 3 | 7 }) {
                   {/* A hairline between the days, like the lines between the hours. */}
                   <View pointerEvents="none" style={{ position: 'absolute', left: -2, top: 0, bottom: 0, width: 1, backgroundColor: tokens.hair }} />
                   <Pressable accessibilityLabel={tx('Termin hier eintragen', 'Add an event here')} onPress={(ev: any) => slotAt(d, ev.nativeEvent.locationY ?? ev.nativeEvent.offsetY)} style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0 }} />
-                  {list.filter((e) => e.work).map((e) => {
+                  {list.filter(isShift).map((e) => {
                     // Work without hours ("Arbeit bis Weihnachten") fills a usual working day, so it never vanishes (Julian 30.10.).
                     const [y0, y1] = workSpan(e);
                     return (
@@ -223,7 +224,7 @@ export default function WeekView({ n }: { n: 3 | 7 }) {
                       </PressScale>
                     );
                   })}
-                  {list.filter((e) => !e.work).map((e) => {
+                  {list.filter((e) => !isShift(e)).map((e) => {
                     const h = evH(e);
                     const l = evLane.get(e);
                     const slim = !!l && l.lanes > 1;

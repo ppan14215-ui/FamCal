@@ -86,6 +86,7 @@ Alle sichtbaren Änderungen an FamCal. Neueste oben. Agenten und Menschen: Ände
 - Ein Tipp auf einen Tag der Leiste zeigt diesen Tag, Wischen bringt die nächste oder letzte Woche, ein zweiter Tipp auf Heute führt zurück zu heute. Neu und offen steht unter den Terminen von heute.
 - Gesagtes, das an einem anderen Tag landet, nimmt die Heute Seite mit zu diesem Tag.
 - Kalender Heute, Tage und Woche nutzen die ganze Höhe: die Stunden teilen sich den Bildschirm gleichmäßig bis an die Leiste unten (8 bis 19 Uhr, weiter bei früheren oder späteren Terminen). In Heute steht ein Termin an seiner Zeit und ist so hoch, wie er dauert; nur wo eine Karte mehr Platz braucht, machen die Stunden daneben Platz. Ein voller Tag scrollt (Julian 16.11.: alles war gestaucht, die untere Hälfte leer).
+- Kalender Heute: Arbeit ist keine Karte mehr, sondern ein gestreifter Block in der Farbe der Person hinter dem Tag (wie in der Woche). Termine während der Arbeit liegen zu ihrer Zeit darauf, zwei Arbeitende stehen nebeneinander. Ein Termin, der nur Arbeit oder Work heißt, zählt auch als Arbeit (Heute, Tage, Woche).
 
 ### App funktioniert zuverlässig (09.11. Audit)
 - Nach längerer Pause im Hintergrund klappen Assistent und Spracheingabe gleich beim ersten Satz, statt "Ich komme gerade nicht an den Assistenten".
