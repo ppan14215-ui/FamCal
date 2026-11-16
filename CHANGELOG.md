@@ -99,6 +99,7 @@ Alle sichtbaren Änderungen an FamCal. Neueste oben. Agenten und Menschen: Ände
 - Start (16.11.): Der Start ist eine einzige Bewegung. Nach dem Blinzeln zieht sich das Schwarz um die Augen zu Memo zusammen, Memo gleitet in seinen Platz in der Leiste und kommt dort genau so groß an, wie er in der Leiste ist. Kein Sprung mehr, etwa 1,4 statt 2,3 Sekunden. Antippen überspringt den Start.
 - Heute: seitlich wischen blättert zum nächsten und zum vorigen Tag. Auf einem Termin löscht Wischen nach links wie bisher.
 - Heute: vergangene Termine sind nicht mehr blass. Das Ausblenden über der Leiste erscheint nur noch, wenn der Tag darunter weiterläuft.
+- Ein Tipp auf einen Termin öffnet ihn gleich zum Ändern, das Blatt dazwischen ist weg. Löschen steht am Ende der Seite, bei Serien für diesen einen Termin oder die ganze Serie.
 
 ### App funktioniert zuverlässig (09.11. Audit)
 - Nach längerer Pause im Hintergrund klappen Assistent und Spracheingabe gleich beim ersten Satz, statt "Ich komme gerade nicht an den Assistenten".

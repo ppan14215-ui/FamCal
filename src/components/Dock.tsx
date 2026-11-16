@@ -102,8 +102,8 @@ function useWhere(): { ctx: Ctx; tab: boolean; lift: number; chat?: boolean } | 
   if (path === '/chat') return { ctx: { kind: 'kalender' }, tab: false, lift: 0, chat: true };
   if (path === '/kalender' || path === '/eingang') return { ctx: { kind: 'kalender' }, tab: true, lift: 0 };
   if (path === '/listen') return { ctx: { kind: 'liste', id: active }, tab: true, lift: 0 };
-  // The Termin's sheet is as quiet as in the klar draft; the field sits on the page behind "Ändern", where spoken changes land.
-  if (path === '/termin-aendern' && typeof id === 'string' && id) return { ctx: { kind: 'termin', id }, tab: false, lift: 0 };
+  // The Termin's page (a tap on a Termin leads straight to it, Julian 16.11.): spoken changes land on its fields.
+  if ((path === '/termin-aendern' || path.startsWith('/termin/')) && typeof id === 'string' && id) return { ctx: { kind: 'termin', id }, tab: false, lift: 0 };
   // Above the "Liste anlegen" button.
   if (path === '/liste-neu') return { ctx: { kind: 'liste-neu' }, tab: false, lift: 74 };
   return null;
