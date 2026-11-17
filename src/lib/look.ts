@@ -56,6 +56,7 @@ export const useNavLook = (): NavLook => use().nav;
 export const useYearLook = (): YearLook => use().year;
 export const useShowDays = (): boolean => use().days;
 export const showDays = () => state.days;
+export const navLook = () => state.nav;
 
 const use = () => useSyncExternalStore((l) => { subs.add(l); return () => { subs.delete(l); }; }, () => state, () => state);
 
