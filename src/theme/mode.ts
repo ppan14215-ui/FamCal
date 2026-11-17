@@ -22,7 +22,7 @@ const LIGHT_ONLY = true;
 const wantDark = () => (LIGHT_ONLY ? false : choice === 'system' ? Appearance.getColorScheme() === 'dark' : choice === 'dunkel');
 
 // The family's colour theme for person colours (Julian 04.11.); the app's own colours never change.
-const readPal = (): ThemeId => { const v = getPref('palette') as ThemeId | undefined; return THEMES.some((t) => t.id === v) ? v! : 'klassisch'; };
+const readPal = (): ThemeId => { const v = getPref('palette') as ThemeId | undefined; return THEMES.some((t) => t.id === v) ? v! : 'erde'; };
 let palette: ThemeId = readPal();
 function apply(force = false) {
   const d = wantDark();
