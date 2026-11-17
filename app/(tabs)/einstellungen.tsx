@@ -36,7 +36,7 @@ import { THEMES } from '../../src/theme/tokens';
 import { usePalette, colorsTouched, redrawIfTouched } from '../../src/theme/mode';
 import { navStyle, setNavStyle } from '../../src/lib/navStyle';
 import { seedDemoFeed } from '../../src/lib/feed';
-import { useBubble, useMemoChoice, setMemoColor, useNavLook, setNavLook, useYearLook, setYearLook, useShowDays, setShowDays } from '../../src/lib/look';
+import { useBubble, useMemoChoice, setMemoColor, useNavLook, setNavLook, useYearLook, useListLook, setListLook, setYearLook, useShowDays, setShowDays } from '../../src/lib/look';
 import { HOME } from '../../src/lib/home';
 
 /** A plain row: name left, value right, like Apple's settings (Julian 03.11.). Flat on the ground, hairlines only. */
@@ -128,6 +128,7 @@ export default function Einstellungen() {
   const memo = useMemoChoice();
   const navLook = useNavLook();
   const yearLook = useYearLook();
+  const listLook = useListLook();
   const days3 = useShowDays();
   const pal = usePalette();
   const themeName = (() => { const t = THEMES.find((x) => x.id === pal); return t ? tx(t.de, t.en) : ''; })();
@@ -169,6 +170,11 @@ export default function Einstellungen() {
         <Pick key="jahr" t={tx('Jahr', 'Year')}>
           <View style={{ width: 216 }}>
             <Seg items={[{ key: 'klein', label: tx('Monate', 'Months') }, { key: 'kacheln', label: tx('Kacheln', 'Tiles') }]} value={yearLook} onChange={(k) => { setYearLook(k); }} />
+          </View>
+        </Pick>
+        <Pick key="listen" t={tx('Listen', 'Lists')}>
+          <View style={{ width: 216 }}>
+            <Seg items={[{ key: 'kacheln', label: tx('Kacheln', 'Tiles') }, { key: 'reiter', label: tx('Reiter', 'Tabs') }]} value={listLook} onChange={(k) => { setListLook(k); }} />
           </View>
         </Pick>
         <Pick key="tage" t={tx('3 Tage', '3 days')}>

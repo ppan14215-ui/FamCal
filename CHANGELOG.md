@@ -108,6 +108,7 @@ Alle sichtbaren Änderungen an FamCal. Neueste oben. Agenten und Menschen: Ände
 - Monat im Ton & Papier Stil: hohe Felder, heute als Tinte Feld, Urlaub als Band am Fuß der Tage.
 - Neue Leiste unten wie in anderen Apps: Kalender, Listen, Memo groß in der Mitte, Neu (Eingang mit Glocke), Einstellungen. Memo antippen öffnet den Chat mit offener Eingabe. Die bisherige Leiste bleibt in den Einstellungen wählbar.
 - Einstellungen: Jahr als Monate oder farbige Kacheln, 3 Tage Ansicht zeigen oder ausblenden.
+- Listen öffnen mit einer Übersicht aus farbigen Kacheln. Eine Kachel öffnet die Liste wie bisher, der Pfeil führt zurück. Die Reiter bleiben in den Einstellungen wählbar.
 
 ### App funktioniert zuverlässig (09.11. Audit)
 - Nach längerer Pause im Hintergrund klappen Assistent und Spracheingabe gleich beim ersten Satz, statt "Ich komme gerade nicht an den Assistenten".

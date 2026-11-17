@@ -33,19 +33,22 @@ export type MemoColor = 'ink' | 'me';
  */
 export type NavLook = 'mitte' | 'pille';
 export type YearLook = 'klein' | 'kacheln';
+/** lists: 'kacheln' = an overview of coloured tiles first (Ton & Papier, the standard since Julian 17.11.); 'reiter' = the lists as a row of chips, as before. */
+export type ListLook = 'reiter' | 'kacheln';
 
 const readBubble = (): BubbleId => { const v = getPref('bubble'); return (BUBBLES.find((b) => b.id === v)?.id ?? 'teal') as BubbleId; };
 const readMemo = (): MemoColor => (getPref('memoColor') === 'me' ? 'me' : 'ink');
 
 const readNav = (): NavLook => (getPref('navLook') === 'pille' ? 'pille' : 'mitte');
 const readYear = (): YearLook => (getPref('yearLook') === 'kacheln' ? 'kacheln' : 'klein');
+const readLists = (): ListLook => (getPref('listLook') === 'reiter' ? 'reiter' : 'kacheln');
 const readDays = (): boolean => getPref('showDays') !== 'aus';
 
-let state = { bubble: readBubble(), memo: readMemo(), nav: readNav(), year: readYear(), days: readDays() };
+let state = { bubble: readBubble(), memo: readMemo(), nav: readNav(), year: readYear(), days: readDays(), lists: readLists() };
 const subs = new Set<() => void>();
 const emit = () => subs.forEach((l) => l());
 // The saved choice arrives a moment after start.
-onPrefsReady(() => { const n = { bubble: readBubble(), memo: readMemo(), nav: readNav(), year: readYear(), days: readDays() }; if ((Object.keys(n) as (keyof typeof n)[]).some((k) => n[k] !== state[k])) { state = n; emit(); } });
+onPrefsReady(() => { const n = { bubble: readBubble(), memo: readMemo(), nav: readNav(), year: readYear(), days: readDays(), lists: readLists() }; if ((Object.keys(n) as (keyof typeof n)[]).some((k) => n[k] !== state[k])) { state = n; emit(); } });
 
 export function setBubble(id: BubbleId) { if (id === state.bubble) return; state = { ...state, bubble: id }; setPref('bubble', id); emit(); }
 export function setMemoColor(v: MemoColor) { if (v === state.memo) return; state = { ...state, memo: v }; setPref('memoColor', v); emit(); }
@@ -54,6 +57,8 @@ export function setYearLook(v: YearLook) { if (v === state.year) return; state =
 export function setShowDays(v: boolean) { if (v === state.days) return; state = { ...state, days: v }; setPref('showDays', v ? 'an' : 'aus'); emit(); }
 export const useNavLook = (): NavLook => use().nav;
 export const useYearLook = (): YearLook => use().year;
+export function setListLook(v: ListLook) { if (v === state.lists) return; state = { ...state, lists: v }; setPref('listLook', v); emit(); }
+export const useListLook = (): ListLook => use().lists;
 export const useShowDays = (): boolean => use().days;
 export const showDays = () => state.days;
 export const navLook = () => state.nav;

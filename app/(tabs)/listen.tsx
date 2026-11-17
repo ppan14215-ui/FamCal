@@ -4,7 +4,7 @@
  * style): the chosen list is a white chip among plain words, the lines lie flat on the ground with a small icon,
  * the note behind the title and who as a dot, and what is done gathers at the end.
  */
-import React, { useEffect, useMemo, useRef } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { View, ScrollView } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withTiming, interpolateColor } from 'react-native-reanimated';
 import { router } from 'expo-router';
@@ -17,7 +17,8 @@ import PressScale from '../../src/components/ui/PressScale';
 import ItemRow from '../../src/components/ItemRow';
 import AddInline from '../../src/components/AddInline';
 import { HintLine } from '../../src/components/HintCard';
-import { tokens, fonts, motion, easing, swapIn, persons, glass } from '../../src/theme';
+import { tokens, fonts, motion, easing, swapIn, persons, glass, allColors } from '../../src/theme';
+import { useListLook } from '../../src/lib/look';
 import { useStore, actions, toast } from '../../src/state/store';
 import { itemMeta, itemText, aisleOf } from '../../src/data/sample';
 import { haptics } from '../../src/lib/haptics';
@@ -42,13 +43,77 @@ export default function Listen() {
   // Without the Aufgaben tab (Julian 30.10.) a hidden or missing choice opens the first list.
   const active = (HIDDEN.tasks && chosen === 'aufgaben') || (chosen !== 'aufgaben' && !lists.some((l) => l.id === chosen)) ? lists[0]?.id ?? 'aufgaben' : chosen;
   const list = lists.find((l) => l.id === active);
+  // Ton & Papier (setting "Listen: Kacheln"): the tab opens on an overview of coloured tiles; a tile opens its list,
+  // which looks and works as before, and the arrow leads back. A list chosen from elsewhere (a chat card) opens at once.
+  const tiles = useListLook() === 'kacheln';
+  const [open, setOpen] = useState(false);
+  const first = useRef(true);
+  useEffect(() => { if (first.current) { first.current = false; return; } setOpen(true); }, [chosen]);
 
+  if (tiles && !open) {
+    return (
+      <Screen tab gap={12} head={<H1 right={<HeaderRight />}>{tx('Listen', 'Lists')}</H1>}>
+        <ListTiles lists={lists} tasks={tasks} onOpen={(id) => { haptics.select(); actions.setActiveList(id); setOpen(true); }} />
+      </Screen>
+    );
+  }
+  const name = active === 'aufgaben' ? tx('Aufgaben', 'Tasks') : list?.name ?? tx('Listen', 'Lists');
   return (
-    <Screen tab gap={12} head={<><H1 right={<HeaderRight />}>{tx('Listen', 'Lists')}</H1><ListChips lists={lists} tasks={tasks} active={active} /></>}>
+    <Screen tab gap={12} head={tiles
+      ? <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 40 }}>
+          <PressScale accessibilityLabel={tx('Alle Listen', 'All lists')} scale={0.92} hitSlop={8} onPress={() => setOpen(false)} style={[{ width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' }, glass.sm]}><LineIcon name="back" size={18} /></PressScale>
+          <Txt size={29} line={34} weight={600} tracking={-0.7} numberOfLines={1} style={{ flex: 1 }}>{name}</Txt>
+          <HeaderRight />
+        </View>
+      : <><H1 right={<HeaderRight />}>{tx('Listen', 'Lists')}</H1><ListChips lists={lists} tasks={tasks} active={active} /></>}>
       <Animated.View key={active} entering={swapIn} style={{ gap: 12 }}>
         {active === 'aufgaben' ? <Aufgaben tasks={tasks} /> : list?.kind === 'shopping' ? <Einkauf list={list} /> : list ? <Packliste list={list} /> : null}
       </Animated.View>
     </Screen>
+  );
+}
+
+/** The colours of the tiles, in turn (theme Erde, the tones of the Ton & Papier pictures). */
+const TILE = ['E-Ocker', 'E-Salbei', 'E-Flieder', 'E-Blau', 'E-Terrakotta', 'E-Rose', 'E-Petrol', 'E-Stein'];
+
+/**
+ * The overview: one coloured tile per list, two in a row, with its name, how much is still open and its clay icon at
+ * 64 dp. Hold a tile to rename the list or change its icon, like the chips. The last tile adds a list.
+ */
+function ListTiles({ lists, tasks, onOpen }: { lists: List[]; tasks: Task[]; onOpen: (id: string) => void }) {
+  const rows: { id: string; name: string; icon: ClayName; n: number; all: boolean }[] = [
+    ...(HIDDEN.tasks ? [] : [{ id: 'aufgaben', name: tx('Aufgaben', 'Tasks'), icon: 'erledigt' as ClayName, n: tasks.filter((t) => t.who && !t.done).length, all: false }]),
+    ...lists.map((l) => {
+      const items = l.sections.flatMap((sec) => sec.items);
+      const all = l.kind === 'collection' || !!l.blueprint;
+      return { id: l.id, name: l.name, icon: listIcon(l), n: all ? items.length : items.filter((i) => !i.done).length, all };
+    }),
+  ];
+  return (
+    <View style={{ flexDirection: 'row', flexWrap: 'wrap', margin: -5 }}>
+      {rows.map((t, i) => {
+        const c = allColors.find((x) => x.name === TILE[i % TILE.length])!;
+        const sub = t.all ? tx(`${t.n} ${t.n === 1 ? 'Eintrag' : 'Einträge'}`, `${t.n} ${t.n === 1 ? 'item' : 'items'}`) : t.n ? tx(`${t.n} offen`, `${t.n} left`) : tx('alles erledigt', 'all done');
+        return (
+          <View key={t.id} style={{ width: '50%', padding: 5 }}>
+            <PressScale scale={0.97} accessibilityLabel={t.name} onPress={() => onOpen(t.id)}
+              onLongPress={t.id === 'aufgaben' ? undefined : () => { haptics.tap(); router.push({ pathname: '/liste-bearbeiten', params: { id: t.id } }); }}
+              style={[{ height: 148, borderRadius: 24, padding: 16, overflow: 'hidden', justifyContent: 'flex-end' }, glass.lift, { backgroundColor: c.bg }]}>
+              <View pointerEvents="none" style={{ position: 'absolute', right: 10, top: 10 }}><ClayIcon name={t.icon} size={64} /></View>
+              <Txt size={18} line={22} weight={600} color={c.fg} numberOfLines={2}>{t.name}</Txt>
+              <Txt size={13} line={17} color={c.fg} numberOfLines={1} style={{ marginTop: 2, opacity: 0.85 }}>{sub}</Txt>
+            </PressScale>
+          </View>
+        );
+      })}
+      <View style={{ width: '50%', padding: 5 }}>
+        <PressScale scale={0.97} accessibilityLabel={tx('Neue Liste', 'New list')} onPress={() => router.push('/liste-neu')}
+          style={{ height: 148, borderRadius: 24, borderWidth: 1.5, borderStyle: 'dashed', borderColor: tokens.circleLine, alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+          <LineIcon name="plus" size={22} color={tokens.sub} />
+          <Txt size={14} color={tokens.sub}>{tx('Neue Liste', 'New list')}</Txt>
+        </PressScale>
+      </View>
+    </View>
   );
 }
 
