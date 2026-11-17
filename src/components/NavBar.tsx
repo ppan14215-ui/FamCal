@@ -36,6 +36,7 @@ import { useMemoOut, setMemoOut } from '../lib/memoOut';
 import { usePrivat } from '../lib/privat';
 import { router } from 'expo-router';
 import { useNavLook, navLook } from '../lib/look';
+import { useStore } from '../state/store';
 const EASE_OUT = Easing.bezier(0.23, 1, 0.32, 1);
 
 export const TABS: { name: string; key: string; icon: LineName }[] = [
@@ -379,6 +380,7 @@ export function KlarPill({ current, onTab }: { current?: string; onTab?: (name: 
   // in the chat with the input open. His size, his place in the pill's row and every motion stay as they are. The
   // four tabs with Memo at the end stay as the other choice in the settings.
   const mitte = useNavLook() === 'mitte';
+  const waiting = useStore((st) => st.inbox.some((i) => i.state === 'ask'));
   const { width: SW } = useWindowDimensions();
   // Both sides are equally wide, so Memo stands in the middle whichever tab is open; a narrow phone shows icons only.
   const words = SW >= 440;
@@ -401,12 +403,16 @@ export function KlarPill({ current, onTab }: { current?: string; onTab?: (name: 
     // A plain tab bar on the ground like in most apps; Memo is the big round button in its middle and stands a little
     // above its edge. It steps back for the Sprechkarte exactly like the pill does.
     const slot = (name: string) => {
-      const tab = TABS.find((x) => x.name === name)!;
+      // "Neu" is the inbox (what Memo read and what waits for a yes); it only shows in this bar.
+      const tab = TABS.find((x) => x.name === name) ?? { name: 'eingang', key: 'nav.neu', icon: 'bell' as LineName };
       const on = current === tab.name;
       return (
         <PressScale key={name} scale={0.94} accessibilityRole="tab" accessibilityLabel={t(tab.key)} accessibilityState={{ selected: on }}
           onPress={() => { if (!on) { haptics.select(); onTab?.(tab.name); } }} style={{ flex: 1, height: navH(), alignItems: 'center', justifyContent: 'center', gap: 3 }}>
-          <LineIcon name={tab.icon} size={22} color={on ? tokens.ink : tokens.mute} stroke={on ? 2 : undefined} />
+          <View>
+            <LineIcon name={tab.icon} size={22} color={on ? tokens.ink : tokens.mute} stroke={on ? 2 : undefined} />
+            {name === 'eingang' && waiting ? <View style={{ position: 'absolute', right: -3, top: -2, width: 9, height: 9, borderRadius: 9, backgroundColor: tokens.frist, borderWidth: 1.5, borderColor: tokens.row }} /> : null}
+          </View>
           <Txt size={11} line={13} weight={on ? 600 : 500} color={on ? tokens.ink : tokens.mute} numberOfLines={1}>{t(tab.key)}</Txt>
         </PressScale>
       );
@@ -420,7 +426,7 @@ export function KlarPill({ current, onTab }: { current?: string; onTab?: (name: 
           <View pointerEvents={onTab ? 'box-none' : 'none'} accessibilityRole="tablist" style={{ position: 'absolute', left: 0, right: 0, bottom: foot, height: navH(), flexDirection: 'row', alignItems: 'center', paddingHorizontal: 6 }}>
             <View style={{ flex: 1, flexDirection: 'row' }}>{slot('kalender')}{slot('listen')}</View>
             <View style={{ width: BIG + 28 }} />
-            <View style={{ flex: 1, flexDirection: 'row' }}>{slot('einstellungen')}</View>
+            <View style={{ flex: 1, flexDirection: 'row' }}>{slot('eingang')}{slot('einstellungen')}</View>
           </View>
           <View pointerEvents="box-none" style={{ position: 'absolute', left: 0, right: 0, bottom: foot + navH() / 2 + BIG_UP - (BIG + 10) / 2, alignItems: 'center' }}>
             <View style={{ width: BIG + 10, height: BIG + 10, borderRadius: 999, backgroundColor: tokens.row, alignItems: 'center', justifyContent: 'center' }}>
