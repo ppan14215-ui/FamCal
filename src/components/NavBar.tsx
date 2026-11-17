@@ -35,6 +35,7 @@ import { useSpeak, speakOpen } from '../lib/speak';
 import { useMemoOut, setMemoOut } from '../lib/memoOut';
 import { usePrivat } from '../lib/privat';
 import { router } from 'expo-router';
+import { useNavLook } from '../lib/look';
 const EASE_OUT = Easing.bezier(0.23, 1, 0.32, 1);
 
 export const TABS: { name: string; key: string; icon: LineName }[] = [
@@ -369,11 +370,45 @@ export function KlarPill({ current, onTab }: { current?: string; onTab?: (name: 
   const hide = useAnimatedStyle((): any => ({ opacity: 1 - a.value, transform: [{ translateY: 14 * a.value }, { scale: 1 - 0.04 * a.value }] }));
   // Where Memo sits in the pill, so the Sprechkarte can grow out of him and bring him back to exactly this spot.
   const pillW = useRef(0), memoAt = useRef(0);
+  // Julian 17.11.: the new standard has no Chat tab; Memo sits in the middle as the main button and a tap on him lands
+  // in the chat with the input open. His size, his place in the pill's row and every motion stay as they are. The
+  // four tabs with Memo at the end stay as the other choice in the settings.
+  const mitte = useNavLook() === 'mitte';
+  const { width: SW } = useWindowDimensions();
+  // Both sides are equally wide, so Memo stands in the middle whichever tab is open; a narrow phone shows icons only.
+  const words = SW >= 440;
+  const side = words ? KLAR_ON + KLAR_OFF + 2 : KLAR_OFF * 2 + 2;
+  const tabOf = (name: string) => {
+    const tab = TABS.find((x) => x.name === name)!;
+    const on = current === tab.name;
+    return <KlarTab key={tab.name} on={on} icon={tab.icon} label={t(tab.key)} bare={!words} onPress={() => { if (!on) { haptics.select(); onTab?.(tab.name); } }} />;
+  };
+  const memo = (
+    <View onLayout={(e) => { memoAt.current = e.nativeEvent.layout.x + e.nativeEvent.layout.width / 2; tell(); }}>
+      <MemoMic box={navH() - 10} size={memoS()} ground={tokens.row}
+        onPress={() => { if (priv.ohneKi) { router.push('/neu'); return; } if (mitte && onTab && current !== 'chat') onTab('chat'); buddyTalk(); }}
+        onLongPress={priv.ohneKi ? undefined : buddyKeys} />
+    </View>
+  );
   const tell = () => { if (pillW.current && memoAt.current) setMemoOut({ dx: Math.round((memoAt.current - pillW.current / 2) * 2) / 2 }); };
   return (
     <View pointerEvents="box-none" style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0 }}>
       <Animated.View pointerEvents={away ? 'none' : 'box-none'} style={[{ position: 'absolute', left: 0, right: 0, bottom: klarFoot(insets.bottom), alignItems: 'center' }, hide]}>
         <View onLayout={(e) => { pillW.current = e.nativeEvent.layout.width; tell(); }} style={[{ height: navH(), borderRadius: navH() / 2, padding: 5, flexDirection: 'row', alignItems: 'center' }, glass.nav]}>
+          {mitte ? (
+            <>
+              <View accessibilityRole="tablist" pointerEvents={onTab ? 'auto' : 'none'} style={{ width: side, flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', gap: 2 }}>
+                {tabOf('kalender')}{tabOf('listen')}
+              </View>
+              <View style={{ width: 1, height: 20, marginHorizontal: 6, backgroundColor: tokens.hair }} />
+              {memo}
+              <View style={{ width: 1, height: 20, marginHorizontal: 6, backgroundColor: tokens.hair }} />
+              <View accessibilityRole="tablist" pointerEvents={onTab ? 'auto' : 'none'} style={{ width: side, flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start', gap: 2 }}>
+                {tabOf('einstellungen')}
+              </View>
+            </>
+          ) : (
+          <>
           <View accessibilityRole="tablist" pointerEvents={onTab ? 'auto' : 'none'} style={{ flexDirection: 'row', alignItems: 'center', gap: 2 }}>
             {TABS.map((tab) => {
               const on = current === tab.name;
@@ -382,23 +417,21 @@ export function KlarPill({ current, onTab }: { current?: string; onTab?: (name: 
           </View>
           <View style={{ width: 1, height: 20, marginHorizontal: 6, backgroundColor: tokens.hair }} />
           {/* Ohne KI there is nothing to talk to: Memo opens the plus sheet instead. */}
-          <View onLayout={(e) => { memoAt.current = e.nativeEvent.layout.x + e.nativeEvent.layout.width / 2; tell(); }}>
-            <MemoMic box={navH() - 10} size={memoS()} ground={tokens.row}
-              onPress={() => (priv.ohneKi ? router.push('/neu') : buddyTalk())}
-              onLongPress={priv.ohneKi ? undefined : buddyKeys} />
-          </View>
+          {memo}
+          </>
+          )}
         </View>
       </Animated.View>
     </View>
   );
 }
 
-function KlarTab({ on, icon, label, onPress }: { on: boolean; icon: LineName; label: string; onPress: () => void }) {
+function KlarTab({ on, icon, label, onPress, bare }: { on: boolean; icon: LineName; label: string; onPress: () => void; bare?: boolean }) {
   // A long word ("Einstellungen") gets the room it needs; on a narrow phone the open tab then shows its icon alone.
   const { width: W } = useWindowDimensions();
   const long = label.length > 10;
-  const word = !long || W >= 384;
-  const onW = !long ? KLAR_ON : word ? KLAR_LONG : KLAR_OFF;
+  const word = !bare && (!long || W >= 384);
+  const onW = !word ? KLAR_OFF : !long ? KLAR_ON : KLAR_LONG;
   const w = useSharedValue(on ? onW : KLAR_OFF);
   useEffect(() => { w.value = withTiming(on ? onW : KLAR_OFF, SWITCH); }, [on, onW]);
   const size = useAnimatedStyle(() => ({ width: w.value }));

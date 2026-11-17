@@ -106,6 +106,7 @@ Alle sichtbaren Änderungen an FamCal. Neueste oben. Agenten und Menschen: Ände
 - Die Farben der Eltern gehören jetzt der Familie: wer auf einem Handy eine Farbe wählt, sieht sie auch auf dem anderen, beim nächsten Öffnen oder Zurückkommen. Eine Wahl ohne Netz geht hoch, sobald das Handy wieder verbunden ist.
 - Ton & Papier, Etappe 1: Papier Grund, Petrol Tinte, warme Grautöne und Schatten, Überschriften in Bricolage Grotesque, Farbthema Erde als Standard. Aufbau und Verhalten unverändert.
 - Monat im Ton & Papier Stil: hohe Felder, heute als Tinte Feld, Urlaub als Band am Fuß der Tage.
+- Neue Leiste mit Memo in der Mitte (alte Leiste als Einstellung), Jahr als farbige Kacheln wählbar, 3 Tage Tab ausblendbar
 
 ### App funktioniert zuverlässig (09.11. Audit)
 - Nach längerer Pause im Hintergrund klappen Assistent und Spracheingabe gleich beim ersten Satz, statt "Ich komme gerade nicht an den Assistenten".
