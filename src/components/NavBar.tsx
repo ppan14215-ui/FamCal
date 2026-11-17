@@ -358,7 +358,7 @@ function KlarNav({ state, navigation }: BottomTabBarProps) {
  * The pill itself. The tabs use it through KlarNav; the onboarding shows the same pill in its try step, where the
  * tabs are only to be seen (no `onTab`) and Memo is the one thing to tap.
  */
-export function KlarPill({ current, onTab }: { current?: string; onTab?: (name: string) => void }) {
+export function KlarPill({ current, onTab, bar }: { current?: string; onTab?: (name: string) => void; /** The onboarding's try step: show the bar the app shows (tabs only to be seen). */ bar?: boolean }) {
   const insets = useSafeAreaInsets();
   const { t } = useTranslation();
   const focus = useFocus();
@@ -380,7 +380,7 @@ export function KlarPill({ current, onTab }: { current?: string; onTab?: (name: 
   // tap on him lands in the chat with the input open. The pill with four tabs and Memo at the end stays as the other
   // choice in the settings.
   // The onboarding's try step (no `onTab`) keeps the pill: there the tabs are only to be seen.
-  const mitte = useNavLook() === 'mitte' && !!onTab;
+  const mitte = useNavLook() === 'mitte' && (!!onTab || !!bar);
   const waiting = useStore((st) => st.inbox.some((i) => i.state === 'ask'));
   const memo = (
     <View onLayout={(e) => { memoAt.current = e.nativeEvent.layout.x + e.nativeEvent.layout.width / 2; tell(); }}>
@@ -412,7 +412,7 @@ export function KlarPill({ current, onTab }: { current?: string; onTab?: (name: 
     const foot = klarFoot(insets.bottom);
     return (
       <View pointerEvents="box-none" style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0 }}>
-        <Animated.View pointerEvents={away ? 'none' : 'box-none'} onLayout={(e) => { pillW.current = e.nativeEvent.layout.width; tell(); }}
+        <Animated.View pointerEvents={away ? 'none' : 'box-none'} onLayout={(e) => { pillW.current = e.nativeEvent.layout.width; memoAt.current = pillW.current / 2; tell(); }}
           style={[{ position: 'absolute', left: 0, right: 0, bottom: 0, height: foot + navH() + BAR_UP }, hide]}>
           <View pointerEvents="none" style={[{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, backgroundColor: tokens.row, borderTopLeftRadius: 22, borderTopRightRadius: 22 }, glass.nav, { borderBottomWidth: 0 } as any]} />
           <View pointerEvents={onTab ? 'box-none' : 'none'} accessibilityRole="tablist" style={{ position: 'absolute', left: 0, right: 0, bottom: foot, height: navH(), flexDirection: 'row', alignItems: 'center', paddingHorizontal: 6 }}>
