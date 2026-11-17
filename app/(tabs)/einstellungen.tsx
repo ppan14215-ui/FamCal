@@ -174,7 +174,7 @@ export default function Einstellungen() {
         </Pick>
         <Pick key="listen" t={tx('Listen', 'Lists')}>
           <View style={{ width: 216 }}>
-            <Seg items={[{ key: 'reiter', label: tx('Reiter', 'Tabs') }, { key: 'kacheln', label: tx('Kacheln', 'Tiles') }]} value={listLook} onChange={(k) => { setListLook(k); }} />
+            <Seg items={[{ key: 'kacheln', label: tx('Kacheln', 'Tiles') }, { key: 'reiter', label: tx('Reiter', 'Tabs') }]} value={listLook} onChange={(k) => { setListLook(k); }} />
           </View>
         </Pick>
         <Pick key="tage" t={tx('3 Tage', '3 days')}>

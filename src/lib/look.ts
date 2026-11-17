@@ -33,7 +33,7 @@ export type MemoColor = 'ink' | 'me';
  */
 export type NavLook = 'mitte' | 'pille';
 export type YearLook = 'klein' | 'kacheln';
-/** lists: 'reiter' = the lists as a row of chips, as before; 'kacheln' = an overview of coloured tiles first (Ton & Papier). */
+/** lists: 'kacheln' = an overview of coloured tiles first (Ton & Papier, the standard since Julian 17.11.); 'reiter' = the lists as a row of chips, as before. */
 export type ListLook = 'reiter' | 'kacheln';
 
 const readBubble = (): BubbleId => { const v = getPref('bubble'); return (BUBBLES.find((b) => b.id === v)?.id ?? 'teal') as BubbleId; };
@@ -41,7 +41,7 @@ const readMemo = (): MemoColor => (getPref('memoColor') === 'me' ? 'me' : 'ink')
 
 const readNav = (): NavLook => (getPref('navLook') === 'pille' ? 'pille' : 'mitte');
 const readYear = (): YearLook => (getPref('yearLook') === 'kacheln' ? 'kacheln' : 'klein');
-const readLists = (): ListLook => (getPref('listLook') === 'kacheln' ? 'kacheln' : 'reiter');
+const readLists = (): ListLook => (getPref('listLook') === 'reiter' ? 'reiter' : 'kacheln');
 const readDays = (): boolean => getPref('showDays') !== 'aus';
 
 let state = { bubble: readBubble(), memo: readMemo(), nav: readNav(), year: readYear(), days: readDays(), lists: readLists() };
