@@ -100,7 +100,8 @@ function useWhere(): { ctx: Ctx; tab: boolean; lift: number; chat?: boolean } | 
   const { id } = useGlobalSearchParams<{ id?: string }>();
   // The family chat (Julian 29.10.): the field is always there, a sentence becomes a card in the log.
   if (path === '/chat') return { ctx: { kind: 'kalender' }, tab: false, lift: 0, chat: true };
-  if (path === '/kalender' || path === '/eingang') return { ctx: { kind: 'kalender' }, tab: true, lift: 0 };
+  // The settings are a tab too (Julian 16.11.): Memo sits in its pill, so a sentence said there works like in the calendar.
+  if (path === '/kalender' || path === '/eingang' || path === '/einstellungen') return { ctx: { kind: 'kalender' }, tab: true, lift: 0 };
   if (path === '/listen') return { ctx: { kind: 'liste', id: active }, tab: true, lift: 0 };
   // The Termin's page (a tap on a Termin leads straight to it, Julian 16.11.): spoken changes land on its fields.
   if ((path === '/termin-aendern' || path.startsWith('/termin/')) && typeof id === 'string' && id) return { ctx: { kind: 'termin', id }, tab: false, lift: 0 };
@@ -829,9 +830,9 @@ export default function Dock() {
       else if (r0?.kind === 'done' && (!r0.note || r0.say)) addMade(said, out.lit ?? (out.land ? [out.land] : []), r0.text, r0.undo, r0.events, { head: p.head, steps: p.steps }, r0.say);
       // An answer from the assistant stays in the chat as its message (Julian 30.10.).
       else if (agentOn() && r0?.kind === 'answer' && r0.reply.kind === 'answer') addSay(said, r0.reply.text);
-      // The card shows what landed over the screen you are on; only a list item on another list still switches (Julian 31.10.).
-      const go = where.chat ? undefined : out.go;
-      if (go && go !== path) router.navigate(go as any);
+      // The card shows what landed over the screen you are on, and I stay there (Julian 16.11.: "appear on top of
+      // where I am always"): a list item said in the calendar no longer switches to the lists.
+      const go = undefined as string | undefined;
       const finish = () => {
         // Each new row arrives on its own with a tick, then the receipt says what happened.
         const rows = out.lit?.length ? out.lit : out.land ? [out.land] : [];
@@ -991,7 +992,8 @@ export default function Dock() {
     {/* Klar: a tap beside the open input puts it away; words already typed stay in it. */}
     {klarShow ? <Pressable accessibilityLabel={tx('Eingabe schließen', 'Close input')} onPress={() => { Keyboard.dismiss(); const b = getBuddy(); if (!b.typed && !b.listening) setBarMode('rest'); }} style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0 }} /> : null}
     <Animated.View pointerEvents="box-none" onLayout={(e) => setH(e.nativeEvent.layout.height)} style={[{ position: 'absolute', left: onTabs ? 14 : 18, right: onTabs ? 14 : 18, gap: 10 }, bStyle]}>
-      {where.chat || turn ? null : <Peek />}
+      {/* Klar at rest: the input is folded into Memo but keeps its room; the card sits right above the nav pill instead. */}
+      {where.chat || turn ? null : <Peek drop={klar && !klarShow && !cardOpen ? Math.max(0, fieldH - navH()) : 0} />}
       {/* Klar: no pill above the nav; the new row itself and the chat are the record (Julian 14.11.). */}
       {turn || !onTabs || klar ? null : <SessionPill />}
       {turn && !cardOpen ? (
