@@ -1,8 +1,8 @@
 /**
- * Kalender · Monat: the flat month, exactly as in the klar draft Julian approved (14.11.). Every day is its number
- * with one dot per Termin in the colour of who goes (Julian 04.11.: the simple month with dots). Today is the dark
- * circle, the chosen day lies on a soft grey field. Feiertage stand bold and Urlaub lies as a soft band behind its
- * days, so you can tell where they were (Julian 14.11.); both are named under the grid. Nothing else stands in a
+ * Kalender · Monat: the month of Ton & Papier (Julian 17.11.: "wir übernehmen nur die Monatsansicht"). Every day is
+ * a tall field with its number and one dot per Termin in the colour of who goes (Julian 04.11.: the simple month
+ * with dots). Today is an ink field, the chosen day lies on a soft field. Feiertage stand in their own colour and
+ * Urlaub lies as a soft band at the foot of its days (Julian 14.11.); both are named under the grid. Nothing else stands in a
  * day: work shifts belong to the hour grids. The chosen day's Termine follow as rows with fine lines between.
  * Swipe sideways for the month before or after.
  */
@@ -25,11 +25,10 @@ import { useCalEvents } from '../../lib/useEvents';
 import { isInfoDay } from '../../lib/feiertage';
 import { isVacation } from '../../lib/urlaub';
 import { AgendaRow } from './AgendaView';
+import { vivid } from '../../theme';
 
 // One letter per weekday, as in the draft.
 const HEAD = tx('M D M D F S S', 'M T W T F S S').split(' ');
-/** The number's circle and the band behind it. */
-const NUM = 30;
 
 export function monthTitle(day: string) {
   return { month: MONTHS[monthIdx(day)], year: year(day) };
@@ -50,6 +49,8 @@ export default function MonthView() {
   const day = useStore((s) => s.calDay);
   const events = useCalEvents();
   const people = useStore((s) => s.people);
+  // Ton & Papier (Julian 17.11.: "wir übernehmen nur die Monatsansicht"): tall cells, today as an ink field, the
+  // Urlaub as a band at the foot of its days. Everything else of the month is as it was.
   const m = monthIdx(day);
   const first = iso(new Date(Date.UTC(year(day), m, 1)));
   const start = monday(first);
@@ -88,7 +89,7 @@ export default function MonthView() {
   // Title, switch and weekday row take about 290, the talk field and tabs about 200.
   const { height: H } = useWindowDimensions();
   const rows = cells.length / 7;
-  const cellH = Math.round(Math.max(52, Math.min(62, (H - 500) / rows)));
+  const cellH = Math.round(Math.max(64, Math.min(88, (H - 470) / rows)));
 
   // Swipe left or right for the next or previous month (Julian 30.10.), like in the week.
   const W = useSharedValue(360);
@@ -131,28 +132,26 @@ export default function MonthView() {
           const inMonth = monthIdx(d) === m;
           const c = inMonth ? at.get(d) : undefined;
           const sel = d === day;
-          const isToday = d === TODAY;
+          const isToday = d === TODAY && inMonth;
           const evs = c?.evs ?? [];
           // The band runs on to the next day inside the week's row and ends round where the Urlaub or the row ends.
           const on = (o: number) => !!c?.vac && monthIdx(addDays(d, o)) === m && at.get(addDays(d, o))?.vac === c.vac;
           const joinL = ci % 7 !== 0 && on(-1), joinR = ci % 7 !== 6 && on(1);
           return (
-            <View key={d} style={{ width: `${100 / 7}%` }}>
+            <View key={d} style={{ width: `${100 / 7}%`, padding: 1 }}>
               <PressScale
                 scale={0.94}
                 onPress={() => { if (inMonth && !sel) { haptics.select(); actions.setCalDay(d); } }}
                 accessibilityLabel={short(d)}
                 accessibilityState={{ selected: sel }}
-                style={{ height: cellH, alignItems: 'center', paddingTop: 6, borderRadius: 10, backgroundColor: sel ? tokens.chipBg : 'transparent' }}
+                style={{ height: cellH, alignItems: 'center', paddingTop: 12, borderRadius: 18, overflow: 'hidden', backgroundColor: isToday ? tokens.ink : sel ? tokens.chipBg : 'transparent' }}
               >
-                {c?.vac ? <View style={{ position: 'absolute', top: 6, height: NUM, left: joinL ? 0 : 5, right: joinR ? 0 : 5, backgroundColor: bandOf(c.vac), borderTopLeftRadius: joinL ? 0 : NUM / 2, borderBottomLeftRadius: joinL ? 0 : NUM / 2, borderTopRightRadius: joinR ? 0 : NUM / 2, borderBottomRightRadius: joinR ? 0 : NUM / 2 }} /> : null}
-                <View style={{ width: NUM, height: NUM, borderRadius: NUM / 2, alignItems: 'center', justifyContent: 'center', backgroundColor: isToday ? tokens.accent : 'transparent' }}>
-                  <Txt size={16.5} line={20} weight={isToday || c?.hol ? 600 : 400} color={isToday ? '#FFFFFF' : inMonth ? tokens.ink : tokens.circleLine}>{String(dayNum(d))}</Txt>
-                </View>
+                {c?.vac ? <View style={{ position: 'absolute', left: joinL ? -1 : 6, right: joinR ? -1 : 6, bottom: 10, height: 10, backgroundColor: bandOf(c.vac), borderTopLeftRadius: joinL ? 0 : 5, borderBottomLeftRadius: joinL ? 0 : 5, borderTopRightRadius: joinR ? 0 : 5, borderBottomRightRadius: joinR ? 0 : 5 }} /> : null}
+                <Txt size={20} line={24} weight={600} color={isToday ? tokens.onInk : !inMonth ? tokens.circleLine : c?.hol ? tokens.frist : tokens.ink}>{String(dayNum(d))}</Txt>
                 {evs.length ? (
-                  <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 3, height: 7, marginTop: 4 }}>
-                    {evs.slice(0, 3).map((e, i) => <View key={i} style={{ width: 5, height: 5, borderRadius: 3, backgroundColor: evInk(e) }} />)}
-                    {evs.length > 3 ? <Txt size={9} line={9} weight={700} color={tokens.sub}>+</Txt> : null}
+                  <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 3, height: 8, marginTop: 6 }}>
+                    {evs.slice(0, 4).map((e, i) => <View key={i} style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: isToday ? tokens.onInk : vivid(evInk(e)) }} />)}
+                    {evs.length > 4 ? <Txt size={9} line={9} weight={700} color={isToday ? tokens.onInk : tokens.sub}>+</Txt> : null}
                   </View>
                 ) : null}
               </PressScale>

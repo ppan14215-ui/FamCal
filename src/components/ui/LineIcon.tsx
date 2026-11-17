@@ -10,7 +10,7 @@ import { tokens } from '../../theme';
 export type LineName =
   | 'home' | 'cal' | 'list' | 'inbox' | 'plus' | 'mic' | 'sync' | 'camera' | 'back' | 'chev'
   | 'check' | 'x' | 'lock' | 'clock' | 'copy' | 'send' | 'flash' | 'pin' | 'sparkle' | 'settings'
-  | 'papier' | 'users' | 'undo' | 'trash' | 'warn' | 'chat' | 'grid' | 'file' | 'image' | 'up' | 'search' | 'edit' | 'more' | 'arrow';
+  | 'papier' | 'users' | 'undo' | 'trash' | 'warn' | 'chat' | 'grid' | 'file' | 'image' | 'up' | 'search' | 'edit' | 'more' | 'arrow' | 'bell';
 
 type Props = { name: LineName; size?: number; color?: string; stroke?: number };
 
@@ -25,6 +25,7 @@ export default function LineIcon({ name, size = 22, color = tokens.ink, stroke =
 
 function shape(n: LineName, p: any) {
   switch (n) {
+    case 'bell': return <><Path {...p} d="M6 17V11a6 6 0 0 1 12 0v6l1.5 2h-15z" /><Path {...p} d="M10 21.5h4" /></>;
     case 'home': return <Path {...p} d="M4 11l8-7 8 7v8a1 1 0 0 1-1 1h-4v-6h-6v6H5a1 1 0 0 1-1-1z" />;
     case 'cal': return <><Rect {...p} x={4} y={5} width={16} height={15} rx={2} /><Path {...p} d="M4 10h16M9 3v4M15 3v4" /></>;
     case 'list': return <><Path {...p} d="M9 6h11M9 12h11M9 18h11" /><Circle {...p} cx={4.5} cy={6} r={1} /><Circle {...p} cx={4.5} cy={12} r={1} /><Circle {...p} cx={4.5} cy={18} r={1} /></>;

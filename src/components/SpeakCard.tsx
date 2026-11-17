@@ -201,9 +201,11 @@ function KlarCard({ seat }: { seat?: 'right' }) {
   const PIN_DY = S * 0.04;
   // Memo's seat, from the middle: in the nav pill, or (off the tabs, Termin ändern) at the right end of the dark line.
   const home = seat === 'right' ? CW / 2 - 26 : mo.dx;
+  // In the bar Memo is the bigger, raised button in the middle: the traveller lands at that size and height.
+  const HK = seat === 'right' ? 1 : mo.k, HDY = seat === 'right' ? 0 : mo.dy;
   const geo = (st: Stage) => (st === 'card' ? { w: CW, h: CH, r: 26, cx: CW / 2, yb: 0, px: K_PAD.l + S / 2, py: K_PAD.b + K_ROW / 2 + PIN_DY }
     : st === 'think' ? { w: BUB_W, h: BUB_H, r: BUB_H / 2, cx: CW / 2, yb: (NAV - BUB_H) / 2, px: CW / 2, py: NAV / 2 + PIN_DY }
-    : { w: BODY, h: BODY, r: BODY / 2, cx: CW / 2 + home, yb: NAV / 2 - 0.2 - BODY / 2, px: CW / 2 + home, py: NAV / 2 - 0.2 + PIN_DY });
+    : { w: BODY * HK, h: BODY * HK, r: BODY * HK / 2, cx: CW / 2 + home, yb: NAV / 2 - 0.2 + HDY - BODY * HK / 2, px: CW / 2 + home, py: NAV / 2 - 0.2 + HDY + PIN_DY * HK });
   const g0 = geo('rest');
   const w = useSharedValue(g0.w), h = useSharedValue(g0.h), r = useSharedValue(g0.r), cx = useSharedValue(g0.cx), yb = useSharedValue(g0.yb);
   const px = useSharedValue(g0.px), py = useSharedValue(g0.py);
@@ -230,7 +232,7 @@ function KlarCard({ seat }: { seat?: 'right' }) {
     const hid = (v: SharedValue<number>, x: number) => { v.value = withDelay(260, withTiming(x, { duration: 1 })); };
     const go = handOver ? hid : to;
     go(w, g.w); go(h, g.h); go(r, g.r); go(cx, g.cx); go(yb, g.yb); go(px, g.px); go(py, g.py);
-    to(ps, stage === 'think' ? BUB_PIN : 1);
+    to(ps, stage === 'think' ? BUB_PIN : stage === 'rest' ? HK : 1);
     if (!moved) return;
     if (handOver) {
       so.value = withDelay(110, withTiming(0, { duration: 120 }));
@@ -244,7 +246,7 @@ function KlarCard({ seat }: { seat?: 'right' }) {
       so.value = withDelay(d, withTiming(0, { duration: 60 }));
       po.value = withDelay(d + 90, withTiming(0, { duration: 1 }));
     } else { so.value = 1; po.value = 1; }
-  }, [stage, CW, home]);
+  }, [stage, CW, home, HK, HDY]);
   // The open card grows and shrinks with its words, like a text field. Only then: on the way out the words change
   // too, and that must not cut the journey short.
   useEffect(() => { if (prev.current === 'card' && stage === 'card') h.value = reduced ? CH : withTiming(CH, { duration: 180, easing: OUT }); }, [CH]);

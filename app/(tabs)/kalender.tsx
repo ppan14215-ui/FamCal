@@ -27,6 +27,7 @@ import { TODAY, WD_LONG, weekday, dayNum, MONTHS_SHORT, monthIdx, addDays, monda
 import { haptics } from '../../src/lib/haptics';
 import { tx, EN } from '../../src/i18n/lang';
 import { useSimple } from '../../src/lib/simple';
+import { useShowDays, showDays } from '../../src/lib/look';
 
 const VIEWS: { key: CalView; label: string }[] = [
   { key: 'heute', label: tx('Heute', 'Today') },
@@ -126,7 +127,9 @@ function Arrive({ from, children }: { from: number; children: React.ReactNode })
 
 /** One step closer (1) or further (-1); nothing at either end. */
 function zoomBy(dir: 1 | -1) {
-  const next = ZOOM[ZOOM.indexOf(get().calView) - dir];
+  // Without the 3 days tab (a setting, Julian 17.11.) the week is the closest step.
+  const steps = showDays() ? ZOOM : ZOOM.filter((v) => v !== 'tag');
+  const next = steps[steps.indexOf(get().calView) - dir];
   if (!next) return;
   haptics.select();
   actions.setCalView(next);
@@ -134,7 +137,10 @@ function zoomBy(dir: 1 | -1) {
 
 export default function Kalender() {
   const simple = useSimple();
-  const view = useStore((s) => s.calView);
+  const days = useShowDays();
+  // With the 3 days tab switched off, what would open there opens as the day.
+  const view = useStore((s) => (s.calView === 'tag' && !days ? 'heute' : s.calView));
+  const views = days ? VIEWS : VIEWS.filter((v) => v.key !== 'tag');
   const day = useStore((s) => s.calDay);
   // The view switch starts open and stays open after a pick (Julian 28.10.); the chevron folds it away.
   const [open, setOpen] = useState(true);
@@ -179,10 +185,10 @@ export default function Kalender() {
   // Heute once more, while another day of the strip is chosen: back to today.
   const again = (v: CalView) => { if (v === 'heute' && get().calDay !== TODAY) { haptics.select(); actions.setCalDay(TODAY); } };
   const seg = simple ? (
-    <Tabs items={VIEWS} value={view} onChange={choose} onAgain={again} bleed={18} />
+    <Tabs items={views} value={view} onChange={choose} onAgain={again} bleed={18} />
   ) : open ? (
     <Animated.View entering={fadeIn} exiting={FadeOut.duration(120)} style={{ gap: 10 }}>
-      <Tabs items={VIEWS} value={view} onChange={choose} onAgain={again} bleed={18} />
+      <Tabs items={views} value={view} onChange={choose} onAgain={again} bleed={18} />
       <WhoFilter />
     </Animated.View>
   ) : <WhoFilter only />;

@@ -23,18 +23,40 @@ export const BUBBLES = [
 ] as const;
 export type BubbleId = (typeof BUBBLES)[number]['id'];
 export type MemoColor = 'ink' | 'me';
+/**
+ * The app is configurable (Julian 17.11.: "sodass wir hingehen zu einer App, die konfigurierbar ist"): where he liked
+ * two ways, both stay and a setting picks one.
+ * nav: 'mitte' = Memo in the middle of the bar, no Chat tab, a tap on him opens the chat with the input open (the new
+ *      standard); 'pille' = the four tabs with Memo at the end, as before.
+ * year: 'klein' = the twelve small months, as before; 'kacheln' = the coloured month tiles of Ton & Papier.
+ * days: whether the 3 days view has its tab.
+ */
+export type NavLook = 'mitte' | 'pille';
+export type YearLook = 'klein' | 'kacheln';
 
 const readBubble = (): BubbleId => { const v = getPref('bubble'); return (BUBBLES.find((b) => b.id === v)?.id ?? 'teal') as BubbleId; };
 const readMemo = (): MemoColor => (getPref('memoColor') === 'me' ? 'me' : 'ink');
 
-let state = { bubble: readBubble(), memo: readMemo() };
+const readNav = (): NavLook => (getPref('navLook') === 'pille' ? 'pille' : 'mitte');
+const readYear = (): YearLook => (getPref('yearLook') === 'kacheln' ? 'kacheln' : 'klein');
+const readDays = (): boolean => getPref('showDays') !== 'aus';
+
+let state = { bubble: readBubble(), memo: readMemo(), nav: readNav(), year: readYear(), days: readDays() };
 const subs = new Set<() => void>();
 const emit = () => subs.forEach((l) => l());
 // The saved choice arrives a moment after start.
-onPrefsReady(() => { const b = readBubble(), m = readMemo(); if (b !== state.bubble || m !== state.memo) { state = { bubble: b, memo: m }; emit(); } });
+onPrefsReady(() => { const n = { bubble: readBubble(), memo: readMemo(), nav: readNav(), year: readYear(), days: readDays() }; if ((Object.keys(n) as (keyof typeof n)[]).some((k) => n[k] !== state[k])) { state = n; emit(); } });
 
 export function setBubble(id: BubbleId) { if (id === state.bubble) return; state = { ...state, bubble: id }; setPref('bubble', id); emit(); }
 export function setMemoColor(v: MemoColor) { if (v === state.memo) return; state = { ...state, memo: v }; setPref('memoColor', v); emit(); }
+export function setNavLook(v: NavLook) { if (v === state.nav) return; state = { ...state, nav: v }; setPref('navLook', v); emit(); }
+export function setYearLook(v: YearLook) { if (v === state.year) return; state = { ...state, year: v }; setPref('yearLook', v); emit(); }
+export function setShowDays(v: boolean) { if (v === state.days) return; state = { ...state, days: v }; setPref('showDays', v ? 'an' : 'aus'); emit(); }
+export const useNavLook = (): NavLook => use().nav;
+export const useYearLook = (): YearLook => use().year;
+export const useShowDays = (): boolean => use().days;
+export const showDays = () => state.days;
+export const navLook = () => state.nav;
 
 const use = () => useSyncExternalStore((l) => { subs.add(l); return () => { subs.delete(l); }; }, () => state, () => state);
 

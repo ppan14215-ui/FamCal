@@ -26,6 +26,9 @@ import { isVacation } from '../../lib/urlaub';
 import { useCalEvents } from '../../lib/useEvents';
 import { tx } from '../../i18n/lang';
 import type { CalEvent } from '../../state/types';
+import { useYearLook } from '../../lib/look';
+import { ClayIcon } from '../../components/ui/Clay';
+import { glass, allColors } from '../../theme';
 
 type Mark = { ev?: boolean; n?: number; hol?: boolean; vac?: string };
 
@@ -95,7 +98,45 @@ function Mini({ y, m, marks, onPress }: { y: number; m: number; marks: Map<strin
   );
 }
 
+// The season's colour and clay icon of each month, from the earth colours of Ton & Papier.
+const SEASON: { color: string; icon: 'schnee' | 'weihnachten' | 'fruehling' | 'strand' | 'herbst' }[] = [
+  { color: 'E-Blau', icon: 'schnee' }, { color: 'E-Blau', icon: 'schnee' },
+  { color: 'E-Salbei', icon: 'fruehling' }, { color: 'E-Salbei', icon: 'fruehling' }, { color: 'E-Salbei', icon: 'fruehling' },
+  { color: 'E-Ocker', icon: 'strand' }, { color: 'E-Ocker', icon: 'strand' }, { color: 'E-Ocker', icon: 'strand' },
+  { color: 'E-Terrakotta', icon: 'herbst' }, { color: 'E-Terrakotta', icon: 'herbst' }, { color: 'E-Terrakotta', icon: 'herbst' },
+  { color: 'E-Blau', icon: 'weihnachten' },
+];
+
+/**
+ * A month as a coloured tile (Julian 17.11.: white boxes are boring, "das funktioniert nur, wenn wir den farbigen Stil
+ * aus dem ursprünglichen Konzept verwenden"): the season's colour, its name, and what stands out in it: an Urlaub or a
+ * Feiertag by name, otherwise how much is on, and the season's clay icon at 48 dp. The running month wears an ink ring.
+ */
+function Tile({ y, m, events, onPress }: { y: number; m: number; events: CalEvent[]; onPress: () => void }) {
+  const from = iso(new Date(Date.UTC(y, m, 1))), to = iso(new Date(Date.UTC(y, m + 1, 0)));
+  const inMonth = events.filter((e) => !e.work && (e.endDate ?? e.date) >= from && e.date <= to);
+  const vac = inMonth.find(isVacation);
+  const hol = inMonth.filter((e) => e.cal === 'feiertage' && e.date >= from).sort((a, b) => a.date.localeCompare(b.date))[0];
+  const n = inMonth.filter((e) => e.cal !== 'feiertage' && !isVacation(e) && e.date >= from).length;
+  const now = yearOf(TODAY) === y && monthIdx(TODAY) === m;
+  const c = allColors.find((x) => x.name === SEASON[m].color)!;
+  const mark = vac ?? hol;
+  const count = n ? tx(`${n} ${n === 1 ? 'Termin' : 'Termine'}`, `${n} ${n === 1 ? 'thing' : 'things'}`) : '';
+  return (
+    <View style={{ width: '33.333%', padding: 5 }}>
+      <PressScale scale={0.96} onPress={onPress} accessibilityLabel={`${MONTHS[m]} ${y}`}
+        style={[{ height: 132, borderRadius: 24, padding: 14, overflow: 'hidden' }, glass.lift, { backgroundColor: c.bg }, now ? { borderWidth: 2.5, borderColor: tokens.ink, padding: 11.5 } : null]}>
+        <Txt size={20} line={24} weight={600} color={c.fg} numberOfLines={1}>{MONTHS[m]}</Txt>
+        <Txt size={12.5} line={16} color={c.fg} numberOfLines={1} style={{ marginTop: 2, opacity: 0.85 }}>{mark ? mark.title : count || tx('noch frei', 'still free')}</Txt>
+        {mark && count ? <Txt size={12.5} line={16} color={c.fg} numberOfLines={1} style={{ opacity: 0.7 }}>{count}</Txt> : null}
+        <View pointerEvents="none" style={{ position: 'absolute', right: 8, bottom: 8 }}><ClayIcon name={(vac && vac.icon) || SEASON[m].icon} size={48} /></View>
+      </PressScale>
+    </View>
+  );
+}
+
 export default function YearView() {
+  const cards = useYearLook() === 'kacheln';
   const day = useStore((s) => s.calDay);
   const events = useCalEvents();
   const y = yearOf(day);
@@ -147,10 +188,10 @@ export default function YearView() {
     <>
       <GestureDetector gesture={pan} touchAction="pan-y">
         <Animated.View onLayout={(e) => { W.value = e.nativeEvent.layout.width; }} style={[{ flexDirection: 'row', flexWrap: 'wrap', marginHorizontal: -4 }, slide]}>
-          {Array.from({ length: 12 }, (_, m) => <Mini key={`${y}-${m}`} y={y} m={m} marks={marks} onPress={() => open(m)} />)}
+          {Array.from({ length: 12 }, (_, m) => cards ? <Tile key={`${y}-${m}`} y={y} m={m} events={events} onPress={() => open(m)} /> : <Mini key={`${y}-${m}`} y={y} m={m} marks={marks} onPress={() => open(m)} />)}
         </Animated.View>
       </GestureDetector>
-      <Legend />
+      {cards ? null : <Legend />}
       <H2>{tx('Was das Jahr noch bringt', 'Still ahead this year')}</H2>
       {ahead.length ? (
         <Group>

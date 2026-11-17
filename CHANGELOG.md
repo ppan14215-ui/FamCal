@@ -105,6 +105,9 @@ Alle sichtbaren Änderungen an FamCal. Neueste oben. Agenten und Menschen: Ände
 - Das Chat Fenster außerhalb des Chats liegt jetzt immer über der Seite, auf der du gerade bist: mit deinem Satz, Memos Antwort und der Karte mit Rückgängig. Es zeigt sich auch im Kalender und in den Listen, und ein Satz für eine Liste wirft dich nicht mehr vom Kalender zu den Listen. Das Fenster sitzt direkt über der Leiste und geht nach ein paar Sekunden von selbst, antippen hält es fest. Im Chat bleibt alles im Verlauf.
 - Die Farben der Eltern gehören jetzt der Familie: wer auf einem Handy eine Farbe wählt, sieht sie auch auf dem anderen, beim nächsten Öffnen oder Zurückkommen. Eine Wahl ohne Netz geht hoch, sobald das Handy wieder verbunden ist.
 - Ton & Papier, Etappe 1: Papier Grund, Petrol Tinte, warme Grautöne und Schatten, Überschriften in Bricolage Grotesque, Farbthema Erde als Standard. Aufbau und Verhalten unverändert.
+- Monat im Ton & Papier Stil: hohe Felder, heute als Tinte Feld, Urlaub als Band am Fuß der Tage.
+- Neue Leiste unten wie in anderen Apps: Kalender, Listen, Memo groß in der Mitte, Neu (Eingang mit Glocke), Einstellungen. Memo antippen öffnet den Chat mit offener Eingabe. Die bisherige Leiste bleibt in den Einstellungen wählbar.
+- Einstellungen: Jahr als Monate oder farbige Kacheln, 3 Tage Ansicht zeigen oder ausblenden.
 
 ### App funktioniert zuverlässig (09.11. Audit)
 - Nach längerer Pause im Hintergrund klappen Assistent und Spracheingabe gleich beim ersten Satz, statt "Ich komme gerade nicht an den Assistenten".

@@ -36,7 +36,7 @@ import { THEMES } from '../../src/theme/tokens';
 import { usePalette, colorsTouched, redrawIfTouched } from '../../src/theme/mode';
 import { navStyle, setNavStyle } from '../../src/lib/navStyle';
 import { seedDemoFeed } from '../../src/lib/feed';
-import { useBubble, useMemoChoice, setMemoColor } from '../../src/lib/look';
+import { useBubble, useMemoChoice, setMemoColor, useNavLook, setNavLook, useYearLook, setYearLook, useShowDays, setShowDays } from '../../src/lib/look';
 import { HOME } from '../../src/lib/home';
 
 /** A plain row: name left, value right, like Apple's settings (Julian 03.11.). Flat on the ground, hairlines only. */
@@ -126,6 +126,9 @@ export default function Einstellungen() {
   const mic = useMicStyle();
   const masc = useMascot();
   const memo = useMemoChoice();
+  const navLook = useNavLook();
+  const yearLook = useYearLook();
+  const days3 = useShowDays();
   const pal = usePalette();
   const themeName = (() => { const t = THEMES.find((x) => x.id === pal); return t ? tx(t.de, t.en) : ''; })();
   const simple = useSimple();
@@ -155,6 +158,22 @@ export default function Einstellungen() {
         <Pick key="sprechen" t={tx('Sprechen', 'Talking')}>
           <View style={{ width: 216 }}>
             <Seg items={[{ key: 'pin', label: tx('Mit Memo', 'With Memo') }, { key: 'minimal', label: 'Minimal' }]} value={masc} onChange={(k) => { setMascot(k); toast(k === 'minimal' ? tx('Nur Mikro und Stopp, ohne Memo', 'Just mic and stop, no Memo') : tx('Memo ist wieder da', 'Memo is back')); }} />
+          </View>
+        </Pick>
+        {/* Julian 17.11.: a configurable app. Where he liked two ways, both stay and a setting picks one. */}
+        <Pick key="leiste" t={tx('Leiste', 'Navigation')}>
+          <View style={{ width: 216 }}>
+            <Seg items={[{ key: 'mitte', label: tx('Memo mittig', 'Memo centred') }, { key: 'pille', label: tx('Mit Chat', 'With chat') }]} value={navLook} onChange={(k) => { setNavLook(k); }} />
+          </View>
+        </Pick>
+        <Pick key="jahr" t={tx('Jahr', 'Year')}>
+          <View style={{ width: 216 }}>
+            <Seg items={[{ key: 'klein', label: tx('Monate', 'Months') }, { key: 'kacheln', label: tx('Kacheln', 'Tiles') }]} value={yearLook} onChange={(k) => { setYearLook(k); }} />
+          </View>
+        </Pick>
+        <Pick key="tage" t={tx('3 Tage', '3 days')}>
+          <View style={{ width: 216 }}>
+            <Seg items={[{ key: 'an', label: tx('Zeigen', 'Show') }, { key: 'aus', label: tx('Ausblenden', 'Hide') }]} value={days3 ? 'an' : 'aus'} onChange={(k) => { setShowDays(k === 'an'); }} />
           </View>
         </Pick>
         <SRow key="sprache" t={tx('Sprache beim Sprechen', 'Speech language')} v={sl === 'de' ? tx('Deutsch', 'German') : tx('Englisch', 'English')} onPress={() => { const v = sl === 'de' ? 'en' : 'de'; setSpeechLang(v); setSl(v); toast(v === 'de' ? tx('Ich höre jetzt auf Deutsch', 'Listening in German now') : tx('Ich höre jetzt auf Englisch', 'Listening in English now')); }} />
