@@ -457,7 +457,12 @@ export default function Dock() {
   useEffect(() => { if (talking) setListenKey(Date.now()); }, [talking]);
   // Tapping Memo is the same as tapping the mic (Julian 08.11.: Memo needs a purpose).
   const buddyTalkN = useBuddyTalk();
-  useEffect(() => { if (!buddyTalkN) return; if (navStyle() === 'bar' || navStyle() === 'klar') setBarMode('input'); setListenKey(Date.now()); }, [buddyTalkN]);
+  // Julian 17.11. ("anytime I open memo the input also jumps"): a tap on Memo goes straight to the Sprechkarte. Until the
+  // card is open the light typing card must not flash up in between; if the card never comes (no microphone), the
+  // typing card shows after a moment as before.
+  const [talkStart, setTalkStart] = useState(false);
+  useEffect(() => { if (!buddyTalkN) return; if (navStyle() === 'klar') setTalkStart(true); if (navStyle() === 'bar' || navStyle() === 'klar') setBarMode('input'); setListenKey(Date.now()); }, [buddyTalkN]);
+  useEffect(() => { if (!talkStart) return; const t = setTimeout(() => setTalkStart(false), 1500); return () => clearTimeout(t); }, [talkStart]);
   // A long press on Memo goes straight to the keyboard (klar).
   const buddyKeysN = useBuddyKeys();
   useEffect(() => { if (!buddyKeysN) return; setBarMode('input'); setFocusKey((k) => k + 1); }, [buddyKeysN]);
@@ -545,7 +550,8 @@ export default function Dock() {
   // Klar (Julian 13.11.): at rest only the nav pill shows. Tapping Memo, typing or a waiting sentence opens the input,
   // which lies over the pill; speaking shows the Sprechkarte in the same place.
   const klarOpen = klar && (typing || barRaw === 'input');
-  const klarShow = klarOpen && !cardOpen;
+  useEffect(() => { if (cardOpen) setTalkStart(false); }, [cardOpen]);
+  const klarShow = klarOpen && !cardOpen && !talkStart;
   const kA = useSharedValue(klarShow ? 1 : 0);
   // Julian 16.11.: "immer im schwarzen Feld bleiben". Between the Sprechkarte and typing the dark card stays where it
   // is and only its words change, so the typing card neither grows out of Memo nor shrinks back then.

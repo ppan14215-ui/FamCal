@@ -109,6 +109,7 @@ Alle sichtbaren Änderungen an FamCal. Neueste oben. Agenten und Menschen: Ände
 - Neue Leiste unten wie in anderen Apps: Kalender, Listen, Memo groß in der Mitte, Neu (Eingang mit Glocke), Einstellungen. Memo antippen öffnet den Chat mit offener Eingabe. Die bisherige Leiste bleibt in den Einstellungen wählbar.
 - Einstellungen: Jahr als Monate oder farbige Kacheln, 3 Tage Ansicht zeigen oder ausblenden.
 - Listen öffnen mit einer Übersicht aus farbigen Kacheln. Eine Kachel öffnet die Liste wie bisher, der Pfeil führt zurück. Die Reiter bleiben in den Einstellungen wählbar.
+- - Memo öffnen springt nicht mehr: die helle Eingabe blitzt nicht mehr kurz auf, und die Sprechkarte wächst aus Memo in der Mitte der Leiste statt von einer Stelle rechts daneben. Der Chat ist beim Start schon aufgebaut.
 
 ### App funktioniert zuverlässig (09.11. Audit)
 - Nach längerer Pause im Hintergrund klappen Assistent und Spracheingabe gleich beim ersten Satz, statt "Ich komme gerade nicht an den Assistenten".
