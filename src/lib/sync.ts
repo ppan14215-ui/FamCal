@@ -5,17 +5,21 @@
  * store as before, sync only watches it.
  */
 import { useSyncExternalStore } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { RealtimeChannel } from '@supabase/supabase-js';
 import { setFamily } from './analytics';
 import { supabase, allRows } from './cloud';
-import { get, set, subscribe, actions, setMeRole } from '../state/store';
+import { get, set, subscribe, actions, setMeRole, colorsReady } from '../state/store';
 import type { CalEvent, Bring, Person } from '../state/types';
 import { watchComments, stopComments } from './comments';
 import type { ClayName } from './clayIcons';
 import { applyFamilyKi, onSaveOhneKi } from './privat';
 import { readCache, writeCache, clearCache } from './cache';
+import { THEMES } from '../theme/tokens';
+import { colorsTouched, redrawIfTouched } from '../theme/mode';
+import { ROLES, cleanColors, sameColors, mergeColors, rolesToTake, firstUpload, type Role, type FamilyColors } from './familyColors';
 
-export type Family = { id: string; name: string; invite_code: string; ohne_ki?: boolean | null; partner_name?: string | null; ics_token?: string | null; vacation?: Partial<Record<'J' | 'T', number>> | null; land?: string | null; country?: string | null; ort?: string | null };
+export type Family = { id: string; name: string; invite_code: string; ohne_ki?: boolean | null; partner_name?: string | null; ics_token?: string | null; vacation?: Partial<Record<'J' | 'T', number>> | null; colors?: FamilyColors | null; land?: string | null; country?: string | null; ort?: string | null };
 type Row = {
   id: string; family_id: string; title: string; sub: string | null; icon: string; date: string; end_date: string | null;
   start_time: string; end_time: string | null; all_day: boolean; who: 'J' | 'T' | 'both' | null; place: string | null;
@@ -58,6 +62,74 @@ let lastEvents: CalEvent[] | null = null;
 let stopStore: (() => void) | null = null;
 let channel: RealtimeChannel | null = null;
 let pushing = Promise.resolve();
+
+/**
+ * The parents' colours are the family's (Julian 17.11.: "Ja, und Farben für beide Handys"); families.colors holds
+ * the place in the colour row by role. A colour chosen here and not confirmed by the server yet wins over what the
+ * family has, like an unsent Termin; it is remembered across a restart.
+ */
+const COLOR_ROW = Math.max(...THEMES.map((t) => t.colors.length));
+const UNSENT_KEY = 'famcal.colors.unsent';
+const unsentColors = new Set<Role>();
+const unsentReady = AsyncStorage.getItem(UNSENT_KEY).then((kept) => { ROLES.forEach((p) => { if (kept?.includes(p)) unsentColors.add(p); }); }).catch(() => {});
+let lastColors: Record<Role, number> = { J: get().colors.J, T: get().colors.T };
+let takingColors = false;
+const keepUnsent = () => { (unsentColors.size ? AsyncStorage.setItem(UNSENT_KEY, [...unsentColors].join('')) : AsyncStorage.removeItem(UNSENT_KEY)).catch(() => {}); };
+// The phone's own saved colours come back a moment after start; that is not a choice.
+let coloursBack = false;
+void colorsReady.then(() => { coloursBack = true; lastColors = { J: get().colors.J, T: get().colors.T }; });
+// A colour chosen on this phone is marked at once, also while there is no network (the family is known from the
+// cache): it goes up as soon as the server is reached. The family's colours arriving, the sample family and a
+// sign out are no choice.
+subscribe(() => {
+  const c = get().colors;
+  if (c.J === lastColors.J && c.T === lastColors.T) return;
+  const before = lastColors;
+  lastColors = { J: c.J, T: c.T };
+  if (!coloursBack || takingColors || !family || get().demo) return;
+  // Every change of the store passes here: a hiccup with the colours must never stop anything else.
+  try {
+    ROLES.forEach((p) => { if (c[p] !== before[p]) unsentColors.add(p); });
+    keepUnsent();
+    if (live) saveColors();
+  } catch (e) { console.warn('[sync] colors', e); }
+});
+
+/** The family's colours come onto this phone, and the pages draw again. A choice still waiting here stays. */
+function takeColors(c: FamilyColors) {
+  const roles = rolesToTake(c, get().colors, unsentColors);
+  takingColors = true;
+  try { roles.forEach((p) => actions.setColor(p, c[p]!)); } finally { takingColors = false; }
+  lastColors = { J: get().colors.J, T: get().colors.T };
+  if (roles.length) { colorsTouched(); redrawIfTouched(); }
+}
+
+/** A colour was chosen on this phone: it goes to the family. Runs in line with the Termine, so a catch up never crosses it. */
+function saveColors() {
+  pushing = pushing.then(async () => {
+    if (!supabase || !family || !unsentColors.size) return;
+    const fam = family.id;
+    // The whole object is written, so the server's colours are read first and only what was chosen here goes over them.
+    const cur = await supabase.from('families').select('colors').eq('id', fam).maybeSingle();
+    // Not there (no network, or the column does not exist yet): it stays marked and goes with the next catch up.
+    if (cur.error) { console.warn('[sync] colors', cur.error.message); return; }
+    if (family?.id !== fam) return;
+    const server = cleanColors((cur.data as { colors?: unknown } | null)?.colors, COLOR_ROW);
+    const roles = [...unsentColors];
+    const next = mergeColors(server, get().colors, roles);
+    if (!sameColors(next, server)) {
+      const { error } = await supabase.from('families').update({ colors: next }).eq('id', fam);
+      if (error) { console.warn('[sync] colors', error.message); return; }
+    }
+    if (family?.id !== fam) return;
+    family = { ...family, colors: next };
+    // Changed again while this was on its way: that one stays marked, its own save follows.
+    roles.forEach((p) => { if (get().colors[p] === next[p]) unsentColors.delete(p); });
+    keepUnsent();
+    // What the other phone chose for the other parent comes along.
+    takeColors(next);
+  }).catch((e) => console.warn('[sync]', e));
+}
 
 export const getFamily = () => family;
 
@@ -125,6 +197,20 @@ export async function startSync(name?: string): Promise<{ family?: Family; error
     set(() => ({ country: family!.country ?? 'DE', land: family!.land ?? '', city: family!.ort ?? get().city }));
     actions.ensureHolidays();
   } else if (get().land || get().country !== 'DE') void saveLand();
+  // The parents' colours are the family's as well: what the family has holds here. A choice made on this phone
+  // that never reached the server stays, and a family without a colour for someone takes this phone's once.
+  // Whatever goes wrong with the colours, the Termine below still sync.
+  try {
+    await Promise.all([colorsReady, unsentReady]);
+    // Signed out meanwhile: there is no family to take colours from.
+    if (family?.id === got.id) {
+      const famColors = cleanColors(family.colors, COLOR_ROW);
+      family = { ...family, colors: famColors };
+      firstUpload(famColors, get().colors).forEach((p) => unsentColors.add(p));
+      takeColors(famColors);
+      if (unsentColors.size) { keepUnsent(); saveColors(); }
+    }
+  } catch (e) { console.warn('[sync] colors', e); }
 
   const remote = (events.data as Row[]).map(fromRow);
   const mine = new Map(get().events.filter(shared).map((e) => [e.id, e]));
@@ -239,10 +325,20 @@ export function catchUp(): Promise<void> {
   pushing = pushing.then(async () => {
     if (!supabase || !family) return;
     const fam = family.id;
-    const [res, people] = await Promise.all([
+    const [res, people, colours] = await Promise.all([
       allRows<Row>((a, b) => supabase!.from('events').select('*').eq('family_id', fam).order('id').range(a, b)),
       peopleOn ? supabase.from('family_people').select('id, name, kind, color, birthday').eq('family_id', fam) : Promise.resolve(null),
+      // The parents' colours, in case the other phone chose a new one meanwhile. Before the column exists this is an error and nothing changes.
+      // A failure here never stops the Termine from catching up.
+      supabase.from('families').select('colors').eq('id', fam).maybeSingle().then((r) => r, () => null),
     ]);
+    if (family?.id === fam && colours && !colours.error && colours.data) {
+      try {
+        const c = cleanColors((colours.data as { colors?: unknown }).colors, COLOR_ROW);
+        family = { ...family, colors: c };
+        takeColors(c);
+      } catch (e) { console.warn('[sync] colors', e); }
+    }
     if (res.error || family?.id !== fam) return;
     const remote = (res.data as Row[]).map(fromRow);
     // An empty answer for a family that had Termine is a hiccup, never a reason to clear the phone.
@@ -274,7 +370,7 @@ export function catchUp(): Promise<void> {
     }
     void import('./photoSync').then((m) => m.syncPhotos(fam, !!people && !people.error)).catch(() => {});
   }).catch((e) => console.warn('[sync] catch up', e));
-  return pushing.then(() => { push(); pushPeople(); });
+  return pushing.then(() => { push(); pushPeople(); if (unsentColors.size) saveColors(); });
 }
 
 /** Sends what changed since the server last saw it. Runs one at a time so two quick edits never cross. */
@@ -365,6 +461,8 @@ export async function forgetLocal() {
   stopSync();
   live = false;
   prevKnown = null;
+  // A colour still waiting to go up belonged to the family that is left now.
+  unsentColors.clear(); keepUnsent();
   setLoaded(false);
   await clearCache();
   actions.reset();

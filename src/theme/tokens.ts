@@ -11,46 +11,46 @@
  * - `done` (teal) is for "erledigt" and the period after headlines.
  */
 const LIGHT = {
-  // Klar (Julian 13.11.): white, near black and greys. Colour comes from people only, never from the app.
-  // Julian 14.11. 09:33: the look from before the Recordings style, so the ground is the near white again and nothing is orange.
-  bg: '#FAFAFA',
-  row: '#FFFFFF',
-  ink: '#111417',
-  sub: '#6B7176',
-  mute: '#9AA0A5',
-  hair: '#E9EAEB',
-  /** Was teal. The klar look has no accent of its own, so "erledigt" and chosen things are ink. */
-  done: '#111417',
-  doneSoft: '#E6E8EA',
+  // Ton & Papier (Julian 17.11.: "tinte, erde wird standard, kein darkmode, start"): warm paper, petrol ink, warm
+  // greys. Stage 1 changes only these values; every layout and every behaviour stays as it was.
+  bg: '#F5EFE4',
+  row: '#FFFDF9',
+  ink: '#14302F',
+  sub: '#6F6A60',
+  mute: '#A49D90',
+  hair: '#E6DFD2',
+  /** The filled check for "erledigt": the deeper petrol of the template. */
+  done: '#0E5A55',
+  doneSoft: '#E8DFCF',
   frist: '#C2410C',
   /** Urlaub, sunny and clearly its own (Julian 31.10.: "Vacation kaum zu erkennen"). */
   vac: '#F6CD6A',
   vacInk: '#5B4100',
-  segBg: '#F0F1F2',
+  segBg: '#EFE7DA',
   /** The chosen pill in a segmented control: it must stand out from segBg in both modes. */
-  segOn: '#FFFFFF',
+  segOn: '#FFFDF9',
   /** The chosen tab in the bottom bar. */
-  pillOn: '#F0F1F2',
-  chipBg: '#F0F1F2',
-  circleLine: '#C8CCCF',
-  dotOff: '#D9DCDE',
+  pillOn: '#EDE4D4',
+  chipBg: '#EFE7DA',
+  circleLine: '#D3C8B6',
+  dotOff: '#DDD3C2',
   danger: '#C7372F',
-  /** Marked text: a light grey wash, so the selected words stay readable. */
-  select: 'rgba(17,20,23,0.16)',
+  /** Marked text: a light wash, so the selected words stay readable. */
+  select: 'rgba(20,48,47,0.16)',
   ok: '#2F9E6E',
-  scrim: 'rgba(17,20,23,0.28)',
-  noteBg: '#F0F1F2',
-  paper: '#F4F1EA',
-  /** Text and icons on an ink surface (primary buttons, today's day). */
-  onInk: '#FFFFFF',
+  scrim: 'rgba(20,48,47,0.28)',
+  noteBg: '#EFE7DA',
+  paper: '#F5EFE4',
+  /** Text and icons on an ink surface (primary buttons, today's day): the paper itself. */
+  onInk: '#F5EFE4',
   /** Frosted surface over a picture (the Symbol chip on a Termin). */
-  glass: 'rgba(255,255,255,0.7)',
+  glass: 'rgba(255,253,249,0.7)',
   /** The calm cover while the assistant works. */
-  veil: 'rgba(250,250,250,0.95)',
-  /** What marks today and now. It was orange for one night (the Recordings style); Julian chose the look before it, so it is ink. */
-  accent: '#111417',
+  veil: 'rgba(245,239,228,0.95)',
+  /** What marks today and now: ink. */
+  accent: '#14302F',
   /** Its soft shadow. */
-  accentGlow: 'rgba(17,20,23,0.14)',
+  accentGlow: 'rgba(20,48,47,0.14)',
 };
 export type Tokens = Record<keyof typeof LIGHT, string>;
 
@@ -94,36 +94,36 @@ export const vivid = (fg: string) => blend(fg, '#FFFFFF', dark ? 0.35 : 0.2);
  */
 export const shadows = {
   /** A card lying on the ground. Wabi's `--sheet`. */
-  card: '0 1px 2px rgba(25,25,25,0.04), 0 12px 28px -12px rgba(25,25,25,0.14)',
+  card: '0 1px 2px rgba(40,30,10,0.05), 0 14px 30px -16px rgba(40,30,10,0.22)',
   /** A round button or a pill you press. Measured on Wabi's app (Julian's screenshot 14.11.): tight under the shape, almost nothing above it. */
-  control: '0 1px 1px rgba(25,25,25,0.05), 0 3px 7px -1px rgba(25,25,25,0.13)',
+  control: '0 1px 1px rgba(40,30,10,0.05), 0 3px 8px -2px rgba(40,30,10,0.18)',
   /** People circles: the stack of faces sits a little above the ground. */
-  face: '0 4px 10px rgba(25,25,25,0.10)',
+  face: '0 4px 10px rgba(40,30,10,0.12)',
 };
 
 /**
  * Glass, only on things you press (nav, input, buttons, chips): white with an inner light, a hairline and a soft
  * shadow. The recipe is Wabi's inner light (Julian 13.11.). boxShadow draws on the new architecture and on the web.
  */
-const G_IN = 'inset 0 1px 4px rgba(255,255,255,0.67), inset 0 -4px 4px rgba(255,255,255,0.85), inset 0 0 14px rgba(229,229,229,0.55)';
+const G_IN = 'inset 0 1px 4px rgba(255,255,255,0.67), inset 0 -4px 4px rgba(255,255,255,0.85), inset 0 0 14px rgba(236,228,214,0.55)';
 // At night the same shapes: a lifted dark surface, a faint light on the top edge, a deeper shadow.
 const G_IN_N = 'inset 0 1px 0 rgba(255,255,255,0.10), inset 0 0 14px rgba(255,255,255,0.03)';
 const glassOf = (night: boolean) => {
-  const bg = night ? '#222C32' : '#FFFFFF';
+  const bg = night ? '#222C32' : '#FFFDF9';
   const inn = night ? G_IN_N : G_IN;
-  const line = (a: number) => (night ? `0 0 0 1px rgba(255,255,255,${a})` : `0 0 0 1px rgba(17,20,23,${a})`);
-  const drop = (y: number, r: number, a: number) => `0 ${y}px ${r}px rgba(${night ? '0,0,0' : '17,20,23'},${night ? Math.min(0.6, a * 3.2) : a})`;
+  const line = (a: number) => (night ? `0 0 0 1px rgba(255,255,255,${a})` : `0 0 0 1px rgba(40,30,10,${a})`);
+  const drop = (y: number, r: number, a: number) => `0 ${y}px ${r}px rgba(${night ? '0,0,0' : '40,30,10'},${night ? Math.min(0.6, a * 3.2) : a})`;
   return {
     /** Small controls: round buttons, chips, the chosen segment. */
     sm: { backgroundColor: bg, boxShadow: `${inn}, ${line(0.05)}, ${night ? drop(2, 6, 0.05) : shadows.control}` } as any,
     /** The floating nav pill. */
-    nav: { backgroundColor: bg, boxShadow: `${inn}, ${line(0.05)}, ${drop(10, 30, 0.1)}` } as any,
+    nav: { backgroundColor: bg, boxShadow: `${inn}, ${line(0.05)}, ${night ? drop(10, 30, 0.1) : '0 10px 30px -12px rgba(40,30,10,0.3)'}` } as any,
     /** The input card that grows out of Memo, and sheets. */
     card: { backgroundColor: bg, boxShadow: `${inn}, ${line(0.06)}, ${drop(14, 40, 0.14)}` } as any,
     /** A flat card in the content: only a hairline. */
-    line: { backgroundColor: night ? '#1A2328' : '#FFFFFF', boxShadow: line(0.08) } as any,
+    line: { backgroundColor: night ? '#1A2328' : '#FFFDF9', boxShadow: line(0.08) } as any,
     /** A card lying on the ground (chat cards, examples): a hairline and Wabi's sheet shadow. No inner light, cards are not pressed like glass. */
-    lift: { backgroundColor: night ? '#1A2328' : '#FFFFFF', boxShadow: `${line(0.07)}, ${night ? '0 1px 2px rgba(0,0,0,0.3), 0 12px 28px -12px rgba(0,0,0,0.6)' : shadows.card}` } as any,
+    lift: { backgroundColor: night ? '#1A2328' : '#FFFDF9', boxShadow: `${line(0.07)}, ${night ? '0 1px 2px rgba(0,0,0,0.3), 0 12px 28px -12px rgba(0,0,0,0.6)' : shadows.card}` } as any,
   };
 };
 /** The live glass styles; like `tokens` they swap in place, so every style reads the current ones. */
@@ -139,8 +139,8 @@ export function applyPalette(isDark: boolean) {
 export type PersonId = 'J' | 'T';
 
 export const persons: Record<PersonId, { name: string; tint: string; ink: string; stripe: string; colorName: string }> = {
-  J: { name: 'Julia', tint: '#F6DDE2', ink: '#9D2B48', stripe: '#EFC6CF', colorName: 'Rosa' },
-  T: { name: 'Tom', tint: '#DCE7F4', ink: '#1F4E89', stripe: '#C3D5EC', colorName: 'Blau' },
+  J: { name: 'Julia', tint: '#D3DDEC', ink: '#34507A', stripe: '#BECBE0', colorName: 'E-Blau' },
+  T: { name: 'Tom', tint: '#E6D6E6', ink: '#6B3F6B', stripe: '#D8C2D8', colorName: 'E-Flieder' },
 };
 
 /** Tint behind a clay icon tile. Falls back to a neutral grey. */
@@ -163,10 +163,17 @@ type Pal = { name: string; bg: string; fg: string };
  * One theme for the whole family; each person picks a colour from it. The app's own colours never change.
  * Saved choices are an index; a theme with fewer colours wraps around. `name` stays the colour's id.
  */
-export type ThemeId = 'klassisch' | 'notion' | 'stundenplan' | 'kontrast';
+export type ThemeId = 'erde' | 'klassisch' | 'notion' | 'stundenplan' | 'kontrast';
 // Julian 04.11. (second round): themes from his saved app designs and big apps, plus a Klassisch made from the app's own UI colours.
 // Every theme has 8 colours. Names are unique across themes, since a kid's colour is saved by name.
 export const THEMES: { id: ThemeId; de: string; en: string; colors: Pal[] }[] = [
+  // Ton & Papier (Julian 17.11.: "erde wird standard"): the five earth colours of the template, three added to reach 8.
+  { id: 'erde', de: 'Erde', en: 'Earth', colors: [
+    { name: 'E-Blau', bg: '#D3DDEC', fg: '#34507A' }, { name: 'E-Flieder', bg: '#E6D6E6', fg: '#6B3F6B' },
+    { name: 'E-Terrakotta', bg: '#F2D3C4', fg: '#8A3B22' }, { name: 'E-Ocker', bg: '#F3E0B0', fg: '#7A5A12' },
+    { name: 'E-Salbei', bg: '#D6E3CF', fg: '#3E5E3A' }, { name: 'E-Rose', bg: '#F0D5D6', fg: '#84404A' },
+    { name: 'E-Petrol', bg: '#CFE1DD', fg: '#1F5C57' }, { name: 'E-Stein', bg: '#E4DACB', fg: '#5E5140' },
+  ] },
   { id: 'klassisch', de: 'Klassisch', en: 'Classic', colors: [
     { name: 'Blau', bg: '#D2DCE7', fg: '#1F4E89' }, { name: 'Rose', bg: '#EBD5DA', fg: '#9D2B48' },
     { name: 'Petrol', bg: '#CDDCDD', fg: '#075056' }, { name: 'Orange', bg: '#F3D9CE', fg: '#AF3A0B' },
@@ -208,7 +215,7 @@ const RETIRED: Pal[] = [
 ];
 /** Every colour of every theme, so a colour name saved for a kid still resolves after a switch. */
 export const allColors: Pal[] = [...THEMES.flatMap((t) => t.colors), ...RETIRED];
-let themeId: ThemeId = 'klassisch';
+let themeId: ThemeId = 'erde';
 export const currentTheme = () => themeId;
 export function applyColorTheme(id: ThemeId) {
   const t = THEMES.find((x) => x.id === id) ?? THEMES[0];
@@ -217,6 +224,9 @@ export function applyColorTheme(id: ThemeId) {
 }
 
 export const radii = { tile: 16, row: 20, card: 24, sheet: 32, pill: 999 } as const;
+
+/** Headings (Ton & Papier, 17.11.): Bricolage Grotesque 600. The file lies in assets/fonts, loaded in app/_layout.tsx. */
+export const headFont = 'BricolageGrotesque_600SemiBold';
 
 // Inter (Julian 13.11., klar look). Custom fonts on native ignore fontWeight, so each weight is its own file.
 export const fonts = {

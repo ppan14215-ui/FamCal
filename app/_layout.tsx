@@ -44,7 +44,7 @@ const sheet = { presentation: 'transparentModal', animation: 'fade', contentStyl
 const plusMenu = { ...sheet, animation: 'none' } as const;
 
 function RootLayout() {
-  const [loaded, error] = useFonts({ Inter_400Regular, Inter_500Medium, Inter_600SemiBold, Inter_700Bold });
+  const [loaded, error] = useFonts({ Inter_400Regular, Inter_500Medium, Inter_600SemiBold, Inter_700Bold, BricolageGrotesque_600SemiBold: require('../assets/fonts/BricolageGrotesque_600SemiBold.ttf') });
   // Darkmode: a new palette remounts the tree once; the page that switched opens again.
   // Darkmode: a new palette redraws every screen; where you are stays as it is.
   const gen = useThemeGen();

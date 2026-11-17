@@ -147,7 +147,7 @@ export default function Einstellungen() {
         <Swatches key="farbe" />
         <Pick key="memo" t="Memo">
           <View style={{ width: 216 }}>
-            <Seg items={[{ key: 'ink', label: tx('Schwarz', 'Black') }, { key: 'me', label: tx('Meine Farbe', 'My colour') }]} value={memo} onChange={(k) => { setMemoColor(k); }} />
+            <Seg items={[{ key: 'ink', label: tx('Tinte', 'Ink') }, { key: 'me', label: tx('Meine Farbe', 'My colour') }]} value={memo} onChange={(k) => { setMemoColor(k); }} />
           </View>
         </Pick>
         <Preview key="vorschau" />
