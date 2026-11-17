@@ -376,20 +376,12 @@ export function KlarPill({ current, onTab }: { current?: string; onTab?: (name: 
   const hide = useAnimatedStyle((): any => ({ opacity: 1 - a.value, transform: [{ translateY: 14 * a.value }, { scale: 1 - 0.04 * a.value }] }));
   // Where Memo sits in the pill, so the Sprechkarte can grow out of him and bring him back to exactly this spot.
   const pillW = useRef(0), memoAt = useRef(0);
-  // Julian 17.11.: the new standard has no Chat tab; Memo sits in the middle as the main button and a tap on him lands
-  // in the chat with the input open. His size, his place in the pill's row and every motion stay as they are. The
-  // four tabs with Memo at the end stay as the other choice in the settings.
-  const mitte = useNavLook() === 'mitte';
+  // Julian 17.11.: the new standard is a plain tab bar without a Chat tab; Memo is the big button in its middle and a
+  // tap on him lands in the chat with the input open. The pill with four tabs and Memo at the end stays as the other
+  // choice in the settings.
+  // The onboarding's try step (no `onTab`) keeps the pill: there the tabs are only to be seen.
+  const mitte = useNavLook() === 'mitte' && !!onTab;
   const waiting = useStore((st) => st.inbox.some((i) => i.state === 'ask'));
-  const { width: SW } = useWindowDimensions();
-  // Both sides are equally wide, so Memo stands in the middle whichever tab is open; a narrow phone shows icons only.
-  const words = SW >= 440;
-  const side = words ? KLAR_ON + KLAR_OFF + 2 : KLAR_OFF * 2 + 2;
-  const tabOf = (name: string) => {
-    const tab = TABS.find((x) => x.name === name)!;
-    const on = current === tab.name;
-    return <KlarTab key={tab.name} on={on} icon={tab.icon} label={t(tab.key)} bare={!words} onPress={() => { if (!on) { haptics.select(); onTab?.(tab.name); } }} />;
-  };
   const memo = (
     <View onLayout={(e) => { memoAt.current = e.nativeEvent.layout.x + e.nativeEvent.layout.width / 2; tell(); }}>
       <MemoMic box={mitte ? BIG : navH() - 10} size={mitte ? BIG / 0.8 : memoS()} ground={tokens.row}
