@@ -56,7 +56,7 @@ export default function KlarTalk({ onSend, spoken, placeholder, tab = 'kalender'
 
   return (
     <View pointerEvents="box-none" style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0 }}>
-      <KlarPill current={tab} />
+      <KlarPill current={tab} bar />
       {/* A tap beside the open input puts it away; words already typed stay in it. */}
       {show ? <Pressable accessibilityLabel={tx('Eingabe schließen', 'Close input')} onPress={() => { Keyboard.dismiss(); const b = getBuddy(); if (!b.typed && !b.listening) setBarMode('rest'); }} style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0 }} /> : null}
       <View pointerEvents="box-none" style={{ position: 'absolute', left: 14, right: 14, bottom }}>

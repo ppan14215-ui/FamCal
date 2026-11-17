@@ -59,6 +59,7 @@ import { stepViewed, onboardingDone } from '../../src/lib/funnel';
 import { useKeyboardInset, useTyping } from '../../src/lib/keyboard';
 import { useSpeak, speakOpen } from '../../src/lib/speak';
 import { useBarMode } from '../../src/lib/navStyle';
+import { useNavLook } from '../../src/lib/look';
 import { forceMascot } from '../../src/lib/mascot';
 
 /** The mascot's name on screen; one place to change it. */
@@ -544,7 +545,10 @@ function Probe({ me, du, familie, ev, setEv, docked, setDocked, pad, onDone }: {
           : tx(du ? `${du} sieht es auch sofort.` : 'Dein Partner sieht es auch sofort.', du ? `${du} sees it right away too.` : 'Your partner sees it right away too.');
   // The pill with Memo stays through 'landed', so he can come home to it; it leaves when the buttons come.
   const bar = phase !== 'notif';
-  const foot = klarFoot(insets.bottom) + navH() + 12;
+  // In the bar Memo is the big button in the middle and stands above its edge, with the label over him: the examples
+  // stay clear of both.
+  const mitte = useNavLook() === 'mitte';
+  const foot = klarFoot(insets.bottom) + navH() + (mitte ? 43 : 12);
   // The room under the calendar is the same in every phase (examples over the pill, or the question with its two
   // buttons), so the calendar never changes its size while you watch it.
   const zone = Math.max(22 + 8 + 40 + 46 + foot, 8 + 42 + 12 + 50 + 12 + 22 + pad);
@@ -621,7 +625,7 @@ function Probe({ me, du, familie, ev, setEv, docked, setDocked, pad, onDone }: {
         </Animated.View>
       ) : null}
       {/* The label over Memo in the pill: this is the talk button. */}
-      {hint && phase === 'wait' && b.dockAt && !talking ? <TapHint x={b.dockAt.x} y={b.dockAt.y} /> : null}
+      {hint && phase === 'wait' && b.dockAt && !talking ? <TapHint x={b.dockAt.x} y={b.dockAt.y} mid={mitte} /> : null}
     </View>
   );
 }
@@ -641,7 +645,7 @@ function CalHead() {
 
 
 /** "Tap me to speak", sitting right over Pin in the bar; it nods toward him once. */
-function TapHint({ x, y }: { x: number; y: number }) {
+function TapHint({ x, y, mid }: { x: number; y: number; mid?: boolean }) {
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const k = useSharedValue(0);
@@ -649,9 +653,10 @@ function TapHint({ x, y }: { x: number; y: number }) {
   useEffect(() => { k.value = withTiming(1, { duration: 320, easing: out }); }, []);
   const st = useAnimatedStyle(() => ({ opacity: k.value, transform: [{ translateY: reduced ? 0 : (1 - k.value) * -8 }] }));
   const w = 178;
-  const left = Math.max(12, Math.min(width - w - 12, x - w + 34));
+  // Over the pill's Memo at its right end, or right over the bar's big Memo in the middle.
+  const left = Math.max(12, Math.min(width - w - 12, mid ? x - w / 2 : x - w + 34));
   return (
-    <Animated.View pointerEvents="none" style={[{ position: 'absolute', left, top: y - insets.top - 52 - 34 - 46, width: w, alignItems: 'flex-end' }, st]}>
+    <Animated.View pointerEvents="none" style={[{ position: 'absolute', left, top: y - insets.top - 52 - 34 - (mid ? 54 : 46), width: w, alignItems: 'flex-end' }, st]}>
       <View style={{ backgroundColor: tokens.ink, borderRadius: 14, paddingHorizontal: 12, height: 34, justifyContent: 'center', alignSelf: 'stretch', alignItems: 'center' }}>
         <Txt size={13.5} weight={600} color={tokens.onInk}>{tx('Antippen und sprechen', 'Tap and speak')}</Txt>
       </View>
