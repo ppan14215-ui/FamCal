@@ -12,7 +12,7 @@
  */
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { View, Platform, Pressable, BackHandler, useWindowDimensions } from 'react-native';
-import Animated, { useAnimatedStyle, useSharedValue, withTiming, withSpring, withDelay, Easing, useReducedMotion, interpolate, Extrapolation, FadeIn } from 'react-native-reanimated';
+import Animated, { useAnimatedStyle, useSharedValue, withTiming, withSpring, withDelay, withSequence, Easing, useReducedMotion, interpolate, Extrapolation, FadeIn } from 'react-native-reanimated';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { scheduleOnRN } from 'react-native-worklets';
 import { tx } from '../i18n/lang';
@@ -30,7 +30,7 @@ import { useDockTop } from '../lib/dockSpace';
 import Svg, { Defs, LinearGradient, Stop, Rect } from 'react-native-svg';
 import { navStyle, useBarMode, setBarMode, setBarNav } from '../lib/navStyle';
 import MemoMic from './buddy/MemoMic';
-import { buddyTalk, buddyKeys } from '../lib/buddy';
+import { buddyTalk, buddyKeys, useBuddy } from '../lib/buddy';
 import { useSpeak, speakOpen } from '../lib/speak';
 import { useMemoOut, setMemoOut } from '../lib/memoOut';
 import { usePrivat } from '../lib/privat';
@@ -382,9 +382,25 @@ export function KlarPill({ current, onTab, bar }: { current?: string; onTab?: (n
   // The onboarding's try step (no `onTab`) keeps the pill: there the tabs are only to be seen.
   const mitte = useNavLook() === 'mitte' && (!!onTab || !!bar);
   const waiting = useStore((st) => st.inbox.some((i) => i.state === 'ask'));
+  // Julian 18.11.: Memo falls into his seat on start "almost like it's making impact and the others are pushed aside
+  // because of the force". The hit shoves the tabs outward (the near ones further), they swing a touch past their place
+  // and settle; the bar gives a little under him. Transform only.
+  const thud = useBuddy().thud;
+  const kick = useSharedValue(0);
+  useEffect(() => {
+    if (!thud) return;
+    kick.value = withSequence(
+      withTiming(1, { duration: 70, easing: Easing.bezier(0.23, 1, 0.32, 1) }),
+      withTiming(-0.16, { duration: 230, easing: Easing.bezier(0.77, 0, 0.175, 1) }),
+      withTiming(0, { duration: 260, easing: Easing.bezier(0.23, 1, 0.32, 1) }),
+    );
+  }, [thud]);
+  const push = [-6, -14, 14, 6];
+  const shove = [0, 1, 2, 3].map((i) => useAnimatedStyle(() => ({ transform: [{ translateX: push[i] * kick.value }, { rotate: `${push[i] * 0.25 * kick.value}deg` }] as any })));
+  const give = useAnimatedStyle(() => ({ transform: [{ translateY: 2.5 * Math.max(0, kick.value) }] as any }));
   const memo = (
     <View onLayout={(e) => { memoAt.current = e.nativeEvent.layout.x + e.nativeEvent.layout.width / 2; tell(); }}>
-      <MemoMic box={mitte ? BIG : navH() - 10} size={mitte ? BIG / 0.8 : memoS()} ground={tokens.row}
+      <MemoMic seat box={mitte ? BIG : navH() - 10} size={mitte ? BIG / 0.8 : memoS()} ground={tokens.row}
         onPress={() => { if (priv.ohneKi) { router.push('/neu'); return; } if (mitte && onTab && current !== 'chat') onTab('chat'); buddyTalk(); }}
         onLongPress={priv.ohneKi ? undefined : buddyKeys} />
     </View>
@@ -397,18 +413,20 @@ export function KlarPill({ current, onTab, bar }: { current?: string; onTab?: (n
   if (mitte) {
     // A plain tab bar on the ground like in most apps; Memo is the big round button in its middle and stands a little
     // above its edge. It steps back for the Sprechkarte exactly like the pill does.
-    const slot = (name: string) => {
+    const slot = (name: string, i: number) => {
       // "Neu" is the inbox (what Memo read and what waits for a yes); it only shows in this bar.
       const tab = TABS.find((x) => x.name === name) ?? { name: 'eingang', key: 'nav.neu', icon: 'bell' as LineName };
       const on = current === tab.name;
       return (
         <PressScale key={name} scale={0.94} accessibilityRole="tab" accessibilityLabel={t(tab.key)} accessibilityState={{ selected: on }}
           onPress={() => { if (!on) { haptics.select(); onTab?.(tab.name); } }} style={{ flex: 1, height: navH(), alignItems: 'center', justifyContent: 'center', gap: 3 }}>
+          <Animated.View style={[{ alignItems: 'center', gap: 3 }, shove[i]]}>
           <View>
             <LineIcon name={tab.icon} size={22} color={on ? tokens.ink : tokens.mute} stroke={on ? 2 : undefined} />
             {name === 'eingang' && waiting ? <View style={{ position: 'absolute', right: -3, top: -2, width: 9, height: 9, borderRadius: 9, backgroundColor: tokens.frist, borderWidth: 1.5, borderColor: tokens.row }} /> : null}
           </View>
           <Txt size={11} line={13} weight={on ? 600 : 500} color={on ? tokens.ink : tokens.mute} numberOfLines={1}>{t(tab.key)}</Txt>
+          </Animated.View>
         </PressScale>
       );
     };
@@ -417,17 +435,19 @@ export function KlarPill({ current, onTab, bar }: { current?: string; onTab?: (n
       <View pointerEvents="box-none" style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0 }}>
         <Animated.View pointerEvents={away ? 'none' : 'box-none'} onLayout={(e) => { pillW.current = e.nativeEvent.layout.width; memoAt.current = pillW.current / 2; tell(); }}
           style={[{ position: 'absolute', left: 0, right: 0, bottom: 0, height: foot + navH() + BAR_UP }, hide]}>
+          <Animated.View pointerEvents="box-none" style={[{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0 }, give]}>
           <View pointerEvents="none" style={[{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, backgroundColor: tokens.row, borderTopLeftRadius: 22, borderTopRightRadius: 22 }, glass.nav, { borderBottomWidth: 0 } as any]} />
           <View pointerEvents={onTab ? 'box-none' : 'none'} accessibilityRole="tablist" style={{ position: 'absolute', left: 0, right: 0, bottom: foot, height: navH(), flexDirection: 'row', alignItems: 'center', paddingHorizontal: 6 }}>
-            <View style={{ flex: 1, flexDirection: 'row' }}>{slot('kalender')}{slot('listen')}</View>
+            <View style={{ flex: 1, flexDirection: 'row' }}>{slot('kalender', 0)}{slot('listen', 1)}</View>
             <View style={{ width: BIG + 28 }} />
-            <View style={{ flex: 1, flexDirection: 'row' }}>{slot('eingang')}{slot('einstellungen')}</View>
+            <View style={{ flex: 1, flexDirection: 'row' }}>{slot('eingang', 2)}{slot('einstellungen', 3)}</View>
           </View>
           <View pointerEvents="box-none" style={{ position: 'absolute', left: 0, right: 0, bottom: foot + navH() / 2 + BIG_UP - (BIG + 10) / 2, alignItems: 'center' }}>
             <View style={{ width: BIG + 10, height: BIG + 10, borderRadius: 999, backgroundColor: tokens.row, alignItems: 'center', justifyContent: 'center' }}>
               <View onLayout={() => { memoAt.current = pillW.current / 2; tell(); }}>{memo.props.children}</View>
             </View>
           </View>
+          </Animated.View>
         </Animated.View>
       </View>
     );
