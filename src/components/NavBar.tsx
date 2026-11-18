@@ -389,7 +389,10 @@ export function KlarPill({ current, onTab, bar }: { current?: string; onTab?: (n
         onLongPress={priv.ohneKi ? undefined : buddyKeys} />
     </View>
   );
-  const tell = () => { if (pillW.current && memoAt.current) setMemoOut({ dx: Math.round((memoAt.current - pillW.current / 2) * 2) / 2, k: mitte ? BIG / (navH() - 10) : 1, dy: mitte ? BIG_UP : 0 }); };
+  // In the bar Memo stands in the exact middle, so his place is known without measuring. (Measuring it there could
+  // miss: the button reported before the bar knew its width, and the traveller then set off from the old pill spot,
+  // Julian 17.11.: "anytime I open memo the input also jumps".)
+  const tell = () => { if (mitte) { setMemoOut({ dx: 0, k: BIG / (navH() - 10), dy: BIG_UP }); return; } if (pillW.current && memoAt.current) setMemoOut({ dx: Math.round((memoAt.current - pillW.current / 2) * 2) / 2, k: mitte ? BIG / (navH() - 10) : 1, dy: mitte ? BIG_UP : 0 }); };
   useEffect(() => { tell(); }, [mitte]);
   if (mitte) {
     // A plain tab bar on the ground like in most apps; Memo is the big round button in its middle and stands a little

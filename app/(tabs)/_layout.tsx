@@ -34,7 +34,9 @@ export default function TabsLayout() {
     >
       <Tabs.Screen name="kalender" />
       <Tabs.Screen name="listen" />
-      <Tabs.Screen name="chat" />
+      {/* Built at the start, so a tap on Memo lands in a chat that is already there instead of one that first has to
+          draw while the Sprechkarte grows (Julian 17.11.: "anytime I open memo the input also jumps"). */}
+      <Tabs.Screen name="chat" options={{ lazy: false }} />
       <Tabs.Screen name="einstellungen" />
       <Tabs.Screen name="eingang" options={{ href: null }} />
     </Tabs>
