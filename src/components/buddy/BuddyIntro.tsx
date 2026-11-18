@@ -18,7 +18,8 @@ import { usePathname } from 'expo-router';
 import { mascot } from '../../lib/mascot';
 import { useMemoColor } from '../../lib/look';
 import { tokens } from '../../theme';
-import { setBuddy, useBuddy, buddyPoke } from '../../lib/buddy';
+import { setBuddy, useBuddy, buddyPoke, getBuddy } from '../../lib/buddy';
+import { haptics } from '../../lib/haptics';
 import { useFieldTop } from '../../lib/dockSpace';
 
 /** Memo as he stands in the middle before he sets off: his body's diameter. The start's eyes are his eyes at this size. */
@@ -31,6 +32,8 @@ const FLOAT = 38, FLOAT_RIGHT = 20, FLOAT_GAP = 6;
 const BLINK = 220, START = 460, RUN = 980;
 /** Shares of the run: the colour closes from 0 to CLOSE, he travels from GO to the end. They overlap, so he never stands still. */
 const CLOSE = 0.56, GO = 0.42;
+/** From FALL on he drops into his seat. */
+const FALL = 0.62;
 
 const cl = (v: number) => { 'worklet'; return v < 0 ? 0 : v > 1 ? 1 : v; };
 /** Slow out of rest, slow into rest. */
@@ -62,7 +65,14 @@ export default function BuddyIntro() {
     ? (b.dockAt ? { x: b.dockAt.x, y: b.dockAt.y + 0.2, d: (b.dockS ?? 40) * BODY } : null)
     : fieldTop ? { x: W - FLOAT_RIGHT - FLOAT / 2, y: H - fieldTop - FLOAT - FLOAT_GAP + FLOAT * BODY_MID, d: FLOAT * BODY } : null;
   const tx = useSharedValue(cx0), ty = useSharedValue(cy0), td = useSharedValue(0); // td 0: nowhere to go, he fades where he stands
-  useEffect(() => { if (seat) { tx.value = seat.x; ty.value = seat.y; td.value = seat.d; } }, [seat?.x, seat?.y, seat?.d]);
+  // A seat that is measured again while he is on his way bends his path instead of making him jump.
+  const known = useRef(false);
+  useEffect(() => {
+    if (!seat) return;
+    if (!known.current || !started.current) { tx.value = seat.x; ty.value = seat.y; td.value = seat.d; known.current = true; return; }
+    const T = { duration: 140, easing: Easing.bezier(0.23, 1, 0.32, 1) };
+    tx.value = withTiming(seat.x, T); ty.value = withTiming(seat.y, T); td.value = withTiming(seat.d, T);
+  }, [seat?.x, seat?.y, seat?.d]);
 
   // Only where Memo lives (screens with the field), never over the onboarding or sign-in.
   const skip = /onboarding|anmelden/.test(path) || mascot() === 'minimal';
@@ -70,7 +80,19 @@ export default function BuddyIntro() {
   const [late, setLate] = useState(false);
   useEffect(() => { const id = setTimeout(() => setLate(true), 900); return () => clearTimeout(id); }, []);
   const go = !!seat || late;
-  const arrive = () => { setArrived(true); setBuddy({ intro: false }); };
+  // The hit (Julian 18.11.: "almost like it's making impact and the others are pushed aside because of the force"): one
+  // contact, he squashes flat and wide with his bottom on the seat, rebounds once and is still. The tabs beside him get
+  // shoved (NavBar reads `thud`). Only then the bar's own Memo takes over under him.
+  const sq = useSharedValue(0);
+  const settled = () => { setArrived(true); setBuddy({ intro: false }); };
+  const arrive = () => {
+    if (td.value > 0) { haptics.commit(); setBuddy({ thud: getBuddy().thud + 1 }); }
+    sq.value = withSequence(
+      withTiming(1, { duration: 70, easing: Easing.bezier(0.23, 1, 0.32, 1) }),
+      withTiming(-0.3, { duration: 150, easing: Easing.bezier(0.77, 0, 0.175, 1) }),
+      withTiming(0, { duration: 190, easing: Easing.bezier(0.23, 1, 0.32, 1) }, (f) => { if (f) runOnJS(settled)(); }),
+    );
+  };
   useEffect(() => {
     if (!on || started.current) return;
     if (skip || reduced) { played = true; setBuddy({ intro: false }); setOn(false); return; }
@@ -87,7 +109,7 @@ export default function BuddyIntro() {
   const close = () => { setOn(false); if (docked) buddyPoke(); };
   useEffect(() => {
     if (!arrived) return;
-    const wait = docked ? (b.landed ? 40 : 600) : 440; // above the field the floating Memo fades in under this one
+    const wait = docked ? (b.landed ? 30 : 600) : 440; // above the field the floating Memo fades in under this one
     const t = setTimeout(() => { gone.value = withTiming(0, { duration: 120 }, (f) => { if (f) runOnJS(close)(); }); }, wait);
     return () => clearTimeout(t);
   }, [arrived, b.landed, docked]);
@@ -100,12 +122,22 @@ export default function BuddyIntro() {
     const A = io(cl(p.value / CLOSE));
     return { transform: [{ scale: Math.pow(D0 / HERO, 1 - A) }] as any };
   });
-  // Memo as a whole, colour and eyes: where he is and how big. He leaves sideways first and comes down into his seat.
+  // Memo as a whole, colour and eyes: where he is and how big. He gets his size first and lifts a little (he gathers
+  // himself), then he drops: slow at the top, faster and faster, and hits his seat at full speed (gravity, no easing
+  // into the seat). Without a seat he just fades where he stands.
   const whole = useAnimatedStyle(() => {
     const B = io(cl((p.value - GO) / (1 - GO)));
-    const Bx = io(cl((p.value - GO) / (0.88 - GO)));
+    const S = 1 - Math.pow(1 - cl((p.value - GO) / (FALL - GO)), 3);
+    const lift = Math.sin(Math.PI * cl((p.value - GO) / (FALL - GO))) * -14;
+    const g = cl((p.value - FALL) / (1 - FALL));
+    const drop = g * g * g;
+    const Bx = io(cl((p.value - GO) / (0.9 - GO)));
     const end = td.value > 0 ? td.value : HERO * 0.6;
-    return { opacity: td.value > 0 ? 1 : 1 - B, transform: [{ translateX: (tx.value - cx0) * Bx }, { translateY: (ty.value - cy0) * B }, { scale: 1 + (end / HERO - 1) * B }] as any };
+    const k = 1 + (end / HERO - 1) * S;
+    // The squash keeps his bottom on the seat: flat and wide on contact, a touch tall on the rebound.
+    const sy = 1 - 0.18 * sq.value, sx = 1 + 0.14 * sq.value;
+    const y = td.value > 0 ? (ty.value - cy0) * drop + lift * (1 - drop) + (1 - sy) * end / 2 : 0;
+    return { opacity: td.value > 0 ? 1 : 1 - B, transform: [{ translateX: (tx.value - cx0) * Bx }, { translateY: y }, { scale: k }, { scaleX: sx }, { scaleY: sy }] as any };
   });
   // He looks where he is going a moment before he sets off, and straight ahead again as he sits down.
   const eyes = useAnimatedStyle(() => {
@@ -121,7 +153,7 @@ export default function BuddyIntro() {
     if (arrived) return;
     played = true; started.current = true;
     p.value = 1;
-    arrive();
+    settled();
     if (!seat) setOn(false);
   };
   const eyeBox = { position: 'absolute' as const, top: HERO / 2 - 3.5 * u, width: 4 * u, height: 7 * u, borderRadius: 2 * u, backgroundColor: eye };

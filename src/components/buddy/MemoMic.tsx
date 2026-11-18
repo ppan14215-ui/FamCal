@@ -18,7 +18,11 @@ import { tokens } from '../../theme';
 import { haptics } from '../../lib/haptics';
 import { tx } from '../../i18n/lang';
 
-export default function MemoMic({ onPress, onLongPress, box = 34, size = 40, label, ground }: { onPress: () => void; onLongPress?: () => void; box?: number; size?: number; label?: string; ground?: string }) {
+/** How many Memos are his real seat (the nav's own Memo). While one is, the other Memos (the field's, kept hidden under
+ * the nav) do not report where they are: they once overwrote the seat with their smaller size, so the start's Memo
+ * arrived small and jumped to the bar's size (Julian 18.11.: "jumps before landing in the nav bar"). */
+let seats = 0;
+export default function MemoMic({ onPress, onLongPress, box = 34, size = 40, label, ground, seat }: { onPress: () => void; onLongPress?: () => void; box?: number; size?: number; label?: string; ground?: string; seat?: boolean }) {
   const b = useBuddy();
   const minimal = useMascot() === 'minimal';
   const typing = useTyping();
@@ -30,7 +34,10 @@ export default function MemoMic({ onPress, onLongPress, box = 34, size = 40, lab
   useEffect(() => { dockIn(); return () => { dockOut(); }; }, []);
   const me = useRef<View>(null);
   // Tell the floating Memo where to glide on start and where to glance from.
-  const measure = () => me.current?.measureInWindow?.((x, y, w, h) => { if (w) setBuddy({ dockAt: { x: x + w / 2, y: y + h / 2 }, dockS: size }); });
+  // Counted while drawing already, so a field Memo laid out in the same moment never gets in first.
+  useState(() => { if (seat) seats++; });
+  useEffect(() => () => { if (seat) seats--; }, []);
+  const measure = () => { if (!seat && seats > 0) return; me.current?.measureInWindow?.((x, y, w, h) => { if (w) setBuddy({ dockAt: { x: x + w / 2, y: y + h / 2 }, dockS: size }); }); };
   useEffect(() => { const t = [setTimeout(measure, 60), setTimeout(measure, 700)]; return () => t.forEach(clearTimeout); }, []);
   const mood: Mood = b.listening ? 'listen' : veil.phase === 'think' || b.thinking ? 'think' : typing ? 'type' : night ? 'sleep' : 'idle';
   const glance = React.useMemo(() => {
