@@ -61,8 +61,14 @@ export default function BuddyIntro() {
   const D0 = 2 * Math.hypot(cx0, cy0) + 16;
   // Where he is going: his seat in the bar (its Memo's body, see MemoMic), else his place above the field.
   const docked = b.docked > 0;
+  // The bar's Memo reports where it is with measureInWindow. On Android that number is not counted from the same top as
+  // this layer (Julian 18.11.: "drops but not all the way down", the status bar went missing), so this layer measures
+  // itself the same way and the seat is taken relative to it: whatever offset the phone adds cancels out.
+  const box = useRef<any>(null);
+  const [org, setOrg] = useState<{ x: number; y: number } | null>(null);
+  const measureOrg = () => box.current?.measureInWindow?.((x: number, y: number, w: number) => { if (w) setOrg((o) => (o && o.x === x && o.y === y ? o : { x, y })); });
   const seat = docked
-    ? (b.dockAt ? { x: b.dockAt.x, y: b.dockAt.y + 0.2, d: (b.dockS ?? 40) * BODY } : null)
+    ? (b.dockAt && org ? { x: b.dockAt.x - org.x, y: b.dockAt.y - org.y + 0.2, d: (b.dockS ?? 40) * BODY } : null)
     : fieldTop ? { x: W - FLOAT_RIGHT - FLOAT / 2, y: H - fieldTop - FLOAT - FLOAT_GAP + FLOAT * BODY_MID, d: FLOAT * BODY } : null;
   const tx = useSharedValue(cx0), ty = useSharedValue(cy0), td = useSharedValue(0); // td 0: nowhere to go, he fades where he stands
   // A seat that is measured again while he is on his way bends his path instead of making him jump.
@@ -78,7 +84,7 @@ export default function BuddyIntro() {
   const skip = /onboarding|anmelden/.test(path) || mascot() === 'minimal';
   // It starts once his seat is known, or after a moment anyway.
   const [late, setLate] = useState(false);
-  useEffect(() => { const id = setTimeout(() => setLate(true), 900); return () => clearTimeout(id); }, []);
+  useEffect(() => { const id = setTimeout(() => setLate(true), 900); const m = [setTimeout(measureOrg, 60), setTimeout(measureOrg, 700)]; return () => { clearTimeout(id); m.forEach(clearTimeout); }; }, []);
   const go = !!seat || late;
   // The hit (Julian 18.11.: "almost like it's making impact and the others are pushed aside because of the force"): one
   // contact, he squashes flat and wide with his bottom on the seat, rebounds once and is still. The tabs beside him get
@@ -158,7 +164,7 @@ export default function BuddyIntro() {
   };
   const eyeBox = { position: 'absolute' as const, top: HERO / 2 - 3.5 * u, width: 4 * u, height: 7 * u, borderRadius: 2 * u, backgroundColor: eye };
   return (
-    <Animated.View pointerEvents={arrived ? 'none' : 'auto'} style={[{ position: 'absolute', left: 0, top: 0, width: W, height: H, overflow: 'hidden' }, fade]}>
+    <Animated.View ref={box} onLayout={measureOrg} collapsable={false} pointerEvents={arrived ? 'none' : 'auto'} style={[{ position: 'absolute', left: 0, top: 0, width: W, height: H, overflow: 'hidden' }, fade]}>
       <Pressable onPress={finish} style={{ flex: 1 }} accessibilityLabel="Intro überspringen">
         <Animated.View style={[{ position: 'absolute', left: cx0 - HERO / 2, top: cy0 - HERO / 2, width: HERO, height: HERO }, whole]}>
           <Animated.View style={[{ position: 'absolute', left: 0, top: 0, width: HERO, height: HERO, borderRadius: HERO / 2, backgroundColor: color }, body]} />
