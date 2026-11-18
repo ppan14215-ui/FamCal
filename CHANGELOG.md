@@ -112,6 +112,8 @@ Alle sichtbaren Änderungen an FamCal. Neueste oben. Agenten und Menschen: Ände
 - - Memo öffnen springt nicht mehr: die helle Eingabe blitzt nicht mehr kurz auf, und die Sprechkarte wächst aus Memo in der Mitte der Leiste statt von einer Stelle rechts daneben. Der Chat ist beim Start schon aufgebaut.
 - - App Start: Memo fällt jetzt mit Schwung in die Mitte der Leiste, prallt auf und schiebt die Tabs kurz zur Seite. Er kommt in seiner richtigen Größe an und springt nicht mehr vor der Landung.
 - App Start: Memo landet auf Android ganz unten in seinem Platz in der Leiste (Statusleiste wird nicht mehr vergessen)
+- Memo in der Mitte öffnet die Eingabe dort, wo man gerade ist, kein Wechsel in den Chat mehr; Zurück schließt sie
+- Der dritte Tab ist wieder der Chat: Verlauf und darunter, was noch auf ein Ja wartet
 
 ### App funktioniert zuverlässig (09.11. Audit)
 - Nach längerer Pause im Hintergrund klappen Assistent und Spracheingabe gleich beim ersten Satz, statt "Ich komme gerade nicht an den Assistenten".

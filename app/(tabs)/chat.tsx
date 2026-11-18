@@ -39,6 +39,7 @@ import type { CalEvent } from '../../src/state/types';
 import { haptics } from '../../src/lib/haptics';
 import { setBuddy } from '../../src/lib/buddy';
 
+import { InboxCard } from './eingang';
 import { Entry, Thinking, Jumps, at, dayOf, useSettled } from '../../src/components/ChatCards';
 
 const SHOWN = 30;
@@ -65,6 +66,7 @@ export default function Chat() {
   useEffect(() => { setBuddy({ waiting: !!openQ && !thinking }); }, [!!openQ, thinking]);
   useEffect(() => () => setBuddy({ waiting: false }), []);
   const shown = feed.slice(-(SHOWN + more));
+  const asks = useStore((st) => st.inbox).filter((i) => i.state === 'ask');
   let lastDay = '';
   return (
     <View style={{ flex: 1, backgroundColor: tokens.bg, paddingTop: insets.top }}>
@@ -79,7 +81,7 @@ export default function Chat() {
             <Txt size={13.5} weight={600} color={tokens.sub}>{tx('Ältere zeigen', 'Show older')}</Txt>
           </PressScale>
         ) : null}
-        {feed.length || veil.inline && veil.phase !== 'off' ? shown.map((f) => {
+        {feed.length || asks.length || veil.inline && veil.phase !== 'off' ? shown.map((f) => {
           // An answer shows on its question, not as a bubble of its own.
           if (f.answer && feed.some((x) => x.id === f.answer!.ask)) return null;
           const d = dayOf(f.at);
@@ -104,6 +106,14 @@ export default function Chat() {
             ) : <Txt size={15} line={22} color={tokens.sub}>{tx('Sprich oder schreib, was ansteht: „Montag 17 Uhr Essen mit Mama“ oder „Milch und Mehl“. Hier siehst du dann, was daraus wurde, und die Familie auch.', 'Say or type what’s up: “Dinner with mum Monday 5 pm” or “milk and flour”. Here you see what it became, and so does the family.')}</Txt>}
           </View>
         )}
+        {/* Julian 18.11.: "Chat ist gleich Log und somit auch Eingangsbestätigung". What Memo read from a mail or a photo
+            and still waits for a yes sits at the newest end of the log. */}
+        {asks.length ? (
+          <View style={{ gap: 10 }}>
+            <Txt size={12.5} weight={700} tracking={0.6} color={tokens.sub}>{tx('ZU BESTÄTIGEN', 'TO CONFIRM')}</Txt>
+            {asks.map((i) => <InboxCard key={i.id} item={i} />)}
+          </View>
+        ) : null}
         <Thinking by={me} />
       </ScrollView>
       {/* Only what still waits for me, like the status pills over Claude's field (Julian 30.10., "Nur offene Fragen"). */}

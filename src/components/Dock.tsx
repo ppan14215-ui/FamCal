@@ -24,7 +24,7 @@ import TalkBar from './TalkBar';
 import SpeakCard from './SpeakCard';
 import { addPic } from '../lib/attach';
 import MemoMic from './buddy/MemoMic';
-import { setSpeak, getSpeak, useSpeak, speakOpen, speakDone, parseHour } from '../lib/speak';
+import { setSpeak, getSpeak, useSpeak, speakOpen, speakDone, parseHour, speakHandlers } from '../lib/speak';
 import { settle as settleTime } from './ChatCards';
 import { setVeil } from './Veil';
 import { useMemoOut } from '../lib/memoOut';
@@ -546,6 +546,13 @@ export default function Dock() {
   // Julian 08.11. ("Ask clarifying questions through inputs"): a question the card asks also stands in the
   // Sprechkarte, with its answers to tap. The handlers are read at tap time, so they always see the current card.
   const sp = useSpeak();
+  // Julian 18.11. ("navigation nirvana"): the phone's back gesture closes the open input wherever it is, the page stays.
+  const spOpen = speakOpen(sp);
+  useEffect(() => {
+    if (!spOpen && barMode !== 'input') return;
+    const sub = BackHandler.addEventListener('hardwareBackPress', () => { if (speakOpen(getSpeak())) speakHandlers.cancel(); else { Keyboard.dismiss(); setBarMode('rest'); } return true; });
+    return () => sub.remove();
+  }, [spOpen, barMode]);
   const cardOpen = speakOpen(sp);
   // Klar (Julian 13.11.): at rest only the nav pill shows. Tapping Memo, typing or a waiting sentence opens the input,
   // which lies over the pill; speaking shows the Sprechkarte in the same place.

@@ -50,7 +50,7 @@ export default function Eingang() {
   );
 }
 
-function InboxCard({ item }: { item: InboxItem }) {
+export function InboxCard({ item }: { item: InboxItem }) {
   return (
     <Animated.View layout={LinearTransition.duration(200)} entering={FadeIn.duration(160)}>
       <Card pad={14} gap={10}>
