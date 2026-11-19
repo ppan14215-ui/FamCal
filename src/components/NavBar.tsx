@@ -376,8 +376,9 @@ export function KlarPill({ current, onTab, bar }: { current?: string; onTab?: (n
   const hide = useAnimatedStyle((): any => ({ opacity: 1 - a.value, transform: [{ translateY: 14 * a.value }, { scale: 1 - 0.04 * a.value }] }));
   // Where Memo sits in the pill, so the Sprechkarte can grow out of him and bring him back to exactly this spot.
   const pillW = useRef(0), memoAt = useRef(0);
-  // Julian 17.11.: the new standard is a plain tab bar without a Chat tab; Memo is the big button in its middle and a
-  // tap on him lands in the chat with the input open. The pill with four tabs and Memo at the end stays as the other
+  // Julian 17.11.: the new standard is a plain tab bar; Memo is the big button in its middle. Julian 18.11.: a tap on him
+  // opens the input right where you are (no jump to the chat, which left him with no way back), and the third tab is
+  // the Chat again: the log, and with it what waits for a yes. The pill with four tabs and Memo at the end stays as the other
   // choice in the settings.
   // The onboarding's try step (no `onTab`) keeps the pill: there the tabs are only to be seen.
   const mitte = useNavLook() === 'mitte' && (!!onTab || !!bar);
@@ -401,7 +402,7 @@ export function KlarPill({ current, onTab, bar }: { current?: string; onTab?: (n
   const memo = (
     <View onLayout={(e) => { memoAt.current = e.nativeEvent.layout.x + e.nativeEvent.layout.width / 2; tell(); }}>
       <MemoMic seat box={mitte ? BIG : navH() - 10} size={mitte ? BIG / 0.8 : memoS()} ground={tokens.row}
-        onPress={() => { if (priv.ohneKi) { router.push('/neu'); return; } if (mitte && onTab && current !== 'chat') onTab('chat'); buddyTalk(); }}
+        onPress={() => { if (priv.ohneKi) { router.push('/neu'); return; } buddyTalk(); }}
         onLongPress={priv.ohneKi ? undefined : buddyKeys} />
     </View>
   );
@@ -423,7 +424,7 @@ export function KlarPill({ current, onTab, bar }: { current?: string; onTab?: (n
           <Animated.View style={[{ alignItems: 'center', gap: 3 }, shove[i]]}>
           <View>
             <LineIcon name={tab.icon} size={22} color={on ? tokens.ink : tokens.mute} stroke={on ? 2 : undefined} />
-            {name === 'eingang' && waiting ? <View style={{ position: 'absolute', right: -3, top: -2, width: 9, height: 9, borderRadius: 9, backgroundColor: tokens.frist, borderWidth: 1.5, borderColor: tokens.row }} /> : null}
+            {name === 'chat' && waiting ? <View style={{ position: 'absolute', right: -3, top: -2, width: 9, height: 9, borderRadius: 9, backgroundColor: tokens.frist, borderWidth: 1.5, borderColor: tokens.row }} /> : null}
           </View>
           <Txt size={11} line={13} weight={on ? 600 : 500} color={on ? tokens.ink : tokens.mute} numberOfLines={1}>{t(tab.key)}</Txt>
           </Animated.View>
@@ -440,7 +441,7 @@ export function KlarPill({ current, onTab, bar }: { current?: string; onTab?: (n
           <View pointerEvents={onTab ? 'box-none' : 'none'} accessibilityRole="tablist" style={{ position: 'absolute', left: 0, right: 0, bottom: foot, height: navH(), flexDirection: 'row', alignItems: 'center', paddingHorizontal: 6 }}>
             <View style={{ flex: 1, flexDirection: 'row' }}>{slot('kalender', 0)}{slot('listen', 1)}</View>
             <View style={{ width: BIG + 28 }} />
-            <View style={{ flex: 1, flexDirection: 'row' }}>{slot('eingang', 2)}{slot('einstellungen', 3)}</View>
+            <View style={{ flex: 1, flexDirection: 'row' }}>{slot('chat', 2)}{slot('einstellungen', 3)}</View>
           </View>
           <View pointerEvents="box-none" style={{ position: 'absolute', left: 0, right: 0, bottom: foot + navH() / 2 + BIG_UP - (BIG + 10) / 2, alignItems: 'center' }}>
             <View style={{ width: BIG + 10, height: BIG + 10, borderRadius: 999, backgroundColor: tokens.row, alignItems: 'center', justifyContent: 'center' }}>
