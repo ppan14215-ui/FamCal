@@ -1109,6 +1109,7 @@ export default function Dock() {
               card
               klar
               speakCard
+              keepOpen
               onIdle={() => setBarMode('rest')}
               onBusy={() => setBarMode('input')}
               onSend={hear}
