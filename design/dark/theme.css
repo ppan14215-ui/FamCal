@@ -1,0 +1,58 @@
+/* FamCal hell und dunkel (Julian 28.10.: Dark Mode, erst das Design).
+   Hell = src/theme/tokens.ts. Dunkel: Blauschwarz aus ink statt reinem Schwarz,
+   Farbe nur in Clay Objekten, Personen und Fristen, das Mikro ist das eine helle Element. */
+.light {
+  --bg: #F5F5F4; --row: #FFFFFF; --ink: #16232A; --sub: #5B666B; --mute: #8A9397; --hair: #E7E7E4;
+  --done: #075056; --doneSoft: #E2EEEC; --frist: #C2410C; --segBg: #EAEAE7; --chipBg: #EFEFEC;
+  --circle: #C9CDCF; --danger: #C7372F; --main: #16232A; --onMain: #FFFFFF;
+  --jT: #F6DDE2; --jI: #9D2B48; --tT: #DCE7F4; --tI: #1F4E89;
+  --tile-blue: #E6EEF4; --tile-green: #E7EDE4; --tile-rose: #F8E8E5; --tile-sand: #F2EEE7; --tile-mint: #E2EEEC;
+  --shadow: 0 10px 28px rgba(22,35,42,.12);
+}
+.dark {
+  --bg: #0F1417; --row: #182024; --ink: #ECEFF0; --sub: #A3ADB1; --mute: #7B868A; --hair: #263035;
+  --done: #5FB3AE; --doneSoft: #16312F; --frist: #F08A4B; --segBg: #1D2629; --chipBg: #222B2F;
+  --circle: #3A464B; --danger: #F06B62; --main: #ECEFF0; --onMain: #0F1417;
+  --jT: #3A2129; --jI: #F2A7B8; --tT: #1C2A3D; --tI: #9EC0EE;
+  --tile-blue: #1E2A33; --tile-green: #1F2A22; --tile-rose: #2E2224; --tile-sand: #2A2620; --tile-mint: #16312F;
+  --shadow: 0 10px 28px rgba(0,0,0,.45);
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: #DADBD8; font-family: Geist, system-ui, sans-serif; }
+.pair { display: flex; gap: 48px; padding: 48px; align-items: flex-start; }
+.label { font-size: 13px; font-weight: 600; letter-spacing: .6px; color: #5B666B; margin: 0 0 12px 4px; }
+.phone { width: 390px; height: 844px; border-radius: 44px; overflow: hidden; position: relative; background: var(--bg); color: var(--ink); padding: 56px 18px 0; }
+.h1 { font-size: 34px; font-weight: 700; letter-spacing: -1px; margin: 0; }
+.h1 b { color: var(--done); }
+.sub { color: var(--sub); font-size: 14px; }
+.kicker { font-size: 12px; font-weight: 600; letter-spacing: .6px; color: var(--done); }
+.card { background: var(--row); border-radius: 24px; padding: 18px; }
+.group { background: var(--row); border-radius: 20px; overflow: hidden; }
+.rowi { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-top: 1px solid var(--hair); }
+.rowi:first-child { border-top: 0; }
+.tile { width: 44px; height: 44px; border-radius: 14px; display: flex; align-items: center; justify-content: center; flex: none; }
+.tile img { width: 36px; height: 36px; }
+.t { font-size: 16px; font-weight: 500; }
+.m { font-size: 13px; color: var(--sub); }
+.time { width: 52px; font-size: 14px; color: var(--sub); flex: none; }
+.who { width: 24px; height: 24px; border-radius: 999px; font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex: none; }
+.who.j { background: var(--jT); color: var(--jI); }
+.who.t { background: var(--tT); color: var(--tI); }
+.who.none { border: 1.5px dashed var(--circle); }
+.check { width: 24px; height: 24px; border-radius: 999px; border: 1.5px solid var(--circle); flex: none; display: flex; align-items: center; justify-content: center; }
+.check.on { background: var(--done); border-color: var(--done); color: var(--onMain); }
+.dock { position: absolute; left: 14px; right: 14px; bottom: 96px; display: flex; flex-direction: column; gap: 10px; }
+.field { display: flex; align-items: center; gap: 8px; padding: 6px; border-radius: 30px; background: var(--row); border: 1px solid var(--hair); box-shadow: var(--shadow); }
+.plus { width: 44px; height: 44px; border-radius: 999px; background: var(--chipBg); display: flex; align-items: center; justify-content: center; color: var(--ink); font-size: 22px; }
+.ph { flex: 1; color: var(--mute); font-size: 16px; }
+.mic { width: 48px; height: 48px; border-radius: 999px; background: var(--main); display: flex; align-items: center; justify-content: center; }
+.tabs { position: absolute; left: 14px; right: 14px; bottom: 18px; height: 66px; border-radius: 26px; background: var(--row); border: 1px solid var(--hair); display: flex; align-items: center; justify-content: space-around; font-size: 12px; color: var(--sub); }
+.tabs .on { background: var(--segBg); color: var(--ink); font-weight: 600; padding: 10px 26px; border-radius: 20px; }
+.chip { display: inline-flex; align-items: center; height: 32px; padding: 0 12px; border-radius: 999px; background: var(--chipBg); font-size: 14px; font-weight: 600; color: var(--ink); }
+.chip.ok { background: var(--doneSoft); color: var(--done); }
+.btn { flex: 1; height: 48px; border-radius: 999px; display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 600; }
+.btn.main { background: var(--main); color: var(--onMain); }
+.btn.soft { background: var(--chipBg); color: var(--ink); }
+.seg { display: flex; padding: 4px; border-radius: 999px; background: var(--segBg); }
+.seg span { flex: 1; height: 38px; border-radius: 999px; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 600; color: var(--sub); }
+.seg span.on { background: var(--row); color: var(--ink); box-shadow: 0 1px 3px rgba(0,0,0,.15); }

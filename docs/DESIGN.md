@@ -31,8 +31,11 @@ radius:
   tile: 16
   card: 24                     # Karte 24 = Kachel 16 + Innenabstand 8 (verschachtelt)
   pill: 999
-elevation:
-  flat: "none"                 # Standard: Flächen statt Schatten
+elevation:                     # Julian 14.11.: Schatten gehören ins Designsystem, gemessen an Wabi. Code: src/theme/tokens.ts (shadows, glass)
+  flat: "none"                 # Zeilen und Listen: Flächen und feine Linien
+  card: "0 1px 2px rgba(25,25,25,.04), 0 12px 28px -12px rgba(25,25,25,.14)"   # shadows.card, mit Haarlinie = glass.lift: jede Karte auf dem Grund
+  control: "0 1px 1px rgba(25,25,25,.05), 0 3px 7px -1px rgba(25,25,25,.13)"   # shadows.control, mit innerem Licht = glass.sm: runde Knöpfe, helle Pillen, Chips
+  face: "0 4px 10px rgba(25,25,25,.10)"                                        # shadows.face: Personen Kreise
   float: "0 0 0 1px rgba(10,10,10,.06), 0 8px 24px rgba(10,10,10,.06)"  # nur schwebende Navigation
 motion:
   enter: "cubic-bezier(0.23, 1, 0.32, 1)"
@@ -70,7 +73,13 @@ Aus Devouring Details (Interaktion; als Regel festgelegt, im statischen Canvas n
 
 **Informationsarchitektur (Julian 26.10.).** Keine Inhalts-Tabs mehr, weil sie Heute und Listen doppelt zeigten. Heute: ohne Tabs, nur was heute und bald ansteht (Termine, fällige Aufgaben, nahe Fristen). Kalender: alles mit Uhrzeit. Listen: oben Clay-Tabs (Aufgaben, Einkauf, eigene Listen wie Kliniktasche, + Neu); Julian 26.10.: die Inhalts-Tabs gehören nur hierhin. "Neu" legt eine Liste mit Vorlage an. Termin: 4 Kategorien + "Alle" öffnet die Symbolauswahl aus allen Clay-Icons (Sport, Gesundheit, Familie, Amt, Unterwegs); gewählte Symbole rücken nach vorn. Eingang: "Neu" (zu bestätigen) und "Dokumente" (Infozettel, oben die Fristen). Eine Frist ist das Datum eines Dokuments und erscheint automatisch in Heute und Kalender. Clay-Icons stehen als Kachel in Zeilen und Kategorien.
 
-**Karten.** Eine Kachel mit Clay-Icon (16 Radius, Tönung des Objekts), daneben Zeit in Mono, Titel und Unterzeile; rechts der Besitzer als Initialen-Kreis in Personenfarbe. Karten sind weiße Flächen ohne Schatten; getönt ist nur die Icon-Kachel.
+**Karten.** Eine Kachel mit Clay-Icon (16 Radius, Tönung des Objekts), daneben Zeit in Mono, Titel und Unterzeile; rechts der Besitzer als Initialen-Kreis in Personenfarbe. Karten sind weiße Flächen mit Haarlinie und dem einen weichen Kartenschatten (`glass.lift`, Julian 14.11. nach Wabi); getönt ist nur die Icon-Kachel. Kein Bauteil schreibt eigene Schatten: Karten nehmen `glass.lift`, alles was man drückt `glass.sm`, Personen Kreise `shadows.face`.
+
+**Personen Kreise.** Überlappend wie Wabis Stapel von Gesichtern (26 %), jeder Kreis mit einem Ring in der Farbe der Person und einem zweiten Ring in der Farbe des Grundes, der ihn aus dem Kreis darunter ausschneidet. Innen steht das Foto der Person (Julian 14.11.), ohne Foto der Anfangsbuchstabe auf dem hellen Ton. Der Ring in der Farbe der Person bleibt auch mit Foto, damit man weiter an der Farbe sieht, wer gemeint ist. Gewählt wird in Familie: Kreis antippen, Galerie, quadratischer Schnitt; mit Foto zeigt der Tipp „Neues Foto“ und „Foto entfernen“. Die Fotos zeigen auch Kinder: sie liegen in einem privaten Speicher nur für die eigene Familie, ohne öffentlichen oder signierten Link, und jedes Handy hält seine eigene Kopie.
+
+**Kalender ist die Basis, Chat der Verlauf** (Julian 14.11.: „Chat is just the log for what happened the calendar is the basis of what we work on“). Es gibt eine Heute Seite: oben das Briefing „Neu und offen“ in den Zeilen des Entwurfs „Start“ (was der andere eingetragen oder geändert hat und was auf meine Antwort wartet, mit Punkt für Ungesehenes; Eigenes steht dort nicht), darunter die Tage. Wer im Kalender oder auf den Listen etwas sagt oder tippt, bleibt dort und sieht die Änderung ankommen: Memo denkt in der Leiste, die Zeile leuchtet kurz, keine Chat Karte legt sich darüber. Eine Karte kommt nur, wenn die Antwort aus Worten besteht, eine Uhrzeit fehlt oder etwas unklar ist. Der Chat hat keinen Start oben, er ist das Protokoll.
+
+**Chat.** Jeder spricht in einer Blase (Julian 14.11.: wie in WhatsApp, ohne Grund ist es zu unruhig): meine farbig rechts, die des Partners in seinem Ton links, die des Assistenten flach grau (`chipBg`) links neben Memo. Alle haben dieselbe Form (`BUBBLE`: Radius 20, die Ecke zum Sprecher 6). Blasen und Karten des Assistenten beginnen an derselben Linie neben Memo. Zwischen zwei Wortwechseln stehen 20, innerhalb 8. In der Karte gilt ein Rand (`EDGE` 14) an den Seiten und 12 zwischen den Teilen.
 
 **Ring und Karten** sind der Kern (Julian, 25.10. 08:00): der Jahresring ist der visuelle Anker, die Karten verteilen Aufgaben mit Besitzern.
 

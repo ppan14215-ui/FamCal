@@ -1,0 +1,10096 @@
+{
+"abendessen": {
+"L": {
+"base": [
+192,
+496,
+816,
+859
+],
+"haube": [
+240,
+149,
+779,
+523
+],
+"whole": [
+192,
+149,
+816,
+859
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "food-social",
+"layers": [
+"base",
+"haube"
+]
+},
+"abgabe": {
+"L": {
+"base": [
+187,
+443,
+837,
+795
+],
+"whole": [
+192,
+229,
+837,
+795
+],
+"zettel": [
+283,
+229,
+725,
+603
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "work-school",
+"layers": [
+"base",
+"zettel"
+]
+},
+"abschluss": {
+"L": {
+"base": [
+155,
+288,
+869,
+784
+],
+"quaste": [
+283,
+400,
+827,
+763
+],
+"whole": [
+155,
+288,
+869,
+784
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "work-school",
+"layers": [
+"base",
+"quaste"
+]
+},
+"aktenkoffer": {
+"L": {
+"whole": [
+192,
+192,
+832,
+832
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "work-school"
+},
+"allergie": {
+"L": {
+"base": [
+139,
+528,
+827,
+939
+],
+"pollen": [
+107,
+85,
+917,
+491
+],
+"tuch": [
+245,
+123,
+789,
+469
+],
+"whole": [
+107,
+85,
+917,
+939
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "health-wellbeing",
+"layers": [
+"base",
+"tuch",
+"pollen"
+]
+},
+"altglas": {
+"L": {
+"base": [
+272,
+192,
+757,
+944
+],
+"flasche-1": [
+320,
+85,
+507,
+411
+],
+"flasche-2": [
+565,
+245,
+704,
+560
+],
+"whole": [
+272,
+85,
+757,
+944
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "home-errands",
+"layers": [
+"base",
+"flasche-1",
+"flasche-2"
+]
+},
+"ampel": {
+"L": {
+"base": [
+197,
+117,
+560,
+939
+],
+"state-gelb": [
+603,
+416,
+800,
+629
+],
+"state-gruen": [
+603,
+651,
+800,
+869
+],
+"state-rot": [
+603,
+181,
+800,
+395
+],
+"whole": [
+197,
+117,
+800,
+939
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "travel-transport",
+"layers": [
+"base",
+"state-rot",
+"state-gelb",
+"state-gruen"
+],
+"states": [
+"state-rot",
+"state-gelb",
+"state-gruen"
+]
+},
+"amt": {
+"L": {
+"base": [
+203,
+251,
+816,
+763
+],
+"whole": [
+203,
+251,
+816,
+763
+],
+"zeiger": [
+475,
+459,
+539,
+501
+]
+},
+"a": "Zeiger dreht",
+"layers": [
+"base",
+"zeiger"
+]
+},
+"angel-face": {
+"L": {
+"whole": [
+224,
+192,
+800,
+827
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "mood-and-reactions"
+},
+"anheften": {
+"L": {
+"whole": [
+251,
+192,
+773,
+832
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "planning-communication"
+},
+"antrag": {
+"L": {
+"base": [
+117,
+123,
+656,
+896
+],
+"fueller": [
+693,
+261,
+960,
+853
+],
+"whole": [
+117,
+123,
+960,
+896
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "finance-admin",
+"layers": [
+"base",
+"fueller"
+]
+},
+"apotheke": {
+"L": {
+"base": [
+181,
+464,
+843,
+923
+],
+"deckel": [
+176,
+139,
+837,
+469
+],
+"whole": [
+176,
+139,
+843,
+923
+]
+},
+"a": "Deckel öffnet",
+"layers": [
+"base",
+"deckel"
+]
+},
+"aquarium": {
+"L": {
+"base": [
+85,
+315,
+597,
+773
+],
+"fisch": [
+645,
+416,
+944,
+736
+],
+"whole": [
+85,
+315,
+944,
+773
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "leisure-culture",
+"layers": [
+"base",
+"fisch"
+]
+},
+"audiobuch": {
+"L": {
+"whole": [
+192,
+192,
+832,
+832
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "leisure-culture"
+},
+"augenuntersuchung": {
+"L": {
+"base": [
+197,
+331,
+805,
+843
+],
+"lid": [
+203,
+197,
+805,
+741
+],
+"whole": [
+197,
+197,
+805,
+843
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "health-wellbeing",
+"layers": [
+"base",
+"lid"
+]
+},
+"ausflug": {
+"L": {
+"whole": [
+192,
+288,
+832,
+741
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "work-school"
+},
+"ausstellung": {
+"L": {
+"base": [
+80,
+208,
+539,
+821
+],
+"bild": [
+565,
+331,
+949,
+704
+],
+"whole": [
+80,
+208,
+949,
+821
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "leisure-culture",
+"layers": [
+"base",
+"bild"
+]
+},
+"auto": {
+"L": {
+"base": [
+192,
+288,
+832,
+693
+],
+"raeder": [
+448,
+512,
+827,
+725
+],
+"whole": [
+192,
+288,
+832,
+725
+]
+},
+"a": "wippt und rollt",
+"layers": [
+"base",
+"raeder"
+]
+},
+"autokindersitz": {
+"L": {
+"whole": [
+251,
+192,
+779,
+832
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "travel-transport"
+},
+"autowaschanlage": {
+"L": {
+"base": [
+240,
+272,
+779,
+752
+],
+"buerste-links": [
+32,
+293,
+245,
+752
+],
+"buerste-rechts": [
+789,
+293,
+992,
+752
+],
+"whole": [
+32,
+272,
+992,
+752
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "travel-transport",
+"layers": [
+"base",
+"buerste-links",
+"buerste-rechts"
+]
+},
+"autowerkstatt": {
+"L": {
+"base": [
+59,
+267,
+699,
+784
+],
+"schluessel": [
+720,
+352,
+987,
+773
+],
+"whole": [
+59,
+267,
+987,
+784
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "travel-transport",
+"layers": [
+"base",
+"schluessel"
+]
+},
+"avocado": {
+"L": {
+"whole": [
+240,
+192,
+789,
+832
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "food-and-drinks"
+},
+"babybett": {
+"L": {
+"whole": [
+192,
+251,
+832,
+779
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "family-children"
+},
+"babybuch": {
+"L": {
+"base": [
+69,
+112,
+907,
+923
+],
+"bild": [
+629,
+96,
+901,
+533
+],
+"whole": [
+69,
+96,
+907,
+923
+]
+},
+"a": "klappt auf",
+"layers": [
+"base",
+"bild"
+]
+},
+"babyphone": {
+"L": {
+"antenne": [
+0,
+0,
+1024,
+1024
+],
+"base": [
+256,
+208,
+699,
+960
+],
+"wellen": [
+587,
+80,
+752,
+229
+],
+"whole": [
+256,
+80,
+752,
+960
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "family-children",
+"layers": [
+"base",
+"antenne",
+"wellen"
+]
+},
+"babyschale": {
+"L": {
+"base": [
+219,
+272,
+805,
+832
+],
+"buegel": [
+288,
+192,
+752,
+640
+],
+"whole": [
+219,
+192,
+805,
+832
+]
+},
+"a": "Bügel klappt",
+"layers": [
+"base",
+"buegel"
+]
+},
+"backen": {
+"L": {
+"base": [
+107,
+176,
+624,
+875
+],
+"nudelholz": [
+619,
+251,
+901,
+784
+],
+"whole": [
+107,
+176,
+901,
+875
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "food-social",
+"layers": [
+"base",
+"nudelholz"
+]
+},
+"badminton": {
+"L": {
+"base": [
+0,
+0,
+1024,
+1024
+],
+"federball": [
+203,
+533,
+496,
+816
+],
+"schlaeger": [
+192,
+192,
+816,
+827
+],
+"whole": [
+192,
+192,
+816,
+827
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"layers": [
+"base",
+"schlaeger",
+"federball"
+]
+},
+"bagel": {
+"L": {
+"whole": [
+192,
+192,
+832,
+827
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "food-and-drinks"
+},
+"ball": {
+"L": {
+"whole": [
+208,
+192,
+805,
+821
+]
+},
+"a": "hüpft"
+},
+"balloon": {
+"L": {
+"whole": [
+341,
+192,
+683,
+827
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "everyday-emoji-objects"
+},
+"banana": {
+"L": {
+"whole": [
+203,
+192,
+821,
+827
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "food-and-drinks"
+},
+"bank": {
+"L": {
+"whole": [
+192,
+192,
+832,
+832
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "finance-admin"
+},
+"basketball": {
+"L": {
+"whole": [
+192,
+192,
+832,
+827
+]
+},
+"a": "Gesamtmotiv sanft bewegen"
+},
+"basteln": {
+"L": {
+"whole": [
+192,
+229,
+832,
+795
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "leisure-culture"
+},
+"bat": {
+"L": {
+"whole": [
+283,
+192,
+741,
+832
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "animals"
+},
+"batterie": {
+"L": {
+"base": [
+357,
+187,
+667,
+837
+],
+"segment-1": [
+405,
+427,
+613,
+533
+],
+"segment-2": [
+405,
+533,
+613,
+661
+],
+"segment-3": [
+405,
+656,
+613,
+752
+],
+"whole": [
+357,
+187,
+667,
+837
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "home-errands",
+"layers": [
+"base",
+"segment-1",
+"segment-2",
+"segment-3"
+]
+},
+"bear": {
+"L": {
+"whole": [
+251,
+192,
+773,
+832
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "animals"
+},
+"beating-heart": {
+"L": {
+"whole": [
+192,
+229,
+832,
+789
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "everyday-emoji-objects"
+},
+"beaver": {
+"L": {
+"whole": [
+261,
+192,
+763,
+832
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "animals"
+},
+"bee": {
+"L": {
+"whole": [
+283,
+192,
+725,
+827
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "animals"
+},
+"benachrichtigung-stumm": {
+"L": {
+"base": [
+0,
+0,
+1024,
+1024
+],
+"glocke": [
+208,
+192,
+811,
+816
+],
+"strich": [
+235,
+240,
+821,
+832
+],
+"whole": [
+208,
+192,
+821,
+832
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "planning-communication",
+"layers": [
+"base",
+"glocke",
+"strich"
+]
+},
+"bento": {
+"L": {
+"whole": [
+192,
+197,
+832,
+811
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "food-and-drinks"
+},
+"besen": {
+"L": {
+"whole": [
+283,
+192,
+747,
+832
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "home-errands"
+},
+"bibliothek": {
+"L": {
+"base": [
+165,
+139,
+837,
+528
+],
+"buch-1": [
+149,
+629,
+325,
+869
+],
+"buch-2": [
+427,
+635,
+603,
+869
+],
+"buch-3": [
+704,
+629,
+880,
+869
+],
+"whole": [
+149,
+139,
+880,
+869
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "work-school",
+"layers": [
+"base",
+"buch-1",
+"buch-2",
+"buch-3"
+]
+},
+"bier": {
+"L": {
+"whole": [
+219,
+197,
+811,
+832
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "food-social"
+},
+"blossom": {
+"L": {
+"whole": [
+213,
+192,
+811,
+827
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "nature-and-plants"
+},
+"blueberries": {
+"L": {
+"whole": [
+192,
+208,
+832,
+805
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "food-and-drinks"
+},
+"blutdruck": {
+"L": {
+"anzeige": [
+592,
+251,
+901,
+523
+],
+"base": [
+85,
+213,
+896,
+896
+],
+"manschette": [
+357,
+560,
+912,
+891
+],
+"whole": [
+85,
+213,
+912,
+896
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "health-wellbeing",
+"layers": [
+"base",
+"manschette",
+"anzeige"
+]
+},
+"blutprobe": {
+"L": {
+"base": [
+304,
+187,
+715,
+853
+],
+"blut": [
+320,
+464,
+587,
+821
+],
+"leer": [
+304,
+187,
+715,
+853
+],
+"whole": [
+304,
+187,
+715,
+853
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "health-wellbeing",
+"layers": [
+"base",
+"blut",
+"leer"
+]
+},
+"bogenschiessen": {
+"L": {
+"whole": [
+219,
+192,
+805,
+832
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "sport-outdoors"
+},
+"bohrmaschine": {
+"L": {
+"base": [
+144,
+155,
+704,
+912
+],
+"bohrer": [
+699,
+235,
+960,
+411
+],
+"whole": [
+144,
+155,
+960,
+912
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "home-errands",
+"layers": [
+"base",
+"bohrer"
+]
+},
+"boule": {
+"L": {
+"base": [
+0,
+0,
+1024,
+1024
+],
+"kugel-1": [
+480,
+240,
+832,
+608
+],
+"kugel-2": [
+192,
+357,
+565,
+736
+],
+"schweinchen": [
+512,
+603,
+677,
+773
+],
+"whole": [
+192,
+240,
+832,
+773
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"layers": [
+"base",
+"kugel-1",
+"kugel-2",
+"schweinchen"
+]
+},
+"bowling": {
+"L": {
+"base": [
+0,
+0,
+1024,
+1024
+],
+"kegel": [
+592,
+192,
+816,
+784
+],
+"kugel": [
+197,
+411,
+779,
+827
+],
+"whole": [
+197,
+192,
+816,
+827
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"layers": [
+"base",
+"kugel",
+"kegel"
+]
+},
+"boxen": {
+"L": {
+"base": [
+64,
+299,
+464,
+800
+],
+"handschuh-rechts": [
+560,
+299,
+960,
+800
+],
+"whole": [
+64,
+299,
+960,
+800
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"layers": [
+"base",
+"handschuh-rechts"
+]
+},
+"bread": {
+"L": {
+"whole": [
+192,
+261,
+832,
+757
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "food-and-drinks"
+},
+"brei": {
+"L": {
+"base": [
+197,
+363,
+768,
+789
+],
+"loeffel": [
+485,
+235,
+832,
+587
+],
+"whole": [
+197,
+235,
+832,
+789
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "family-children",
+"layers": [
+"base",
+"loeffel"
+]
+},
+"brief-gelesen": {
+"L": {
+"base": [
+192,
+213,
+832,
+811
+],
+"marker": [
+395,
+400,
+816,
+699
+],
+"whole": [
+192,
+213,
+832,
+811
+]
+},
+"a": "Marker streicht über die Zeile",
+"layers": [
+"base",
+"marker"
+]
+},
+"briefkasten": {
+"L": {
+"base": [
+80,
+192,
+907,
+843
+],
+"brief": [
+267,
+501,
+523,
+709
+],
+"klappe": [
+75,
+320,
+352,
+752
+],
+"whole": [
+75,
+197,
+907,
+843
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "home-errands",
+"layers": [
+"base",
+"klappe",
+"brief"
+]
+},
+"brille": {
+"L": {
+"whole": [
+192,
+347,
+832,
+677
+]
+},
+"a": "blinzelt kurz"
+},
+"broccoli": {
+"L": {
+"whole": [
+256,
+197,
+768,
+827
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "food-and-drinks"
+},
+"broken-heart": {
+"L": {
+"whole": [
+192,
+235,
+832,
+779
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "everyday-emoji-objects"
+},
+"brotdose": {
+"L": {
+"base": [
+203,
+117,
+816,
+917
+],
+"deckel": [
+192,
+117,
+805,
+475
+],
+"whole": [
+192,
+112,
+816,
+917
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "work-school",
+"layers": [
+"base",
+"deckel"
+]
+},
+"buch": {
+"L": {
+"deckel": [
+272,
+229,
+811,
+624
+],
+"offen": [
+117,
+240,
+896,
+773
+],
+"whole": [
+117,
+229,
+896,
+773
+]
+},
+"a": "klappt auf",
+"layers": [
+"deckel",
+"offen"
+]
+},
+"budget": {
+"L": {
+"balken-1": [
+59,
+512,
+336,
+864
+],
+"balken-2": [
+357,
+320,
+640,
+864
+],
+"balken-3": [
+656,
+91,
+960,
+864
+],
+"base": [
+53,
+880,
+971,
+965
+],
+"whole": [
+53,
+91,
+971,
+965
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "finance-admin",
+"layers": [
+"base",
+"balken-1",
+"balken-2",
+"balken-3"
+]
+},
+"buegeleisen": {
+"L": {
+"whole": [
+192,
+277,
+832,
+752
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "home-errands"
+},
+"burrito": {
+"L": {
+"whole": [
+224,
+331,
+800,
+827
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "food-and-drinks"
+},
+"bus": {
+"L": {
+"whole": [
+192,
+277,
+832,
+752
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "travel-transport"
+},
+"butterfly": {
+"L": {
+"whole": [
+224,
+192,
+800,
+827
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "animals"
+},
+"cactus": {
+"L": {
+"whole": [
+261,
+197,
+763,
+827
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "nature-and-plants"
+},
+"cafe": {
+"L": {
+"base": [
+272,
+91,
+699,
+475
+],
+"dampf": [
+181,
+469,
+832,
+955
+],
+"whole": [
+181,
+91,
+832,
+955
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "food-social",
+"layers": [
+"base",
+"dampf"
+]
+},
+"camping": {
+"L": {
+"whole": [
+192,
+267,
+832,
+763
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "travel-transport"
+},
+"candy": {
+"L": {
+"whole": [
+192,
+315,
+832,
+709
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "food-and-drinks"
+},
+"carrot": {
+"L": {
+"whole": [
+283,
+192,
+741,
+827
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "food-and-drinks"
+},
+"cat": {
+"L": {
+"whole": [
+304,
+192,
+720,
+832
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "animals"
+},
+"celebration-face": {
+"L": {
+"whole": [
+203,
+192,
+821,
+827
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "mood-and-reactions"
+},
+"chat": {
+"L": {
+"base": [
+208,
+267,
+795,
+773
+],
+"whole": [
+208,
+267,
+832,
+773
+],
+"zweite-blase": [
+443,
+352,
+832,
+709
+]
+},
+"a": "Blase ploppt auf",
+"layers": [
+"base",
+"zweite-blase"
+]
+},
+"checkliste": {
+"L": {
+"base": [
+283,
+187,
+741,
+837
+],
+"haken-1": [
+357,
+400,
+469,
+480
+],
+"haken-2": [
+347,
+507,
+459,
+587
+],
+"haken-3": [
+341,
+613,
+453,
+693
+],
+"whole": [
+283,
+187,
+741,
+837
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "planning-communication",
+"layers": [
+"base",
+"haken-1",
+"haken-2",
+"haken-3"
+]
+},
+"cheeky-grin": {
+"L": {
+"whole": [
+197,
+192,
+827,
+827
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "mood-and-reactions"
+},
+"cheese": {
+"L": {
+"whole": [
+197,
+213,
+832,
+805
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "food-and-drinks"
+},
+"cherries": {
+"L": {
+"whole": [
+245,
+192,
+784,
+827
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "food-and-drinks"
+},
+"chocolate-bar": {
+"L": {
+"whole": [
+192,
+245,
+832,
+779
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "food-and-drinks"
+},
+"clapping-hands": {
+"L": {
+"whole": [
+192,
+197,
+832,
+821
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "hand-gestures"
+},
+"clover": {
+"L": {
+"whole": [
+203,
+192,
+821,
+827
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "nature-and-plants"
+},
+"coconut": {
+"L": {
+"whole": [
+192,
+192,
+832,
+832
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "food-and-drinks"
+},
+"coin": {
+"L": {
+"whole": [
+224,
+192,
+795,
+827
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "everyday-emoji-objects"
+},
+"cold-face": {
+"L": {
+"whole": [
+208,
+192,
+811,
+827
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "mood-and-reactions"
+},
+"comet": {
+"L": {
+"whole": [
+192,
+245,
+832,
+773
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "nature-and-plants"
+},
+"confetti-ball": {
+"L": {
+"whole": [
+240,
+192,
+784,
+827
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "everyday-emoji-objects"
+},
+"cookie": {
+"L": {
+"whole": [
+192,
+197,
+832,
+821
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "food-and-drinks"
+},
+"corn": {
+"L": {
+"whole": [
+288,
+288,
+736,
+827
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "food-and-drinks"
+},
+"cowboy-face": {
+"L": {
+"whole": [
+192,
+208,
+832,
+811
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "mood-and-reactions"
+},
+"crescent-star": {
+"L": {
+"whole": [
+224,
+192,
+800,
+827
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "nature-and-plants"
+},
+"cricket": {
+"L": {
+"ball": [
+501,
+640,
+683,
+821
+],
+"base": [
+0,
+0,
+1024,
+1024
+],
+"schlaeger": [
+299,
+192,
+720,
+821
+],
+"whole": [
+299,
+192,
+720,
+821
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"layers": [
+"base",
+"ball",
+"schlaeger"
+]
+},
+"croissant": {
+"L": {
+"whole": [
+197,
+245,
+832,
+768
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "food-and-drinks"
+},
+"crossed-fingers": {
+"L": {
+"whole": [
+315,
+192,
+709,
+832
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "hand-gestures"
+},
+"crown": {
+"L": {
+"whole": [
+192,
+192,
+832,
+827
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "everyday-emoji-objects"
+},
+"crying-face": {
+"L": {
+"whole": [
+256,
+304,
+768,
+827
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "mood-and-reactions"
+},
+"cucumber": {
+"L": {
+"whole": [
+277,
+192,
+747,
+827
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "food-and-drinks"
+},
+"curry": {
+"L": {
+"whole": [
+192,
+213,
+832,
+805
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "food-and-drinks"
+},
+"darts": {
+"L": {
+"pfeil": [
+512,
+208,
+832,
+496
+],
+"scheibe": [
+192,
+272,
+795,
+821
+],
+"whole": [
+192,
+208,
+832,
+821
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"layers": [
+"scheibe",
+"pfeil"
+]
+},
+"date": {
+"L": {
+"base": [
+160,
+117,
+512,
+763
+],
+"glas-rechts": [
+512,
+117,
+864,
+763
+],
+"sockel": [
+144,
+757,
+891,
+965
+],
+"whole": [
+144,
+117,
+891,
+965
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "food-social",
+"layers": [
+"base",
+"glas-rechts",
+"sockel"
+]
+},
+"deer": {
+"L": {
+"whole": [
+288,
+192,
+736,
+832
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "animals"
+},
+"desert-island": {
+"L": {
+"whole": [
+203,
+192,
+816,
+827
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "nature-and-plants"
+},
+"dog": {
+"L": {
+"whole": [
+299,
+192,
+725,
+832
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "animals"
+},
+"dokumentenmappe": {
+"L": {
+"whole": [
+192,
+219,
+832,
+805
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "finance-admin"
+},
+"dolphin": {
+"L": {
+"whole": [
+192,
+224,
+827,
+800
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "animals"
+},
+"doughnut": {
+"L": {
+"whole": [
+203,
+192,
+821,
+827
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "food-and-drinks"
+},
+"dumpling": {
+"L": {
+"whole": [
+192,
+192,
+827,
+821
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "food-and-drinks"
+},
+"egg": {
+"L": {
+"whole": [
+224,
+357,
+789,
+827
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "food-and-drinks"
+},
+"eingang": {
+"L": {
+"base": [
+176,
+112,
+800,
+933
+],
+"brief": [
+325,
+117,
+709,
+405
+],
+"fach-vorne": [
+181,
+699,
+656,
+928
+],
+"whole": [
+176,
+112,
+800,
+933
+]
+},
+"a": "Brief gleitet hinein",
+"layers": [
+"base",
+"fach-vorne",
+"brief"
+]
+},
+"einkauf": {
+"L": {
+"baguette": [
+283,
+192,
+549,
+459
+],
+"base": [
+267,
+357,
+763,
+832
+],
+"salat": [
+480,
+245,
+747,
+443
+],
+"whole": [
+267,
+192,
+763,
+832
+]
+},
+"a": "hüpft",
+"layers": [
+"base",
+"baguette",
+"salat"
+]
+},
+"einladung": {
+"L": {
+"base": [
+261,
+192,
+741,
+821
+],
+"stern": [
+363,
+405,
+597,
+651
+],
+"whole": [
+261,
+192,
+741,
+821
+]
+},
+"a": "Stern funkelt",
+"layers": [
+"base",
+"stern"
+]
+},
+"einstellungen": {
+"L": {
+"whole": [
+192,
+203,
+832,
+821
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "planning-communication"
+},
+"eisdiele": {
+"L": {
+"whole": [
+309,
+192,
+715,
+832
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "food-social"
+},
+"eishockey": {
+"L": {
+"whole": [
+203,
+192,
+821,
+827
+]
+},
+"a": "Gesamtmotiv sanft bewegen"
+},
+"elephant": {
+"L": {
+"whole": [
+192,
+235,
+832,
+789
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "animals"
+},
+"elternabend": {
+"L": {
+"base": [
+37,
+357,
+368,
+752
+],
+"stuhl-2": [
+379,
+384,
+635,
+683
+],
+"stuhl-3": [
+651,
+357,
+987,
+752
+],
+"whole": [
+37,
+357,
+987,
+752
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "work-school",
+"layers": [
+"base",
+"stuhl-2",
+"stuhl-3"
+]
+},
+"erledigt": {
+"L": {
+"base": [
+192,
+245,
+827,
+779
+],
+"haken": [
+277,
+331,
+784,
+699
+],
+"whole": [
+192,
+245,
+827,
+779
+]
+},
+"a": "Haken zeichnet sich und ploppt",
+"layers": [
+"base",
+"haken"
+]
+},
+"evergreen": {
+"L": {
+"whole": [
+261,
+192,
+757,
+827
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "nature-and-plants"
+},
+"experiment": {
+"L": {
+"whole": [
+288,
+192,
+741,
+832
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "work-school"
+},
+"faehre": {
+"L": {
+"whole": [
+192,
+256,
+832,
+768
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "travel-transport"
+},
+"fallen-leaves": {
+"L": {
+"whole": [
+192,
+235,
+832,
+784
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "nature-and-plants"
+},
+"familienessen": {
+"L": {
+"whole": [
+192,
+320,
+832,
+699
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "food-social"
+},
+"fechten": {
+"L": {
+"base": [
+59,
+256,
+485,
+864
+],
+"degen": [
+587,
+165,
+965,
+859
+],
+"whole": [
+59,
+165,
+965,
+864
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"layers": [
+"base",
+"degen"
+]
+},
+"federmappe": {
+"L": {
+"base": [
+69,
+405,
+624,
+789
+],
+"deckel": [
+85,
+203,
+629,
+411
+],
+"stifte": [
+619,
+560,
+949,
+885
+],
+"whole": [
+69,
+203,
+949,
+885
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "work-school",
+"layers": [
+"base",
+"deckel",
+"stifte"
+]
+},
+"feier": {
+"L": {
+"base": [
+224,
+395,
+800,
+976
+],
+"konfetti": [
+261,
+101,
+763,
+357
+],
+"whole": [
+224,
+101,
+800,
+976
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "food-social",
+"layers": [
+"base",
+"konfetti"
+]
+},
+"feiertag": {
+"L": {
+"whole": [
+240,
+192,
+789,
+832
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "holidays-seasons"
+},
+"fensterputzen": {
+"L": {
+"abzieher": [
+640,
+469,
+912,
+800
+],
+"base": [
+128,
+219,
+608,
+779
+],
+"whole": [
+128,
+219,
+912,
+800
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "home-errands",
+"layers": [
+"base",
+"abzieher"
+]
+},
+"fire": {
+"L": {
+"whole": [
+251,
+192,
+773,
+827
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "nature-and-plants"
+},
+"fireworks": {
+"L": {
+"whole": [
+192,
+192,
+832,
+827
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "everyday-emoji-objects"
+},
+"fist-bump": {
+"L": {
+"whole": [
+192,
+288,
+832,
+731
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "hand-gestures"
+},
+"fitness": {
+"L": {
+"whole": [
+192,
+320,
+832,
+704
+]
+},
+"a": "Gesamtmotiv sanft bewegen"
+},
+"flaeschchen": {
+"L": {
+"state-halb-voll": [
+341,
+192,
+677,
+816
+],
+"whole": [
+341,
+192,
+677,
+827
+]
+},
+"a": "Milch schwappt",
+"states": [
+"state-halb-voll"
+]
+},
+"floete": {
+"L": {
+"whole": [
+336,
+192,
+688,
+832
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "leisure-culture"
+},
+"flower": {
+"L": {
+"whole": [
+272,
+192,
+752,
+832
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "nature-and-plants"
+},
+"flugzeug": {
+"L": {
+"whole": [
+192,
+288,
+827,
+741
+]
+},
+"a": "schwebt"
+},
+"foggy": {
+"L": {
+"whole": [
+197,
+283,
+827,
+741
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "nature-and-plants"
+},
+"foto": {
+"L": {
+"whole": [
+245,
+192,
+779,
+821
+]
+},
+"a": "fällt und dreht sich"
+},
+"fox": {
+"L": {
+"whole": [
+256,
+283,
+768,
+827
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "animals"
+},
+"french-fries": {
+"L": {
+"whole": [
+235,
+192,
+789,
+827
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "food-and-drinks"
+},
+"friseur": {
+"L": {
+"base": [
+53,
+107,
+347,
+923
+],
+"schere-links": [
+325,
+155,
+661,
+875
+],
+"schere-rechts": [
+656,
+149,
+965,
+869
+],
+"whole": [
+53,
+107,
+965,
+923
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "health-wellbeing",
+"layers": [
+"base",
+"schere-links",
+"schere-rechts"
+]
+},
+"frist": {
+"L": {
+"base": [
+192,
+197,
+827,
+827
+],
+"ecke": [
+651,
+549,
+805,
+768
+],
+"whole": [
+192,
+197,
+827,
+827
+]
+},
+"a": "Ecke knickt um",
+"layers": [
+"base",
+"ecke"
+]
+},
+"frog": {
+"L": {
+"whole": [
+267,
+192,
+757,
+832
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "animals"
+},
+"fruehling": {
+"L": {
+"whole": [
+192,
+251,
+832,
+784
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "holidays-seasons"
+},
+"fruehstueck": {
+"L": {
+"base": [
+235,
+651,
+768,
+864
+],
+"ei": [
+608,
+331,
+880,
+565
+],
+"toast": [
+139,
+155,
+581,
+587
+],
+"whole": [
+139,
+155,
+880,
+864
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "food-social",
+"layers": [
+"base",
+"toast",
+"ei"
+]
+},
+"fuehrerschein": {
+"L": {
+"whole": [
+192,
+256,
+832,
+773
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "finance-admin"
+},
+"fussabdruck": {
+"L": {
+"whole": [
+192,
+251,
+832,
+779
+]
+},
+"a": "Abdruck drückt sich ein"
+},
+"fussball": {
+"L": {
+"whole": [
+213,
+192,
+811,
+821
+]
+},
+"a": "Ganzes Icon"
+},
+"gaming": {
+"L": {
+"whole": [
+192,
+277,
+832,
+747
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "leisure-culture"
+},
+"garage": {
+"L": {
+"whole": [
+192,
+272,
+832,
+757
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "travel-transport"
+},
+"geburtstag": {
+"L": {
+"base": [
+277,
+331,
+747,
+811
+],
+"flamme": [
+464,
+192,
+560,
+341
+],
+"whole": [
+277,
+192,
+747,
+811
+]
+},
+"a": "Flamme flackert",
+"layers": [
+"base",
+"flamme"
+]
+},
+"geburtstagskrone": {
+"L": {
+"whole": [
+192,
+251,
+832,
+773
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "family-children"
+},
+"geige": {
+"L": {
+"base": [
+165,
+48,
+587,
+976
+],
+"bogen": [
+592,
+208,
+880,
+965
+],
+"whole": [
+165,
+48,
+880,
+976
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "leisure-culture",
+"layers": [
+"base",
+"bogen"
+]
+},
+"geldautomat": {
+"L": {
+"base": [
+75,
+101,
+928,
+917
+],
+"schein": [
+544,
+677,
+885,
+901
+],
+"whole": [
+75,
+101,
+928,
+917
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "finance-admin",
+"layers": [
+"base",
+"schein"
+]
+},
+"geldboerse": {
+"L": {
+"whole": [
+192,
+197,
+832,
+827
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "finance-admin"
+},
+"gem": {
+"L": {
+"whole": [
+192,
+213,
+832,
+805
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "everyday-emoji-objects"
+},
+"gemuese": {
+"L": {
+"base": [
+203,
+528,
+843,
+923
+],
+"brokkoli": [
+203,
+171,
+555,
+501
+],
+"karotte": [
+560,
+128,
+789,
+517
+],
+"whole": [
+203,
+128,
+843,
+923
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "food-social",
+"layers": [
+"base",
+"brokkoli",
+"karotte"
+]
+},
+"geschenk": {
+"L": {
+"base": [
+197,
+288,
+827,
+832
+],
+"deckel": [
+219,
+192,
+821,
+635
+],
+"whole": [
+197,
+192,
+827,
+832
+]
+},
+"a": "Deckel springt",
+"layers": [
+"base",
+"deckel"
+]
+},
+"geschirrspueler": {
+"L": {
+"base": [
+293,
+64,
+725,
+533
+],
+"klappe": [
+59,
+624,
+432,
+939
+],
+"korb": [
+507,
+624,
+960,
+944
+],
+"whole": [
+59,
+64,
+960,
+944
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "home-errands",
+"layers": [
+"base",
+"klappe",
+"korb"
+]
+},
+"gesellschaftsspiel": {
+"L": {
+"base": [
+139,
+149,
+395,
+576
+],
+"figur-2": [
+629,
+181,
+885,
+608
+],
+"whole": [
+139,
+149,
+885,
+907
+],
+"wuerfel": [
+320,
+555,
+656,
+907
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "family-children",
+"layers": [
+"base",
+"figur-2",
+"wuerfel"
+]
+},
+"gewitter": {
+"L": {
+"base": [
+0,
+0,
+1024,
+1024
+],
+"blitz": [
+389,
+459,
+629,
+784
+],
+"whole": [
+192,
+245,
+837,
+784
+],
+"wolke": [
+192,
+245,
+837,
+667
+]
+},
+"a": "Blitz zuckt",
+"layers": [
+"base",
+"wolke",
+"blitz"
+]
+},
+"giesskanne": {
+"L": {
+"whole": [
+192,
+293,
+832,
+741
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "home-errands"
+},
+"giraffe": {
+"L": {
+"whole": [
+229,
+192,
+795,
+832
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "animals"
+},
+"gitarre": {
+"L": {
+"whole": [
+283,
+192,
+741,
+832
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "leisure-culture"
+},
+"glocke": {
+"L": {
+"base": [
+224,
+192,
+800,
+821
+],
+"kloeppel": [
+432,
+635,
+608,
+832
+],
+"whole": [
+224,
+192,
+800,
+832
+]
+},
+"a": "schwingt",
+"layers": [
+"base",
+"kloeppel"
+]
+},
+"gluehbirne": {
+"L": {
+"whole": [
+299,
+192,
+731,
+832
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "home-errands"
+},
+"golf": {
+"L": {
+"ball": [
+528,
+581,
+725,
+784
+],
+"base": [
+0,
+0,
+1024,
+1024
+],
+"schlaeger": [
+192,
+224,
+832,
+763
+],
+"whole": [
+192,
+224,
+832,
+784
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"layers": [
+"base",
+"schlaeger",
+"ball"
+]
+},
+"grillen": {
+"L": {
+"base": [
+165,
+53,
+853,
+955
+],
+"deckel": [
+395,
+75,
+843,
+464
+],
+"whole": [
+165,
+53,
+853,
+955
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "food-social",
+"layers": [
+"base",
+"deckel"
+]
+},
+"gruppe": {
+"L": {
+"base": [
+37,
+331,
+331,
+731
+],
+"person-mitte": [
+400,
+379,
+624,
+731
+],
+"person-rechts": [
+688,
+315,
+987,
+731
+],
+"whole": [
+37,
+315,
+987,
+731
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "planning-communication",
+"layers": [
+"base",
+"person-mitte",
+"person-rechts"
+]
+},
+"haendewaschen": {
+"L": {
+"base": [
+155,
+528,
+651,
+891
+],
+"blasen": [
+0,
+0,
+1024,
+1024
+],
+"pumpkopf": [
+213,
+117,
+507,
+533
+],
+"seife": [
+645,
+645,
+869,
+853
+],
+"whole": [
+155,
+117,
+869,
+891
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "health-wellbeing",
+"layers": [
+"base",
+"pumpkopf",
+"blasen",
+"seife"
+]
+},
+"halloween": {
+"L": {
+"whole": [
+192,
+203,
+832,
+827
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "holidays-seasons"
+},
+"hamburger": {
+"L": {
+"whole": [
+192,
+192,
+827,
+827
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "food-and-drinks"
+},
+"hamster": {
+"L": {
+"whole": [
+299,
+192,
+725,
+832
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "animals"
+},
+"hand-nimmt": {
+"L": {
+"base": [
+192,
+357,
+651,
+779
+],
+"karte": [
+448,
+251,
+827,
+544
+],
+"whole": [
+192,
+251,
+827,
+779
+]
+},
+"a": "Karte wird gegriffen",
+"layers": [
+"karte",
+"base"
+]
+},
+"handball": {
+"L": {
+"whole": [
+192,
+192,
+832,
+832
+]
+},
+"a": "Gesamtmotiv sanft bewegen"
+},
+"handshake": {
+"L": {
+"whole": [
+192,
+315,
+832,
+709
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "hand-gestures"
+},
+"handwerker": {
+"L": {
+"base": [
+251,
+256,
+832,
+811
+],
+"hammer": [
+192,
+208,
+741,
+805
+],
+"whole": [
+192,
+208,
+832,
+811
+]
+},
+"a": "klopft",
+"layers": [
+"base",
+"hammer"
+]
+},
+"hausaufgaben": {
+"L": {
+"base": [
+75,
+336,
+683,
+773
+],
+"stift": [
+720,
+288,
+949,
+661
+],
+"whole": [
+75,
+288,
+949,
+773
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "work-school",
+"layers": [
+"base",
+"stift"
+]
+},
+"haustier": {
+"L": {
+"base": [
+165,
+459,
+864,
+885
+],
+"knochen": [
+277,
+192,
+731,
+432
+],
+"whole": [
+165,
+192,
+864,
+885
+]
+},
+"a": "hüpft",
+"layers": [
+"base",
+"knochen"
+]
+},
+"hautpflege": {
+"L": {
+"whole": [
+352,
+197,
+672,
+832
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "health-wellbeing"
+},
+"heart-eyes": {
+"L": {
+"whole": [
+203,
+192,
+821,
+827
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "mood-and-reactions"
+},
+"heart-hands": {
+"L": {
+"whole": [
+192,
+272,
+832,
+747
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "hand-gestures"
+},
+"heart-with-arrow": {
+"L": {
+"whole": [
+192,
+288,
+832,
+731
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "everyday-emoji-objects"
+},
+"hebamme": {
+"L": {
+"base": [
+197,
+224,
+821,
+768
+],
+"verschluss": [
+395,
+405,
+576,
+693
+],
+"whole": [
+197,
+224,
+821,
+768
+]
+},
+"a": "Tasche öffnet sich",
+"layers": [
+"base",
+"verschluss"
+]
+},
+"heckenschere": {
+"L": {
+"base": [
+133,
+96,
+485,
+955
+],
+"griff-rechts": [
+533,
+96,
+880,
+955
+],
+"whole": [
+133,
+96,
+880,
+955
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "home-errands",
+"layers": [
+"base",
+"griff-rechts"
+]
+},
+"hedgehog": {
+"L": {
+"whole": [
+192,
+219,
+832,
+805
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "animals"
+},
+"herb": {
+"L": {
+"whole": [
+267,
+192,
+757,
+827
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "nature-and-plants"
+},
+"herbst": {
+"L": {
+"whole": [
+192,
+192,
+832,
+832
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "holidays-seasons"
+},
+"herz": {
+"L": {
+"whole": [
+192,
+235,
+832,
+779
+]
+},
+"a": "pocht"
+},
+"hibiscus": {
+"L": {
+"whole": [
+213,
+197,
+811,
+827
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "nature-and-plants"
+},
+"hochstuhl": {
+"L": {
+"base": [
+80,
+165,
+613,
+896
+],
+"tablett": [
+528,
+267,
+928,
+432
+],
+"whole": [
+80,
+165,
+928,
+896
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "family-children",
+"layers": [
+"base",
+"tablett"
+]
+},
+"hochzeit": {
+"L": {
+"base": [
+144,
+336,
+491,
+736
+],
+"ring-2": [
+512,
+336,
+859,
+736
+],
+"whole": [
+144,
+336,
+859,
+736
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "food-social",
+"layers": [
+"base",
+"ring-2"
+]
+},
+"hockey": {
+"L": {
+"ball": [
+453,
+683,
+587,
+816
+],
+"base": [
+0,
+0,
+1024,
+1024
+],
+"schlaeger": [
+229,
+192,
+795,
+811
+],
+"whole": [
+229,
+192,
+795,
+816
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"layers": [
+"base",
+"schlaeger",
+"ball"
+]
+},
+"hoergeraet": {
+"L": {
+"base": [
+224,
+197,
+800,
+832
+],
+"wellen": [
+69,
+405,
+203,
+581
+],
+"whole": [
+69,
+197,
+800,
+832
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "health-wellbeing",
+"layers": [
+"base",
+"wellen"
+]
+},
+"homeoffice": {
+"L": {
+"base": [
+75,
+352,
+437,
+715
+],
+"laptop": [
+544,
+421,
+944,
+731
+],
+"whole": [
+75,
+352,
+944,
+731
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "work-school",
+"layers": [
+"base",
+"laptop"
+]
+},
+"honey": {
+"L": {
+"whole": [
+256,
+192,
+763,
+827
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "food-and-drinks"
+},
+"hot-face": {
+"L": {
+"whole": [
+187,
+229,
+832,
+789
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "mood-and-reactions"
+},
+"hotdog": {
+"L": {
+"whole": [
+219,
+363,
+800,
+827
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "food-and-drinks"
+},
+"hotel": {
+"L": {
+"whole": [
+192,
+256,
+832,
+773
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "travel-transport"
+},
+"hug-face": {
+"L": {
+"whole": [
+192,
+197,
+832,
+827
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "mood-and-reactions"
+},
+"hundeleine": {
+"L": {
+"whole": [
+192,
+235,
+832,
+789
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "home-errands"
+},
+"ice-cream": {
+"L": {
+"whole": [
+293,
+192,
+731,
+827
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "food-and-drinks"
+},
+"impfung": {
+"L": {
+"base": [
+261,
+192,
+571,
+779
+],
+"pflaster": [
+443,
+485,
+757,
+827
+],
+"whole": [
+261,
+192,
+757,
+827
+]
+},
+"a": "Pflaster klebt sich auf",
+"layers": [
+"base",
+"pflaster"
+]
+},
+"inhalator": {
+"L": {
+"whole": [
+256,
+192,
+768,
+832
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "health-wellbeing"
+},
+"inline-skaten": {
+"L": {
+"whole": [
+213,
+192,
+805,
+832
+]
+},
+"a": "Gesamtmotiv sanft bewegen"
+},
+"jahresring": {
+"L": {
+"base": [
+192,
+267,
+827,
+741
+],
+"perle": [
+661,
+320,
+832,
+485
+],
+"whole": [
+192,
+267,
+832,
+741
+]
+},
+"a": "Perle läuft um den Ring",
+"layers": [
+"base",
+"perle"
+]
+},
+"joy-laughing": {
+"L": {
+"whole": [
+235,
+192,
+795,
+827
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "mood-and-reactions"
+},
+"jubilaeum": {
+"L": {
+"base": [
+331,
+309,
+709,
+949
+],
+"korken": [
+400,
+85,
+624,
+304
+],
+"whole": [
+331,
+85,
+709,
+949
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "food-social",
+"layers": [
+"base",
+"korken"
+]
+},
+"kalender": {
+"L": {
+"base": [
+197,
+192,
+832,
+821
+],
+"blatt": [
+197,
+368,
+795,
+827
+],
+"whole": [
+197,
+192,
+832,
+827
+]
+},
+"a": "Blatt blättert",
+"layers": [
+"base",
+"blatt"
+]
+},
+"kamera-scan": {
+"L": {
+"state-blitz": [
+192,
+240,
+832,
+779
+],
+"whole": [
+192,
+240,
+832,
+773
+]
+},
+"a": "Blitz blinkt",
+"states": [
+"state-blitz"
+]
+},
+"kampfsport": {
+"L": {
+"base": [
+64,
+160,
+587,
+640
+],
+"guertel": [
+496,
+448,
+928,
+859
+],
+"whole": [
+64,
+160,
+928,
+859
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"layers": [
+"base",
+"guertel"
+]
+},
+"kanu": {
+"L": {
+"base": [
+144,
+272,
+880,
+864
+],
+"paddel": [
+288,
+304,
+773,
+848
+],
+"whole": [
+144,
+272,
+880,
+864
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"layers": [
+"base",
+"paddel"
+]
+},
+"karten": {
+"L": {
+"base": [
+197,
+251,
+789,
+811
+],
+"oberste-karte": [
+379,
+219,
+827,
+715
+],
+"whole": [
+197,
+219,
+827,
+811
+]
+},
+"a": "oberste Karte wischt zur Seite",
+"layers": [
+"base",
+"oberste-karte"
+]
+},
+"karussell": {
+"L": {
+"whole": [
+277,
+192,
+747,
+832
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "leisure-culture"
+},
+"keramik": {
+"L": {
+"base": [
+64,
+251,
+635,
+832
+],
+"schale": [
+629,
+373,
+971,
+832
+],
+"whole": [
+64,
+251,
+976,
+832
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "leisure-culture",
+"layers": [
+"base",
+"schale"
+]
+},
+"kettlebell": {
+"L": {
+"whole": [
+277,
+197,
+747,
+832
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "sport-outdoors"
+},
+"kindergeld": {
+"L": {
+"base": [
+229,
+363,
+779,
+811
+],
+"eine-muenze": [
+229,
+192,
+779,
+555
+],
+"whole": [
+229,
+192,
+779,
+811
+]
+},
+"a": "Münze fällt auf den Stapel",
+"layers": [
+"base",
+"eine-muenze"
+]
+},
+"kinderwagen": {
+"L": {
+"base": [
+219,
+197,
+779,
+779
+],
+"raeder": [
+245,
+613,
+800,
+827
+],
+"whole": [
+219,
+197,
+800,
+827
+]
+},
+"a": "rollt hin und her",
+"layers": [
+"base",
+"raeder"
+]
+},
+"kino": {
+"L": {
+"base": [
+96,
+336,
+912,
+763
+],
+"filmstreifen": [
+432,
+432,
+907,
+720
+],
+"whole": [
+96,
+336,
+912,
+763
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "leisure-culture",
+"layers": [
+"base",
+"filmstreifen"
+]
+},
+"kita": {
+"L": {
+"base": [
+293,
+352,
+731,
+811
+],
+"oberer-block": [
+389,
+197,
+635,
+427
+],
+"whole": [
+293,
+197,
+731,
+811
+]
+},
+"a": "Block plumpst drauf",
+"layers": [
+"base",
+"oberer-block"
+]
+},
+"klavier": {
+"L": {
+"whole": [
+192,
+240,
+832,
+784
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "leisure-culture"
+},
+"klettern": {
+"L": {
+"whole": [
+261,
+192,
+763,
+832
+]
+},
+"a": "Gesamtmotiv sanft bewegen"
+},
+"koala": {
+"L": {
+"whole": [
+192,
+203,
+832,
+821
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "animals"
+},
+"kochtopf": {
+"L": {
+"base": [
+203,
+437,
+821,
+800
+],
+"dampf": [
+480,
+192,
+576,
+352
+],
+"deckel": [
+288,
+197,
+720,
+613
+],
+"whole": [
+203,
+192,
+816,
+800
+]
+},
+"a": "Deckel klappert, Dampf steigt",
+"layers": [
+"base",
+"deckel",
+"dampf"
+]
+},
+"kompass": {
+"L": {
+"base": [
+171,
+331,
+821,
+976
+],
+"nadel": [
+341,
+80,
+683,
+325
+],
+"whole": [
+171,
+80,
+821,
+976
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "travel-transport",
+"layers": [
+"base",
+"nadel"
+]
+},
+"kontakt": {
+"L": {
+"whole": [
+235,
+197,
+789,
+832
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "planning-communication"
+},
+"konzert": {
+"L": {
+"base": [
+59,
+395,
+485,
+635
+],
+"ticket-vorne": [
+533,
+389,
+965,
+635
+],
+"whole": [
+59,
+389,
+965,
+635
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "leisure-culture",
+"layers": [
+"base",
+"ticket-vorne"
+]
+},
+"krankenhaus": {
+"L": {
+"base": [
+128,
+384,
+672,
+885
+],
+"kreuz": [
+485,
+155,
+912,
+576
+],
+"whole": [
+128,
+155,
+912,
+885
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "health-wellbeing",
+"layers": [
+"base",
+"kreuz"
+]
+},
+"krankenkasse": {
+"L": {
+"whole": [
+192,
+272,
+832,
+752
+]
+},
+"a": "dreht sich"
+},
+"kreditkarte": {
+"L": {
+"base": [
+37,
+379,
+475,
+645
+],
+"karte-vorne": [
+549,
+379,
+987,
+645
+],
+"whole": [
+37,
+379,
+987,
+645
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "finance-admin",
+"layers": [
+"base",
+"karte-vorne"
+]
+},
+"kruecken": {
+"L": {
+"base": [
+149,
+91,
+427,
+923
+],
+"kruecke-rechts": [
+597,
+96,
+880,
+923
+],
+"whole": [
+149,
+91,
+880,
+923
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "health-wellbeing",
+"layers": [
+"base",
+"kruecke-rechts"
+]
+},
+"kuscheltier": {
+"L": {
+"whole": [
+256,
+192,
+768,
+832
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "family-children"
+},
+"ladesaeule": {
+"L": {
+"base": [
+123,
+123,
+805,
+928
+],
+"kabel": [
+512,
+229,
+880,
+789
+],
+"whole": [
+123,
+123,
+885,
+928
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "travel-transport",
+"layers": [
+"base",
+"kabel"
+]
+},
+"ladybug": {
+"L": {
+"whole": [
+251,
+192,
+763,
+827
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "animals"
+},
+"laetzchen": {
+"L": {
+"whole": [
+224,
+192,
+800,
+832
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "family-children"
+},
+"landkarte": {
+"L": {
+"whole": [
+192,
+272,
+832,
+757
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "travel-transport"
+},
+"laptop": {
+"L": {
+"base": [
+149,
+603,
+811,
+901
+],
+"deckel": [
+261,
+139,
+837,
+587
+],
+"whole": [
+149,
+139,
+837,
+901
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "work-school",
+"layers": [
+"base",
+"deckel"
+]
+},
+"lastenrad": {
+"L": {
+"whole": [
+192,
+293,
+832,
+736
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "travel-transport"
+},
+"laufen": {
+"L": {
+"whole": [
+192,
+288,
+827,
+731
+]
+},
+"a": "Gesamtmotiv sanft bewegen"
+},
+"laufrad": {
+"L": {
+"base": [
+64,
+139,
+976,
+885
+],
+"rad-hinten": [
+635,
+512,
+976,
+875
+],
+"rad-vorne": [
+43,
+501,
+389,
+875
+],
+"whole": [
+32,
+139,
+976,
+885
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "family-children",
+"layers": [
+"base",
+"rad-vorne",
+"rad-hinten"
+]
+},
+"laugh-tears": {
+"L": {
+"whole": [
+192,
+192,
+832,
+827
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "mood-and-reactions"
+},
+"lemon": {
+"L": {
+"whole": [
+197,
+203,
+832,
+811
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "food-and-drinks"
+},
+"lightning-bolt": {
+"L": {
+"whole": [
+299,
+192,
+720,
+827
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "everyday-emoji-objects"
+},
+"link-abo": {
+"L": {
+"base": [
+139,
+443,
+539,
+816
+],
+"glied-2": [
+512,
+229,
+901,
+603
+],
+"whole": [
+139,
+229,
+901,
+816
+]
+},
+"a": "Schlaufe hakt ein",
+"layers": [
+"base",
+"glied-2"
+]
+},
+"lion": {
+"L": {
+"whole": [
+192,
+224,
+837,
+800
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "animals"
+},
+"lipstick": {
+"L": {
+"whole": [
+347,
+192,
+672,
+827
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "everyday-emoji-objects"
+},
+"lohnabrechnung": {
+"L": {
+"base": [
+320,
+117,
+928,
+869
+],
+"muenze": [
+59,
+597,
+325,
+885
+],
+"whole": [
+59,
+117,
+928,
+885
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "finance-admin",
+"layers": [
+"base",
+"muenze"
+]
+},
+"lollipop": {
+"L": {
+"whole": [
+304,
+192,
+720,
+827
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "food-and-drinks"
+},
+"magnet": {
+"L": {
+"base": [
+437,
+213,
+661,
+432
+],
+"notiz": [
+197,
+261,
+832,
+811
+],
+"whole": [
+197,
+213,
+832,
+811
+]
+},
+"a": "Notiz schwingt leicht",
+"layers": [
+"notiz",
+"base"
+]
+},
+"magnifying-glass": {
+"L": {
+"whole": [
+235,
+192,
+784,
+827
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "everyday-emoji-objects"
+},
+"malen": {
+"L": {
+"base": [
+80,
+192,
+928,
+880
+],
+"pinsel": [
+560,
+256,
+923,
+859
+],
+"whole": [
+80,
+192,
+928,
+880
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "leisure-culture",
+"layers": [
+"base",
+"pinsel"
+]
+},
+"manikuere": {
+"L": {
+"base": [
+224,
+459,
+528,
+869
+],
+"deckel": [
+267,
+133,
+480,
+421
+],
+"feile": [
+560,
+256,
+843,
+811
+],
+"whole": [
+224,
+133,
+843,
+869
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "health-wellbeing",
+"layers": [
+"base",
+"deckel",
+"feile"
+]
+},
+"maple-leaf": {
+"L": {
+"whole": [
+203,
+192,
+821,
+832
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "nature-and-plants"
+},
+"mask-face": {
+"L": {
+"whole": [
+192,
+240,
+693,
+779
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "mood-and-reactions"
+},
+"massage": {
+"L": {
+"base": [
+117,
+395,
+901,
+875
+],
+"handtuch": [
+576,
+192,
+891,
+368
+],
+"whole": [
+117,
+192,
+901,
+875
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "health-wellbeing",
+"layers": [
+"base",
+"handtuch"
+]
+},
+"massband": {
+"L": {
+"band": [
+480,
+528,
+939,
+683
+],
+"base": [
+91,
+277,
+464,
+667
+],
+"whole": [
+91,
+277,
+939,
+683
+]
+},
+"a": "rollt aus",
+"layers": [
+"base",
+"band"
+]
+},
+"medaille": {
+"L": {
+"base": [
+240,
+123,
+784,
+453
+],
+"medaille": [
+277,
+448,
+736,
+912
+],
+"whole": [
+240,
+123,
+784,
+912
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "sport-outdoors",
+"layers": [
+"base",
+"medaille"
+]
+},
+"medal-first": {
+"L": {
+"whole": [
+288,
+192,
+736,
+827
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "everyday-emoji-objects"
+},
+"medal-second": {
+"L": {
+"whole": [
+288,
+192,
+731,
+827
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "everyday-emoji-objects"
+},
+"medal-third": {
+"L": {
+"whole": [
+293,
+192,
+736,
+827
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "everyday-emoji-objects"
+},
+"meditation": {
+"L": {
+"whole": [
+197,
+267,
+832,
+757
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "health-wellbeing"
+},
+"medizin": {
+"L": {
+"base": [
+341,
+347,
+667,
+811
+],
+"becher": [
+357,
+197,
+651,
+459
+],
+"whole": [
+341,
+192,
+667,
+811
+]
+},
+"a": "Becher hebt sich",
+"layers": [
+"base",
+"becher"
+]
+},
+"meeting": {
+"L": {
+"base": [
+59,
+379,
+325,
+720
+],
+"stuhl-rechts": [
+699,
+368,
+965,
+720
+],
+"tisch": [
+331,
+421,
+688,
+725
+],
+"whole": [
+59,
+368,
+965,
+725
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "work-school",
+"layers": [
+"base",
+"tisch",
+"stuhl-rechts"
+]
+},
+"melting-face": {
+"L": {
+"whole": [
+187,
+240,
+832,
+784
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "mood-and-reactions"
+},
+"mikrofon": {
+"L": {
+"base": [
+331,
+192,
+693,
+832
+],
+"wellen": [
+688,
+309,
+827,
+480
+],
+"whole": [
+331,
+192,
+827,
+832
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "planning-communication",
+"layers": [
+"base",
+"wellen"
+]
+},
+"milchpumpe": {
+"L": {
+"base": [
+256,
+53,
+784,
+421
+],
+"flasche": [
+373,
+581,
+651,
+971
+],
+"milch": [
+469,
+437,
+560,
+565
+],
+"whole": [
+256,
+53,
+784,
+971
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "family-children",
+"layers": [
+"base",
+"milch",
+"flasche"
+]
+},
+"milky-way": {
+"L": {
+"whole": [
+192,
+224,
+827,
+795
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "nature-and-plants"
+},
+"mittagessen": {
+"L": {
+"base": [
+288,
+512,
+699,
+907
+],
+"brokkoli": [
+112,
+155,
+443,
+501
+],
+"fisch": [
+496,
+224,
+907,
+501
+],
+"whole": [
+112,
+155,
+907,
+907
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "food-social",
+"layers": [
+"base",
+"brokkoli",
+"fisch"
+]
+},
+"mobile": {
+"L": {
+"whole": [
+224,
+192,
+800,
+832
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "family-children"
+},
+"monatsplan": {
+"L": {
+"base": [
+69,
+352,
+603,
+848
+],
+"blatt": [
+443,
+155,
+965,
+507
+],
+"whole": [
+69,
+155,
+965,
+848
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "planning-communication",
+"layers": [
+"base",
+"blatt"
+]
+},
+"mond": {
+"L": {
+"base": [
+203,
+192,
+821,
+827
+],
+"stern": [
+581,
+299,
+795,
+507
+],
+"whole": [
+203,
+192,
+821,
+827
+]
+},
+"a": "schaukelt, Stern funkelt",
+"layers": [
+"base",
+"stern"
+]
+},
+"money-bag": {
+"L": {
+"whole": [
+208,
+192,
+805,
+827
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "everyday-emoji-objects"
+},
+"monkey": {
+"L": {
+"whole": [
+213,
+192,
+811,
+832
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "animals"
+},
+"monocle-face": {
+"L": {
+"whole": [
+197,
+192,
+821,
+827
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "mood-and-reactions"
+},
+"motorrad": {
+"L": {
+"whole": [
+192,
+277,
+832,
+747
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "travel-transport"
+},
+"mouse": {
+"L": {
+"whole": [
+256,
+192,
+757,
+832
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "animals"
+},
+"muell": {
+"L": {
+"base": [
+240,
+299,
+784,
+805
+],
+"deckel": [
+245,
+192,
+784,
+496
+],
+"whole": [
+240,
+192,
+784,
+805
+]
+},
+"a": "Deckel klappt",
+"layers": [
+"base",
+"deckel"
+]
+},
+"muscle-arm": {
+"L": {
+"whole": [
+219,
+192,
+800,
+827
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "hand-gestures"
+},
+"museum": {
+"L": {
+"whole": [
+192,
+208,
+832,
+816
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "leisure-culture"
+},
+"mushroom": {
+"L": {
+"whole": [
+272,
+192,
+752,
+827
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "food-and-drinks"
+},
+"musik": {
+"L": {
+"base": [
+192,
+288,
+811,
+816
+],
+"stock-1": [
+224,
+192,
+512,
+464
+],
+"stock-2": [
+475,
+240,
+832,
+512
+],
+"whole": [
+192,
+192,
+832,
+816
+]
+},
+"a": "trommeln",
+"layers": [
+"base",
+"stock-1",
+"stock-2"
+]
+},
+"naehen": {
+"L": {
+"whole": [
+192,
+197,
+832,
+832
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "leisure-culture"
+},
+"nahrungsergaenzung": {
+"L": {
+"base": [
+293,
+464,
+763,
+960
+],
+"deckel": [
+288,
+80,
+709,
+320
+],
+"kapsel": [
+416,
+315,
+624,
+459
+],
+"whole": [
+288,
+80,
+763,
+960
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "health-wellbeing",
+"layers": [
+"base",
+"deckel",
+"kapsel"
+]
+},
+"nail-polish": {
+"L": {
+"whole": [
+304,
+197,
+715,
+827
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "everyday-emoji-objects"
+},
+"nerd-face": {
+"L": {
+"whole": [
+203,
+192,
+821,
+827
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "mood-and-reactions"
+},
+"neutral-face": {
+"L": {
+"whole": [
+213,
+192,
+811,
+827
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "mood-and-reactions"
+},
+"noch-offen": {
+"L": {
+"base": [
+192,
+240,
+832,
+784
+],
+"ring": [
+299,
+309,
+725,
+672
+],
+"whole": [
+192,
+240,
+832,
+784
+]
+},
+"a": "Ring dreht langsam",
+"layers": [
+"base",
+"ring"
+]
+},
+"notizblock": {
+"L": {
+"base": [
+85,
+267,
+491,
+805
+],
+"blatt": [
+533,
+309,
+949,
+800
+],
+"whole": [
+85,
+267,
+949,
+805
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "planning-communication",
+"layers": [
+"base",
+"blatt"
+]
+},
+"obst": {
+"L": {
+"base": [
+91,
+347,
+464,
+789
+],
+"birne": [
+560,
+240,
+912,
+789
+],
+"whole": [
+91,
+240,
+912,
+789
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "food-social",
+"layers": [
+"base",
+"birne"
+]
+},
+"octopus": {
+"L": {
+"whole": [
+192,
+224,
+832,
+800
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "animals"
+},
+"ok-hand": {
+"L": {
+"whole": [
+261,
+192,
+757,
+827
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "hand-gestures"
+},
+"onlinekurs": {
+"L": {
+"base": [
+213,
+197,
+816,
+832
+],
+"play": [
+411,
+341,
+597,
+549
+],
+"whole": [
+213,
+197,
+816,
+832
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "work-school",
+"layers": [
+"base",
+"play"
+]
+},
+"open-hands": {
+"L": {
+"whole": [
+192,
+277,
+832,
+741
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "hand-gestures"
+},
+"ordner": {
+"L": {
+"base": [
+112,
+320,
+917,
+917
+],
+"reiter": [
+133,
+96,
+800,
+320
+],
+"whole": [
+112,
+96,
+917,
+917
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "planning-communication",
+"layers": [
+"base",
+"reiter"
+]
+},
+"ort": {
+"L": {
+"base": [
+245,
+507,
+768,
+827
+],
+"pin": [
+309,
+299,
+683,
+757
+],
+"whole": [
+245,
+299,
+768,
+827
+]
+},
+"a": "Pin fällt und federt",
+"layers": [
+"base",
+"pin"
+]
+},
+"ostern": {
+"L": {
+"base": [
+176,
+528,
+832,
+896
+],
+"ei-1": [
+160,
+133,
+464,
+485
+],
+"ei-2": [
+544,
+165,
+843,
+507
+],
+"whole": [
+160,
+133,
+843,
+896
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "holidays-seasons",
+"layers": [
+"base",
+"ei-1",
+"ei-2"
+]
+},
+"otter": {
+"L": {
+"whole": [
+219,
+192,
+805,
+832
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "animals"
+},
+"padel": {
+"L": {
+"whole": [
+251,
+192,
+768,
+821
+]
+},
+"a": "Gesamtmotiv sanft bewegen"
+},
+"paket": {
+"L": {
+"base": [
+197,
+192,
+827,
+811
+],
+"klappe": [
+203,
+219,
+725,
+576
+],
+"whole": [
+197,
+192,
+827,
+811
+]
+},
+"a": "Klappe öffnet",
+"layers": [
+"base",
+"klappe"
+]
+},
+"palm-tree": {
+"L": {
+"whole": [
+208,
+192,
+816,
+827
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "nature-and-plants"
+},
+"pancakes": {
+"L": {
+"whole": [
+229,
+192,
+789,
+715
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "food-and-drinks"
+},
+"panda": {
+"L": {
+"whole": [
+251,
+192,
+768,
+827
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "animals"
+},
+"paperclip": {
+"L": {
+"whole": [
+261,
+192,
+763,
+827
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "everyday-emoji-objects"
+},
+"papier-stift": {
+"L": {
+"base": [
+197,
+251,
+821,
+779
+],
+"stift": [
+347,
+320,
+795,
+736
+],
+"whole": [
+197,
+251,
+821,
+779
+]
+},
+"a": "Stift schreibt",
+"layers": [
+"base",
+"stift"
+]
+},
+"parkplatz": {
+"L": {
+"base": [
+133,
+272,
+875,
+891
+],
+"schranke": [
+389,
+176,
+880,
+544
+],
+"whole": [
+133,
+176,
+880,
+891
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "travel-transport",
+"layers": [
+"base",
+"schranke"
+]
+},
+"party-popper": {
+"L": {
+"whole": [
+213,
+192,
+811,
+827
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "everyday-emoji-objects"
+},
+"pasta": {
+"L": {
+"whole": [
+192,
+245,
+832,
+779
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "food-social"
+},
+"peace-hand": {
+"L": {
+"whole": [
+325,
+192,
+699,
+827
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "hand-gestures"
+},
+"peach": {
+"L": {
+"whole": [
+229,
+192,
+795,
+827
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "food-and-drinks"
+},
+"pear": {
+"L": {
+"whole": [
+288,
+192,
+741,
+832
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "food-and-drinks"
+},
+"perfume": {
+"L": {
+"whole": [
+197,
+192,
+827,
+827
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "everyday-emoji-objects"
+},
+"person-artist": {
+"L": {
+"whole": [
+240,
+192,
+779,
+827
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "people-and-roles"
+},
+"person-astronaut": {
+"L": {
+"whole": [
+309,
+192,
+715,
+832
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "people-and-roles"
+},
+"person-baby": {
+"L": {
+"whole": [
+267,
+192,
+757,
+832
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "family-children"
+},
+"person-bowing": {
+"L": {
+"whole": [
+363,
+187,
+672,
+832
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "people-and-roles"
+},
+"person-chef": {
+"L": {
+"whole": [
+352,
+197,
+683,
+827
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "people-and-roles"
+},
+"person-dancing": {
+"L": {
+"whole": [
+288,
+192,
+736,
+832
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "people-and-roles"
+},
+"person-detective": {
+"L": {
+"whole": [
+293,
+192,
+731,
+832
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "people-and-roles"
+},
+"person-doctor": {
+"L": {
+"whole": [
+256,
+192,
+768,
+832
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "people-and-roles"
+},
+"person-farmer": {
+"L": {
+"whole": [
+267,
+192,
+757,
+832
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "people-and-roles"
+},
+"person-firefighter": {
+"L": {
+"whole": [
+315,
+192,
+709,
+832
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "people-and-roles"
+},
+"person-frau": {
+"L": {
+"whole": [
+267,
+192,
+763,
+832
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "planning-communication"
+},
+"person-guard": {
+"L": {
+"whole": [
+347,
+197,
+677,
+832
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "people-and-roles"
+},
+"person-kind": {
+"L": {
+"whole": [
+304,
+192,
+725,
+832
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "family-children"
+},
+"person-mann": {
+"L": {
+"whole": [
+245,
+192,
+779,
+832
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "planning-communication"
+},
+"person-mechanic": {
+"L": {
+"whole": [
+219,
+197,
+805,
+832
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "people-and-roles"
+},
+"person-office": {
+"L": {
+"whole": [
+267,
+192,
+757,
+827
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "people-and-roles"
+},
+"person-pilot": {
+"L": {
+"whole": [
+192,
+213,
+832,
+811
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "people-and-roles"
+},
+"person-police": {
+"L": {
+"whole": [
+347,
+192,
+683,
+832
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "people-and-roles"
+},
+"person-running": {
+"L": {
+"whole": [
+304,
+187,
+715,
+832
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "people-and-roles"
+},
+"person-senior": {
+"L": {
+"whole": [
+288,
+192,
+741,
+832
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "family-children"
+},
+"person-singer": {
+"L": {
+"whole": [
+219,
+192,
+805,
+832
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "people-and-roles"
+},
+"person-student": {
+"L": {
+"whole": [
+256,
+192,
+768,
+827
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "people-and-roles"
+},
+"person-teacher": {
+"L": {
+"whole": [
+261,
+192,
+763,
+832
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "people-and-roles"
+},
+"person-technologist": {
+"L": {
+"whole": [
+208,
+192,
+821,
+832
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "people-and-roles"
+},
+"person-wheelchair": {
+"L": {
+"whole": [
+288,
+187,
+736,
+832
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "people-and-roles"
+},
+"personalausweis": {
+"L": {
+"whole": [
+192,
+229,
+827,
+795
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "finance-admin"
+},
+"pflanze": {
+"L": {
+"base": [
+299,
+592,
+699,
+949
+],
+"blaetter": [
+224,
+112,
+773,
+587
+],
+"whole": [
+224,
+112,
+773,
+949
+]
+},
+"a": "wiegen sich",
+"layers": [
+"base",
+"blaetter"
+]
+},
+"physiotherapie": {
+"L": {
+"base": [
+107,
+432,
+725,
+800
+],
+"rolle": [
+533,
+293,
+917,
+629
+],
+"whole": [
+107,
+293,
+917,
+800
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "health-wellbeing",
+"layers": [
+"base",
+"rolle"
+]
+},
+"picknick": {
+"L": {
+"base": [
+165,
+117,
+848,
+912
+],
+"deckel": [
+229,
+304,
+757,
+443
+],
+"whole": [
+165,
+117,
+848,
+912
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "food-social",
+"layers": [
+"base",
+"deckel"
+]
+},
+"pilates": {
+"L": {
+"ball": [
+608,
+405,
+955,
+859
+],
+"base": [
+69,
+155,
+613,
+864
+],
+"whole": [
+69,
+155,
+955,
+864
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"layers": [
+"base",
+"ball"
+]
+},
+"pinching-hand": {
+"L": {
+"whole": [
+192,
+261,
+837,
+757
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "hand-gestures"
+},
+"pineapple": {
+"L": {
+"whole": [
+293,
+197,
+736,
+832
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "food-and-drinks"
+},
+"pizza": {
+"L": {
+"whole": [
+192,
+192,
+832,
+832
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "food-social"
+},
+"planet": {
+"L": {
+"whole": [
+192,
+256,
+832,
+763
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "nature-and-plants"
+},
+"planetarium": {
+"L": {
+"base": [
+53,
+155,
+587,
+800
+],
+"fuss": [
+139,
+800,
+491,
+949
+],
+"ring": [
+661,
+133,
+960,
+741
+],
+"whole": [
+53,
+133,
+960,
+949
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "leisure-culture",
+"layers": [
+"base",
+"ring",
+"fuss"
+]
+},
+"pointing-down": {
+"L": {
+"whole": [
+192,
+213,
+837,
+805
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "hand-gestures"
+},
+"pointing-left": {
+"L": {
+"whole": [
+192,
+288,
+832,
+731
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "hand-gestures"
+},
+"pointing-right": {
+"L": {
+"whole": [
+192,
+299,
+832,
+720
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "hand-gestures"
+},
+"pointing-up": {
+"L": {
+"whole": [
+331,
+192,
+688,
+827
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "hand-gestures"
+},
+"pokal": {
+"L": {
+"whole": [
+192,
+203,
+832,
+821
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "sport-outdoors"
+},
+"popcorn": {
+"L": {
+"whole": [
+256,
+192,
+768,
+827
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "food-and-drinks"
+},
+"potted-plant": {
+"L": {
+"whole": [
+224,
+192,
+800,
+832
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "nature-and-plants"
+},
+"praesentation": {
+"L": {
+"balken-1": [
+283,
+485,
+416,
+651
+],
+"balken-2": [
+437,
+400,
+576,
+651
+],
+"balken-3": [
+597,
+299,
+736,
+651
+],
+"base": [
+155,
+75,
+859,
+965
+],
+"whole": [
+155,
+75,
+859,
+965
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "work-school",
+"layers": [
+"base",
+"balken-1",
+"balken-2",
+"balken-3"
+]
+},
+"praying-hands": {
+"L": {
+"whole": [
+224,
+192,
+800,
+827
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "hand-gestures"
+},
+"pretzel": {
+"L": {
+"whole": [
+192,
+240,
+832,
+779
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "food-and-drinks"
+},
+"prioritaet": {
+"L": {
+"base": [
+325,
+176,
+501,
+864
+],
+"fahne": [
+496,
+192,
+731,
+864
+],
+"whole": [
+325,
+176,
+731,
+864
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "planning-communication",
+"layers": [
+"base",
+"fahne"
+]
+},
+"pruefung": {
+"L": {
+"base": [
+69,
+192,
+965,
+821
+],
+"haken": [
+768,
+555,
+965,
+731
+],
+"stift": [
+603,
+336,
+821,
+800
+],
+"whole": [
+69,
+192,
+971,
+821
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "work-school",
+"layers": [
+"base",
+"stift",
+"haken"
+]
+},
+"putzen": {
+"L": {
+"base": [
+224,
+213,
+629,
+832
+],
+"spruehnebel": [
+635,
+192,
+800,
+368
+],
+"whole": [
+224,
+192,
+800,
+832
+]
+},
+"a": "sprüht",
+"layers": [
+"base",
+"spruehnebel"
+]
+},
+"puzzle": {
+"L": {
+"base": [
+336,
+75,
+683,
+549
+],
+"teil-2": [
+48,
+501,
+459,
+976
+],
+"teil-3": [
+560,
+501,
+976,
+976
+],
+"whole": [
+48,
+75,
+976,
+976
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "family-children",
+"layers": [
+"base",
+"teil-2",
+"teil-3"
+]
+},
+"rabbit": {
+"L": {
+"whole": [
+352,
+192,
+677,
+832
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "animals"
+},
+"radfahren": {
+"L": {
+"base": [
+101,
+219,
+923,
+853
+],
+"rad-hinten": [
+53,
+469,
+405,
+837
+],
+"rad-vorne": [
+613,
+475,
+965,
+837
+],
+"whole": [
+53,
+219,
+965,
+853
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"layers": [
+"base",
+"rad-vorne",
+"rad-hinten"
+]
+},
+"raised-hands": {
+"L": {
+"whole": [
+192,
+229,
+832,
+789
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "hand-gestures"
+},
+"ramen": {
+"L": {
+"whole": [
+197,
+192,
+827,
+827
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "food-and-drinks"
+},
+"rasenmaeher": {
+"L": {
+"base": [
+171,
+144,
+965,
+875
+],
+"rad-hinten": [
+539,
+613,
+779,
+869
+],
+"rad-vorne": [
+96,
+677,
+283,
+864
+],
+"whole": [
+96,
+144,
+965,
+875
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "home-errands",
+"layers": [
+"base",
+"rad-vorne",
+"rad-hinten"
+]
+},
+"rassel": {
+"L": {
+"whole": [
+224,
+197,
+795,
+832
+]
+},
+"a": "rasselt"
+},
+"rechnung": {
+"L": {
+"base": [
+219,
+277,
+789,
+933
+],
+"rolle": [
+224,
+107,
+779,
+283
+],
+"whole": [
+219,
+107,
+789,
+933
+]
+},
+"a": "rollt sich aus",
+"layers": [
+"base",
+"rolle"
+]
+},
+"recycling": {
+"L": {
+"whole": [
+192,
+203,
+832,
+821
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "home-errands"
+},
+"regen": {
+"L": {
+"base": [
+0,
+0,
+1024,
+1024
+],
+"tropfen-1": [
+192,
+544,
+379,
+709
+],
+"tropfen-2": [
+395,
+581,
+592,
+832
+],
+"tropfen-3": [
+651,
+523,
+832,
+741
+],
+"whole": [
+192,
+197,
+832,
+832
+],
+"wolke": [
+192,
+197,
+805,
+597
+]
+},
+"a": "Tropfen fallen",
+"layers": [
+"base",
+"tropfen-1",
+"tropfen-2",
+"tropfen-3",
+"wolke"
+]
+},
+"regenbogen": {
+"L": {
+"whole": [
+192,
+277,
+832,
+752
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "holidays-seasons"
+},
+"reifenwechsel": {
+"L": {
+"base": [
+128,
+240,
+891,
+827
+],
+"schluessel": [
+613,
+411,
+880,
+795
+],
+"whole": [
+128,
+235,
+891,
+827
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "travel-transport",
+"layers": [
+"base",
+"schluessel"
+]
+},
+"reise": {
+"L": {
+"whole": [
+283,
+192,
+736,
+821
+]
+},
+"a": "rollt"
+},
+"reisepass": {
+"L": {
+"state-offen": [
+309,
+192,
+715,
+832
+],
+"whole": [
+309,
+192,
+709,
+795
+]
+},
+"a": "klappt auf",
+"states": [
+"state-offen"
+]
+},
+"reiten": {
+"L": {
+"whole": [
+192,
+208,
+827,
+816
+]
+},
+"a": "Gesamtmotiv sanft bewegen"
+},
+"relaxed-smile": {
+"L": {
+"whole": [
+197,
+192,
+827,
+827
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "mood-and-reactions"
+},
+"relieved-face": {
+"L": {
+"whole": [
+256,
+299,
+763,
+827
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "mood-and-reactions"
+},
+"restaurant": {
+"L": {
+"base": [
+251,
+240,
+752,
+805
+],
+"gabel": [
+91,
+240,
+251,
+805
+],
+"loeffel": [
+747,
+240,
+917,
+805
+],
+"whole": [
+91,
+240,
+917,
+805
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "food-social",
+"layers": [
+"base",
+"gabel",
+"loeffel"
+]
+},
+"rice-bowl": {
+"L": {
+"whole": [
+192,
+261,
+837,
+757
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "food-and-drinks"
+},
+"ring": {
+"L": {
+"whole": [
+235,
+192,
+789,
+827
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "everyday-emoji-objects"
+},
+"roller": {
+"L": {
+"whole": [
+203,
+197,
+821,
+832
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "travel-transport"
+},
+"rollstuhl": {
+"L": {
+"base": [
+96,
+101,
+955,
+944
+],
+"rad-hinten": [
+80,
+443,
+459,
+907
+],
+"rad-vorne": [
+475,
+715,
+683,
+933
+],
+"whole": [
+80,
+101,
+955,
+944
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "health-wellbeing",
+"layers": [
+"base",
+"rad-vorne",
+"rad-hinten"
+]
+},
+"rose": {
+"L": {
+"whole": [
+245,
+192,
+779,
+827
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "nature-and-plants"
+},
+"rucksack": {
+"L": {
+"whole": [
+224,
+192,
+800,
+827
+]
+},
+"a": "wippt"
+},
+"rudern": {
+"L": {
+"base": [
+59,
+240,
+832,
+896
+],
+"ruder-rechts": [
+427,
+171,
+939,
+837
+],
+"whole": [
+59,
+171,
+939,
+896
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"layers": [
+"base",
+"ruder-rechts"
+]
+},
+"rugby": {
+"L": {
+"whole": [
+192,
+256,
+832,
+752
+]
+},
+"a": "Gesamtmotiv sanft bewegen"
+},
+"sad-face": {
+"L": {
+"whole": [
+261,
+304,
+763,
+827
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "mood-and-reactions"
+},
+"saeen": {
+"L": {
+"base": [
+107,
+384,
+357,
+672
+],
+"keim": [
+693,
+443,
+917,
+677
+],
+"samen": [
+464,
+539,
+581,
+645
+],
+"whole": [
+107,
+384,
+917,
+677
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "home-errands",
+"layers": [
+"base",
+"samen",
+"keim"
+]
+},
+"salat": {
+"L": {
+"whole": [
+192,
+203,
+832,
+821
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "food-social"
+},
+"salute-face": {
+"L": {
+"whole": [
+192,
+245,
+832,
+773
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "mood-and-reactions"
+},
+"sandkasten": {
+"L": {
+"base": [
+69,
+400,
+523,
+736
+],
+"eimer": [
+555,
+459,
+757,
+704
+],
+"schaufel": [
+784,
+379,
+949,
+709
+],
+"whole": [
+69,
+379,
+949,
+736
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "family-children",
+"layers": [
+"base",
+"eimer",
+"schaufel"
+]
+},
+"sauna": {
+"L": {
+"base": [
+187,
+528,
+693,
+917
+],
+"kelle": [
+208,
+117,
+939,
+533
+],
+"whole": [
+187,
+117,
+939,
+917
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "leisure-culture",
+"layers": [
+"base",
+"kelle"
+]
+},
+"schlafmaske": {
+"L": {
+"whole": [
+192,
+320,
+832,
+704
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "health-wellbeing"
+},
+"schlafsack": {
+"L": {
+"whole": [
+267,
+192,
+763,
+832
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "family-children"
+},
+"schlittschuhlaufen": {
+"L": {
+"whole": [
+219,
+197,
+805,
+832
+]
+},
+"a": "Gesamtmotiv sanft bewegen"
+},
+"schloss": {
+"L": {
+"base": [
+256,
+405,
+768,
+795
+],
+"buegel": [
+315,
+192,
+709,
+464
+],
+"whole": [
+256,
+192,
+768,
+795
+]
+},
+"a": "Bügel klickt zu",
+"layers": [
+"base",
+"buegel"
+]
+},
+"schluessel": {
+"L": {
+"whole": [
+192,
+197,
+832,
+827
+]
+},
+"a": "schwingt"
+},
+"schnee": {
+"L": {
+"base": [
+203,
+80,
+811,
+448
+],
+"flocke-1": [
+240,
+485,
+448,
+725
+],
+"flocke-2": [
+533,
+720,
+741,
+955
+],
+"whole": [
+203,
+80,
+811,
+955
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "holidays-seasons",
+"layers": [
+"base",
+"flocke-1",
+"flocke-2"
+]
+},
+"schnuller": {
+"L": {
+"whole": [
+192,
+197,
+832,
+821
+]
+},
+"a": "wippt"
+},
+"schreibtisch": {
+"L": {
+"base": [
+75,
+453,
+624,
+784
+],
+"lampe": [
+619,
+277,
+923,
+779
+],
+"whole": [
+75,
+277,
+923,
+784
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "work-school",
+"layers": [
+"base",
+"lampe"
+]
+},
+"schulbus": {
+"L": {
+"whole": [
+192,
+272,
+832,
+752
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "work-school"
+},
+"schule": {
+"L": {
+"whole": [
+251,
+197,
+768,
+832
+]
+},
+"a": "dreht sich leicht"
+},
+"schultafel": {
+"L": {
+"base": [
+139,
+133,
+880,
+773
+],
+"schrift": [
+347,
+795,
+651,
+949
+],
+"whole": [
+139,
+133,
+880,
+949
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "work-school",
+"layers": [
+"base",
+"schrift"
+]
+},
+"schwangerschaftstest": {
+"L": {
+"base": [
+101,
+288,
+923,
+811
+],
+"strich-2": [
+715,
+619,
+752,
+720
+],
+"whole": [
+101,
+283,
+923,
+811
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "health-wellbeing",
+"layers": [
+"base",
+"strich-2"
+]
+},
+"schwimmbrille": {
+"L": {
+"whole": [
+192,
+352,
+832,
+677
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "sport-outdoors"
+},
+"schwimmen": {
+"L": {
+"whole": [
+192,
+256,
+832,
+747
+]
+},
+"a": "schaukelt auf Wellen"
+},
+"scissors": {
+"L": {
+"whole": [
+224,
+192,
+805,
+827
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "everyday-emoji-objects"
+},
+"seedling": {
+"L": {
+"whole": [
+192,
+192,
+832,
+827
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "nature-and-plants"
+},
+"segeln": {
+"L": {
+"whole": [
+256,
+192,
+768,
+821
+]
+},
+"a": "Gesamtmotiv sanft bewegen"
+},
+"shooting-star": {
+"L": {
+"whole": [
+192,
+283,
+827,
+741
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "nature-and-plants"
+},
+"shushing-face": {
+"L": {
+"whole": [
+208,
+192,
+816,
+827
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "mood-and-reactions"
+},
+"shy-face": {
+"L": {
+"whole": [
+203,
+192,
+821,
+827
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "mood-and-reactions"
+},
+"silvester": {
+"L": {
+"base": [
+171,
+256,
+736,
+933
+],
+"funken": [
+523,
+85,
+837,
+347
+],
+"whole": [
+171,
+85,
+837,
+933
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "holidays-seasons",
+"layers": [
+"base",
+"funken"
+]
+},
+"skateboard": {
+"L": {
+"whole": [
+192,
+320,
+832,
+704
+]
+},
+"a": "Gesamtmotiv sanft bewegen"
+},
+"ski": {
+"L": {
+"base": [
+171,
+96,
+864,
+923
+],
+"ski-rechts": [
+352,
+197,
+875,
+992
+],
+"whole": [
+171,
+96,
+875,
+992
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"layers": [
+"base",
+"ski-rechts"
+]
+},
+"sleepy-face": {
+"L": {
+"whole": [
+256,
+304,
+768,
+827
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "mood-and-reactions"
+},
+"sloth": {
+"L": {
+"whole": [
+197,
+192,
+827,
+832
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "animals"
+},
+"smile-blush": {
+"L": {
+"whole": [
+203,
+192,
+821,
+827
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "mood-and-reactions"
+},
+"snail": {
+"L": {
+"whole": [
+240,
+192,
+779,
+827
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "animals"
+},
+"snowboard": {
+"L": {
+"whole": [
+192,
+293,
+832,
+725
+]
+},
+"a": "Gesamtmotiv sanft bewegen"
+},
+"snowflake": {
+"L": {
+"whole": [
+224,
+192,
+800,
+827
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "nature-and-plants"
+},
+"soap": {
+"L": {
+"whole": [
+192,
+277,
+827,
+752
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "everyday-emoji-objects"
+},
+"sommer": {
+"L": {
+"whole": [
+192,
+315,
+832,
+715
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "holidays-seasons"
+},
+"sonne": {
+"L": {
+"base": [
+341,
+347,
+683,
+677
+],
+"strahlen": [
+192,
+203,
+832,
+821
+],
+"whole": [
+192,
+203,
+832,
+821
+]
+},
+"a": "Strahlen drehen",
+"layers": [
+"base",
+"strahlen"
+]
+},
+"sonnencreme": {
+"L": {
+"whole": [
+299,
+192,
+725,
+832
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "health-wellbeing"
+},
+"spaeter": {
+"L": {
+"base": [
+325,
+192,
+699,
+821
+],
+"sand": [
+368,
+373,
+656,
+757
+],
+"whole": [
+325,
+192,
+699,
+821
+]
+},
+"a": "Glas dreht sich, Sand rieselt",
+"layers": [
+"base",
+"sand"
+]
+},
+"sparkles": {
+"L": {
+"whole": [
+197,
+192,
+827,
+779
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "nature-and-plants"
+},
+"sparkling-heart": {
+"L": {
+"whole": [
+224,
+192,
+800,
+827
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "everyday-emoji-objects"
+},
+"sparschwein": {
+"L": {
+"base": [
+149,
+357,
+859,
+949
+],
+"muenze": [
+208,
+96,
+704,
+363
+],
+"whole": [
+149,
+96,
+859,
+949
+]
+},
+"a": "Münze fällt hinein",
+"layers": [
+"base",
+"muenze"
+]
+},
+"spenden": {
+"L": {
+"base": [
+128,
+197,
+891,
+896
+],
+"herz": [
+320,
+208,
+699,
+528
+],
+"whole": [
+128,
+197,
+891,
+896
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "finance-admin",
+"layers": [
+"base",
+"herz"
+]
+},
+"spielplatz": {
+"L": {
+"ball": [
+565,
+176,
+704,
+315
+],
+"base": [
+197,
+197,
+827,
+832
+],
+"whole": [
+197,
+176,
+827,
+832
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "family-children",
+"layers": [
+"base",
+"ball"
+]
+},
+"spinning": {
+"L": {
+"base": [
+27,
+416,
+384,
+816
+],
+"rahmen": [
+411,
+219,
+992,
+816
+],
+"whole": [
+21,
+219,
+992,
+816
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "sport-outdoors",
+"layers": [
+"base",
+"rahmen"
+]
+},
+"sponge": {
+"L": {
+"whole": [
+192,
+235,
+827,
+784
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "everyday-emoji-objects"
+},
+"sporttasche": {
+"L": {
+"whole": [
+192,
+267,
+832,
+757
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "sport-outdoors"
+},
+"sprachkurs": {
+"L": {
+"base": [
+128,
+325,
+448,
+704
+],
+"blase-2": [
+480,
+245,
+896,
+629
+],
+"pfeil": [
+299,
+645,
+715,
+832
+],
+"whole": [
+128,
+245,
+896,
+832
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "work-school",
+"layers": [
+"base",
+"blase-2",
+"pfeil"
+]
+},
+"squash": {
+"L": {
+"whole": [
+208,
+192,
+816,
+827
+]
+},
+"a": "Gesamtmotiv sanft bewegen"
+},
+"squirrel": {
+"L": {
+"whole": [
+245,
+192,
+779,
+832
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "animals"
+},
+"stand-up-paddling": {
+"L": {
+"whole": [
+192,
+224,
+832,
+789
+]
+},
+"a": "Gesamtmotiv sanft bewegen"
+},
+"staubsauger": {
+"L": {
+"base": [
+117,
+496,
+533,
+901
+],
+"rohr": [
+528,
+128,
+955,
+896
+],
+"whole": [
+117,
+128,
+955,
+901
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "home-errands",
+"layers": [
+"base",
+"rohr"
+]
+},
+"stempel": {
+"L": {
+"base": [
+0,
+0,
+1024,
+1024
+],
+"stempel": [
+288,
+192,
+736,
+832
+],
+"whole": [
+288,
+192,
+736,
+832
+]
+},
+"a": "stempelt",
+"layers": [
+"base",
+"stempel"
+]
+},
+"stethoskop": {
+"L": {
+"base": [
+213,
+192,
+811,
+752
+],
+"bruststueck": [
+501,
+576,
+784,
+832
+],
+"whole": [
+213,
+192,
+811,
+832
+]
+},
+"a": "Bruststück pendelt",
+"layers": [
+"base",
+"bruststueck"
+]
+},
+"steuer": {
+"L": {
+"base": [
+197,
+192,
+816,
+859
+],
+"taste": [
+533,
+677,
+816,
+843
+],
+"whole": [
+197,
+192,
+816,
+859
+]
+},
+"a": "Taste drückt",
+"layers": [
+"base",
+"taste"
+]
+},
+"stoppuhr": {
+"L": {
+"base": [
+251,
+357,
+763,
+960
+],
+"knopf": [
+443,
+80,
+576,
+192
+],
+"whole": [
+251,
+80,
+763,
+960
+],
+"zeiger": [
+443,
+187,
+645,
+363
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "planning-communication",
+"layers": [
+"base",
+"zeiger",
+"knopf"
+]
+},
+"strampler": {
+"L": {
+"whole": [
+203,
+192,
+827,
+832
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "family-children"
+},
+"strand": {
+"L": {
+"base": [
+144,
+128,
+869,
+917
+],
+"sand": [
+299,
+725,
+843,
+891
+],
+"whole": [
+144,
+128,
+869,
+917
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "travel-transport",
+"layers": [
+"base",
+"sand"
+]
+},
+"strassenbahn": {
+"L": {
+"whole": [
+192,
+219,
+832,
+805
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "travel-transport"
+},
+"strawberry": {
+"L": {
+"whole": [
+240,
+192,
+779,
+827
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "food-and-drinks"
+},
+"stricken": {
+"L": {
+"base": [
+64,
+267,
+640,
+821
+],
+"nadel-1": [
+683,
+128,
+784,
+901
+],
+"nadel-2": [
+816,
+128,
+923,
+901
+],
+"whole": [
+64,
+128,
+923,
+901
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "leisure-culture",
+"layers": [
+"base",
+"nadel-1",
+"nadel-2"
+]
+},
+"suchen": {
+"L": {
+"whole": [
+192,
+203,
+832,
+821
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "planning-communication"
+},
+"sunflower": {
+"L": {
+"whole": [
+240,
+192,
+784,
+832
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "nature-and-plants"
+},
+"sunglasses-face": {
+"L": {
+"whole": [
+208,
+192,
+816,
+827
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "mood-and-reactions"
+},
+"surfen": {
+"L": {
+"whole": [
+192,
+304,
+832,
+720
+]
+},
+"a": "Gesamtmotiv sanft bewegen"
+},
+"surprised-face": {
+"L": {
+"whole": [
+208,
+192,
+811,
+827
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "mood-and-reactions"
+},
+"sushi": {
+"L": {
+"whole": [
+192,
+256,
+832,
+763
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "food-and-drinks"
+},
+"sweet-potato": {
+"L": {
+"whole": [
+240,
+299,
+784,
+827
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "food-and-drinks"
+},
+"sync": {
+"L": {
+"base": [
+0,
+0,
+1024,
+1024
+],
+"pfeile": [
+192,
+245,
+832,
+784
+],
+"whole": [
+192,
+245,
+832,
+784
+]
+},
+"a": "dreht sich",
+"layers": [
+"base",
+"pfeile"
+]
+},
+"taco": {
+"L": {
+"whole": [
+192,
+229,
+832,
+789
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "food-and-drinks"
+},
+"tagesplan": {
+"L": {
+"base": [
+96,
+261,
+533,
+800
+],
+"blatt": [
+528,
+357,
+933,
+773
+],
+"whole": [
+96,
+261,
+933,
+800
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "planning-communication",
+"layers": [
+"base",
+"blatt"
+]
+},
+"tankstelle": {
+"L": {
+"base": [
+117,
+187,
+635,
+880
+],
+"whole": [
+117,
+187,
+891,
+880
+],
+"zapfhahn": [
+635,
+256,
+891,
+757
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "travel-transport",
+"layers": [
+"base",
+"zapfhahn"
+]
+},
+"tanzen": {
+"L": {
+"band": [
+229,
+123,
+965,
+555
+],
+"base": [
+144,
+128,
+501,
+880
+],
+"schuh-rechts": [
+496,
+213,
+752,
+885
+],
+"whole": [
+144,
+123,
+965,
+885
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"layers": [
+"base",
+"schuh-rechts",
+"band"
+]
+},
+"tauchen": {
+"L": {
+"whole": [
+299,
+192,
+725,
+832
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "sport-outdoors"
+},
+"taxi": {
+"L": {
+"whole": [
+192,
+267,
+832,
+763
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "travel-transport"
+},
+"tee": {
+"L": {
+"base": [
+176,
+405,
+848,
+944
+],
+"dampf": [
+379,
+112,
+603,
+400
+],
+"whole": [
+176,
+112,
+848,
+944
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "food-social",
+"layers": [
+"base",
+"dampf"
+]
+},
+"teilen": {
+"L": {
+"base": [
+160,
+352,
+656,
+688
+],
+"knoten-1": [
+160,
+427,
+336,
+565
+],
+"knoten-2": [
+608,
+171,
+805,
+379
+],
+"knoten-3": [
+608,
+656,
+805,
+875
+],
+"whole": [
+160,
+171,
+805,
+875
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "planning-communication",
+"layers": [
+"base",
+"knoten-1",
+"knoten-2",
+"knoten-3"
+]
+},
+"telefon": {
+"L": {
+"whole": [
+203,
+192,
+821,
+821
+]
+},
+"a": "klingelt"
+},
+"tennis": {
+"L": {
+"whole": [
+256,
+192,
+768,
+832
+]
+},
+"a": "Gesamtmotiv sanft bewegen"
+},
+"termin-absagen": {
+"L": {
+"whole": [
+229,
+192,
+800,
+832
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "planning-communication"
+},
+"termin-hinzufuegen": {
+"L": {
+"base": [
+203,
+197,
+816,
+832
+],
+"plus": [
+427,
+475,
+688,
+736
+],
+"whole": [
+203,
+197,
+816,
+832
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "planning-communication",
+"layers": [
+"base",
+"plus"
+]
+},
+"termin-verschieben": {
+"L": {
+"whole": [
+224,
+197,
+805,
+832
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "planning-communication"
+},
+"theater": {
+"L": {
+"base": [
+69,
+304,
+507,
+763
+],
+"maske-traurig": [
+517,
+304,
+933,
+763
+],
+"whole": [
+69,
+304,
+933,
+763
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "leisure-culture",
+"layers": [
+"base",
+"maske-traurig"
+]
+},
+"therapie": {
+"L": {
+"whole": [
+197,
+197,
+827,
+832
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "health-wellbeing"
+},
+"thermometer": {
+"L": {
+"state-blush": [
+192,
+331,
+832,
+683
+],
+"whole": [
+192,
+331,
+832,
+688
+]
+},
+"a": "Anzeige färbt sich",
+"states": [
+"state-blush"
+]
+},
+"thinking-face": {
+"L": {
+"whole": [
+261,
+299,
+757,
+827
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "mood-and-reactions"
+},
+"thumbs-down": {
+"L": {
+"whole": [
+192,
+192,
+832,
+827
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "hand-gestures"
+},
+"thumbs-up": {
+"L": {
+"whole": [
+213,
+192,
+811,
+827
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "hand-gestures"
+},
+"tierarzt": {
+"L": {
+"whole": [
+192,
+245,
+832,
+784
+]
+},
+"a": "drückt sich ein"
+},
+"tischtennis": {
+"L": {
+"ball": [
+576,
+544,
+800,
+757
+],
+"base": [
+0,
+0,
+1024,
+1024
+],
+"schlaeger": [
+192,
+224,
+832,
+784
+],
+"whole": [
+192,
+224,
+832,
+784
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"layers": [
+"base",
+"schlaeger",
+"ball"
+]
+},
+"tornado": {
+"L": {
+"whole": [
+213,
+197,
+811,
+827
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "nature-and-plants"
+},
+"trampolin": {
+"L": {
+"whole": [
+192,
+277,
+832,
+752
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "sport-outdoors"
+},
+"trinkflasche": {
+"L": {
+"base": [
+293,
+331,
+736,
+949
+],
+"deckel": [
+352,
+101,
+672,
+320
+],
+"whole": [
+293,
+101,
+736,
+949
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "sport-outdoors",
+"layers": [
+"base",
+"deckel"
+]
+},
+"trophy": {
+"L": {
+"whole": [
+197,
+192,
+827,
+827
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "everyday-emoji-objects"
+},
+"tulip": {
+"L": {
+"whole": [
+293,
+192,
+725,
+827
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "nature-and-plants"
+},
+"turnen": {
+"L": {
+"whole": [
+192,
+192,
+832,
+832
+]
+},
+"a": "Gesamtmotiv sanft bewegen"
+},
+"turtle": {
+"L": {
+"whole": [
+192,
+283,
+827,
+741
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "animals"
+},
+"two-hearts": {
+"L": {
+"whole": [
+192,
+240,
+832,
+773
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "everyday-emoji-objects"
+},
+"u-bahn": {
+"L": {
+"whole": [
+192,
+192,
+832,
+832
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "travel-transport"
+},
+"u-heft": {
+"L": {
+"base": [
+272,
+192,
+725,
+832
+],
+"seite": [
+411,
+304,
+747,
+757
+],
+"whole": [
+272,
+192,
+747,
+832
+]
+},
+"a": "Seite blättert",
+"layers": [
+"seite",
+"base"
+]
+},
+"ueberweisung": {
+"L": {
+"base": [
+16,
+336,
+395,
+699
+],
+"kalender-rechts": [
+619,
+336,
+997,
+704
+],
+"pfeil": [
+421,
+453,
+608,
+608
+],
+"whole": [
+16,
+336,
+997,
+704
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "finance-admin",
+"layers": [
+"base",
+"pfeil",
+"kalender-rechts"
+]
+},
+"uhr": {
+"L": {
+"base": [
+224,
+192,
+800,
+816
+],
+"whole": [
+224,
+192,
+800,
+816
+],
+"zeiger": [
+395,
+421,
+677,
+603
+]
+},
+"a": "Zeiger läuft",
+"layers": [
+"base",
+"zeiger"
+]
+},
+"ultraschall": {
+"L": {
+"baby": [
+661,
+379,
+923,
+731
+],
+"base": [
+96,
+251,
+597,
+848
+],
+"whole": [
+96,
+251,
+923,
+848
+]
+},
+"a": "taucht weich auf",
+"layers": [
+"base",
+"baby"
+]
+},
+"umschlag-euro": {
+"L": {
+"base": [
+197,
+288,
+784,
+693
+],
+"muenze": [
+587,
+453,
+832,
+731
+],
+"whole": [
+197,
+288,
+832,
+731
+]
+},
+"a": "Münze rollt heran",
+"layers": [
+"base",
+"muenze"
+]
+},
+"umzug": {
+"L": {
+"base": [
+85,
+448,
+411,
+757
+],
+"karton-2": [
+427,
+304,
+949,
+763
+],
+"whole": [
+85,
+304,
+949,
+763
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "home-errands",
+"layers": [
+"base",
+"karton-2"
+]
+},
+"unamused-face": {
+"L": {
+"whole": [
+213,
+192,
+811,
+827
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "mood-and-reactions"
+},
+"urkunde": {
+"L": {
+"state-offen": [
+192,
+304,
+832,
+725
+],
+"whole": [
+192,
+304,
+789,
+613
+]
+},
+"a": "rollt auf",
+"states": [
+"state-offen"
+]
+},
+"urlaub": {
+"L": {
+"whole": [
+192,
+267,
+832,
+757
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "holidays-seasons"
+},
+"verband": {
+"L": {
+"band": [
+277,
+469,
+907,
+843
+],
+"base": [
+123,
+245,
+587,
+773
+],
+"whole": [
+123,
+245,
+907,
+843
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "health-wellbeing",
+"layers": [
+"base",
+"band"
+]
+},
+"verkehrskegel": {
+"L": {
+"base": [
+64,
+288,
+581,
+752
+],
+"state-umgekippt": [
+576,
+373,
+960,
+736
+],
+"whole": [
+64,
+288,
+960,
+752
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "travel-transport",
+"layers": [
+"base",
+"state-umgekippt"
+],
+"states": [
+"state-umgekippt"
+]
+},
+"versicherung": {
+"L": {
+"base": [
+336,
+571,
+544,
+832
+],
+"schirm": [
+203,
+192,
+821,
+635
+],
+"whole": [
+203,
+192,
+821,
+832
+]
+},
+"a": "Schirm spannt auf",
+"layers": [
+"base",
+"schirm"
+]
+},
+"vertrag": {
+"L": {
+"base": [
+192,
+288,
+832,
+725
+],
+"siegel": [
+459,
+432,
+635,
+603
+],
+"whole": [
+192,
+288,
+832,
+725
+]
+},
+"a": "Siegel drückt sich drauf",
+"layers": [
+"base",
+"siegel"
+]
+},
+"videokonferenz": {
+"L": {
+"whole": [
+192,
+197,
+832,
+832
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "planning-communication"
+},
+"volleyball": {
+"L": {
+"whole": [
+203,
+197,
+821,
+827
+]
+},
+"a": "Gesamtmotiv sanft bewegen"
+},
+"waage": {
+"L": {
+"base": [
+251,
+469,
+768,
+731
+],
+"schale": [
+192,
+288,
+832,
+539
+],
+"whole": [
+192,
+288,
+832,
+731
+]
+},
+"a": "wippt",
+"layers": [
+"base",
+"schale"
+]
+},
+"waesche": {
+"L": {
+"base": [
+213,
+416,
+795,
+736
+],
+"oberstes-tuch": [
+192,
+304,
+827,
+635
+],
+"whole": [
+192,
+304,
+827,
+736
+]
+},
+"a": "Tuch faltet sich",
+"layers": [
+"oberstes-tuch",
+"base"
+]
+},
+"waeschestaender": {
+"L": {
+"base": [
+69,
+325,
+603,
+821
+],
+"handtuch": [
+603,
+352,
+955,
+667
+],
+"whole": [
+69,
+325,
+955,
+821
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "home-errands",
+"layers": [
+"base",
+"handtuch"
+]
+},
+"waffle": {
+"L": {
+"whole": [
+229,
+192,
+789,
+832
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "food-and-drinks"
+},
+"wahl": {
+"L": {
+"base": [
+203,
+421,
+811,
+923
+],
+"whole": [
+203,
+128,
+811,
+923
+],
+"zettel": [
+379,
+128,
+629,
+411
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "finance-admin",
+"layers": [
+"base",
+"zettel"
+]
+},
+"wandern": {
+"L": {
+"whole": [
+192,
+224,
+832,
+800
+]
+},
+"a": "Gesamtmotiv sanft bewegen"
+},
+"warning-sign": {
+"L": {
+"whole": [
+192,
+213,
+827,
+811
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "everyday-emoji-objects"
+},
+"waschmaschine": {
+"L": {
+"whole": [
+229,
+192,
+800,
+832
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "home-errands"
+},
+"wassertrinken": {
+"L": {
+"whole": [
+229,
+197,
+800,
+832
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "health-wellbeing"
+},
+"water-drop": {
+"L": {
+"whole": [
+293,
+192,
+736,
+827
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "nature-and-plants"
+},
+"watermelon": {
+"L": {
+"whole": [
+192,
+192,
+832,
+821
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "food-and-drinks"
+},
+"wave": {
+"L": {
+"whole": [
+192,
+251,
+832,
+773
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "nature-and-plants"
+},
+"wave-hand": {
+"L": {
+"whole": [
+213,
+192,
+811,
+827
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "hand-gestures"
+},
+"weihnachten": {
+"L": {
+"base": [
+261,
+304,
+747,
+928
+],
+"stern": [
+416,
+96,
+608,
+283
+],
+"whole": [
+261,
+96,
+747,
+928
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "holidays-seasons",
+"layers": [
+"base",
+"stern"
+]
+},
+"werkzeugkasten": {
+"L": {
+"base": [
+149,
+501,
+848,
+891
+],
+"deckel": [
+149,
+133,
+859,
+507
+],
+"whole": [
+149,
+133,
+859,
+891
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "home-errands",
+"layers": [
+"base",
+"deckel"
+]
+},
+"whale": {
+"L": {
+"whole": [
+192,
+240,
+832,
+779
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "animals"
+},
+"wickeltasche": {
+"L": {
+"whole": [
+192,
+213,
+832,
+811
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "family-children"
+},
+"wind": {
+"L": {
+"base": [
+69,
+304,
+640,
+736
+],
+"blatt": [
+661,
+379,
+939,
+635
+],
+"whole": [
+69,
+304,
+939,
+736
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "holidays-seasons",
+"layers": [
+"base",
+"blatt"
+]
+},
+"windeln": {
+"L": {
+"base": [
+192,
+224,
+827,
+800
+],
+"lasche": [
+219,
+288,
+357,
+427
+],
+"whole": [
+192,
+224,
+827,
+800
+]
+},
+"a": "Lasche klappt zu",
+"layers": [
+"base",
+"lasche"
+]
+},
+"wink": {
+"L": {
+"whole": [
+203,
+192,
+821,
+827
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "mood-and-reactions"
+},
+"wochenplan": {
+"L": {
+"base": [
+64,
+277,
+757,
+827
+],
+"markierung": [
+768,
+512,
+960,
+608
+],
+"whole": [
+64,
+277,
+960,
+827
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "planning-communication",
+"layers": [
+"base",
+"markierung"
+]
+},
+"wolke": {
+"L": {
+"whole": [
+192,
+277,
+827,
+736
+]
+},
+"a": "treibt"
+},
+"wolke-sonne": {
+"L": {
+"base": [
+0,
+0,
+1024,
+1024
+],
+"sonne": [
+459,
+240,
+832,
+613
+],
+"whole": [
+197,
+240,
+832,
+747
+],
+"wolke": [
+197,
+352,
+827,
+747
+]
+},
+"a": "Sonne lugt hervor",
+"layers": [
+"base",
+"wolke",
+"sonne"
+]
+},
+"worried-face": {
+"L": {
+"whole": [
+245,
+192,
+779,
+747
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "mood-and-reactions"
+},
+"writing-hand": {
+"L": {
+"whole": [
+192,
+245,
+832,
+773
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "hand-gestures"
+},
+"yogamatte": {
+"L": {
+"base": [
+133,
+437,
+811,
+832
+],
+"rolle": [
+507,
+304,
+880,
+736
+],
+"whole": [
+133,
+304,
+880,
+832
+]
+},
+"a": "ruhiges Aufwippen",
+"layers": [
+"base",
+"rolle"
+]
+},
+"zahn": {
+"L": {
+"base": [
+192,
+203,
+800,
+821
+],
+"funkeln": [
+624,
+261,
+832,
+501
+],
+"whole": [
+192,
+203,
+832,
+821
+]
+},
+"a": "funkelt",
+"layers": [
+"base",
+"funkeln"
+]
+},
+"zahnarzt": {
+"L": {
+"base": [
+133,
+171,
+512,
+827
+],
+"buerste": [
+507,
+192,
+907,
+832
+],
+"whole": [
+128,
+171,
+907,
+832
+]
+},
+"a": "putzt hin und her",
+"layers": [
+"base",
+"buerste"
+]
+},
+"zebra": {
+"L": {
+"whole": [
+229,
+192,
+795,
+832
+]
+},
+"a": "Whole icon; static layer-ready illustration",
+"cat": "animals"
+},
+"zelt": {
+"L": {
+"base": [
+96,
+197,
+907,
+869
+],
+"tuer": [
+544,
+384,
+843,
+843
+],
+"whole": [
+96,
+197,
+907,
+869
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "travel-transport",
+"layers": [
+"base",
+"tuer"
+]
+},
+"zug": {
+"L": {
+"whole": [
+197,
+261,
+832,
+768
+]
+},
+"a": "Gesamtmotiv sanft bewegen",
+"cat": "travel-transport"
+},
+"zuhause": {
+"L": {
+"state-dunkel": [
+192,
+192,
+832,
+821
+],
+"whole": [
+192,
+192,
+832,
+816
+]
+},
+"a": "Fenster geht an",
+"states": [
+"state-dunkel"
+]
+},
+"zwei-spuren": {
+"L": {
+"base": [
+192,
+224,
+832,
+800
+],
+"mittlere-pille": [
+437,
+389,
+587,
+651
+],
+"whole": [
+192,
+224,
+832,
+800
+]
+},
+"a": "Pille rutscht in die Lücke",
+"layers": [
+"base",
+"mittlere-pille"
+]
+}
+}
