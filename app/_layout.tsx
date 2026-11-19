@@ -27,6 +27,7 @@ import { tokens } from '../src/theme';
 import { useThemeGen, Keyed } from '../src/theme/mode';
 import { isDark } from '../src/theme/tokens';
 import { navStyle } from '../src/lib/navStyle';
+import '../src/lib/ansicht'; // the calendar opens on the chosen start view (Julian 19.11.)
 
 // Crashes first, so a crash during start is caught; then analytics (both no-ops on the web link and in dev).
 initSentry();

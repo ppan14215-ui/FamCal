@@ -116,6 +116,9 @@ Alle sichtbaren Änderungen an FamCal. Neueste oben. Agenten und Menschen: Ände
 - Der dritte Tab ist wieder der Chat: Verlauf und darunter, was noch auf ein Ja wartet
 - Memo kann die Standarddauer neuer Termine setzen, auch in den Einstellungen wählbar
 - Memo antippen öffnet das Textfeld, Sprechen startet erst über das Mikro
+- Kalender Startansicht wählbar, auch per Memo (z.B. Woche)
+- Standarddauer neuer Termine gilt für die ganze Familie; Memo merkt sich Regeln wie Arzt 1 Stunde und hält sich daran
+- Memo Feld bleibt offen, bis man daneben tippt; eigener Mikro Knopf im Feld
 
 ### App funktioniert zuverlässig (09.11. Audit)
 - Nach längerer Pause im Hintergrund klappen Assistent und Spracheingabe gleich beim ersten Satz, statt "Ich komme gerade nicht an den Assistenten".

@@ -14,12 +14,13 @@ import type { CalEvent, Bring, Person } from '../state/types';
 import { watchComments, stopComments } from './comments';
 import type { ClayName } from './clayIcons';
 import { applyFamilyKi, onSaveOhneKi } from './privat';
+import { applyFamilyDur, onSaveTermDur, termDur } from './dauer';
 import { readCache, writeCache, clearCache } from './cache';
 import { THEMES } from '../theme/tokens';
 import { colorsTouched, redrawIfTouched } from '../theme/mode';
 import { ROLES, cleanColors, sameColors, mergeColors, rolesToTake, firstUpload, type Role, type FamilyColors } from './familyColors';
 
-export type Family = { id: string; name: string; invite_code: string; ohne_ki?: boolean | null; partner_name?: string | null; ics_token?: string | null; vacation?: Partial<Record<'J' | 'T', number>> | null; colors?: FamilyColors | null; land?: string | null; country?: string | null; ort?: string | null };
+export type Family = { id: string; name: string; invite_code: string; ohne_ki?: boolean | null; termin_dauer?: number | null; partner_name?: string | null; ics_token?: string | null; vacation?: Partial<Record<'J' | 'T', number>> | null; colors?: FamilyColors | null; land?: string | null; country?: string | null; ort?: string | null };
 type Row = {
   id: string; family_id: string; title: string; sub: string | null; icon: string; date: string; end_date: string | null;
   start_time: string; end_time: string | null; all_day: boolean; who: 'J' | 'T' | 'both' | null; place: string | null;
@@ -172,6 +173,9 @@ export async function startSync(name?: string): Promise<{ family?: Family; error
   family = got;
   // Ohne KI holds for the whole family (Julian 05.11.): the partner's switch reaches this phone here.
   applyFamilyKi(family.ohne_ki);
+  // The Standarddauer is the family's too (Julian 19.11.): one set on this phone before the family had one goes up once.
+  if (family.termin_dauer != null) applyFamilyDur(family.termin_dauer);
+  else if (termDur() && 'termin_dauer' in family) void saveTermDur(termDur());
 
   const uid = (await supabase.auth.getSession()).data.session?.user.id;
   const names = { J: '', T: '' };
@@ -332,6 +336,11 @@ export function catchUp(): Promise<void> {
       // A failure here never stops the Termine from catching up.
       supabase.from('families').select('colors').eq('id', fam).maybeSingle().then((r) => r, () => null),
     ]);
+    // The Standarddauer, in case the other phone (or Memo there) changed it. Before the column exists nothing changes.
+    void supabase.from('families').select('termin_dauer').eq('id', fam).maybeSingle().then((r) => {
+      const v = (r.data as { termin_dauer?: number | null } | null)?.termin_dauer;
+      if (!r.error && family?.id === fam && v != null) { family = { ...family, termin_dauer: v }; applyFamilyDur(v); }
+    }, () => {});
     if (family?.id === fam && colours && !colours.error && colours.data) {
       try {
         const c = cleanColors((colours.data as { colors?: unknown }).colors, COLOR_ROW);
@@ -423,6 +432,7 @@ export async function restoreFromCache(uid: string): Promise<boolean> {
   me = c.me; setMeRole(me);
   actions.setNames(c.names);
   applyFamilyKi(family.ohne_ki);
+  applyFamilyDur(family.termin_dauer);
   set((s) => ({ demo: false, events: [...s.events.filter((e) => !shared(e)), ...(c.events as CalEvent[])] }));
   actions.ensureHolidays();
   prevKnown = new Map(c.known ?? []);
@@ -509,6 +519,16 @@ onSaveOhneKi(async (v) => {
   family = { ...family, ohne_ki: v };
   return true;
 });
+
+// The Standarddauer neuer Termine is written on the family, so both phones use the same (Julian 19.11.).
+async function saveTermDur(min: number): Promise<boolean> {
+  if (!supabase || !family) return true;
+  const { error } = await supabase.from('families').update({ termin_dauer: min }).eq('id', family.id);
+  if (error) { console.warn('[sync] termin_dauer', error.message); return false; }
+  family = { ...family, termin_dauer: min };
+  return true;
+}
+onSaveTermDur(saveTermDur);
 
 /** The partner's name before they join (Julian 28.10.). */
 export async function setPartnerName(name: string) {

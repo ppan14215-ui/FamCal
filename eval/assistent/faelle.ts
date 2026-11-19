@@ -8,6 +8,7 @@
  * Neuer Fehler auf dem Handy = neuer Fall hier, bevor er behoben wird.
  */
 import { termDur, setTermDur } from '../../src/lib/dauer';
+import { startView, setStartView } from '../../src/lib/ansicht';
 import type { CalEvent, List, Task, Person } from '../../src/state/types';
 import { weekday } from './familie';
 import { grossTermine, grossListen, LEUTE } from './grossfamilie';
@@ -46,6 +47,7 @@ const gross = (s: Stand): Stand => ({ ...s, events: grossTermine(), lists: gross
 const work = (s: Stand) => s.events.filter((e) => e.work);
 const byId = (s: Stand, id: string) => s.events.find((e) => e.id === id);
 const items = (s: Stand, list: string) => (s.lists.find((l) => l.id === list)?.sections.flatMap((x) => x.items) ?? []).map((i) => ({ ...i, text: `${i.qty ? `${i.qty} ` : ''}${i.name}` }));
+const mitRegel = (s: Stand): Stand => ({ ...s, lists: [...s.lists, { id: 'wissen', name: 'Familiengedächtnis', icon: 'notizblock', kind: 'collection', sections: [{ id: 'main', title: '', items: [{ id: 'f1', name: 'Arzttermine dauern 1 Stunde', note: '', who: 'J', done: false, data: { date: '2026-11-19' } }] }] } as List] });
 const neu = (e: Ergebnis) => e.stand.events.filter((x) => !e.vorher.events.some((y) => y.id === x.id));
 const fehlt = (e: Ergebnis) => e.vorher.events.filter((x) => !e.stand.events.some((y) => y.id === x.id));
 const same = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
@@ -53,7 +55,7 @@ const geaendert = (e: Ergebnis) => e.stand.events.filter((x) => { const y = e.vo
 const buero = (x: CalEvent) => /büro|office/i.test(`${x.title} ${x.place ?? ''} ${x.sub ?? ''}`);
 const homeoffice = (x: CalEvent) => /home ?office/i.test(`${x.title} ${x.place ?? ''} ${x.sub ?? ''}`);
 
-const DE = /\b(ich|ist|und|der|die|das|dir|dein|deine|du|wie|viel|oder|um|wann|bis|kommt|trage|eingetragen|steht|habe|mach|gerne?|okay,? ich|alles klar)\b|ganztägig|ä|ö|ü|ß/i;
+const DE = /\b(ich|ist|und|der|die|das|dir|dein|deine|du|wie|viel|oder|um|wann|bis|kommt|trage|eingetragen|steht|habe|mach|gerne?|okay,? ich|alles klar|euch|bei|ab|jetzt|eine?|mit|auf|nicht|wird|gemerkt|notiert|stunden?)\b|ganztägig|ä|ö|ü|ß/i;
 const EN = /\b(I|I'll|I've|the|your|you|added|done|sure|okay,? I)\b/;
 function deutsch(e: Ergebnis): string[] {
   const t = e.frage ?? e.antwort;
@@ -378,5 +380,26 @@ export const FAELLE: Fall[] = [
       setTermDur(0);
       const n = neu(e);
       return [...(set === 120 ? [] : [`Standarddauer ${set || 'nicht gesetzt'} statt 120`]), ...(n.length === 1 && n[0].start === '10:00' && n[0].end === '12:00' ? [] : [`Termin: ${n.map((x) => `${x.title} ${x.start}-${x.end ?? ''}`).join(' | ') || 'keiner'}`]), ...(e.frage ? [`fragt nach: ${e.frage}`] : []), ...deutsch(e)];
+    } },
+  // Julian 19.11. 13:16: "if I prefer to have the weekly view be my default … I should be able to tell that memo".
+  { id: 'startansicht-woche', saetze: ['I prefer the weekly view as my default when I open the calendar'],
+    pruefe: (e) => {
+      const v = startView();
+      setStartView('heute');
+      return [...(v === 'woche' ? [] : [`Startansicht ${v} statt woche`]), ...keineNeuen(e), ...(e.frage ? [`fragt nach: ${e.frage}`] : []), ...englisch(e)];
+    } },
+  // Julian 19.11. 13:15: specific wishes become family rules in the memory, not settings.
+  { id: 'regel-merken-arztdauer', saetze: ['Arzttermine dauern bei uns immer eine Stunde'],
+    pruefe: (e) => {
+      const f = items(e.stand, 'wissen');
+      const d = termDur();
+      setTermDur(0);
+      return [...(f.some((i) => /arzt/i.test(i.text) && /stunde|60/i.test(i.text)) ? [] : ['Regel nicht gemerkt']), ...(d === 0 ? [] : [`Standarddauer auf ${d} gesetzt`]), ...keineNeuen(e), ...deutsch(e)];
+    } },
+  { id: 'regel-geht-vor-standarddauer', start: (st) => { setTermDur(120); return mitRegel(st); }, saetze: ['Hautarzt am Freitag um 9 Uhr'],
+    pruefe: (e) => {
+      setTermDur(0);
+      const n = neu(e);
+      return [...(n.length === 1 && n[0].start === '09:00' && n[0].end === '10:00' ? [] : [`Termin: ${n.map((x) => `${x.title} ${x.start}-${x.end ?? ''}`).join(' | ') || 'keiner'}`]), ...(e.frage ? [`fragt nach: ${e.frage}`] : []), ...deutsch(e)];
     } },
 ];

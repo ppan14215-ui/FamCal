@@ -9,6 +9,7 @@ import { router, useFocusEffect } from 'expo-router';
 import * as Clipboard from 'expo-clipboard';
 import { Screen, H1, H2, Group, Chevron, Seg } from '../../src/components/ui/kit';
 import { useTermDur, setTermDur, durLabel } from '../../src/lib/dauer';
+import { useStartView, setStartView, viewLabel, VIEWS } from '../../src/lib/ansicht';
 import Txt from '../../src/components/ui/Txt';
 import LineIcon from '../../src/components/ui/LineIcon';
 import PressScale from '../../src/components/ui/PressScale';
@@ -37,7 +38,7 @@ import { THEMES } from '../../src/theme/tokens';
 import { usePalette, colorsTouched, redrawIfTouched } from '../../src/theme/mode';
 import { navStyle, setNavStyle } from '../../src/lib/navStyle';
 import { seedDemoFeed } from '../../src/lib/feed';
-import { useBubble, useMemoChoice, setMemoColor, useNavLook, setNavLook, useYearLook, useListLook, setListLook, setYearLook, useShowDays, setShowDays } from '../../src/lib/look';
+import { useBubble, useMemoChoice, setMemoColor, useNavLook, setNavLook, useYearLook, useListLook, setListLook, setYearLook, useShowDays, setShowDays, showDays } from '../../src/lib/look';
 import { HOME } from '../../src/lib/home';
 
 /** A plain row: name left, value right, like Apple's settings (Julian 03.11.). Flat on the ground, hairlines only. */
@@ -130,6 +131,7 @@ export default function Einstellungen() {
   const navLook = useNavLook();
   const yearLook = useYearLook();
   const dur = useTermDur();
+  const sv = useStartView();
   const listLook = useListLook();
   const days3 = useShowDays();
   const pal = usePalette();
@@ -184,13 +186,14 @@ export default function Einstellungen() {
             <Seg items={[{ key: 'an', label: tx('Zeigen', 'Show') }, { key: 'aus', label: tx('Ausblenden', 'Hide') }]} value={days3 ? 'an' : 'aus'} onChange={(k) => { setShowDays(k === 'an'); }} />
           </View>
         </Pick>
-        <SRow key="dauer" t={tx('Dauer neuer Termine', 'New event length')} v={dur ? tx(durLabel(dur, true), durLabel(dur, false)) : tx('Wie üblich', 'Usual')} onPress={() => { const opts = [0, 30, 60, 90, 120]; const v = opts[(opts.indexOf(dur) + 1) % opts.length]; haptics.select(); setTermDur(v); toast(v ? tx(`Neue Termine dauern ${durLabel(v, true)}`, `New events last ${durLabel(v, false)}`) : tx('Dauer wie üblich', 'Usual length')); }} />
+        <SRow key="start" t={tx('Kalender startet mit', 'Calendar opens on')} v={tx(viewLabel(sv, true), viewLabel(sv, false))} onPress={() => { const opts = VIEWS.filter((x) => x !== 'tag' || showDays()); const v = opts[(opts.indexOf(sv) + 1) % opts.length]; haptics.select(); setStartView(v); toast(tx(`Kalender startet mit ${viewLabel(v, true)}`, `Calendar opens on ${viewLabel(v, false)}`)); }} />
         <SRow key="sprache" t={tx('Sprache beim Sprechen', 'Speech language')} v={sl === 'de' ? tx('Deutsch', 'German') : tx('Englisch', 'English')} onPress={() => { const v = sl === 'de' ? 'en' : 'de'; setSpeechLang(v); setSl(v); toast(v === 'de' ? tx('Ich höre jetzt auf Deutsch', 'Listening in German now') : tx('Ich höre jetzt auf Englisch', 'Listening in English now')); }} />
       </Group>
 
       <H2>{tx('Familie', 'Family')}</H2>
       <Group>
         <SRow key="mitglieder" t={tx('Mitglieder', 'Members')} v={String(2 + people)} onPress={() => router.push('/personen')} />
+        <SRow key="dauer" t={tx('Dauer neuer Termine', 'New event length')} v={dur ? tx(durLabel(dur, true), durLabel(dur, false)) : tx('Wie üblich', 'Usual')} onPress={() => { const opts = [0, 30, 60, 90, 120]; const v = opts[(opts.indexOf(dur) + 1) % opts.length]; haptics.select(); setTermDur(v); toast(v ? tx(`Neue Termine dauern ${durLabel(v, true)}`, `New events last ${durLabel(v, false)}`) : tx('Dauer wie üblich', 'Usual length')); }} />
         <SRow key="kalender" t={tx('Kalender verbinden', 'Connect calendars')} v={cals.map((c) => CAL_SHORT[c.provider] ?? c.provider).join(', ') || undefined} onPress={openCals} />
         {HIDDEN.extras ? null : <SRow key="hinweise" t={tx('Benachrichtigungen', 'Notifications')} onPress={() => router.push('/demo/sperrbildschirm')} />}
         {LIVE ? (

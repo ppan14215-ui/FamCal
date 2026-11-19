@@ -10,6 +10,7 @@
  * A switch in the settings (per phone) picks this or the old way, to compare.
  */
 import { withDefaultEnd, termDur, setTermDur, durLabel } from './dauer';
+import { VIEWS, startView, setStartView, viewLabel } from './ansicht';
 import { kniffelRound } from './games';
 import { useSyncExternalStore } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -21,7 +22,7 @@ import { getPref, setPref } from './prefs';
 import { TODAY, today, nowHM, addDays, WD_SHORT, weekday, long, hm, short } from './dates';
 import { persons } from '../theme/tokens';
 import { LANG, tx } from '../i18n/lang';
-import { get, set, actions } from '../state/store';
+import { get, set, actions, type CalView } from '../state/store';
 import type { CalEvent, List, Task, Who } from '../state/types';
 import { fromModel, TERMIN_ICON_NAMES, type Understood } from './talk';
 import { replyPlan, listFromClaude, gameStart, pointsPlan, liste, type Plan, type Result } from './act';
@@ -514,11 +515,23 @@ function opOf(a: Action, said: string): Op | null {
       return { step: tx(`Vergessen: ${what}`, `Forgot: ${what}`), run: () => { const undo = forget(ids); return { lit: [], text: tx(`Vergessen: ${what}`, `Forgot: ${what}`), undo }; } };
     }
     case 'einstellung': {
-      // Julian 19.11.: "Default should be 2hr for any appointment". Memo sets it himself, with Rückgängig.
+      // Julian 19.11.: settings by saying them. Standarddauer (the family's) and Startansicht (this person's), with Rückgängig.
+      const hasDur = i.termin_dauer !== undefined && i.termin_dauer !== null;
       const min = Math.round(Number(i.termin_dauer));
-      if (!Number.isFinite(min) || (min !== 0 && (min < 15 || min > 720))) return null;
-      const text = min ? tx(`Neue Termine dauern jetzt ${durLabel(min, true)}.`, `New events now last ${durLabel(min, false)}.`) : tx('Keine feste Termindauer mehr.', 'No fixed event length any more.');
-      return { step: text, run: () => { const before = termDur(); setTermDur(min); return { lit: [], text, undo: () => setTermDur(before) }; } };
+      if (hasDur && (!Number.isFinite(min) || (min !== 0 && (min < 15 || min > 720)))) return null;
+      const view = VIEWS.includes(i.start_ansicht as CalView) ? (i.start_ansicht as CalView) : null;
+      if (!hasDur && !view) return null;
+      const parts = [
+        hasDur ? (min ? tx(`Neue Termine dauern jetzt ${durLabel(min, true)}.`, `New events now last ${durLabel(min, false)}.`) : tx('Keine feste Termindauer mehr.', 'No fixed event length any more.')) : '',
+        view ? tx(`Der Kalender startet jetzt mit ${viewLabel(view, true)}.`, `The calendar now opens on ${viewLabel(view, false)}.`) : '',
+      ].filter(Boolean);
+      const text = parts.join(' ');
+      return { step: text, run: () => {
+        const before = termDur(); const beforeView = startView();
+        if (hasDur) setTermDur(min);
+        if (view) setStartView(view);
+        return { lit: [], text, undo: () => { if (hasDur) setTermDur(before); if (view) setStartView(beforeView); } };
+      } };
     }
     case 'partner_fragen': {
       const question = s(i.question);
