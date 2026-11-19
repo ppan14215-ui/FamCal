@@ -8,6 +8,7 @@ import { View } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
 import * as Clipboard from 'expo-clipboard';
 import { Screen, H1, H2, Group, Chevron, Seg } from '../../src/components/ui/kit';
+import { useTermDur, setTermDur, durLabel } from '../../src/lib/dauer';
 import Txt from '../../src/components/ui/Txt';
 import LineIcon from '../../src/components/ui/LineIcon';
 import PressScale from '../../src/components/ui/PressScale';
@@ -128,6 +129,7 @@ export default function Einstellungen() {
   const memo = useMemoChoice();
   const navLook = useNavLook();
   const yearLook = useYearLook();
+  const dur = useTermDur();
   const listLook = useListLook();
   const days3 = useShowDays();
   const pal = usePalette();
@@ -182,6 +184,7 @@ export default function Einstellungen() {
             <Seg items={[{ key: 'an', label: tx('Zeigen', 'Show') }, { key: 'aus', label: tx('Ausblenden', 'Hide') }]} value={days3 ? 'an' : 'aus'} onChange={(k) => { setShowDays(k === 'an'); }} />
           </View>
         </Pick>
+        <SRow key="dauer" t={tx('Dauer neuer Termine', 'New event length')} v={dur ? tx(durLabel(dur, true), durLabel(dur, false)) : tx('Wie üblich', 'Usual')} onPress={() => { const opts = [0, 30, 60, 90, 120]; const v = opts[(opts.indexOf(dur) + 1) % opts.length]; haptics.select(); setTermDur(v); toast(v ? tx(`Neue Termine dauern ${durLabel(v, true)}`, `New events last ${durLabel(v, false)}`) : tx('Dauer wie üblich', 'Usual length')); }} />
         <SRow key="sprache" t={tx('Sprache beim Sprechen', 'Speech language')} v={sl === 'de' ? tx('Deutsch', 'German') : tx('Englisch', 'English')} onPress={() => { const v = sl === 'de' ? 'en' : 'de'; setSpeechLang(v); setSl(v); toast(v === 'de' ? tx('Ich höre jetzt auf Deutsch', 'Listening in German now') : tx('Ich höre jetzt auf Englisch', 'Listening in English now')); }} />
       </Group>
 

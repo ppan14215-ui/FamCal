@@ -127,6 +127,10 @@ const TOOLS: Tool[] = [
   { name: 'vergessen', ...obj('Löscht Fakten aus dem Familiengedächtnis, wenn jemand sagt, dass etwas nicht mehr stimmt oder vergessen werden soll.', {
     ids: strs('ids der Fakten aus dem Familiengedächtnis.'),
   }, ['ids']) },
+  // Julian 19.11.: "Default should be 2hr for any appointment". The one setting Memo can change so far.
+  { name: 'einstellung', ...obj('Ändert eine Einstellung der App. Bisher nur die Standarddauer neuer Termine ("Termine sollen immer 2 Stunden dauern", "Standard 90 Minuten").', {
+    termin_dauer: { type: 'integer', description: 'Minuten, 15 bis 720 (2 Stunden = 120). 0 nimmt die feste Dauer wieder weg.' },
+  }, ['termin_dauer']) },
   // Lookups: answered by the phone from what it already has, at most 20 rows each.
   { name: 'termine_suchen', ...obj('Sucht Termine, die du im Stand nicht siehst (früher, weiter weg). Nur aufrufen, wenn der Stand nicht reicht. Höchstens 20 Treffer.', {
     suche: str('Wörter aus Titel oder Ort ("Zahnarzt", "Fam3"), sonst weglassen.'),
@@ -145,7 +149,7 @@ const TOOLS: Tool[] = [
     events: strs('ids der Termine, um die es geht; die App zeigt sie.'),
   }, ['text']) },
   { name: 'nachfragen', ...obj('Fragt nach, wenn etwas unklar ist oder so nicht geht. Dann wird nichts anderes ausgeführt. Nie, wenn Datum und Uhrzeit dastehen: das ist ein Termin.', {
-    question: str('Eine kurze Rückfrage in der Sprache des Satzes. Geht es so nicht, schlage das Nächstmögliche vor ("Einstellungen kann ich noch nicht ändern. Soll ich dich stattdessen erinnern?").'),
+    question: str('Eine kurze Rückfrage in der Sprache des Satzes. Geht es so nicht, schlage das Nächstmögliche vor ("Anrufen kann ich nicht. Soll ich dich stattdessen erinnern?").'),
   }, ['question']) },
 ];
 
@@ -164,7 +168,8 @@ Grundregel (Julian):
 - Ist etwas unklar oder mehrdeutig (welcher Termin, welche Liste, fehlt das Datum), oder geht es so nicht, rufe nur nachfragen auf, mit einer kurzen Frage oder dem nächstmöglichen Vorschlag. Dann nichts anderes. Ausnahme: Stehen Datum und Uhrzeit da, ist ein knapper Satz nie unklar. Ein Name oder Stichwort mit Datum und Uhrzeit ("Parvis, 13.11. gegen 19 Uhr", "Friseur Dienstag 15 Uhr") ist immer sofort termin_neu mit diesem Wort als Titel; frag nicht, was es ist oder für wen.
 - Mehrere Dinge in einem Satz: mehrere Werkzeuge in einer Antwort.
 - Fragen zum Kalender oder zu Listen ("Was steht morgen an?", "Wann ist der Zahnarzt?", "Was fehlt noch auf der Einkaufsliste?") beantwortest du mit antworten, aus dem Stand unten.
-- Was die App nicht kann (Einstellungen, Nachrichten an andere Menschen, Anrufe, Bezahlen), sagst du mit nachfragen und schlägst vor, was geht.
+- Die Standarddauer neuer Termine stellst du mit einstellung ein, sofort und ohne Rückfrage ("Default should be 2hr for any appointment" ist termin_dauer 120), zuerst antworten ("Mach ich, neue Termine dauern ab jetzt 2 Stunden.").
+- Was die App nicht kann (andere Einstellungen, Nachrichten an andere Menschen, Anrufe, Bezahlen), sagst du mit nachfragen und schlägst vor, was geht.
 - Antworte immer, wie ein echter persönlicher Assistent: Rufe bei jeder Ausführung ZUERST antworten auf, mit einem kurzen, natürlichen Satz an die Person, was du machst ("Okay, ich verschiebe den Zahnarzt auf Freitag um 10.", "Mach ich, Butter steht drauf.", "Gern, ich lege die Packliste an."). Danach die Werkzeuge, die es ausführen. Der Satz erscheint sofort, während die App noch arbeitet. Höchstens zwei Sätze, freundlich und locker, ohne alle Details aufzuzählen. Bei nachfragen ist die Frage die Antwort.
 - Schreibe außerhalb der Werkzeuge keinen Text.
 
@@ -183,7 +188,7 @@ Termine:
 - Relative Angaben rechnest du vom heutigen Datum aus. "Nächsten Freitag" ist der kommende Freitag, außer heute ist Freitag, dann eine Woche später. "3pm" ist 15:00.
 - Ohne Uhrzeit: start weglassen, trotzdem eintragen und ask_time setzen, bei JEDEM Termin (Julian: jeder Termin ohne Uhrzeit bekommt die Frage). Nur echte Ganztagssachen sind ganztägig ohne Rückfrage: Urlaub, Reise, Ferien, Krankheit, Geburtstag, Feiertag und ganze Tage bei jemandem ("An Weihnachten sind wir bei Mama"); über mehrere Tage mit end_date.
 - Ungefähre Tageszeit ohne Zahl ("gegen Abend", "nachmittags", "morgens", "abends", "in the evening") ist keine Uhrzeit: start weglassen und ask_time setzen ("Um wie viel Uhr ungefähr?"). Mit Zahl ("gegen 19 Uhr") ist es die Uhrzeit.
-- Mit Startzeit ohne Ende setzt du end nach der üblichen Dauer (Arzt 45 Minuten, Friseur 1 Stunde, Fußballspiel 2 Stunden, Kino 2,5 Stunden, Elternabend 2 Stunden), sonst weglassen.
+- Mit Startzeit ohne Ende: Steht im Stand eine Standarddauer, setzt du end nach dieser Dauer, außer der Satz nennt selbst eine Dauer oder ein Ende. Sonst end nach der üblichen Dauer (Arzt 45 Minuten, Friseur 1 Stunde, Fußballspiel 2 Stunden, Kino 2,5 Stunden, Elternabend 2 Stunden), sonst weglassen.
 - who: J oder T, wenn einer der Eltern genannt ist oder "ich" sagt (wer spricht, steht unten), both für "wir", "beide", "zusammen". Kinder und Begleitung kommen in sub ("mit Ben").
 - Fehlt das Datum ganz, frag mit nachfragen.
 - Was im Kalender steht, muss den Tag unterscheiden. Mehrere Tage mit demselben Anlass (Weihnachten, Ostern, Urlaub) bekommen nie denselben Titel: der Titel sagt, wo ihr seid oder was passiert ("Bei Mama", "Bei Sophias Eltern", "Zu Oma"), der Anlass steht höchstens in sub. Den Anlass selbst ("Weihnachten") nur als Titel, wenn sonst nichts gesagt ist. Jeder Tag mit eigenem Ziel ist ein eigener termin_neu.

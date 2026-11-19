@@ -9,6 +9,7 @@
  *
  * A switch in the settings (per phone) picks this or the old way, to compare.
  */
+import { withDefaultEnd, termDur, setTermDur, durLabel } from './dauer';
 import { kniffelRound } from './games';
 import { useSyncExternalStore } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -274,7 +275,8 @@ function terminOf(a: Action, said: string): CalEvent[] {
     suggest_bring: arr(i.suggest_bring), icon: s(i.icon) || null, work: !!i.work, follows: true,
   };
   const r = fromModel(m, said, get().events, () => newId('e'));
-  return r?.kind === 'added' ? [r.event, ...(r.more ?? [])] : [];
+  // Julian 19.11.: a set length for new Termine fills the end the sentence left open.
+  return r?.kind === 'added' ? [r.event, ...(r.more ?? [])].map(withDefaultEnd) : [];
 }
 
 /** One step with its undo; plans from the old path (lists, recipes, games) run as they are. */
@@ -510,6 +512,13 @@ function opOf(a: Action, said: string): Op | null {
       if (!ids.length) return null;
       const what = facts().filter((f) => ids.includes(f.id)).map((f) => f.text).join(', ');
       return { step: tx(`Vergessen: ${what}`, `Forgot: ${what}`), run: () => { const undo = forget(ids); return { lit: [], text: tx(`Vergessen: ${what}`, `Forgot: ${what}`), undo }; } };
+    }
+    case 'einstellung': {
+      // Julian 19.11.: "Default should be 2hr for any appointment". Memo sets it himself, with Rückgängig.
+      const min = Math.round(Number(i.termin_dauer));
+      if (!Number.isFinite(min) || (min !== 0 && (min < 15 || min > 720))) return null;
+      const text = min ? tx(`Neue Termine dauern jetzt ${durLabel(min, true)}.`, `New events now last ${durLabel(min, false)}.`) : tx('Keine feste Termindauer mehr.', 'No fixed event length any more.');
+      return { step: text, run: () => { const before = termDur(); setTermDur(min); return { lit: [], text, undo: () => setTermDur(before) }; } };
     }
     case 'partner_fragen': {
       const question = s(i.question);

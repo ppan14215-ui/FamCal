@@ -7,6 +7,7 @@
  *
  * Neuer Fehler auf dem Handy = neuer Fall hier, bevor er behoben wird.
  */
+import { termDur, setTermDur } from '../../src/lib/dauer';
 import type { CalEvent, List, Task, Person } from '../../src/state/types';
 import { weekday } from './familie';
 import { grossTermine, grossListen, LEUTE } from './grossfamilie';
@@ -369,4 +370,13 @@ export const FAELLE: Fall[] = [
     } },
   { id: 'gross-sophia-arbeit-privat', start: gross, saetze: ['Was macht Sophia am Montag?'],
     pruefe: (e) => [...nichtsGeaendert(e), ...(/falke|siemens|quartal/i.test(e.antwort) ? ['Inhalt aus privatem Kalender in der Antwort'] : []), ...(e.antwort || e.frage ? [] : ['keine Antwort']), ...deutsch(e)] },
+  // Julian 19.11.: "Default should be 2hr for any appointment". Memo sets the length himself, the next Termin uses it.
+  // Last in the list: the length stays set until its check puts it back.
+  { id: 'standarddauer-zwei-stunden', saetze: ['Termine sollen ab jetzt immer 2 Stunden dauern', 'Zahnarzt am Freitag um 10 Uhr'],
+    pruefe: (e) => {
+      const set = termDur();
+      setTermDur(0);
+      const n = neu(e);
+      return [...(set === 120 ? [] : [`Standarddauer ${set || 'nicht gesetzt'} statt 120`]), ...(n.length === 1 && n[0].start === '10:00' && n[0].end === '12:00' ? [] : [`Termin: ${n.map((x) => `${x.title} ${x.start}-${x.end ?? ''}`).join(' | ') || 'keiner'}`]), ...(e.frage ? [`fragt nach: ${e.frage}`] : []), ...deutsch(e)];
+    } },
 ];
