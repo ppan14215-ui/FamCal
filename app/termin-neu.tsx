@@ -4,6 +4,7 @@
  * to bring, repeating and a note. A tap on the symbol opens every clay icon. Below it the reminder that saying it to
  * Memo does the same.
  */
+import { endAfter } from '../src/lib/dauer';
 import React, { useEffect, useRef, useState } from 'react';
 import { View, type ScrollView } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -40,7 +41,8 @@ export default function TerminNeu() {
   const [touched, setTouched] = useState(false);
   // Tapping an empty slot in the calendar hands over its day and hour (Julian 05.11.).
   const slot = useLocalSearchParams<{ date?: string; start?: string }>();
-  const plusHour = (t: string) => { const [h, m] = t.split(':').map(Number); return `${String(Math.min(23, h + 1)).padStart(2, '0')}:${String(m).padStart(2, '0')}`; };
+  // Julian 19.11.: the set length for new Termine (Einstellungen or told to Memo), else one hour.
+  const plusHour = (t: string) => endAfter(t);
   const [when, setWhen] = useState<When>(slot.date ? { date: slot.date, ...(slot.start ? { start: slot.start, end: plusHour(slot.start) } : {}) } : LIVE ? { date: TODAY } : { date: '2026-11-12', start: '09:30', end: '10:15' });
   const [place, setPlace] = useState(LIVE ? '' : 'Kinderarztpraxis Weber');
   const [who, setWho] = useState<Who>(LIVE ? 'both' : 'T');

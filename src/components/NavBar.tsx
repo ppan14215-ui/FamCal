@@ -378,7 +378,8 @@ export function KlarPill({ current, onTab, bar }: { current?: string; onTab?: (n
   const pillW = useRef(0), memoAt = useRef(0);
   // Julian 17.11.: the new standard is a plain tab bar; Memo is the big button in its middle. Julian 18.11.: a tap on him
   // opens the input right where you are (no jump to the chat, which left him with no way back), and the third tab is
-  // the Chat again: the log, and with it what waits for a yes. The pill with four tabs and Memo at the end stays as the other
+  // the Chat again: the log, and with it what waits for a yes. Julian 19.11.: the tap opens the field for typing, the
+  // microphone starts only with one more tap on its icon, so a typed message is followed by typing again. The pill with four tabs and Memo at the end stays as the other
   // choice in the settings.
   // The onboarding's try step (no `onTab`) keeps the pill: there the tabs are only to be seen.
   const mitte = useNavLook() === 'mitte' && (!!onTab || !!bar);
@@ -402,7 +403,7 @@ export function KlarPill({ current, onTab, bar }: { current?: string; onTab?: (n
   const memo = (
     <View onLayout={(e) => { memoAt.current = e.nativeEvent.layout.x + e.nativeEvent.layout.width / 2; tell(); }}>
       <MemoMic seat box={mitte ? BIG : navH() - 10} size={mitte ? BIG / 0.8 : memoS()} ground={tokens.row}
-        onPress={() => { if (priv.ohneKi) { router.push('/neu'); return; } buddyTalk(); }}
+        onPress={() => { if (priv.ohneKi) { router.push('/neu'); return; } if (mitte) buddyKeys(); else buddyTalk(); }}
         onLongPress={priv.ohneKi ? undefined : buddyKeys} />
     </View>
   );

@@ -15,6 +15,7 @@
  *   get access to the database. At most 20 rows per lookup, 3 per sentence.
  */
 import { get } from '../state/store';
+import { termDur } from './dauer';
 import type { CalEvent, List, Task, Who } from '../state/types';
 import { persons } from '../theme/tokens';
 import { TODAY, addDays, weekday } from './dates';
@@ -187,6 +188,7 @@ export function leanSnapshot(said: string, screen: string, A: Alias, screenList?
   const fam = [`Fam1 (J, Elternteil)`, `Fam2 (T, Elternteil)`, ...[...people].sort((a, b) => a.id.localeCompare(b.id)).map((p) => `${A.codes[p.id]} (${p.kind === 'kind' ? 'Kind' : p.kind === 'grosseltern' ? 'Großeltern' : 'Familie'}${p.birthday ? `, geboren ${p.birthday.slice(0, 4)}` : ''})`)];
   return [
     `Familie: ${fam.join(', ')}`,
+    termDur() ? `Standarddauer neuer Termine: ${termDur()} Minuten (einstellung ändert sie).` : 'Standarddauer neuer Termine: keine festgelegt (einstellung legt sie fest).',
     `Termine ${day(from)} bis ${day(to)} (id | Tag | Zeit | Titel | Details):\n${win.map((e) => eventLine(e, A)).join('\n') || '(keine)'}`,
     series.length ? `Serien, die weiterlaufen:\n${series.map((e) => eventLine(e, A)).join('\n')}` : '',
     onDays.length ? `An den genannten Tagen:\n${onDays.map((e) => eventLine(e, A)).join('\n')}` : '',

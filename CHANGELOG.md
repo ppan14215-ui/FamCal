@@ -114,6 +114,8 @@ Alle sichtbaren Änderungen an FamCal. Neueste oben. Agenten und Menschen: Ände
 - App Start: Memo landet auf Android ganz unten in seinem Platz in der Leiste (Statusleiste wird nicht mehr vergessen)
 - Memo in der Mitte öffnet die Eingabe dort, wo man gerade ist, kein Wechsel in den Chat mehr; Zurück schließt sie
 - Der dritte Tab ist wieder der Chat: Verlauf und darunter, was noch auf ein Ja wartet
+- Memo kann die Standarddauer neuer Termine setzen, auch in den Einstellungen wählbar
+- Memo antippen öffnet das Textfeld, Sprechen startet erst über das Mikro
 
 ### App funktioniert zuverlässig (09.11. Audit)
 - Nach längerer Pause im Hintergrund klappen Assistent und Spracheingabe gleich beim ersten Satz, statt "Ich komme gerade nicht an den Assistenten".

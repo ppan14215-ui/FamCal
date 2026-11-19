@@ -6,6 +6,7 @@
  * what it understood (shown under the orb) and where the result lands.
  * Rules everywhere; in the real app Claude reads calendar sentences first (planOnline).
  */
+import { withDefaultEnd } from './dauer';
 import { noteMade } from './session';
 import type { CalEvent, Who, List } from '../state/types';
 import { get, actions, toast } from '../state/store';
@@ -204,7 +205,7 @@ export function replyPlan(reply: Reply, replacing?: Set<string>): Plan {
   return {
     head: tx('Ich trage in den Kalender ein', 'Adding to the calendar'),
     steps: reply.steps,
-    run: () => { actions.addEvent(reply.event); noteMade([reply.event.id]); return { land: reply.event.id, result: { kind: 'event', event: reply.event, needsTime: reply.needsTime, suggest: reply.suggest, ask: reply.ask } }; },
+    run: () => { reply.event = withDefaultEnd(reply.event); actions.addEvent(reply.event); noteMade([reply.event.id]); return { land: reply.event.id, result: { kind: 'event', event: reply.event, needsTime: reply.needsTime, suggest: reply.suggest, ask: reply.ask } }; },
   };
 }
 
