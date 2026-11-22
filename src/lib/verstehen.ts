@@ -39,6 +39,12 @@ export async function limitHint(error: unknown) {
   }
   if (!res || res.status !== 429) return;
   const body = await res.json().catch(() => null);
+  // 'busy': the server's emergency brake for all families together (migration 20261122080000). Not this family's
+  // cap, so nothing is blocked here; the next sentence asks Claude again.
+  if (body?.reason === 'busy') {
+    if (!told.has('busy')) { told.add('busy'); toast(tx('Claude hat gerade sehr viel zu tun', 'Claude is very busy right now'), undefined, { kind: 'info', sub: tx('Ich nehme solange einfache Regeln. Bitte prüf die Einträge.', "I'll use simple rules meanwhile. Please check what I add.") }); }
+    return;
+  }
   const why = body?.reason === 'month' && body?.tier === 'gratis' ? 'free' : body?.reason === 'month' ? 'month' : body?.reason === 'day' ? 'day' : '';
   if (!why) return;
   const d = new Date();

@@ -28,7 +28,8 @@
       "channel": "production",
       "env": {
         "SENTRY_DISABLE_AUTO_UPLOAD": "true"
-      }
+      },
+      "environment": "production"
     },
     "testflight": {
       "distribution": "store",

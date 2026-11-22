@@ -85,3 +85,37 @@ export async function restore(): Promise<boolean> {
   track('restore_tapped');
   try { return !!(await R.restorePurchases())?.entitlements?.active?.[ENTITLEMENT]; } catch { return false; }
 }
+
+/**
+ * What the paywall may honestly say about a package, read only from the store (UWG, Julian 22.11.2026: no fake
+ * discounts, no countdown). `full` is the normal price; `first` is a paid first period that is lower (the founder
+ * price, set up in the store as an introductory offer). Without such an offer in the store there is no
+ * strike-through. `perDay` is the price paid now spread over its days, rounded up to the cent.
+ */
+export type Deal = { full: string; first?: string; perDay?: string; trialDays?: number };
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function dealOf(pkg: any, yearly: boolean, locale: string): Deal | null {
+  const p = pkg?.product;
+  if (!p) return null;
+  const money = (n: number) => { try { return new Intl.NumberFormat(locale, { style: 'currency', currency: p.currencyCode || 'EUR' }).format(n); } catch { return `${n.toFixed(2)} ${p.currencyCode ?? ''}`.trim(); } };
+  const deal: Deal = { full: p.priceString };
+  // The price that is paid now: the normal one, or the cheaper first period when the store has one.
+  let now = typeof p.price === 'number' ? p.price : 0;
+  // iOS: one introductory offer. Android: the default offer's phases (free trial, then maybe a cheaper first year).
+  const phases: { price?: { amountMicros?: number; formatted?: string }; billingPeriod?: { iso8601?: string } }[] = p.defaultOption?.pricingPhases ?? [];
+  for (const ph of phases) {
+    const micros = ph.price?.amountMicros ?? 0;
+    const days = /^P(\d+)D$/.exec(ph.billingPeriod?.iso8601 ?? '')?.[1];
+    const weeks = /^P(\d+)W$/.exec(ph.billingPeriod?.iso8601 ?? '')?.[1];
+    if (micros === 0 && (days || weeks)) deal.trialDays = days ? +days : +weeks! * 7;
+    else if (micros > 0 && micros / 1e6 < p.price && ph.price?.formatted) { deal.first = ph.price.formatted; now = micros / 1e6; }
+  }
+  const intro = p.introPrice;
+  if (intro) {
+    if (intro.price === 0 && intro.periodUnit === 'DAY') deal.trialDays = intro.periodNumberOfUnits;
+    else if (intro.price === 0 && intro.periodUnit === 'WEEK') deal.trialDays = intro.periodNumberOfUnits * 7;
+    else if (intro.price > 0 && intro.price < p.price) { deal.first = intro.priceString; now = intro.price; }
+  }
+  if (now > 0) deal.perDay = money(Math.ceil((now / (yearly ? 365 : 30)) * 100) / 100);
+  return deal;
+}

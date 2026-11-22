@@ -7,12 +7,14 @@
 import { AppState, Platform } from 'react-native';
 import { useSyncExternalStore } from 'react';
 import type { Session } from '@supabase/supabase-js';
+import * as Updates from 'expo-updates';
 import { supabase } from './cloud';
 import { tx, LANG } from '../i18n/lang';
 import { identify, resetAnalytics } from './analytics';
 import { setSentryUser } from './sentry';
 import { startPurchases, stopPurchases } from './purchases';
 import { handOver } from './lifecycle';
+import { refreshPlan, clearPlan } from './plan';
 
 type Auth = { session: Session | null; ready: boolean };
 let auth: Auth = { session: null, ready: !supabase };
@@ -21,7 +23,7 @@ const put = (next: Partial<Auth>) => { auth = { ...auth, ...next }; subs.forEach
 
 if (supabase) {
   supabase.auth.getSession()
-    .then(({ data }) => put({ session: data.session, ready: true }))
+    .then(({ data }) => { put({ session: data.session, ready: true }); if (data.session) void refreshPlan(); })
     .catch(() => put({ ready: true }));
   supabase.auth.onAuthStateChange((_e, session) => {
     const before = auth.session?.user.id;
@@ -32,7 +34,8 @@ if (supabase) {
       identify(uid, { test: !!TEST_EMAIL && session?.user.email === TEST_EMAIL, lang: LANG });
       setSentryUser(uid);
       void startPurchases(uid);
-    } else if (!uid && before) { resetAnalytics(); setSentryUser(null); void stopPurchases(); }
+      void refreshPlan();
+    } else if (!uid && before) { resetAnalytics(); setSentryUser(null); void stopPurchases(); clearPlan(); }
   });
 }
 
@@ -79,10 +82,12 @@ export type SignIn = { error: string | null; name?: string };
  */
 const TEST_EMAIL = process.env.EXPO_PUBLIC_TEST_EMAIL;
 const TEST_PASSWORD = process.env.EXPO_PUBLIC_TEST_PASSWORD;
-export const canTestSignIn = !!(supabase && TEST_EMAIL && TEST_PASSWORD);
+// Second lock (22.11.2026): even if the variables slipped into a store build, the button stays hidden there.
+const STORE_CHANNEL = Updates.channel === 'production';
+export const canTestSignIn = !!(supabase && TEST_EMAIL && TEST_PASSWORD) && !STORE_CHANNEL;
 
 export async function signInForTest(): Promise<SignIn> {
-  if (!supabase || !TEST_EMAIL || !TEST_PASSWORD) return { error: 'no_test_account' };
+  if (!canTestSignIn || !supabase || !TEST_EMAIL || !TEST_PASSWORD) return { error: 'no_test_account' };
   const { error } = await supabase.auth.signInWithPassword({ email: TEST_EMAIL, password: TEST_PASSWORD });
   return { error: error?.message ?? null };
 }
