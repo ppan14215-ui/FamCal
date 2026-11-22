@@ -5,6 +5,7 @@ Alle sichtbaren Änderungen an FamCal. Neueste oben. Agenten und Menschen: Ände
 ## Unreleased
 
 ### Startklar fürs MVP: Grenzen, Bezahlseite, Testzugang (22.11.)
+- Neuer Satz zum Start: „Damit nicht einer alles im Kopf hat.“ statt „Der klügste Familienkalender“.
 - Bezahlseite: Jahresabo vorausgewählt, Preis pro Tag, der Gründerpreis wird nur durchgestrichen gezeigt, wenn der Store wirklich ein günstigeres erstes Jahr verkauft. Kurze Liste, was Plus macht, und Antworten zum Kündigen. Die Probetage kommen aus dem Store, nicht aus dem Text.
 - Gratis Familien hören mit der Spracherkennung des Handys, die genaue Cloud Spracherkennung gehört zu Plus und den Probetagen. Die App fragt den Plan beim Start und nach jeder Rückkehr.
 - Server: KI Grenzen pro Familie (30 Sätze am Tag, 600 im Monat, mehr bei größeren Familien), Aufnahmen 40 pro Person am Tag und 1200 pro Familie im Monat, dazu eine Notbremse für alle zusammen. Wenn sie greift, sagt Memo das einmal und nimmt einfache Regeln.
