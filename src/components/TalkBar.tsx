@@ -112,6 +112,8 @@ type Props = {
   slim?: boolean;
   /** Julian 19.11. ("it closes all the time"): the field stays open when it loses focus; only a tap beside it, the back key or sending puts it away. */
   keepOpen?: boolean;
+  /** Inside Memo's history sheet (Julian 23.11.): a light row, plus, a pale pill to type in, the mic and send. */
+  sheet?: boolean;
 };
 
 // Listeners of the last recording, shared by every TalkBar: the phone has one recognizer, and a bar that was swapped
@@ -120,7 +122,7 @@ const lastSubs = { current: [] as { remove: () => void }[] };
 /** Counts recordings, so a timer or event of an older recording never touches the one running now (Julian 11.11.). */
 let recSeq = 0;
 
-export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, onClose, split, card, dark, onIdle, onBusy, speakCard, klar, slim, keepOpen, placeholder = tx('Sag oder schreib, was ansteht …', 'Say or type what\'s coming up …') }: Props) {
+export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, onClose, split, card, dark, onIdle, onBusy, speakCard, klar, slim, keepOpen, sheet, placeholder = tx('Sag oder schreib, was ansteht …', 'Say or type what\'s coming up …') }: Props) {
   const [text, setText] = useState('');
   const pics = usePics();
   const [listening, setListening] = useState(false);
@@ -137,7 +139,7 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, o
   const micStyle = useMicStyle();
   const [demo, setDemo] = useState(false);
   // Klar writes a little larger, on the dark card.
-  const LN = klar ? 24 : LINE;
+  const LN = sheet ? 20 : klar ? 24 : LINE;
   const MIN_H = LN + PAD * 2;
   const MAX_H = LN * 4 + PAD * 2;
   const [boxH, setBoxH] = useState(MIN_H);
@@ -571,7 +573,7 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, o
   );
 
   /** The words stand on ink: in the one dark bar, and in klar always (Julian 16.11.). */
-  const onDark = (card && dark) || !!klar;
+  const onDark = (card && dark) || (!!klar && !sheet);
   // Klar off the tabs, at rest: one slim line. The field keeps its place in the tree, so the first tap does not lose the cursor.
   const kLine = !!klar && !!slim && !text && !pics.length && !focused && !listening && !writing;
   const fieldBox = (
@@ -599,11 +601,11 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, o
         editable={!demo}
         // The slim line writes its hint itself (one line that ends in dots on every phone).
         placeholder={kLine ? '' : writing ? tx('Schreibe auf …', 'Writing it down …') : listening && wavy ? '' : listening ? tx('Ich höre zu … Tippe ✓ wenn fertig', 'Listening … Tap ✓ when done') : placeholder}
-        placeholderTextColor={dark || klar ? 'rgba(255,255,255,0.55)' : tokens.mute}
+        placeholderTextColor={(dark || klar) && !sheet ? 'rgba(255,255,255,0.55)' : tokens.mute}
         selectionColor={tokens.select} cursorColor={onDark ? tokens.onInk : tokens.ink}
         returnKeyType={TOUCH ? 'default' : 'send'}
         accessibilityLabel={tx('Was steht an?', 'What\'s on?')}
-        style={[{ width: '100%', height: boxH, marginBottom: (card && !text) || klar ? 0 : 2, fontFamily: fonts[klar ? 500 : 400], fontSize: klar ? 18 : split ? 16 : 16.5, lineHeight: LN, color: onDark ? tokens.onInk : tokens.ink, paddingVertical: PAD, paddingHorizontal: klar ? 0 : split ? 3 : 8, textAlignVertical: 'top', includeFontPadding: false }, Platform.OS === 'web' ? ({ outlineStyle: 'none' } as any) : null]}
+        style={[{ width: '100%', height: boxH, marginBottom: (card && !text) || klar ? 0 : 2, fontFamily: fonts[klar && !sheet ? 500 : 400], fontSize: sheet ? 16.5 : klar ? 18 : split ? 16 : 16.5, lineHeight: LN, color: onDark ? tokens.onInk : tokens.ink, paddingVertical: PAD, paddingHorizontal: klar ? 0 : split ? 3 : 8, textAlignVertical: 'top', includeFontPadding: false }, Platform.OS === 'web' ? ({ outlineStyle: 'none' } as any) : null]}
       />
       {listening && wavy ? (
         <View pointerEvents="none" style={{ position: 'absolute', left: klar ? 0 : split ? 3 : 8, right: 6, top: 0, bottom: 2, justifyContent: 'center' }}>
@@ -730,6 +732,33 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, o
     </View>
   );
 
+  // Memo's history sheet: one light row under the conversation. Speaking starts only with the mic; the dark card then
+  // takes this place (SpeakCard), and Aa there comes back here.
+  const sChip = { width: 42, height: 42, borderRadius: 21, alignItems: 'center', justifyContent: 'center', backgroundColor: tokens.row, boxShadow: `0 0 0 1px ${tokens.hair}` } as any;
+  const sheetInput = (
+    <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 8 }}>
+      {onPlus ? (
+        <PressScale accessibilityLabel={tx('Foto, Termin, Aufgabe', 'Photo, event, task')} onPress={() => onPlus()} style={sChip}>
+          <LineIcon name="plus" size={19} color={tokens.ink} stroke={2} />
+        </PressScale>
+      ) : null}
+      <View style={{ flex: 1, minWidth: 0, minHeight: 42, justifyContent: 'center', borderRadius: 21, paddingHorizontal: 14, backgroundColor: tokens.row, boxShadow: `0 0 0 1px ${tokens.hair}` } as any}>
+        {picRow}
+        {fieldBox}
+      </View>
+      {listening ? null : (
+        <PressScale accessibilityLabel={tx('Sprechen', 'Speak')} onPress={listen} style={sChip}>
+          <LineIcon name="mic" size={18} color={tokens.ink} />
+        </PressScale>
+      )}
+      {live ? (
+        <PressScale accessibilityLabel={tx('Senden', 'Send')} onPress={finishAndSend} style={[sChip, { backgroundColor: tokens.ink, boxShadow: 'none' }]}>
+          <LineIcon name="up" size={18} color={tokens.onInk} stroke={2.3} />
+        </PressScale>
+      ) : null}
+    </View>
+  );
+
   const input = (
     <View style={[{ flexDirection: 'row', alignItems: 'flex-end', gap: 4, padding: 6, paddingLeft: 6, borderRadius: boxH > MIN_H ? 26 : 30, backgroundColor: dark && !text && !listening ? 'transparent' : tokens.row, borderWidth: 1, borderColor: dark && !text && !listening ? 'transparent' : listening ? tokens.ink : tokens.hair }, dark && !text && !listening ? null : lift]}>
       {onClose ? (
@@ -786,7 +815,7 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, o
         <Txt size={12.5} line={17} color={tokens.sub} style={{ paddingHorizontal: 10 }}>{tx('Im Testlink ist das Mikro gesperrt, darum spreche ich einen Beispielsatz. In der App hört es euch zu.', 'The test link can\'t use the microphone, so I say a sample sentence. The app listens to you.')}</Txt>
       ) : null}
       {!card && !klar ? picRow : null}
-      {klar ? klarInput : card ? cardInput : input}
+      {sheet ? sheetInput : klar ? klarInput : card ? cardInput : input}
     </View>
   );
 }
