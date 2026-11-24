@@ -29,7 +29,7 @@ export function HeuteWidget({ snap }: { snap: Snapshot | null }) {
       style={{ height: 'match_parent', width: 'match_parent', backgroundColor: C.row, borderRadius: 24, padding: 14, flexDirection: 'column' }}
     >
       <FlexWidget style={{ flexDirection: 'row', alignItems: 'center', width: 'match_parent', marginBottom: 6 }}>
-        <TextWidget text={snap?.head ?? 'FamCal'} style={{ fontSize: 17, color: C.ink, fontWeight: '700' }} />
+        <TextWidget text={snap?.head ?? 'ParentButler'} style={{ fontSize: 17, color: C.ink, fontWeight: '700' }} />
         <TextWidget text="." style={{ fontSize: 17, color: C.done, fontWeight: '700' }} />
         <FlexWidget style={{ flex: 1 }} />
         <FlexWidget
@@ -49,7 +49,7 @@ export function HeuteWidget({ snap }: { snap: Snapshot | null }) {
           {d.more ? <TextWidget text={d.more} style={{ fontSize: 12, color: C.mute }} /> : null}
         </FlexWidget>
       )) : (
-        <TextWidget text={snap?.empty ?? 'Öffne FamCal einmal, dann erscheinen hier eure Termine.'} style={{ fontSize: 13, color: C.sub }} />
+        <TextWidget text={snap?.empty ?? 'Öffne ParentButler einmal, dann erscheinen hier eure Termine.'} style={{ fontSize: 13, color: C.sub }} />
       )}
     </FlexWidget>
   );

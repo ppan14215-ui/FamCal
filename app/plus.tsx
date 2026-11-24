@@ -105,7 +105,7 @@ export default function Plus() {
 
   const feel: [string, string][] = [
     [tx('Einmal sagen, beide wissen es.', 'Say it once, you both know.'), tx('Kein Hinterhertelefonieren, wer was wann macht.', 'No more chasing who does what, when.')],
-    [tx('Der Kopf wird leiser.', 'Your head gets quieter.'), tx('Termine, Einkauf, Arzt, Geschenke: FamCal denkt mit, damit ihr es nicht müsst.', 'Appointments, shopping, doctors, gifts: FamCal keeps track so you don’t have to.')],
+    [tx('Der Kopf wird leiser.', 'Your head gets quieter.'), tx('Termine, Einkauf, Arzt, Geschenke: ParentButler denkt mit, damit ihr es nicht müsst.', 'Appointments, shopping, doctors, gifts: ParentButler keeps track so you don’t have to.')],
     [tx('Mehr Abende ohne Orga.', 'More evenings without planning.'), tx('Weniger Absprachen, mehr Zeit füreinander.', 'Less coordinating, more time together.')],
   ];
 

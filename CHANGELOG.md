@@ -127,6 +127,7 @@ Alle sichtbaren Änderungen an FamCal. Neueste oben. Agenten und Menschen: Ände
 - Standarddauer neuer Termine gilt für die ganze Familie; Memo merkt sich Regeln wie Arzt 1 Stunde und hält sich daran
 - Memo Feld bleibt offen, bis man daneben tippt; eigener Mikro Knopf im Feld
 - Memo geht als Verlauf über der Seite auf: Gespräch und Ergebnisse oben, helle Eingabe unten, Sprechen nur übers Mikro, schließen mit X, Zurück oder Wischen
+- Neuer Name ParentButler in den Texten der App (Plus, Familie beitreten, Widget)
 
 ### App funktioniert zuverlässig (09.11. Audit)
 - Nach längerer Pause im Hintergrund klappen Assistent und Spracheingabe gleich beim ersten Satz, statt "Ich komme gerade nicht an den Assistenten".
