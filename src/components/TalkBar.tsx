@@ -537,7 +537,9 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, o
   if (speakCard) {
     speakHandlers.stop = () => { if (listeningRef.current) listen(); };
     speakHandlers.again = () => { held.current = false; setText(''); listen(); };
-    speakHandlers.send = () => { held.current = false; finishAndSend(); };
+    // Julian 24.11.: a background song went out as messages. While still listening (or writing it down) the arrow only
+    // stops: the words stand in the card and a second tap sends, so nothing heard goes out unseen.
+    speakHandlers.send = () => { if (listeningRef.current) { listen(); return; } if (writing) return; held.current = false; finishAndSend(); };
     speakHandlers.cancel = () => {
       held.current = false; sendAfter.current = false;
       if (listeningRef.current || writing) { typed.current = true; timers.current.forEach(clearTimeout); setDemo(false); toKeys.current?.(); setWriting(false); }
