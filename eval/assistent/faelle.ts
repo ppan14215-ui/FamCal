@@ -309,6 +309,16 @@ export const FAELLE: Fall[] = [
       const j = sum(/^julian$/i), so = sum(/^sophia$/i);
       return [...(j === 280 ? [] : [`Julian: ${j}`]), ...(so === 0 ? [] : [`Sophia: ${so}`]), ...(ps.length === 2 ? [] : [`Spieler: ${ps.map((x) => x.name).join(', ')}`]), ...deutsch(e)];
     } },
+  // Julian 24.11. (Rommé): a correction changed nothing right, it added rounds in minus and asked again and again.
+  { id: 'romme-korrektur', saetze: ['Wir spielen Rommé. Ich habe zweihundertachtzig Punkte, Sophia null', 'Julian 120, Sophia 40', 'Die letzte Runde war falsch, bei mir waren es nur 60'],
+    pruefe: (e) => {
+      const l = e.stand.lists.find((x) => x.blueprint?.blocks.includes('points'));
+      if (!l) return ['keine Punkteliste', ...deutsch(e)];
+      const ps = l.sections.flatMap((x) => x.items);
+      const r = (n: RegExp) => ps.find((x) => n.test(x.name))?.data?.rounds ?? [];
+      const j = r(/^julian$/i), so = r(/^sophia$/i);
+      return [...(j.join(',') === '280,60' ? [] : [`Julian Runden: ${j.join(',')}`]), ...(so.join(',') === '0,40' ? [] : [`Sophia Runden: ${so.join(',')}`]), ...deutsch(e)];
+    } },
   // Julian 31.10. 21:10: Familiengedächtnis. Ein Fakt wird gemerkt, nicht als Termin oder Einkauf eingetragen.
   { id: 'merken', saetze: ['Karlo hat Schuhgröße 28'],
     pruefe: (e) => {

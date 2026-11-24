@@ -8,7 +8,7 @@
  */
 import { withDefaultEnd } from './dauer';
 import { noteMade } from './session';
-import type { CalEvent, Who, List } from '../state/types';
+import type { CalEvent, Who, List, Item } from '../state/types';
 import { get, actions, toast } from '../state/store';
 import { persons } from '../theme/tokens';
 import { blueprintFor, blocksLine, GAMES, gameBlueprint } from './blueprint';
@@ -390,6 +390,50 @@ export function pointsPlan(list: List, said: string): Plan | null {
         land: touched[0], lit: touched, go: '/listen',
         result: { kind: 'done', text, sub: factor === 2 ? tx('Diese Runde zählt doppelt.', 'This round counts double.') : otherSees(), undo: () => { before.forEach((v, id) => actions.setItemData(list.id, id, { rounds: v })); made.forEach((id) => actions.deleteItem(list.id, id)); } },
       };
+    },
+  };
+}
+
+/**
+ * A round that was wrong is changed where it is (Julian 24.11., Rommé: "176 war einfach", "118 mal zwei").
+ * round is 1 based and defaults to each player's last round; loeschen takes that round away for everyone.
+ */
+export function correctionPlan(list: List, scores: { who: string; points: number }[], round?: number, loeschen?: boolean): Plan | null {
+  const all = players(list);
+  const n = roundsOf(list);
+  if (!n) return null;
+  if (loeschen) {
+    const k = Math.min(round ?? n, n);
+    return {
+      head: tx(`Runde ${k} auf „${list.name}“ streichen`, `Remove round ${k} on “${list.name}”`),
+      steps: [tx(`Runde ${k} gestrichen`, `Round ${k} removed`)],
+      run: () => {
+        const before = new Map(all.map((p) => [p.id, p.data?.rounds ?? []] as const));
+        all.forEach((p) => { const r = [...(p.data?.rounds ?? [])]; if (r.length >= k) { r.splice(k - 1, 1); actions.setItemData(list.id, p.id, { rounds: r }); } });
+        const now = get().lists.find((l) => l.id === list.id) ?? list;
+        return { lit: all.map((p) => p.id), go: '/listen', result: { kind: 'done', text: tx(`Runde ${k} ist gestrichen. ${standLine(now)}.`, `Round ${k} is removed. ${standLine(now)}.`), undo: () => before.forEach((v, id) => actions.setItemData(list.id, id, { rounds: v })) } };
+      },
+    };
+  }
+  const fixes = scores.map((x) => ({ x, p: matchPlayer(all, x.who) })).filter((f): f is { x: { who: string; points: number }; p: Item } => !!f.p);
+  if (!fixes.length) return null;
+  const at = (p: Item) => Math.max(1, round ?? (p.data?.rounds?.length || n));
+  return {
+    head: tx(`Korrektur auf „${list.name}“`, `Fix on “${list.name}”`),
+    steps: fixes.map(({ x, p }) => tx(`${p.name} Runde ${at(p)}: ${x.points}`, `${p.name} round ${at(p)}: ${x.points}`)),
+    run: () => {
+      const before = new Map<string, number[]>();
+      for (const { x, p } of fixes) {
+        const cur = players(get().lists.find((l) => l.id === list.id) ?? list).find((i) => i.id === p.id) ?? p;
+        const r = [...(cur.data?.rounds ?? [])];
+        before.set(p.id, cur.data?.rounds ?? []);
+        const k = at(cur);
+        while (r.length < k) r.push(0);
+        r[k - 1] = x.points;
+        actions.setItemData(list.id, p.id, { rounds: r });
+      }
+      const now = get().lists.find((l) => l.id === list.id) ?? list;
+      return { land: fixes[0].p.id, lit: fixes.map((f) => f.p.id), go: '/listen', result: { kind: 'done', text: tx(`Korrigiert. ${standLine(now)}.`, `Fixed. ${standLine(now)}.`), undo: () => before.forEach((v, id) => actions.setItemData(list.id, id, { rounds: v })) } };
     },
   };
 }

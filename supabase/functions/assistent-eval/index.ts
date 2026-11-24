@@ -118,6 +118,12 @@ const TOOLS: Tool[] = [
     list: str('id der Punkteliste.'),
     scores: { type: 'array', items: { type: 'object', properties: { who: { type: 'string' }, points: { type: 'number' } }, required: ['who', 'points'] } },
   }, ['list', 'scores']) },
+  { name: 'spiel_korrektur', ...obj('Ändert eine schon eingetragene Runde auf einer Punkteliste ("176 war einfach, nicht doppelt", "bei mir waren es 118 mal zwei", "die letzte Runde war falsch"). Setzt die neuen Punkte genau dieser Runde, statt eine Runde mit Minuspunkten anzuhängen.', {
+    list: { type: 'string', description: 'Id der Punkteliste.' },
+    round: { type: 'number', description: 'Welche Runde, ab 1 gezählt (siehe Runden im Stand). Weglassen heißt die letzte Runde der genannten Person.' },
+    scores: { type: 'array', items: { type: 'object', properties: { who: { type: 'string' }, points: { type: 'number' } }, required: ['who', 'points'] }, description: 'Die richtigen Punkte dieser Runde je Person, schon fertig gerechnet (verdoppelt oder halbiert).' },
+    loeschen: { type: 'boolean', description: 'true streicht die ganze Runde für alle (zum Beispiel eine aus Versehen eingetragene).' },
+  }, ['list']) },
   { name: 'partner_fragen', ...obj('Schickt dem anderen Elternteil eine Ja/Nein Frage in den Familienchat ("Passt Samstag?").', {
     question: str('Die Frage, kurz, in der Sprache des Satzes.'),
   }, ['question']) },
@@ -208,7 +214,7 @@ Listen:
 - Steht etwas schon offen auf der Liste, nimm eintrag_aendern statt doppelt einzutragen. Eine genannte Menge ist dann die neue Gesamtmenge ("Wir brauchen 3 Hafermilch" bei 2 auf der Liste: 3). Nur bei "noch", "mehr" oder "zusätzlich" zählst du dazu.
 - "Erinnere mich …", "ich muss noch …", "remind me to …" kommt kurz auf die Liste "Zu erledigen" (mit Tag, wenn genannt: "Kita anrufen (Fr)"); gibt es sie nicht, liste_neu "Zu erledigen". Nie ein Termin. Ein Satz mit Uhrzeit oder festem Tag zum Hingehen ist ein Termin.
 - Kochen oder Backen ("Heute koche ich Bolognese", "alles für einen Karottenkuchen") ist rezept, auch mit "heute Abend". Auch hier zuerst antworten ("Lecker, ich setze die Zutaten für Bolognese auf die Einkaufsliste.").
-- Spiele und Punkte ("Wir spielen Rommé", "Ich habe 280 Punkte, Sophia null") sind nie eine normale Liste: spiel_neu startet eine Punkteliste, mit scores, wenn schon Punkte genannt sind. Punkte einer Runde gehen mit spiel_runde auf die passende Punkteliste aus dem Stand. Du kennst die Regeln der gängigen Spiele und rechnest gesprochene Spielwörter in Punkte um, bevor du sie einträgst: Wizard "Julian sagt 2, macht 2" ist 20 plus 10 pro Stich (40), daneben minus 10 pro Stich Abstand; Kniffel Full House 25, kleine Straße 30, große Straße 40, Kniffel 50; Doppelkopf und Schafkopf: Verlierer bekommen dieselben Punkte im Minus. Ist eine Angabe nach den Regeln unklar, frag mit nachfragen.
+- Spiele und Punkte ("Wir spielen Rommé", "Ich habe 280 Punkte, Sophia null") sind nie eine normale Liste: spiel_neu startet eine Punkteliste, mit scores, wenn schon Punkte genannt sind. Punkte einer Runde gehen mit spiel_runde auf die passende Punkteliste aus dem Stand. Du kennst die Regeln der gängigen Spiele und rechnest gesprochene Spielwörter in Punkte um, bevor du sie einträgst: Wizard "Julian sagt 2, macht 2" ist 20 plus 10 pro Stich (40), daneben minus 10 pro Stich Abstand; Kniffel Full House 25, kleine Straße 30, große Straße 40, Kniffel 50; Doppelkopf und Schafkopf: Verlierer bekommen dieselben Punkte im Minus. Ist eine Angabe nach den Regeln unklar, frag mit nachfragen. Korrekturen an Punkten ("war zu hoch", "war einfach, nicht doppelt", "Hälfte für beide", "mal zwei") gehen immer mit spiel_korrektur auf die gemeinte Runde, nie mit spiel_runde und Minuspunkten. Im Stand stehen die Runden je Person, rechne die neuen Werte selbst aus (Hälfte, doppelt) und nimm ohne Angabe die letzte Runde. Frag dazu höchstens einmal nach, danach handle mit der wahrscheinlichsten Lesart.
 - "Frag Sophia, ob …" ist partner_fragen.
 
 Familiengedächtnis (Julian 31.10.: der Assistent vergisst nie):

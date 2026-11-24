@@ -42,7 +42,6 @@ export default function MemoVerlauf({ foot, onClose }: { foot: number; onClose: 
       else y.value = withTiming(0, { duration: 200, easing: OUT });
     },
   })).current;
-  useEffect(() => { const t = setTimeout(() => scroller.current?.scrollToEnd({ animated: true }), 60); return () => clearTimeout(t); }, [feed.length]);
   const shown = feed.slice(-SHOWN).filter((f) => !(f.answer && feed.some((x) => x.id === f.answer!.ask)));
   let lastDay = '';
   return (

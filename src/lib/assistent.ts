@@ -25,7 +25,7 @@ import { LANG, tx } from '../i18n/lang';
 import { get, set, actions, type CalView } from '../state/store';
 import type { CalEvent, List, Task, Who } from '../state/types';
 import { fromModel, TERMIN_ICON_NAMES, type Understood } from './talk';
-import { replyPlan, listFromClaude, gameStart, pointsPlan, liste, type Plan, type Result } from './act';
+import { replyPlan, listFromClaude, gameStart, pointsPlan, correctionPlan, liste, type Plan, type Result } from './act';
 import { isPoints, players, total, parseRound } from './points';
 import { myRole } from './sync';
 import { HIDDEN } from './core';
@@ -108,7 +108,7 @@ export function snapshotAlt(): string {
   const known = facts(lists).slice(-120).map((f) => `${f.id}: ${clip(f.text, 160)}${f.about ? ` [über ${clip(f.about, 30)}]` : ''}${f.by ? ` (${persons[f.by].name}${f.at ? `, ${day(f.at)}` : ''})` : f.at ? ` (${day(f.at)})` : ''}`);
   const listLines = lists.filter((l) => !isWissen(l) && !(HIDDEN.points && isPoints(l))).slice(0, 20).map((l: List) => {
     if (isPoints(l)) {
-      return `Punkteliste ${l.id} "${clip(l.name)}": ${players(l).map((p) => `${p.id} ${clip(p.name, 30)} ${total(p)}`).join(', ') || 'noch keine Spieler'}`;
+      return `Punkteliste ${l.id} "${clip(l.name)}": ${players(l).map((p) => `${p.id} ${clip(p.name, 30)} ${total(p)}${p.data?.rounds?.length ? ` (Runden: ${p.data.rounds.slice(-12).join(' · ')})` : ''}`).join(', ') || 'noch keine Spieler'}`;
     }
     const all = l.sections.flatMap((s) => s.items);
     const open = all.filter((i) => !i.done).slice(0, 50);
@@ -499,6 +499,15 @@ function opOf(a: Action, said: string): Op | null {
       // Kniffel boxes come from the sentence itself, so the sheet knows which box was filled (Julian 01.11.).
       if (/kniffel|yahtzee/i.test(l.name) && kniffelRound(said)) { const k = pointsPlan(l, said); if (k) return fromPlan(k); }
       const p = pointsPlan(l, scores.map((x: any) => `${x.who} ${Math.round(Number(x.points))}`).join(', '));
+      return p ? fromPlan(p) : null;
+    }
+    case 'spiel_korrektur': {
+      // Julian 24.11. (Rommé): a wrong round is changed in place, never fixed with a second round in minus.
+      const l = listOf(s(i.list));
+      if (!l || !isPoints(l)) return null;
+      const scores = (Array.isArray(i.scores) ? i.scores : []).filter((x: any) => x && typeof x.who === 'string' && Number.isFinite(Number(x.points))).map((x: any) => ({ who: String(x.who), points: Math.round(Number(x.points)) }));
+      const round = Number.isFinite(Number(i.round)) && Number(i.round) >= 1 ? Math.round(Number(i.round)) : undefined;
+      const p = correctionPlan(l, scores, round, i.loeschen === true);
       return p ? fromPlan(p) : null;
     }
     case 'merken': {
