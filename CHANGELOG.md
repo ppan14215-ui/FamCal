@@ -4,6 +4,9 @@ Alle sichtbaren Änderungen an FamCal. Neueste oben. Agenten und Menschen: Ände
 
 ## Unreleased
 
+### Neues App Icon: der flache Memo (24.11.)
+- Das Icon auf dem Homescreen zeigt jetzt den flachen Memo aus der App (Tinte auf Papier) statt des alten Ton Memo. Kommt mit dem nächsten nativen Build, nicht per Update.
+
 ### Memo zeigt, was er verstanden hat: Tags im Satz (24.11.)
 - Namen der Familie, Zeiten, das Termin Wort und Orte erscheinen im Satz als farbige Tags: im Chat, in Nachrichten vom Partner, im Memo Verlauf und live beim Sprechen.
 - Ein neuer Tag wächst aus einem Punkt unter dem Wort (280 ms, kein Überschwingen); ältere Nachrichten zeigen ihn ruhig. Die Eingabezeile bleibt wie sie ist.

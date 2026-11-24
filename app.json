@@ -6,7 +6,7 @@
     "scheme": "famcal",
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",
-    "backgroundColor": "#F5F5F4",
+    "backgroundColor": "#F5EFE4",
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.julian.famcal",
@@ -18,8 +18,8 @@
     "android": {
       "package": "com.julian.famcal",
       "adaptiveIcon": {
-        "backgroundColor": "#F5F5F4",
-        "foregroundImage": "./assets/app-icon/adaptive-foreground-A.png"
+        "backgroundColor": "#F5EFE4",
+        "foregroundImage": "./assets/app-icon/adaptive-foreground.png"
       }
     },
     "web": {
