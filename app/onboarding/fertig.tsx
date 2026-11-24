@@ -64,7 +64,7 @@ export default function Fertig() {
       {stuck && Platform.OS === 'android' ? (
         <Animated.View entering={FadeInDown.duration(300).delay(500)} style={{ padding: 14, borderRadius: 18, backgroundColor: tokens.row, gap: 4 }}>
           <Txt size={15} weight={600}>{tx('Tipp: Heute auf dem Startbildschirm', 'Tip: today on your home screen')}</Txt>
-          <Txt size={14} line={20} color={tokens.sub}>{tx('Lange auf den Startbildschirm drücken, Widgets, FamCal. Dann siehst du den Tag, ohne die App zu öffnen.', 'Long-press your home screen, Widgets, FamCal. Then you see the day without opening the app.')}</Txt>
+          <Txt size={14} line={20} color={tokens.sub}>{tx('Lange auf den Startbildschirm drücken, Widgets, ParentButler. Dann siehst du den Tag, ohne die App zu öffnen.', 'Long-press your home screen, Widgets, ParentButler. Then you see the day without opening the app.')}</Txt>
         </Animated.View>
       ) : null}
     </Step>
