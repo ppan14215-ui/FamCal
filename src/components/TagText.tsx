@@ -40,7 +40,7 @@ export function useTagNames(): TagNames {
   }, [ps, people]);
 }
 
-function Pill({ seg, size, line, weight, born, delay }: { seg: Seg; size: number; line: number; weight: Weight; born: boolean; delay: number }) {
+function Pill({ seg, size, line, weight, born, delay, steady }: { seg: Seg; size: number; line: number; weight: Weight; born: boolean; delay: number; steady?: boolean }) {
   const still = useReducedMotion();
   const c = seg.kind === 'person' ? { bg: seg.bg!, fg: seg.fg! } : KIND[seg.kind as Exclude<TagKind, 'person'>];
   const grow = useSharedValue(born && !still ? 0 : 1);
@@ -53,8 +53,8 @@ function Pill({ seg, size, line, weight, born, delay }: { seg: Seg; size: number
     return { opacity: g > 0 ? 1 : 0, transform: [{ scaleX: 0.12 + 0.88 * Math.min(1, Math.max(0, (g - 0.25) / 0.75)) }, { scaleY: 0.35 + 0.65 * Math.min(1, g / 0.45) }] };
   });
   return (
-    <View style={{ marginHorizontal: 1, paddingHorizontal: 5 }}>
-      <Animated.View pointerEvents="none" style={[{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, borderRadius: 8, backgroundColor: c.bg, transformOrigin: 'left center' } as any, ground]} />
+    <View style={steady ? undefined : { marginHorizontal: 1, paddingHorizontal: 5 }}>
+      <Animated.View pointerEvents="none" style={[{ position: 'absolute', left: steady ? -4 : 0, right: steady ? -4 : 0, top: 0, bottom: 0, borderRadius: 8, backgroundColor: c.bg, transformOrigin: 'left center' } as any, ground]} />
       <Txt size={size} line={line} weight={weight} color={c.fg}>{seg.text}</Txt>
     </View>
   );
@@ -64,7 +64,7 @@ function Pill({ seg, size, line, weight, born, delay }: { seg: Seg; size: number
  * The text with its tags. `titles`: the Termin titles Memo made of it. `tail`: words still being heard, shown muted
  * and never tagged. `animate`: the tags are new (a fresh message, or live speech), so they are born; else they just stand.
  */
-export default function TagText({ text, tail, size = 16, line, weight = 400, color, tailColor, titles, animate }: { text: string; tail?: string; size?: number; line?: number; weight?: Weight; color?: string; tailColor?: string; titles?: string[]; animate?: boolean }) {
+export default function TagText({ text, tail, size = 16, line, weight = 400, color, tailColor, titles, animate, steady }: { text: string; tail?: string; size?: number; line?: number; weight?: Weight; color?: string; tailColor?: string; titles?: string[]; animate?: boolean; /** Live text: the tag's ground sits behind the word without taking room, so no word moves when a tag appears. */ steady?: boolean }) {
   const names = useTagNames();
   const segs = useMemo(() => tagSegments(text, { names, titles }), [text, names, titles?.join('|')]);
   const lh = line ?? Math.round(size * 1.38);
@@ -90,10 +90,10 @@ export default function TagText({ text, tail, size = 16, line, weight = 400, col
     }
     // Keyed by kind and order, not by the words: a time that grows while you speak ("Dienstag" > "Dienstag um 16") stays the same tag.
     count[s.kind] = (count[s.kind] ?? 0) + 1;
-    parts.push(<Pill key={`${s.kind}${count[s.kind]}`} seg={s} size={size} line={lh} weight={weight} born={!!animate} delay={animate && first.current ? 80 * born++ : 0} />);
+    parts.push(<Pill key={`${s.kind}${count[s.kind]}`} seg={s} size={size} line={lh} weight={weight} born={!!animate} delay={animate && first.current ? 80 * born++ : 0} steady={steady} />);
   });
   if (tail) for (const [j, w] of (` ${tail}`.match(/\S+\s*|\s+/g) ?? []).entries()) parts.push(<Txt key={`t${j}`} size={size} line={lh} weight={weight} color={tailColor}>{w}</Txt>);
-  return <View accessible accessibilityLabel={tail ? `${text} ${tail}` : text} style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', marginHorizontal: -1 }}>{parts}</View>;
+  return <View accessible accessibilityLabel={tail ? `${text} ${tail}` : text} style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', marginHorizontal: steady ? 0 : -1 }}>{parts}</View>;
 }
 
 /** The titles of the Termine Memo made from a message, so the Termin word in the sentence can be shown. */

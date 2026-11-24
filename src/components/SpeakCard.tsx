@@ -316,7 +316,7 @@ function KlarCard({ seat }: { seat?: 'right' }) {
                 {words ? (
                   <Pressable onPress={intoText} accessibilityRole="button" accessibilityLabel={tapLabel()}>
                     {/* What Memo already understood shows in the words as you speak (Julian 24.11.); the words still being heard stay muted and untagged. */}
-                    <TagText text={sure} tail={s.live!.part} {...T} color={writing ? dim(0.6) : ON} tailColor={dim(0.45)} animate />
+                    <View style={{ maxHeight: 6 * T.line, overflow: 'hidden', justifyContent: 'flex-end' }}><TagText text={sure} tail={s.live!.part} {...T} color={writing ? dim(0.6) : ON} tailColor={dim(0.45)} animate steady /></View>
                   </Pressable>
                 ) : s.phase === 'text' ? <Pressable onPress={intoText} accessibilityRole="button" accessibilityLabel={tapLabel()}><Txt {...T} numberOfLines={7} color={ON}>{s.text}</Txt></Pressable>
                   : writing ? <Pressable onPress={intoText} accessibilityRole="button" accessibilityLabel={tapLabel()}><Txt {...T} color={dim(0.45)}>{tx('Schreibe auf …', 'Writing it down …')}</Txt></Pressable>
@@ -439,7 +439,7 @@ function BigCard({ barH, from }: { barH: number; from: string }) {
             {label || words ? <Txt size={12.5} weight={600} tracking={0.4} color={tokens.done} numberOfLines={2}>{label ?? (writing ? tx('Schreibe auf …', 'Writing it down …') : tx('Ich höre zu …', "I'm listening …"))}</Txt> : null}
             {words ? (
               <Pressable onPress={intoText} accessibilityRole="button" accessibilityLabel={tapLabel()}>
-                <TagText text={sure} tail={s.live!.part} size={18} line={25} weight={500} color={writing ? tokens.sub : tokens.ink} tailColor={tokens.mute} animate />
+                <View style={{ maxHeight: 4 * 25, overflow: 'hidden', justifyContent: 'flex-end' }}><TagText text={sure} tail={s.live!.part} size={18} line={25} weight={500} color={writing ? tokens.sub : tokens.ink} tailColor={tokens.mute} animate steady /></View>
               </Pressable>
             ) : s.phase === 'text' ? (
               <Pressable onPress={intoText} accessibilityRole="button" accessibilityLabel={tapLabel()}>
