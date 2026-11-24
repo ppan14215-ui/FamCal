@@ -751,8 +751,14 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, o
           <LineIcon name="mic" size={18} color={tokens.ink} />
         </PressScale>
       )}
-      {live ? (
-        <PressScale accessibilityLabel={tx('Senden', 'Send')} onPress={finishAndSend} style={[sChip, { backgroundColor: tokens.ink, boxShadow: 'none' }]}>
+      {/* Julian 24.11.: a song in the background went out as messages. While listening this is a stop button: the words
+          land in the field and wait; only the arrow, shown once listening is over, sends (voice never sends by itself). */}
+      {listening ? (
+        <PressScale accessibilityLabel={tx('Aufnahme beenden', 'Stop recording')} onPress={listen} style={[sChip, { backgroundColor: tokens.ink, boxShadow: 'none' }]}>
+          <View style={{ width: 13, height: 13, borderRadius: 3, backgroundColor: tokens.onInk }} />
+        </PressScale>
+      ) : text.trim() || pics.length ? (
+        <PressScale accessibilityLabel={tx('Senden', 'Send')} onPress={() => send()} style={[sChip, { backgroundColor: tokens.ink, boxShadow: 'none' }]}>
           <LineIcon name="up" size={18} color={tokens.onInk} stroke={2.3} />
         </PressScale>
       ) : null}

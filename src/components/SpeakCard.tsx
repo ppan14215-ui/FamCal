@@ -12,6 +12,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { View, ScrollView, Pressable, Platform, useWindowDimensions } from 'react-native';
 import Animated, { useSharedValue, useAnimatedStyle, withTiming, withRepeat, withSequence, withDelay, interpolate, interpolateColor, Extrapolation, Easing, useReducedMotion, type SharedValue } from 'react-native-reanimated';
 import TagText from './TagText';
+import { usePathname } from 'expo-router';
 import Txt from './ui/Txt';
 import LineIcon from './ui/LineIcon';
 import PressScale from './ui/PressScale';
@@ -157,7 +158,10 @@ function KlarCard({ seat }: { seat?: 'right' }) {
   const thinking = (veil.phase === 'think' && !!veil.inline) || b.thinking;
   const [late, setLate] = useState(false);
   useEffect(() => { setLate(false); if (!thinking) return; const t = setTimeout(() => setLate(true), 12000); return () => clearTimeout(t); }, [thinking]);
-  const want: Stage = open ? 'card' : thinking && !late && !typing && mode !== 'input' ? 'think' : 'rest';
+  // On the chat page the field stands right above the nav, so the bubble would lie on it (Julian 24.11. screenshot):
+  // there the dots in the chat show the thinking and the nav stays.
+  const onChat = /\/chat$/.test(usePathname());
+  const want: Stage = open ? 'card' : thinking && !late && !typing && mode !== 'input' && !onChat ? 'think' : 'rest';
   const [stage, setStage] = useState<Stage>('rest');
   const thinkSince = useRef(0);
   // When the thinking began. If it is already going on when the bubble may show (the keyboard just closed after a

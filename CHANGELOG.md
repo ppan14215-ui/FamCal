@@ -134,6 +134,9 @@ Alle sichtbaren Änderungen an FamCal. Neueste oben. Agenten und Menschen: Ände
 - Neuer Name ParentButler in den Texten der App (Plus, Familie beitreten, Widget)
 - Chat Seite hat wieder immer ein Eingabefeld, überall dieselbe helle Eingabe, Bild aus Plus öffnet das Feld, Memo korrigiert Spielrunden statt Minusrunden anzuhängen
 - Nach dem Tippen im Chat springt beim Wechsel zum Kalender kein Memo Blatt mehr auf
+- Chat: Memo legt sich beim Nachdenken nicht mehr über das Eingabefeld
+- Spracheingabe im Memo Blatt: Stopp beendet nur die Aufnahme, Senden erst danach mit dem Pfeil
+- Eingabefeld fährt mit der Tastatur mit, statt danach zu springen (Android)
 
 ### App funktioniert zuverlässig (09.11. Audit)
 - Nach längerer Pause im Hintergrund klappen Assistent und Spracheingabe gleich beim ersten Satz, statt "Ich komme gerade nicht an den Assistenten".

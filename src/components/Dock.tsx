@@ -12,7 +12,7 @@ import { useBuddyTalk, useBuddyKeys, getBuddy, setBuddy } from '../lib/buddy';
 import React, { useEffect, useRef, useState } from 'react';
 import { View, ScrollView, Platform, BackHandler, useWindowDimensions, TextInput, Pressable, Keyboard } from 'react-native';
 import { router, usePathname, useGlobalSearchParams } from 'expo-router';
-import Animated, { FadeIn, FadeInDown, FadeOut, useSharedValue, useAnimatedStyle, withSpring, withTiming, withDelay, Easing } from 'react-native-reanimated';
+import Animated, { FadeIn, FadeInDown, FadeOut, useSharedValue, useAnimatedStyle, withSpring, withTiming, withDelay, Easing, useAnimatedKeyboard, useAnimatedReaction } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Defs, LinearGradient, Stop, Rect } from 'react-native-svg';
 import { Chip } from './ui/kit';
@@ -528,6 +528,8 @@ export default function Dock() {
   const wStyle = useAnimatedStyle(() => ({ width: wAnim.value }));
   // Typing hides the tabs, so the field drops into their place right above the keyboard.
   const bottom = !where ? 0 : kb > 0 ? kb + 8 : klar && where.chat && !(typing && Platform.OS === 'web') ? above + navH() + 26 : onTabs ? (typing && Platform.OS === 'web' && !klar ? Math.max(insets.bottom, 12) + 10 : above) : insets.bottom + 12 + where.lift;
+  /** Where the field stands with no keyboard: the floor the keyboard's frame lifts it from. */
+  const restBottom = !where ? 0 : klar && where.chat && !(typing && Platform.OS === 'web') ? above + navH() + 26 : onTabs ? (typing && Platform.OS === 'web' && !klar ? Math.max(insets.bottom, 12) + 10 : above) : insets.bottom + 12 + where.lift;
   useEffect(() => { setDockTop(where ? bottom + (shown ? h : 0) : 0); }, [bottom, h, !!where, shown]);
   // The field's own top edge (cards and pills above it don't count): Memo sits right on it (Julian 08.11.).
   // The field is the last row, flush with the bottom, so its top is bottom + its own height. Its y from onLayout went stale
@@ -542,7 +544,25 @@ export default function Dock() {
     wasFolded.current = folded;
     bAnim.value = spring ? withTiming(bottom, { duration: 340, easing: Easing.bezier(0.32, 0.72, 0, 1) }) : bottom;
   }, [bottom, folded]);
-  const bStyle = useAnimatedStyle(() => ({ bottom: bAnim.value }));
+  // Julian 24.11. ("das Feld springt"): Android reports the keyboard only once it has fully slid up, so the field
+  // jumped up after it. The keyboard's own frame, read every frame on the UI thread, carries the field along instead.
+  const kbFrame = useAnimatedKeyboard();
+  const restB = useSharedValue(restBottom);
+  const kbJs = useSharedValue(kb);
+  useEffect(() => { restB.value = restBottom; kbJs.value = kb; }, [restBottom, kb]);
+  const native = Platform.OS !== 'web';
+  // The keyboard's tallest frame of this opening: on the way down the field goes down in the same proportion, so it lands
+  // exactly on its rest place when the keys are gone (the phone's own height for the keys can differ a little).
+  const kbPeak = useSharedValue(0);
+  useAnimatedReaction(() => kbFrame.height.value, (h) => { kbPeak.value = h <= 0 ? 0 : Math.max(kbPeak.value, h); });
+  const bStyle = useAnimatedStyle(() => {
+    const h = kbFrame.height.value;
+    if (!native || (h <= 0 && kbJs.value <= 0)) return { bottom: bAnim.value };
+    if (h <= 0) return { bottom: restB.value };
+    // Keys known (shown): between the rest place and the field over the keys, as far as the keys are up.
+    if (kbJs.value > 0) return { bottom: restB.value + (Math.max(restB.value, bAnim.value) - restB.value) * Math.min(1, h / Math.max(1, kbPeak.value)) };
+    return { bottom: Math.max(restB.value, h + 8) };
+  });
 
   // Julian 08.11. ("Ask clarifying questions through inputs"): a question the card asks also stands in the
   // Sprechkarte, with its answers to tap. The handlers are read at tap time, so they always see the current card.
