@@ -21,6 +21,7 @@
  * fertig (your family and your first appointment) · sign-in sheet · Plus.
  * No network here: the offline rules read the sentence (talk.understand); no assistant call without an account.
  */
+import { INTRO_CLAIM } from '../../src/components/onboarding/Intro';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { View, TextInput, Pressable, ScrollView, Keyboard, useWindowDimensions, Platform } from 'react-native';
 import Animated, { useSharedValue, useAnimatedStyle, withTiming, withDelay, Easing, useReducedMotion, FadeIn, FadeOut } from 'react-native-reanimated';
@@ -361,7 +362,7 @@ function Typer({ text, size, line, weight = 700, delay = 0, onDone, center }: { 
 function Welcome({ top }: { top: number }) {
   return (
     <View style={{ flex: 1, alignItems: 'center', paddingHorizontal: 28, paddingTop: top, gap: 12 }}>
-      <Rise delay={520}><Txt size={30} line={36} weight={700} center>{tx('Der klügste Familienkalender, mit dem du je gesprochen hast', 'The smartest family calendar you ever spoke to')}</Txt></Rise>
+      <Rise delay={520}><Txt size={30} line={36} weight={700} center>{INTRO_CLAIM()}</Txt></Rise>
       <Rise delay={640}><Txt size={16} line={22} color={tokens.sub} center>{tx('Sag einfach, was ansteht. Ich kümmere mich um den Rest.', 'Just say what’s coming up. I’ll handle the rest.')}</Txt></Rise>
     </View>
   );

@@ -21,8 +21,7 @@
  * - Money events that count (purchase completed, renewal, refund) come from the RevenueCat webhook on the
  *   server, not from the phone. The phone only reports what the person saw and tapped.
  *
- * Off on the web test link, in the demo export and in development. Without EXPO_PUBLIC_POSTHOG_KEY it is a
- * no-op, so the app works the same before the PostHog project exists.
+ * Off on the web test link, in the demo export and in development (__DEV__).
  */
 import { Platform } from 'react-native';
 import * as Updates from 'expo-updates';
@@ -32,7 +31,9 @@ import { getPref, setPref, onPrefsReady } from './prefs';
 /** Raise when an event's name or the meaning of a property changes. */
 export const SCHEMA = 1;
 
-const KEY = process.env.EXPO_PUBLIC_POSTHOG_KEY ?? '';
+// Project token of PostHog org FamCal, project "FamCal App" (EU, id 365321, made 23.11.2026). Public by design,
+// like the Sentry DSN: it can only send events, not read them. The EAS variable wins when it is set.
+const KEY = process.env.EXPO_PUBLIC_POSTHOG_KEY || 'phc_sJuCeP6H3nCEFDhFQeUeTLDX4goRBU5aLtqcpsqjx9mp';
 const HOST = process.env.EXPO_PUBLIC_POSTHOG_HOST ?? 'https://eu.i.posthog.com';
 const ON = LIVE && !!KEY && Platform.OS !== 'web' && !__DEV__;
 

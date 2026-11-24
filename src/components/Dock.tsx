@@ -22,6 +22,7 @@ import { Avatar, Pair, Owner } from './ui/Person';
 import PressScale from './ui/PressScale';
 import TalkBar from './TalkBar';
 import SpeakCard from './SpeakCard';
+import MemoVerlauf from './MemoVerlauf';
 import { addPic } from '../lib/attach';
 import MemoMic from './buddy/MemoMic';
 import { setSpeak, getSpeak, useSpeak, speakOpen, speakDone, parseHour, speakHandlers } from '../lib/speak';
@@ -559,6 +560,8 @@ export default function Dock() {
   const klarOpen = klar && (typing || barRaw === 'input');
   useEffect(() => { if (cardOpen) setTalkStart(false); }, [cardOpen]);
   const klarShow = klarOpen && !cardOpen && !talkStart;
+  // Julian 23.11. ("4 bauen"): off the chat, the open Memo is one sheet over the page with the history in it.
+  const sheet = klarOpen && !where?.chat;
   const kA = useSharedValue(klarShow ? 1 : 0);
   // Julian 16.11.: "immer im schwarzen Feld bleiben". Between the Sprechkarte and typing the dark card stays where it
   // is and only its words change, so the typing card neither grows out of Memo nor shrinks back then.
@@ -1004,12 +1007,13 @@ export default function Dock() {
     {klar || (onTabs && !kb && !(typing && Platform.OS === 'web')) ? null : <View pointerEvents="none" style={{ position: 'absolute', left: 0, right: 0, bottom: fadeFrom, height: bottom - fadeFrom + 27, backgroundColor: tokens.bg }} />}
     {/* Klar: a tap beside the open input puts it away; words already typed stay in it. */}
     {klarShow ? <Pressable accessibilityLabel={tx('Eingabe schließen', 'Close input')} onPress={() => { Keyboard.dismiss(); const b = getBuddy(); if (!b.typed && !b.listening) setBarMode('rest'); }} style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0 }} /> : null}
+    {sheet ? <MemoVerlauf foot={bottom + fieldH} onClose={() => { if (speakOpen(getSpeak())) speakHandlers.cancel(); Keyboard.dismiss(); setBarMode('rest'); }} /> : null}
     <Animated.View pointerEvents="box-none" onLayout={(e) => setH(e.nativeEvent.layout.height)} style={[{ position: 'absolute', left: onTabs ? 14 : 18, right: onTabs ? 14 : 18, gap: 10 }, bStyle]}>
       {/* Klar at rest: the input is folded into Memo but keeps its room; the card sits right above the nav pill instead. */}
       {where.chat || turn ? null : <Peek drop={klar && !klarShow && !cardOpen ? Math.max(0, fieldH - navH()) : 0} />}
       {/* Klar: no pill above the nav; the new row itself and the chat are the record (Julian 14.11.). */}
       {turn || !onTabs || klar ? null : <SessionPill />}
-      {turn && !cardOpen ? (
+      {turn && !cardOpen && !(sheet && quietTurn(turn.result)) ? (
         <Animated.View key={turn.id} entering={FadeInDown.duration(220).easing(easing.out)} exiting={FadeOut.duration(150).easing(easing.out)} style={[{ maxHeight: 420, borderRadius: 26 }, klar ? glass.card : [{ backgroundColor: tokens.row }, shadow]]}>
           <ScrollView ref={scroller} onContentSizeChange={() => scroller.current?.scrollToEnd({ animated: false })} contentContainerStyle={{ padding: 18, gap: 12 }} showsVerticalScrollIndicator={false}>
             {turn.result.kind === 'cut' ? (
@@ -1110,6 +1114,7 @@ export default function Dock() {
               klar
               speakCard
               keepOpen
+              sheet={!where.chat}
               onIdle={() => setBarMode('rest')}
               onBusy={() => setBarMode('input')}
               onSend={hear}
@@ -1117,7 +1122,7 @@ export default function Dock() {
               spoken={SPOKEN[kind]}
               listenKey={listenKey}
               focusKey={focusKey}
-              placeholder={resumed ? tx(`Weiter zu „${resumed.said.slice(0, 24)}“ …`, `More on “${resumed.said.slice(0, 24)}” …`) : where.chat && mode === 'msg' ? tx('Nachricht an die Familie …', 'Message to the family …') : turn?.result.kind === 'cut' ? tx('Sprich einfach weiter …', 'Just keep talking …') : turn && kind === 'kalender' ? tx('Antworten oder ergänzen …', 'Reply or add …') : tx('Was steht an?', "What's coming up?")}
+              placeholder={resumed ? tx(`Weiter zu „${resumed.said.slice(0, 24)}“ …`, `More on “${resumed.said.slice(0, 24)}” …`) : where.chat && mode === 'msg' ? tx('Nachricht an die Familie …', 'Message to the family …') : turn?.result.kind === 'cut' ? tx('Sprich einfach weiter …', 'Just keep talking …') : turn && kind === 'kalender' ? tx('Antworten oder ergänzen …', 'Reply or add …') : !where.chat ? tx('Schreib Memo …', 'Message Memo …') : tx('Was steht an?', "What's coming up?")}
             />
           </Animated.View>
         )}
@@ -1215,4 +1220,13 @@ export default function Dock() {
     </Animated.View>
     </Other.Provider>
   );
+}
+
+/** What already shows as its entry in Memo's history needs no card of its own over the sheet. */
+function quietTurn(r: any): boolean {
+  if (!r) return false;
+  if (r.kind === 'done') return true;
+  if (r.kind === 'answer') return r.reply?.kind === 'answer';
+  if (r.kind === 'event') return !r.suggest && !(r.needsTime && r.event?.allDay);
+  return false;
 }

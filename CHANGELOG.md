@@ -4,6 +4,13 @@ Alle sichtbaren Änderungen an FamCal. Neueste oben. Agenten und Menschen: Ände
 
 ## Unreleased
 
+### Startklar fürs MVP: Grenzen, Bezahlseite, Testzugang (22.11.)
+- Neuer Satz zum Start: „Damit nicht einer alles im Kopf hat.“ statt „Der klügste Familienkalender“.
+- Bezahlseite: Jahresabo vorausgewählt, Preis pro Tag, der Gründerpreis wird nur durchgestrichen gezeigt, wenn der Store wirklich ein günstigeres erstes Jahr verkauft. Kurze Liste, was Plus macht, und Antworten zum Kündigen. Die Probetage kommen aus dem Store, nicht aus dem Text.
+- Gratis Familien hören mit der Spracherkennung des Handys, die genaue Cloud Spracherkennung gehört zu Plus und den Probetagen. Die App fragt den Plan beim Start und nach jeder Rückkehr.
+- Server: KI Grenzen pro Familie (30 Sätze am Tag, 600 im Monat, mehr bei größeren Familien), Aufnahmen 40 pro Person am Tag und 1200 pro Familie im Monat, dazu eine Notbremse für alle zusammen. Wenn sie greift, sagt Memo das einmal und nimmt einfache Regeln.
+- Der Testzugang kann nicht mehr in einen Store Build gelangen: der Build bricht ab, und selbst dann bliebe der Knopf versteckt.
+
 ### Gelöschte Termine aus dem Handykalender bleiben weg (16.11.)
 - Ein Termin aus Google, den der Assistent gelöscht hat (gesprochen oder getippt), kam beim nächsten Abgleich zurück. Jetzt merkt sich die App jedes Löschen an einer Stelle, egal auf welchem Weg, auch wenn gerade ein Abgleich läuft. Rückgängig holt ihn wieder.
 - Server: Termine sind jetzt je Familie eindeutig (Migration events_key_per_family). Vorher stießen Termine aus dem Handykalender mit gleichen Nummern einer anderen Familie zusammen und das Speichern wurde abgelehnt.
@@ -119,6 +126,8 @@ Alle sichtbaren Änderungen an FamCal. Neueste oben. Agenten und Menschen: Ände
 - Kalender Startansicht wählbar, auch per Memo (z.B. Woche)
 - Standarddauer neuer Termine gilt für die ganze Familie; Memo merkt sich Regeln wie Arzt 1 Stunde und hält sich daran
 - Memo Feld bleibt offen, bis man daneben tippt; eigener Mikro Knopf im Feld
+- Memo geht als Verlauf über der Seite auf: Gespräch und Ergebnisse oben, helle Eingabe unten, Sprechen nur übers Mikro, schließen mit X, Zurück oder Wischen
+- Neuer Name ParentButler in den Texten der App (Plus, Familie beitreten, Widget)
 
 ### App funktioniert zuverlässig (09.11. Audit)
 - Nach längerer Pause im Hintergrund klappen Assistent und Spracheingabe gleich beim ersten Satz, statt "Ich komme gerade nicht an den Assistenten".
