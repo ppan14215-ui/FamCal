@@ -250,7 +250,8 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, o
     const t = setTimeout(() => { if (!keysNext.current) return; keysNext.current = false; onBusy?.(); field.current?.focus(); }, 80);
     return () => clearTimeout(t);
   }, [listening, writing]);
-  const finishAndSend = () => { if (!listening) return send(); sendAfter.current = true; listen(); };
+  // Julian 24.11. (a song went out as messages): every send button only stops while listening; what was heard waits to be seen.
+  const finishAndSend = () => { if (!listening) return send(); listen(); };
 
   // The Sprechkarte shows what happens: listening, writing it down, the sentence ready to send.
   useEffect(() => {
