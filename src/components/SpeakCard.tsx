@@ -316,7 +316,7 @@ function KlarCard({ seat }: { seat?: 'right' }) {
                 {words ? (
                   <Pressable onPress={intoText} accessibilityRole="button" accessibilityLabel={tapLabel()}>
                     {/* What Memo already understood shows in the words as you speak (Julian 24.11.); the words still being heard stay muted and untagged. */}
-                    <View style={{ maxHeight: 6 * T.line, overflow: 'hidden', justifyContent: 'flex-end' }}><TagText text={sure} tail={s.live!.part} {...T} color={writing ? dim(0.6) : ON} tailColor={dim(0.45)} animate steady /></View>
+                    <View style={{ maxHeight: 6 * T.line, overflow: 'hidden', justifyContent: 'flex-end' }}><TagText text={sure} tail={s.live!.part} {...T} color={writing ? dim(0.6) : ON} tailColor={dim(0.45)} animate steady dark /></View>
                   </Pressable>
                 ) : s.phase === 'text' ? <Pressable onPress={intoText} accessibilityRole="button" accessibilityLabel={tapLabel()}><Txt {...T} numberOfLines={7} color={ON}>{s.text}</Txt></Pressable>
                   : writing ? <Pressable onPress={intoText} accessibilityRole="button" accessibilityLabel={tapLabel()}><Txt {...T} color={dim(0.45)}>{tx('Schreibe auf …', 'Writing it down …')}</Txt></Pressable>

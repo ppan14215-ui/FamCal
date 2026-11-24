@@ -87,7 +87,7 @@ function Said({ f, mine }: { f: FeedEntry; mine: boolean }) {
     <View style={{ alignSelf: mine ? 'flex-end' : 'flex-start', maxWidth: '86%', gap: 3 }}>
       {mine ? null : <Txt size={12} color={tokens.sub} style={{ paddingLeft: 4 }}>{persons[f.by].name}</Txt>}
       <View style={{ borderRadius: 20, paddingVertical: 9, paddingHorizontal: 15, backgroundColor: mine ? tokens.ink : tokens.row, boxShadow: mine ? undefined : `0 0 0 1px ${tokens.hair}` } as any}>
-        <TagText text={f.said} size={15.5} line={21} color={mine ? tokens.onInk : tokens.ink} titles={titles} animate={Date.now() - Date.parse(f.at) < 8000} />
+        <TagText text={f.said} size={15.5} line={21} color={mine ? tokens.onInk : tokens.ink} titles={titles} animate={Date.now() - Date.parse(f.at) < 8000} dark={mine} />
       </View>
     </View>
   );

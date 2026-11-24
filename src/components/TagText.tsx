@@ -17,11 +17,11 @@ import { usePersons } from './ui/Person';
 import { useStore } from '../state/store';
 import { tagSegments, hasTags, Seg, TagKind, TagNames } from '../lib/tags';
 
-const KIND: Record<Exclude<TagKind, 'person'>, { bg: string; fg: string }> = {
-  time: { bg: '#E6E1D6', fg: '#14302F' },
-  event: { bg: '#F1DCC9', fg: '#7A4A22' },
-  place: { bg: '#DCE6D3', fg: '#4E6B47' },
-};
+// One quiet chip for every kind (Julian 24.11. 21:43: the coloured tags mixed with the coloured bubbles, "zu bunt").
+// White on the light bubbles like the chip on white in the film, a soft light veil on dark ground. The bubble keeps
+// the only colour: who wrote it.
+const CHIP = { bg: '#FFFFFF', ring: '0 0 0 1px rgba(25,25,25,0.07), 0 1px 2px rgba(25,25,25,0.06)' };
+const CHIP_DARK = { bg: 'rgba(255,255,255,0.16)', ring: undefined };
 const EASE = Easing.bezier(0.23, 1, 0.32, 1);
 
 /** Everyone the family has, with their colours: the two parents and every child or grandparent. */
@@ -40,9 +40,9 @@ export function useTagNames(): TagNames {
   }, [ps, people]);
 }
 
-function Pill({ seg, size, line, weight, born, delay, steady }: { seg: Seg; size: number; line: number; weight: Weight; born: boolean; delay: number; steady?: boolean }) {
+function Pill({ seg, size, line, weight, born, delay, steady, dark, color }: { seg: Seg; size: number; line: number; weight: Weight; born: boolean; delay: number; steady?: boolean; dark?: boolean; color?: string }) {
   const still = useReducedMotion();
-  const c = seg.kind === 'person' ? { bg: seg.bg!, fg: seg.fg! } : KIND[seg.kind as Exclude<TagKind, 'person'>];
+  const c = dark ? CHIP_DARK : CHIP;
   const grow = useSharedValue(born && !still ? 0 : 1);
   useEffect(() => {
     if (grow.value < 1) grow.value = withDelay(delay, withTiming(1, { duration: 280, easing: EASE }));
@@ -54,8 +54,8 @@ function Pill({ seg, size, line, weight, born, delay, steady }: { seg: Seg; size
   });
   return (
     <View style={steady ? undefined : { marginHorizontal: 1, paddingHorizontal: 5 }}>
-      <Animated.View pointerEvents="none" style={[{ position: 'absolute', left: steady ? -4 : 0, right: steady ? -4 : 0, top: 0, bottom: 0, borderRadius: 8, backgroundColor: c.bg, transformOrigin: 'left center' } as any, ground]} />
-      <Txt size={size} line={line} weight={weight} color={c.fg}>{seg.text}</Txt>
+      <Animated.View pointerEvents="none" style={[{ position: 'absolute', left: steady ? -4 : 0, right: steady ? -4 : 0, top: 0, bottom: 0, borderRadius: 8, backgroundColor: c.bg, boxShadow: c.ring, transformOrigin: 'left center' } as any, ground]} />
+      <Txt size={size} line={line} weight={weight} color={color}>{seg.text}</Txt>
     </View>
   );
 }
@@ -64,7 +64,7 @@ function Pill({ seg, size, line, weight, born, delay, steady }: { seg: Seg; size
  * The text with its tags. `titles`: the Termin titles Memo made of it. `tail`: words still being heard, shown muted
  * and never tagged. `animate`: the tags are new (a fresh message, or live speech), so they are born; else they just stand.
  */
-export default function TagText({ text, tail, size = 16, line, weight = 400, color, tailColor, titles, animate, steady }: { text: string; tail?: string; size?: number; line?: number; weight?: Weight; color?: string; tailColor?: string; titles?: string[]; animate?: boolean; /** Live text: the tag's ground sits behind the word without taking room, so no word moves when a tag appears. */ steady?: boolean }) {
+export default function TagText({ text, tail, size = 16, line, weight = 400, color, tailColor, titles, animate, steady, dark }: { text: string; tail?: string; size?: number; line?: number; weight?: Weight; color?: string; tailColor?: string; titles?: string[]; animate?: boolean; /** Live text: the tag's ground sits behind the word without taking room, so no word moves when a tag appears. */ steady?: boolean; /** Dark ground (my ink bubble, the speaking card): the chip is a light veil instead of white. */ dark?: boolean }) {
   const names = useTagNames();
   const segs = useMemo(() => tagSegments(text, { names, titles }), [text, names, titles?.join('|')]);
   const lh = line ?? Math.round(size * 1.38);
@@ -90,7 +90,7 @@ export default function TagText({ text, tail, size = 16, line, weight = 400, col
     }
     // Keyed by kind and order, not by the words: a time that grows while you speak ("Dienstag" > "Dienstag um 16") stays the same tag.
     count[s.kind] = (count[s.kind] ?? 0) + 1;
-    parts.push(<Pill key={`${s.kind}${count[s.kind]}`} seg={s} size={size} line={lh} weight={weight} born={!!animate} delay={animate && first.current ? 80 * born++ : 0} steady={steady} />);
+    parts.push(<Pill key={`${s.kind}${count[s.kind]}`} seg={s} size={size} line={lh} weight={weight} born={!!animate} delay={animate && first.current ? 80 * born++ : 0} steady={steady} dark={dark} color={color} />);
   });
   if (tail) for (const [j, w] of (` ${tail}`.match(/\S+\s*|\s+/g) ?? []).entries()) parts.push(<Txt key={`t${j}`} size={size} line={lh} weight={weight} color={tailColor}>{w}</Txt>);
   return <View accessible accessibilityLabel={tail ? `${text} ${tail}` : text} style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', marginHorizontal: steady ? 0 : -1 }}>{parts}</View>;
