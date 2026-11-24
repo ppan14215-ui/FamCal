@@ -17,6 +17,7 @@ import { getFamily, myRole } from '../lib/sync';
 import { short, hm, TODAY } from '../lib/dates';
 import { tx } from '../i18n/lang';
 import { Thinking, dayOf } from './ChatCards';
+import TagText, { useMadeTitles } from './TagText';
 
 const SHOWN = 20;
 const OUT = Easing.bezier(0.23, 1, 0.32, 1);
@@ -80,12 +81,13 @@ export default function MemoVerlauf({ foot, onClose }: { foot: number; onClose: 
 
 /** What was said: mine dark on the right, the partner's light on the left with the name above. */
 function Said({ f, mine }: { f: FeedEntry; mine: boolean }) {
+  const titles = useMadeTitles(f.undone ? undefined : f.events, f.snap?.events);
   if (!f.said.trim()) return null;
   return (
     <View style={{ alignSelf: mine ? 'flex-end' : 'flex-start', maxWidth: '86%', gap: 3 }}>
       {mine ? null : <Txt size={12} color={tokens.sub} style={{ paddingLeft: 4 }}>{persons[f.by].name}</Txt>}
       <View style={{ borderRadius: 20, paddingVertical: 9, paddingHorizontal: 15, backgroundColor: mine ? tokens.ink : tokens.row, boxShadow: mine ? undefined : `0 0 0 1px ${tokens.hair}` } as any}>
-        <Txt size={15.5} line={21} color={mine ? tokens.onInk : tokens.ink}>{f.said}</Txt>
+        <TagText text={f.said} size={15.5} line={21} color={mine ? tokens.onInk : tokens.ink} titles={titles} animate={Date.now() - Date.parse(f.at) < 8000} />
       </View>
     </View>
   );

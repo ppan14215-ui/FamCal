@@ -11,6 +11,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { View, ScrollView, Pressable, Platform, useWindowDimensions } from 'react-native';
 import Animated, { useSharedValue, useAnimatedStyle, withTiming, withRepeat, withSequence, withDelay, interpolate, interpolateColor, Extrapolation, Easing, useReducedMotion, type SharedValue } from 'react-native-reanimated';
+import TagText from './TagText';
 import Txt from './ui/Txt';
 import LineIcon from './ui/LineIcon';
 import PressScale from './ui/PressScale';
@@ -314,9 +315,8 @@ function KlarCard({ seat }: { seat?: 'right' }) {
                     into them: the keyboard comes and they stand in the field, nothing is sent. */}
                 {words ? (
                   <Pressable onPress={intoText} accessibilityRole="button" accessibilityLabel={tapLabel()}>
-                    <Txt {...T} numberOfLines={6} color={writing ? dim(0.6) : ON}>
-                      {sure}{sure && s.live!.part ? ' ' : ''}<Txt {...T} color={dim(0.45)}>{s.live!.part}</Txt>
-                    </Txt>
+                    {/* What Memo already understood shows in the words as you speak (Julian 24.11.); the words still being heard stay muted and untagged. */}
+                    <TagText text={sure} tail={s.live!.part} {...T} color={writing ? dim(0.6) : ON} tailColor={dim(0.45)} animate />
                   </Pressable>
                 ) : s.phase === 'text' ? <Pressable onPress={intoText} accessibilityRole="button" accessibilityLabel={tapLabel()}><Txt {...T} numberOfLines={7} color={ON}>{s.text}</Txt></Pressable>
                   : writing ? <Pressable onPress={intoText} accessibilityRole="button" accessibilityLabel={tapLabel()}><Txt {...T} color={dim(0.45)}>{tx('Schreibe auf …', 'Writing it down …')}</Txt></Pressable>
@@ -439,9 +439,7 @@ function BigCard({ barH, from }: { barH: number; from: string }) {
             {label || words ? <Txt size={12.5} weight={600} tracking={0.4} color={tokens.done} numberOfLines={2}>{label ?? (writing ? tx('Schreibe auf …', 'Writing it down …') : tx('Ich höre zu …', "I'm listening …"))}</Txt> : null}
             {words ? (
               <Pressable onPress={intoText} accessibilityRole="button" accessibilityLabel={tapLabel()}>
-                <Txt size={18} line={25} weight={500} numberOfLines={4} color={writing ? tokens.sub : tokens.ink}>
-                  {sure}{sure && s.live!.part ? ' ' : ''}<Txt size={18} line={25} weight={500} color={tokens.mute}>{s.live!.part}</Txt>
-                </Txt>
+                <TagText text={sure} tail={s.live!.part} size={18} line={25} weight={500} color={writing ? tokens.sub : tokens.ink} tailColor={tokens.mute} animate />
               </Pressable>
             ) : s.phase === 'text' ? (
               <Pressable onPress={intoText} accessibilityRole="button" accessibilityLabel={tapLabel()}>

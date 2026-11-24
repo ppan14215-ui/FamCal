@@ -4,6 +4,10 @@ Alle sichtbaren Änderungen an FamCal. Neueste oben. Agenten und Menschen: Ände
 
 ## Unreleased
 
+### Memo zeigt, was er verstanden hat: Tags im Satz (24.11.)
+- Namen der Familie, Zeiten, das Termin Wort und Orte erscheinen im Satz als farbige Tags: im Chat, in Nachrichten vom Partner, im Memo Verlauf und live beim Sprechen.
+- Ein neuer Tag wächst aus einem Punkt unter dem Wort (280 ms, kein Überschwingen); ältere Nachrichten zeigen ihn ruhig. Die Eingabezeile bleibt wie sie ist.
+
 ### Startklar fürs MVP: Grenzen, Bezahlseite, Testzugang (22.11.)
 - Neuer Satz zum Start: „Damit nicht einer alles im Kopf hat.“ statt „Der klügste Familienkalender“.
 - Bezahlseite: Jahresabo vorausgewählt, Preis pro Tag, der Gründerpreis wird nur durchgestrichen gezeigt, wenn der Store wirklich ein günstigeres erstes Jahr verkauft. Kurze Liste, was Plus macht, und Antworten zum Kündigen. Die Probetage kommen aus dem Store, nicht aus dem Text.

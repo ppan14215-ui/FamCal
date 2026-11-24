@@ -29,6 +29,7 @@ import { hm, short, TODAY } from '../lib/dates';
 import HeaderRight from './ui/HeaderRight';
 import { tx } from '../i18n/lang';
 import Pin from './buddy/Pin';
+import TagText, { useMadeTitles } from './TagText';
 import { useMascot } from '../lib/mascot';
 import { useVeil, Step, Dots } from './Veil';
 import { isTrip, makePackList, kidsOn, ageText } from '../lib/pack';
@@ -515,6 +516,7 @@ function EntryBody({ f, mine: own, me, answer, side }: Omit<EntryProps, 'showcas
     ? { backgroundColor: tokens.row, borderWidth: 1, borderColor: tokens.hair }
     : { backgroundColor: mine && persons === basePersons ? mineSoft : p.tint };
   const fresh = Date.now() - Date.parse(f.at) < 60000;
+  const titles = useMadeTitles(f.undone ? undefined : f.events, f.snap?.events);
   const recent = Date.now() - Date.parse(f.at) < 15 * 60000;
   const made = f.kind === 'made' && !!(f.events || f.items || f.tasks || f.undone);
   // What Memo says under the sentence: his own words, or else where it went.
@@ -533,7 +535,7 @@ function EntryBody({ f, mine: own, me, answer, side }: Omit<EntryProps, 'showcas
           {mine ? null : <View style={{ marginBottom: 9 }}><Avatar p={f.by} size={MEMO} /></View>}
           <View style={[BUBBLE, mine ? { borderBottomRightRadius: 6 } : { borderBottomLeftRadius: 6 }, bubble]}>
             {f.ask ? <Txt size={12} weight={600} tracking={0.6} color={tokens.done}>{tx(`FRAGE AN ${persons[f.ask.to].name.toUpperCase()}`, `QUESTION FOR ${persons[f.ask.to].name.toUpperCase()}`)}</Txt> : null}
-            <Txt size={17} line={24}>{f.ask ? f.ask.q : shortSaid(f.said)}</Txt>
+            <TagText text={f.ask ? f.ask.q : shortSaid(f.said)} size={17} line={24} titles={titles} animate={fresh && Date.now() - Date.parse(f.at) < 8000} />
           </View>
         </View>
         {f.ask ? <Ask f={f} me={me} answer={answer} /> : null}
