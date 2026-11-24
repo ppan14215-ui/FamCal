@@ -197,7 +197,9 @@ export async function askAgent(said: string, lines: { said: string; app?: string
   const session = getAuth().session;
   const url = process.env.EXPO_PUBLIC_SUPABASE_URL;
   if (!supabase || !session || !url) return null;
-  const history = [...chatHistory(), ...lines.slice(0, -1)].slice(-6);
+  // The open card's lines and the chat log often hold the same exchange; twice would push older context out of the six.
+  const seen = new Set<string>();
+  const history = [...chatHistory(), ...lines.slice(0, -1)].filter((h) => { const k = `${h.said}\u0000${h.app ?? ''}`; if (seen.has(k)) return false; seen.add(k); return true; }).slice(-6);
   const A = aliases();
   return converse(said, history, screen, async (b) => post(url, (await freshToken()) ?? session.access_token, b, (t) => onSay?.(A.show(t))), screenList);
 }
