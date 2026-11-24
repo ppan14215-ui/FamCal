@@ -567,6 +567,9 @@ export default function Dock() {
   // A picture picked under Plus lands in the field, so the field opens to show it (Julian 24.11.: "Image upload did not work").
   const picsN = usePics().length;
   useEffect(() => { if (picsN && klar) setBarMode('input'); }, [picsN, klar]);
+  // Julian 24.11. ("jump to often"): typing on the chat page must not pop the Memo sheet open on the next tab.
+  const wasChat = useRef(false);
+  useEffect(() => { const c = !!where?.chat; if (wasChat.current && !c && klar) { Keyboard.dismiss(); setBarMode('rest'); } wasChat.current = c; }, [!!where?.chat, klar]);
   const kA = useSharedValue(klarShow ? 1 : 0);
   // Julian 16.11.: "immer im schwarzen Feld bleiben". Between the Sprechkarte and typing the dark card stays where it
   // is and only its words change, so the typing card neither grows out of Memo nor shrinks back then.
