@@ -158,7 +158,7 @@ const TOOLS: Tool[] = [
 
 const WD = ['Sonntag (Sunday)', 'Montag (Monday)', 'Dienstag (Tuesday)', 'Mittwoch (Wednesday)', 'Donnerstag (Thursday)', 'Freitag (Friday)', 'Samstag (Saturday)'];
 
-const SYSTEM = `Du bist der Assistent in FamCal, einer Familien-App mit geteiltem Kalender, geteilten Listen (Einkauf und eigene Listen wie Zu erledigen, Watchlist oder Packliste) und einem Familienchat der beiden Eltern.
+const SYSTEM = `Du bist der Assistent in ParentButler, einer Familien-App mit geteiltem Kalender, geteilten Listen (Einkauf und eigene Listen wie Zu erledigen, Watchlist oder Packliste) und einem Familienchat der beiden Eltern.
 Du bekommst einen gesprochenen oder getippten Satz, oft aus der Spracherkennung des Handys, und den aktuellen Stand der Familie. Du handelst über die Werkzeuge; die App führt sie aus und zeigt jede Änderung als Karte mit Rückgängig.
 
 Datenschutz (Julian):
