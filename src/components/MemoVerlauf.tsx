@@ -47,7 +47,7 @@ export default function MemoVerlauf({ foot, onClose }: { foot: number; onClose: 
   let lastDay = '';
   return (
     // The page shows faintly through the top of the sheet, so you still see where you are (the board, 23.11.).
-    <Animated.View exiting={FadeOut.duration(150)} style={[{ position: 'absolute', left: 0, right: 0, bottom: 0, top: Math.round(height * 0.44), backgroundColor: tokens.bg + 'F0', borderTopLeftRadius: 28, borderTopRightRadius: 28, boxShadow: '0 -10px 32px rgba(22,35,42,0.14)', backdropFilter: 'blur(14px)' } as any, style]}>
+    <Animated.View exiting={FadeOut.duration(150)} style={[{ position: 'absolute', left: 0, right: 0, bottom: 0, top: Math.round(height * 0.44), /* opaque: Android has no backdrop blur, the calendar showed through (Julian 24.11. 23:12) */ backgroundColor: tokens.bg, borderTopLeftRadius: 28, borderTopRightRadius: 28, boxShadow: '0 -10px 32px rgba(22,35,42,0.14)' } as any, style]}>
       <View {...pan.panHandlers} style={{ paddingTop: 8, paddingHorizontal: 18, paddingBottom: 4 }}>
         <View style={{ alignSelf: 'center', width: 36, height: 4, borderRadius: 2, backgroundColor: tokens.hair }} />
         <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 10 }}>

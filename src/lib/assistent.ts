@@ -129,9 +129,13 @@ export function snapshotAlt(): string {
   ].filter(Boolean).join('\n\n');
 }
 
-/** The chat a moment ago, so "nein, um 16 Uhr" knows what it is about. Only the last half hour. */
+/**
+ * The chat as Memo's sheet shows it, so "nein, um 16 Uhr" or "Ja" knows what it is about.
+ * Julian 24.11. 23:12: a question from 21:31 still stood in the sheet, his "Ja" at 23:11 went out without it
+ * (half an hour was the limit) and Memo asked "Wozu sagst du Ja?". What the person can see counts, up to 12 hours.
+ */
 function chatHistory(): { said: string; app?: string }[] {
-  const since = new Date(Date.now() - 30 * 60000).toISOString();
+  const since = new Date(Date.now() - 12 * 3600000).toISOString();
   return feedTail(6).filter((f) => f.at >= since && !f.undone).map((f) => ({ said: f.said, app: f.kind === 'made' ? f.say ?? f.text : f.ask ? tx(`Frage an ${persons[f.ask.to].name}`, `Asked ${persons[f.ask.to].name}`) : undefined }));
 }
 

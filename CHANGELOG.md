@@ -139,6 +139,7 @@ Alle sichtbaren Änderungen an FamCal. Neueste oben. Agenten und Menschen: Ände
 - Eingabefeld fährt mit der Tastatur mit, statt danach zu springen (Android)
 - Sprechkarte: der Pfeil beendet beim Zuhören erst die Aufnahme, gesendet wird mit dem zweiten Tipp
 - Memo versteht kurze Antworten im Gespräch ("Donnerstag", "Arbeit") und trägt fehlende Arbeit nach dem Muster der anderen Tage ein, statt endlos nachzufragen.
+- Memo erinnert sich an das, was im Memo Blatt steht (bis 12 Stunden statt 30 Minuten), und das Blatt ist deckend.
 
 ### App funktioniert zuverlässig (09.11. Audit)
 - Nach längerer Pause im Hintergrund klappen Assistent und Spracheingabe gleich beim ersten Satz, statt "Ich komme gerade nicht an den Assistenten".
