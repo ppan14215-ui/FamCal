@@ -583,7 +583,7 @@ function Probe({ me, du, familie, ev, setEv, docked, setDocked, pad, onDone }: {
               <ClayIcon name={ev.icon as ClayName} size={38} />
               <View style={{ flex: 1, gap: 2 }}>
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                  <Txt size={13} weight={600} color={tokens.sub}>FamCal</Txt>
+                  <Txt size={13} weight={600} color={tokens.sub}>ParentButler</Txt>
                   <Txt size={13} color={tokens.mute}>{tx('jetzt', 'now')}</Txt>
                 </View>
                 <Txt size={15.5} line={21} weight={600}>{tx(`${me || 'Neu'}: ${ev.title}`, `${me || 'New'}: ${ev.title}`)}</Txt>

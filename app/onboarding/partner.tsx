@@ -31,7 +31,7 @@ const LINK = 'familie.app/j/huber-7Q2';
 const invite = () => {
   const code = getFamily()?.invite_code;
   return code
-    ? { shown: `Code ${code}`, copy: code, message: (from: string) => tx(`${from} lädt dich in euren Familienkalender ein. Lade FamCal, melde dich an und gib den Code ${code} ein.`, `${from} invites you to your family calendar. Get FamCal, sign in and enter the code ${code}.`) }
+    ? { shown: `Code ${code}`, copy: code, message: (from: string) => tx(`${from} lädt dich in euren Familienkalender ein. Lade ParentButler, melde dich an und gib den Code ${code} ein.`, `${from} invites you to your family calendar. Get ParentButler, sign in and enter the code ${code}.`) }
     : { shown: LINK, copy: `https://${LINK}`, message: (from: string) => tx(`${from} lädt dich in euren Familienkalender ein: https://${LINK}`, `${from} invites you to your family calendar: https://${LINK}`) };
 };
 
