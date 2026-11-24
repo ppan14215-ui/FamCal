@@ -4,6 +4,9 @@ Alle sichtbaren Änderungen an FamCal. Neueste oben. Agenten und Menschen: Ände
 
 ## Unreleased
 
+### Neues App Icon
+- Memo flach in Tinte auf weißem Grund, passend zur neuen Marke (braucht neue App Version, kein Update über Nacht).
+
 ### Julians Rückmeldung 28.11.
 - Die Leiste mit Memo in der Mitte ist fest; die Auswahl im Profil ist weg. Memo antippen öffnet die Texteingabe, das Mikro steht daneben.
 - Woche zeigt wieder die ganze Woche auf einen Blick (sieben Tage als Raster).
