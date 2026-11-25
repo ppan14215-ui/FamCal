@@ -36,9 +36,10 @@ import PressScale from '../../components/ui/PressScale';
 import { Faces } from '../../components/ui/Person';
 import Stripes from '../../components/Stripes';
 import Fresh from '../../components/Fresh';
+import Blink from '../../components/Blink';
 import SwipeRow, { justSwiped, markSwiped } from '../../components/SwipeRow';
 import { navTop } from '../../components/NavBar';
-import { tokens, glass, springs, motion, easing, rowOut, rowLayout } from '../../theme';
+import { tokens, glass, springs, motion, easing, rise, rowLayout, cardOut } from '../../theme';
 import { useStore, actions, get } from '../../state/store';
 import { useScroller, useLitIds } from '../../lib/landing';
 import { useCalEvents } from '../../lib/useEvents';
@@ -225,10 +226,10 @@ const TodayCard = React.memo(function TodayCard({ e, date, hour, onContent }: { 
             </View>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: FACE }}>
               <Faces who={e.who} people={e.people} size={FACE} ring={tokens.row} />
-              <View style={{ flex: 1, minWidth: 0, flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', gap: 5 }}>
+              <Blink k={when} style={{ flex: 1, minWidth: 0, flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', gap: 5 }}>
                 <LineIcon name="clock" size={15} color={tokens.sub} />
                 <Txt size={14.5} line={LINE} color={tokens.sub} numberOfLines={1} style={{ flexShrink: 1, fontVariant: ['tabular-nums'] }}>{when}</Txt>
-              </View>
+              </Blink>
             </View>
             {e.note ? (
               <View style={{ borderRadius: 14, padding: 12, backgroundColor: tokens.chipBg }}>
@@ -311,6 +312,9 @@ export default function TodayView({ bottom, band }: { bottom?: React.ReactNode; 
   const track = useScroller(ref);
   const now = useNowMin();
   const today = day === TODAY;
+  // Start (Allo motion map): the day's Termine rise in one by one, 50 ms apart. Only right after the view opens; later arrivals land with the punch instead.
+  const born = useRef(Date.now());
+  const arrive = (i: number) => (Date.now() - born.current < 1200 ? rise(i) : undefined);
 
   const { whole, timed, shifts, info } = useMemo(() => {
     const whole: CalEvent[] = [], timed: CalEvent[] = [], shifts: CalEvent[] = [];
@@ -481,13 +485,13 @@ export default function TodayView({ bottom, band }: { bottom?: React.ReactNode; 
                 const spot = [top + PAD - 4, ...plan.spots.filter(([t, b2]) => b2 > top && t < end).map(([, b2]) => b2 + 2)].find(free);
                 return <Shift key={e.id} e={e} top={top} height={end - top} lane={side?.lane ?? 0} of={side?.lanes ?? 1} label={(spot ?? top + PAD - 4) + 4 - top} />;
               })}
-              {whole.map((e) => (
-                <Animated.View key={e.id} exiting={rowOut} layout={slide} style={{ marginBottom: GAP }}>
+              {whole.map((e, i) => (
+                <Animated.View key={e.id} entering={arrive(i)} exiting={cardOut} layout={slide} style={{ marginBottom: GAP }}>
                   <TodayCard e={e} date={day} hour={plan.hour} onContent={content} />
                 </Animated.View>
               ))}
               {timed.map((e, i) => (
-                <Animated.View key={e.id} exiting={rowOut} layout={slide} style={{ marginTop: plan.gaps[i] ?? GAP }}>
+                <Animated.View key={e.id} entering={arrive(whole.length + i)} exiting={cardOut} layout={slide} style={{ marginTop: plan.gaps[i] ?? GAP }}>
                   <TodayCard e={e} date={day} hour={plan.hour} onContent={content} />
                 </Animated.View>
               ))}

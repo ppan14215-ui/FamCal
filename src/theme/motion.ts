@@ -67,3 +67,9 @@ export const swapIn = FadeIn.duration(motion.micro).easing(easing.out);
  * View switches happen tens of times a day, so it stays near-imperceptible: 160 ms (Emil Kowalski 08.11.).
  */
 export const build = new Keyframe({ 0: { opacity: 0, transform: [{ translateY: 8 }] }, 100: { opacity: 1, transform: [{ translateY: 0 }], easing: Easing.bezier(0.23, 1, 0.32, 1) } }).duration(160);
+
+/**
+ * A deleted card sinks toward the Rückgängig pill at the bottom while its
+ * neighbours close the gap (Allo motion map, Julian 25.11.). 200 ms, no overshoot.
+ */
+export const cardOut = new Keyframe({ 0: { opacity: 1, transform: [{ translateY: 0 }, { scale: 1 }] }, 100: { opacity: 0, transform: [{ translateY: 14 }, { scale: 0.92 }], easing: Easing.bezier(0.23, 1, 0.32, 1) } }).duration(200);

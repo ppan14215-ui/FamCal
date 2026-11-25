@@ -4,6 +4,13 @@ Alle sichtbaren Änderungen an FamCal. Neueste oben. Agenten und Menschen: Ände
 
 ## Unreleased
 
+### Bewegung in der ganzen App (25.11.)
+- Ein neuer Termin landet mit einem kurzen Stoß, genau wenn Memo nach seinem Sprung aufkommt, mit leichtem Tick am Handy.
+- Abhaken: der Haken zeichnet sich von links nach rechts.
+- Löschen: die Karte sinkt Richtung Rückgängig, die anderen rücken nach.
+- Verschiebt sich ein Termin, blinkt nur seine Zeit einmal.
+- Beim Öffnen kommen die Termine des Tages einzeln herein.
+
 ### Memo zeigt, was er verstanden hat: Tags im Satz (24.11.)
 - Namen der Familie, Zeiten, das Termin Wort und Orte erscheinen im Satz als farbige Tags: im Chat, in Nachrichten vom Partner, im Memo Verlauf und live beim Sprechen.
 - Ein neuer Tag wächst aus einem Punkt unter dem Wort (280 ms, kein Überschwingen); ältere Nachrichten zeigen ihn ruhig. Die Eingabezeile bleibt wie sie ist.
