@@ -7,8 +7,9 @@
  *   events   blink, glance, nod, attention, squint, joy, wink, sad. Small overlays on top of the state.
  *   morphs   on a real result he melts into a small object and back (see morphs.ts).
  *
- * No hops, no salto (Julian: "trotzdem bleiben wir 2d"). The body stays almost still and exactly round; the eyes
- * carry the feeling. Looking to the side slides both eyes over and narrows the outer one, which reads as a turn.
+ * No salto, no roll (Julian: "trotzdem bleiben wir 2d"). The body stays almost still and exactly round; the eyes
+ * carry the feeling. One exception (Julian 24.11. 17:34, Allo film): a hop at two moments only, when he jumps into the
+ * speak card and when a Termin is done. Anticipation, a short flight, one frame of squash to 0.86, one settle. Looking to the side slides both eyes over and narrows the outer one, which reads as a turn.
  * All functions here are worklets and run on the UI thread; the same ones run once in JS for the first picture.
  */
 import { morph, type Morph } from './morphs';
@@ -37,6 +38,8 @@ function swap(x: number, a: number, b: number) {
 export const ST = { idle: 0, type: 1, listen: 2, think: 3, sleep: 4, happy: 5, load: 6 } as const;
 export const POSE = { none: 0, peek: 1, wave: 2 } as const;
 const NEVER = -1e9;
+/** The hop's timing in ms: anticipation, flight, and how long until he is at rest again. */
+export const HOP = { pre: 80, fly: 220, len: 720 } as const;
 
 /** What a state alone says about him. Units: turn and gaze -1..1, sizes as factors, rot in degrees, ty/tx in u. */
 export type Base = {
@@ -63,6 +66,8 @@ export type In = {
   glN: number; glX: number; glY: number; glHold: number;
   nodN: number; pokeN: number; tapN: number; winkN: number; sadN: number;
   joyN: number; joyKind: number; joyLong: number;
+  /** A hop: counter and height (in u). */
+  hopN: number; hopH: number;
 };
 /** What he remembers (kept on the UI thread): the state he is in and when each thing happened, on his own clock. */
 export type Rt = {
@@ -72,6 +77,7 @@ export type Rt = {
   nodN: number; nodAt: number; pokeN: number; pokeAt: number; tapN: number; tapAt: number;
   winkN: number; winkAt: number; sadN: number; sadAt: number;
   joyN: number; joyAt: number; joyKind: number; joyLong: number;
+  hopN: number; hopAt: number; hopH: number;
 };
 
 export function zero(): Base {
@@ -79,7 +85,7 @@ export function zero(): Base {
   return { turn: 0, gx: 0, gy: 0, sx: 1, sy: 1, rot: 0, tx: 0, ty: 0, blink: 1, dash: 0, wide: 1, happy: 0, peek: 0, tho: 0, thm: 0, tha: 0, thx: 0, thw: 0 };
 }
 export function firstIn(p: Partial<In>): In {
-  return { st: 0, pose: 0, breathe: 0, restX: 0, restY: 0, typeX: -0.55, typeY: 0.75, blinkN: 0, blink2: 0, glN: 0, glX: 0, glY: 0, glHold: 1000, nodN: 0, pokeN: 0, tapN: 0, winkN: 0, sadN: 0, joyN: 0, joyKind: 0, joyLong: 900, ...p };
+  return { st: 0, pose: 0, breathe: 0, restX: 0, restY: 0, typeX: -0.55, typeY: 0.75, blinkN: 0, blink2: 0, glN: 0, glX: 0, glY: 0, glHold: 1000, nodN: 0, pokeN: 0, tapN: 0, winkN: 0, sadN: 0, joyN: 0, joyKind: 0, joyLong: 900, hopN: 0, hopH: 8, ...p };
 }
 export function firstRt(i: In): Rt {
   return {
@@ -88,6 +94,7 @@ export function firstRt(i: In): Rt {
     blinkN: i.blinkN, blinkAt: NEVER, blink2: 0, glN: i.glN, glAt: NEVER, glX: 0, glY: 0, glHold: 1000, glFX: 0, glFY: 0,
     nodN: i.nodN, nodAt: NEVER, pokeN: i.pokeN, pokeAt: NEVER, tapN: i.tapN, tapAt: NEVER,
     winkN: i.winkN, winkAt: NEVER, sadN: i.sadN, sadAt: NEVER, joyN: i.joyN, joyAt: NEVER, joyKind: 0, joyLong: 900,
+    hopN: i.hopN, hopAt: NEVER, hopH: i.hopH,
   };
 }
 
@@ -95,7 +102,7 @@ export function firstRt(i: In): Rt {
 export function sync(i: In, r: Rt, t: number, last: Base): Rt {
   'worklet';
   if (i.st === r.st && i.blinkN === r.blinkN && i.glN === r.glN && i.nodN === r.nodN && i.pokeN === r.pokeN && i.tapN === r.tapN
-    && i.winkN === r.winkN && i.sadN === r.sadN && i.joyN === r.joyN) return r;
+    && i.winkN === r.winkN && i.sadN === r.sadN && i.joyN === r.joyN && i.hopN === r.hopN) return r;
   const n = { ...r };
   if (i.st !== r.st) { n.st = i.st; n.stAt = t; n.snap = last; }
   if (i.blinkN !== r.blinkN) { n.blinkN = i.blinkN; n.blinkAt = t; n.blink2 = i.blink2; }
@@ -111,6 +118,7 @@ export function sync(i: In, r: Rt, t: number, last: Base): Rt {
   if (i.winkN !== r.winkN) { n.winkN = i.winkN; n.winkAt = t; }
   if (i.sadN !== r.sadN) { n.sadN = i.sadN; n.sadAt = t; }
   if (i.joyN !== r.joyN) { n.joyN = i.joyN; n.joyAt = t; n.joyKind = i.joyKind; n.joyLong = i.joyLong; }
+  if (i.hopN !== r.hopN) { n.hopN = i.hopN; n.hopAt = t; n.hopH = i.hopH; }
   return n;
 }
 
@@ -260,9 +268,29 @@ export function frame(t: number, i: In, r: Rt, v: number, gx: number, gy: number
     p.gy += 0.55 * sd; p.sy *= 1 - 0.035 * sd; p.sx *= 1 + 0.02 * sd; p.wide *= 1 - 0.1 * sd; p.rot -= 3 * sd; p.blink *= 1 - 0.6 * pulse(x, 950, 220);
   }
 
+  // The hop (values from the Allo film demo): 80 ms anticipation, a 220 ms flight that stretches a little with its
+  // speed, one frame of impact (0.86), then one quick settle. Squashes keep his bottom on the ground. No roll.
+  x = t - r.hopAt;
+  const PRE = 80, FLY = 220;
+  if (x < 720) {
+    const H = r.hopH;
+    let sy = 1;
+    if (x < PRE) sy = 1 - 0.10 * out(x / PRE);
+    else if (x < PRE + FLY) {
+      const k = (x - PRE) / FLY;
+      p.ty -= 4 * H * k * (1 - k);
+      sy = 1 + 0.10 * Math.abs(1 - 2 * k);
+    } else {
+      const k = (x - PRE - FLY) / 1000;
+      sy = k < 0.033 ? 0.86 : 1 - 0.14 * Math.exp(-12 * k) * Math.cos(22 * k);
+    }
+    p.sy *= sy; p.sx *= sy < 1 ? 1 + (1 - sy) * 0.86 : 1 / Math.sqrt(sy);
+    if (sy < 1) p.ty += (1 - sy) * 17;
+  }
+
   if (p.turn > 0.8) p.turn = 0.8; else if (p.turn < -0.8) p.turn = -0.8;
   return p;
 }
 
 /** How long the clock has to run after something happened, so the frames stop when he is at rest again. */
-export const RUN = { state: 700, sleep: 5200, blink: 560, poke: 760, tap: 760, nod: 460, wink: 900, sad: 2300, gaze: 520, morph: 1700 } as const;
+export const RUN = { hop: 800, state: 700, sleep: 5200, blink: 560, poke: 760, tap: 760, nod: 460, wink: 900, sad: 2300, gaze: 520, morph: 1700 } as const;

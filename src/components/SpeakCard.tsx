@@ -239,6 +239,7 @@ function KlarCard({ seat }: { seat?: 'right' }) {
     go(w, g.w); go(h, g.h); go(r, g.r); go(cx, g.cx); go(yb, g.yb); go(px, g.px); go(py, g.py);
     to(ps, stage === 'think' ? BUB_PIN : stage === 'rest' ? HK : 1);
     if (!moved) return;
+    if (from === 'rest' && stage === 'card' && d) setJump((j) => ({ n: j.n + 1, h: 10 }));
     if (handOver) {
       so.value = withDelay(110, withTiming(0, { duration: 120 }));
       po.value = withDelay(110, withTiming(0, { duration: 60 }));
@@ -264,6 +265,10 @@ function KlarCard({ seat }: { seat?: 'right' }) {
   // Something landed: the travelling Memo is glad together with the one in the pill, so they look the same when he
   // lands. Not inside the bubble (there are only the dots); a joy from just before he leaves it plays on the way home.
   const [glad, setGlad] = useState(0);
+  // His hops (Julian 24.11., Allo film): a big one from his seat into the opening card, a small one when a Termin is done.
+  const [jump, setJump] = useState({ n: 0, h: 10 });
+  const seenHop = useRef(b.hop);
+  useEffect(() => { if (b.hop !== seenHop.current) { seenHop.current = b.hop; setJump((j) => ({ n: j.n + 1, h: 6 })); } }, [b.hop]);
   const joyAt = useRef(0);
   const seenJoy = useRef(b.joy);
   useEffect(() => {
@@ -385,7 +390,7 @@ function KlarCard({ seat }: { seat?: 'right' }) {
         </Animated.View>
       ) : stage === 'rest' && !linger ? null : (
         <Animated.View pointerEvents="none" style={[{ position: 'absolute', left: 0, bottom: 0, width: S, height: S }, pin]}>
-          <Pin size={S} mood={mood as any} load={stage === 'think'} joy={glad} joyKind={b.joyKind} poke={b.poke} sad={b.sad} wink={b.wink} level={voiceLevel} heard={s.live?.n ?? 0} ground={tokens.ink} />
+          <Pin size={S} mood={mood as any} load={stage === 'think'} joy={glad} joyKind={b.joyKind} hop={jump.n} hopH={jump.h} poke={b.poke} sad={b.sad} wink={b.wink} level={voiceLevel} heard={s.live?.n ?? 0} ground={tokens.ink} />
         </Animated.View>
       )}
     </View>

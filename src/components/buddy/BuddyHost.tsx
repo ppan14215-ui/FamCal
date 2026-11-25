@@ -13,8 +13,10 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Pressable, useWindowDimensions, View } from 'react-native';
 import Animated, { useSharedValue, useAnimatedStyle, withTiming, withSequence, withDelay, Easing, useReducedMotion } from 'react-native-reanimated';
 import Pin from './Pin';
+import { HOP } from './rig';
+const HOP_WAIT = 320;
 import { useMascot } from '../../lib/mascot';
-import { useBuddy, setBuddy, buddyJoy, buddyPoke, buddySad, buddyTalk, voiceLevel, isNight, type Mood } from '../../lib/buddy';
+import { useBuddy, setBuddy, buddyJoy, buddyHop, buddyPoke, buddySad, buddyTalk, voiceLevel, isNight, type Mood } from '../../lib/buddy';
 import type { MorphKind } from './morphs';
 import type { CalEvent, List } from '../../state/types';
 import { getPref, setPref, onPrefsReady } from '../../lib/prefs';
@@ -61,16 +63,18 @@ export default function BuddyHost() {
   useEffect(() => { if (b.touch) touchAt.current = Date.now(); }, [b.touch?.n]);
   /** You did something a moment ago (a touch, a sentence): then a change in the family's data is yours. */
   const mine = () => Date.now() - Math.max(touchAt.current, thinkAt.current) < 8000;
-  const joy = (kind: MorphKind | null = null) => {
+  /** `after`: wait that long first (the hop for a done Termin plays before he becomes the sheet). */
+  const joy = (kind: MorphKind | null = null, after = 90) => {
     if (kind) pend.current.kind = kind;
-    if (pend.current.t) return;
+    if (pend.current.t) { if (after <= 90) return; clearTimeout(pend.current.t); }
     pend.current.t = setTimeout(() => {
       const k = pend.current.kind;
       pend.current = { kind: null, t: null };
-      if (Date.now() - lastJoy.current < 1500) return;
+      // A plain ^^ a moment ago never swallows a real result (the answer and its Termin come together).
+      if (!k && Date.now() - lastJoy.current < 1500) return;
       lastJoy.current = Date.now();
       buddyJoy(typingRef.current ? null : k);
-    }, 90);
+    }, after);
   };
   useEffect(() => () => { if (pend.current.t) clearTimeout(pend.current.t); }, []);
   const was = useRef(veil.phase);
@@ -108,7 +112,9 @@ export default function BuddyHost() {
     const all = get().events;
     const d = evN - seenEv.current;
     if (mine()) {
-      if (d === 1) { const e = all.find((x) => !evIds.current!.has(x.id)); joy(e ? eventKind(e) : 'termin'); }
+      // A Termin is done: he hops once (Julian 24.11.), then becomes the sheet. The hop waits a moment: after the form
+      // closes the nav (and its Memo) comes back first, and a hop before that would play on a Memo nobody sees.
+      if (d === 1) { const e = all.find((x) => !evIds.current!.has(x.id)); if (!typingRef.current) setTimeout(buddyHop, HOP_WAIT); joy(e ? eventKind(e) : 'termin', typingRef.current ? 90 : HOP_WAIT + HOP.len - 200); }
       else if (d === 0 && evSig !== seenSig.current) joy('pfeil');
       else if (d < 0) joy('eimer');
     }
@@ -242,7 +248,7 @@ export default function BuddyHost() {
       ) : null}
       <Animated.View style={bodyStyle}>
       <Pressable onPress={tap} hitSlop={{ top: 10, left: 10, right: 10, bottom: 0 }} accessibilityRole="button" accessibilityLabel={tx('Memo, tippen zum Sprechen', 'Memo, tap to talk')}>
-        <Pin size={SIZE} mood={mood} joy={b.joy} joyKind={b.joyKind} poke={b.poke} sad={b.sad} wink={b.wink} level={voiceLevel} glance={glance} />
+        <Pin size={SIZE} mood={mood} joy={b.joy} joyKind={b.joyKind} hop={b.hop} hopH={6} poke={b.poke} sad={b.sad} wink={b.wink} level={voiceLevel} glance={glance} />
       </Pressable>
       <Animated.View pointerEvents="none" style={[{ position: 'absolute', right: -4, top: -6, width: 16, height: 16, borderRadius: 8, alignItems: 'center', justifyContent: 'center', backgroundColor: tokens.row, boxShadow: `0 0 0 1px ${tokens.hair}` } as any, askStyle]}>
         <Txt size={11} weight={700} color={tokens.done} style={{ lineHeight: 13 }}>?</Txt>

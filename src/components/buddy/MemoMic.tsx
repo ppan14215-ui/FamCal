@@ -62,7 +62,7 @@ export default function MemoMic({ onPress, onLongPress, box = 34, size = 40, lab
       accessibilityRole="button" accessibilityLabel={label ?? tx('Memo, tippen zum Sprechen', 'Memo, tap to talk')}
       style={{ width: box, height: box, alignItems: 'center', justifyContent: 'center', overflow: 'visible' }}>
       <View pointerEvents="none" style={{ width: size, height: size, marginTop: -(0.08 * size - 0.4), opacity: b.landed && !b.dockHidden && !out ? 1 : 0 }}>
-        <Pin size={size} mood={mood} joy={b.joy} joyKind={b.joyKind} poke={b.poke} tap={tap} sad={b.sad} wink={b.wink} level={voiceLevel} glance={glance} typeAt={typeAt} ground={ground} />
+        <Pin size={size} mood={mood} joy={b.joy} joyKind={b.joyKind} hop={b.hop} hopH={6} poke={b.poke} tap={tap} sad={b.sad} wink={b.wink} level={voiceLevel} glance={glance} typeAt={typeAt} ground={ground} />
       </View>
       {ask ? (
         <View pointerEvents="none" style={{ position: 'absolute', right: -5, top: -5, width: 15, height: 15, borderRadius: 8, alignItems: 'center', justifyContent: 'center', backgroundColor: tokens.row, boxShadow: `0 0 0 1px ${tokens.hair}` } as any}>
