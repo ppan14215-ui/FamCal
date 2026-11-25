@@ -10,6 +10,7 @@ Alle sichtbaren Änderungen an FamCal. Neueste oben. Agenten und Menschen: Ände
 - Löschen: die Karte sinkt Richtung Rückgängig, die anderen rücken nach.
 - Verschiebt sich ein Termin, blinkt nur seine Zeit einmal.
 - Beim Öffnen kommen die Termine des Tages einzeln herein.
+- Chat: Memos Antwort kommt Wort für Wort, die neue Karte schlüpft neben Memo heraus.
 
 ### Memo zeigt, was er verstanden hat: Tags im Satz (24.11.)
 - Namen der Familie, Zeiten, das Termin Wort und Orte erscheinen im Satz als farbige Tags: im Chat, in Nachrichten vom Partner, im Memo Verlauf und live beim Sprechen.
