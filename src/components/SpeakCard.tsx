@@ -11,6 +11,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { View, ScrollView, Pressable, Platform, useWindowDimensions } from 'react-native';
 import Animated, { useSharedValue, useAnimatedStyle, withTiming, withRepeat, withSequence, withDelay, interpolate, interpolateColor, Extrapolation, Easing, useReducedMotion, type SharedValue } from 'react-native-reanimated';
+import TagText from './TagText';
+import { usePathname } from 'expo-router';
 import Txt from './ui/Txt';
 import LineIcon from './ui/LineIcon';
 import PressScale from './ui/PressScale';
@@ -156,7 +158,10 @@ function KlarCard({ seat }: { seat?: 'right' }) {
   const thinking = (veil.phase === 'think' && !!veil.inline) || b.thinking;
   const [late, setLate] = useState(false);
   useEffect(() => { setLate(false); if (!thinking) return; const t = setTimeout(() => setLate(true), 12000); return () => clearTimeout(t); }, [thinking]);
-  const want: Stage = open ? 'card' : thinking && !late && !typing && mode !== 'input' ? 'think' : 'rest';
+  // On the chat page the field stands right above the nav, so the bubble would lie on it (Julian 24.11. screenshot):
+  // there the dots in the chat show the thinking and the nav stays.
+  const onChat = /\/chat$/.test(usePathname());
+  const want: Stage = open ? 'card' : thinking && !late && !typing && mode !== 'input' && !onChat ? 'think' : 'rest';
   const [stage, setStage] = useState<Stage>('rest');
   const thinkSince = useRef(0);
   // When the thinking began. If it is already going on when the bubble may show (the keyboard just closed after a
@@ -234,6 +239,7 @@ function KlarCard({ seat }: { seat?: 'right' }) {
     go(w, g.w); go(h, g.h); go(r, g.r); go(cx, g.cx); go(yb, g.yb); go(px, g.px); go(py, g.py);
     to(ps, stage === 'think' ? BUB_PIN : stage === 'rest' ? HK : 1);
     if (!moved) return;
+    if (from === 'rest' && stage === 'card' && d) setJump((j) => ({ n: j.n + 1, h: 10 }));
     if (handOver) {
       so.value = withDelay(110, withTiming(0, { duration: 120 }));
       po.value = withDelay(110, withTiming(0, { duration: 60 }));
@@ -259,6 +265,10 @@ function KlarCard({ seat }: { seat?: 'right' }) {
   // Something landed: the travelling Memo is glad together with the one in the pill, so they look the same when he
   // lands. Not inside the bubble (there are only the dots); a joy from just before he leaves it plays on the way home.
   const [glad, setGlad] = useState(0);
+  // His hops (Julian 24.11., Allo film): a big one from his seat into the opening card, a small one when a Termin is done.
+  const [jump, setJump] = useState({ n: 0, h: 10 });
+  const seenHop = useRef(b.hop);
+  useEffect(() => { if (b.hop !== seenHop.current) { seenHop.current = b.hop; setJump((j) => ({ n: j.n + 1, h: 6 })); } }, [b.hop]);
   const joyAt = useRef(0);
   const seenJoy = useRef(b.joy);
   useEffect(() => {
@@ -314,9 +324,8 @@ function KlarCard({ seat }: { seat?: 'right' }) {
                     into them: the keyboard comes and they stand in the field, nothing is sent. */}
                 {words ? (
                   <Pressable onPress={intoText} accessibilityRole="button" accessibilityLabel={tapLabel()}>
-                    <Txt {...T} numberOfLines={6} color={writing ? dim(0.6) : ON}>
-                      {sure}{sure && s.live!.part ? ' ' : ''}<Txt {...T} color={dim(0.45)}>{s.live!.part}</Txt>
-                    </Txt>
+                    {/* What Memo already understood shows in the words as you speak (Julian 24.11.); the words still being heard stay muted and untagged. */}
+                    <View style={{ maxHeight: 6 * T.line, overflow: 'hidden', justifyContent: 'flex-end' }}><TagText text={sure} tail={s.live!.part} {...T} color={writing ? dim(0.6) : ON} tailColor={dim(0.45)} animate steady dark /></View>
                   </Pressable>
                 ) : s.phase === 'text' ? <Pressable onPress={intoText} accessibilityRole="button" accessibilityLabel={tapLabel()}><Txt {...T} numberOfLines={7} color={ON}>{s.text}</Txt></Pressable>
                   : writing ? <Pressable onPress={intoText} accessibilityRole="button" accessibilityLabel={tapLabel()}><Txt {...T} color={dim(0.45)}>{tx('Schreibe auf …', 'Writing it down …')}</Txt></Pressable>
@@ -381,7 +390,7 @@ function KlarCard({ seat }: { seat?: 'right' }) {
         </Animated.View>
       ) : stage === 'rest' && !linger ? null : (
         <Animated.View pointerEvents="none" style={[{ position: 'absolute', left: 0, bottom: 0, width: S, height: S }, pin]}>
-          <Pin size={S} mood={mood as any} load={stage === 'think'} joy={glad} joyKind={b.joyKind} poke={b.poke} sad={b.sad} wink={b.wink} level={voiceLevel} heard={s.live?.n ?? 0} ground={tokens.ink} />
+          <Pin size={S} mood={mood as any} load={stage === 'think'} joy={glad} joyKind={b.joyKind} hop={jump.n} hopH={jump.h} poke={b.poke} sad={b.sad} wink={b.wink} level={voiceLevel} heard={s.live?.n ?? 0} ground={tokens.ink} />
         </Animated.View>
       )}
     </View>
@@ -439,9 +448,7 @@ function BigCard({ barH, from }: { barH: number; from: string }) {
             {label || words ? <Txt size={12.5} weight={600} tracking={0.4} color={tokens.done} numberOfLines={2}>{label ?? (writing ? tx('Schreibe auf …', 'Writing it down …') : tx('Ich höre zu …', "I'm listening …"))}</Txt> : null}
             {words ? (
               <Pressable onPress={intoText} accessibilityRole="button" accessibilityLabel={tapLabel()}>
-                <Txt size={18} line={25} weight={500} numberOfLines={4} color={writing ? tokens.sub : tokens.ink}>
-                  {sure}{sure && s.live!.part ? ' ' : ''}<Txt size={18} line={25} weight={500} color={tokens.mute}>{s.live!.part}</Txt>
-                </Txt>
+                <View style={{ maxHeight: 4 * 25, overflow: 'hidden', justifyContent: 'flex-end' }}><TagText text={sure} tail={s.live!.part} size={18} line={25} weight={500} color={writing ? tokens.sub : tokens.ink} tailColor={tokens.mute} animate steady /></View>
               </Pressable>
             ) : s.phase === 'text' ? (
               <Pressable onPress={intoText} accessibilityRole="button" accessibilityLabel={tapLabel()}>

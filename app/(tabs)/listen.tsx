@@ -384,7 +384,8 @@ function Sections({ list, footer }: { list: List; footer?: React.ReactElement })
   // Every line starts with a small icon of what it is, when the list is one where most things have one.
   const icons = useMemo(() => !bp && listHasIcons(list.sections.flatMap((x) => x.items.map((i) => i.name))), [list, bp]);
   const line = (i: Item) => (
-    <Fresh key={i.id} id={i.id}>
+    // Rows without a check start with the text, so the teal mark stands left of it, never on the name (Julian 24.11.).
+    <Fresh key={i.id} id={i.id} bleed={plain ? 10 : 0}>
       <ItemRow
         title={i.name}
         editText={itemText(i)}

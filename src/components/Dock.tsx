@@ -12,7 +12,7 @@ import { useBuddyTalk, useBuddyKeys, getBuddy, setBuddy } from '../lib/buddy';
 import React, { useEffect, useRef, useState } from 'react';
 import { View, ScrollView, Platform, BackHandler, useWindowDimensions, TextInput, Pressable, Keyboard } from 'react-native';
 import { router, usePathname, useGlobalSearchParams } from 'expo-router';
-import Animated, { FadeIn, FadeInDown, FadeOut, useSharedValue, useAnimatedStyle, withSpring, withTiming, withDelay, Easing } from 'react-native-reanimated';
+import Animated, { FadeIn, FadeInDown, FadeOut, useSharedValue, useAnimatedStyle, withSpring, withTiming, withDelay, Easing, useAnimatedKeyboard, useAnimatedReaction } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Defs, LinearGradient, Stop, Rect } from 'react-native-svg';
 import { Chip } from './ui/kit';
@@ -23,7 +23,7 @@ import PressScale from './ui/PressScale';
 import TalkBar from './TalkBar';
 import SpeakCard from './SpeakCard';
 import MemoVerlauf from './MemoVerlauf';
-import { addPic } from '../lib/attach';
+import { addPic, usePics } from '../lib/attach';
 import MemoMic from './buddy/MemoMic';
 import { setSpeak, getSpeak, useSpeak, speakOpen, speakDone, parseHour, speakHandlers } from '../lib/speak';
 import { settle as settleTime } from './ChatCards';
@@ -481,7 +481,7 @@ export default function Dock() {
   const folded = useNavFolded();
   // Klar: the input lies over the nav pill instead of above it, so only what is taller than the pill needs extra room.
   const klarTabs = !!where && (where.tab || !!where.chat) && navStyle() === 'klar';
-  useEffect(() => { setDockSpace(!where || !shown ? 0 : klarTabs ? Math.max(0, h - navH()) + (where.chat ? navH() + 18 : 0) : h + (where.chat ? (folded ? 0 : navH() + 10) : where.tab ? 0 : 8)); }, [h, !!where, shown, folded, klarTabs]);
+  useEffect(() => { setDockSpace(!where || !shown ? 0 : klarTabs ? (where.chat ? h + navH() + 30 : Math.max(0, h - navH())) : h + (where.chat ? (folded ? 0 : navH() + 10) : where.tab ? 0 : 8)); }, [h, !!where, shown, folded, klarTabs]);
   useEffect(() => () => timers.current.forEach(clearTimeout), []);
   // Shared to FamCal from the browser or another app (Julian 28.10.): as if typed into the field.
   const hearRef = useRef<(raw: string, how?: { voice?: boolean }) => void>(() => {});
@@ -527,7 +527,9 @@ export default function Dock() {
   useEffect(() => { wAnim.value = withTiming(tabsW, { duration: 240, easing: Easing.bezier(0.23, 1, 0.32, 1) }); }, [tabsW]);
   const wStyle = useAnimatedStyle(() => ({ width: wAnim.value }));
   // Typing hides the tabs, so the field drops into their place right above the keyboard.
-  const bottom = !where ? 0 : kb > 0 ? kb + 8 : onTabs ? (typing && Platform.OS === 'web' && !klar ? Math.max(insets.bottom, 12) + 10 : above) : insets.bottom + 12 + where.lift;
+  const bottom = !where ? 0 : kb > 0 ? kb + 8 : klar && where.chat && !(typing && Platform.OS === 'web') ? above + navH() + 26 : onTabs ? (typing && Platform.OS === 'web' && !klar ? Math.max(insets.bottom, 12) + 10 : above) : insets.bottom + 12 + where.lift;
+  /** Where the field stands with no keyboard: the floor the keyboard's frame lifts it from. */
+  const restBottom = !where ? 0 : klar && where.chat && !(typing && Platform.OS === 'web') ? above + navH() + 26 : onTabs ? (typing && Platform.OS === 'web' && !klar ? Math.max(insets.bottom, 12) + 10 : above) : insets.bottom + 12 + where.lift;
   useEffect(() => { setDockTop(where ? bottom + (shown ? h : 0) : 0); }, [bottom, h, !!where, shown]);
   // The field's own top edge (cards and pills above it don't count): Memo sits right on it (Julian 08.11.).
   // The field is the last row, flush with the bottom, so its top is bottom + its own height. Its y from onLayout went stale
@@ -542,7 +544,25 @@ export default function Dock() {
     wasFolded.current = folded;
     bAnim.value = spring ? withTiming(bottom, { duration: 340, easing: Easing.bezier(0.32, 0.72, 0, 1) }) : bottom;
   }, [bottom, folded]);
-  const bStyle = useAnimatedStyle(() => ({ bottom: bAnim.value }));
+  // Julian 24.11. ("das Feld springt"): Android reports the keyboard only once it has fully slid up, so the field
+  // jumped up after it. The keyboard's own frame, read every frame on the UI thread, carries the field along instead.
+  const kbFrame = useAnimatedKeyboard();
+  const restB = useSharedValue(restBottom);
+  const kbJs = useSharedValue(kb);
+  useEffect(() => { restB.value = restBottom; kbJs.value = kb; }, [restBottom, kb]);
+  const native = Platform.OS !== 'web';
+  // The keyboard's tallest frame of this opening: on the way down the field goes down in the same proportion, so it lands
+  // exactly on its rest place when the keys are gone (the phone's own height for the keys can differ a little).
+  const kbPeak = useSharedValue(0);
+  useAnimatedReaction(() => kbFrame.height.value, (h) => { kbPeak.value = h <= 0 ? 0 : Math.max(kbPeak.value, h); });
+  const bStyle = useAnimatedStyle(() => {
+    const h = kbFrame.height.value;
+    if (!native || (h <= 0 && kbJs.value <= 0)) return { bottom: bAnim.value };
+    if (h <= 0) return { bottom: restB.value };
+    // Keys known (shown): between the rest place and the field over the keys, as far as the keys are up.
+    if (kbJs.value > 0) return { bottom: restB.value + (Math.max(restB.value, bAnim.value) - restB.value) * Math.min(1, h / Math.max(1, kbPeak.value)) };
+    return { bottom: Math.max(restB.value, h + 8) };
+  });
 
   // Julian 08.11. ("Ask clarifying questions through inputs"): a question the card asks also stands in the
   // Sprechkarte, with its answers to tap. The handlers are read at tap time, so they always see the current card.
@@ -559,9 +579,17 @@ export default function Dock() {
   // which lies over the pill; speaking shows the Sprechkarte in the same place.
   const klarOpen = klar && (typing || barRaw === 'input');
   useEffect(() => { if (cardOpen) setTalkStart(false); }, [cardOpen]);
-  const klarShow = klarOpen && !cardOpen && !talkStart;
+  // Julian 24.11. ("Chat input missing on chat page"): in the chat the field always stands above the nav, like any chat.
+  const chatField = klar && !!where?.chat;
+  const klarShow = (klarOpen || chatField) && !cardOpen && !talkStart;
   // Julian 23.11. ("4 bauen"): off the chat, the open Memo is one sheet over the page with the history in it.
   const sheet = klarOpen && !where?.chat;
+  // A picture picked under Plus lands in the field, so the field opens to show it (Julian 24.11.: "Image upload did not work").
+  const picsN = usePics().length;
+  useEffect(() => { if (picsN && klar) setBarMode('input'); }, [picsN, klar]);
+  // Julian 24.11. ("jump to often"): typing on the chat page must not pop the Memo sheet open on the next tab.
+  const wasChat = useRef(false);
+  useEffect(() => { const c = !!where?.chat; if (wasChat.current && !c && klar) { Keyboard.dismiss(); setBarMode('rest'); } wasChat.current = c; }, [!!where?.chat, klar]);
   const kA = useSharedValue(klarShow ? 1 : 0);
   // Julian 16.11.: "immer im schwarzen Feld bleiben". Between the Sprechkarte and typing the dark card stays where it
   // is and only its words change, so the typing card neither grows out of Memo nor shrinks back then.
@@ -1006,7 +1034,7 @@ export default function Dock() {
     {/* Julian 05.11.: no soft fade above the field; a solid ground up to the middle of the field, which hides its edge. */}
     {klar || (onTabs && !kb && !(typing && Platform.OS === 'web')) ? null : <View pointerEvents="none" style={{ position: 'absolute', left: 0, right: 0, bottom: fadeFrom, height: bottom - fadeFrom + 27, backgroundColor: tokens.bg }} />}
     {/* Klar: a tap beside the open input puts it away; words already typed stay in it. */}
-    {klarShow ? <Pressable accessibilityLabel={tx('Eingabe schließen', 'Close input')} onPress={() => { Keyboard.dismiss(); const b = getBuddy(); if (!b.typed && !b.listening) setBarMode('rest'); }} style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0 }} /> : null}
+    {klarShow && !chatField ? <Pressable accessibilityLabel={tx('Eingabe schließen', 'Close input')} onPress={() => { Keyboard.dismiss(); const b = getBuddy(); if (!b.typed && !b.listening) setBarMode('rest'); }} style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0 }} /> : null}
     {sheet ? <MemoVerlauf foot={bottom + fieldH} onClose={() => { if (speakOpen(getSpeak())) speakHandlers.cancel(); Keyboard.dismiss(); setBarMode('rest'); }} /> : null}
     <Animated.View pointerEvents="box-none" onLayout={(e) => setH(e.nativeEvent.layout.height)} style={[{ position: 'absolute', left: onTabs ? 14 : 18, right: onTabs ? 14 : 18, gap: 10 }, bStyle]}>
       {/* Klar at rest: the input is folded into Memo but keeps its room; the card sits right above the nav pill instead. */}
@@ -1114,7 +1142,7 @@ export default function Dock() {
               klar
               speakCard
               keepOpen
-              sheet={!where.chat}
+              sheet
               onIdle={() => setBarMode('rest')}
               onBusy={() => setBarMode('input')}
               onSend={hear}
@@ -1122,7 +1150,7 @@ export default function Dock() {
               spoken={SPOKEN[kind]}
               listenKey={listenKey}
               focusKey={focusKey}
-              placeholder={resumed ? tx(`Weiter zu „${resumed.said.slice(0, 24)}“ …`, `More on “${resumed.said.slice(0, 24)}” …`) : where.chat && mode === 'msg' ? tx('Nachricht an die Familie …', 'Message to the family …') : turn?.result.kind === 'cut' ? tx('Sprich einfach weiter …', 'Just keep talking …') : turn && kind === 'kalender' ? tx('Antworten oder ergänzen …', 'Reply or add …') : !where.chat ? tx('Schreib Memo …', 'Message Memo …') : tx('Was steht an?', "What's coming up?")}
+              placeholder={resumed ? tx(`Weiter zu „${resumed.said.slice(0, 24)}“ …`, `More on “${resumed.said.slice(0, 24)}” …`) : where.chat && mode === 'msg' ? tx('Nachricht an die Familie …', 'Message to the family …') : turn?.result.kind === 'cut' ? tx('Sprich einfach weiter …', 'Just keep talking …') : turn && kind === 'kalender' ? tx('Antworten oder ergänzen …', 'Reply or add …') : tx('Schreib Memo …', 'Message Memo …')}
             />
           </Animated.View>
         )}

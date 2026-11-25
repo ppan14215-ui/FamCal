@@ -4,6 +4,10 @@ Alle sichtbaren Änderungen an FamCal. Neueste oben. Agenten und Menschen: Ände
 
 ## Unreleased
 
+### Memo zeigt, was er verstanden hat: Tags im Satz (24.11.)
+- Namen der Familie, Zeiten, das Termin Wort und Orte erscheinen im Satz als farbige Tags: im Chat, in Nachrichten vom Partner, im Memo Verlauf und live beim Sprechen.
+- Ein neuer Tag wächst aus einem Punkt unter dem Wort (280 ms, kein Überschwingen); ältere Nachrichten zeigen ihn ruhig. Die Eingabezeile bleibt wie sie ist.
+
 ### Startklar fürs MVP: Grenzen, Bezahlseite, Testzugang (22.11.)
 - Neuer Satz zum Start: „Damit nicht einer alles im Kopf hat.“ statt „Der klügste Familienkalender“.
 - Bezahlseite: Jahresabo vorausgewählt, Preis pro Tag, der Gründerpreis wird nur durchgestrichen gezeigt, wenn der Store wirklich ein günstigeres erstes Jahr verkauft. Kurze Liste, was Plus macht, und Antworten zum Kündigen. Die Probetage kommen aus dem Store, nicht aus dem Text.
@@ -128,6 +132,15 @@ Alle sichtbaren Änderungen an FamCal. Neueste oben. Agenten und Menschen: Ände
 - Memo Feld bleibt offen, bis man daneben tippt; eigener Mikro Knopf im Feld
 - Memo geht als Verlauf über der Seite auf: Gespräch und Ergebnisse oben, helle Eingabe unten, Sprechen nur übers Mikro, schließen mit X, Zurück oder Wischen
 - Neuer Name ParentButler in den Texten der App (Plus, Familie beitreten, Widget)
+- Chat Seite hat wieder immer ein Eingabefeld, überall dieselbe helle Eingabe, Bild aus Plus öffnet das Feld, Memo korrigiert Spielrunden statt Minusrunden anzuhängen
+- Nach dem Tippen im Chat springt beim Wechsel zum Kalender kein Memo Blatt mehr auf
+- Chat: Memo legt sich beim Nachdenken nicht mehr über das Eingabefeld
+- Spracheingabe im Memo Blatt: Stopp beendet nur die Aufnahme, Senden erst danach mit dem Pfeil
+- Eingabefeld fährt mit der Tastatur mit, statt danach zu springen (Android)
+- Sprechkarte: der Pfeil beendet beim Zuhören erst die Aufnahme, gesendet wird mit dem zweiten Tipp
+- Memo versteht kurze Antworten im Gespräch ("Donnerstag", "Arbeit") und trägt fehlende Arbeit nach dem Muster der anderen Tage ein, statt endlos nachzufragen.
+- Memo erinnert sich an das, was im Memo Blatt steht (bis 12 Stunden statt 30 Minuten), und das Blatt ist deckend.
+- Memo hüpft einmal, wenn ein Termin fertig ist, und springt beim Mikro in die Sprechkarte (wie im Allo Film)
 
 ### App funktioniert zuverlässig (09.11. Audit)
 - Nach längerer Pause im Hintergrund klappen Assistent und Spracheingabe gleich beim ersten Satz, statt "Ich komme gerade nicht an den Assistenten".

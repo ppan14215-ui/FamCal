@@ -250,7 +250,8 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, o
     const t = setTimeout(() => { if (!keysNext.current) return; keysNext.current = false; onBusy?.(); field.current?.focus(); }, 80);
     return () => clearTimeout(t);
   }, [listening, writing]);
-  const finishAndSend = () => { if (!listening) return send(); sendAfter.current = true; listen(); };
+  // Julian 24.11. (a song went out as messages): every send button only stops while listening; what was heard waits to be seen.
+  const finishAndSend = () => { if (!listening) return send(); listen(); };
 
   // The Sprechkarte shows what happens: listening, writing it down, the sentence ready to send.
   useEffect(() => {
@@ -537,7 +538,9 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, o
   if (speakCard) {
     speakHandlers.stop = () => { if (listeningRef.current) listen(); };
     speakHandlers.again = () => { held.current = false; setText(''); listen(); };
-    speakHandlers.send = () => { held.current = false; finishAndSend(); };
+    // Julian 24.11.: a background song went out as messages. While still listening (or writing it down) the arrow only
+    // stops: the words stand in the card and a second tap sends, so nothing heard goes out unseen.
+    speakHandlers.send = () => { if (listeningRef.current) { listen(); return; } if (writing) return; held.current = false; finishAndSend(); };
     speakHandlers.cancel = () => {
       held.current = false; sendAfter.current = false;
       if (listeningRef.current || writing) { typed.current = true; timers.current.forEach(clearTimeout); setDemo(false); toKeys.current?.(); setWriting(false); }
@@ -751,8 +754,14 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, o
           <LineIcon name="mic" size={18} color={tokens.ink} />
         </PressScale>
       )}
-      {live ? (
-        <PressScale accessibilityLabel={tx('Senden', 'Send')} onPress={finishAndSend} style={[sChip, { backgroundColor: tokens.ink, boxShadow: 'none' }]}>
+      {/* Julian 24.11.: a song in the background went out as messages. While listening this is a stop button: the words
+          land in the field and wait; only the arrow, shown once listening is over, sends (voice never sends by itself). */}
+      {listening ? (
+        <PressScale accessibilityLabel={tx('Aufnahme beenden', 'Stop recording')} onPress={listen} style={[sChip, { backgroundColor: tokens.ink, boxShadow: 'none' }]}>
+          <View style={{ width: 13, height: 13, borderRadius: 3, backgroundColor: tokens.onInk }} />
+        </PressScale>
+      ) : text.trim() || pics.length ? (
+        <PressScale accessibilityLabel={tx('Senden', 'Send')} onPress={() => send()} style={[sChip, { backgroundColor: tokens.ink, boxShadow: 'none' }]}>
           <LineIcon name="up" size={18} color={tokens.onInk} stroke={2.3} />
         </PressScale>
       ) : null}

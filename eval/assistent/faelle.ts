@@ -85,6 +85,13 @@ function mittwochsBuero(e: Ergebnis): string[] {
 }
 
 const ohneArbeit = (s: Stand): Stand => ({ ...s, events: s.events.filter((x) => !x.work) });
+/** Arbeit 08:30 bis 16:00 im Büro an Fr 30.10. und Mo bis Fr der nächsten Woche, nur Mi 4.11. fehlt (Julian 24.11.). */
+const arbeitMuster = (s: Stand): Stand => ({ ...s, events: [...s.events.filter((x) => !x.work), ...['2026-10-30', '2026-11-02', '2026-11-03', '2026-11-05', '2026-11-06'].map((d) => ({ id: `muster-${d}`, title: 'Arbeit', date: d, allDay: false, start: '08:30', end: '16:00', place: 'Büro', icon: 'aktenkoffer', work: true, who: 'J' } as CalEvent))] });
+function mittwochNachMuster(e: Ergebnis): string[] {
+  const m = e.stand.events.filter((x) => x.date === '2026-11-04' && x.work);
+  if (m.length !== 1) return [`Arbeit am 4.11.: ${m.length} Einträge`];
+  return m[0].start === '08:30' && m[0].end === '16:00' && !m[0].allDay ? [] : [`Arbeit am 4.11.: ${m[0].allDay ? 'ganztägig' : `${m[0].start} bis ${m[0].end}`}`];
+}
 
 // ─── Die Fälle ─────────────────────────────────────────────────────────────
 
@@ -309,6 +316,16 @@ export const FAELLE: Fall[] = [
       const j = sum(/^julian$/i), so = sum(/^sophia$/i);
       return [...(j === 280 ? [] : [`Julian: ${j}`]), ...(so === 0 ? [] : [`Sophia: ${so}`]), ...(ps.length === 2 ? [] : [`Spieler: ${ps.map((x) => x.name).join(', ')}`]), ...deutsch(e)];
     } },
+  // Julian 24.11. (Rommé): a correction changed nothing right, it added rounds in minus and asked again and again.
+  { id: 'romme-korrektur', saetze: ['Wir spielen Rommé. Ich habe zweihundertachtzig Punkte, Sophia null', 'Julian 120, Sophia 40', 'Die letzte Runde war falsch, bei mir waren es nur 60'],
+    pruefe: (e) => {
+      const l = e.stand.lists.find((x) => x.blueprint?.blocks.includes('points'));
+      if (!l) return ['keine Punkteliste', ...deutsch(e)];
+      const ps = l.sections.flatMap((x) => x.items);
+      const r = (n: RegExp) => ps.find((x) => n.test(x.name))?.data?.rounds ?? [];
+      const j = r(/^julian$/i), so = r(/^sophia$/i);
+      return [...(j.join(',') === '280,60' ? [] : [`Julian Runden: ${j.join(',')}`]), ...(so.join(',') === '0,40' ? [] : [`Sophia Runden: ${so.join(',')}`]), ...deutsch(e)];
+    } },
   // Julian 31.10. 21:10: Familiengedächtnis. Ein Fakt wird gemerkt, nicht als Termin oder Einkauf eingetragen.
   { id: 'merken', saetze: ['Karlo hat Schuhgröße 28'],
     pruefe: (e) => {
@@ -402,4 +419,12 @@ export const FAELLE: Fall[] = [
       const n = neu(e);
       return [...(n.length === 1 && n[0].start === '09:00' && n[0].end === '10:00' ? [] : [`Termin: ${n.map((x) => `${x.title} ${x.start}-${x.end ?? ''}`).join(' | ') || 'keiner'}`]), ...(e.frage ? [`fragt nach: ${e.frage}`] : []), ...deutsch(e)];
     } },
+  // Julian 24.11.: "Wieso fehlt mein Arbeitsblocker für morgen?", dann "Donnerstag", dann "Arbeit": Memo fragte nur zurück.
+  // Hier ist Testtag Do 29.10., an den Werktagen Arbeit 08:30 bis 16:00 im Büro, nur Mittwoch 4.11. fehlt.
+  { id: 'arbeit-fehlt-gespraech', start: arbeitMuster, saetze: ['Wieso fehlt mein Arbeitsblocker für morgen?', 'Mittwoch', 'Arbeit'],
+    pruefe: (e) => [...mittwochNachMuster(e), ...keineFrage(e), ...deutsch(e)] },
+  { id: 'arbeit-fehlt-ein-satz', start: arbeitMuster, saetze: ['Wieso fehlt meine Arbeit am Mittwoch?'],
+    pruefe: (e) => [...(e.frage && /08:30|8:30|8 ?Uhr ?30|halb neun/i.test(e.frage) ? [] : mittwochNachMuster(e)), ...deutsch(e)] },
+  { id: 'arbeit-ohne-zeit-muster', start: arbeitMuster, saetze: ['Am Mittwoch arbeite ich auch'],
+    pruefe: (e) => [...mittwochNachMuster(e), ...keineFrage(e), ...deutsch(e)] },
 ];

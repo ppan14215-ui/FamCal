@@ -25,7 +25,7 @@ import { LANG, tx } from '../i18n/lang';
 import { get, set, actions, type CalView } from '../state/store';
 import type { CalEvent, List, Task, Who } from '../state/types';
 import { fromModel, TERMIN_ICON_NAMES, type Understood } from './talk';
-import { replyPlan, listFromClaude, gameStart, pointsPlan, liste, type Plan, type Result } from './act';
+import { replyPlan, listFromClaude, gameStart, pointsPlan, correctionPlan, liste, type Plan, type Result } from './act';
 import { isPoints, players, total, parseRound } from './points';
 import { myRole } from './sync';
 import { HIDDEN } from './core';
@@ -108,7 +108,7 @@ export function snapshotAlt(): string {
   const known = facts(lists).slice(-120).map((f) => `${f.id}: ${clip(f.text, 160)}${f.about ? ` [über ${clip(f.about, 30)}]` : ''}${f.by ? ` (${persons[f.by].name}${f.at ? `, ${day(f.at)}` : ''})` : f.at ? ` (${day(f.at)})` : ''}`);
   const listLines = lists.filter((l) => !isWissen(l) && !(HIDDEN.points && isPoints(l))).slice(0, 20).map((l: List) => {
     if (isPoints(l)) {
-      return `Punkteliste ${l.id} "${clip(l.name)}": ${players(l).map((p) => `${p.id} ${clip(p.name, 30)} ${total(p)}`).join(', ') || 'noch keine Spieler'}`;
+      return `Punkteliste ${l.id} "${clip(l.name)}": ${players(l).map((p) => `${p.id} ${clip(p.name, 30)} ${total(p)}${p.data?.rounds?.length ? ` (Runden: ${p.data.rounds.slice(-12).join(' · ')})` : ''}`).join(', ') || 'noch keine Spieler'}`;
     }
     const all = l.sections.flatMap((s) => s.items);
     const open = all.filter((i) => !i.done).slice(0, 50);
@@ -129,9 +129,13 @@ export function snapshotAlt(): string {
   ].filter(Boolean).join('\n\n');
 }
 
-/** The chat a moment ago, so "nein, um 16 Uhr" knows what it is about. Only the last half hour. */
+/**
+ * The chat as Memo's sheet shows it, so "nein, um 16 Uhr" or "Ja" knows what it is about.
+ * Julian 24.11. 23:12: a question from 21:31 still stood in the sheet, his "Ja" at 23:11 went out without it
+ * (half an hour was the limit) and Memo asked "Wozu sagst du Ja?". What the person can see counts, up to 12 hours.
+ */
 function chatHistory(): { said: string; app?: string }[] {
-  const since = new Date(Date.now() - 30 * 60000).toISOString();
+  const since = new Date(Date.now() - 12 * 3600000).toISOString();
   return feedTail(6).filter((f) => f.at >= since && !f.undone).map((f) => ({ said: f.said, app: f.kind === 'made' ? f.say ?? f.text : f.ask ? tx(`Frage an ${persons[f.ask.to].name}`, `Asked ${persons[f.ask.to].name}`) : undefined }));
 }
 
@@ -197,7 +201,9 @@ export async function askAgent(said: string, lines: { said: string; app?: string
   const session = getAuth().session;
   const url = process.env.EXPO_PUBLIC_SUPABASE_URL;
   if (!supabase || !session || !url) return null;
-  const history = [...chatHistory(), ...lines.slice(0, -1)].slice(-6);
+  // The open card's lines and the chat log often hold the same exchange; twice would push older context out of the six.
+  const seen = new Set<string>();
+  const history = [...chatHistory(), ...lines.slice(0, -1)].filter((h) => { const k = `${h.said}\u0000${h.app ?? ''}`; if (seen.has(k)) return false; seen.add(k); return true; }).slice(-6);
   const A = aliases();
   return converse(said, history, screen, async (b) => post(url, (await freshToken()) ?? session.access_token, b, (t) => onSay?.(A.show(t))), screenList);
 }
@@ -499,6 +505,15 @@ function opOf(a: Action, said: string): Op | null {
       // Kniffel boxes come from the sentence itself, so the sheet knows which box was filled (Julian 01.11.).
       if (/kniffel|yahtzee/i.test(l.name) && kniffelRound(said)) { const k = pointsPlan(l, said); if (k) return fromPlan(k); }
       const p = pointsPlan(l, scores.map((x: any) => `${x.who} ${Math.round(Number(x.points))}`).join(', '));
+      return p ? fromPlan(p) : null;
+    }
+    case 'spiel_korrektur': {
+      // Julian 24.11. (Rommé): a wrong round is changed in place, never fixed with a second round in minus.
+      const l = listOf(s(i.list));
+      if (!l || !isPoints(l)) return null;
+      const scores = (Array.isArray(i.scores) ? i.scores : []).filter((x: any) => x && typeof x.who === 'string' && Number.isFinite(Number(x.points))).map((x: any) => ({ who: String(x.who), points: Math.round(Number(x.points)) }));
+      const round = Number.isFinite(Number(i.round)) && Number(i.round) >= 1 ? Math.round(Number(i.round)) : undefined;
+      const p = correctionPlan(l, scores, round, i.loeschen === true);
       return p ? fromPlan(p) : null;
     }
     case 'merken': {

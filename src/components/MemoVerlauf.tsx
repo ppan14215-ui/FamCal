@@ -17,6 +17,7 @@ import { getFamily, myRole } from '../lib/sync';
 import { short, hm, TODAY } from '../lib/dates';
 import { tx } from '../i18n/lang';
 import { Thinking, dayOf } from './ChatCards';
+import TagText, { useMadeTitles } from './TagText';
 
 const SHOWN = 20;
 const OUT = Easing.bezier(0.23, 1, 0.32, 1);
@@ -42,12 +43,11 @@ export default function MemoVerlauf({ foot, onClose }: { foot: number; onClose: 
       else y.value = withTiming(0, { duration: 200, easing: OUT });
     },
   })).current;
-  useEffect(() => { const t = setTimeout(() => scroller.current?.scrollToEnd({ animated: true }), 60); return () => clearTimeout(t); }, [feed.length]);
   const shown = feed.slice(-SHOWN).filter((f) => !(f.answer && feed.some((x) => x.id === f.answer!.ask)));
   let lastDay = '';
   return (
     // The page shows faintly through the top of the sheet, so you still see where you are (the board, 23.11.).
-    <Animated.View exiting={FadeOut.duration(150)} style={[{ position: 'absolute', left: 0, right: 0, bottom: 0, top: Math.round(height * 0.44), backgroundColor: tokens.bg + 'F0', borderTopLeftRadius: 28, borderTopRightRadius: 28, boxShadow: '0 -10px 32px rgba(22,35,42,0.14)', backdropFilter: 'blur(14px)' } as any, style]}>
+    <Animated.View exiting={FadeOut.duration(150)} style={[{ position: 'absolute', left: 0, right: 0, bottom: 0, top: Math.round(height * 0.44), /* opaque: Android has no backdrop blur, the calendar showed through (Julian 24.11. 23:12) */ backgroundColor: tokens.bg, borderTopLeftRadius: 28, borderTopRightRadius: 28, boxShadow: '0 -10px 32px rgba(22,35,42,0.14)' } as any, style]}>
       <View {...pan.panHandlers} style={{ paddingTop: 8, paddingHorizontal: 18, paddingBottom: 4 }}>
         <View style={{ alignSelf: 'center', width: 36, height: 4, borderRadius: 2, backgroundColor: tokens.hair }} />
         <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 10 }}>
@@ -81,12 +81,13 @@ export default function MemoVerlauf({ foot, onClose }: { foot: number; onClose: 
 
 /** What was said: mine dark on the right, the partner's light on the left with the name above. */
 function Said({ f, mine }: { f: FeedEntry; mine: boolean }) {
+  const titles = useMadeTitles(f.undone ? undefined : f.events, f.snap?.events);
   if (!f.said.trim()) return null;
   return (
     <View style={{ alignSelf: mine ? 'flex-end' : 'flex-start', maxWidth: '86%', gap: 3 }}>
       {mine ? null : <Txt size={12} color={tokens.sub} style={{ paddingLeft: 4 }}>{persons[f.by].name}</Txt>}
       <View style={{ borderRadius: 20, paddingVertical: 9, paddingHorizontal: 15, backgroundColor: mine ? tokens.ink : tokens.row, boxShadow: mine ? undefined : `0 0 0 1px ${tokens.hair}` } as any}>
-        <Txt size={15.5} line={21} color={mine ? tokens.onInk : tokens.ink}>{f.said}</Txt>
+        <TagText text={f.said} size={15.5} line={21} color={mine ? tokens.onInk : tokens.ink} titles={titles} animate={Date.now() - Date.parse(f.at) < 8000} dark={mine} />
       </View>
     </View>
   );
