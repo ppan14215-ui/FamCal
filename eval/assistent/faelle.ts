@@ -421,7 +421,10 @@ export const FAELLE: Fall[] = [
     } },
   // Julian 24.11.: "Wieso fehlt mein Arbeitsblocker für morgen?", dann "Donnerstag", dann "Arbeit": Memo fragte nur zurück.
   // Hier ist Testtag Do 29.10., an den Werktagen Arbeit 08:30 bis 16:00 im Büro, nur Mittwoch 4.11. fehlt.
-  { id: 'arbeit-fehlt-gespraech', start: arbeitMuster, saetze: ['Wieso fehlt mein Arbeitsblocker für morgen?', 'Mittwoch', 'Arbeit'],
+  // Julian 24.11. (a Tuesday: his "morgen" was the Wednesday). The test day is a Thursday whose "morgen" already has
+  // work, so the day is left open here, and the "Arbeit" he only had to add because Memo asked twice is gone: once the
+  // day is named, Memo enters it.
+  { id: 'arbeit-fehlt-gespraech', start: arbeitMuster, saetze: ['Wieso fehlt mein Arbeitsblocker?', 'Mittwoch'],
     pruefe: (e) => [...mittwochNachMuster(e), ...keineFrage(e), ...deutsch(e)] },
   { id: 'arbeit-fehlt-ein-satz', start: arbeitMuster, saetze: ['Wieso fehlt meine Arbeit am Mittwoch?'],
     pruefe: (e) => [...(e.frage && /08:30|8:30|8 ?Uhr ?30|halb neun/i.test(e.frage) ? [] : mittwochNachMuster(e)), ...deutsch(e)] },
