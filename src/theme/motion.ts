@@ -67,3 +67,21 @@ export const swapIn = FadeIn.duration(motion.micro).easing(easing.out);
  * View switches happen tens of times a day, so it stays near-imperceptible: 160 ms (Emil Kowalski 08.11.).
  */
 export const build = new Keyframe({ 0: { opacity: 0, transform: [{ translateY: 8 }] }, 100: { opacity: 1, transform: [{ translateY: 0 }], easing: Easing.bezier(0.23, 1, 0.32, 1) } }).duration(160);
+
+/**
+ * A deleted card sinks toward the Rückgängig pill at the bottom while its
+ * neighbours close the gap (Allo motion map, Julian 25.11.). 200 ms, no overshoot.
+ */
+export const cardOut = new Keyframe({ 0: { opacity: 1, transform: [{ translateY: 0 }, { scale: 1 }] }, 100: { opacity: 0, transform: [{ translateY: 14 }, { scale: 0.92 }], easing: Easing.bezier(0.23, 1, 0.32, 1) } }).duration(200);
+
+/**
+ * A card Memo just made slips out from beside him (Allo film, approved by Julian 24.11.): from 40 % opacity,
+ * scale 0.4 and -10°, a 6 % overshoot, settled in 200 ms. Pair it with transformOrigin at Memo's corner.
+ */
+export const slipOut = new Keyframe({
+  0: { opacity: 0.4, transform: [{ scale: 0.4 }, { rotate: '-10deg' }] },
+  60: { opacity: 1, transform: [{ scale: 1.06 }, { rotate: '0deg' }], easing: Easing.bezier(0.23, 1, 0.32, 1) },
+  100: { opacity: 1, transform: [{ scale: 1 }, { rotate: '0deg' }], easing: Easing.bezier(0.23, 1, 0.32, 1) },
+}).duration(200);
+/** The card's content follows its shape 80 ms later. */
+export const contentIn = FadeIn.duration(180).easing(Easing.bezier(0.23, 1, 0.32, 1)).delay(80);

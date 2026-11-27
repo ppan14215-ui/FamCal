@@ -4,6 +4,25 @@ Alle sichtbaren Änderungen an FamCal. Neueste oben. Agenten und Menschen: Ände
 
 ## Unreleased
 
+### Neue Marke, Schritt 1: neuer Look (27.11.)
+- Weißer Grund, Memo Tinte, ruhige Grautöne; Karten weiß mit feiner Linie statt Schatten.
+- Neue Schrift DM Sans, Überschriften kräftig.
+- Neues Farbthema "Familie" mit den Markenfarben ist Standard, Bunt bleibt wählbar, Erde fällt weg.
+- Die Leiste hat fünf gleich breite Spalten; der Einstellungen Tab heißt dort kurz "Profil".
+- Farbkreise in den Einstellungen zeigen die Farbe so, wie sie in der App erscheint.
+
+### Farbthema Bunt (27.11.)
+- Neues zweites Farbthema "Bunt" mit zehn kräftigen Farben neben Erde. Alle anderen Themen sind weg; alte Farben bleiben lesbar.
+- Die weißen Tags in den Chat Blasen haben keinen dunklen Rand mehr.
+
+### Bewegung in der ganzen App (25.11.)
+- Ein neuer Termin landet mit einem kurzen Stoß, genau wenn Memo nach seinem Sprung aufkommt, mit leichtem Tick am Handy.
+- Abhaken: der Haken zeichnet sich von links nach rechts.
+- Löschen: die Karte sinkt Richtung Rückgängig, die anderen rücken nach.
+- Verschiebt sich ein Termin, blinkt nur seine Zeit einmal.
+- Beim Öffnen kommen die Termine des Tages einzeln herein.
+- Chat: Memos Antwort kommt Wort für Wort, die neue Karte schlüpft neben Memo heraus.
+
 ### Memo zeigt, was er verstanden hat: Tags im Satz (24.11.)
 - Namen der Familie, Zeiten, das Termin Wort und Orte erscheinen im Satz als farbige Tags: im Chat, in Nachrichten vom Partner, im Memo Verlauf und live beim Sprechen.
 - Ein neuer Tag wächst aus einem Punkt unter dem Wort (280 ms, kein Überschwingen); ältere Nachrichten zeigen ihn ruhig. Die Eingabezeile bleibt wie sie ist.

@@ -28,6 +28,7 @@ import { useVeil } from '../Veil';
 import { useFeed } from '../../lib/feed';
 import { getFamily, myRole } from '../../lib/sync';
 import { haptics } from '../../lib/haptics';
+import { punch, isLit } from '../../lib/landing';
 import { usePathname } from 'expo-router';
 import { useStore, get } from '../../state/store';
 import { useSpeak, speakOpen } from '../../lib/speak';
@@ -114,7 +115,7 @@ export default function BuddyHost() {
     if (mine()) {
       // A Termin is done: he hops once (Julian 24.11.), then becomes the sheet. The hop waits a moment: after the form
       // closes the nav (and its Memo) comes back first, and a hop before that would play on a Memo nobody sees.
-      if (d === 1) { const e = all.find((x) => !evIds.current!.has(x.id)); if (!typingRef.current) setTimeout(buddyHop, HOP_WAIT); joy(e ? eventKind(e) : 'termin', typingRef.current ? 90 : HOP_WAIT + HOP.len - 200); }
+      if (d === 1) { const e = all.find((x) => !evIds.current!.has(x.id)); if (!typingRef.current) setTimeout(buddyHop, HOP_WAIT); if (e) setTimeout(() => { if (isLit(e.id)) return; punch(e.id); haptics.tap(); }, HOP_WAIT + HOP.pre + HOP.fly); joy(e ? eventKind(e) : 'termin', typingRef.current ? 90 : HOP_WAIT + HOP.len - 200); }
       else if (d === 0 && evSig !== seenSig.current) joy('pfeil');
       else if (d < 0) joy('eimer');
     }

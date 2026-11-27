@@ -11,42 +11,42 @@
  * - `done` (teal) is for "erledigt" and the period after headlines.
  */
 const LIGHT = {
-  // Ton & Papier (Julian 17.11.: "tinte, erde wird standard, kein darkmode, start"): warm paper, petrol ink, warm
-  // greys. Stage 1 changes only these values; every layout and every behaviour stays as it was.
-  bg: '#F5EFE4',
-  row: '#FFFDF9',
+  // Der Dritte im Bunde (Julian 27.11.: new brand, step 1 = look only): white ground, Memo ink, Nebel for soft fills,
+  // Moos for quiet text. Every layout and every behaviour stays as it was; only these values change.
+  bg: '#FFFFFF',
+  row: '#FFFFFF',
   ink: '#14302F',
-  sub: '#6F6A60',
-  mute: '#A49D90',
-  hair: '#E6DFD2',
-  /** The filled check for "erledigt": the deeper petrol of the template. */
-  done: '#0E5A55',
-  doneSoft: '#E8DFCF',
-  frist: '#C2410C',
+  sub: '#71817F',
+  mute: '#9AA8A6',
+  hair: '#EEF2F1',
+  /** The filled check for "erledigt": Memo ink, like the template. */
+  done: '#14302F',
+  doneSoft: '#E4EAE9',
+  frist: '#E5484D',
   /** Urlaub, sunny and clearly its own (Julian 31.10.: "Vacation kaum zu erkennen"). */
   vac: '#F6CD6A',
   vacInk: '#5B4100',
-  segBg: '#EFE7DA',
+  segBg: '#F1F4F3',
   /** The chosen pill in a segmented control: it must stand out from segBg in both modes. */
-  segOn: '#FFFDF9',
+  segOn: '#FFFFFF',
   /** The chosen tab in the bottom bar. */
-  pillOn: '#EDE4D4',
-  chipBg: '#EFE7DA',
-  circleLine: '#D3C8B6',
-  dotOff: '#DDD3C2',
+  pillOn: '#F1F4F3',
+  chipBg: '#F1F4F3',
+  circleLine: '#D5DEDC',
+  dotOff: '#C9D2D0',
   danger: '#C7372F',
   /** Marked text: a light wash, so the selected words stay readable. */
   select: 'rgba(20,48,47,0.16)',
   ok: '#2F9E6E',
   scrim: 'rgba(20,48,47,0.28)',
-  noteBg: '#EFE7DA',
-  paper: '#F5EFE4',
-  /** Text and icons on an ink surface (primary buttons, today's day): the paper itself. */
-  onInk: '#F5EFE4',
+  noteBg: '#F1F4F3',
+  paper: '#FFFFFF',
+  /** Text and icons on an ink surface (primary buttons, today's day). */
+  onInk: '#FFFFFF',
   /** Frosted surface over a picture (the Symbol chip on a Termin). */
-  glass: 'rgba(255,253,249,0.7)',
+  glass: 'rgba(255,255,255,0.7)',
   /** The calm cover while the assistant works. */
-  veil: 'rgba(245,239,228,0.95)',
+  veil: 'rgba(255,255,255,0.95)',
   /** What marks today and now: ink. */
   accent: '#14302F',
   /** Its soft shadow. */
@@ -94,36 +94,36 @@ export const vivid = (fg: string) => blend(fg, '#FFFFFF', dark ? 0.35 : 0.2);
  */
 export const shadows = {
   /** A card lying on the ground. Wabi's `--sheet`. */
-  card: '0 1px 2px rgba(40,30,10,0.05), 0 14px 30px -16px rgba(40,30,10,0.22)',
+  card: '0 1px 2px rgba(20,48,47,0.05), 0 14px 30px -16px rgba(20,48,47,0.20)',
   /** A round button or a pill you press. Measured on Wabi's app (Julian's screenshot 14.11.): tight under the shape, almost nothing above it. */
-  control: '0 1px 1px rgba(40,30,10,0.05), 0 3px 8px -2px rgba(40,30,10,0.18)',
+  control: '0 1px 1px rgba(20,48,47,0.05), 0 3px 8px -2px rgba(20,48,47,0.16)',
   /** People circles: the stack of faces sits a little above the ground. */
-  face: '0 4px 10px rgba(40,30,10,0.12)',
+  face: '0 4px 10px rgba(20,48,47,0.12)',
 };
 
 /**
  * Glass, only on things you press (nav, input, buttons, chips): white with an inner light, a hairline and a soft
  * shadow. The recipe is Wabi's inner light (Julian 13.11.). boxShadow draws on the new architecture and on the web.
  */
-const G_IN = 'inset 0 1px 4px rgba(255,255,255,0.67), inset 0 -4px 4px rgba(255,255,255,0.85), inset 0 0 14px rgba(236,228,214,0.55)';
+const G_IN = 'inset 0 1px 4px rgba(255,255,255,0.67), inset 0 -4px 4px rgba(255,255,255,0.85), inset 0 0 14px rgba(228,234,233,0.55)';
 // At night the same shapes: a lifted dark surface, a faint light on the top edge, a deeper shadow.
 const G_IN_N = 'inset 0 1px 0 rgba(255,255,255,0.10), inset 0 0 14px rgba(255,255,255,0.03)';
 const glassOf = (night: boolean) => {
-  const bg = night ? '#222C32' : '#FFFDF9';
+  const bg = night ? '#222C32' : '#FFFFFF';
   const inn = night ? G_IN_N : G_IN;
-  const line = (a: number) => (night ? `0 0 0 1px rgba(255,255,255,${a})` : `0 0 0 1px rgba(40,30,10,${a})`);
-  const drop = (y: number, r: number, a: number) => `0 ${y}px ${r}px rgba(${night ? '0,0,0' : '40,30,10'},${night ? Math.min(0.6, a * 3.2) : a})`;
+  const line = (a: number) => (night ? `0 0 0 1px rgba(255,255,255,${a})` : `0 0 0 1px rgba(20,48,47,${a})`);
+  const drop = (y: number, r: number, a: number) => `0 ${y}px ${r}px rgba(${night ? '0,0,0' : '20,48,47'},${night ? Math.min(0.6, a * 3.2) : a})`;
   return {
     /** Small controls: round buttons, chips, the chosen segment. */
     sm: { backgroundColor: bg, boxShadow: `${inn}, ${line(0.05)}, ${night ? drop(2, 6, 0.05) : shadows.control}` } as any,
     /** The floating nav pill. */
-    nav: { backgroundColor: bg, boxShadow: `${inn}, ${line(0.05)}, ${night ? drop(10, 30, 0.1) : '0 10px 30px -12px rgba(40,30,10,0.3)'}` } as any,
+    nav: { backgroundColor: bg, boxShadow: `${inn}, ${line(0.05)}, ${night ? drop(10, 30, 0.1) : '0 10px 30px -12px rgba(20,48,47,0.28)'}` } as any,
     /** The input card that grows out of Memo, and sheets. */
     card: { backgroundColor: bg, boxShadow: `${inn}, ${line(0.06)}, ${drop(14, 40, 0.14)}` } as any,
     /** A flat card in the content: only a hairline. */
-    line: { backgroundColor: night ? '#1A2328' : '#FFFDF9', boxShadow: line(0.08) } as any,
-    /** A card lying on the ground (chat cards, examples): a hairline and Wabi's sheet shadow. No inner light, cards are not pressed like glass. */
-    lift: { backgroundColor: night ? '#1A2328' : '#FFFDF9', boxShadow: `${line(0.07)}, ${night ? '0 1px 2px rgba(0,0,0,0.3), 0 12px 28px -12px rgba(0,0,0,0.6)' : shadows.card}` } as any,
+    line: { backgroundColor: night ? '#1A2328' : '#FFFFFF', boxShadow: line(0.08) } as any,
+    /** A card lying on the ground (chat cards, examples): white with a 1.5 px line, no shadow (brand template 27.11.). */
+    lift: { backgroundColor: night ? '#1A2328' : '#FFFFFF', boxShadow: night ? `${line(0.07)}, 0 1px 2px rgba(0,0,0,0.3), 0 12px 28px -12px rgba(0,0,0,0.6)` : '0 0 0 1.5px #E4EAE9' } as any,
   };
 };
 /** The live glass styles; like `tokens` they swap in place, so every style reads the current ones. */
@@ -139,8 +139,8 @@ export function applyPalette(isDark: boolean) {
 export type PersonId = 'J' | 'T';
 
 export const persons: Record<PersonId, { name: string; tint: string; ink: string; stripe: string; colorName: string }> = {
-  J: { name: 'Julia', tint: '#D3DDEC', ink: '#34507A', stripe: '#BECBE0', colorName: 'E-Blau' },
-  T: { name: 'Tom', tint: '#E6D6E6', ink: '#6B3F6B', stripe: '#D8C2D8', colorName: 'E-Flieder' },
+  J: { name: 'Julia', tint: '#5B8DEF', ink: '#1F3F80', stripe: '#5B8DEF', colorName: 'M-Blau' },
+  T: { name: 'Tom', tint: '#F4A340', ink: '#6B4210', stripe: '#F4A340', colorName: 'M-Amber' },
 };
 
 /** Tint behind a clay icon tile. Falls back to a neutral grey. */
@@ -163,49 +163,66 @@ type Pal = { name: string; bg: string; fg: string };
  * One theme for the whole family; each person picks a colour from it. The app's own colours never change.
  * Saved choices are an index; a theme with fewer colours wraps around. `name` stays the colour's id.
  */
-export type ThemeId = 'erde' | 'klassisch' | 'notion' | 'stundenplan' | 'kontrast';
+export type ThemeId = 'marke' | 'bunt';
 // Julian 04.11. (second round): themes from his saved app designs and big apps, plus a Klassisch made from the app's own UI colours.
-// Every theme has 8 colours. Names are unique across themes, since a kid's colour is saved by name.
+// Familie (the brand) has 8 colours, Bunt 10. Names are unique across themes, since a kid's colour is saved by name.
 export const THEMES: { id: ThemeId; de: string; en: string; colors: Pal[] }[] = [
-  // Ton & Papier (Julian 17.11.: "erde wird standard"): the five earth colours of the template, three added to reach 8.
-  { id: 'erde', de: 'Erde', en: 'Earth', colors: [
-    { name: 'E-Blau', bg: '#D3DDEC', fg: '#34507A' }, { name: 'E-Flieder', bg: '#E6D6E6', fg: '#6B3F6B' },
-    { name: 'E-Terrakotta', bg: '#F2D3C4', fg: '#8A3B22' }, { name: 'E-Ocker', bg: '#F3E0B0', fg: '#7A5A12' },
-    { name: 'E-Salbei', bg: '#D6E3CF', fg: '#3E5E3A' }, { name: 'E-Rose', bg: '#F0D5D6', fg: '#84404A' },
-    { name: 'E-Petrol', bg: '#CFE1DD', fg: '#1F5C57' }, { name: 'E-Stein', bg: '#E4DACB', fg: '#5E5140' },
+  // Der Dritte im Bunde (Julian 27.11.): one clear colour per person, the four of the brand first (Julian blue, Sophia
+  // amber, Emil green, Oma lilac), four calm ones added so every child can have its own.
+  { id: 'marke', de: 'Familie', en: 'Family', colors: [
+    { name: 'M-Blau', bg: '#5B8DEF', fg: '#1F3F80' }, { name: 'M-Amber', bg: '#F4A340', fg: '#6B4210' },
+    { name: 'M-Grün', bg: '#7BC67E', fg: '#2B5A2D' }, { name: 'M-Lila', bg: '#C58BE0', fg: '#57306B' },
+    { name: 'M-Koralle', bg: '#F2836B', fg: '#6E2E20' }, { name: 'M-Türkis', bg: '#4FBFB5', fg: '#1D5A55' },
+    { name: 'M-Rosa', bg: '#EE8DB5', fg: '#6B2D47' }, { name: 'M-Sand', bg: '#D8B56A', fg: '#5E4A1A' },
   ] },
-  { id: 'klassisch', de: 'Klassisch', en: 'Classic', colors: [
-    { name: 'Blau', bg: '#D2DCE7', fg: '#1F4E89' }, { name: 'Rose', bg: '#EBD5DA', fg: '#9D2B48' },
-    { name: 'Petrol', bg: '#CDDCDD', fg: '#075056' }, { name: 'Orange', bg: '#F3D9CE', fg: '#AF3A0B' },
-    { name: 'Grün', bg: '#D5ECE2', fg: '#237551' }, { name: 'Sonne', bg: '#F4EBD2', fg: '#856614' },
-    { name: 'Rot', bg: '#F4D7D5', fg: '#B3312A' }, { name: 'Tinte', bg: '#D0D3D4', fg: '#16232A' },
-  ] },
-  // Notion's tag colours, a little stronger so they carry a calendar block, text darkened to stay readable.
-  { id: 'notion', de: 'Notion', en: 'Notion', colors: [
-    { name: 'N-Blau', bg: '#C6DBE7', fg: '#286284' }, { name: 'N-Pink', bg: '#EECDDE', fg: '#973B6C' },
-    { name: 'N-Grün', bg: '#CBDCD3', fg: '#35664C' }, { name: 'N-Orange', bg: '#F4D9C1', fg: '#935016' },
-    { name: 'N-Gelb', bg: '#F0E0C5', fg: '#825D1E' }, { name: 'N-Rot', bg: '#F3CDCB', fg: '#A13A36' },
-    { name: 'N-Lila', bg: '#E0D4E9', fg: '#704F89' }, { name: 'N-Braun', bg: '#E4D6CF', fg: '#7C5341' },
-  ] },
-  // From Julian's saved school timetable design: soft, like a real Stundenplan.
-  { id: 'stundenplan', de: 'Stundenplan', en: 'Timetable', colors: [
-    { name: 'S-Mint', bg: '#C9F8E6', fg: '#0F5A43' }, { name: 'S-Sand', bg: '#F3E2CD', fg: '#7A4E1A' },
-    { name: 'S-Lavendel', bg: '#CFD1F8', fg: '#353A9A' }, { name: 'S-Flieder', bg: '#E1D0F3', fg: '#5D2E8F' },
-    { name: 'S-Vanille', bg: '#FDEFD0', fg: '#7A5A0E' }, { name: 'S-Salbei', bg: '#D3EEE0', fg: '#2C5F45' },
-    { name: 'S-Pfirsich', bg: '#FCD9C9', fg: '#8E3B17' }, { name: 'S-Himmel', bg: '#CDE6F6', fg: '#1D5480' },
-  ] },
-  // From his saved typelabo and MindfulPalettes posts, two colours added to reach 8.
-  { id: 'kontrast', de: 'Kontrast', en: 'Contrast', colors: [
-    { name: 'K-Orange', bg: '#FFDBC8', fg: '#AD3E03' }, { name: 'K-Petrol', bg: '#C8D8DA', fg: '#075056' },
-    { name: 'K-Türkis', bg: '#C7ECF1', fg: '#00707F' }, { name: 'K-Marine', bg: '#C7CDD3', fg: '#011C39' },
-    { name: 'K-Gelb', bg: '#FCF7DF', fg: '#7D7139' }, { name: 'K-Rot', bg: '#F1D1D1', fg: '#AF2B29' },
-    { name: 'K-Lila', bg: '#DCD3EC', fg: '#5B3E8C' }, { name: 'K-Grün', bg: '#D3E6CF', fg: '#2E6326' },
+  // Julian 25.11. (pill palette from an Interfaces post): bright fills for the family bubbles, 10 colours.
+  { id: 'bunt', de: 'Bunt', en: 'Bright', colors: [
+    { name: 'B-Lila', bg: '#A8ABFF', fg: '#46476B' }, { name: 'B-Blau', bg: '#00CAFF', fg: '#00546B' },
+    { name: 'B-Himmel', bg: '#00D7FF', fg: '#005A6B' }, { name: 'B-Türkis', bg: '#00E4C2', fg: '#005F51' },
+    { name: 'B-Grün', bg: '#00E291', fg: '#005E3C' }, { name: 'B-Limette', bg: '#AFCE00', fg: '#495600' },
+    { name: 'B-Gelb', bg: '#FDAC00', fg: '#6A4800' }, { name: 'B-Orange', bg: '#FF8B54', fg: '#6B3A23' },
+    { name: 'B-Lachs', bg: '#FF8289', fg: '#6B3639' }, { name: 'B-Pink', bg: '#FF81B9', fg: '#6B364D' },
   ] },
 ];
 /** The active theme's colours. Mutable: swapped in place by applyColorTheme. */
 export const personPalette: Pal[] = [...THEMES[0].colors];
 // Colours of earlier themes, kept only so a colour saved by name (e.g. for a kid) still resolves.
 const RETIRED: Pal[] = [
+  // Erde, removed 27.11. (Julian: the brand look is the standard, Bunt stays the other choice).
+  { name: 'E-Blau', bg: '#D3DDEC', fg: '#34507A' }, { name: 'E-Flieder', bg: '#E6D6E6', fg: '#6B3F6B' }, { name: 'E-Terrakotta', bg: '#F2D3C4', fg: '#8A3B22' }, { name: 'E-Ocker', bg: '#F3E0B0', fg: '#7A5A12' }, { name: 'E-Salbei', bg: '#D6E3CF', fg: '#3E5E3A' }, { name: 'E-Rose', bg: '#F0D5D6', fg: '#84404A' }, { name: 'E-Petrol', bg: '#CFE1DD', fg: '#1F5C57' }, { name: 'E-Stein', bg: '#E4DACB', fg: '#5E5140' },
+  // Themes removed 25.11. (Julian: only Erde and Bunt stay).
+  { name: 'Blau', bg: '#D2DCE7', fg: '#1F4E89' },
+  { name: 'Rose', bg: '#EBD5DA', fg: '#9D2B48' },
+  { name: 'Petrol', bg: '#CDDCDD', fg: '#075056' },
+  { name: 'Orange', bg: '#F3D9CE', fg: '#AF3A0B' },
+  { name: 'Grün', bg: '#D5ECE2', fg: '#237551' },
+  { name: 'Sonne', bg: '#F4EBD2', fg: '#856614' },
+  { name: 'Rot', bg: '#F4D7D5', fg: '#B3312A' },
+  { name: 'Tinte', bg: '#D0D3D4', fg: '#16232A' },
+  { name: 'N-Blau', bg: '#C6DBE7', fg: '#286284' },
+  { name: 'N-Pink', bg: '#EECDDE', fg: '#973B6C' },
+  { name: 'N-Grün', bg: '#CBDCD3', fg: '#35664C' },
+  { name: 'N-Orange', bg: '#F4D9C1', fg: '#935016' },
+  { name: 'N-Gelb', bg: '#F0E0C5', fg: '#825D1E' },
+  { name: 'N-Rot', bg: '#F3CDCB', fg: '#A13A36' },
+  { name: 'N-Lila', bg: '#E0D4E9', fg: '#704F89' },
+  { name: 'N-Braun', bg: '#E4D6CF', fg: '#7C5341' },
+  { name: 'S-Mint', bg: '#C9F8E6', fg: '#0F5A43' },
+  { name: 'S-Sand', bg: '#F3E2CD', fg: '#7A4E1A' },
+  { name: 'S-Lavendel', bg: '#CFD1F8', fg: '#353A9A' },
+  { name: 'S-Flieder', bg: '#E1D0F3', fg: '#5D2E8F' },
+  { name: 'S-Vanille', bg: '#FDEFD0', fg: '#7A5A0E' },
+  { name: 'S-Salbei', bg: '#D3EEE0', fg: '#2C5F45' },
+  { name: 'S-Pfirsich', bg: '#FCD9C9', fg: '#8E3B17' },
+  { name: 'S-Himmel', bg: '#CDE6F6', fg: '#1D5480' },
+  { name: 'K-Orange', bg: '#FFDBC8', fg: '#AD3E03' },
+  { name: 'K-Petrol', bg: '#C8D8DA', fg: '#075056' },
+  { name: 'K-Türkis', bg: '#C7ECF1', fg: '#00707F' },
+  { name: 'K-Marine', bg: '#C7CDD3', fg: '#011C39' },
+  { name: 'K-Gelb', bg: '#FCF7DF', fg: '#7D7139' },
+  { name: 'K-Rot', bg: '#F1D1D1', fg: '#AF2B29' },
+  { name: 'K-Lila', bg: '#DCD3EC', fg: '#5B3E8C' },
+  { name: 'K-Grün', bg: '#D3E6CF', fg: '#2E6326' },
   { name: 'Rosa', bg: '#F7C6D2', fg: '#8A1538' }, { name: 'Mint', bg: '#B5E3D9', fg: '#0A5048' },
   { name: 'Sand', bg: '#FAD1A0', fg: '#7A3D00' }, { name: 'Salbei', bg: '#BFE0B4', fg: '#1F5426' },
   { name: 'Flieder', bg: '#E0CAF3', fg: '#592886' }, { name: 'Koralle', bg: '#FBC9B6', fg: '#8F2D12' },
@@ -215,7 +232,7 @@ const RETIRED: Pal[] = [
 ];
 /** Every colour of every theme, so a colour name saved for a kid still resolves after a switch. */
 export const allColors: Pal[] = [...THEMES.flatMap((t) => t.colors), ...RETIRED];
-let themeId: ThemeId = 'erde';
+let themeId: ThemeId = 'marke';
 export const currentTheme = () => themeId;
 export function applyColorTheme(id: ThemeId) {
   const t = THEMES.find((x) => x.id === id) ?? THEMES[0];
@@ -225,14 +242,14 @@ export function applyColorTheme(id: ThemeId) {
 
 export const radii = { tile: 16, row: 20, card: 24, sheet: 32, pill: 999 } as const;
 
-/** Headings (Ton & Papier, 17.11.): Bricolage Grotesque 600. The file lies in assets/fonts, loaded in app/_layout.tsx. */
-export const headFont = 'BricolageGrotesque_600SemiBold';
+/** Headings (brand 27.11.): DM Sans ExtraBold, set tight. The files lie in assets/fonts, loaded in app/_layout.tsx. */
+export const headFont = 'DMSans_800ExtraBold';
 
-// Inter (Julian 13.11., klar look). Custom fonts on native ignore fontWeight, so each weight is its own file.
+// DM Sans (brand 27.11.). Custom fonts on native ignore fontWeight, so each weight is its own file.
 export const fonts = {
-  400: 'Inter_400Regular',
-  500: 'Inter_500Medium',
-  600: 'Inter_600SemiBold',
-  700: 'Inter_700Bold',
+  400: 'DMSans_400Regular',
+  500: 'DMSans_500Medium',
+  600: 'DMSans_600SemiBold',
+  700: 'DMSans_700Bold',
 } as const;
 export type Weight = keyof typeof fonts;

@@ -6,11 +6,6 @@ import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider, SafeAreaInsetsContext } from 'react-native-safe-area-context';
 import { useFonts } from 'expo-font';
-// Per-weight imports so only the four weights we use get bundled. Inter since the klar look (Julian 13.11.).
-import { Inter_400Regular } from '@expo-google-fonts/inter/400Regular';
-import { Inter_500Medium } from '@expo-google-fonts/inter/500Medium';
-import { Inter_600SemiBold } from '@expo-google-fonts/inter/600SemiBold';
-import { Inter_700Bold } from '@expo-google-fonts/inter/700Bold';
 import ToastHost from '../src/components/ToastHost';
 import { initSentry, wrapRoot } from '../src/lib/sentry';
 import { initAnalytics } from '../src/lib/analytics';
@@ -45,7 +40,14 @@ const sheet = { presentation: 'transparentModal', animation: 'fade', contentStyl
 const plusMenu = { ...sheet, animation: 'none' } as const;
 
 function RootLayout() {
-  const [loaded, error] = useFonts({ Inter_400Regular, Inter_500Medium, Inter_600SemiBold, Inter_700Bold, BricolageGrotesque_600SemiBold: require('../assets/fonts/BricolageGrotesque_600SemiBold.ttf') });
+  const [loaded, error] = useFonts({
+    // DM Sans, the brand font (27.11.): the four text weights and ExtraBold for headings, from assets/fonts (OFL).
+    DMSans_400Regular: require('../assets/fonts/DMSans_400Regular.ttf'),
+    DMSans_500Medium: require('../assets/fonts/DMSans_500Medium.ttf'),
+    DMSans_600SemiBold: require('../assets/fonts/DMSans_600SemiBold.ttf'),
+    DMSans_700Bold: require('../assets/fonts/DMSans_700Bold.ttf'),
+    DMSans_800ExtraBold: require('../assets/fonts/DMSans_800ExtraBold.ttf'),
+  });
   // Darkmode: a new palette remounts the tree once; the page that switched opens again.
   // Darkmode: a new palette redraws every screen; where you are stays as it is.
   const gen = useThemeGen();

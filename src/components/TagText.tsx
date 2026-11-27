@@ -20,7 +20,8 @@ import { tagSegments, hasTags, Seg, TagKind, TagNames } from '../lib/tags';
 // One quiet chip for every kind (Julian 24.11. 21:43: the coloured tags mixed with the coloured bubbles, "zu bunt").
 // White on the light bubbles like the chip on white in the film, a soft light veil on dark ground. The bubble keeps
 // the only colour: who wrote it.
-const CHIP = { bg: '#FFFFFF', ring: '0 0 0 1px rgba(25,25,25,0.07), 0 1px 2px rgba(25,25,25,0.06)' };
+// No outline: Android drew the hairline ring as a hard black edge (Julian 27.11.: "sehen komisch aus mit der black outline"). White on the light bubble is enough.
+const CHIP = { bg: '#FFFFFF', ring: undefined as string | undefined };
 const CHIP_DARK = { bg: 'rgba(255,255,255,0.16)', ring: undefined };
 const EASE = Easing.bezier(0.23, 1, 0.32, 1);
 

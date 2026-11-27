@@ -5,7 +5,7 @@
  */
 import React, { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { View, ScrollView } from 'react-native';
-import Animated from 'react-native-reanimated';
+import Animated, { FadeIn } from 'react-native-reanimated';
 import { useMemoOut } from '../lib/memoOut';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
@@ -17,7 +17,7 @@ import PressScale from './ui/PressScale';
 import LineIcon from './ui/LineIcon';
 import { tokens, glass, persons as basePersons } from '../theme';
 import { useBubble } from '../lib/look';
-import { swapIn, rowLayout } from '../theme/motion';
+import { swapIn, rowLayout, easing, slipOut, contentIn } from '../theme/motion';
 import { useStore, actions } from '../state/store';
 import { useDockSpace } from '../lib/dockSpace';
 import { useKeyboardInset } from '../lib/keyboard';
@@ -435,7 +435,27 @@ const MEMO = 26;
 const MEMO_GAP = 8;
 const memoInset = (minimal: boolean) => (minimal ? 0 : MEMO + MEMO_GAP);
 
-export function Reply({ text, live, fresh, bare }: { text?: string; live?: boolean; fresh?: boolean; /** In the chat log: Memo and his words as one plain line on the ground, as in the klar draft. */ bare?: boolean }) {
+/**
+ * Memo's live answer arrives word by word (Allo motion map, Julian 25.11.): each word fades in 28 ms after the one
+ * before, so the answer is read as it comes. Words that came in an earlier batch stay put. Old answers stay still.
+ */
+function Words({ text, size, line }: { text: string; size: number; line: number }) {
+  const parts = text.split(/(\s+)/).filter((w) => w && !/^\s+$/.test(w));
+  const seen = useRef(0);
+  const from = seen.current;
+  useEffect(() => { seen.current = parts.length; });
+  return (
+    <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
+      {parts.map((w, i) => (
+        <Animated.View key={i} entering={i < from ? undefined : FadeIn.duration(180).easing(easing.out).delay(Math.min(i - from, 24) * 28)}>
+          <Txt size={size} line={line}>{i < parts.length - 1 ? w + ' ' : w}</Txt>
+        </Animated.View>
+      ))}
+    </View>
+  );
+}
+
+export function Reply({ text, live, fresh, bare, flow }: { text?: string; live?: boolean; fresh?: boolean; /** Words arrive one by one (a just-given answer). */ flow?: boolean; /** In the chat log: Memo and his words as one plain line on the ground, as in the klar draft. */ bare?: boolean }) {
   // The blob (Julian 07.11.): squashes while it thinks, ^^ when it has answered; older cards hold still.
   const mood = live ? (text ? 'happy' : 'think') : 'idle';
   const minimal = useMascot() === 'minimal';
@@ -445,7 +465,7 @@ export function Reply({ text, live, fresh, bare }: { text?: string; live?: boole
     <View style={{ alignSelf: 'stretch', flexDirection: 'row', alignItems: 'flex-end', gap: MEMO_GAP }}>
       {minimal ? null : <View style={{ marginBottom: 9 }}><Pin mood={mood} size={MEMO} shadow={false} still={!live} /></View>}
       <View style={[BUBBLE, { borderBottomLeftRadius: 6, backgroundColor: tokens.chipBg }]}>
-        {text ? <Animated.View entering={swapIn}><Txt size={17} line={24}>{text}</Txt></Animated.View> : <View style={{ paddingVertical: 8, paddingHorizontal: 2 }}><Dots /></View>}
+        {text ? (live || flow ? <Words text={text} size={17} line={24} /> : <Animated.View entering={swapIn}><Txt size={17} line={24}>{text}</Txt></Animated.View>) : <View style={{ paddingVertical: 8, paddingHorizontal: 2 }}><Dots /></View>}
       </View>
     </View>
   );
@@ -455,7 +475,7 @@ export function Reply({ text, live, fresh, bare }: { text?: string; live?: boole
         {minimal ? null : <Pin mood={mood} size={24} shadow={false} still={!live} />}
         <Txt size={12} weight={600} tracking={0.6} color={tokens.done}>MEMO</Txt>
       </View>
-      {text ? <Animated.View entering={swapIn}><Txt size={15} line={21}>{text}</Txt></Animated.View> : <View style={{ paddingVertical: 4 }}><Dots /></View>}
+      {text ? (live || flow ? <Words text={text} size={15} line={21} /> : <Animated.View entering={swapIn}><Txt size={15} line={21}>{text}</Txt></Animated.View>) : <View style={{ paddingVertical: 4 }}><Dots /></View>}
     </View>
   );
 }
@@ -516,6 +536,8 @@ function EntryBody({ f, mine: own, me, answer, side }: Omit<EntryProps, 'showcas
     ? { backgroundColor: tokens.row, borderWidth: 1, borderColor: tokens.hair }
     : { backgroundColor: mine && persons === basePersons ? mineSoft : p.tint };
   const fresh = Date.now() - Date.parse(f.at) < 60000;
+  // Just made by Memo in this sitting: the card slips out from beside him once (Allo map). Older cards in the log stay still.
+  const born = useRef(!still && Date.now() - Date.parse(f.at) < 8000).current;
   const titles = useMadeTitles(f.undone ? undefined : f.events, f.snap?.events);
   const recent = Date.now() - Date.parse(f.at) < 15 * 60000;
   const made = f.kind === 'made' && !!(f.events || f.items || f.tasks || f.undone);
@@ -539,9 +561,10 @@ function EntryBody({ f, mine: own, me, answer, side }: Omit<EntryProps, 'showcas
           </View>
         </View>
         {f.ask ? <Ask f={f} me={me} answer={answer} /> : null}
-        {says ? <Reply bare text={says} fresh={fresh} /> : null}
+        {says ? <Reply bare text={says} fresh={fresh} flow={born} /> : null}
         {made ? (
-          <Animated.View layout={rowLayout} style={[cardFrame, { marginLeft: inset, opacity: f.undone ? 0.55 : 1 }]}>
+          <Animated.View layout={rowLayout} entering={born ? slipOut : undefined} style={[cardFrame, { marginLeft: inset, opacity: f.undone ? 0.55 : 1, transformOrigin: 'left bottom' }]}>
+            <Animated.View entering={born ? contentIn : undefined}>
             {f.undone ? null : f.events ? <Termine ids={f.events} snap={f.snap?.events} changed={f.changed} fresh={fresh} foot={!undo} ask={asks && !open && recent ? me : undefined} timeQ={asks && !open && recent ? f.timeQ : undefined} placeQ={asks && !open && recent} /> : null}
             {f.undone ? null : f.events ? <VacationLeft ids={f.events} /> : null}
             {f.undone || HIDDEN.suggestions ? null : f.events ? <PackOffer ids={f.events} /> : null}
@@ -555,6 +578,7 @@ function EntryBody({ f, mine: own, me, answer, side }: Omit<EntryProps, 'showcas
                 <CardBtn label={tx('Rückgängig', 'Undo')} onPress={() => undoEntry(f.id)} />
               </View>
             ) : !f.undone && !f.events ? <View style={{ height: 4 }} /> : null}
+            </Animated.View>
           </Animated.View>
         ) : null}
         {/* An answer without a card can show how it came about. */}

@@ -8,7 +8,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { ScrollView, StyleProp, View, ViewStyle, Platform, LayoutChangeEvent } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Defs, LinearGradient, Stop, Rect } from 'react-native-svg';
-import Animated, { useAnimatedStyle, useSharedValue, withSpring, withTiming, interpolateColor, makeMutable, type SharedValue } from 'react-native-reanimated';
+import Animated, { useAnimatedStyle, useSharedValue, withSpring, withTiming, withDelay, interpolateColor, makeMutable, type SharedValue } from 'react-native-reanimated';
 import Txt, { Dot } from './Txt';
 import LineIcon, { LineName } from './LineIcon';
 import PressScale from './PressScale';
@@ -407,15 +407,22 @@ export function Chip({ children, bg = tokens.chipBg, color = tokens.ink, onPress
  */
 export function Check({ done, onPress, size = 24, color = tokens.done }: { done: boolean; onPress?: () => void; size?: number; color?: string }) {
   const v = useSharedValue(done ? 1 : 0);
+  const d = useSharedValue(done ? 1 : 0);
   useEffect(() => {
     // Calm, not playful (Julian 28.10.): the fill settles in once, no bounce.
     v.value = withTiming(done ? 1 : 0, { duration: done ? motion.micro : 120, easing: easing.out });
+    // The tick draws itself left to right, 60 ms after the shape (Allo: shape first, then content).
+    d.value = done ? withDelay(60, withTiming(1, { duration: 200, easing: easing.out })) : withTiming(0, { duration: 0 });
   }, [done]);
   const fill = useAnimatedStyle(() => ({ opacity: v.value, transform: [{ scale: 0.8 + 0.2 * v.value }] }));
+  const wipe = useAnimatedStyle(() => ({ transform: [{ translateX: d.value * size }] }));
   const inner = (
     <Animated.View style={[{ width: size, height: size, borderRadius: 999, borderWidth: 1.5, borderColor: tokens.circleLine, alignItems: 'center', justifyContent: 'center' }]}>
       <Animated.View style={[{ position: 'absolute', top: -1.5, left: -1.5, width: size, height: size, borderRadius: 999, backgroundColor: color, alignItems: 'center', justifyContent: 'center' }, fill]}>
         <LineIcon name="check" size={size * 0.62} color="#FFFFFF" stroke={2.4} />
+        <View pointerEvents="none" style={{ position: 'absolute', top: 0, bottom: 0, left: 0, right: 0, borderRadius: 999, overflow: 'hidden' }}>
+          <Animated.View style={[{ position: 'absolute', top: 0, bottom: 0, left: size * 0.12, width: size, backgroundColor: color }, wipe]} />
+        </View>
       </Animated.View>
     </Animated.View>
   );
