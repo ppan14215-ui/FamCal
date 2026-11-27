@@ -4,6 +4,12 @@ Alle sichtbaren Änderungen an FamCal. Neueste oben. Agenten und Menschen: Ände
 
 ## Unreleased
 
+### Neue Marke, Schritt 4: Chat (28.11.)
+- Überschrift "Chat" mit "Familie" darüber, die Familienköpfe oben rechts fallen weg.
+- Was auf ein Ja wartet, steht oben als graue Karte mit "Eintragen" und "Nein".
+- Gesagtes steht in breiten, sanft gefärbten Blasen mit Name und Uhrzeit darüber, Memo antwortet in grauen Blasen.
+- Termin Karten im Chat zeigen den Farbbalken der Person und wer dabei ist, statt Symbol, Ort Knopf und Pfeil.
+
 ### Neue Marke, Schritt 3: Termin (28.11.)
 - Ein Termin öffnet mit großem Titel, darunter wer dabei ist als Pillen zum Antippen, dann ruhige graue Gruppen: Wann und Wo, Erinnern und Wiederholen, Mitbringen und Notiz. Löschen als ruhige Pille unten.
 - Neuer Termin wie im Entwurf: "Abbrechen" und "Sichern" oben, der Titel auf einer weißen Karte, die Felder in zwei Gruppen, unten ein großer Sichern Knopf.
