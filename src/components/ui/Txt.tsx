@@ -24,12 +24,12 @@ export default function Txt({ size = 16, line, weight = 400, color = tokens.ink,
       {...rest}
       style={[
         {
-          // Brand (27.11.): what reads as a heading (large and strong) is DM Sans ExtraBold, set tight like the template.
+          // Brand (27.11.): what reads as a heading (large and strong) is DM Sans Bold, set tight like the template.
           fontFamily: size >= 20 && weight >= 600 ? headFont : fonts[weight],
           fontSize: size,
           lineHeight: line ?? Math.round(size * 1.38),
           color,
-          letterSpacing: tracking ?? (size >= 20 && weight >= 600 ? -0.035 * size : undefined),
+          letterSpacing: tracking ?? (size >= 20 && weight >= 600 ? -0.028 * size : undefined),
           textAlign: center ? 'center' : undefined,
           textDecorationLine: strike ? 'line-through' : undefined,
         },

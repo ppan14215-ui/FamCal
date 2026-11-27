@@ -40,6 +40,10 @@ const LIGHT = {
   ok: '#2F9E6E',
   scrim: 'rgba(20,48,47,0.28)',
   noteBg: '#F1F4F3',
+  /** A grouped list lies on this (brand 27.11., like Notion and iOS settings). */
+  group: '#F6F8F8',
+  /** The line between two rows of a group. */
+  groupLine: 'rgba(20,48,47,0.07)',
   paper: '#FFFFFF',
   /** Text and icons on an ink surface (primary buttons, today's day). */
   onInk: '#FFFFFF',
@@ -63,7 +67,7 @@ const DARK: Tokens = {
   bg: '#0F1518', row: '#1A2328', ink: '#F2F4F4', sub: '#A9B2B6', mute: '#7C878C', hair: '#2C3840',
   done: '#5FB7AE', doneSoft: '#1E4F49', frist: '#F08A4B', vac: '#8C6A1F', vacInk: '#FFF4D6', segBg: '#151C20', segOn: '#3B4B53', pillOn: '#3B4B53', chipBg: '#2A363C',
   circleLine: '#3A464C', dotOff: '#3A464C', danger: '#F0766C', select: 'rgba(95,183,174,0.32)', ok: '#4CC28E',
-  scrim: 'rgba(0,0,0,0.55)', noteBg: '#1F272B', paper: '#1C2326', onInk: '#16232A', glass: 'rgba(26,35,40,0.72)', veil: 'rgba(15,21,24,0.95)',
+  scrim: 'rgba(0,0,0,0.55)', noteBg: '#1F272B', group: '#1A2328', groupLine: 'rgba(255,255,255,0.07)', paper: '#1C2326', onInk: '#16232A', glass: 'rgba(26,35,40,0.72)', veil: 'rgba(15,21,24,0.95)',
   accent: '#F2F4F4', accentGlow: 'rgba(0,0,0,0.3)',
 };
 
@@ -122,8 +126,8 @@ const glassOf = (night: boolean) => {
     card: { backgroundColor: bg, boxShadow: `${inn}, ${line(0.06)}, ${drop(14, 40, 0.14)}` } as any,
     /** A flat card in the content: only a hairline. */
     line: { backgroundColor: night ? '#1A2328' : '#FFFFFF', boxShadow: line(0.08) } as any,
-    /** A card lying on the ground (chat cards, examples): white with a 1.5 px line, no shadow (brand template 27.11.). */
-    lift: { backgroundColor: night ? '#1A2328' : '#FFFFFF', boxShadow: night ? `${line(0.07)}, 0 1px 2px rgba(0,0,0,0.3), 0 12px 28px -12px rgba(0,0,0,0.6)` : '0 0 0 1.5px #E4EAE9' } as any,
+    /** A card lying on the ground (chat cards, examples): white, a 7 % line and a soft low shadow (brand template, polished 27.11.). */
+    lift: { backgroundColor: night ? '#1A2328' : '#FFFFFF', boxShadow: night ? `${line(0.07)}, 0 1px 2px rgba(0,0,0,0.3), 0 12px 28px -12px rgba(0,0,0,0.6)` : '0 0 0 1px rgba(20,48,47,0.07), 0 1px 2px rgba(20,48,47,0.04), 0 8px 20px -14px rgba(20,48,47,0.25)' } as any,
   };
 };
 /** The live glass styles; like `tokens` they swap in place, so every style reads the current ones. */
@@ -242,8 +246,8 @@ export function applyColorTheme(id: ThemeId) {
 
 export const radii = { tile: 16, row: 20, card: 24, sheet: 32, pill: 999 } as const;
 
-/** Headings (brand 27.11.): DM Sans ExtraBold, set tight. The files lie in assets/fonts, loaded in app/_layout.tsx. */
-export const headFont = 'DMSans_800ExtraBold';
+/** Headings (brand, polished 27.11.): DM Sans Bold, set tight. The files lie in assets/fonts, loaded in app/_layout.tsx. */
+export const headFont = 'DMSans_700Bold';
 
 // DM Sans (brand 27.11.). Custom fonts on native ignore fontWeight, so each weight is its own file.
 export const fonts = {

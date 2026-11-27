@@ -61,3 +61,24 @@ export function evInk(e: Ev): string {
   }
   return tokens.sub;
 }
+
+/**
+ * The clear colour of a Termin (brand 27.11.): the person's fill, for the bar beside a row and the dots. Brand and
+ * Bunt keep the vivid colour in `bg`; a Termin of the whole family or of nobody stays quiet.
+ */
+export function evFill(e: Ev): string {
+  if (colorBy() === 'kategorie') {
+    const c = categoryOf(e.icon);
+    const pal = c ? personPalette[categoryIndex(c) % personPalette.length] : undefined;
+    return pal ? shade(pal).bg : tokens.dotOff;
+  }
+  if (e.who === 'J' || e.who === 'T') return persons[e.who].tint;
+  // Someone of the family besides the parents: their colour (the first one named).
+  if (e.people?.length) {
+    const p = get().people.find((x) => x.id === e.people![0]);
+    const c = p && allColors.find((x) => x.name === p.color);
+    if (c) return shade(c).bg;
+  }
+  // The whole family, or nobody named: the moss grey of the brand.
+  return e.who === 'both' ? tokens.sub : tokens.dotOff;
+}

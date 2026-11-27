@@ -4,6 +4,13 @@ Alle sichtbaren Änderungen an FamCal. Neueste oben. Agenten und Menschen: Ände
 
 ## Unreleased
 
+### Neue Marke, Schritt 2: Kalender (28.11.)
+- Heute ist eine ruhige Liste statt Stundenraster: Zeit, Farbbalken der Person, Titel, Gesichter. Vorbei wird blass, eine rote Linie zeigt Jetzt. Darunter die Aufgaben von heute zum Abhaken.
+- Woche: oben die sieben Tage mit Punkten in den Farben der Personen, darunter jeder Tag als Gruppe. Tippen auf einen Tag gleitet dorthin, Wischen auf der Leiste blättert die Woche.
+- Monat mit runden Tagen und Punkten, darunter der gewählte Tag. Jahr als zwölf ruhige Kacheln mit Balken für wie viel los ist, Urlaub grün, darunter was das Jahr noch bringt.
+- Überschrift mit grauer Zeile darüber, Personenfilter als "Alle" und farbige Punkte, auch in der einfachen Version.
+- Oben rechts nur noch das Plus, die Suche oben fällt weg. Das Briefing über Heute fällt weg, Fragen stehen im Chat.
+
 ### Neue Marke, Schritt 1: neuer Look (27.11.)
 - Weißer Grund, Memo Tinte, ruhige Grautöne; Karten weiß mit feiner Linie statt Schatten.
 - Neue Schrift DM Sans, Überschriften kräftig.
