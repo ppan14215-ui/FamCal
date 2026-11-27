@@ -419,15 +419,19 @@ export function KlarPill({ current, onTab, bar }: { current?: string; onTab?: (n
       // "Neu" is the inbox (what Memo read and what waits for a yes); it only shows in this bar.
       const tab = TABS.find((x) => x.name === name) ?? { name: 'eingang', key: 'nav.neu', icon: 'bell' as LineName };
       const on = current === tab.name;
+      // Julian 27.11.: "Einstellungen" is too long for the bar; there it is "Profil" with a person, the screen keeps its name.
+      const profil = name === 'einstellungen';
+      const label = profil ? tx('Profil', 'Profile') : t(tab.key);
+      const icon: LineName = profil ? 'person' : tab.icon;
       return (
-        <PressScale key={name} scale={0.94} accessibilityRole="tab" accessibilityLabel={t(tab.key)} accessibilityState={{ selected: on }}
+        <PressScale key={name} scale={0.94} accessibilityRole="tab" accessibilityLabel={label} accessibilityState={{ selected: on }}
           onPress={() => { if (!on) { haptics.select(); onTab?.(tab.name); } }} style={{ flex: 1, height: navH(), alignItems: 'center', justifyContent: 'center', gap: 3 }}>
           <Animated.View style={[{ alignItems: 'center', gap: 3 }, shove[i]]}>
           <View>
-            <LineIcon name={tab.icon} size={22} color={on ? tokens.ink : tokens.mute} stroke={on ? 2 : undefined} />
+            <LineIcon name={icon} size={22} color={on ? tokens.ink : tokens.mute} stroke={on ? 2 : undefined} />
             {name === 'chat' && waiting ? <View style={{ position: 'absolute', right: -3, top: -2, width: 9, height: 9, borderRadius: 9, backgroundColor: tokens.frist, borderWidth: 1.5, borderColor: tokens.row }} /> : null}
           </View>
-          <Txt size={11} line={13} weight={on ? 600 : 500} color={on ? tokens.ink : tokens.mute} numberOfLines={1}>{t(tab.key)}</Txt>
+          <Txt size={11} line={13} weight={on ? 600 : 500} color={on ? tokens.ink : tokens.mute} numberOfLines={1}>{label}</Txt>
           </Animated.View>
         </PressScale>
       );
@@ -440,9 +444,10 @@ export function KlarPill({ current, onTab, bar }: { current?: string; onTab?: (n
           <Animated.View pointerEvents="box-none" style={[{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0 }, give]}>
           <View pointerEvents="none" style={[{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, backgroundColor: tokens.row, borderTopLeftRadius: 22, borderTopRightRadius: 22 }, glass.nav, { borderBottomWidth: 0 } as any]} />
           <View pointerEvents={onTab ? 'box-none' : 'none'} accessibilityRole="tablist" style={{ position: 'absolute', left: 0, right: 0, bottom: foot, height: navH(), flexDirection: 'row', alignItems: 'center', paddingHorizontal: 6 }}>
-            <View style={{ flex: 1, flexDirection: 'row' }}>{slot('kalender', 0)}{slot('listen', 1)}</View>
-            <View style={{ width: BIG + 28 }} />
-            <View style={{ flex: 1, flexDirection: 'row' }}>{slot('chat', 2)}{slot('einstellungen', 3)}</View>
+            {/* Five equal columns (Julian 27.11.: "die Tabs sind nicht sauber verteilt"); Memo stands in the middle one. */}
+            {slot('kalender', 0)}{slot('listen', 1)}
+            <View style={{ flex: 1 }} />
+            {slot('chat', 2)}{slot('einstellungen', 3)}
           </View>
           <View pointerEvents="box-none" style={{ position: 'absolute', left: 0, right: 0, bottom: foot + navH() / 2 + BIG_UP - (BIG + 10) / 2, alignItems: 'center' }}>
             <View style={{ width: BIG + 10, height: BIG + 10, borderRadius: 999, backgroundColor: tokens.row, alignItems: 'center', justifyContent: 'center' }}>

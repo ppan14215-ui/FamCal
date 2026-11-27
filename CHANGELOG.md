@@ -4,6 +4,13 @@ Alle sichtbaren Änderungen an FamCal. Neueste oben. Agenten und Menschen: Ände
 
 ## Unreleased
 
+### Neue Marke, Schritt 1: neuer Look (27.11.)
+- Weißer Grund, Memo Tinte, ruhige Grautöne; Karten weiß mit feiner Linie statt Schatten.
+- Neue Schrift DM Sans, Überschriften kräftig.
+- Neues Farbthema "Familie" mit den Markenfarben ist Standard, Bunt bleibt wählbar, Erde fällt weg.
+- Die Leiste hat fünf gleich breite Spalten; der Einstellungen Tab heißt dort kurz "Profil".
+- Farbkreise in den Einstellungen zeigen die Farbe so, wie sie in der App erscheint.
+
 ### Farbthema Bunt (27.11.)
 - Neues zweites Farbthema "Bunt" mit zehn kräftigen Farben neben Erde. Alle anderen Themen sind weg; alte Farben bleiben lesbar.
 - Die weißen Tags in den Chat Blasen haben keinen dunklen Rand mehr.

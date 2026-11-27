@@ -91,7 +91,8 @@ function Swatches() {
           return (
             <PressScale key={c.name} scale={0.9} hitSlop={4} disabled={off} accessibilityRole="radio" accessibilityLabel={c.name.replace(/^[A-Z]-/, '')} accessibilityState={{ selected: on, disabled: off }} onPress={() => { haptics.select(); actions.setColor(me, i); colorsTouched(); }}
               style={{ width: 38, height: 38, borderRadius: 19, alignItems: 'center', justifyContent: 'center', borderWidth: 1.5, borderColor: on ? tokens.ink : 'transparent', opacity: off ? 0.25 : 1 }}>
-              <View style={{ width: 29, height: 29, borderRadius: 15, backgroundColor: c.fg }} />
+              {/* The colour as people see it in the app: the fill (brand and Bunt both name it bg). */}
+              <View style={{ width: 29, height: 29, borderRadius: 15, backgroundColor: c.bg }} />
             </PressScale>
           );
         })}

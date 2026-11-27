@@ -24,12 +24,12 @@ export default function Txt({ size = 16, line, weight = 400, color = tokens.ink,
       {...rest}
       style={[
         {
-          // Ton & Papier: what reads as a heading (large and strong) is set in Bricolage; everything else stays Inter.
+          // Brand (27.11.): what reads as a heading (large and strong) is DM Sans ExtraBold, set tight like the template.
           fontFamily: size >= 20 && weight >= 600 ? headFont : fonts[weight],
           fontSize: size,
           lineHeight: line ?? Math.round(size * 1.38),
           color,
-          letterSpacing: tracking,
+          letterSpacing: tracking ?? (size >= 20 && weight >= 600 ? -0.035 * size : undefined),
           textAlign: center ? 'center' : undefined,
           textDecorationLine: strike ? 'line-through' : undefined,
         },
