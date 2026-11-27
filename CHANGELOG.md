@@ -4,6 +4,11 @@ Alle sichtbaren Änderungen an FamCal. Neueste oben. Agenten und Menschen: Ände
 
 ## Unreleased
 
+### Neue Marke, Schritt 3: Termin (28.11.)
+- Ein Termin öffnet mit großem Titel, darunter wer dabei ist als Pillen zum Antippen, dann ruhige graue Gruppen: Wann und Wo, Erinnern und Wiederholen, Mitbringen und Notiz. Löschen als ruhige Pille unten.
+- Neuer Termin wie im Entwurf: "Abbrechen" und "Sichern" oben, der Titel auf einer weißen Karte, die Felder in zwei Gruppen, unten ein großer Sichern Knopf.
+- Das große Symbol oben im Termin fällt weg.
+
 ### Neue Marke, Schritt 2: Kalender (28.11.)
 - Heute ist eine ruhige Liste statt Stundenraster: Zeit, Farbbalken der Person, Titel, Gesichter. Vorbei wird blass, eine rote Linie zeigt Jetzt. Darunter die Aufgaben von heute zum Abhaken.
 - Woche: oben die sieben Tage mit Punkten in den Farben der Personen, darunter jeder Tag als Gruppe. Tippen auf einen Tag gleitet dorthin, Wischen auf der Leiste blättert die Woche.
