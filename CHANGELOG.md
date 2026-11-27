@@ -4,6 +4,10 @@ Alle sichtbaren Änderungen an FamCal. Neueste oben. Agenten und Menschen: Ände
 
 ## Unreleased
 
+### Farbthema Bunt (27.11.)
+- Neues zweites Farbthema "Bunt" mit zehn kräftigen Farben neben Erde. Alle anderen Themen sind weg; alte Farben bleiben lesbar.
+- Die weißen Tags in den Chat Blasen haben keinen dunklen Rand mehr.
+
 ### Bewegung in der ganzen App (25.11.)
 - Ein neuer Termin landet mit einem kurzen Stoß, genau wenn Memo nach seinem Sprung aufkommt, mit leichtem Tick am Handy.
 - Abhaken: der Haken zeichnet sich von links nach rechts.

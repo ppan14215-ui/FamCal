@@ -163,9 +163,9 @@ type Pal = { name: string; bg: string; fg: string };
  * One theme for the whole family; each person picks a colour from it. The app's own colours never change.
  * Saved choices are an index; a theme with fewer colours wraps around. `name` stays the colour's id.
  */
-export type ThemeId = 'erde' | 'klassisch' | 'notion' | 'stundenplan' | 'kontrast';
+export type ThemeId = 'erde' | 'bunt';
 // Julian 04.11. (second round): themes from his saved app designs and big apps, plus a Klassisch made from the app's own UI colours.
-// Every theme has 8 colours. Names are unique across themes, since a kid's colour is saved by name.
+// Erde has 8 colours, Bunt 10. Names are unique across themes, since a kid's colour is saved by name.
 export const THEMES: { id: ThemeId; de: string; en: string; colors: Pal[] }[] = [
   // Ton & Papier (Julian 17.11.: "erde wird standard"): the five earth colours of the template, three added to reach 8.
   { id: 'erde', de: 'Erde', en: 'Earth', colors: [
@@ -174,38 +174,52 @@ export const THEMES: { id: ThemeId; de: string; en: string; colors: Pal[] }[] = 
     { name: 'E-Salbei', bg: '#D6E3CF', fg: '#3E5E3A' }, { name: 'E-Rose', bg: '#F0D5D6', fg: '#84404A' },
     { name: 'E-Petrol', bg: '#CFE1DD', fg: '#1F5C57' }, { name: 'E-Stein', bg: '#E4DACB', fg: '#5E5140' },
   ] },
-  { id: 'klassisch', de: 'Klassisch', en: 'Classic', colors: [
-    { name: 'Blau', bg: '#D2DCE7', fg: '#1F4E89' }, { name: 'Rose', bg: '#EBD5DA', fg: '#9D2B48' },
-    { name: 'Petrol', bg: '#CDDCDD', fg: '#075056' }, { name: 'Orange', bg: '#F3D9CE', fg: '#AF3A0B' },
-    { name: 'Grün', bg: '#D5ECE2', fg: '#237551' }, { name: 'Sonne', bg: '#F4EBD2', fg: '#856614' },
-    { name: 'Rot', bg: '#F4D7D5', fg: '#B3312A' }, { name: 'Tinte', bg: '#D0D3D4', fg: '#16232A' },
-  ] },
-  // Notion's tag colours, a little stronger so they carry a calendar block, text darkened to stay readable.
-  { id: 'notion', de: 'Notion', en: 'Notion', colors: [
-    { name: 'N-Blau', bg: '#C6DBE7', fg: '#286284' }, { name: 'N-Pink', bg: '#EECDDE', fg: '#973B6C' },
-    { name: 'N-Grün', bg: '#CBDCD3', fg: '#35664C' }, { name: 'N-Orange', bg: '#F4D9C1', fg: '#935016' },
-    { name: 'N-Gelb', bg: '#F0E0C5', fg: '#825D1E' }, { name: 'N-Rot', bg: '#F3CDCB', fg: '#A13A36' },
-    { name: 'N-Lila', bg: '#E0D4E9', fg: '#704F89' }, { name: 'N-Braun', bg: '#E4D6CF', fg: '#7C5341' },
-  ] },
-  // From Julian's saved school timetable design: soft, like a real Stundenplan.
-  { id: 'stundenplan', de: 'Stundenplan', en: 'Timetable', colors: [
-    { name: 'S-Mint', bg: '#C9F8E6', fg: '#0F5A43' }, { name: 'S-Sand', bg: '#F3E2CD', fg: '#7A4E1A' },
-    { name: 'S-Lavendel', bg: '#CFD1F8', fg: '#353A9A' }, { name: 'S-Flieder', bg: '#E1D0F3', fg: '#5D2E8F' },
-    { name: 'S-Vanille', bg: '#FDEFD0', fg: '#7A5A0E' }, { name: 'S-Salbei', bg: '#D3EEE0', fg: '#2C5F45' },
-    { name: 'S-Pfirsich', bg: '#FCD9C9', fg: '#8E3B17' }, { name: 'S-Himmel', bg: '#CDE6F6', fg: '#1D5480' },
-  ] },
-  // From his saved typelabo and MindfulPalettes posts, two colours added to reach 8.
-  { id: 'kontrast', de: 'Kontrast', en: 'Contrast', colors: [
-    { name: 'K-Orange', bg: '#FFDBC8', fg: '#AD3E03' }, { name: 'K-Petrol', bg: '#C8D8DA', fg: '#075056' },
-    { name: 'K-Türkis', bg: '#C7ECF1', fg: '#00707F' }, { name: 'K-Marine', bg: '#C7CDD3', fg: '#011C39' },
-    { name: 'K-Gelb', bg: '#FCF7DF', fg: '#7D7139' }, { name: 'K-Rot', bg: '#F1D1D1', fg: '#AF2B29' },
-    { name: 'K-Lila', bg: '#DCD3EC', fg: '#5B3E8C' }, { name: 'K-Grün', bg: '#D3E6CF', fg: '#2E6326' },
+  // Julian 25.11. (pill palette from an Interfaces post): bright fills for the family bubbles, 10 colours.
+  { id: 'bunt', de: 'Bunt', en: 'Bright', colors: [
+    { name: 'B-Lila', bg: '#A8ABFF', fg: '#46476B' }, { name: 'B-Blau', bg: '#00CAFF', fg: '#00546B' },
+    { name: 'B-Himmel', bg: '#00D7FF', fg: '#005A6B' }, { name: 'B-Türkis', bg: '#00E4C2', fg: '#005F51' },
+    { name: 'B-Grün', bg: '#00E291', fg: '#005E3C' }, { name: 'B-Limette', bg: '#AFCE00', fg: '#495600' },
+    { name: 'B-Gelb', bg: '#FDAC00', fg: '#6A4800' }, { name: 'B-Orange', bg: '#FF8B54', fg: '#6B3A23' },
+    { name: 'B-Lachs', bg: '#FF8289', fg: '#6B3639' }, { name: 'B-Pink', bg: '#FF81B9', fg: '#6B364D' },
   ] },
 ];
 /** The active theme's colours. Mutable: swapped in place by applyColorTheme. */
 export const personPalette: Pal[] = [...THEMES[0].colors];
 // Colours of earlier themes, kept only so a colour saved by name (e.g. for a kid) still resolves.
 const RETIRED: Pal[] = [
+  // Themes removed 25.11. (Julian: only Erde and Bunt stay).
+  { name: 'Blau', bg: '#D2DCE7', fg: '#1F4E89' },
+  { name: 'Rose', bg: '#EBD5DA', fg: '#9D2B48' },
+  { name: 'Petrol', bg: '#CDDCDD', fg: '#075056' },
+  { name: 'Orange', bg: '#F3D9CE', fg: '#AF3A0B' },
+  { name: 'Grün', bg: '#D5ECE2', fg: '#237551' },
+  { name: 'Sonne', bg: '#F4EBD2', fg: '#856614' },
+  { name: 'Rot', bg: '#F4D7D5', fg: '#B3312A' },
+  { name: 'Tinte', bg: '#D0D3D4', fg: '#16232A' },
+  { name: 'N-Blau', bg: '#C6DBE7', fg: '#286284' },
+  { name: 'N-Pink', bg: '#EECDDE', fg: '#973B6C' },
+  { name: 'N-Grün', bg: '#CBDCD3', fg: '#35664C' },
+  { name: 'N-Orange', bg: '#F4D9C1', fg: '#935016' },
+  { name: 'N-Gelb', bg: '#F0E0C5', fg: '#825D1E' },
+  { name: 'N-Rot', bg: '#F3CDCB', fg: '#A13A36' },
+  { name: 'N-Lila', bg: '#E0D4E9', fg: '#704F89' },
+  { name: 'N-Braun', bg: '#E4D6CF', fg: '#7C5341' },
+  { name: 'S-Mint', bg: '#C9F8E6', fg: '#0F5A43' },
+  { name: 'S-Sand', bg: '#F3E2CD', fg: '#7A4E1A' },
+  { name: 'S-Lavendel', bg: '#CFD1F8', fg: '#353A9A' },
+  { name: 'S-Flieder', bg: '#E1D0F3', fg: '#5D2E8F' },
+  { name: 'S-Vanille', bg: '#FDEFD0', fg: '#7A5A0E' },
+  { name: 'S-Salbei', bg: '#D3EEE0', fg: '#2C5F45' },
+  { name: 'S-Pfirsich', bg: '#FCD9C9', fg: '#8E3B17' },
+  { name: 'S-Himmel', bg: '#CDE6F6', fg: '#1D5480' },
+  { name: 'K-Orange', bg: '#FFDBC8', fg: '#AD3E03' },
+  { name: 'K-Petrol', bg: '#C8D8DA', fg: '#075056' },
+  { name: 'K-Türkis', bg: '#C7ECF1', fg: '#00707F' },
+  { name: 'K-Marine', bg: '#C7CDD3', fg: '#011C39' },
+  { name: 'K-Gelb', bg: '#FCF7DF', fg: '#7D7139' },
+  { name: 'K-Rot', bg: '#F1D1D1', fg: '#AF2B29' },
+  { name: 'K-Lila', bg: '#DCD3EC', fg: '#5B3E8C' },
+  { name: 'K-Grün', bg: '#D3E6CF', fg: '#2E6326' },
   { name: 'Rosa', bg: '#F7C6D2', fg: '#8A1538' }, { name: 'Mint', bg: '#B5E3D9', fg: '#0A5048' },
   { name: 'Sand', bg: '#FAD1A0', fg: '#7A3D00' }, { name: 'Salbei', bg: '#BFE0B4', fg: '#1F5426' },
   { name: 'Flieder', bg: '#E0CAF3', fg: '#592886' }, { name: 'Koralle', bg: '#FBC9B6', fg: '#8F2D12' },
