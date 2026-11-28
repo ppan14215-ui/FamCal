@@ -4,6 +4,34 @@ Alle sichtbaren Änderungen an FamCal. Neueste oben. Agenten und Menschen: Ände
 
 ## Unreleased
 
+### Neue Marke, Schritt 6: Profil (28.11.)
+- Der Tab heißt jetzt auch oben "Profil", mit deinem Namen darüber. Drei ruhige Gruppen: du (Konto, Meine Farbe), Familie, App.
+- Weg sind die Auswahlen, die nur das Aussehen umschalteten: Memo Farbe mit Vorschau, Jahr als Monate oder Kacheln, Listen als Kacheln oder Reiter, 3 Tage zeigen. Die Leiste bleibt wählbar.
+
+### Neue Marke, Schritt 5: Listen (28.11.)
+- Listen hat zwei Reiter: "Alle Listen" und "Aufgaben". Oben steht, wie viel offen ist.
+- Alle Listen zeigt den Einkauf direkt zum Abhaken, darunter "Wer macht was, diese Woche", dann jede andere Liste als ruhige Kachel mit Fortschritt.
+- Aufgaben sind die Liste "Zu erledigen"; die offenen stehen auch im Kalender unter Heute.
+- Zeilen ohne Symbole, mit Initialen statt Punkten; wer noch fehlt, zeigt ein gestrichelter Kreis. Die farbigen Kacheln und die Listen Chips fallen weg.
+
+### Neue Marke, Schritt 4: Chat (28.11.)
+- Überschrift "Chat" mit "Familie" darüber, die Familienköpfe oben rechts fallen weg.
+- Was auf ein Ja wartet, steht oben als graue Karte mit "Eintragen" und "Nein".
+- Gesagtes steht in breiten, sanft gefärbten Blasen mit Name und Uhrzeit darüber, Memo antwortet in grauen Blasen.
+- Termin Karten im Chat zeigen den Farbbalken der Person und wer dabei ist, statt Symbol, Ort Knopf und Pfeil.
+
+### Neue Marke, Schritt 3: Termin (28.11.)
+- Ein Termin öffnet mit großem Titel, darunter wer dabei ist als Pillen zum Antippen, dann ruhige graue Gruppen: Wann und Wo, Erinnern und Wiederholen, Mitbringen und Notiz. Löschen als ruhige Pille unten.
+- Neuer Termin wie im Entwurf: "Abbrechen" und "Sichern" oben, der Titel auf einer weißen Karte, die Felder in zwei Gruppen, unten ein großer Sichern Knopf.
+- Das große Symbol oben im Termin fällt weg.
+
+### Neue Marke, Schritt 2: Kalender (28.11.)
+- Heute ist eine ruhige Liste statt Stundenraster: Zeit, Farbbalken der Person, Titel, Gesichter. Vorbei wird blass, eine rote Linie zeigt Jetzt. Darunter die Aufgaben von heute zum Abhaken.
+- Woche: oben die sieben Tage mit Punkten in den Farben der Personen, darunter jeder Tag als Gruppe. Tippen auf einen Tag gleitet dorthin, Wischen auf der Leiste blättert die Woche.
+- Monat mit runden Tagen und Punkten, darunter der gewählte Tag. Jahr als zwölf ruhige Kacheln mit Balken für wie viel los ist, Urlaub grün, darunter was das Jahr noch bringt.
+- Überschrift mit grauer Zeile darüber, Personenfilter als "Alle" und farbige Punkte, auch in der einfachen Version.
+- Oben rechts nur noch das Plus, die Suche oben fällt weg. Das Briefing über Heute fällt weg, Fragen stehen im Chat.
+
 ### Neue Marke, Schritt 1: neuer Look (27.11.)
 - Weißer Grund, Memo Tinte, ruhige Grautöne; Karten weiß mit feiner Linie statt Schatten.
 - Neue Schrift DM Sans, Überschriften kräftig.

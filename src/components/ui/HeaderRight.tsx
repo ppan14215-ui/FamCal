@@ -9,17 +9,17 @@ import { router } from 'expo-router';
 import PressScale from './PressScale';
 import LineIcon, { type LineName } from './LineIcon';
 import { Family } from './Person';
-import { tokens, glass } from '../../theme';
+import { tokens } from '../../theme';
 import { tx } from '../../i18n/lang';
 import { haptics } from '../../lib/haptics';
 import { setPlusFrom } from '../../lib/plusFrom';
 
-export const HEAD_BTN = 40;
-/** One round button of the head: white glass with Wabi's inner light (Julian 14.11.: "icon button should get that glossy look"). */
+export const HEAD_BTN = 36;
+/** One round button of the head (brand 27.11.): flat on the soft grey of the groups, no glass. */
 export function HeadBtn({ icon, label, onPress, size = 21 }: { icon: LineName; label: string; onPress: () => void; size?: number }) {
   return (
     <PressScale accessibilityLabel={label} hitSlop={6} scale={0.92} onPress={onPress}
-      style={[{ width: HEAD_BTN, height: HEAD_BTN, borderRadius: 999, alignItems: 'center', justifyContent: 'center' }, glass.sm]}>
+      style={{ width: HEAD_BTN, height: HEAD_BTN, borderRadius: 999, alignItems: 'center', justifyContent: 'center', backgroundColor: tokens.group }}>
       <LineIcon name={icon} size={size} color={tokens.ink} />
     </PressScale>
   );
@@ -45,9 +45,8 @@ export default function HeaderRight({ before, people }: { before?: React.ReactNo
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
       {before}
-      <HeadBtn icon="search" label={tx('Suchen', 'Search')} onPress={() => { haptics.select(); router.push('/suche'); }} />
       <View ref={plus} collapsable={false}>
-        <HeadBtn icon="plus" label={tx('Neu', 'New')} onPress={openNew} size={22} />
+        <HeadBtn icon="plus" label={tx('Neu', 'New')} onPress={openNew} size={19} />
       </View>
     </View>
   );

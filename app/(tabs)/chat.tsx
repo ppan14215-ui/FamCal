@@ -25,7 +25,6 @@ import { useFeed, canUndo, undoEntry, answerAsk, type FeedEntry, type EventSnap 
 import { getFamily, myRole } from '../../src/lib/sync';
 import { hm, short, TODAY } from '../../src/lib/dates';
 import { useScroller } from '../../src/lib/landing';
-import HeaderRight from '../../src/components/ui/HeaderRight';
 import { tx } from '../../src/i18n/lang';
 import { useVeil, Step, Dots } from '../../src/components/Veil';
 import { isTrip, makePackList, kidsOn, ageText } from '../../src/lib/pack';
@@ -73,9 +72,12 @@ export default function Chat() {
       {simple ? null : <Jumps />}
       {/* The title stays put while the messages scroll under it (Julian 30.10. 22:15). */}
       <Head>
-        <H1 right={<HeaderRight people />}>Chat</H1>
+        <H1 sub={tx('Familie', 'Family')}>Chat</H1>
       </Head>
-      <ScrollView ref={scroller} onScroll={(e) => trackY(e.nativeEvent.contentOffset.y)} scrollEventThrottle={32} onContentSizeChange={() => { if (!more) scroller.current?.scrollToEnd({ animated: false }); }} contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 18, paddingTop: 8, paddingBottom: dock + (kb > 0 ? kb : insets.bottom) + 40, gap: 28 }} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+      <ScrollView ref={scroller} onScroll={(e) => trackY(e.nativeEvent.contentOffset.y)} scrollEventThrottle={32} onContentSizeChange={() => { if (!more) scroller.current?.scrollToEnd({ animated: false }); }} contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 20, paddingTop: 8, paddingBottom: dock + (kb > 0 ? kb : insets.bottom) + 40, gap: 28 }} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+        {/* Julian 18.11.: "Chat ist gleich Log und somit auch Eingangsbestätigung". Brand (27.11.): what still waits for
+            a yes stands on top, where it is seen first. */}
+        {asks.length ? <View style={{ gap: 10 }}>{asks.map((i) => <InboxCard key={i.id} item={i} />)}</View> : null}
         {feed.length > shown.length ? (
           <PressScale onPress={() => setMore((m) => m + SHOWN)} style={{ alignSelf: 'center', paddingVertical: 8, paddingHorizontal: 14 }}>
             <Txt size={13.5} weight={600} color={tokens.sub}>{tx('Ältere zeigen', 'Show older')}</Txt>
@@ -89,7 +91,7 @@ export default function Chat() {
           return (
             <React.Fragment key={f.id}>
               {f.id === openQ?.id ? <View onLayout={(e) => { qY.current = e.nativeEvent.layout.y; }} /> : null}
-              {head ? <View style={{ alignSelf: 'center', backgroundColor: tokens.segBg, borderRadius: 999, paddingVertical: 4, paddingHorizontal: 12 }}><Txt size={12.5} color={tokens.sub}>{head}</Txt></View> : null}
+              {head ? <Txt size={12.5} line={16} weight={600} color={tokens.mute} style={{ alignSelf: 'center' }}>{head}</Txt> : null}
               <Entry f={f} mine={f.by === me} me={me} answer={f.ask ? feed.find((x) => x.answer?.ask === f.id) : undefined} />
             </React.Fragment>
           );
@@ -106,14 +108,6 @@ export default function Chat() {
             ) : <Txt size={15} line={22} color={tokens.sub}>{tx('Sprich oder schreib, was ansteht: „Montag 17 Uhr Essen mit Mama“ oder „Milch und Mehl“. Hier siehst du dann, was daraus wurde, und die Familie auch.', 'Say or type what’s up: “Dinner with mum Monday 5 pm” or “milk and flour”. Here you see what it became, and so does the family.')}</Txt>}
           </View>
         )}
-        {/* Julian 18.11.: "Chat ist gleich Log und somit auch Eingangsbestätigung". What Memo read from a mail or a photo
-            and still waits for a yes sits at the newest end of the log. */}
-        {asks.length ? (
-          <View style={{ gap: 10 }}>
-            <Txt size={12.5} weight={700} tracking={0.6} color={tokens.sub}>{tx('ZU BESTÄTIGEN', 'TO CONFIRM')}</Txt>
-            {asks.map((i) => <InboxCard key={i.id} item={i} />)}
-          </View>
-        ) : null}
         <Thinking by={me} />
       </ScrollView>
       {/* Only what still waits for me, like the status pills over Claude's field (Julian 30.10., "Nur offene Fragen"). */}

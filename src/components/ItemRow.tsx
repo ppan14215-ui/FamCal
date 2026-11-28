@@ -11,6 +11,7 @@ import { View, TextInput, Platform } from 'react-native';
 import Txt from './ui/Txt';
 import { Check, Meta } from './ui/kit';
 import { Owner } from './ui/Person';
+import { Initials } from './ui/Group';
 import { ClayIcon } from './ui/Clay';
 import SwipeRow from './SwipeRow';
 import { tokens, fonts, persons } from '../theme';
@@ -79,15 +80,16 @@ export default function ItemRow({ title, editText, meta, metaColor, done, who, i
   };
 
   // Flat: the note stands behind the title on the same line, unless the row carries more (a cover, stars).
-  const inline = !!flat && !lead && !below;
+  // Brand (27.11.): the note stands under the title in grey, never behind it.
+  const inline = false;
   const ink = who && who !== 'both' ? persons[who].ink : tokens.ink;
   const body = (
-    <View style={flat ? { minHeight: 48, justifyContent: 'center', paddingVertical: editing ? 10 : 6, paddingHorizontal: 2, backgroundColor: tokens.bg, gap: 6 } : { paddingVertical: editing ? 12 : 10, paddingHorizontal: 14, backgroundColor: tokens.row, gap: 6 }}>
+    <View style={flat ? { minHeight: 56, justifyContent: 'center', paddingVertical: editing ? 12 : 10, backgroundColor: tokens.group, gap: 6 } : { paddingVertical: editing ? 12 : 10, paddingHorizontal: 14, backgroundColor: tokens.row, gap: 6 }}>
       <View style={{ flexDirection: 'row', alignItems: lead ? 'flex-start' : 'center', gap: 12 }}>
-        {noCheck ? null : flat ? <Check done={done} onPress={onToggle} color={ink} /> : <Check done={done} onPress={onToggle} />}
+        {noCheck ? null : <Check done={done} onPress={onToggle} />}
         {lead}
-        {flat ? (icon || iconSlot ? <View style={{ width: 26, height: 26, opacity: done ? 0.45 : 1 }}>{icon ? <ClayIcon name={icon} size={26} celebrate={done} /> : null}</View> : null)
-          : icon ? <ClayIcon name={icon} size={42} celebrate={done} /> : null}
+        {/* Brand (27.11.): no icons in the lines, the words carry it. */}
+        {flat ? null : icon ? <ClayIcon name={icon} size={42} celebrate={done} /> : null}
         {editing ? (
           <TextInput
             value={text}
@@ -112,12 +114,12 @@ export default function ItemRow({ title, editText, meta, metaColor, done, who, i
             }}
           >
             {flat ? (
-              <Txt size={17} line={22} weight={400} strike={done} color={done || dim ? tokens.sub : tokens.ink}>
+              <Txt size={15.5} line={21} weight={500} tracking={-0.19} color={done || dim ? tokens.mute : tokens.ink}>
                 {title}
                 {meta && inline ? <Txt size={14.5} line={22} color={metaColor ?? tokens.sub}>{`  ${meta}`}</Txt> : null}
               </Txt>
             ) : <Txt size={16} weight={500} strike={done} color={done || dim ? tokens.mute : tokens.ink}>{title}</Txt>}
-            {meta && !inline ? <Meta color={metaColor}>{meta}</Meta> : null}
+            {meta && !inline ? <Txt size={13} line={17} color={metaColor ?? (done ? tokens.mute : tokens.sub)} numberOfLines={2}>{meta}</Txt> : null}
           </PressScale>
           {below}
           </View>
@@ -129,12 +131,12 @@ export default function ItemRow({ title, editText, meta, metaColor, done, who, i
           accessibilityLabel={tx('Zuständig wechseln', 'Change who\'s on it')}
           onPress={() => { haptics.select(); onCycleWho?.(); }}
         >
-          {flat ? <WhoDots who={who} empty={!!onCycleWho && !done} /> : who || (onCycleWho && !done) ? <Owner who={who} size={editing ? 26 : 22} /> : null}
+          {flat ? <View style={{ opacity: done ? 0.45 : 1 }}><Initials who={who} open={!!onCycleWho && !done} /></View> : who || (onCycleWho && !done) ? <Owner who={who} size={editing ? 26 : 22} /> : null}
         </PressScale>
       </View>
-      {editing ? <Txt size={13} color={tokens.mute} style={{ paddingLeft: noCheck ? 0 : flat && (icon || iconSlot) ? 74 : 38 }}>{editHint}</Txt> : null}
+      {editing ? <Txt size={13} color={tokens.mute} style={{ paddingLeft: noCheck ? 0 : 36 }}>{editHint}</Txt> : null}
     </View>
   );
 
-  return onDelete ? <SwipeRow onDelete={onDelete} bg={flat ? tokens.bg : undefined}>{body}</SwipeRow> : body;
+  return onDelete ? <SwipeRow onDelete={onDelete} bg={flat ? tokens.group : undefined}>{body}</SwipeRow> : body;
 }
