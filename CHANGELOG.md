@@ -4,6 +4,7 @@ Alle sichtbaren Änderungen an FamCal. Neueste oben. Agenten und Menschen: Ände
 
 ## Unreleased
 
+- Erstes Jahr: wer eine Frist übernimmt und was erledigt ist, bleibt jetzt nach einem Neustart erhalten und erscheint auch beim anderen Elternteil (sobald die Familie den Speicherplatz dafür am Server hat).
 - Neuer Tab "Erstes Jahr" statt Chat: wo euer Kind im ersten Jahr steht, ein Satz von Memo, was gerade zählt, die nächsten Fristen mit Countdown und wer sie übernimmt, danach der Rest des Jahres. Vergangene Fristen fragen "Schon erledigt?".
 - Memo schaut im Blatt beim Tippen nach unten auf deinen Text und nickt mit. Das Blatt lässt sich fast bis ganz nach oben ziehen. Die Chat Seite zeigt kein eigenes Eingabefeld mehr über der Leiste, Memo öffnet überall das Blatt.
 - Tippst du im Memo Blatt, fährt es mit der Tastatur auf zwei Drittel hoch, damit mehr vom Chat zu sehen ist.

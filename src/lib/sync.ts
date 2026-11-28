@@ -19,6 +19,7 @@ import { readCache, writeCache, clearCache } from './cache';
 import { THEMES } from '../theme/tokens';
 import { colorsTouched, redrawIfTouched } from '../theme/mode';
 import { ROLES, cleanColors, sameColors, mergeColors, rolesToTake, firstUpload, type Role, type FamilyColors } from './familyColors';
+import { cleanMarks, mergeMarks, sameMarks, takeMarks, allMarks, unsentMarks, marksSent, marksReady, onMarked, clearMarks } from './milestoneMarks';
 
 export type Family = { id: string; name: string; invite_code: string; ohne_ki?: boolean | null; termin_dauer?: number | null; partner_name?: string | null; ics_token?: string | null; vacation?: Partial<Record<'J' | 'T', number>> | null; colors?: FamilyColors | null; land?: string | null; country?: string | null; ort?: string | null };
 type Row = {
@@ -135,6 +136,38 @@ function saveColors() {
 export const getFamily = () => family;
 
 /**
+ * The first year's answers (who takes a step, what is done) are the family's (Erstes Jahr, Julian 28.11.):
+ * families.milestones holds them as one object, so both parents see the same. The object is read first and merged
+ * (the newer answer wins per step), then written, so one parent never wipes what the other just answered.
+ * Before the column exists the read is an error: the answers stay on the phone and go up with a later catch up.
+ */
+let marksBusy: Promise<void> = Promise.resolve();
+function syncMarks(): Promise<void> {
+  marksBusy = marksBusy.then(async () => {
+    if (!supabase || !family || get().demo) return;
+    const fam = family.id;
+    await marksReady;
+    const cur = await supabase.from('families').select('milestones').eq('id', fam).maybeSingle();
+    if (cur.error) { console.warn('[sync] milestones', cur.error.message); return; }
+    if (family?.id !== fam) return;
+    const server = cleanMarks((cur.data as { milestones?: unknown } | null)?.milestones);
+    const keys = unsentMarks();
+    if (keys.length) {
+      const next = mergeMarks(server, allMarks());
+      if (!sameMarks(next, server)) {
+        const { error } = await supabase.from('families').update({ milestones: next }).eq('id', fam);
+        if (error) { console.warn('[sync] milestones', error.message); return; }
+      }
+      if (family?.id !== fam) return;
+      marksSent(keys, next);
+      takeMarks(next);
+    } else takeMarks(server);
+  }).catch((e) => console.warn('[sync] milestones', e));
+  return marksBusy;
+}
+onMarked(() => { if (family) void syncMarks(); });
+
+/**
  * Whether this run of the app has the family's Termine yet. Until then a chat card cannot tell a
  * deleted Termin from one still loading; it said "Nicht mehr im Kalender" and "Im Kalender" at once
  * (Julian 04.11.). Cards wait for this before they call a Termin gone.
@@ -215,6 +248,9 @@ export async function startSync(name?: string): Promise<{ family?: Family; error
       if (unsentColors.size) { keepUnsent(); saveColors(); }
     }
   } catch (e) { console.warn('[sync] colors', e); }
+
+  // The first year's answers come and go on their own line; whatever happens there, the Termine below still sync.
+  void syncMarks();
 
   const remote = (events.data as Row[]).map(fromRow);
   const mine = new Map(get().events.filter(shared).map((e) => [e.id, e]));
@@ -336,6 +372,8 @@ export function catchUp(): Promise<void> {
       // A failure here never stops the Termine from catching up.
       supabase.from('families').select('colors').eq('id', fam).maybeSingle().then((r) => r, () => null),
     ]);
+    // The first year's answers, in case the other parent took a step or ticked one off meanwhile.
+    void syncMarks();
     // The Standarddauer, in case the other phone (or Memo there) changed it. Before the column exists nothing changes.
     void supabase.from('families').select('termin_dauer').eq('id', fam).maybeSingle().then((r) => {
       const v = (r.data as { termin_dauer?: number | null } | null)?.termin_dauer;
@@ -473,6 +511,8 @@ export async function forgetLocal() {
   prevKnown = null;
   // A colour still waiting to go up belonged to the family that is left now.
   unsentColors.clear(); keepUnsent();
+  // The first year's answers belonged to that family too.
+  await clearMarks();
   setLoaded(false);
   await clearCache();
   actions.reset();
