@@ -16,7 +16,7 @@ import { Tabs, Head } from '../../src/components/ui/kit';
 import Txt from '../../src/components/ui/Txt';
 import HeaderRight from '../../src/components/ui/HeaderRight';
 import { useStore, actions, get, CalView } from '../../src/state/store';
-import { TodayList, WeekList, WeekStripBar } from '../../src/screens/kalender/DayList';
+import { TodayList } from '../../src/screens/kalender/DayList';
 import WeekView from '../../src/screens/kalender/WeekView';
 import MonthView, { monthTitle } from '../../src/screens/kalender/MonthView';
 import YearView from '../../src/screens/kalender/YearView';
@@ -180,27 +180,28 @@ export default function Kalender() {
     </Head>
   );
 
-  if (view === 'heute' || view === 'woche') {
+  if (view === 'heute') {
     const today = day === TODAY;
-    const title = view === 'woche' ? tx('Woche', 'Week') : today ? tx('Heute', 'Today') : WD_LONG[weekday(day)];
-    const sub = view === 'woche' ? spanLong(first, lastDay) : today ? dayLong(day) : dayMonthLong(day);
+    const title = today ? tx('Heute', 'Today') : WD_LONG[weekday(day)];
+    const sub = today ? dayLong(day) : dayMonthLong(day);
     return (
       <View style={{ flex: 1, backgroundColor: tokens.bg, paddingTop: insets.top }}>
-        {head(title, sub, view === 'woche' ? <WeekStripBar /> : null)}
-        <Animated.View key={view} entering={swapIn} style={{ flex: 1 }}>{view === 'woche' ? <WeekList /> : <TodayList />}</Animated.View>
+        {head(title, sub)}
+        <Animated.View key={view} entering={swapIn} style={{ flex: 1 }}><TodayList /></Animated.View>
       </View>
     );
   }
 
-  const title = view === 'tag' ? tx('Tage', 'Days') : view === 'monat' ? monthTitle(day).month : String(yr);
-  const sub = view === 'tag' ? spanLong(first, lastDay) : view === 'monat' ? String(yr) : yr === Number(TODAY.slice(0, 4)) ? tx('Dieses Jahr', 'This year') : yr === Number(TODAY.slice(0, 4)) + 1 ? tx('Nächstes Jahr', 'Next year') : undefined;
+  // Julian 28.11.: Woche is the whole week at one glance again (the grid of seven days), not a second Heute list.
+  const title = view === 'tag' ? tx('Tage', 'Days') : view === 'woche' ? tx('Woche', 'Week') : view === 'monat' ? monthTitle(day).month : String(yr);
+  const sub = view === 'tag' || view === 'woche' ? spanLong(first, lastDay) : view === 'monat' ? String(yr) : yr === Number(TODAY.slice(0, 4)) ? tx('Dieses Jahr', 'This year') : yr === Number(TODAY.slice(0, 4)) + 1 ? tx('Nächstes Jahr', 'Next year') : undefined;
   return (
     <View style={{ flex: 1, backgroundColor: tokens.bg, paddingTop: insets.top }}>
       {head(title, sub)}
       <GestureDetector gesture={pinch} touchAction="pan-y">
         <Animated.View style={[{ flex: 1 }, zoomed]}>
           <Arrive key={view} from={from.current}>
-            {view === 'tag' ? <View style={{ paddingHorizontal: 18, paddingBottom: navTop(insets.bottom) + 16, flex: 1 }}><WeekView n={3} /></View> : (
+            {view === 'tag' || view === 'woche' ? <View style={{ paddingHorizontal: 18, paddingBottom: navTop(insets.bottom) + 16, flex: 1 }}><WeekView n={view === 'woche' ? 7 : 3} /></View> : (
               <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 8, paddingBottom: navTop(insets.bottom) + 40 }}>
                 {view === 'monat' ? <MonthView /> : <YearView />}
               </ScrollView>

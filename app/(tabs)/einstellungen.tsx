@@ -40,7 +40,7 @@ import { THEMES } from '../../src/theme/tokens';
 import { usePalette, colorsTouched, redrawIfTouched } from '../../src/theme/mode';
 import { navStyle, setNavStyle } from '../../src/lib/navStyle';
 import { seedDemoFeed } from '../../src/lib/feed';
-import { useBubble, useMemoChoice, setMemoColor, useNavLook, setNavLook, useYearLook, useListLook, setListLook, setYearLook, useShowDays, setShowDays, showDays } from '../../src/lib/look';
+import { useBubble, useMemoChoice, setMemoColor, useYearLook, useListLook, setListLook, setYearLook, useShowDays, setShowDays, showDays } from '../../src/lib/look';
 import { HOME } from '../../src/lib/home';
 
 /** A plain row: name left, value right, like Apple's settings (Julian 03.11.). Flat on the ground, hairlines only. */
@@ -131,7 +131,6 @@ export default function Einstellungen() {
   const mic = useMicStyle();
   const masc = useMascot();
   const memo = useMemoChoice();
-  const navLook = useNavLook();
   const yearLook = useYearLook();
   const dur = useTermDur();
   const sv = useStartView();
@@ -178,11 +177,7 @@ export default function Einstellungen() {
         <SRow key="start" t={tx('Kalender startet mit', 'Calendar opens on')} v={tx(viewLabel(sv, true), viewLabel(sv, false))} onPress={() => { const opts = VIEWS.filter((x) => x !== 'tag' || showDays()); const v = opts[(opts.indexOf(sv) + 1) % opts.length]; haptics.select(); setStartView(v); toast(tx(`Kalender startet mit ${viewLabel(v, true)}`, `Calendar opens on ${viewLabel(v, false)}`)); }} />
         <SRow key="dauer" t={tx('Dauer neuer Termine', 'New event length')} v={dur ? tx(durLabel(dur, true), durLabel(dur, false)) : tx('Wie üblich', 'Usual')} onPress={() => { const opts = [0, 30, 60, 90, 120]; const v = opts[(opts.indexOf(dur) + 1) % opts.length]; haptics.select(); setTermDur(v); toast(v ? tx(`Neue Termine dauern ${durLabel(v, true)}`, `New events last ${durLabel(v, false)}`) : tx('Dauer wie üblich', 'Usual length')); }} />
         <SRow key="thema" t={tx('Farbthema', 'Colour theme')} v={themeName} onPress={() => router.push('/design')} />
-        <Pick key="leiste" t={tx('Leiste', 'Navigation')}>
-          <View style={{ width: 200 }}>
-            <Seg items={[{ key: 'mitte', label: tx('Memo mittig', 'Memo centred') }, { key: 'pille', label: tx('Mit Chat', 'With chat') }]} value={navLook} onChange={(k) => { setNavLook(k); }} />
-          </View>
-        </Pick>
+        {/* Julian 28.11.: the bar with Memo in the middle is the only one; choosing it was a test switch, not for users. */}
         {/* Julian 05.11.: Ohne KI, Sprache nur auf dem Handy, Alle Daten löschen. */}
         <SRow key="datenschutz" t={tx('Datenschutz', 'Privacy')} v={ohneKiNow ? tx('Ohne KI', 'Without AI') : undefined} onPress={() => router.push('/datenschutz')} />
         <SRow key="export" t={tx('Kalender Abo und Export', 'Calendar feed and export')} onPress={() => router.push('/kalender-abo')} />

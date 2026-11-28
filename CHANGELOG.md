@@ -4,6 +4,10 @@ Alle sichtbaren Änderungen an FamCal. Neueste oben. Agenten und Menschen: Ände
 
 ## Unreleased
 
+### Julians Rückmeldung 28.11.
+- Die Leiste mit Memo in der Mitte ist fest; die Auswahl im Profil ist weg. Memo antippen öffnet die Texteingabe, das Mikro steht daneben.
+- Woche zeigt wieder die ganze Woche auf einen Blick (sieben Tage als Raster).
+
 ### Neue Marke, Schritt 9: Familie, Familiencode, Plus, Ausprobieren
 - Familie: alle auf einer grauen Gruppe; der Familiencode als große Karte zum Vorlesen, Antippen kopiert.
 - Familie beitreten: die Frage als großer Titel, das Codefeld auf grauem Grund. Eingabefelder überall auf grauem Grund.

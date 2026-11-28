@@ -39,7 +39,8 @@ export type ListLook = 'reiter' | 'kacheln';
 const readBubble = (): BubbleId => { const v = getPref('bubble'); return (BUBBLES.find((b) => b.id === v)?.id ?? 'teal') as BubbleId; };
 const readMemo = (): MemoColor => (getPref('memoColor') === 'me' ? 'me' : 'ink');
 
-const readNav = (): NavLook => (getPref('navLook') === 'pille' ? 'pille' : 'mitte');
+// Julian 28.11.: Memo in the middle is the only bar for users; the choice was a test switch (no longer in Profil).
+const readNav = (): NavLook => 'mitte';
 const readYear = (): YearLook => (getPref('yearLook') === 'kacheln' ? 'kacheln' : 'klein');
 const readLists = (): ListLook => (getPref('listLook') === 'reiter' ? 'reiter' : 'kacheln');
 const readDays = (): boolean => getPref('showDays') !== 'aus';
@@ -52,7 +53,7 @@ onPrefsReady(() => { const n = { bubble: readBubble(), memo: readMemo(), nav: re
 
 export function setBubble(id: BubbleId) { if (id === state.bubble) return; state = { ...state, bubble: id }; setPref('bubble', id); emit(); }
 export function setMemoColor(v: MemoColor) { if (v === state.memo) return; state = { ...state, memo: v }; setPref('memoColor', v); emit(); }
-export function setNavLook(v: NavLook) { if (v === state.nav) return; state = { ...state, nav: v }; setPref('navLook', v); emit(); }
+export function setNavLook(v: NavLook) { if (v === state.nav) return; state = { ...state, nav: v }; setPref('navLook2', v); emit(); }
 export function setYearLook(v: YearLook) { if (v === state.year) return; state = { ...state, year: v }; setPref('yearLook', v); emit(); }
 export function setShowDays(v: boolean) { if (v === state.days) return; state = { ...state, days: v }; setPref('showDays', v ? 'an' : 'aus'); emit(); }
 export const useNavLook = (): NavLook => use().nav;
