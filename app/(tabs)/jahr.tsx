@@ -4,7 +4,7 @@
  * steps with their countdown and who has them, then what comes after. Everything comes from the milestones the app
  * built from the birth date (firstYear.ts), nothing here is invented.
  */
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View } from 'react-native';
 import { router } from 'expo-router';
 import { Screen, H1 } from '../../src/components/ui/kit';
@@ -34,7 +34,19 @@ const countdown = (d: number) =>
 export default function Jahr() {
   const kid = useStore((s) => s.kid);
   const all = useStore((s) => s.milestones);
+  const people = useStore((s) => s.people);
   const pp = usePersons();
+  // The child itself only lives in memory, but its birthday is synced with the family (family_people). After a restart
+  // the youngest child under about a year is taken from there, and the first year is built again from its birthday.
+  useEffect(() => {
+    if (kid) return;
+    const baby = people
+      .filter((p) => p.kind === 'kind' && p.birthday && p.birthday > addMonths(TODAY, -13))
+      .sort((a, b) => (a.birthday! < b.birthday! ? 1 : -1))[0];
+    if (!baby) return;
+    const b = baby.birthday!;
+    actions.setKid(b > TODAY ? { name: baby.name, due: b } : { name: baby.name, born: b });
+  }, [kid, people]);
 
   const born = kid?.born;
   const lm = born ? monthsSince(born, TODAY) : -1; // finished Lebensmonate
