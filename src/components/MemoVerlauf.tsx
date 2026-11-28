@@ -28,7 +28,7 @@ const OUT = Easing.bezier(0.23, 1, 0.32, 1);
 const TABS: { name: string; icon: LineName; label: () => string }[] = [
   { name: 'kalender', icon: 'cal', label: () => tx('Kalender', 'Calendar') },
   { name: 'listen', icon: 'list', label: () => tx('Listen', 'Lists') },
-  { name: 'chat', icon: 'chat', label: () => 'Chat' },
+  { name: 'jahr', icon: 'year', label: () => tx('Erstes Jahr', 'First year') },
   { name: 'einstellungen', icon: 'person', label: () => tx('Profil', 'Profile') },
 ];
 

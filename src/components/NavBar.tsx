@@ -42,7 +42,8 @@ const EASE_OUT = Easing.bezier(0.23, 1, 0.32, 1);
 export const TABS: { name: string; key: string; icon: LineName }[] = [
   { name: 'kalender', key: 'nav.kalender', icon: 'cal' },
   { name: 'listen', key: 'nav.listen', icon: 'list' },
-  { name: 'chat', key: 'nav.chat', icon: 'chat' },
+  // Julian 28.11.: the Chat tab goes, the first year takes its place (the chat lives in Memo's sheet).
+  { name: 'jahr', key: 'nav.jahr', icon: 'year' },
   // Julian 16.11.: "Setting can only be acces via chat? Needs to be it's own tap." The settings are a tab of their own.
   { name: 'einstellungen', key: 'nav.einstellungen', icon: 'settings' },
 ];
@@ -447,7 +448,7 @@ export function KlarPill({ current, onTab, bar }: { current?: string; onTab?: (n
             {/* Five equal columns (Julian 27.11.: "die Tabs sind nicht sauber verteilt"); Memo stands in the middle one. */}
             {slot('kalender', 0)}{slot('listen', 1)}
             <View style={{ flex: 1 }} />
-            {slot('chat', 2)}{slot('einstellungen', 3)}
+            {slot('jahr', 2)}{slot('einstellungen', 3)}
           </View>
           <View pointerEvents="box-none" style={{ position: 'absolute', left: 0, right: 0, bottom: foot + navH() / 2 + BIG_UP - (BIG + 10) / 2, alignItems: 'center' }}>
             <View style={{ width: BIG + 10, height: BIG + 10, borderRadius: 999, backgroundColor: tokens.row, alignItems: 'center', justifyContent: 'center' }}>

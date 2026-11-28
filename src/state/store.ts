@@ -563,6 +563,8 @@ export const actions = {
   },
   clearDraftSymbol() { set(() => ({ draftSymbol: null })); },
 
+  /** Who takes a step of the first year (the "Wer übernimmt?" chip on the Erstes Jahr tab). */
+  setMilestoneWho(id: string, who: Who) { set((s) => ({ milestones: s.milestones.map((m) => (m.id === id ? { ...m, who } : m)) })); },
   toggleMilestone(id: string) { set((s) => ({ milestones: s.milestones.map((m) => (m.id === id ? { ...m, done: !m.done } : m)) })); },
 
   setPlan(p: State['plan']) { set(() => ({ plan: p })); },
