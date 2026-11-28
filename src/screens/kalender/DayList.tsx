@@ -33,7 +33,7 @@ import { isShift, shiftSpan } from '../../lib/shift';
 import { haptics } from '../../lib/haptics';
 import { TODAY, addDays, daysBetween, dayNum, weekday, monday, WD_SHORT, WD_LONG, minutes, hm } from '../../lib/dates';
 import { tx, EN } from '../../i18n/lang';
-import type { CalEvent, Task } from '../../state/types';
+import type { CalEvent, Task, Item } from '../../state/types';
 import { dropEvent } from './DayView';
 
 const RED = '#E5484D';
@@ -139,13 +139,35 @@ function DayGroup({ items, day, now, arrive }: { items: CalEvent[]; day: string;
 }
 
 /** Today's open Aufgaben, and what was ticked today (pale, so the tick can be seen landing). */
-function useDayTasks(day: string): Task[] {
+type Todo = Item & { list: string };
+/** Today's open Aufgaben: old tasks due today, and on today the open lines of "Zu erledigen" (up to four). */
+function useDayTasks(day: string): (Task | Todo)[] {
   const tasks = useStore((s) => s.tasks);
-  return useMemo(() => tasks.filter((t) => {
-    if (t.done) return !!t.doneAt && t.doneAt.slice(0, 10) === day;
-    if (!t.due) return false;
-    return day === TODAY ? t.due <= day : t.due === day;
-  }), [tasks, day]);
+  const todo = useStore((s) => s.lists.find((l) => l.id === 'aufgaben'));
+  return useMemo(() => {
+    const mine: (Task | Todo)[] = tasks.filter((t) => {
+      if (t.done) return !!t.doneAt && t.doneAt.slice(0, 10) === day;
+      if (!t.due) return false;
+      return day === TODAY ? t.due <= day : t.due === day;
+    });
+    if (day === TODAY && todo) for (const it of todo.sections.flatMap((x) => x.items)) { if (!it.done && mine.length < 4) mine.push({ ...it, list: todo.id }); }
+    return mine;
+  }, [tasks, todo, day]);
+}
+
+function TodoRow({ it }: { it: Todo }) {
+  return (
+    <Fresh id={it.id} bleed={14}>
+      <View style={{ minHeight: 56, flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 11 }}>
+        <Check done={it.done} onPress={() => { haptics.select(); actions.toggleItem(it.list, it.id); }} />
+        <PressScale scale={0.985} onPress={() => { actions.setActiveList('aufgaben'); router.navigate('/listen'); }} style={{ flex: 1, minWidth: 0 }} accessibilityLabel={it.name}>
+          <Txt size={15.5} line={20} weight={500} tracking={-0.19} numberOfLines={2}>{it.name}</Txt>
+          {it.note ? <Txt size={13} line={17} color={tokens.sub} numberOfLines={1}>{it.note}</Txt> : null}
+        </PressScale>
+        <Initials who={it.who} open />
+      </View>
+    </Fresh>
+  );
 }
 
 function TaskRow({ t }: { t: Task }) {
@@ -193,7 +215,7 @@ export function TodayList() {
             {tasks.map((t, i) => (
               <Animated.View key={t.id} entering={arrive(items.length + i)} exiting={cardOut} layout={slide}>
                 {i ? <Line /> : null}
-                <TaskRow t={t} />
+                {'list' in t ? <TodoRow it={t} /> : <TaskRow t={t} />}
               </Animated.View>
             ))}
           </Rows>

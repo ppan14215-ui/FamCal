@@ -8,7 +8,8 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { View, ScrollView } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withTiming, interpolateColor } from 'react-native-reanimated';
 import { router } from 'expo-router';
-import { Screen, H1, H2, Group, Meta } from '../../src/components/ui/kit';
+import { Screen, H1, H2, Group, Meta, Tabs } from '../../src/components/ui/kit';
+import { SectionLabel } from '../../src/components/ui/Group';
 import Txt from '../../src/components/ui/Txt';
 import LineIcon from '../../src/components/ui/LineIcon';
 import { ClayIcon } from '../../src/components/ui/Clay';
@@ -40,80 +41,157 @@ export default function Listen() {
   const lists = useMemo(() => all.filter((l) => !isWissen(l) && !(HIDDEN.points && isPoints(l))), [all]);
   const tasks = useStore((s) => s.tasks);
   const chosen = useStore((s) => s.activeList);
-  // Without the Aufgaben tab (Julian 30.10.) a hidden or missing choice opens the first list.
-  const active = (HIDDEN.tasks && chosen === 'aufgaben') || (chosen !== 'aufgaben' && !lists.some((l) => l.id === chosen)) ? lists[0]?.id ?? 'aufgaben' : chosen;
-  const list = lists.find((l) => l.id === active);
-  // Ton & Papier (setting "Listen: Kacheln"): the tab opens on an overview of coloured tiles; a tile opens its list,
-  // which looks and works as before, and the arrow leads back. A list chosen from elsewhere (a chat card) opens at once.
-  const tiles = useListLook() === 'kacheln';
-  const [open, setOpen] = useState(false);
+  // Brand (27.11.): two tabs, "Alle Listen" and "Aufgaben". All lists is the overview: the shopping list open with its
+  // lines, the week's Aufgaben, every other list as a soft tile. A tile opens its list, the arrow leads back.
+  // Aufgaben are the list "Zu erledigen" (id aufgaben, lib/mitdenken), and old tasks if there are any.
+  const todo = lists.find((l) => l.id === 'aufgaben');
+  const [tab, setTab] = useState<'listen' | 'aufgaben'>(chosen === 'aufgaben' ? 'aufgaben' : 'listen');
+  const [openId, setOpenId] = useState<string | null>(null);
   const first = useRef(true);
-  useEffect(() => { if (first.current) { first.current = false; return; } setOpen(true); }, [chosen]);
+  // A list chosen from elsewhere (a chat card, Memo) opens at once.
+  useEffect(() => {
+    if (first.current) { first.current = false; return; }
+    if (chosen === 'aufgaben') { setOpenId(null); setTab('aufgaben'); } else { setTab('listen'); setOpenId(chosen); }
+  }, [chosen]);
+  const list = openId ? lists.find((l) => l.id === openId) : undefined;
+  const openOf = (l: List) => l.sections.flatMap((x) => x.items).filter((i) => !i.done).length;
+  const n = lists.filter((l) => l.kind !== 'collection' && !l.blueprint).reduce((k, l) => k + openOf(l), 0) + tasks.filter((t) => !t.done).length;
 
-  if (tiles && !open) {
+  if (list) {
     return (
-      <Screen tab gap={12} head={<H1 right={<HeaderRight />}>{tx('Listen', 'Lists')}</H1>}>
-        <ListTiles lists={lists} tasks={tasks} onOpen={(id) => { haptics.select(); actions.setActiveList(id); setOpen(true); }} />
+      <Screen tab gap={12} head={
+        <View style={{ gap: 2 }}>
+          <PressScale accessibilityLabel={tx('Alle Listen', 'All lists')} scale={0.96} hitSlop={10} onPress={() => { haptics.select(); setOpenId(null); }} style={{ alignSelf: 'flex-start' }}>
+            <Txt size={15} line={20} weight={500} color={tokens.sub}>{`‹ ${tx('Listen', 'Lists')}`}</Txt>
+          </PressScale>
+          <H1 right={<HeaderRight />}>{list.name}</H1>
+        </View>
+      }>
+        <Animated.View key={list.id} entering={swapIn} style={{ gap: 12 }}>
+          {list.kind === 'shopping' ? <Einkauf list={list} /> : <Packliste list={list} />}
+        </Animated.View>
       </Screen>
     );
   }
-  const name = active === 'aufgaben' ? tx('Aufgaben', 'Tasks') : list?.name ?? tx('Listen', 'Lists');
+  const items = [{ key: 'listen', label: tx('Alle Listen', 'All lists') }, { key: 'aufgaben', label: tx('Aufgaben', 'To-dos') }];
   return (
-    <Screen tab gap={12} head={tiles
-      ? <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 40 }}>
-          <PressScale accessibilityLabel={tx('Alle Listen', 'All lists')} scale={0.92} hitSlop={8} onPress={() => setOpen(false)} style={[{ width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' }, glass.sm]}><LineIcon name="back" size={18} /></PressScale>
-          <Txt size={29} line={34} weight={600} tracking={-0.7} numberOfLines={1} style={{ flex: 1 }}>{name}</Txt>
-          <HeaderRight />
-        </View>
-      : <><H1 right={<HeaderRight />}>{tx('Listen', 'Lists')}</H1><ListChips lists={lists} tasks={tasks} active={active} /></>}>
-      <Animated.View key={active} entering={swapIn} style={{ gap: 12 }}>
-        {active === 'aufgaben' ? <Aufgaben tasks={tasks} /> : list?.kind === 'shopping' ? <Einkauf list={list} /> : list ? <Packliste list={list} /> : null}
+    <Screen tab gap={12} head={
+      <>
+        <H1 sub={n ? tx(`${n} offen`, `${n} open`) : tx('Alles erledigt', 'All done')} right={<HeaderRight />}>{tx('Listen', 'Lists')}</H1>
+        <Tabs items={items} value={tab} onChange={(k) => { haptics.select(); setTab(k as 'listen' | 'aufgaben'); if (k === 'aufgaben') actions.setActiveList('aufgaben'); }} />
+      </>
+    }>
+      <Animated.View key={tab} entering={swapIn} style={{ gap: 12 }}>
+        {tab === 'aufgaben' ? <Todos list={todo} tasks={tasks} /> : <Overview lists={lists} tasks={tasks} onOpen={(id) => { haptics.select(); setOpenId(id); }} />}
       </Animated.View>
     </Screen>
   );
 }
 
-/** The colours of the tiles, in turn (theme Erde, the tones of the Ton & Papier pictures). */
-const TILE = ['E-Ocker', 'E-Salbei', 'E-Flieder', 'E-Blau', 'E-Terrakotta', 'E-Rose', 'E-Petrol', 'E-Stein'];
-
-/**
- * The overview: one coloured tile per list, two in a row, with its name, how much is still open and its clay icon at
- * 64 dp. Hold a tile to rename the list or change its icon, like the chips. The last tile adds a list.
- */
-function ListTiles({ lists, tasks, onOpen }: { lists: List[]; tasks: Task[]; onOpen: (id: string) => void }) {
-  const rows: { id: string; name: string; icon: ClayName; n: number; all: boolean }[] = [
-    ...(HIDDEN.tasks ? [] : [{ id: 'aufgaben', name: tx('Aufgaben', 'Tasks'), icon: 'erledigt' as ClayName, n: tasks.filter((t) => t.who && !t.done).length, all: false }]),
-    ...lists.map((l) => {
-      const items = l.sections.flatMap((sec) => sec.items);
-      const all = l.kind === 'collection' || !!l.blueprint;
-      return { id: l.id, name: l.name, icon: listIcon(l), n: all ? items.length : items.filter((i) => !i.done).length, all };
-    }),
-  ];
+/** Aufgaben: the list "Zu erledigen" with who is on what, and old tasks when there are any. */
+function Todos({ list, tasks }: { list?: List; tasks: Task[] }) {
+  const create = (t: string) => {
+    if (!list) actions.createList({ id: 'aufgaben', name: tx('Zu erledigen', 'To do'), icon: 'erledigt' as ClayName, kind: 'packing', sections: [{ id: 'main', title: '', items: [] }] });
+    actions.addItem('aufgaben', t);
+  };
   return (
-    <View style={{ flexDirection: 'row', flexWrap: 'wrap', margin: -5 }}>
-      {rows.map((t, i) => {
-        const c = allColors.find((x) => x.name === TILE[i % TILE.length])!;
-        const sub = t.all ? tx(`${t.n} ${t.n === 1 ? 'Eintrag' : 'Einträge'}`, `${t.n} ${t.n === 1 ? 'item' : 'items'}`) : t.n ? tx(`${t.n} offen`, `${t.n} left`) : tx('alles erledigt', 'all done');
+    <>
+      {tasks.length ? <Aufgaben tasks={tasks} /> : null}
+      {list ? <Packliste list={list} /> : null}
+      {!list && !tasks.length ? (
+        <>
+          <Txt size={15} line={21} color={tokens.sub}>{tx('Noch keine Aufgaben. Sag Memo zum Beispiel: „Kindergeld beantragen, macht Julian“.', 'No to-dos yet. Tell Memo for example: "Apply for child benefit, Julian does it".')}</Txt>
+          <AddInline flat placeholder={tx('Aufgabe hinzufügen …', 'Add a to-do …')} onAdd={create} />
+        </>
+      ) : null}
+    </>
+  );
+}
+
+/** The overview of all lists: the shopping list with its open lines, the week's Aufgaben, then a tile per other list. */
+function Overview({ lists, tasks, onOpen }: { lists: List[]; tasks: Task[]; onOpen: (id: string) => void }) {
+  const shop = lists.filter((l) => l.kind === 'shopping');
+  const rest = lists.filter((l) => l.kind !== 'shopping' && l.id !== 'aufgaben');
+  const todo = lists.find((l) => l.id === 'aufgaben');
+  const week = tasks.filter((t) => !t.done).slice(0, 4);
+  const todoOpen = (todo?.sections.flatMap((x) => x.items) ?? []).filter((i) => !i.done).slice(0, Math.max(0, 4 - week.length));
+  return (
+    <>
+      {shop.map((l, i) => {
+        const open = l.sections.flatMap((x) => x.items).filter((it) => !it.done);
         return (
-          <View key={t.id} style={{ width: '50%', padding: 5 }}>
-            <PressScale scale={0.97} accessibilityLabel={t.name} onPress={() => onOpen(t.id)}
-              onLongPress={t.id === 'aufgaben' ? undefined : () => { haptics.tap(); router.push({ pathname: '/liste-bearbeiten', params: { id: t.id } }); }}
-              style={[{ height: 148, borderRadius: 24, padding: 16, overflow: 'hidden', justifyContent: 'flex-end' }, glass.lift, { backgroundColor: c.bg }]}>
-              <View pointerEvents="none" style={{ position: 'absolute', right: 10, top: 10 }}><ClayIcon name={t.icon} size={64} /></View>
-              <Txt size={18} line={22} weight={600} color={c.fg} numberOfLines={2}>{t.name}</Txt>
-              <Txt size={13} line={17} color={c.fg} numberOfLines={1} style={{ marginTop: 2, opacity: 0.85 }}>{sub}</Txt>
-            </PressScale>
+          <View key={l.id}>
+            <SectionLabel first={i === 0} right={open.length > 5 ? <PressScale hitSlop={8} onPress={() => onOpen(l.id)}><Txt size={14} line={18} weight={500} color={tokens.sub}>{tx(`alle ${open.length}`, `all ${open.length}`)}</Txt></PressScale> : undefined}>{l.name}</SectionLabel>
+            {open.length ? (
+              <Group>
+                {open.slice(0, 5).map((it) => (
+                  <Fresh key={it.id} id={it.id}>
+                    <ItemRow flat title={itemText(it)} editText={itemText(it)} meta={itemMeta(it) || undefined} done={it.done} who={it.who ?? null}
+                      onToggle={() => actions.toggleItem(l.id, it.id)} onEdit={(t) => actions.editItem(l.id, it.id, t)} onCycleWho={() => actions.cycleItemWho(l.id, it.id)} onDelete={() => actions.deleteItem(l.id, it.id)} />
+                  </Fresh>
+                ))}
+              </Group>
+            ) : (
+              <PressScale scale={0.985} onPress={() => onOpen(l.id)} style={{ backgroundColor: tokens.group, borderRadius: 16, paddingHorizontal: 14, minHeight: 56, justifyContent: 'center' }}>
+                <Txt size={15} line={20} color={tokens.sub}>{tx('Alles eingekauft. Sag Memo, was fehlt.', 'All bought. Tell Memo what is missing.')}</Txt>
+              </PressScale>
+            )}
           </View>
         );
       })}
-      <View style={{ width: '50%', padding: 5 }}>
-        <PressScale scale={0.97} accessibilityLabel={tx('Neue Liste', 'New list')} onPress={() => router.push('/liste-neu')}
-          style={{ height: 148, borderRadius: 24, borderWidth: 1.5, borderStyle: 'dashed', borderColor: tokens.circleLine, alignItems: 'center', justifyContent: 'center', gap: 6 }}>
-          <LineIcon name="plus" size={22} color={tokens.sub} />
-          <Txt size={14} color={tokens.sub}>{tx('Neue Liste', 'New list')}</Txt>
-        </PressScale>
+      {week.length || todoOpen.length ? (
+        <View>
+          <SectionLabel first={!shop.length}>{tx('Wer macht was, diese Woche', 'Who does what, this week')}</SectionLabel>
+          <Group>
+            {todo ? todoOpen.map((it) => (
+              <Fresh key={it.id} id={it.id}>
+                <ItemRow flat title={itemText(it)} editText={itemText(it)} meta={it.who ? itemMeta(it) || undefined : tx('ohne Zuständigen', 'nobody on it')} done={it.done} who={it.who ?? null}
+                  onToggle={() => actions.toggleItem(todo.id, it.id)} onEdit={(t) => actions.editItem(todo.id, it.id, t)} onCycleWho={() => actions.cycleItemWho(todo.id, it.id)} onDelete={() => actions.deleteItem(todo.id, it.id)} />
+              </Fresh>
+            )) : null}
+            {week.map((t) => (
+              <Fresh key={t.id} id={t.id}>
+                <ItemRow flat title={t.title} meta={t.who ? t.dueLabel : tx('ohne Zuständigen', 'nobody on it')} metaColor={t.frist ? tokens.frist : undefined} done={t.done} who={t.who}
+                  onToggle={() => actions.toggleTask(t.id)} onEdit={(x) => actions.renameTask(t.id, x)} onCycleWho={() => actions.cycleTaskWho(t.id)} onDelete={() => actions.deleteTask(t.id)} />
+              </Fresh>
+            ))}
+          </Group>
+        </View>
+      ) : null}
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', margin: -5, marginTop: 14 }}>
+        {rest.map((l) => {
+          const its = l.sections.flatMap((x) => x.items);
+          const whole = l.kind === 'collection' || !!l.blueprint;
+          const left = its.filter((i) => !i.done).length;
+          const sub = whole ? tx(`${its.length} ${its.length === 1 ? 'Eintrag' : 'Einträge'}`, `${its.length} ${its.length === 1 ? 'item' : 'items'}`) : left ? tx(`${left} offen`, `${left} left`) : tx('alles erledigt', 'all done');
+          const done = its.length ? (its.length - left) / its.length : 0;
+          return (
+            <View key={l.id} style={{ width: '50%', padding: 5 }}>
+              <PressScale scale={0.97} accessibilityLabel={l.name} onPress={() => onOpen(l.id)}
+                onLongPress={() => { haptics.tap(); router.push({ pathname: '/liste-bearbeiten', params: { id: l.id } }); }}
+                style={{ height: 96, borderRadius: 16, padding: 14, backgroundColor: tokens.group, justifyContent: 'space-between' }}>
+                <View>
+                  <Txt size={15.5} line={20} weight={600} tracking={-0.19} numberOfLines={1}>{l.name}</Txt>
+                  <Txt size={13} line={17} color={tokens.sub} numberOfLines={1}>{sub}</Txt>
+                </View>
+                {whole ? null : (
+                  <View style={{ height: 4, borderRadius: 2, backgroundColor: tokens.doneSoft, overflow: 'hidden' }}>
+                    <View style={{ width: `${Math.round(done * 100)}%`, height: 4, borderRadius: 2, backgroundColor: tokens.ink }} />
+                  </View>
+                )}
+              </PressScale>
+            </View>
+          );
+        })}
+        <View style={{ width: '50%', padding: 5 }}>
+          <PressScale scale={0.97} accessibilityLabel={tx('Neue Liste', 'New list')} onPress={() => router.push('/liste-neu')}
+            style={{ height: 96, borderRadius: 16, borderWidth: 1.5, borderStyle: 'dashed', borderColor: tokens.circleLine, alignItems: 'center', justifyContent: 'center', gap: 4 }}>
+            <LineIcon name="plus" size={20} color={tokens.sub} />
+            <Txt size={14} line={18} weight={500} color={tokens.sub}>{tx('Neue Liste', 'New list')}</Txt>
+          </PressScale>
+        </View>
       </View>
-    </View>
+    </>
   );
 }
 
@@ -207,7 +285,7 @@ function Aufgaben({ tasks }: { tasks: Task[] }) {
         <HintLine icon="reise" bold={tx('Ostsee', 'Baltic Sea')} text={tx(' steht im Kalender. Packliste anlegen?', ' is in the calendar. Make a packing list?')} go={tx('Ansehen', 'View')} onGo={() => router.push({ pathname: '/liste-neu', params: { vorschlag: 'urlaub' } })} onNo={() => actions.dismissHint('urlaub')} />
       ) : null}
       {nobody.length ? (
-        <PressScale scale={0.985} onPress={() => router.push('/aufteilen')} style={{ flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 14, paddingHorizontal: 16, borderRadius: 24, backgroundColor: tokens.row }}>
+        <PressScale scale={0.985} onPress={() => router.push('/aufteilen')} style={{ flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 14, paddingHorizontal: 16, borderRadius: 16, backgroundColor: tokens.group }}>
           <ClayIcon name="hand-nimmt" size={56} />
           <View style={{ flex: 1, gap: 2 }}>
             <Txt size={17} weight={600}>{tx(`${nobody.length} ohne Zuständigen`, `${nobody.length} with nobody on it`)}</Txt>
@@ -259,7 +337,7 @@ function Balance({ tasks }: { tasks: Task[] }) {
   if (!total && !rows[0].open && !rows[1].open) return null;
   const share = total ? rows[0].done / total : 0.5;
   return (
-    <View style={{ gap: 12, paddingVertical: 14, paddingHorizontal: 16, borderRadius: 24, backgroundColor: tokens.row }}>
+    <View style={{ gap: 12, paddingVertical: 14, paddingHorizontal: 16, borderRadius: 16, backgroundColor: tokens.group }}>
       <Txt size={15} weight={600}>{tx('Wer macht was, diese Woche', 'Who does what, this week')}</Txt>
       <View style={{ height: 10, borderRadius: 5, overflow: 'hidden', flexDirection: 'row', backgroundColor: tokens.chipBg }}>
         {total ? (

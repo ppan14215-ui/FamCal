@@ -4,6 +4,12 @@ Alle sichtbaren Änderungen an FamCal. Neueste oben. Agenten und Menschen: Ände
 
 ## Unreleased
 
+### Neue Marke, Schritt 5: Listen (28.11.)
+- Listen hat zwei Reiter: "Alle Listen" und "Aufgaben". Oben steht, wie viel offen ist.
+- Alle Listen zeigt den Einkauf direkt zum Abhaken, darunter "Wer macht was, diese Woche", dann jede andere Liste als ruhige Kachel mit Fortschritt.
+- Aufgaben sind die Liste "Zu erledigen"; die offenen stehen auch im Kalender unter Heute.
+- Zeilen ohne Symbole, mit Initialen statt Punkten; wer noch fehlt, zeigt ein gestrichelter Kreis. Die farbigen Kacheln und die Listen Chips fallen weg.
+
 ### Neue Marke, Schritt 4: Chat (28.11.)
 - Überschrift "Chat" mit "Familie" darüber, die Familienköpfe oben rechts fallen weg.
 - Was auf ein Ja wartet, steht oben als graue Karte mit "Eintragen" und "Nein".
