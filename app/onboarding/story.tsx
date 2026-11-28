@@ -37,17 +37,17 @@ import type { Pose } from '../../src/components/onboarding/Mascot';
 import LiveMemo, { BIG } from '../../src/components/onboarding/LiveMemo';
 import SignInSheet from '../../src/components/onboarding/SignInSheet';
 import KlarTalk from '../../src/components/onboarding/KlarTalk';
-import AgendaView from '../../src/screens/kalender/AgendaView';
+import { TodayList } from '../../src/screens/kalender/DayList';
 import { navH, klarFoot } from '../../src/components/NavBar';
-import { light, locate } from '../../src/lib/landing';
-import { StoreContext, createStore, type Store } from '../../src/state/store';
+import { light } from '../../src/lib/landing';
+import { StoreContext, createStore, useStore, type Store } from '../../src/state/store';
 import { PersonsContext, type Persons } from '../../src/components/ui/Person';
 import { StillContext } from '../../src/components/ChatCards';
 import { buildDemoState, demoEvents } from '../../src/data/demoFamily';
 import { buddyJoy, buddyPoke, setBuddy, useBuddy } from '../../src/lib/buddy';
 import { understand } from '../../src/lib/talk';
 import type { CalEvent } from '../../src/state/types';
-import { TODAY, addDays, weekday, WD_LONG, hm, dmShort, daysBetween } from '../../src/lib/dates';
+import { TODAY, addDays, weekday, WD_LONG, hm, dmShort, daysBetween, dayNum, MONTHS, monthIdx } from '../../src/lib/dates';
 import { tokens, persons as appPersons } from '../../src/theme';
 import { haptics } from '../../src/lib/haptics';
 import { tx } from '../../src/i18n/lang';
@@ -486,20 +486,15 @@ function Probe({ me, du, familie, ev, setEv, docked, setDocked, pad, onDone }: {
     const base = buildDemoState(TODAY);
     const keep = new Set(['ev_fussball', 'ev_markt', 'ev_film']);
     // One of each: in the endless list a weekly series would fill every week.
-    const seed = demoEvents(TODAY).filter((e) => keep.has(e.id)).map((e) => ({ ...e, people: undefined, place: undefined, repeat: undefined }));
+    // Today is not empty (the app opens on Heute, Julian 16.11.): market and film stand today, football tomorrow.
+    const seed = demoEvents(TODAY).filter((e) => keep.has(e.id)).map((e) => ({ ...e, date: e.id === 'ev_fussball' ? e.date : TODAY, people: undefined, place: undefined, repeat: undefined }));
     // Only appointments: no open things, deadlines or hints of the demo family in the list.
     return createStore({ ...base, people: [], tasks: [], docs: [], lists: [], events: ev ? [...seed, ev] : seed, calView: 'tag' as const, calDay: ev ? ev.date : TODAY, names: { J: me || tx('Du', 'You'), T: du || tx('Partner', 'Partner') } });
   }, []);
   const people: Persons = useMemo(() => ({ J: { ...appPersons.J, name: me || tx('Du', 'You') }, T: { ...appPersons.T, name: du || tx('Partner', 'Partner') } }), [me, du]);
   const insets = useSafeAreaInsets();
-  // Where the calendar box sits on the screen, so the new line can be brought into view inside it.
-  const frame = useRef<View>(null);
-  const showLine = (id: string) => {
-    light(id);
-    const f = frame.current as any;
-    if (!f?.measureInWindow) return;
-    f.measureInWindow((_x: number, y: number, _w: number, h: number) => locate(id, { top: y + 96, floor: y + h - 24, height: h }, () => {}));
-  };
+  // The day's list is short and stands whole in the box: the new line only has to light up.
+  const showLine = (id: string) => light(id);
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
   const later = (ms: number, fn: () => void) => { timers.current.push(setTimeout(fn, ms)); };
   useEffect(() => () => { timers.current.forEach(clearTimeout); setBuddy({ thinking: false }); light(null); }, []);
@@ -555,18 +550,17 @@ function Probe({ me, du, familie, ev, setEv, docked, setDocked, pad, onDone }: {
   const exA = useSharedValue(0);
   useEffect(() => { exA.value = withTiming(exOn ? 1 : 0, { duration: exOn ? 260 : 140, easing: out }); }, [exOn]);
   const exSt = useAnimatedStyle(() => ({ opacity: exA.value, transform: [{ translateY: (1 - exA.value) * 10 }] }));
-  const reach = ev ? daysBetween(TODAY, ev.date) + 8 : undefined;
 
   return (
     <View style={{ flex: 1 }}>
       <Say text={line} />
-      <View ref={frame} collapsable={false} style={{ flex: 1, marginHorizontal: 14, marginTop: 14, marginBottom: 10, borderRadius: 26, overflow: 'hidden', borderWidth: 1, borderColor: tokens.hair, backgroundColor: tokens.bg }}>
+      <View style={{ flex: 1, marginHorizontal: 14, marginTop: 14, marginBottom: 10, borderRadius: 26, overflow: 'hidden', borderWidth: 1, borderColor: tokens.hair, backgroundColor: tokens.bg }}>
         <View pointerEvents="none" style={{ flex: 1 }}>
           <StoreContext.Provider value={world}>
             <PersonsContext.Provider value={people}>
               <StillContext.Provider value>
                 <CalHead />
-                <AgendaView reach={reach} />
+                <TodayList />
               </StillContext.Provider>
             </PersonsContext.Provider>
           </StoreContext.Provider>
@@ -632,10 +626,16 @@ function Probe({ me, du, familie, ev, setEv, docked, setDocked, pad, onDone }: {
 /** The head of the Kalender tab as it is in the app (klar draft, Julian 14.11.): the weekday semibold without a period,
  *  the short grey info behind it on the same line ("Donnerstag 29. Okt"). */
 function CalHead() {
+  // The page title of the brand, as on the Kalender tab: the date small above, the day big under it. It follows the
+  // new Termin to its day.
+  const day = useStore((st) => st.calDay);
+  const today = day === TODAY;
+  const month = `${dayNum(day)}. ${MONTHS[monthIdx(day)]}`;
+  const sub = today ? tx(`${WD_LONG[weekday(day)]}, ${month}`, `${WD_LONG[weekday(day)]}, ${MONTHS[monthIdx(day)]} ${dayNum(day)}`) : tx(month, `${MONTHS[monthIdx(day)]} ${dayNum(day)}`);
   return (
-    <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 9, paddingHorizontal: 18, paddingTop: 16, paddingBottom: 6 }}>
-      <Txt size={29} line={34} weight={600} tracking={-0.72} numberOfLines={1} style={{ flexShrink: 1 }}>{WD_LONG[weekday(TODAY)]}</Txt>
-      <Txt size={16} line={21} color={tokens.sub} numberOfLines={1} style={{ flexShrink: 2 }}>{dmShort(TODAY)}</Txt>
+    <View style={{ paddingHorizontal: 20, paddingTop: 18, paddingBottom: 12 }}>
+      <Txt size={15} line={20} weight={500} color={tokens.sub} numberOfLines={1}>{sub}</Txt>
+      <Txt size={34} line={40} weight={700} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>{today ? tx('Heute', 'Today') : WD_LONG[weekday(day)]}</Txt>
     </View>
   );
 }
