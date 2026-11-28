@@ -5,7 +5,7 @@
  * it becomes the full Chat; pull it down, tap the open tab again or press back and it closes. The entries are the Chat tab's own.
  */
 import React, { useEffect, useRef } from 'react';
-import { View, ScrollView, PanResponder, Keyboard, useWindowDimensions } from 'react-native';
+import { View, ScrollView, PanResponder, Keyboard, Platform, useWindowDimensions } from 'react-native';
 import Animated, { FadeOut, useSharedValue, useAnimatedStyle, withTiming, Easing, runOnJS } from 'react-native-reanimated';
 import { router, usePathname } from 'expo-router';
 import Txt from './ui/Txt';
@@ -21,6 +21,7 @@ import { haptics } from '../lib/haptics';
 import { tx } from '../i18n/lang';
 import { setBarMode } from '../lib/navStyle';
 import { Thinking, dayOf, Entry } from './ChatCards';
+import { useTyping, useKeyboardInset } from '../lib/keyboard';
 
 const SHOWN = 20;
 const OUT = Easing.bezier(0.23, 1, 0.32, 1);
@@ -30,6 +31,10 @@ const TABS: { name: string; icon: LineName; label: () => string }[] = [
   { name: 'chat', icon: 'chat', label: () => 'Chat' },
   { name: 'einstellungen', icon: 'person', label: () => tx('Profil', 'Profile') },
 ];
+
+/** Where the sheet starts, from the top: half the screen at rest, two thirds tall while typing. */
+const HALF = 0.46;
+const TWO_THIRDS = 0.33;
 
 export default function MemoVerlauf({ foot, onClose }: { foot: number; onClose: () => void }) {
   const { height } = useWindowDimensions();
@@ -42,6 +47,15 @@ export default function MemoVerlauf({ foot, onClose }: { foot: number; onClose: 
   const a = useSharedValue(0);
   useEffect(() => { y.value = withTiming(0, { duration: 260, easing: OUT }); a.value = withTiming(1, { duration: 200, easing: OUT }); }, []);
   const style = useAnimatedStyle(() => ({ opacity: a.value, transform: [{ translateY: y.value }] }));
+  // Julian 28.11.: with the keyboard up the half sheet left room for one bubble. While typing it rides up and takes
+  // two thirds of the screen; it goes back to half when the keys go. The keyboard itself moves the page, so this
+  // follows it in the same beat (one value, no overshoot).
+  const focus = useTyping();
+  const kb = useKeyboardInset();
+  const keys = focus && (Platform.OS === 'web' || kb > 0);
+  const topV = useSharedValue(Math.round(height * HALF));
+  useEffect(() => { topV.value = withTiming(Math.round(height * (keys ? TWO_THIRDS : HALF)), { duration: 240, easing: OUT }); }, [keys, height]);
+  const topStyle = useAnimatedStyle(() => ({ top: topV.value }));
   const close = () => onClose();
   // The whole Chat has its own field above the nav, so the sheet's open input is let go on the way.
   const go = (name: string) => { haptics.select(); if (name === 'chat') { Keyboard.dismiss(); setBarMode('rest'); } router.navigate(('/' + name) as any); };
@@ -70,7 +84,7 @@ export default function MemoVerlauf({ foot, onClose }: { foot: number; onClose: 
   };
   let lastDay = '';
   return (
-    <Animated.View exiting={FadeOut.duration(150)} style={[{ position: 'absolute', left: 0, right: 0, bottom: 0, top: Math.round(height * 0.46), /* opaque: Android has no backdrop blur (Julian 24.11. 23:12) */ backgroundColor: tokens.bg, borderTopLeftRadius: 22, borderTopRightRadius: 22, boxShadow: `0 -1px 0 ${tokens.groupLine}, 0 -8px 24px rgba(20,48,47,0.08)` } as any, style]}>
+    <Animated.View exiting={FadeOut.duration(150)} style={[{ position: 'absolute', left: 0, right: 0, bottom: 0, /* opaque: Android has no backdrop blur (Julian 24.11. 23:12) */ backgroundColor: tokens.bg, borderTopLeftRadius: 22, borderTopRightRadius: 22, boxShadow: `0 -1px 0 ${tokens.groupLine}, 0 -8px 24px rgba(20,48,47,0.08)` } as any, topStyle, style]}>
       {/* The nav, moved up: the same five columns as the bar below, Memo big in the middle, now the line between the
           page and the talk (the draft "Memo halbes Blatt", 27.11.). */}
       <View {...pan.panHandlers} style={{ paddingHorizontal: 6, paddingTop: 4 }}>
