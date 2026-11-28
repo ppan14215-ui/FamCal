@@ -42,6 +42,8 @@ import { InboxCard } from './eingang';
 import { Entry, Thinking, Jumps, at, dayOf, useSettled } from '../../src/components/ChatCards';
 
 const SHOWN = 30;
+/** When the app opened: a fine line "Jetzt" parts what was said since from the log before (brand 27.11., section 7). */
+const OPENED = Date.now();
 
 export default function Chat() {
   const insets = useSafeAreaInsets();
@@ -67,6 +69,9 @@ export default function Chat() {
   const shown = feed.slice(-(SHOWN + more));
   const asks = useStore((st) => st.inbox).filter((i) => i.state === 'ask');
   let lastDay = '';
+  // The first entry of this sitting, when there is a log before it.
+  const nowAt = shown.findIndex((f) => Date.parse(f.at) >= OPENED);
+  const nowId = nowAt > 0 ? shown[nowAt].id : null;
   return (
     <View style={{ flex: 1, backgroundColor: tokens.bg, paddingTop: insets.top }}>
       {simple ? null : <Jumps />}
@@ -91,6 +96,13 @@ export default function Chat() {
           return (
             <React.Fragment key={f.id}>
               {f.id === openQ?.id ? <View onLayout={(e) => { qY.current = e.nativeEvent.layout.y; }} /> : null}
+              {f.id === nowId ? (
+                <Animated.View entering={swapIn} style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                  <View style={{ flex: 1, height: 1, backgroundColor: tokens.groupLine }} />
+                  <Txt size={12} line={16} weight={600} color={tokens.mute}>{tx('Jetzt', 'Now')}</Txt>
+                  <View style={{ flex: 1, height: 1, backgroundColor: tokens.groupLine }} />
+                </Animated.View>
+              ) : null}
               {head ? <Txt size={12.5} line={16} weight={600} color={tokens.mute} style={{ alignSelf: 'center' }}>{head}</Txt> : null}
               <Entry f={f} mine={f.by === me} me={me} answer={f.ask ? feed.find((x) => x.answer?.ask === f.id) : undefined} />
             </React.Fragment>

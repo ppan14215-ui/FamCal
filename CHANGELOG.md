@@ -4,6 +4,10 @@ Alle sichtbaren Änderungen an FamCal. Neueste oben. Agenten und Menschen: Ände
 
 ## Unreleased
 
+### Neue Marke, Schritt 7: Bewegung (28.11.)
+- Neue Karten von Memo springen etwas ruhiger heraus (300 ms bis 1,06, dann 100 ms zurück).
+- Im Chat trennt eine feine Linie "Jetzt" das Neue vom Protokoll davor.
+
 ### Neue Marke, Schritt 6: Profil (28.11.)
 - Der Tab heißt jetzt auch oben "Profil", mit deinem Namen darüber. Drei ruhige Gruppen: du (Konto, Meine Farbe), Familie, App.
 - Weg sind die Auswahlen, die nur das Aussehen umschalteten: Memo Farbe mit Vorschau, Jahr als Monate oder Kacheln, Listen als Kacheln oder Reiter, 3 Tage zeigen. Die Leiste bleibt wählbar.

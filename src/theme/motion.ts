@@ -80,8 +80,9 @@ export const cardOut = new Keyframe({ 0: { opacity: 1, transform: [{ translateY:
  */
 export const slipOut = new Keyframe({
   0: { opacity: 0.4, transform: [{ scale: 0.4 }, { rotate: '-10deg' }] },
-  60: { opacity: 1, transform: [{ scale: 1.06 }, { rotate: '0deg' }], easing: Easing.bezier(0.23, 1, 0.32, 1) },
-  100: { opacity: 1, transform: [{ scale: 1 }, { rotate: '0deg' }], easing: Easing.bezier(0.23, 1, 0.32, 1) },
-}).duration(200);
+  // Brand (27.11.): 300 ms ease-out up to 1.06, then 100 ms in-out back to 1.
+  75: { opacity: 1, transform: [{ scale: 1.06 }, { rotate: '0deg' }], easing: Easing.bezier(0.23, 1, 0.32, 1) },
+  100: { opacity: 1, transform: [{ scale: 1 }, { rotate: '0deg' }], easing: Easing.bezier(0.77, 0, 0.175, 1) },
+}).duration(400);
 /** The card's content follows its shape 80 ms later. */
 export const contentIn = FadeIn.duration(180).easing(Easing.bezier(0.23, 1, 0.32, 1)).delay(80);
