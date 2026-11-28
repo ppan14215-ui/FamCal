@@ -1,0 +1,88 @@
+/**
+ * Motion values, taken from Namore's theme/motion.ts. Principles in
+ * docs/MOTION.md ("Fühlen der Aktion", Julian 26.10.): every tap answers
+ * with movement, content arrives instead of appearing, nothing feels rigid.
+ * - Enter/exit: `easing.out`. Movement across the screen: `easing.inOut`.
+ *   Sheets: `easing.drawer`. Never ease-in alone.
+ * - Gesture-driven or interruptible motion is a spring and takes over the
+ *   gesture velocity. Programmatic fades use timing.
+ * - UI chrome stays under 300 ms. Animate transform and opacity only.
+ * - Reanimated's default ReduceMotion.System jumps to the end state when the
+ *   OS asks for reduced motion.
+ */
+import { Platform } from 'react-native';
+import { Easing, FadeInDown, FadeIn, FadeOut, LinearTransition, Keyframe } from 'react-native-reanimated';
+
+export const motion = {
+  press: 120,     // press-in / press-out feedback
+  micro: 180,     // toasts, chips, small state swaps
+  base: 240,      // cards, rows, content entrances
+  sheet: 320,     // sheets and modals in
+  sheetOut: 240,  // sheets and modals out
+  reveal: 520,    // rare moments
+  flyOff: 220,    // swipe card leaving the screen
+} as const;
+
+export const easing = {
+  out: Easing.bezier(0.23, 1, 0.32, 1),
+  inOut: Easing.bezier(0.77, 0, 0.175, 1),
+  drawer: Easing.bezier(0.32, 0.72, 0, 1),
+} as const;
+
+// Comments give the iOS-equivalent response / damping ratio.
+export const springs = {
+  // 0.3 s, ζ 0.75: press feedback, toggles, small chrome.
+  snappy: { stiffness: 400, damping: 30, mass: 1 },
+  // 0.4 s, ζ 0.86: sheets, sliding pills, anything settling into place.
+  smooth: { stiffness: 250, damping: 27, mass: 1 },
+  // 0.5 s, ζ 0.7: one soft overshoot. Only after the person's own action.
+  reveal: { stiffness: 160, damping: 18, mass: 1 },
+  // ζ 0.84: swipe card or row snapping back under the finger.
+  snapBack: { stiffness: 600, damping: 32, mass: 0.6 },
+} as const;
+
+/** Delay between siblings entering together. */
+export const stagger = 50;
+
+/**
+ * Content rises in from 12 pt below, one stagger apart (capped at 6).
+ * Web: Reanimated 4.2 pins entering views with custom initial values to
+ * `position: absolute` once the animation ends, which breaks the layout. The
+ * web link uses the stock FadeInDown curve instead.
+ */
+export const rise = (i = 0) => {
+  const a = FadeInDown.duration(motion.base).easing(easing.out).delay(Math.min(i, 6) * stagger);
+  return Platform.OS === 'web' ? a : a.withInitialValues({ opacity: 0, transform: [{ translateY: 12 }] });
+};
+
+/** Rows in a list: fade in and out, neighbours slide into the gap. */
+export const rowIn = FadeIn.duration(motion.micro).easing(easing.out);
+export const rowOut = FadeOut.duration(motion.micro).easing(easing.out);
+export const rowLayout = LinearTransition.duration(motion.base).easing(easing.out);
+
+/** Swapping content in place (tab, view, step). */
+export const swapIn = FadeIn.duration(motion.micro).easing(easing.out);
+/**
+ * A new view builds up: fades in and settles 8 px, fast (Julian 31.10.: "sauber animierter schneller Aufbau").
+ * View switches happen tens of times a day, so it stays near-imperceptible: 160 ms (Emil Kowalski 08.11.).
+ */
+export const build = new Keyframe({ 0: { opacity: 0, transform: [{ translateY: 8 }] }, 100: { opacity: 1, transform: [{ translateY: 0 }], easing: Easing.bezier(0.23, 1, 0.32, 1) } }).duration(160);
+
+/**
+ * A deleted card sinks toward the Rückgängig pill at the bottom while its
+ * neighbours close the gap (Allo motion map, Julian 25.11.). 200 ms, no overshoot.
+ */
+export const cardOut = new Keyframe({ 0: { opacity: 1, transform: [{ translateY: 0 }, { scale: 1 }] }, 100: { opacity: 0, transform: [{ translateY: 14 }, { scale: 0.92 }], easing: Easing.bezier(0.23, 1, 0.32, 1) } }).duration(200);
+
+/**
+ * A card Memo just made slips out from beside him (Allo film, approved by Julian 24.11.): from 40 % opacity,
+ * scale 0.4 and -10°, a 6 % overshoot, settled in 200 ms. Pair it with transformOrigin at Memo's corner.
+ */
+export const slipOut = new Keyframe({
+  0: { opacity: 0.4, transform: [{ scale: 0.4 }, { rotate: '-10deg' }] },
+  // Brand (27.11.): 300 ms ease-out up to 1.06, then 100 ms in-out back to 1.
+  75: { opacity: 1, transform: [{ scale: 1.06 }, { rotate: '0deg' }], easing: Easing.bezier(0.23, 1, 0.32, 1) },
+  100: { opacity: 1, transform: [{ scale: 1 }, { rotate: '0deg' }], easing: Easing.bezier(0.77, 0, 0.175, 1) },
+}).duration(400);
+/** The card's content follows its shape 80 ms later. */
+export const contentIn = FadeIn.duration(180).easing(Easing.bezier(0.23, 1, 0.32, 1)).delay(80);

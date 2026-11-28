@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<title>FamCal Einstellungen hell und dunkel</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;display=swap">
+<link rel="stylesheet" href="theme.css">
+</head>
+<body>
+<template>
+  <div style="width:40px;height:40px;border-radius:999px;background:var(--row);display:flex;align-items:center;justify-content:center;font-size:20px">‹</div>
+  <h1 class="h1" style="margin-top:14px">Einstellungen<b>.</b></h1>
+  <div style="margin:22px 4px 10px" class="label">FAMILIE</div>
+  <div class="group">
+    <div class="rowi"><span class="who j" style="width:36px;height:36px;font-size:14px">J</span><span class="t" style="flex:1">Julia<br><span class="m">Rosa</span></span></div>
+    <div class="rowi"><span class="who t" style="width:36px;height:36px;font-size:14px">T</span><span class="t" style="flex:1">Tom<br><span class="m">Blau</span></span></div>
+  </div>
+  <div style="margin:22px 4px 10px" class="label">DARSTELLUNG</div>
+  <div class="card" style="display:flex;flex-direction:column;gap:12px">
+    <div style="display:flex;align-items:center;gap:12px">
+      <div class="tile" style="background:var(--tile-mint)"><img src="../../assets/icons/icon-mond.webp" alt=""></div>
+      <span class="t" style="flex:1">Erscheinungsbild<br><span class="m">Dunkel schont abends die Augen</span></span>
+    </div>
+    <div class="seg" role="radiogroup" aria-label="Erscheinungsbild"><span>Hell</span><span class="on">Dunkel</span><span>Wie das Handy</span></div>
+  </div>
+  <div class="group" style="margin-top:12px">
+    <div class="rowi"><div class="tile" style="background:var(--tile-sand)"><img src="../../assets/icons/icon-chat.webp" alt=""></div><span class="t" style="flex:1">Ich spreche<br><span class="m">Deutsch</span></span><span class="m">›</span></div>
+    <div class="rowi"><div class="tile" style="background:var(--tile-blue)"><img src="../../assets/icons/icon-kalender.webp" alt=""></div><span class="t" style="flex:1">Handykalender<br><span class="m">2 Kalender verbunden</span></span><span class="m">›</span></div>
+  </div>
+  <div style="text-align:center;margin-top:22px" class="m">Build a0b9727a · Update 01a18395</div>
+</template>
+<script src="_frame.js"></script>
+</body>
+</html>

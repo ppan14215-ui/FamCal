@@ -42,7 +42,7 @@ Alle Screens aus dem Canvas, so weit wie im Design vorgesehen, als Live-Prototyp
 
 ## Offene Entscheidungen
 - Technik: **entschieden (Julian, 26.10.2026): derselbe Stack wie Namore** (`ppan14215-ui/namore-baby-name-app`). Das ist Expo SDK 55 mit expo-router, React Native 0.83, React 19.2, Reanimated 4 + react-native-worklets, gesture-handler, react-native-svg, expo-haptics, i18next, EAS (eas.json, expo-updates) und react-native-web. Später kommen wie bei Namore Supabase, RevenueCat, PostHog und Sentry dazu, aber nicht im ersten Prototyp. Namores CLAUDE.md, AGENTS.md und Projektstruktur (`app/`, `src/`) sind die Vorlage.
-- Wie Julian am Handy testet: wie bei Namore (EAS-Build/Update auf seinem Gerät) oder per Web-Export-Link. Klären, was er bei Namore nutzt.
+- Wie Julian am Handy testet: wie bei Namore (EAS-Build/Update auf seinem Gerät) oder per Web-Export-Link. Klären, was er bei Namore nutzt. Zwischenstand 26.10.: Web-Link läuft (`npm run artifact`), für EAS fehlt noch `eas init` mit Julians Expo-Konto.
 - App-Name: offen. `familienkalender` ist nur ein Arbeitsname.
 - Positionierung: Vorschlag, noch nicht bestätigt.
 

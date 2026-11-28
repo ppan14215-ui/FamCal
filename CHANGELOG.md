@@ -1,0 +1,531 @@
+# Changelog
+
+Alle sichtbaren Änderungen an FamCal. Neueste oben. Agenten und Menschen: Änderung unter **Unreleased** in einfacher Sprache eintragen.
+
+## Unreleased
+
+- Erstes Jahr ohne Kind fragt jetzt nach Geburtstag oder errechnetem Termin und legt dann das ganze Jahr an, auch für den anderen Elternteil. Von der Leiste nach oben wischen öffnet Memos Blatt.
+- Leiste: Kalender, Erstes Jahr, Memo, Listen, Profil. Auf Heute zeigt Memo einmal am Tag die nächste Frist, ein Tipp öffnet Erstes Jahr, das x blendet sie bis morgen aus.
+- Erstes Jahr: wer eine Frist übernimmt und was erledigt ist, bleibt jetzt nach einem Neustart erhalten und erscheint auch beim anderen Elternteil (sobald die Familie den Speicherplatz dafür am Server hat).
+- Neuer Tab "Erstes Jahr" statt Chat: wo euer Kind im ersten Jahr steht, ein Satz von Memo, was gerade zählt, die nächsten Fristen mit Countdown und wer sie übernimmt, danach der Rest des Jahres. Vergangene Fristen fragen "Schon erledigt?".
+- Memo schaut im Blatt beim Tippen nach unten auf deinen Text und nickt mit. Das Blatt lässt sich fast bis ganz nach oben ziehen. Die Chat Seite zeigt kein eigenes Eingabefeld mehr über der Leiste, Memo öffnet überall das Blatt.
+- Tippst du im Memo Blatt, fährt es mit der Tastatur auf zwei Drittel hoch, damit mehr vom Chat zu sehen ist.
+- Memo antippen öffnet den Verlauf ohne Tastatur. Sprechen öffnet einen ruhigen weißen Screen mit Memo oben, mitlaufendem Text und Welle statt der dunklen Karte. Die Termin Ansicht hat jetzt das gleiche helle Feld mit Mikro.
+
+### Neues App Icon
+- Memo flach in Tinte auf weißem Grund, passend zur neuen Marke (braucht neue App Version, kein Update über Nacht).
+
+### Julians Rückmeldung 28.11.
+- Die Leiste mit Memo in der Mitte ist fest; die Auswahl im Profil ist weg. Memo antippen öffnet die Texteingabe, das Mikro steht daneben.
+- Woche zeigt wieder die ganze Woche auf einen Blick (sieben Tage als Raster).
+
+### Neue Marke, Schritt 9: Familie, Familiencode, Plus, Ausprobieren
+- Familie: alle auf einer grauen Gruppe; der Familiencode als große Karte zum Vorlesen, Antippen kopiert.
+- Familie beitreten: die Frage als großer Titel, das Codefeld auf grauem Grund. Eingabefelder überall auf grauem Grund.
+- Plus: Vorteile und Preise auf grauen Karten, die Texte bleiben gleich.
+- Ausprobieren im Onboarding zeigt den Tag als neue Liste.
+
+### Neue Marke, Schritt 8: Memo als halbes Blatt
+- Memo öffnet sich auf jeder Seite als halbes Blatt: die Leiste wandert mit Memo nach oben und wird zur Trennlinie. Oben wechseln Kalender, Listen und Profil weiter, die Seite bleibt bedienbar; das Gespräch bleibt unten und sieht aus wie im Chat.
+- Trennlinie hochziehen öffnet den ganzen Chat, runterziehen oder den offenen Tab nochmal tippen schließt.
+
+### Neue Marke, Schritt 7: Bewegung (28.11.)
+- Neue Karten von Memo springen etwas ruhiger heraus (300 ms bis 1,06, dann 100 ms zurück).
+- Im Chat trennt eine feine Linie "Jetzt" das Neue vom Protokoll davor.
+
+### Neue Marke, Schritt 6: Profil (28.11.)
+- Der Tab heißt jetzt auch oben "Profil", mit deinem Namen darüber. Drei ruhige Gruppen: du (Konto, Meine Farbe), Familie, App.
+- Weg sind die Auswahlen, die nur das Aussehen umschalteten: Memo Farbe mit Vorschau, Jahr als Monate oder Kacheln, Listen als Kacheln oder Reiter, 3 Tage zeigen. Die Leiste bleibt wählbar.
+
+### Neue Marke, Schritt 5: Listen (28.11.)
+- Listen hat zwei Reiter: "Alle Listen" und "Aufgaben". Oben steht, wie viel offen ist.
+- Alle Listen zeigt den Einkauf direkt zum Abhaken, darunter "Wer macht was, diese Woche", dann jede andere Liste als ruhige Kachel mit Fortschritt.
+- Aufgaben sind die Liste "Zu erledigen"; die offenen stehen auch im Kalender unter Heute.
+- Zeilen ohne Symbole, mit Initialen statt Punkten; wer noch fehlt, zeigt ein gestrichelter Kreis. Die farbigen Kacheln und die Listen Chips fallen weg.
+
+### Neue Marke, Schritt 4: Chat (28.11.)
+- Überschrift "Chat" mit "Familie" darüber, die Familienköpfe oben rechts fallen weg.
+- Was auf ein Ja wartet, steht oben als graue Karte mit "Eintragen" und "Nein".
+- Gesagtes steht in breiten, sanft gefärbten Blasen mit Name und Uhrzeit darüber, Memo antwortet in grauen Blasen.
+- Termin Karten im Chat zeigen den Farbbalken der Person und wer dabei ist, statt Symbol, Ort Knopf und Pfeil.
+
+### Neue Marke, Schritt 3: Termin (28.11.)
+- Ein Termin öffnet mit großem Titel, darunter wer dabei ist als Pillen zum Antippen, dann ruhige graue Gruppen: Wann und Wo, Erinnern und Wiederholen, Mitbringen und Notiz. Löschen als ruhige Pille unten.
+- Neuer Termin wie im Entwurf: "Abbrechen" und "Sichern" oben, der Titel auf einer weißen Karte, die Felder in zwei Gruppen, unten ein großer Sichern Knopf.
+- Das große Symbol oben im Termin fällt weg.
+
+### Neue Marke, Schritt 2: Kalender (28.11.)
+- Heute ist eine ruhige Liste statt Stundenraster: Zeit, Farbbalken der Person, Titel, Gesichter. Vorbei wird blass, eine rote Linie zeigt Jetzt. Darunter die Aufgaben von heute zum Abhaken.
+- Woche: oben die sieben Tage mit Punkten in den Farben der Personen, darunter jeder Tag als Gruppe. Tippen auf einen Tag gleitet dorthin, Wischen auf der Leiste blättert die Woche.
+- Monat mit runden Tagen und Punkten, darunter der gewählte Tag. Jahr als zwölf ruhige Kacheln mit Balken für wie viel los ist, Urlaub grün, darunter was das Jahr noch bringt.
+- Überschrift mit grauer Zeile darüber, Personenfilter als "Alle" und farbige Punkte, auch in der einfachen Version.
+- Oben rechts nur noch das Plus, die Suche oben fällt weg. Das Briefing über Heute fällt weg, Fragen stehen im Chat.
+
+### Neue Marke, Schritt 1: neuer Look (27.11.)
+- Weißer Grund, Memo Tinte, ruhige Grautöne; Karten weiß mit feiner Linie statt Schatten.
+- Neue Schrift DM Sans, Überschriften kräftig.
+- Neues Farbthema "Familie" mit den Markenfarben ist Standard, Bunt bleibt wählbar, Erde fällt weg.
+- Die Leiste hat fünf gleich breite Spalten; der Einstellungen Tab heißt dort kurz "Profil".
+- Farbkreise in den Einstellungen zeigen die Farbe so, wie sie in der App erscheint.
+
+### Farbthema Bunt (27.11.)
+- Neues zweites Farbthema "Bunt" mit zehn kräftigen Farben neben Erde. Alle anderen Themen sind weg; alte Farben bleiben lesbar.
+- Die weißen Tags in den Chat Blasen haben keinen dunklen Rand mehr.
+
+### Bewegung in der ganzen App (25.11.)
+- Ein neuer Termin landet mit einem kurzen Stoß, genau wenn Memo nach seinem Sprung aufkommt, mit leichtem Tick am Handy.
+- Abhaken: der Haken zeichnet sich von links nach rechts.
+- Löschen: die Karte sinkt Richtung Rückgängig, die anderen rücken nach.
+- Verschiebt sich ein Termin, blinkt nur seine Zeit einmal.
+- Beim Öffnen kommen die Termine des Tages einzeln herein.
+- Chat: Memos Antwort kommt Wort für Wort, die neue Karte schlüpft neben Memo heraus.
+
+### Memo zeigt, was er verstanden hat: Tags im Satz (24.11.)
+- Namen der Familie, Zeiten, das Termin Wort und Orte erscheinen im Satz als farbige Tags: im Chat, in Nachrichten vom Partner, im Memo Verlauf und live beim Sprechen.
+- Ein neuer Tag wächst aus einem Punkt unter dem Wort (280 ms, kein Überschwingen); ältere Nachrichten zeigen ihn ruhig. Die Eingabezeile bleibt wie sie ist.
+
+### Startklar fürs MVP: Grenzen, Bezahlseite, Testzugang (22.11.)
+- Neuer Satz zum Start: „Damit nicht einer alles im Kopf hat.“ statt „Der klügste Familienkalender“.
+- Bezahlseite: Jahresabo vorausgewählt, Preis pro Tag, der Gründerpreis wird nur durchgestrichen gezeigt, wenn der Store wirklich ein günstigeres erstes Jahr verkauft. Kurze Liste, was Plus macht, und Antworten zum Kündigen. Die Probetage kommen aus dem Store, nicht aus dem Text.
+- Gratis Familien hören mit der Spracherkennung des Handys, die genaue Cloud Spracherkennung gehört zu Plus und den Probetagen. Die App fragt den Plan beim Start und nach jeder Rückkehr.
+- Server: KI Grenzen pro Familie (30 Sätze am Tag, 600 im Monat, mehr bei größeren Familien), Aufnahmen 40 pro Person am Tag und 1200 pro Familie im Monat, dazu eine Notbremse für alle zusammen. Wenn sie greift, sagt Memo das einmal und nimmt einfache Regeln.
+- Der Testzugang kann nicht mehr in einen Store Build gelangen: der Build bricht ab, und selbst dann bliebe der Knopf versteckt.
+
+### Gelöschte Termine aus dem Handykalender bleiben weg (16.11.)
+- Ein Termin aus Google, den der Assistent gelöscht hat (gesprochen oder getippt), kam beim nächsten Abgleich zurück. Jetzt merkt sich die App jedes Löschen an einer Stelle, egal auf welchem Weg, auch wenn gerade ein Abgleich läuft. Rückgängig holt ihn wieder.
+- Server: Termine sind jetzt je Familie eindeutig (Migration events_key_per_family). Vorher stießen Termine aus dem Handykalender mit gleichen Nummern einer anderen Familie zusammen und das Speichern wurde abgelehnt.
+
+### Live Wörter beim Sprechen (15.11.)
+- Das Mikrofon geht beim Sprechen direkt zu ElevenLabs Scribe Echtzeit. Die Sprechkarte zeigt die aktuelle Vermutung grau und bestätigte Wörter fest, auch wenn Deutsch und Englisch gemischt werden.
+- Fällt die Verbindung aus, geht dieselbe Aufnahme einmal den bisherigen Weg. Ohne das neue Mikrofon Modul (alte App) bleibt alles wie zuvor.
+- Braucht eine neue App (natives Modul expo-audio-stream-pcm), kein reines Update.
+- 16.11.: Die Live Verbindung kam auf dem Handy nie zustande (AbortSignal.timeout fehlt in Hermes, der Abruf brach sofort ab). Jetzt mit AbortController; der Fehlertext steht im Protokoll.
+
+### Updates kommen von selbst an (14.11.)
+- Die App sucht bei jeder Rückkehr nach einem Update, lädt es still und startet es bei der nächsten Rückkehr nach einer Pause. Vorher brauchte es zwei komplette Neustarts.
+- Auch beim Anmelden mit Google oder Apple und beim Teilen der Einladung startet die App nicht mitten drin neu.
+- Kommt man aus der Galerie oder der Kamera zurück, startet die App nie neu. Das gewählte Foto bleibt, der Neustart wartet auf die nächste Rückkehr.
+
+### Sprechen und Tippen (14.11.)
+- „Aa“ beim Sprechen: Die Tastatur kommt sofort, nicht erst nach dem Aufschreiben. Was schon gesagt war, landet danach im Feld. Kein „Aufnahme kam nicht an“ mehr, wenn man nur tippen wollte.
+- Der Schalter „Sprache nur auf dem Handy“ ist weg (Julian 14.11.). Sprache geht immer über die Cloud und wird dadurch viel besser verstanden. Wer das nicht will, nutzt „Ohne KI“.
+- Das Fehlerprotokoll je Aufnahme nennt jetzt den Grund, warum die Cloud Ohren aus waren, und ob „Aa“ getippt wurde. Nie den Inhalt.
+
+### Klarer Look (14.11.)
+- Die App ist jetzt ruhig und neutral: Weiß, fast Schwarz und Grau. Farbe kommt nur noch von den Personen. Schrift ist Inter.
+- Inhalte sind flach und dicht mit feinen Linien statt weißer Blöcke. Glas gibt es nur auf dem, was man drückt: Knöpfe, Chips, Leiste.
+- Memo bewegt sich neu: er bleibt rund und fast still, die Augen tragen das Gefühl. Jeder Zustand fließt in den nächsten, er schaut zur Seite, Denken und Nacht sind langsam, keine Sprünge mehr.
+- Memo verwandelt sich bei echten Ergebnissen kurz in ein passendes Zeichen und zurück: Termin, Geburtstag, Urlaub, Einkauf, verschoben, gelöscht, Liste fertig, neues Familienmitglied. Häufiges wie Abhaken bekommt nur ein kurzes Lächeln.
+- Wenn etwas nicht klappt, schaut Memo kurz betrübt.
+- Neue Seite "Memo" (Testlink) zeigt alle Zustände, kleinen Antworten und 20 Verwandlungen.
+- Unten sitzt jetzt eine kleine Glas Pille mit den Tabs und Memo. Tippst du Memo an, wächst die Eingabe aus ihm heraus, legt sich über die Pille und hört sofort zu. „Aa“ holt die Tastatur, der Text bleibt. Lange auf Memo drücken geht direkt zur Tastatur.
+- Beim Sprechen stehen die Worte live in der Karte, sichere dunkel, unsichere grau. Gesendet wird weiter erst, wenn du auf Senden tippst.
+- Die alte Leiste bleibt unter „Zum Testen“ in den Einstellungen umschaltbar.
+- Kalender Heute ist jetzt eine endlose, dichte Liste nach Tagen: links der Tag, rechts die Termine mit Farbstrich der Person, Zeit und Symbol. Was heute vorbei ist, wird grau, eine feine dunkle Linie zeigt jetzt. Freie Tage fallen weg. Offenes, Fristen und Vorschläge stehen im Block von heute.
+- Tage und Woche sind dasselbe Stundenraster, flach mit feinen Linien: Woche zeigt sieben Tage, Tage zeigt drei Tage größer mit ganzen Titeln und Zeiten. Heute und die Jetzt Linie sind dunkel.
+- Zoomen mit zwei Fingern wechselt die Ansicht und rastet ein: auseinander geht es näher heran (Jahr, Monat, Woche, Tage), zusammen weiter weg. Die Chips oben machen dasselbe per Tipp.
+- Monat ist flach: Zahl mit Punkten, heute als dunkler Kreis. Feiertage färben die Zahl, Urlaub liegt als weiches Band hinter seinen Tagen, beides steht unter dem Raster mit Namen.
+- Sprechen im klaren Look: Die Karte ist jetzt dunkel und wächst aus Memo heraus. Was du sagst, steht groß darin, sichere Worte hell, unsichere grau. Unten läuft die Aufnahme mit weißem Punkt, Zeit und Stopp.
+- Nach dem Senden schrumpft die Karte zu einer kleinen Blase, Memos Augen werden drei Ladepunkte. Ist die Antwort da, gleitet Memo an seinen Platz zurück und die Leiste schiebt sich wieder herein. Nichts verschwindet und taucht neu auf.
+- Plus Menü im klaren Look: kein Blatt von unten mehr. Eine kleine dunkle Karte wächst aus dem Plus, das Plus dreht sich zum Kreuz und schließt wieder, der Bildschirm dahinter tritt zurück. Aus dem Tippfeld geöffnet steigt die Karte über der Navigation auf.
+- Hinzufügen ist jetzt die nächste Zeile der Liste: leerer Kreis und Text. Was du dort schreibst, wird zur Zeile darüber, die Zeile bleibt für den nächsten Eintrag offen.
+- Einstellungen im klaren Look: Zeilen liegen flach auf dem Grund mit feinen Linien, keine weißen Blöcke mehr.
+- Onboarding, Ausprobieren: zeigt die App, wie sie jetzt ist. Kalender als Liste, Leiste mit Memo, dunkle Sprechkarte mit großen Worten, Ladeblase, die neue Zeile leuchtet auf.
+- Neue Zeilen leuchten überall in Orange auf statt in Grau.
+- Nach einem getippten Satz kommt die Ladeblase sofort, die Leiste blitzt nicht mehr dazwischen auf.
+- Zurück zum klaren Look, den Julian abgesegnet hat (vor dem orangen Stil): Memo sitzt wieder groß und schwarz in der Leiste unten, auch auf Handys, auf denen früher das einfache Mikrofon gewählt war. Die kleine Pille „1 neu“ über der Leiste ist weg.
+- Aussehen wie im abgesegneten Entwurf: heller Grund, kein Orange mehr, alles Betonte ist fast Schwarz. Titel ruhig und halbfett ohne Punkt, die kurze Info steht grau dahinter („Donnerstag 29. Okt“).
+- Im Kalender sind die Ansichten wieder Wörter auf einer feinen Linie (Heute, Tage, Woche, Monat, Jahr); ein kurzer Strich gleitet zum gewählten Wort.
+- Oben rechts sitzen zwei runde weiße Knöpfe: Suchen und Plus. Im Chat stehen dort die Familie und die Einstellungen.
+- Neue Suche: ein Feld über Termine, Listen und Aufgaben. Sie liest nur, was schon auf dem Handy ist.
+- Kalender Heute ist so dicht wie im Entwurf: kleinere Zeilen, Zeit in der Farbe der Person, der nächste Termin steht fett. Englische Zeiten („9:30am“) haben genug Platz und werden nicht mehr abgeschnitten.
+- Listen wie im Entwurf: die gewählte Liste ist ein weißer Chip, die anderen stehen schlicht daneben. Jede Zeile hat ihr kleines Symbol, die Notiz steht grau hinter dem Titel, die Person ist ein Farbpunkt. Gekauftes sammelt sich unten unter „Erledigt“.
+- Hinweise wie „Windeln kauft ihr etwa alle 12 Tage“ sind jetzt eine ruhige graue Zeile mit „Ansehen“.
+- Chat wie im Entwurf: deine Sätze stehen in deiner Blasenfarbe, Memo antwortet als schlichte Zeile mit seinem Gesicht, das Ergebnis ist eine weiße Karte mit zwei echten Knöpfen: „Ändern“ in Schwarz und „Rückgängig“.
+- Kalender Heute zeigt nur noch, was im Entwurf steht: pro Termin eine Zeile mit Farbstrich, Zeit, Symbol, Titel und Farbpunkt. Zweite Zeilen, Quellen, Aufgaben, Fristen, Hinweiskarten und Arbeitszeiten stehen dort nicht mehr. Arbeitszeiten bleiben in Tage und Woche.
+- Listen zeigen nur noch die Liste selbst: die Hinzufügen Zeile und der Hilfetext sind weg. Neues kommt über Sprechen oder das Plus oben rechts; nur eine leere Liste behält eine Zeile zum Anfangen.
+- Hinweiszeilen haben kein Kreuz mehr: nach links wischen räumt sie weg.
+- Einstellungen wie im Entwurf: oben Du mit Blasenfarbe, Memo (Schwarz oder Meine Farbe), Vorschau und Sprechen (Mit Memo oder Minimal), dann Familie mit Mitglieder, Kalender verbinden und Benachrichtigungen, dann Konto. Zeilen ohne Symbole. Das Farbthema steht unter Zum Testen.
+- Monat wie im Entwurf: Wochentage als ein Buchstabe, der gewählte Tag liegt auf einem grauen Feld, Feiertage stehen fett. Darunter die Termine des Tages als höhere Zeilen mit feinen Linien, die Überschrift nennt Wochentag und Tag. Arbeitszeiten stehen nicht mehr im Monat, sie bleiben in Tage und Woche.
+- Im Kalender Kopf stehen nur noch Suchen und Plus, die Pfeile sind weg. Geblättert wird durch Wischen zur Seite.
+- Listen zum Abhaken wie im Entwurf: oben steht „4 von 9 gepackt“ mit Prozent über der Linie, Abgehaktes sammelt sich unten unter Erledigt, die Abschnitte zeigen nur noch, was offen ist.
+- Ein Termin öffnet jetzt als Blatt über dem Kalender wie im Entwurf: Symbol, Titel und Zeit, darunter ruhige Zeilen (Für, Wer geht, Wo, Mitbringen, Erinnern), woher er kommt, und drei Knöpfe: Ändern, Verschieben und Mehr (dort steht Löschen). Bearbeitet wird auf der Seite hinter „Ändern“; „Verschieben“ öffnet dort gleich Tag und Zeit. Das Sprechfeld sitzt auf der Seite hinter „Ändern“.
+- Neuer Termin sieht aus wie im Entwurf: oben Schließen, Name der Seite und Sichern, das Symbol neben dem großen Titel, darunter je eine ruhige Zeile für Wann, Wer, Wo, Erinnern, Mitbringen, Wiederholen und Notiz. Die vier Kacheln und der Link Mehr sind weg.
+- Termin ändern ist aus denselben Zeilen gebaut wie Neuer Termin. Löschen liegt auf dem Blatt hinter den drei Punkten.
+- Ein neu gesicherter Termin steht in Heute und im Monat wieder an der richtigen Stelle nach Uhrzeit.
+- Familie sieht aus wie im Entwurf: oben Zurück und Einladen, darunter je Person eine ruhige Zeile mit Kreis, Name, einem kurzen grauen Wort (Alter beim Kind) und der Farbe als Punkt. Hinzufügen und der Familiencode liegen hinter Einladen, entfernt wird mit einem Wisch nach links.
+- Chat Karten wie bei Wabi (Julian 14.11.): weiße Karte mit feinem Rand und weichem Schatten, links das Bild, der Name fett, darunter eine graue Zeile, rechts ein kleiner Pfeil zum Öffnen. Was auf eine Liste kam, steht als eine solche Karte da, abgehakt wird in der Liste. Die Beispiele im leeren Chat liegen auf denselben Karten.
+- Schatten sind jetzt feste Bausteine im Designsystem (nach Wabi gemessen): ein Kartenschatten für alle Karten, ein enger Schatten mit Glanz für runde Knöpfe, helle Pillen und Chips.
+- Personen Kreise im Kopf überlappen wie bei Wabi und tragen einen Ring in der Farbe der Person.
+- Im Chat spricht der Assistent jetzt in einer eigenen ruhigen grauen Blase links neben Memo, wie man es von WhatsApp kennt. Deine Sätze bleiben farbig rechts.
+- Blasen und Karten beginnen an derselben Linie, zwischen zwei Wortwechseln ist mehr Luft, und in den Karten hat alles denselben Rand.
+- In den Chat Karten wird die Uhrzeit nicht mehr abgeschnitten, wenn ein Ort daneben steht: Datum und Zeit bleiben ganz, die graue Zeile darf dafür eine zweite Zeile haben.
+- Fotos in den Personen Kreisen: In Familie auf einen Kreis tippen, Foto aus der Galerie wählen und quadratisch zuschneiden. Das Foto füllt den Kreis, der Ring bleibt in der Farbe der Person. Wer schon ein Foto hat, bekommt beim Antippen „Neues Foto“ und „Foto entfernen“. Ohne Foto bleibt der Buchstabe.
+- Die Fotos liegen in einem privaten Speicher nur für die eigene Familie. Es gibt keinen öffentlichen Link, jedes Handy holt sie mit der eigenen Anmeldung. Beim Abmelden verschwinden sie vom Handy, beim Löschen des Kontos auch aus dem Speicher.
+- Kalender Heute beginnt jetzt mit „Neu und offen“: was der andere eingetragen oder geändert hat und was auf deine Antwort wartet, mit einem Punkt für alles, was du noch nicht gesehen hast. Darunter stehen die Tage wie bisher. Gibt es nichts Neues, beginnt Heute direkt mit den Tagen. Der Chat bleibt reiner Verlauf.
+- Wer im Kalender oder auf den Listen etwas sagt oder tippt, bleibt dort: Es legt sich keine Chat Karte mehr darüber, die neue oder geänderte Zeile kommt an und leuchtet kurz, Memo denkt in der Leiste. Eine Karte kommt nur noch, wenn die Antwort aus Worten besteht, eine Uhrzeit fehlt oder etwas unklar ist. Alles steht weiter im Chat.
+- Termin im Kalender löschen: Die App bleibt im Kalender (Julian 15.11.). Vorher ging sie nach dem Löschen im Termin Blatt zwei Schritte zurück und landete im Chat. Gilt auch für „Nur diesen Termin“, die ganze Serie und Arbeitstermine.
+- Termin ändern: Das obere „Fertig“ übernimmt jetzt auch einen Tag oder eine Uhrzeit, die in der Karte „Wann“ noch offen ist (Julian 15.11.). Vorher schloss es die Seite und die Änderung war weg.
+- Sprechkarte: ein Tipp auf den gezeigten Text öffnet ihn zum Ändern, beim Zuhören wie beim fertigen Satz. Die Tastatur kommt, gesendet wird nichts (Julian 15.11.).
+- Serie, „Nur dieser Termin“: nach dem Ändern zeigt das Blatt den geänderten Tag und nicht mehr Tag und Uhrzeit der Serie.
+- „Verschoben auf …“ zeigt einen Haken statt des Papierkorbs; Rückgängig bleibt.
+- Termin ändern und Neuer Termin: Das Symbol steht wieder groß oben als Kopf, ein Tipp wechselt es. Es gibt nur noch ein „Fertig“; in der Karte „Wann“ klappt ein kleiner Pfeil zu. Tag und Uhrzeit gelten auf jedem Weg hinaus, auch mit dem Pfeil zurück (Julian 15.11.).
+- Denken: nur noch eine Anzeige. Solange Memo als Blase denkt, zeigt der Chat keine zweiten Punkte. Die Blase ist größer (Julian 15.11.).
+- Kalender Heute: Ein gelöschter Termin blendet weich aus und die Zeilen darunter rutschen nach, statt hart zu verschwinden.
+- Kalender Heute nach Julians Referenz (16.11.): oben die Woche als Leiste, der gewählte Tag steht auf einer hellen Kachel. Darunter der eine Tag: links die Stunden, die aktuelle Stunde in einer Pille, rechts pro Termin eine Karte mit Balken in der Farbe der Person, Titel, Ort, Gesichtern und Zeitspanne. Freie Zeit ist eine Lücke, keine Karte wird abgeschnitten.
+- Die Karten in Heute sind die Karten der ganzen App: weiß, feine Linie, weicher Schatten, auf dem hellen Grund. Oben unter dem Kopf und unten vor der Leiste blendet die Seite weich aus. Der graue Grund aus der Referenz war kurz ausgeliefert und ist zurückgenommen (Julian 16.11.).
+- Ein Tipp auf einen Tag der Leiste zeigt diesen Tag, Wischen bringt die nächste oder letzte Woche, ein zweiter Tipp auf Heute führt zurück zu heute. Neu und offen steht unter den Terminen von heute.
+- Gesagtes, das an einem anderen Tag landet, nimmt die Heute Seite mit zu diesem Tag.
+- Kalender Heute, Tage und Woche nutzen die ganze Höhe: die Stunden teilen sich den Bildschirm gleichmäßig bis an die Leiste unten (8 bis 19 Uhr, weiter bei früheren oder späteren Terminen). In Heute steht ein Termin an seiner Zeit und ist so hoch, wie er dauert; nur wo eine Karte mehr Platz braucht, machen die Stunden daneben Platz. Ein voller Tag scrollt (Julian 16.11.: alles war gestaucht, die untere Hälfte leer).
+- Kalender Heute: Arbeit ist keine Karte mehr, sondern ein gestreifter Block in der Farbe der Person hinter dem Tag (wie in der Woche). Termine während der Arbeit liegen zu ihrer Zeit darauf, zwei Arbeitende stehen nebeneinander. Ein Termin, der nur Arbeit oder Work heißt, zählt auch als Arbeit (Heute, Tage, Woche).
+- Kalender Heute, Tage, Woche: die Stunden folgen den Terminen. Der Tag beginnt mit dem ersten und endet mit dem letzten Termin (auch um 22 Uhr), statt fest von 8 bis 19 Uhr. Ein ruhiger Tag zeigt trotzdem genug Stunden, und die Seite ist immer ganz gefüllt.
+- Kalender für große Familien: Arbeit steht in der Farbe der Person, auch bei Kindern und Großeltern, und zeigt nebeneinander das Gesicht dazu. In Woche und Tage stehen höchstens zwei oder drei Termine nebeneinander, weitere stecken in „+3“ (ein Tipp zeigt den Tag). Die Zeile unter der Woche nennt alle, die arbeiten.
+- Chat: der schwarze Ändern Knopf auf den Karten ist weg, ein Tipp auf die Karte öffnet den Termin. Ein Wisch nach links löscht den Termin auch im Chat (danach Rückgängig), wie im Kalender. Zwischen Blasen, Antwort und Karte ist mehr Luft.
+- Eingabe (16.11.): Das Feld bleibt immer schwarz. Wer von der Sprechkarte auf Tippen wechselt („Aa“), bleibt in derselben schwarzen Karte, Memo bleibt an seinem Platz, Senden steht an derselben Stelle. Auf „Termin ändern“ und „Neue Liste“ ersetzt eine schmale schwarze Zeile das alte weiße Feld, und Einsprechen öffnet dort dieselbe schwarze Sprechkarte wie im Kalender.
+- Start (16.11.): Die App öffnet im Kalender mit „Heute“. In der Leiste steht der Kalender vorn, dann die Listen, der Chat rückt nach hinten und bleibt der Verlauf. Zurück führt jetzt immer in den Kalender. Nach der Einführung, nach Anmelden, Familie anlegen und Abo landet man ebenfalls im Kalender.
+- Start (16.11.): Der Start ist eine einzige Bewegung. Nach dem Blinzeln zieht sich das Schwarz um die Augen zu Memo zusammen, Memo gleitet in seinen Platz in der Leiste und kommt dort genau so groß an, wie er in der Leiste ist. Kein Sprung mehr, etwa 1,4 statt 2,3 Sekunden. Antippen überspringt den Start.
+- Heute: seitlich wischen blättert zum nächsten und zum vorigen Tag. Auf einem Termin löscht Wischen nach links wie bisher.
+- Heute: vergangene Termine sind nicht mehr blass. Das Ausblenden über der Leiste erscheint nur noch, wenn der Tag darunter weiterläuft.
+- Ein Tipp auf einen Termin öffnet ihn gleich zum Ändern, das Blatt dazwischen ist weg. Löschen steht am Ende der Seite, bei Serien für diesen einen Termin oder die ganze Serie.
+- Einstellungen sind ein eigener Tab in der Leiste (Julian 16.11.): Kalender, Listen, Chat, Einstellungen. Das Zahnrad oben im Chat entfällt. Nach einem neuen Farbthema oder einer anderen Navigation bleibt man in den Einstellungen statt im Kalender zu landen.
+- Jede Person hat eine Farbe, überall dieselbe (Julian 16.11.): Termine und Arbeit im Kalender, der Kreis und die eigene Blase im Chat. Wählbar in den Einstellungen unter „Deine Farbe“ und für jede Person unter Familie mit einem Tipp auf den Farbpunkt. Die eigene Blasenfarbe als getrennte Wahl entfällt.
+- Das Chat Fenster außerhalb des Chats liegt jetzt immer über der Seite, auf der du gerade bist: mit deinem Satz, Memos Antwort und der Karte mit Rückgängig. Es zeigt sich auch im Kalender und in den Listen, und ein Satz für eine Liste wirft dich nicht mehr vom Kalender zu den Listen. Das Fenster sitzt direkt über der Leiste und geht nach ein paar Sekunden von selbst, antippen hält es fest. Im Chat bleibt alles im Verlauf.
+- Die Farben der Eltern gehören jetzt der Familie: wer auf einem Handy eine Farbe wählt, sieht sie auch auf dem anderen, beim nächsten Öffnen oder Zurückkommen. Eine Wahl ohne Netz geht hoch, sobald das Handy wieder verbunden ist.
+- Ton & Papier, Etappe 1: Papier Grund, Petrol Tinte, warme Grautöne und Schatten, Überschriften in Bricolage Grotesque, Farbthema Erde als Standard. Aufbau und Verhalten unverändert.
+- Monat im Ton & Papier Stil: hohe Felder, heute als Tinte Feld, Urlaub als Band am Fuß der Tage.
+- Neue Leiste unten wie in anderen Apps: Kalender, Listen, Memo groß in der Mitte, Neu (Eingang mit Glocke), Einstellungen. Memo antippen öffnet den Chat mit offener Eingabe. Die bisherige Leiste bleibt in den Einstellungen wählbar.
+- Einstellungen: Jahr als Monate oder farbige Kacheln, 3 Tage Ansicht zeigen oder ausblenden.
+- Listen öffnen mit einer Übersicht aus farbigen Kacheln. Eine Kachel öffnet die Liste wie bisher, der Pfeil führt zurück. Die Reiter bleiben in den Einstellungen wählbar.
+- - Memo öffnen springt nicht mehr: die helle Eingabe blitzt nicht mehr kurz auf, und die Sprechkarte wächst aus Memo in der Mitte der Leiste statt von einer Stelle rechts daneben. Der Chat ist beim Start schon aufgebaut.
+- - App Start: Memo fällt jetzt mit Schwung in die Mitte der Leiste, prallt auf und schiebt die Tabs kurz zur Seite. Er kommt in seiner richtigen Größe an und springt nicht mehr vor der Landung.
+- App Start: Memo landet auf Android ganz unten in seinem Platz in der Leiste (Statusleiste wird nicht mehr vergessen)
+- Memo in der Mitte öffnet die Eingabe dort, wo man gerade ist, kein Wechsel in den Chat mehr; Zurück schließt sie
+- Der dritte Tab ist wieder der Chat: Verlauf und darunter, was noch auf ein Ja wartet
+- Memo kann die Standarddauer neuer Termine setzen, auch in den Einstellungen wählbar
+- Memo antippen öffnet das Textfeld, Sprechen startet erst über das Mikro
+- Kalender Startansicht wählbar, auch per Memo (z.B. Woche)
+- Standarddauer neuer Termine gilt für die ganze Familie; Memo merkt sich Regeln wie Arzt 1 Stunde und hält sich daran
+- Memo Feld bleibt offen, bis man daneben tippt; eigener Mikro Knopf im Feld
+- Memo geht als Verlauf über der Seite auf: Gespräch und Ergebnisse oben, helle Eingabe unten, Sprechen nur übers Mikro, schließen mit X, Zurück oder Wischen
+- Neuer Name ParentButler in den Texten der App (Plus, Familie beitreten, Widget)
+- Chat Seite hat wieder immer ein Eingabefeld, überall dieselbe helle Eingabe, Bild aus Plus öffnet das Feld, Memo korrigiert Spielrunden statt Minusrunden anzuhängen
+- Nach dem Tippen im Chat springt beim Wechsel zum Kalender kein Memo Blatt mehr auf
+- Chat: Memo legt sich beim Nachdenken nicht mehr über das Eingabefeld
+- Spracheingabe im Memo Blatt: Stopp beendet nur die Aufnahme, Senden erst danach mit dem Pfeil
+- Eingabefeld fährt mit der Tastatur mit, statt danach zu springen (Android)
+- Sprechkarte: der Pfeil beendet beim Zuhören erst die Aufnahme, gesendet wird mit dem zweiten Tipp
+- Memo versteht kurze Antworten im Gespräch ("Donnerstag", "Arbeit") und trägt fehlende Arbeit nach dem Muster der anderen Tage ein, statt endlos nachzufragen.
+- Memo erinnert sich an das, was im Memo Blatt steht (bis 12 Stunden statt 30 Minuten), und das Blatt ist deckend.
+- Memo hüpft einmal, wenn ein Termin fertig ist, und springt beim Mikro in die Sprechkarte (wie im Allo Film)
+
+### App funktioniert zuverlässig (09.11. Audit)
+- Nach längerer Pause im Hintergrund klappen Assistent und Spracheingabe gleich beim ersten Satz, statt "Ich komme gerade nicht an den Assistenten".
+- "Heute" und "morgen" stimmen auch, wenn die App seit gestern offen war. Am neuen Tag lädt sie sich beim Zurückkommen einmal neu.
+- Was der Partner in der Zwischenzeit eingetragen, verschoben oder gelöscht hat, ist beim Zurückkommen in die App sofort da. Löschungen kommen jetzt auch live an.
+- Chatkarten sagen beim Laden nicht mehr "Nicht mehr im Kalender" und "Im Kalender" gleichzeitig.
+- Eine leere Antwort des Assistenten wird einmal still neu gefragt.
+- Kalender und Listen liegen jetzt auch auf dem Handy: die App öffnet sofort, auch ohne Netz, und was du ohne Netz einträgst, geht nicht verloren.
+- Klappt das erste Laden nicht, zeigt die App das an und bietet "Nochmal versuchen" statt eines leeren Bildschirms.
+- Abmelden räumt Kalender, Listen und Chat vom Handy.
+- Die App ist jetzt ruhig und neutral: Weiß, fast Schwarz und Grau. Farbe kommt nur noch von den Personen. Schrift ist Inter.
+- Inhalte sind flach und dicht mit feinen Linien statt weißer Blöcke. Glas gibt es nur auf dem, was man drückt: Knöpfe, Chips, Leiste.
+
+### Memo lebt (08.11. Nacht)
+- Beim Tippen schaut Memo hoch auf den Text und liest mit; jeder neue Buchstabe ein kleines Nicken.
+- Er reagiert auf alles: anderer Bildschirm, etwas abgehakt (freut sich), etwas gelöscht (zuckt kurz).
+- Neue Bewegungen ohne Standard-Federn: erst kurz Schwung holen, dann strecken, dann nachwackeln. Augen huschen zuerst, der Körper lehnt sich hinterher zur Berührung.
+- Start: der kleine Memo aus dem Intro gleitet direkt an seinen Platz in der Leiste, es gibt nie zwei.
+- Die Leiste klappt mit einer eigenen weichen Kurve statt einer Feder.
+
+### Sprechkarte (08.11. abends)
+- Beim Sprechen wächst die Leiste zu einer hellen Karte. Memo sitzt in ihrer Mitte als Sprechknopf: antippen, wenn du fertig bist.
+- Der gesagte Satz steht in der Karte, mit Senden oder Ändern. Er geht nie von selbst raus.
+- Rückfragen kommen in derselben Karte: "Um wie viel Uhr?" mit Stunden zum Antippen oder einfach sagen ("um drei"), andere Fragen mit Antworten zum Antippen. Danach zeigt die Karte kurz, was jetzt im Kalender steht.
+- Memo sitzt nicht mehr auf der Leiste oder auf Karten darüber.
+- Memo sitzt jetzt in der Leiste, wo das Mikro war. Es gibt nur noch einen Memo; antippen heißt sprechen, ins Feld tippen heißt schreiben.
+
+### Bewegung nach Emil Kowalski (08.11.)
+- Tabs wechseln mit kurzem Einblenden statt Schieben, die Kalenderansichten bauen sich schneller auf.
+- Vibration nur noch einmal pro Aktion: beim Eintragen am Ende, beim Löschen im Moment des Loslassens.
+- Blätter und Hinweise, die man wegwischt, behalten den Schwung der Hand.
+- Tag wechseln im Tagkalender ist etwas schneller.
+
+### Memo als Blob (07.11.)
+- 08.11. abends: Der wahre Grund für „jede zweite Aufnahme klappt nicht“: Die Cloud-Erkennung hat manche deutschen Sätze für Englisch gehalten und leer zurückgegeben (12 von 12 Fehlern). Jetzt fragt sie dann einmal auf Deutsch nach, und wenn sie trotzdem nichts liefert, landen die Wörter, die das Handy selbst gehört hat, im Feld statt einer Fehlermeldung.
+- 08.11. spät: Jede zweite Aufnahme schlug fehl. Nach einem Tab-Wechsel ging das Mikro von selbst wieder an (seit Memo auch das Mikro startet), und der nächste Tipp stoppte diese leere Aufnahme. Jetzt startet jeder Sprech-Auftrag das Mikro genau einmal. Memo federt nicht mehr: Freude, Zuhören und Mitgleiten mit dem Feld laufen weich aus, ohne Nachwippen.
+- 08.11. abends: Memo hat eine Aufgabe. Er ist der Sprechknopf: Antippen und sprechen. Er schaut dahin, wo du tippst, und zeigt ein kleines „?“, wenn eine Frage auf deine Antwort wartet. Bei den ersten drei Starts sagt eine kleine Zeile „Tipp mich an und sprich“.
+- 08.11.: Memo hüpft nicht mehr. Er freut sich auf der Stelle (kurz zusammendrücken, kleines Wackeln, ^^ Augen) und bleibt immer auf dem Eingabefeld sitzen, auch wenn eine Karte oder Pille darüber erscheint.
+- 08.11.: Die Start Animation läuft jetzt flüssig: nur noch Bewegungen, die das Handy direkt zeichnet, und der kleine Memo übernimmt ohne Lücke.
+- Memo ist jetzt ein weicher, glänzender Tropfen in Teal mit zwei cremefarbenen Augen und sitzt rechts über dem Eingabefeld, auf jedem Screen mit Feld.
+- Memo lebt mit: atmet, blinzelt, schaut sich um, schaut aufs Feld beim Tippen, wird beim Sprechen größer und wackelt mit der Stimme, drückt sich beim Nachdenken flach und hüpft mit ^^ Augen, wenn etwas eingetragen ist. Antippen lässt ihn hüpfen. Nachts (23 bis 6 Uhr) döst er.
+- Beim App Start ist der ganze Bildschirm kurz Memo und schmilzt nach oben weg, dann fliegt Memo an seinen Platz. Tippen überspringt es.
+- Im Chat zeigt jede Antwort den kleinen Blob statt des alten Magneten.
+- Auch im Onboarding und in der Vorstellung ist Memo jetzt der Blob; der alte Magnet ist überall ersetzt.
+
+### Datenschutz (05.11.)
+- Der Assistent bekommt pro Satz nur noch die nächsten zwei Wochen und was zum Satz passt, statt bis zu 220 Termine, alle Fakten und alle Listen. Braucht er mehr, sucht die App auf dem Handy nach (höchstens 20 Zeilen, höchstens 3 Suchen pro Satz). Etwa halb so viel Text pro Satz, bei großen Familien 60 % weniger.
+- Eure Namen gehen nur noch als Platzhalter raus, die App setzt sie wieder ein. Private Kalender gehen nur als „Belegt“ oder „Arbeit“ raus, ohne Titel und Ort.
+- Neu in den Einstellungen unter Datenschutz: „Ohne KI“ für die ganze Familie (das Sprechfeld fällt weg, ihr tragt alles mit dem Plus ein), „Sprache nur auf dem Handy“ und „Alle Daten löschen“.
+- Vor dem ersten Satz fragt die App einmal: Mit KI oder ohne. Sie sagt dabei klar, was an wen geht.
+- Viele Termine auf einmal („alle Arbeitstage im Dezember“) ändert der Assistent jetzt über eine Beschreibung, die App findet alle passenden selbst.
+
+### Ruhiger, weniger Text (03.11.)
+- Leerer Chat zeigt nur noch drei Beispielsätze direkt über dem Feld, ohne Memo, Überschrift und Hilfetext.
+- Eigene Nachrichten ohne „Du · Uhrzeit“. Eine Termin Karte fragt nur noch eine Sache auf einmal (erst Uhrzeit, dann wer geht, dann der Ort). Die schwebende zweite Frage über dem Feld ist weg. Karte antippen öffnet den Termin, der Knopf „Ändern“ fällt weg.
+- Heute: kein „Als Nächstes“, kein „Danach“, keine Labels „Mitgedacht“, „Bald“, „Später heute“. Wochenbriefing ist eine Zeile. Leere Bereiche verschwinden statt Hilfetext zu zeigen.
+- Monat: ohne „5 Termine“ über der Tagesliste.
+- Listen: kein Zähler unter dem Titel und an den Abschnitten, kein zweites Eingabefeld. Das Feld unten sagt, welche Liste es füllt („Auf Einkauf …“). Der Abo Vorschlag ist eine Zeile. Der Hilfetext zu Haken und Wischen ist weg. Spielerlisten behalten ihr eigenes Feld.
+- Termin: ohne „Symbol“ Chip und ohne „selbst übernommen“. Ganztägig, Wiederholen, Erinnerung, Countdown und Notiz zeigen sich nur, wenn sie etwas enthalten, sonst hinter „Mehr“.
+- Plus Menü ohne Überschrift und Unterzeilen. Einstellungen: Name links, Wert rechts, nur noch eine Sprache Zeile.
+
+### Längerer Einstiegsfilm (02.11.)
+- Der Film hat jetzt acht Szenen: Foto vom Kita-Brief, weitergeleitete Mail (mit „Bald“ markiert), Memo kennt euren Alltag und merkt sich, was ihr sagt. Am Ende wird das Handy zum Monatskalender: „Der klügste Kalender, mit dem du je gesprochen hast“.
+
+### 107 neue Clay Icons (02.11.)
+- Kino, Tankstelle, Bus, Hochzeit, Weihnachten, Personen und 100 weitere Icons sind in der App, auch unter „Symbol wählen“. Der Assistent und die Regeln finden sie über deutsche und englische Wörter („Kino“, „cinema“, „tanken“).
+- 51 davon bewegen sich als Ganzes mit ruhigen Federn: Fahrzeuge fahren los und bremsen (jedes mit eigenem Gewicht, ohne über den Text zu fahren), Personen nicken, das Karussell dreht sich, der Kürbis schaukelt. Die übrigen 56 (jetzt auch U-Bahn und Hörbuch) geben beim Antippen nur leicht nach, bis ihre Einzelteile da sind.
+- Bessere Icons aus Wörtern: „Flug buchen“ ist kein Buch mehr, Laternenumzug und Sankt Martin bekommen das Herbstblatt, Schulbus, Busfahrkarte, Rollerfahren, Weihnachtsmarkt, Oma und Opa, Parkausweis, Fasching, Halloween und Babyparty passen jetzt.
+- Briefkasten, Brotdose, Federmappe, Frühstück, Mittagessen, Prüfung und Schulbus haben die neuen Bilder.
+
+### Onboarding zeigt die echte App (02.11.)
+- Der Start zeigt in acht kurzen Kapiteln die echte App mit einer Beispielfamilie: Termin eintragen, Überblick, Verschieben, Partner bekommt Bescheid, Einkauf, Rezept, und noch mehr. Weiter geht es nur per Tipp, Überspringen geht immer.
+- Am Ende räumt die Beispielfamilie den Chat leer, dann tragt ihr euch ein. Eure eigenen Daten berührt das nie.
+- Die Probier-Schritte Termin und Einkauf sind weg, nach der Familie kommen gleich die Kalender.
+- Der Vorfilm mit Memo ist neu animiert: ruhiger, jede Szene spielt einmal und bleibt dann stehen, bis ihr auf Weiter tippt. Die Kühlschranktür wird zum Handy, Zettel fliegen zu Karten, Memo blinzelt bei jedem Blickwechsel.
+- Der Vorfilm ist länger und zeigt, was FamCal kann: ein Foto vom Kita-Brief wird Termin und Mitbring-Liste, eine weitergeleitete Mail wird ein Termin (mit „Bald“ markiert), Memo ergänzt Arzt, Adresse und Uhrzeit von selbst und merkt sich, was ihr sagt. Neuer Claim: „Der klügste Kalender, mit dem ihr je gesprochen habt“.
+
+### Kalender ruhiger und klarer (31.10. morgens)
+- Der Umschalter gleitet sofort beim Tippen los, auch zwischen Heute und Tage.
+- Tabs und Kalenderansichten bauen sich kurz animiert auf, statt einfach umzuspringen.
+- Urlaub hat eine eigene sonnige Farbe: im Jahr als durchgehender Balken, im Monat als gelber Eintrag.
+- Läuft ein Urlaub schon, sagt die große Karte auf Heute "Gerade · Tag 5 von 6" statt "Als Nächstes".
+- Geburtstage von Personen, deren Name schon "Geburtstag" enthält, heißen nicht mehr doppelt.
+- Assistent (erst im Testserver): jeder Termin ohne Uhrzeit fragt nach ihr, außer Urlaub, Geburtstag und Ähnlichem. Neuer Testfall jeder-termin-uhrzeit.
+
+### Umschalter und Icons (31.10. morgens)
+- Von Heute auf Woche gleitet die Auswahl im Kalender-Umschalter jetzt, statt zu springen.
+- Die untere Leiste ändert beim Tab-Wechsel nicht mehr ihre Breite, die weiße Pille schießt bei Listen nicht mehr über.
+- Erscheint ein Termin als Karte im Chat oder über Kalender und Listen, bewegt sich sein Icon einmal kurz.
+
+### Karte statt Orb auf Kalender und Listen (31.10. nachts)
+- Ein Satz auf Kalender oder Listen denkt jetzt in derselben Karte wie im Chat, über dem Feld und über dem, was du gerade anschaust (src/components/Peek.tsx). Kein Orb, kein Sprung in den Kalender. Die Karte geht nach ein paar Sekunden von selbst, außer du berührst sie.
+- Alles, was außerhalb vom Chat passiert, landet automatisch auch im Chat (Satz plus Karte), damit der Verlauf vollständig bleibt.
+- Die Chat-Karten liegen jetzt in src/components/ChatCards.tsx, damit Chat und Overlay dieselben benutzen.
+
+### Karte im Chat schlanker (31.10. nachts)
+
+- "Wer geht?" verschwindet, sobald jemand gewählt ist.
+- "Ändern" öffnet direkt den Termin zum Bearbeiten, ohne Zwischenschritt "Alles bearbeiten".
+- Mehrtägige Termine zeigen in der Karte Anfang und Ende ("17. Jan bis 4. Feb").
+
+### Feiertage leise, Abende in der Woche, Chat ohne Doppel (30.10. nachts)
+
+- Feiertage und Tage wie Halloween stehen nur noch als leise Info am Tag, ohne Person, nicht mehr unter "Als Nächstes" oder als Punkt im Monat. Im Monat ist das Datum farbig.
+- Die Wochenansicht reicht so früh und so spät wie eure Termine (Fußball um 19 Uhr steht im Raster).
+- Im Chat steht dein Satz nur noch einmal; die Antwort des Assistenten sitzt in der Karte.
+- Listen lassen sich bearbeiten: Tab lange drücken oder "Bearbeiten" unter der Liste, dann Name und Symbol ändern.
+- Monatsansicht wie bei Google: kurze farbige Titel je Tag statt Punkten, darunter die Termine des gewählten Tags.
+- Zahnrad oben rechts öffnet die Einstellungen. Dort lassen sich die eigene Farbe und die des Partners ändern; sie bleiben nach dem Neustart.
+- Nach "Zutaten hinzufügen" im Chat kommt nur noch ein kurzer Hinweis statt der großen Bestätigung, die Karte im Chat zeigt es schon.
+- Fragt der Assistent nach der Uhrzeit, stehen die Antworten zum Antippen direkt in der Karte im Chat (9, 12, 15, 18, 19:30 Uhr, ganztägig, anders), danach "Bis wann?". Kein großes Fenster mehr unten.
+- Wartet noch eine Frage auf dich (von deinem Partner oder Uhrzeit/Wer geht vom Assistenten), steht eine kleine Pill über dem Feld; Antippen springt hin.
+- Eine Uhrzeit, nach der noch gefragt wird, trägt die App nicht mehr als geraten ein.
+- Rezepte denken an alle Teile: Schnitzel mit Pommes bringt Kartoffeln, Eier und Frittieröl mit.
+- Sagt man "An Weihnachten sind wir bei Mama", bleibt Heiligabend im Kalender stehen und "Bei Mama" kommt als eigener Termin dazu.
+
+### Einkauf nach Supermarkt, gleiche Header (30.10. spät)
+
+- Die Einkaufsliste sortiert sich wie der Weg durch den Laden: Obst und Gemüse zusammen, dann Brot, Kühlregal, Fleisch, Vorrat, Tiefkühl, Getränke.
+- Doppelte Einträge (auch Zwiebel und Zwiebeln) werden zusammengeführt, mit Rückgängig. Neue Doppelte entstehen nicht mehr.
+- Chat, Kalender und Listen haben denselben Header an derselben Stelle, mit Luft und einem sanften Übergang zum Inhalt.
+- Feld, Tab-Leiste und Karten haben auf Android wieder einen weichen Schatten.
+- Der Wechsel zwischen Tage, Woche und Monat rechnet die Serien nur noch einmal.
+- Plus zeigt drei klare Wege: Termin, Auf die Liste (Liste wählen oder neue anlegen) und Foto. Ein Foto von Brief, Einladung oder Zettel wird am Handy gelesen und der Assistent trägt ein, was drin steht.
+- Mehrtägiges zeigt in der Tagesansicht nur die Tageszählung, kein "bis" mehr.
+- Im Chat heißt "Details" bei Terminen jetzt "Ändern": wer geht, Tag und Uhrzeit direkt in der Karte, dazu "Alles bearbeiten".
+
+### Ruhiger, schneller, richtiger (30.10. abends)
+
+- Im Chat ist die Karte von Anfang an da, das Nachdenken passiert in ihr. Bei einem neuen Termin fragen Chips gleich: Ich, Partner oder Beide?
+- Der Assistent kennt frühere Termine (z.B. Kinderarzt) und übernimmt Ort und Dauer vom letzten Mal.
+- "Am Freitag arbeite ich nur bis 15:39" macht aus dem ganztägigen Arbeitstag wirklich einen Tag bis 15:39.
+- Besuche heißen nach dem Ziel ("Bei Mama", "Zu Oma") statt dreimal "Weihnachten".
+- Arbeit in der Detailansicht: keine Serie, kein "Coming along", kein Mitnehmen, nur wer arbeitet und wann.
+- Zutaten-Sheet: eigene Zutaten ergänzen, lang drücken ändert Menge oder Namen.
+- Titel und Umschalter bleiben in Kalender und Listen stehen, nur der Inhalt scrollt.
+- Schneller: versteckte Tabs rechnen nicht mehr mit, der Chat zeigt die letzten 30 Nachrichten (ältere auf Tipp), Tage-Ansicht und Monat sind leichter. Im Monat Punkte statt Icons.
+
+### Super simpel: eine Leiste, ein Feld (30.10.)
+
+- Unten steht immer dieselbe dunkle Leiste mit Chat, Kalender und Listen. Der offene Tab ist hell und zeigt sein Wort.
+- Darüber steht auf jedem Screen dasselbe Feld mit Plus und Mikro. Nichts klappt weg, nichts wird getauscht.
+- Das Plus zeigt nur noch Termin, Listeneintrag und Neue Liste. Die Test-Schalter in den Einstellungen sind weg, die einfache Version und der Assistent sind immer an.
+
+### Zurück zum Kern, Assistent denkt kurz nach (30.10.)
+
+- Der Assistent ist jetzt immer an und überlegt kurz, bevor er handelt. Er hat eine Liste mit 23 echten Sätzen zweimal komplett bestanden.
+- Erinnerungen landen auf der Liste „Zu erledigen“. Aufgaben, Rommé, Filmbewertungen und Vorschläge sind ausgeblendet.
+- Ist der Assistent nicht erreichbar, sagt die App das ehrlich, statt zu raten.
+- Bei „Ich koche Bolognese“ sagt er jetzt auch einen Satz dazu.
+
+### Ruhiger unten (28.10.)
+
+- Die Vorschläge über dem Sprechfeld sind weg. Unten steht nur noch das Feld mit Mikro.
+
+### Das Mikro lässt dich ausreden (28.10.)
+
+- Kurze Pausen beenden die Aufnahme nicht mehr. Das Mikro hört zu, bis du etwa zweieinhalb Sekunden still bist oder nochmal auf den Kreis tippst. Den Text siehst du live mitlaufen.
+
+### Neue Liste: klare Wahl statt Vorlagen Wirrwarr (28.10.)
+
+- Oben ein Schalter: Zum Abhaken oder Sammlung. Er stellt sich nach dem Namen selbst ein, „Filme“ wird Sammlung.
+- Bei einer Sammlung siehst du sofort, wie ein Eintrag aussieht, und schaltest Bausteine wie Cover, Bewertung oder Preis an und aus.
+- Passt eine Vorlage zum Namen, etwa „Packliste Ostsee“, fragt die App, ob sie sie übernehmen soll. Die übrigen Vorlagen stehen klein darunter.
+- Das Symbol bleibt leer, bis ein Name da ist. Ein altes Symbol aus einem Termin rutscht nicht mehr hinein.
+
+### Listen zeigen, was sie brauchen (27.10.)
+
+- Filme und Bücher bekommen Cover, Jahr und Autor oder Regie, fünf Sterne zum Bewerten und „Gesehen“ oder „Gelesen“. Gesehenes wird blasser, bleibt aber an seinem Platz.
+- Ohne Cover steht der erste Buchstabe auf einer ruhigen Farbe, während die App sucht, atmet die Fläche.
+- Schon beim Anlegen steht unter dem Namen, was die Liste bekommt, zum Beispiel „Mit Cover, Bewertung und Gesehen“.
+
+### Listen mit eigenem Symbol und Sammlungen ohne Haken (27.10.)
+
+- Beim Anlegen einer Liste tippst du auf das Symbol und suchst dir eins aus, wie in Notion. Ohne Auswahl passt es sich dem Namen an.
+- Neue Vorlage Sammlung: Listen ohne Haken, zum Beispiel Filme, Bücher oder Ideen. Nach links wischen löscht weiter.
+
+### Mehr Symbole, und das passende kommt von selbst (27.10.)
+
+- 106 neue Symbole, zum Beispiel Friseur, Zug, Elternabend, Spielplatz, Frühstück und alle Sportarten. Im Symbol Auswahl stehen sie in ihren Gruppen, dazu eine neue Gruppe Arbeit.
+- Sagst du „Fußball am Montag mit Freunden“, bekommt der Termin den Ball. Die App erkennt jetzt viel mehr Wörter auf Deutsch und Englisch, auch bei Terminen aus dem Handykalender.
+
+### Sprechen überall und passende Icons (27.10.)
+
+- Wer im Kalender „Pack Nudeln auf die Einkaufsliste“ sagt, bekommt keinen Termin mehr, sondern Nudeln auf der Einkaufsliste. Claude erkennt Einkäufe und Aufgaben von jedem Bildschirm aus. Haben die Regeln schon einen Termin angelegt, nimmt Claude ihn wieder heraus.
+- Claude wählt das Icon für einen Termin aus allen vorhandenen Icons, „Fußball am Montag mit Freunden“ bekommt den Fußball. Neue Icons kennt Claude automatisch, die App schickt die Liste mit.
+- Was der Assistent auf eine Liste setzt, leuchtet auf und wippt kurz, alle neuen Zeilen auf einmal, nicht nur die letzte. Das Leuchten bleibt etwas länger stehen.
+
+### Neue Versionen ohne neue Installation (27.10.)
+
+- Die Test App holt sich Änderungen beim Start selbst (EAS Update). Neu installieren muss man nur noch, wenn sich etwas am Handy Teil ändert, etwa eine neue Berechtigung.
+
+### Mikro versteht Deutsch auch auf englischen Handys (27.10.)
+
+- Das Mikro hörte bisher in der Sprache der App. Auf einem Handy mit Englisch als erster Sprache war das Englisch, Deutsch kam gar nicht an. Jetzt hört es Deutsch, sobald Deutsch irgendwo in den Sprachen des Handys steht.
+- Außerdem wählt man in den Einstellungen unter „Ich spreche“ Deutsch oder Englisch, das Handy merkt es sich.
+
+### Kein Warten mehr auf Claude (27.10.)
+
+- Gemessen braucht Claude 2 bis 4 Sekunden pro Satz. Deshalb zeigt die App den Termin jetzt sofort mit ihren eigenen Regeln. Claude liest den Satz gleichzeitig und korrigiert danach still, was die Regeln falsch verstanden haben. Der Termin leuchtet dabei kurz auf.
+- Hat die App einen Satz gar nicht verstanden, Claude aber schon, trägt Claude den Termin nach.
+- Claude antwortet kürzer, das spart Zeit.
+
+### 14 Tage Plus, danach 30 Sätze im Monat gratis (27.10.)
+
+- Jede Familie startet mit 14 Tagen Plus. Danach versteht Claude 30 Sätze im Monat gratis, mit Plus unbegrenzt. Eingeladene nutzen den Plan ihrer Familie mit.
+- Ist das Monatslimit erreicht, sagt die App das einmal und versteht weiter mit ihren eigenen Regeln. Bei 5 übrigen Sätzen kommt ein kurzer Hinweis.
+- Die Datenbank prüft den Plan, bevor Claude gefragt wird. Ein gesperrter Satz kostet nichts. Plus kann sich niemand selbst geben, das setzt später nur das Bezahlen.
+- Für alle bleibt die Grenze von 60 Sätzen pro Person und Tag.
+
+### Sprechen zuerst: neues Intro und kürzeres Onboarding (27.10.)
+
+- Das Intro zeigt jetzt nur noch, was den Kalender ausmacht: ein gesprochener Satz wird zum Termin, er landet sofort auf beiden Handys, „Eine Stunde später“ verschiebt ihn, „Wann haben wir beide frei?“ findet die Lücke, und Google, iCloud und Outlook ziehen in einem Schritt mit um. Kein Behördenbrief mehr.
+- Onboarding in drei Schritten: eure Namen, Kalender umziehen, Partner einladen (oder später). Die Schritte zu Stadt, Kind, erstem Jahr und Aufgabenkarten sind weg.
+- Datenbank: zwei Sicherheitshinweise von Supabase behoben.
+- Kostenbremse für Claude: jede Person kann Claude höchstens 60 Sätze am Tag lesen lassen, danach übernehmen die eingebauten Regeln. Ein Satz kostet etwa 0,03 Cent.
+
+### Echte App: Anmelden, gemeinsamer Kalender, Sprechen mit Claude (27.10.)
+
+- Anmelden mit Apple oder Google, ohne Passwort. Danach startest du eure Familie oder gibst den Code deines Partners ein und teilt denselben Kalender.
+- Termine liegen in Supabase und erscheinen sofort auf beiden Handys. Jede Familie sieht nur ihre eigenen Daten.
+- Das Mikro hört in der App direkt auf dem Handy zu, der Ton verlässt das Gerät nicht. Den Satz liest Claude und macht daraus den Termin mit Datum, Uhrzeit, wer und wo. Ohne Netz übernehmen die bisherigen Regeln.
+- Umzug von bestehenden Kalendern: in der echten App übernimmt „Kalender auf diesem Handy“ eure Termine der nächsten zwölf Monate aus iCloud, Google oder Outlook in FamCal, für beide sichtbar. Arbeit bleibt ein privater Block auf deinem Handy. Zweimal übernehmen legt nichts doppelt an.
+- In der echten App gilt das echte Datum. Der Testlink bleibt beim Beispieltag 29. Oktober und braucht kein Konto.
+- Deutsch und Englisch von Anfang an: die App folgt der Sprache des Handys. Kalender, Listen, Sprechleiste, Anmelden, Onboarding, Einstellungen und Plus gibt es in beiden Sprachen. Englische Sätze wie „Julia has the dentist Friday at 3pm“ oder „every Tuesday 7pm“ werden verstanden, auch ohne Claude. Uhrzeiten stehen auf Englisch als 3pm. Im Testlink zeigt „#en“ am Ende des Links die englische Fassung.
+- Plus kostet 79 € im Jahr oder 8,99 € im Monat, die ersten 1.000 Familien zahlen im ersten Jahr 49 €. Eingeladene Familienmitglieder sind immer gratis.
+- Einstellungen in der echten App: Familiencode zum Kopieren und Abmelden. Der Bereich Prototyp bleibt nur im Testlink.
+- Neuer Termin startet in der echten App leer auf heute statt mit dem Beispiel U5.
+- Noch auf Deutsch: Chat, Wissen, Entwurf, Foto, Infozettel, Meilensteine und die Vorlagen der Packlisten. Die kommen mit dem neuen Zielbild.
+
+### Kalender scrollt endlos, Tabs weichen der Tastatur (27.10.)
+
+- Monat: das Raster nutzt die Höhe des Bildschirms, die Icons sitzen frei in ihrer Kachel, weitere Termine stehen als „+3“ darunter statt daneben. Heute ist grün, der gewählte Tag hat den Rahmen.
+- Woche: seitlich wischen oder die Pfeile wechseln zur vorigen und nächsten Woche, die neue gleitet von der Seite herein. Mit zwei Fingern oder Plus und Minus zoomen: größer zeigt die Uhrzeiten, ganz groß drei Tage mit vollen Titeln.
+- Heute ist in der Wochenleiste farbig, der Rahmen um die ganze Kachel zeigt den Tag im Blick und gleitet mit. Wer woanders ist, bekommt oben einen „Heute“ Knopf, der zurückspringt.
+- Wie in der Claude App: auf dem Handy macht die Eingabetaste eine neue Zeile, abgeschickt wird mit dem Pfeil. Mit echter Tastatur schickt Enter ab. Der Pfeil springt beim Antippen nicht mehr weg.
+- Kalender Tag: Titel, Umschalter und Wochenleiste bleiben oben stehen, nur die Tage scrollen. Die Leiste zeigt mit ihrem Rahmen den Tag, den man gerade sieht, und gleitet in die nächste Woche, wenn man sie erreicht. Die Liste geht endlos weiter, freie Tage sind eine ruhige Zeile, jede Woche beginnt mit einer Trennlinie. Tippen auf einen Tag scrollt dorthin.
+- Beim Tippen ins Sprechfeld verschwinden die Tabs, das Feld sitzt direkt über der Tastatur.
+- Listen: die Icons in den Tabs haben Platz zum Springen und werden nicht mehr abgeschnitten.
+- Datum mit Monatsnamen wird verstanden („Am 12. November Zahnarzt um 10“), auch wenn Tag und Uhrzeit getrennt stehen.
+
+### Eingabe und Ablauf wie in einer Chat App (27.10.)
+
+- Das Textfeld wächst mit dem Text nach oben, bis vier Zeilen, danach scrollt es. Enter schickt ab, Shift und Enter macht eine neue Zeile.
+- Während der Assistent arbeitet, steht der ganze Plan als Aufgabenliste unter der Kugel: oben der Satz, darunter jeder Schritt, der laufende dreht sich, fertige bekommen einen Haken.
+
+### Sprechen überall, Kalender als Startansicht (27.10.)
+
+- Ein Sprechfeld für die ganze App. Es weiß, wo ihr seid: im Kalender wird ein Satz zum Termin oder zur Antwort, auf einem Termin ändert er diesen Termin, auf einer Liste füllt er diese Liste, beim Anlegen baut er die neue Liste.
+- Termin per Stimme: wer geht, was mitkommt, eine Stunde später, neuer Tag oder Ort, absagen mit Rückgängig.
+- Listen per Stimme: mehrere Dinge auf einmal, Mengen werden zusammengeführt, Doppeltes wird erkannt.
+- Nach jeder Änderung fliegt die Kugel genau an die geänderte Stelle und die leuchtet kurz auf.
+- Heute Tab entfernt, der Kalender ist die Startansicht. Jeder Tag ist eine Karte mit Terminen, darunter Mitbringen, Aufgaben und Fristen.
+
+### Pivot 26.10.: ein gemeinsamer Kalender, mit dem ihr redet
+- Heute ist jetzt der sprechende Kalender. Unten ein Feld mit Foto, Text und Mikro wie in einer Chat App. Wo ein Chat seinen Verlauf zeigt, steht euer Kalender für die nächsten sieben Tage.
+- Ein Satz wird ein Termin für die richtige Person: „Tom bringt Ben Dienstag 10 Uhr zur Krabbelgruppe“, „Erstelle mir einen Termin für Freitag bei meinem Kinderarzt“. Ohne Uhrzeit fragt er nach, ohne Person fragt er, wer geht. Rückgängig geht immer.
+- Er sagt, woher er etwas weiß: die Adresse vom Kinderarzt kommt aus dem letzten Termin dort. Er warnt, wenn sich etwas beißt („Tom arbeitet da bis 14:00“).
+- Fragen bekommen Antworten aus dem Kalender: „Wann haben wir beide frei?“ (Arbeit schon abgezogen), „Was steht am Wochenende an?“, „Wann ist die U5?“, „Wer bringt Ben zur U6?“.
+- Die Glaskugel: beim Zuhören sitzt sie im Mikroknopf. Danach wächst sie als Welle über den ganzen Bildschirm, in den Farben von euch beiden, und zeigt ihre Denkschritte. Am Ende zieht sie sich zu einem Tropfen zusammen, der an seinen Tag fliegt, dort leuchtet der neue Termin kurz auf.
+- Im Testlink ist das Mikro gesperrt. Dann spricht die App einen Beispielsatz und sagt das auch.
+- Babyjahr ist optional: ohne Kind geht es nach „Zu zweit“ direkt zum Kalender. Das Intro beginnt jetzt mit „Sag es einfach“.
+- Noch ohne Sprachmodell: das Verstehen sind feste Regeln in src/lib/talk.ts.
+
+### Kommentare vom 26.10. abends
+- Termin: ein anderes Symbol aus der Auswahl wird jetzt übernommen. Vorher ging die Wahl verloren. Die Herkunft zeigt nicht mehr doppelt „Aus: Aus“.
+- Icons in Zeilen und Listen nochmals größer: Zeilen 46 statt 34, Listenpunkte 42 statt 30, Kacheln füllen 90 statt 78 Prozent.
+- Clay Icons füllen ihre Fläche jetzt aus und wirken überall etwa ein Drittel größer. Die Bilder hatten rund ein Drittel leeren Rand.
+- Neues Intro: fünf kurze Szenen statt einer Schleife. Post vom Amt, Foto und fertig, für euch beide, weiß was bei euch gilt, dann das Versprechen. Läuft einmal, Tippen springt weiter, Balken oben zeigen den Stand.
+- Einkauf ergänzen: das Eingabefeld sitzt unten am Daumen und fährt mit der Tastatur hoch, Treffer erscheinen direkt darüber.
+- Listen: Tabs sind so breit wie ihr Name, scrollen seitlich und der gewählte rückt ins Bild. Eigene Listen lassen sich unten mit „Liste löschen“ entfernen, mit Rückgängig.
+- Termin: ohne Ort zeigt der Termin kein leeres Feld mehr, nur „+ Ort oder Notiz“.
+- Foto: der Beispielbrief hat echten Text statt grauer Balken, und die Kamera sagt ehrlich, dass im Testlink ein Beispielbrief liegt.
+
+### Jede Stadt kennt ihr Bundesland, Geburtsdatum mit Jahr
+- „Wo wohnt ihr?“ kennt alle 10.942 Gemeinden aus dem Gemeindeverzeichnis des Statistischen Bundesamts (Stand 2017). Beim Tippen kommen Vorschläge mit Bundesland, darunter steht zum Beispiel „Fürth liegt in Bayern“. Gibt es den Ort mehrmals, reicht ein Tipp auf „Nein, Fürth in Hessen“.
+- Das Bundesland beim Kind ist damit vorausgewählt. Der Stadt Schritt zeigt für nicht geprüfte Orte wenigstens die Feiertage des Landes.
+- Erstes Jahr: abgehakte Termine bleiben mit Haken stehen und zeigen „erledigt“. Im Web Link läuft die Liste ohne Layout Animation, die in mobilem Safari Zeilen verschieben kann. Der Assistenten Funke ist neu gezeichnet.
+- „Zu zweit“ nimmt die Farbe des Partners an: Hintergrund und Punkt im Titel wechseln mit, sobald sie gewählt ist.
+- Geburtstag und errechneter Termin haben ein eigenes Datumsfeld: eintippen wie „14.9.2022“ oder „14. September 2022“, oder im Kalender erst Jahr, dann Monat, dann Tag wählen. Vier Jahre zurück sind drei Tipps. Keine Uhrzeiten mehr als Beispiele.
+
+### Echte Kalender vom Handy
+- In der App liest FamCal jetzt die Kalender, die schon auf dem Handy sind (iCloud, Google, Outlook) über expo-calendar. Ihr wählt pro Konto, welche erscheinen, und wem sie gehören. Arbeitskalender erscheinen nur als gestreifter Block, Feiertage kommen nach Bundesland dazu. FamCal liest nur und schreibt nichts zurück.
+- Im Web Testlink bleibt die Anmeldung simuliert, dort gibt es keine Gerätekalender.
+- Einstellungen zeigen die wirklich verbundenen Kalender und führen zur Auswahl zurück. Der Titel zeigt eure Namen statt „Familie Huber“.
+
+### Stadt, Assistent mit Quellen, alles bearbeitbar
+- Onboarding fragt zuerst Namen und Stadt. Danach zeigt „Das gilt in Köln“, was der Assistent nachgeschlagen hat (Kita-Portal, Bürgeramt, Feiertage), jeweils mit Quelle. Im Prototyp geprüft für Köln, München, Düsseldorf, Berlin und Hamburg. Das Bundesland kommt aus der Stadt.
+- Die Karte „Kita-Platz anfragen“ nennt das Portal der Stadt und verlinkt es (Köln: LITTLE BIRD).
+- Termin beim Bürgeramt für einen Pass: der Assistent schreibt die Mitbringliste dazu und markiert jede Zeile mit „Vom Assistenten ergänzt“ und der Quelle.
+- Termine sind komplett bearbeitbar: Symbol, Titel, Ort, Tag und Zeit, wer hingeht und jede Zeile der Mitbringliste samt wer sie mitbringt. Nach links wischen löscht eine Zeile, mit Rückgängig.
+- Listen: das Icon des gewählten Tabs spielt seine Animation.
+- Wer kümmert sich: das Icon auf der Karte lehnt sich beim Wischen mit und spielt ab der Schwelle seine Animation.
+
+### Erster Start, echte Eingaben, Bewegung
+- Die App startet komplett leer, wie beim allerersten Öffnen. Die Beispielfamilie gibt es über „Ich wurde eingeladen“ oder in den Einstellungen.
+- Neues Intro auf dem ersten Screen: Brief, Stethoskop und Einkaufstüte landen nacheinander in einer ruhigen Heute-Karte. Antippen springt zum Ende.
+- Eure Kinder: Name mit Platzhalter, Geburtstag oder errechneter Termin per Schreibzeile oder Kalender, Bundesland als Auswahlliste. Daraus entsteht das erste Jahr (U-Untersuchungen, Impfungen, Elterngeld, Kindergeld, Kita).
+- Wann-Feld als Schreibzeile: Text wie „Do 15 Uhr“ oder „jeden Di 19-20:30“ wird verstanden, „Kalender“ schaltet auf das Monatsraster, das Gerät merkt sich die Wahl.
+- Kalender verbinden: Anmelden, gefundene Kalender auswählen, Besitzer wählen, übernehmen. Termine, Arbeitsblöcke und Feiertage nach Bundesland erscheinen danach. Die Anmeldung ist im Prototyp noch simuliert.
+- Farben im Partner-Screen lassen sich wirklich ändern. Avatare zeigen den ersten Buchstaben des eingetragenen Namens.
+- „Alle anzeigen“ im ersten Jahr klappt die Liste an Ort und Stelle auf.
+- Abhaken bewegt das Icon: jedes Clay-Icon spielt seine eigene kleine Geschichte.
+- Bewegung nach den Namore-Prinzipien auf allen Screens (siehe docs/MOTION.md). Gesten wie bei Namore: Entscheidung beim Loslassen, Schwung bleibt erhalten.
+- Heute zeigt auch überfällige Aufgaben und hat einen Hinweis, wenn noch nichts da ist.
+- Web: Einblendungen verschieben das Layout nicht mehr.
+
+### Live-Prototyp mit allen Canvas-Screens
+- Expo-App mit dem Namore-Stack: Onboarding (7 Schritte bis zum Kartenstapel), Heute, Kalender mit Tag, Woche, Monat und Jahresring, Listen (Aufgaben, Einkauf, Kliniktasche, Geschenke, neue Liste), Eingang mit Neu und Dokumente, Erfassen per Foto, Termin anlegen und ansehen, Symbolauswahl, Aufteilen, Entwürfe, Assistent mit „Was ich weiß“, Einstellungen, Plus und drei Demos (Sperrbildschirm, Teilen aus dem Chat, Widgets).
+- Echte Gesten: Haken mit Haptik, nach links wischen löscht mit Rückgängig, Text antippen bearbeitet die Zeile (Menge und Notiz aus „2 Hafermilch, ungesüßt“), Person antippen wechselt Tom, Julia, niemand, Karten nach links zu Julia und nach rechts zu Tom, Jahresring halten, ziehen, loslassen.
+- Beispieldaten von Julia, Tom und Ben. Heute ist fest Do 29. Oktober 2026, 8:50. Wochentage gegen den echten Kalender geprüft, dabei Laternenbasteln auf Sa 14. Nov korrigiert (der 15. ist ein Sonntag).
+- Web-Version als einzelne HTML-Datei zum Testen am Handy (`npm run artifact`).
