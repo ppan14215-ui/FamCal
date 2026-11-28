@@ -17,9 +17,9 @@ import Txt from '../src/components/ui/Txt';
 import PressScale from '../src/components/ui/PressScale';
 import SwipeRow from '../src/components/SwipeRow';
 import { HeadBtn } from '../src/components/ui/HeaderRight';
-import { FormRow, FormValue, FormChip } from '../src/components/TerminForm';
+import { FormChip } from '../src/components/TerminForm';
 import { Avatar, PersonDot } from '../src/components/ui/Person';
-import { tokens, personPalette, persons, shade, allColors, glass } from '../src/theme';
+import { tokens, personPalette, persons, shade, allColors } from '../src/theme';
 import { useStore, actions, toast, get } from '../src/state/store';
 import type { Person, CalEvent } from '../src/state/types';
 import { dayMonth, year, TODAY } from '../src/lib/dates';
@@ -49,9 +49,9 @@ function note(p: Person) {
 /** One person as one quiet line (40 of 284 in the draft). */
 function Line({ circle, name, word, dot, last, onCircle, onDot }: { circle: React.ReactNode; name: string; word?: string; dot: string; last: boolean; /** A tap on the circle: the person's photo. */ onCircle: () => void; /** A tap on the colour dot: the person's colour. */ onDot: () => void }) {
   return (
-    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 56, backgroundColor: tokens.bg, borderBottomWidth: last ? 0 : 1, borderBottomColor: tokens.hair }}>
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 56, paddingHorizontal: 14, backgroundColor: tokens.group, borderBottomWidth: last ? 0 : 1, borderBottomColor: tokens.groupLine }}>
       <PressScale scale={0.92} hitSlop={10} accessibilityRole="button" accessibilityLabel={tx(`Foto von ${name}`, `Photo of ${name}`)} onPress={onCircle}>{circle}</PressScale>
-      <Txt size={17} line={22} numberOfLines={1} style={{ flex: 1, minWidth: 0 }}>
+      <Txt size={15.5} line={21} weight={500} numberOfLines={1} style={{ flex: 1, minWidth: 0 }}>
         {name}
         {word ? <Txt size={14.5} line={22} color={tokens.sub}>{`  ${word}`}</Txt> : null}
       </Txt>
@@ -101,7 +101,7 @@ export default function Personen() {
   };
   const circle = (key: string) => () => { haptics.select(); setColorOf(null); if (photos[key]) setPhotoOf((k) => (k === key ? null : key)); else void choose(key); };
   const photoRow = (key: string) => photoOf === key ? (
-    <View style={{ flexDirection: 'row', gap: 8, paddingLeft: 46, paddingBottom: 12, backgroundColor: tokens.bg, borderBottomWidth: 1, borderBottomColor: tokens.hair }}>
+    <View style={{ flexDirection: 'row', gap: 8, paddingLeft: 60, paddingRight: 14, paddingBottom: 12, backgroundColor: tokens.group, borderBottomWidth: 1, borderBottomColor: tokens.groupLine }}>
       <FormChip label={tx('Neues Foto', 'New photo')} onPress={() => void choose(key)} />
       <FormChip label={tx('Foto entfernen', 'Remove photo')} onPress={() => { haptics.select(); setPhoto(key, null); setPhotoOf(null); }} />
     </View>
@@ -121,7 +121,7 @@ export default function Personen() {
     const has = parent ? ((colors[key as 'J' | 'T'] % n) + n) % n : personPalette.findIndex((c) => c.name === people.find((x) => x.id === key)?.color);
     const taken = parent ? ((colors[key === 'J' ? 'T' : 'J'] % n) + n) % n : -1;
     return (
-      <View accessibilityRole="radiogroup" style={{ flexDirection: 'row', justifyContent: 'space-between', paddingLeft: 46, paddingBottom: 12, backgroundColor: tokens.bg, borderBottomWidth: 1, borderBottomColor: tokens.hair }}>
+      <View accessibilityRole="radiogroup" style={{ flexDirection: 'row', justifyContent: 'space-between', paddingLeft: 60, paddingRight: 14, paddingBottom: 12, backgroundColor: tokens.group, borderBottomWidth: 1, borderBottomColor: tokens.groupLine }}>
         {personPalette.map(shade).map((c, i) => {
           const on = i === has;
           const off = i === taken && !on;
@@ -160,12 +160,14 @@ export default function Personen() {
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', minHeight: 44 }}>
         <HeadBtn icon="back" label={tx('Zurück', 'Back')} onPress={goBack} size={19} />
         <PressScale accessibilityRole="button" scale={0.95} hitSlop={6} onPress={() => { haptics.select(); setAdding((a) => !a); }}
-          style={[{ height: 40, paddingHorizontal: 16, borderRadius: 999, alignItems: 'center', justifyContent: 'center' }, glass.sm]}>
-          <Txt size={16.5} weight={500}>{adding ? tx('Fertig', 'Done') : tx('Einladen', 'Invite')}</Txt>
+          style={{ height: 36, paddingHorizontal: 14, borderRadius: 999, alignItems: 'center', justifyContent: 'center', backgroundColor: tokens.group }}>
+          <Txt size={15} weight={600}>{adding ? tx('Fertig', 'Done') : tx('Einladen', 'Invite')}</Txt>
         </PressScale>
       </View>
       <H1 sub={count === 1 ? tx('1 Person', '1 person') : tx(`${count} Personen`, `${count} people`)}>{tx('Familie', 'Family')}</H1>
-      <View style={{ marginTop: -6 }}>
+      {/* Brand (28.11.): everyone on one soft grey group, like every list in the app. */}
+      <View>
+        <View style={{ backgroundColor: tokens.group, borderRadius: 16, overflow: 'hidden' }}>
         {parents.map((r, i) => (
           <React.Fragment key={r}>
             <Line circle={<Avatar p={r} size={34} />} name={persons[r].name} dot={persons[r].ink} last={i === count - 1 || photoOf === r || colorOf === r} onCircle={circle(r)} onDot={dot(r)} />
@@ -177,7 +179,7 @@ export default function Personen() {
           const c = allColors.find((x) => x.name === p.color);
           return (
             <React.Fragment key={p.id}>
-              <SwipeRow bg={tokens.bg} onDelete={() => remove(p)}>
+              <SwipeRow bg={tokens.group} onDelete={() => remove(p)}>
                 <Line circle={<PersonDot name={p.name} color={p.color} size={34} id={p.id} />} name={p.name} word={note(p)} dot={c ? shade(c).fg : tokens.circleLine} last={parents.length + i === count - 1 || photoOf === p.id || colorOf === p.id} onCircle={circle(p.id)} onDot={dot(p.id)} />
               </SwipeRow>
               {photoRow(p.id)}
@@ -185,16 +187,25 @@ export default function Personen() {
             </React.Fragment>
           );
         })}
-        <View style={{ paddingTop: 12 }}><Meta>{tx('Tippe auf einen Kreis für ein Foto, auf den Punkt für die Farbe.', 'Tap a circle for a photo, the dot for the colour.')}</Meta></View>
+        </View>
+        <View style={{ paddingTop: 10, paddingHorizontal: 2 }}><Meta>{tx('Tippe auf einen Kreis für ein Foto, auf den Punkt für die Farbe.', 'Tap a circle for a photo, the dot for the colour.')}</Meta></View>
       </View>
       {adding ? (
         <>
           {code ? (
-            <View>
+            <View style={{ gap: 10 }}>
               <H2>{tx('Mit eigenem Handy', 'With their own phone')}</H2>
-              <FormRow last label={tx('Familiencode', 'Family code')} onPress={async () => { await Clipboard.setStringAsync(code).catch(() => {}); toast(tx('Code kopiert', 'Code copied')); }}>
-                <FormValue>{code}</FormValue>
-              </FormRow>
+              {/* The family code as one card: big and spaced so it can be read out loud, a tap copies it. */}
+              <PressScale accessibilityRole="button" accessibilityLabel={tx(`Familiencode ${code}, kopieren`, `Family code ${code}, copy`)} scale={0.98}
+                onPress={async () => { haptics.select(); await Clipboard.setStringAsync(code).catch(() => {}); toast(tx('Code kopiert', 'Code copied')); }}
+                style={{ backgroundColor: tokens.group, borderRadius: 16, paddingHorizontal: 18, paddingVertical: 16, gap: 4 }}>
+                <Txt size={13} line={17} weight={500} color={tokens.sub}>{tx('Familiencode', 'Family code')}</Txt>
+                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <Txt size={30} line={36} weight={700} tracking={4} style={{ fontVariant: ['tabular-nums'] }}>{code}</Txt>
+                  <Txt size={14} line={18} weight={600}>{tx('Kopieren', 'Copy')}</Txt>
+                </View>
+                <Txt size={13} line={18} color={tokens.sub}>{tx('Der Partner gibt ihn nach dem Anmelden unter „Habt ihr schon einen Kalender?“ ein.', 'Your partner enters it after signing in, under “Already have a shared calendar?”.')}</Txt>
+              </PressScale>
             </View>
           ) : null}
           <H2>{tx('Ohne eigenes Handy', 'Without a phone')}</H2>

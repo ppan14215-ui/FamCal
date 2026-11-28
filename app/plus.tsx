@@ -130,7 +130,7 @@ export default function Plus() {
         </>
       }
     >
-      <Txt size={32} weight={700} line={38}>{tx('Euer Familienleben, endlich gemeinsam im Kopf.', 'Your family life, finally shared.')}</Txt>
+      <Txt size={34} weight={700} line={38} tracking={-0.6}>{tx('Euer Familienleben, endlich gemeinsam im Kopf.', 'Your family life, finally shared.')}</Txt>
       <View style={{ gap: 16, paddingVertical: 8 }}>
         {feel.map(([a, b]) => (
           <View key={a} style={{ gap: 2 }}>
@@ -139,7 +139,8 @@ export default function Plus() {
           </View>
         ))}
       </View>
-      <View style={{ gap: 8 }}>
+      {/* Brand (28.11.): what Plus brings as one grey group, like every list in the app. */}
+      <View style={{ backgroundColor: tokens.group, borderRadius: 16, paddingHorizontal: 14, paddingVertical: 12, gap: 10 }}>
         {[
           tx('Sagen statt tippen: Memo trägt ein, was ihr erzählt', 'Say it instead of typing: Memo adds what you tell it'),
           tx('Genaue Spracherkennung, auch bei Deutsch und Englisch gemischt', 'Accurate speech recognition, even mixing German and English'),
@@ -158,7 +159,7 @@ export default function Plus() {
           const dp = deal(p);
           return (
             <Pressable key={p} onPress={() => { setPlan(p); haptics.tap(); }} accessibilityRole="radio" accessibilityState={{ selected: on }}
-              style={{ padding: 16, borderRadius: 18, borderWidth: on ? 2 : 1, borderColor: on ? tokens.ink : tokens.hair, backgroundColor: tokens.row, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+              style={{ padding: 16, borderRadius: 16, borderWidth: 2, borderColor: on ? tokens.ink : 'transparent', backgroundColor: tokens.group, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
               <View style={{ gap: 2, flex: 1 }}>
                 <Txt size={16} weight={600}>{p === 'year' ? tx('Jährlich', 'Yearly') : tx('Monatlich', 'Monthly')}</Txt>
                 {dp?.perDay ? <Txt size={13} color={tokens.sub}>{tx(`${dp.perDay} am Tag`, `${dp.perDay} a day`)}{p === 'year' && dp.first ? tx(' · Gründerpreis im ersten Jahr', ' · founder price for the first year') : ''}</Txt> : null}

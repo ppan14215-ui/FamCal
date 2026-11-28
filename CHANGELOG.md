@@ -4,6 +4,12 @@ Alle sichtbaren Änderungen an FamCal. Neueste oben. Agenten und Menschen: Ände
 
 ## Unreleased
 
+### Neue Marke, Schritt 9: Familie, Familiencode, Plus, Ausprobieren
+- Familie: alle auf einer grauen Gruppe; der Familiencode als große Karte zum Vorlesen, Antippen kopiert.
+- Familie beitreten: die Frage als großer Titel, das Codefeld auf grauem Grund. Eingabefelder überall auf grauem Grund.
+- Plus: Vorteile und Preise auf grauen Karten, die Texte bleiben gleich.
+- Ausprobieren im Onboarding zeigt den Tag als neue Liste.
+
 ### Neue Marke, Schritt 8: Memo als halbes Blatt
 - Memo öffnet sich auf jeder Seite als halbes Blatt: die Leiste wandert mit Memo nach oben und wird zur Trennlinie. Oben wechseln Kalender, Listen und Profil weiter, die Seite bleibt bedienbar; das Gespräch bleibt unten und sieht aus wie im Chat.
 - Trennlinie hochziehen öffnet den ganzen Chat, runterziehen oder den offenen Tab nochmal tippen schließt.

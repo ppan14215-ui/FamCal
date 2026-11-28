@@ -6,9 +6,10 @@ import { tokens, fonts } from '../theme';
 
 const noOutline = Platform.OS === 'web' ? ({ outlineStyle: 'none' } as any) : null;
 
+/** Brand (28.11.): a field lies on the same soft grey ground as the groups. */
 export function Field({ label, value, onChangeText, right, placeholder, numeric }: { label: string; value: string; onChangeText: (t: string) => void; right?: React.ReactNode; placeholder?: string; numeric?: boolean }) {
   return (
-    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12, paddingHorizontal: 16, borderRadius: 18, backgroundColor: tokens.row }}>
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12, paddingHorizontal: 16, borderRadius: 16, backgroundColor: tokens.group }}>
       <View style={{ flex: 1, gap: 2 }}>
         <Txt size={13} color={tokens.sub}>{label}</Txt>
         <TextInput
