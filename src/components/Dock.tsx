@@ -1160,10 +1160,13 @@ export default function Dock() {
       <View onLayout={(e) => setFieldH(e.nativeEvent.layout.height)} pointerEvents={offAway ? 'none' : 'box-none'} style={{ minHeight: navH(), justifyContent: 'flex-end' }}>
         <Animated.View style={offStyle}>
           {priv.ohneKi ? <View style={{ borderRadius: 26, backgroundColor: tokens.ink }}><ManualField dark h={navH()} /></View> : (
+            // Julian 28.11. ("same concept on the event details"): the light row as in Memo's sheet, the field to type,
+            // the mic to speak into the white listening screen. No dark line any more.
             <TalkBar
               key={kind}
               klar
               slim
+              sheet
               speakCard
               onIdle={() => setBarMode('rest')}
               onBusy={() => setBarMode('input')}

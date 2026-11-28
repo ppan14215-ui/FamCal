@@ -403,7 +403,7 @@ export function KlarPill({ current, onTab, bar }: { current?: string; onTab?: (n
   const memo = (
     <View onLayout={(e) => { memoAt.current = e.nativeEvent.layout.x + e.nativeEvent.layout.width / 2; tell(); }}>
       <MemoMic seat box={mitte ? BIG : navH() - 10} size={mitte ? BIG / 0.8 : memoS()} ground={tokens.row}
-        onPress={() => { if (priv.ohneKi) { router.push('/neu'); return; } if (mitte && onTab) buddyKeys(); else buddyTalk(); }}
+        onPress={() => { if (priv.ohneKi) { router.push('/neu'); return; } if (mitte && onTab) { haptics.tap(); setBarMode('input'); } else buddyTalk(); }}
         onLongPress={priv.ohneKi ? undefined : buddyKeys} />
     </View>
   );

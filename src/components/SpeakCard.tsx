@@ -18,6 +18,7 @@ import LineIcon from './ui/LineIcon';
 import PressScale from './ui/PressScale';
 import VoiceWaves from './VoiceWaves';
 import Pin from './buddy/Pin';
+import HearScreen, { hearOwns } from './HearScreen';
 import { useMascot } from '../lib/mascot';
 import { tokens, blend } from '../theme';
 import { voiceLevel, useBuddy, isNight } from '../lib/buddy';
@@ -135,7 +136,8 @@ function KlarCard({ seat }: { seat?: 'right' }) {
   const b = useBuddy();
   const veil = useVeil();
   const mo = useMemoOut();
-  const open = speakOpen(now);
+  // Speaking itself now has its own white screen (HearScreen, Julian 28.11.); the card keeps the questions.
+  const open = speakOpen(now) && !hearOwns(now.phase);
   // What the card shows. While it closes it keeps its last words and buttons, so nothing else flashes up on the way
   // out (Julian 16.11.: the dark card stays when typing takes over, only its words change).
   const kept = useRef(now);
@@ -398,7 +400,7 @@ function KlarCard({ seat }: { seat?: 'right' }) {
 }
 
 export default function SpeakCard(props: { barH: number; from: string; klar?: boolean; seat?: 'right' }) {
-  return props.klar ? <KlarCard seat={props.seat} /> : <BigCard {...props} />;
+  return props.klar ? <><KlarCard seat={props.seat} /><HearScreen /></> : <BigCard {...props} />;
 }
 
 function BigCard({ barH, from }: { barH: number; from: string }) {

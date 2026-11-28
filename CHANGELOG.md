@@ -4,6 +4,8 @@ Alle sichtbaren Änderungen an FamCal. Neueste oben. Agenten und Menschen: Ände
 
 ## Unreleased
 
+- Memo antippen öffnet den Verlauf ohne Tastatur. Sprechen öffnet einen ruhigen weißen Screen mit Memo oben, mitlaufendem Text und Welle statt der dunklen Karte. Die Termin Ansicht hat jetzt das gleiche helle Feld mit Mikro.
+
 ### Neues App Icon
 - Memo flach in Tinte auf weißem Grund, passend zur neuen Marke (braucht neue App Version, kein Update über Nacht).
 

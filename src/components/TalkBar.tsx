@@ -578,7 +578,7 @@ export default function TalkBar({ onSend, onPlus, spoken, listenKey, focusKey, o
   /** The words stand on ink: in the one dark bar, and in klar always (Julian 16.11.). */
   const onDark = (card && dark) || (!!klar && !sheet);
   // Klar off the tabs, at rest: one slim line. The field keeps its place in the tree, so the first tap does not lose the cursor.
-  const kLine = !!klar && !!slim && !text && !pics.length && !focused && !listening && !writing;
+  const kLine = !!klar && !!slim && !sheet && !text && !pics.length && !focused && !listening && !writing;
   const fieldBox = (
       <View style={card ? { alignSelf: 'stretch' } : { flex: 1, minWidth: 0 }}>
       <TextInput
