@@ -1034,7 +1034,8 @@ export default function Dock() {
     {/* Julian 05.11.: no soft fade above the field; a solid ground up to the middle of the field, which hides its edge. */}
     {klar || (onTabs && !kb && !(typing && Platform.OS === 'web')) ? null : <View pointerEvents="none" style={{ position: 'absolute', left: 0, right: 0, bottom: fadeFrom, height: bottom - fadeFrom + 27, backgroundColor: tokens.bg }} />}
     {/* Klar: a tap beside the open input puts it away; words already typed stay in it. */}
-    {klarShow && !chatField ? <Pressable accessibilityLabel={tx('Eingabe schließen', 'Close input')} onPress={() => { Keyboard.dismiss(); const b = getBuddy(); if (!b.typed && !b.listening) setBarMode('rest'); }} style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0 }} /> : null}
+    {/* Brand 28.11.: with Memo's half sheet open the page above stays usable; the sheet closes by its line, X or back. */}
+    {klarShow && !chatField && !sheet ? <Pressable accessibilityLabel={tx('Eingabe schließen', 'Close input')} onPress={() => { Keyboard.dismiss(); const b = getBuddy(); if (!b.typed && !b.listening) setBarMode('rest'); }} style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0 }} /> : null}
     {sheet ? <MemoVerlauf foot={bottom + fieldH} onClose={() => { if (speakOpen(getSpeak())) speakHandlers.cancel(); Keyboard.dismiss(); setBarMode('rest'); }} /> : null}
     <Animated.View pointerEvents="box-none" onLayout={(e) => setH(e.nativeEvent.layout.height)} style={[{ position: 'absolute', left: onTabs ? 14 : 18, right: onTabs ? 14 : 18, gap: 10 }, bStyle]}>
       {/* Klar at rest: the input is folded into Memo but keeps its room; the card sits right above the nav pill instead. */}

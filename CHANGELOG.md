@@ -4,6 +4,10 @@ Alle sichtbaren Änderungen an FamCal. Neueste oben. Agenten und Menschen: Ände
 
 ## Unreleased
 
+### Neue Marke, Schritt 8: Memo als halbes Blatt
+- Memo öffnet sich auf jeder Seite als halbes Blatt: die Leiste wandert mit Memo nach oben und wird zur Trennlinie. Oben wechseln Kalender, Listen und Profil weiter, die Seite bleibt bedienbar; das Gespräch bleibt unten und sieht aus wie im Chat.
+- Trennlinie hochziehen öffnet den ganzen Chat, runterziehen oder den offenen Tab nochmal tippen schließt.
+
 ### Neue Marke, Schritt 7: Bewegung (28.11.)
 - Neue Karten von Memo springen etwas ruhiger heraus (300 ms bis 1,06, dann 100 ms zurück).
 - Im Chat trennt eine feine Linie "Jetzt" das Neue vom Protokoll davor.

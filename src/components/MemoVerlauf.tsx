@@ -1,73 +1,99 @@
 /**
- * Memo's history over the page (Julian 19.11., built 23.11. after "4 bauen"): a tap on Memo opens one sheet over
- * whatever screen you are on. The calendar stays visible above it; inside is the conversation (what was said and what
- * Memo made of it, the same entries as the Chat tab) and at its foot the input. Nothing stacks as extra cards, the
- * answer lands in this history. It closes with the X, the back key or a swipe down on its head.
+ * Memo as a half sheet over the page (Julian 19.11., built 23.11.; brand 28.11. after the Amie split view in the
+ * handover, section 7): the nav moves up and becomes the line between page and talk. Its tabs still switch the page
+ * above, the conversation stays below; the page stays scrollable and tappable while Memo works. Pull the line up and
+ * it becomes the full Chat; pull it down, tap the open tab again or press back and it closes. The entries are the Chat tab's own.
  */
 import React, { useEffect, useRef } from 'react';
-import { View, ScrollView, PanResponder, useWindowDimensions } from 'react-native';
+import { View, ScrollView, PanResponder, Keyboard, useWindowDimensions } from 'react-native';
 import Animated, { FadeOut, useSharedValue, useAnimatedStyle, withTiming, Easing, runOnJS } from 'react-native-reanimated';
+import { router, usePathname } from 'expo-router';
 import Txt from './ui/Txt';
-import LineIcon from './ui/LineIcon';
+import LineIcon, { type LineName } from './ui/LineIcon';
+import MemoMic from './buddy/MemoMic';
+import { buddyTalk } from '../lib/buddy';
 import PressScale from './ui/PressScale';
-import { tokens, persons } from '../theme';
-import { useFeed, type FeedEntry } from '../lib/feed';
-import { useStore } from '../state/store';
+import { tokens } from '../theme';
+import { useFeed } from '../lib/feed';
 import { getFamily, myRole } from '../lib/sync';
-import { short, hm, TODAY } from '../lib/dates';
+import { short, TODAY } from '../lib/dates';
+import { haptics } from '../lib/haptics';
 import { tx } from '../i18n/lang';
-import { Thinking, dayOf } from './ChatCards';
-import TagText, { useMadeTitles } from './TagText';
+import { setBarMode } from '../lib/navStyle';
+import { Thinking, dayOf, Entry } from './ChatCards';
 
 const SHOWN = 20;
 const OUT = Easing.bezier(0.23, 1, 0.32, 1);
-const YESTERDAY = (() => { const d = new Date(TODAY + 'T12:00:00'); d.setDate(d.getDate() - 1); return d.toISOString().slice(0, 10); })();
+const TABS: { name: string; icon: LineName; label: () => string }[] = [
+  { name: 'kalender', icon: 'cal', label: () => tx('Kalender', 'Calendar') },
+  { name: 'listen', icon: 'list', label: () => tx('Listen', 'Lists') },
+  { name: 'chat', icon: 'chat', label: () => 'Chat' },
+  { name: 'einstellungen', icon: 'person', label: () => tx('Profil', 'Profile') },
+];
 
 export default function MemoVerlauf({ foot, onClose }: { foot: number; onClose: () => void }) {
   const { height } = useWindowDimensions();
   const feed = useFeed();
+  const path = usePathname();
   const me = getFamily() ? myRole() : 'J';
   const scroller = useRef<ScrollView>(null);
   // In from below, the same way it goes back (MOTION.md: one place, one path). Transform and opacity only.
   const y = useSharedValue(40);
   const a = useSharedValue(0);
   useEffect(() => { y.value = withTiming(0, { duration: 260, easing: OUT }); a.value = withTiming(1, { duration: 200, easing: OUT }); }, []);
-  const style = useAnimatedStyle(() => ({ opacity: a.value, transform: [{ translateY: Math.max(0, y.value) }] }));
+  const style = useAnimatedStyle(() => ({ opacity: a.value, transform: [{ translateY: y.value }] }));
   const close = () => onClose();
-  // A swipe down on the head takes the sheet with the finger; far enough or fast enough and it closes.
+  // The whole Chat has its own field above the nav, so the sheet's open input is let go on the way.
+  const go = (name: string) => { haptics.select(); if (name === 'chat') { Keyboard.dismiss(); setBarMode('rest'); } router.navigate(('/' + name) as any); };
+  const full = () => go('chat');
+  // The line goes with the finger: down far or fast closes, up far or fast opens the whole Chat.
   const pan = useRef(PanResponder.create({
-    onMoveShouldSetPanResponder: (_, g) => g.dy > 6 && Math.abs(g.dy) > Math.abs(g.dx),
-    onPanResponderMove: (_, g) => { y.value = Math.max(0, g.dy); },
+    onMoveShouldSetPanResponder: (_, g) => Math.abs(g.dy) > 6 && Math.abs(g.dy) > Math.abs(g.dx),
+    onPanResponderMove: (_, g) => { y.value = g.dy > 0 ? g.dy : Math.max(-60, g.dy * 0.5); },
     onPanResponderRelease: (_, g) => {
       if (g.dy > 90 || g.vy > 0.8) { y.value = withTiming(height, { duration: 220, easing: OUT }, () => runOnJS(close)()); }
+      else if (g.dy < -70 || g.vy < -0.8) { y.value = withTiming(0, { duration: 200, easing: OUT }); full(); }
       else y.value = withTiming(0, { duration: 200, easing: OUT });
     },
   })).current;
   const shown = feed.slice(-SHOWN).filter((f) => !(f.answer && feed.some((x) => x.id === f.answer!.ask)));
+  const here = TABS.find((t) => path.startsWith('/' + t.name))?.name;
+  const slot = (t: typeof TABS[number]) => {
+    const on = t.name === here;
+    return (
+      <PressScale key={t.name} scale={0.94} accessibilityRole="tab" accessibilityLabel={t.label()} accessibilityState={{ selected: on }}
+        onPress={() => { if (on) close(); else go(t.name); }} style={{ flex: 1, height: 56, alignItems: 'center', justifyContent: 'center', gap: 3 }}>
+        <LineIcon name={t.icon} size={22} color={on ? tokens.ink : tokens.mute} stroke={on ? 2 : undefined} />
+        <Txt size={11} line={13} weight={on ? 600 : 500} color={on ? tokens.ink : tokens.mute} numberOfLines={1}>{t.label()}</Txt>
+      </PressScale>
+    );
+  };
   let lastDay = '';
   return (
-    // The page shows faintly through the top of the sheet, so you still see where you are (the board, 23.11.).
-    <Animated.View exiting={FadeOut.duration(150)} style={[{ position: 'absolute', left: 0, right: 0, bottom: 0, top: Math.round(height * 0.44), /* opaque: Android has no backdrop blur, the calendar showed through (Julian 24.11. 23:12) */ backgroundColor: tokens.bg, borderTopLeftRadius: 28, borderTopRightRadius: 28, boxShadow: '0 -10px 32px rgba(22,35,42,0.14)' } as any, style]}>
-      <View {...pan.panHandlers} style={{ paddingTop: 8, paddingHorizontal: 18, paddingBottom: 4 }}>
-        <View style={{ alignSelf: 'center', width: 36, height: 4, borderRadius: 2, backgroundColor: tokens.hair }} />
-        <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 10 }}>
-          <Txt size={18} weight={700} tracking={-0.3} style={{ flex: 1 }}>Memo</Txt>
-          <PressScale accessibilityLabel={tx('Schließen', 'Close')} hitSlop={8} onPress={close}
-            style={{ width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center', backgroundColor: tokens.row, boxShadow: `0 0 0 1px ${tokens.hair}, 0 4px 10px rgba(22,35,42,0.08)` } as any}>
-            <LineIcon name="x" size={18} color={tokens.ink} stroke={2.2} />
-          </PressScale>
+    <Animated.View exiting={FadeOut.duration(150)} style={[{ position: 'absolute', left: 0, right: 0, bottom: 0, top: Math.round(height * 0.46), /* opaque: Android has no backdrop blur (Julian 24.11. 23:12) */ backgroundColor: tokens.bg, borderTopLeftRadius: 22, borderTopRightRadius: 22, boxShadow: `0 -1px 0 ${tokens.groupLine}, 0 -8px 24px rgba(20,48,47,0.08)` } as any, style]}>
+      {/* The nav, moved up: the same five columns as the bar below, Memo big in the middle, now the line between the
+          page and the talk (the draft "Memo halbes Blatt", 27.11.). */}
+      <View {...pan.panHandlers} style={{ paddingHorizontal: 6, paddingTop: 4 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', height: 56 }}>
+          {slot(TABS[0])}{slot(TABS[1])}
+          <View style={{ flex: 1, alignItems: 'center' }}>
+            <View style={{ marginTop: -30, width: 68, height: 68, borderRadius: 34, backgroundColor: tokens.bg, alignItems: 'center', justifyContent: 'center' }}>
+              <MemoMic box={58} size={58 / 0.8} ground={tokens.bg} onPress={() => buddyTalk()} label={tx('Mit Memo sprechen', 'Talk to Memo')} />
+            </View>
+          </View>
+          {slot(TABS[2])}{slot(TABS[3])}
         </View>
+        <View style={{ alignSelf: 'center', width: 36, height: 4, borderRadius: 2, backgroundColor: tokens.groupLine, marginTop: 6, marginBottom: 4 }} />
       </View>
       <ScrollView ref={scroller} onContentSizeChange={() => scroller.current?.scrollToEnd({ animated: false })} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ flexGrow: 1, justifyContent: 'flex-end', paddingHorizontal: 18, paddingTop: 6, paddingBottom: foot + 14, gap: 10 }}>
+        contentContainerStyle={{ flexGrow: 1, justifyContent: 'flex-end', paddingHorizontal: 18, paddingTop: 10, paddingBottom: foot + 14, gap: 20 }}>
         {shown.length ? shown.map((f) => {
           const d = dayOf(f.at);
-          const head = d !== lastDay ? (lastDay = d, d === TODAY ? tx('heute', 'today') : d === YESTERDAY ? tx('gestern', 'yesterday') : short(d)) : null;
+          const head = d !== lastDay ? (lastDay = d, d === TODAY ? tx('Heute', 'Today') : short(d)) : null;
           return (
             <React.Fragment key={f.id}>
-              {head ? <Txt size={12.5} color={tokens.sub} style={{ alignSelf: 'center', marginTop: 4 }}>{head}</Txt> : null}
-              <Said f={f} mine={f.by === me} />
-              <Made f={f} />
+              {head ? <Txt size={12.5} line={16} weight={600} color={tokens.mute} style={{ alignSelf: 'center' }}>{head}</Txt> : null}
+              <Entry f={f} mine={f.by === me} me={me} answer={f.ask ? feed.find((x) => x.answer?.ask === f.id) : undefined} />
             </React.Fragment>
           );
         }) : (
@@ -76,52 +102,5 @@ export default function MemoVerlauf({ foot, onClose }: { foot: number; onClose: 
         <Thinking by={me} />
       </ScrollView>
     </Animated.View>
-  );
-}
-
-/** What was said: mine dark on the right, the partner's light on the left with the name above. */
-function Said({ f, mine }: { f: FeedEntry; mine: boolean }) {
-  const titles = useMadeTitles(f.undone ? undefined : f.events, f.snap?.events);
-  if (!f.said.trim()) return null;
-  return (
-    <View style={{ alignSelf: mine ? 'flex-end' : 'flex-start', maxWidth: '86%', gap: 3 }}>
-      {mine ? null : <Txt size={12} color={tokens.sub} style={{ paddingLeft: 4 }}>{persons[f.by].name}</Txt>}
-      <View style={{ borderRadius: 20, paddingVertical: 9, paddingHorizontal: 15, backgroundColor: mine ? tokens.ink : tokens.row, boxShadow: mine ? undefined : `0 0 0 1px ${tokens.hair}` } as any}>
-        <TagText text={f.said} size={15.5} line={21} color={mine ? tokens.onInk : tokens.ink} titles={titles} animate={Date.now() - Date.parse(f.at) < 8000} dark={mine} />
-      </View>
-    </View>
-  );
-}
-
-/** What Memo made of it: one white card per Termin or list, and what Memo said back in a white bubble. */
-function Made({ f }: { f: FeedEntry }) {
-  const events = useStore((s) => s.events);
-  if (f.kind === 'msg') return null;
-  const cards: { k: string; title: string; sub: string }[] = [];
-  if (!f.undone) {
-    for (const id of f.events ?? []) {
-      const e = events.find((x) => x.id === id) ?? f.snap?.events?.find((x) => x.id === id);
-      if (!e) continue;
-      const when = e.allDay ? tx('ganztägig', 'all day') : hm(e.start);
-      cards.push({ k: id, title: e.title, sub: `${short(e.date)} · ${when} · ${tx('im Kalender', 'in the calendar')}` });
-    }
-    if (f.items?.ids.length && f.snap?.items?.length) cards.push({ k: 'items', title: f.snap.items.join(', '), sub: f.snap.list ? tx(`auf ${f.snap.list}`, `on ${f.snap.list}`) : tx('auf der Liste', 'on the list') });
-    if (f.snap?.tasks?.length) cards.push({ k: 'tasks', title: f.snap.tasks.join(', '), sub: tx('bei den Aufgaben', 'in the tasks') });
-  }
-  const line = f.undone ? tx('Rückgängig gemacht.', 'Undone.') : f.say?.trim() || (!cards.length ? f.text?.trim() : '');
-  return (
-    <>
-      {cards.map((c) => (
-        <View key={c.k} style={{ alignSelf: 'stretch', borderRadius: 18, paddingVertical: 12, paddingHorizontal: 15, gap: 2, backgroundColor: tokens.row, boxShadow: `0 0 0 1px ${tokens.hair}, 0 4px 12px rgba(22,35,42,0.05)` } as any}>
-          <Txt size={16} weight={700} tracking={-0.2} numberOfLines={2}>{c.title}</Txt>
-          <Txt size={14} color={tokens.sub} numberOfLines={1}>{c.sub}</Txt>
-        </View>
-      ))}
-      {line ? (
-        <View style={{ alignSelf: 'flex-start', maxWidth: '86%', borderRadius: 18, paddingVertical: 10, paddingHorizontal: 15, backgroundColor: tokens.row, boxShadow: `0 0 0 1px ${tokens.hair}` } as any}>
-          <Txt size={15.5} line={21} color={f.undone ? tokens.sub : tokens.ink}>{line}</Txt>
-        </View>
-      ) : null}
-    </>
   );
 }
