@@ -21,6 +21,7 @@ import { dueLabel } from '../lib/when';
 import { tx } from '../i18n/lang';
 import { noteSplit } from '../lib/splitDay';
 import { markDropped } from '../lib/phoneDropped';
+import { markMilestone, withMarks, onMarksChanged } from '../lib/milestoneMarks';
 
 /** Who uses this phone; the sync sets it once the family is known. */
 let meRole: PersonId = 'J';
@@ -232,7 +233,8 @@ export const actions = {
     // The child is also one of the family's people, so Termine can say who is there.
     const has = app.get().people.some((p) => p.kind === 'kind' && p.name === kid.name);
     const person: Person = { id: S.newId('p_'), name: kid.name, kind: 'kind', color: 'Mint', birthday: kid.born };
-    set((s) => ({ kid, milestones, onboardingCards: cards, people: has ? s.people : [...s.people, person] }));
+    // Who takes a step and what is done are the family's answers; they come back on top of the freshly built steps.
+    set((s) => ({ kid, milestones: s.demo ? milestones : withMarks(kid, milestones), onboardingCards: cards, people: has ? s.people : [...s.people, person] }));
   },
   addPerson(p: Omit<Person, 'id'>): string {
     const id = S.newId('p_');
@@ -564,8 +566,18 @@ export const actions = {
   clearDraftSymbol() { set(() => ({ draftSymbol: null })); },
 
   /** Who takes a step of the first year (the "Wer übernimmt?" chip on the Erstes Jahr tab). */
-  setMilestoneWho(id: string, who: Who) { set((s) => ({ milestones: s.milestones.map((m) => (m.id === id ? { ...m, who } : m)) })); },
-  toggleMilestone(id: string) { set((s) => ({ milestones: s.milestones.map((m) => (m.id === id ? { ...m, done: !m.done } : m)) })); },
+  /** Both answers are kept on the phone and go to the family (milestoneMarks), so a restart and the other parent keep them. */
+  setMilestoneWho(id: string, who: Who) {
+    const s0 = app.get();
+    if (!s0.demo && s0.milestones.some((m) => m.id === id)) markMilestone(s0.kid, id, { who });
+    set((s) => ({ milestones: s.milestones.map((m) => (m.id === id ? { ...m, who } : m)) }));
+  },
+  toggleMilestone(id: string) {
+    const s0 = app.get();
+    const cur = s0.milestones.find((m) => m.id === id);
+    if (!s0.demo && cur) markMilestone(s0.kid, id, { done: !cur.done });
+    set((s) => ({ milestones: s.milestones.map((m) => (m.id === id ? { ...m, done: !m.done } : m)) }));
+  },
 
   setPlan(p: State['plan']) { set(() => ({ plan: p })); },
   setPhotoTaken(v: boolean) { set(() => ({ photoTaken: v })); },
@@ -580,3 +592,12 @@ export const colorsReady: Promise<void> = AsyncStorage.getItem(COLORS_KEY).then(
   if (!c) return;
   (['J', 'T'] as PersonId[]).forEach((p) => { if (Number.isInteger(c[p]) && c[p] >= 0) actions.setColor(p, c[p]); });
 }).catch(() => {});
+
+// The first year's answers (who takes a step, what is done) arrive later than the steps: from the phone's memory
+// after a start, or from the other parent through the sync. They go on top of the steps that are there.
+onMarksChanged(() => {
+  const s = app.get();
+  if (s.demo || !s.milestones.length) return;
+  const next = withMarks(s.kid, s.milestones);
+  if (next !== s.milestones) set(() => ({ milestones: next }));
+});
