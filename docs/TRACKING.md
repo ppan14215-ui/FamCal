@@ -31,7 +31,7 @@ Wahlen: nav_style_chosen {style, source}, time_picker_mode_chosen {mode, source}
 
 ## Einrichtung
 
-- PostHog: eigene Organisation FamCal (EU), Schlüssel als EAS Variable `EXPO_PUBLIC_POSTHOG_KEY` (preview und production). Ohne Schlüssel ist alles ein No-op.
+- PostHog: eigene Organisation FamCal (EU), Projekt "FamCal App" (id 365321, angelegt 23.11.2026, Zeitzone Berlin, IPs anonymisiert). Der öffentliche Projekt Schlüssel steht fest in `analytics.ts`; eine EAS Variable `EXPO_PUBLIC_POSTHOG_KEY` würde ihn überschreiben. Im Webhook als Supabase Secret `POSTHOG_KEY`.
 - Sentry: Org namore, Projekt famcal, Region de. Source Maps brauchen `SENTRY_AUTH_TOKEN` als EAS Secret; bis dahin `SENTRY_DISABLE_AUTO_UPLOAD=true` in eas.json.
 - RevenueCat: Projekt FamCal, Entitlement `plus`, Keys `EXPO_PUBLIC_REVENUECAT_ANDROID_KEY` / `_IOS_KEY`. Webhook siehe Kopf von `supabase/functions/revenuecat-webhook/index.ts`, Secrets `RC_WEBHOOK_SECRET`, `POSTHOG_KEY`.
 - Neue native Module (posthog, expo-application, expo-device, expo-file-system, Sentry, RevenueCat): neuer Fingerprint, also neues APK, kein OTA.

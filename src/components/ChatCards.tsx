@@ -4,8 +4,8 @@
  * card that lays over Kalender and Listen (Julian 31.10.: "Wie im Chat nur außerhalb").
  */
 import React, { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react';
-import { View, ScrollView } from 'react-native';
-import Animated from 'react-native-reanimated';
+import { View, ScrollView, Platform } from 'react-native';
+import Animated, { FadeIn } from 'react-native-reanimated';
 import { useMemoOut } from '../lib/memoOut';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
@@ -15,9 +15,11 @@ import { Avatar, Pair, usePersons } from './ui/Person';
 import { Tile, ClayIcon } from './ui/Clay';
 import PressScale from './ui/PressScale';
 import LineIcon from './ui/LineIcon';
-import { tokens, glass, persons as basePersons } from '../theme';
+import { tokens, glass, blend, persons as basePersons } from '../theme';
+import { evFill } from '../lib/evColor';
+import { Initials } from './ui/Group';
 import { useBubble } from '../lib/look';
-import { swapIn, rowLayout } from '../theme/motion';
+import { swapIn, rowLayout, easing, slipOut, contentIn } from '../theme/motion';
 import { useStore, actions } from '../state/store';
 import { useDockSpace } from '../lib/dockSpace';
 import { useKeyboardInset } from '../lib/keyboard';
@@ -29,6 +31,7 @@ import { hm, short, TODAY } from '../lib/dates';
 import HeaderRight from './ui/HeaderRight';
 import { tx } from '../i18n/lang';
 import Pin from './buddy/Pin';
+import TagText, { useMadeTitles } from './TagText';
 import { useMascot } from '../lib/mascot';
 import { useVeil, Step, Dots } from './Veil';
 import { isTrip, makePackList, kidsOn, ageText } from '../lib/pack';
@@ -87,16 +90,15 @@ function WhoDots({ who }: { who?: CalEvent['who'] }) {
 /** The inner edge of a card in the chat. */
 const EDGE = 14;
 
-function Made({ icon, title, sub, onPress, right, celebrate }: { icon: ClayName; title: string; sub?: string; onPress?: () => void; right?: React.ReactNode; celebrate?: boolean }) {
+function Made({ icon, title, sub, onPress, right, celebrate, bar }: { icon: ClayName; title: string; sub?: string; onPress?: () => void; right?: React.ReactNode; celebrate?: boolean; /** Brand: a Termin shows its person's bar instead of an icon. */ bar?: string }) {
   const row = (
     <>
-      <Tile name={icon} size={48} radius={12} ratio={0.66} bg={tokens.chipBg} celebrate={celebrate} />
+      {bar ? <View style={{ width: 4, alignSelf: 'stretch', minHeight: 36, borderRadius: 2, backgroundColor: bar }} /> : <Tile name={icon} size={44} radius={12} ratio={0.66} bg={tokens.chipBg} celebrate={celebrate} />}
       <View style={{ flex: 1, minWidth: 0 }}>
-        <Txt size={17} line={22} weight={600} numberOfLines={2}>{title}</Txt>
-        {sub ? <Txt size={14.5} line={20} color={tokens.sub} numberOfLines={2}>{sub}</Txt> : null}
+        <Txt size={16} line={21} weight={700} tracking={-0.2} numberOfLines={2}>{title}</Txt>
+        {sub ? <Txt size={13.5} line={18} color={tokens.sub} numberOfLines={2}>{sub}</Txt> : null}
       </View>
       {right}
-      {onPress ? <LineIcon name="arrow" size={18} color={tokens.mute} /> : null}
     </>
   );
   // One inner edge for everything in a card (Julian 14.11.: "padding in chat need to be improved"): 14 at the sides, 12 between the parts.
@@ -122,10 +124,10 @@ export function Termine({ ids, snap, changed, ask, timeQ, fresh, placeQ, foot }:
     <>
       {live.map((e, i) => {
         const row = (
-          <Made icon={e.icon} celebrate={play} title={e.title}
+          <Made icon={e.icon} celebrate={play} title={e.title} bar={evFill(e as CalEvent)}
             sub={[keep((e as CalEvent).endDate && (e as CalEvent).endDate! > e.date ? tx(`${short(e.date)} bis ${short((e as CalEvent).endDate!)}`, `${short(e.date)} to ${short((e as CalEvent).endDate!)}`) : short(e.date)), keep(e.allDay ? tx('ganztägig', 'all day') : e.end ? tx(`${hm(e.start)} bis ${hm(e.end)}`, `${hm(e.start)} to ${hm(e.end)}`) : hm(e.start)), e.place].filter(Boolean).join('\u00A0· ')}
             onPress={still ? noop : () => { if (!justSwiped()) router.push(`/termin/${e.id}`); }}
-            right={<>{e.place ? <PinChip place={e.place} still={still} /> : null}<WhoDots who={e.who} /></>} />
+            right={<Initials who={e.who} people={(e as CalEvent).people} ring="#FFFFFF" />} />
         );
         const edge = foot && i === live.length - 1 ? <View style={{ height: 4 }} /> : null;
         // A swipe to the left deletes it from the calendar, here as in the calendar (Julian 16.11.: "Das soll sowohl im
@@ -420,7 +422,7 @@ export function Ask({ f, me, answer }: { f: FeedEntry; me: 'J' | 'T'; answer?: F
  * it did grows in below. Thinking and the finished entry draw the same frame,
  * so nothing jumps when one becomes the other.
  */
-export const cardFrame = [{ alignSelf: 'stretch' as const, borderRadius: 20, overflow: 'hidden' as const }, glass.lift];
+export const cardFrame = [{ alignSelf: 'stretch' as const, borderRadius: 16, overflow: 'hidden' as const }, glass.lift];
 /**
  * Memo is the assistant's face (Julian 01.11.): thinks with a "?" while working, happy eyes when it has answered,
  * just entered something. Older cards in the log stay still, so a long chat never twitches.
@@ -428,13 +430,38 @@ export const cardFrame = [{ alignSelf: 'stretch' as const, borderRadius: 20, ove
 /** One bubble in the log, mine or the assistant's: the same shape, only the side and the colour differ. */
 /** Between the parts of one turn: my words, Memo's answer, the card (Julian 16.11.: the bubbles lay too close). */
 const TURN = 12;
-const BUBBLE = { maxWidth: '84%' as const, flexShrink: 1, borderRadius: 20, paddingVertical: 10, paddingHorizontal: 15 };
+const BUBBLE = { maxWidth: '84%' as const, flexShrink: 1, borderRadius: 18, paddingVertical: 11, paddingHorizontal: 16 };
+/** The family's words (brand 27.11.): a wide soft bubble in the colour of who said it. */
+const SAID = { alignSelf: 'stretch' as const, borderRadius: 18, paddingVertical: 12, paddingHorizontal: 16 };
+/** Reanimated's layout transition pins cards over their neighbours on the web; the phone keeps it. */
+const cardLayout = Platform.OS === 'web' ? undefined : rowLayout;
+const soft = (c: string) => blend(c, '#FFFFFF', 0.82);
 /** Memo beside his bubble, and how far his cards stand in so they line up with it. */
 const MEMO = 26;
 const MEMO_GAP = 8;
 const memoInset = (minimal: boolean) => (minimal ? 0 : MEMO + MEMO_GAP);
 
-export function Reply({ text, live, fresh, bare }: { text?: string; live?: boolean; fresh?: boolean; /** In the chat log: Memo and his words as one plain line on the ground, as in the klar draft. */ bare?: boolean }) {
+/**
+ * Memo's live answer arrives word by word (Allo motion map, Julian 25.11.): each word fades in 28 ms after the one
+ * before, so the answer is read as it comes. Words that came in an earlier batch stay put. Old answers stay still.
+ */
+function Words({ text, size, line }: { text: string; size: number; line: number }) {
+  const parts = text.split(/(\s+)/).filter((w) => w && !/^\s+$/.test(w));
+  const seen = useRef(0);
+  const from = seen.current;
+  useEffect(() => { seen.current = parts.length; });
+  return (
+    <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
+      {parts.map((w, i) => (
+        <Animated.View key={i} entering={i < from ? undefined : FadeIn.duration(180).easing(easing.out).delay(Math.min(i - from, 24) * 28)}>
+          <Txt size={size} line={line}>{i < parts.length - 1 ? w + ' ' : w}</Txt>
+        </Animated.View>
+      ))}
+    </View>
+  );
+}
+
+export function Reply({ text, live, fresh, bare, flow }: { text?: string; live?: boolean; fresh?: boolean; /** Words arrive one by one (a just-given answer). */ flow?: boolean; /** In the chat log: Memo and his words as one plain line on the ground, as in the klar draft. */ bare?: boolean }) {
   // The blob (Julian 07.11.): squashes while it thinks, ^^ when it has answered; older cards hold still.
   const mood = live ? (text ? 'happy' : 'think') : 'idle';
   const minimal = useMascot() === 'minimal';
@@ -443,8 +470,8 @@ export function Reply({ text, live, fresh, bare }: { text?: string; live?: boole
   if (bare) return (
     <View style={{ alignSelf: 'stretch', flexDirection: 'row', alignItems: 'flex-end', gap: MEMO_GAP }}>
       {minimal ? null : <View style={{ marginBottom: 9 }}><Pin mood={mood} size={MEMO} shadow={false} still={!live} /></View>}
-      <View style={[BUBBLE, { borderBottomLeftRadius: 6, backgroundColor: tokens.chipBg }]}>
-        {text ? <Animated.View entering={swapIn}><Txt size={17} line={24}>{text}</Txt></Animated.View> : <View style={{ paddingVertical: 8, paddingHorizontal: 2 }}><Dots /></View>}
+      <View style={[BUBBLE, { backgroundColor: tokens.chipBg }]}>
+        {text ? (live || flow ? <Words text={text} size={17} line={24} /> : <Animated.View entering={swapIn}><Txt size={17} line={24}>{text}</Txt></Animated.View>) : <View style={{ paddingVertical: 8, paddingHorizontal: 2 }}><Dots /></View>}
       </View>
     </View>
   );
@@ -454,7 +481,7 @@ export function Reply({ text, live, fresh, bare }: { text?: string; live?: boole
         {minimal ? null : <Pin mood={mood} size={24} shadow={false} still={!live} />}
         <Txt size={12} weight={600} tracking={0.6} color={tokens.done}>MEMO</Txt>
       </View>
-      {text ? <Animated.View entering={swapIn}><Txt size={15} line={21}>{text}</Txt></Animated.View> : <View style={{ paddingVertical: 4 }}><Dots /></View>}
+      {text ? (live || flow ? <Words text={text} size={15} line={21} /> : <Animated.View entering={swapIn}><Txt size={15} line={21}>{text}</Txt></Animated.View>) : <View style={{ paddingVertical: 4 }}><Dots /></View>}
     </View>
   );
 }
@@ -513,8 +540,11 @@ function EntryBody({ f, mine: own, me, answer, side }: Omit<EntryProps, 'showcas
   // In the onboarding showcase the people are examples, so the bubble keeps the example person's colour there.
   const bubble = f.kind === 'msg'
     ? { backgroundColor: tokens.row, borderWidth: 1, borderColor: tokens.hair }
-    : { backgroundColor: mine && persons === basePersons ? mineSoft : p.tint };
+    : { backgroundColor: soft(mine && persons === basePersons ? mineSoft : p.tint) };
   const fresh = Date.now() - Date.parse(f.at) < 60000;
+  // Just made by Memo in this sitting: the card slips out from beside him once (Allo map). Older cards in the log stay still.
+  const born = useRef(!still && Date.now() - Date.parse(f.at) < 8000).current;
+  const titles = useMadeTitles(f.undone ? undefined : f.events, f.snap?.events);
   const recent = Date.now() - Date.parse(f.at) < 15 * 60000;
   const made = f.kind === 'made' && !!(f.events || f.items || f.tasks || f.undone);
   // What Memo says under the sentence: his own words, or else where it went.
@@ -528,18 +558,18 @@ function EntryBody({ f, mine: own, me, answer, side }: Omit<EntryProps, 'showcas
       {/* One column: my words on the right; the partner's, Memo's and the cards all start at the same line on the left. */}
       <View style={{ gap: TURN, alignItems: mine ? 'flex-end' : 'flex-start' }}>
         {/* Mine needs no name; the others say who and when. */}
-        {mine && f.kind !== 'msg' ? null : <Txt size={12.5} color={tokens.sub} style={mine ? undefined : { marginLeft: MEMO + MEMO_GAP, marginBottom: -3 }}>{[mine ? tx('Du', 'You') : p.name || f.by, f.kind === 'msg' ? tx('Nachricht', 'Message') : null, at(f.at)].filter(Boolean).join(' · ')}</Txt>}
-        <View style={{ alignSelf: 'stretch', flexDirection: 'row', alignItems: 'flex-end', gap: MEMO_GAP, justifyContent: mine ? 'flex-end' : 'flex-start' }}>
-          {mine ? null : <View style={{ marginBottom: 9 }}><Avatar p={f.by} size={MEMO} /></View>}
-          <View style={[BUBBLE, mine ? { borderBottomRightRadius: 6 } : { borderBottomLeftRadius: 6 }, bubble]}>
+        <Txt size={12.5} line={16} weight={600} color={tokens.mute} style={{ marginBottom: -4 }}>{[mine ? tx('Du', 'You') : p.name || f.by, f.kind === 'msg' ? tx('Nachricht', 'Message') : null, at(f.at)].filter(Boolean).join(' · ')}</Txt>
+        <View style={{ alignSelf: 'stretch' }}>
+          <View style={[SAID, bubble]}>
             {f.ask ? <Txt size={12} weight={600} tracking={0.6} color={tokens.done}>{tx(`FRAGE AN ${persons[f.ask.to].name.toUpperCase()}`, `QUESTION FOR ${persons[f.ask.to].name.toUpperCase()}`)}</Txt> : null}
-            <Txt size={17} line={24}>{f.ask ? f.ask.q : shortSaid(f.said)}</Txt>
+            <TagText text={f.ask ? f.ask.q : shortSaid(f.said)} size={17} line={24} titles={titles} animate={fresh && Date.now() - Date.parse(f.at) < 8000} />
           </View>
         </View>
         {f.ask ? <Ask f={f} me={me} answer={answer} /> : null}
-        {says ? <Reply bare text={says} fresh={fresh} /> : null}
+        {says ? <Reply bare text={says} fresh={fresh} flow={born} /> : null}
         {made ? (
-          <Animated.View layout={rowLayout} style={[cardFrame, { marginLeft: inset, opacity: f.undone ? 0.55 : 1 }]}>
+          <Animated.View layout={cardLayout} entering={born ? slipOut : undefined} style={[cardFrame, { marginLeft: inset, opacity: f.undone ? 0.55 : 1, transformOrigin: 'left bottom' }]}>
+            <Animated.View entering={born ? contentIn : undefined}>
             {f.undone ? null : f.events ? <Termine ids={f.events} snap={f.snap?.events} changed={f.changed} fresh={fresh} foot={!undo} ask={asks && !open && recent ? me : undefined} timeQ={asks && !open && recent ? f.timeQ : undefined} placeQ={asks && !open && recent} /> : null}
             {f.undone ? null : f.events ? <VacationLeft ids={f.events} /> : null}
             {f.undone || HIDDEN.suggestions ? null : f.events ? <PackOffer ids={f.events} /> : null}
@@ -553,6 +583,7 @@ function EntryBody({ f, mine: own, me, answer, side }: Omit<EntryProps, 'showcas
                 <CardBtn label={tx('Rückgängig', 'Undo')} onPress={() => undoEntry(f.id)} />
               </View>
             ) : !f.undone && !f.events ? <View style={{ height: 4 }} /> : null}
+            </Animated.View>
           </Animated.View>
         ) : null}
         {/* An answer without a card can show how it came about. */}
@@ -588,7 +619,7 @@ export function Thinking({ by }: { by: 'J' | 'T' }) {
     <View style={{ gap: TURN, alignItems: 'flex-end' }}>
       {v.said ? (
         <>
-          <View style={[BUBBLE, { borderBottomRightRadius: 6, backgroundColor: persons === basePersons ? mineSoft : persons[by].tint }]}>
+          <View style={[SAID, { backgroundColor: soft(persons === basePersons ? mineSoft : persons[by].tint) }]}>
             <Txt size={17} line={24}>{shortSaid(v.said)}</Txt>
           </View>
         </>
@@ -596,7 +627,7 @@ export function Thinking({ by }: { by: 'J' | 'T' }) {
       {v.reply || (!memoThinks && waited) ? <Reply bare text={v.reply} live /> : null}
       {/* Julian 31.10.: one thinking sign only. Steps show only once there is a plan. */}
       {v.head || v.lines.length ? (
-        <Animated.View layout={rowLayout} style={[cardFrame, { marginLeft: inset }]}>
+        <Animated.View layout={cardLayout} style={[cardFrame, { marginLeft: inset }]}>
           <View style={{ paddingHorizontal: 14, paddingTop: 12, paddingBottom: 14, gap: 10 }}>
             {v.head ? <Txt size={12} weight={600} tracking={0.6} color={tokens.done}>{v.head.toUpperCase()}</Txt> : null}
             {v.lines.map((l, i) => <Step key={i} label={l} state={i < v.shown ? 'done' : i === v.shown ? 'now' : 'next'} />)}

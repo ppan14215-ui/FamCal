@@ -50,29 +50,26 @@ export default function Eingang() {
   );
 }
 
-function InboxCard({ item }: { item: InboxItem }) {
+export function InboxCard({ item }: { item: InboxItem }) {
+  // Brand (27.11.): what waits for a yes lies on the soft grey on top of the chat, with one dark and one white pill.
+  const ok = item.state === 'ok';
   return (
     <Animated.View layout={LinearTransition.duration(200)} entering={FadeIn.duration(160)}>
-      <Card pad={14} gap={10}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-          <Tile name={item.icon} size={48} radius={14} />
-          <View style={{ flex: 1 }}>
-            <Meta>{item.src}</Meta>
-            <Txt size={16} weight={600}>{item.title}</Txt>
+      <View style={{ backgroundColor: tokens.group, borderRadius: 16, padding: 18, gap: 4 }}>
+        <Txt size={13.5} line={18} weight={500} color={tokens.sub}>{ok ? tx('Eingetragen', 'Added') : tx('Zu bestätigen', 'To confirm')}</Txt>
+        <Txt size={17} line={22} weight={700} tracking={-0.25}>{item.title}</Txt>
+        <Txt size={13.5} line={18} color={tokens.sub}>{[item.src, item.made].filter(Boolean).join(' · ')}</Txt>
+        {ok ? null : (
+          <View style={{ flexDirection: 'row', gap: 8, marginTop: 12 }}>
+            <PressScale scale={0.96} accessibilityRole="button" onPress={() => actions.confirmInbox(item.id, true)} style={{ height: 40, paddingHorizontal: 18, borderRadius: 999, backgroundColor: tokens.ink, justifyContent: 'center' }}>
+              <Txt size={15} line={20} weight={600} color="#FFFFFF">{tx('Eintragen', 'Add')}</Txt>
+            </PressScale>
+            <PressScale scale={0.96} accessibilityRole="button" onPress={() => actions.confirmInbox(item.id, false)} style={{ height: 40, paddingHorizontal: 18, borderRadius: 999, backgroundColor: '#FFFFFF', justifyContent: 'center' }}>
+              <Txt size={15} line={20} weight={500}>{tx('Nein', 'No')}</Txt>
+            </PressScale>
           </View>
-        </View>
-        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-          <View style={{ flex: 1 }}><Meta>{item.made}</Meta></View>
-          {item.state === 'ok' ? (
-            <Chip bg={tokens.doneSoft} color={tokens.done} icon={<LineIcon name="check" size={14} color={tokens.done} stroke={2.4} />}>{tx('Eingetragen', 'Added')}</Chip>
-          ) : (
-            <View style={{ flexDirection: 'row', gap: 6 }}>
-              <Chip onPress={() => actions.confirmInbox(item.id, false)}>{tx('Nein', 'No')}</Chip>
-              <Chip bg={tokens.doneSoft} color={tokens.done} onPress={() => actions.confirmInbox(item.id, true)}>{tx('Ja', 'Yes')}</Chip>
-            </View>
-          )}
-        </View>
-      </Card>
+        )}
+      </View>
     </Animated.View>
   );
 }

@@ -229,7 +229,7 @@ function DeviceCard({ conn }: { conn?: { account: string; ids: string[] } }) {
 
       {state === 'denied' ? (
         <Animated.View entering={rowIn} exiting={rowOut} style={{ paddingHorizontal: 14, paddingBottom: 14 }}>
-          <Txt size={14} line={20} color={tokens.sub}>{tx('Ohne Zugriff bleibt euer Kalender hier leer. Ihr könnt ihn jederzeit in den Einstellungen des Handys unter FamCal freigeben.', 'Without access your calendar stays empty here. You can allow it any time in your phone’s settings under FamCal.')}</Txt>
+          <Txt size={14} line={20} color={tokens.sub}>{tx('Ohne Zugriff bleibt euer Kalender hier leer. Ihr könnt ihn jederzeit in den Einstellungen des Handys unter ParentButler freigeben.', 'Without access your calendar stays empty here. You can allow it any time in your phone’s settings under ParentButler.')}</Txt>
         </Animated.View>
       ) : null}
 
@@ -261,7 +261,7 @@ function DeviceCard({ conn }: { conn?: { account: string; ids: string[] } }) {
             ))}
           </View>
           {/* Datenschutz (Infra 05.11.): who sees what; two-way sync since 8bd2141, so the old "liest nur" line is gone. */}
-          <Txt size={12.5} line={17} color={tokens.mute} center>{tx('Dein Partner sieht diese Termine mit Titel und Ort. Arbeit nur als Block. Änderungen in FamCal landen auch in diesem Kalender.', 'Your partner sees these events with title and place. Work only as a block. Changes in FamCal also go into this calendar.')}</Txt>
+          <Txt size={12.5} line={17} color={tokens.mute} center>{tx('Dein Partner sieht diese Termine mit Titel und Ort. Arbeit nur als Block. Änderungen in ParentButler landen auch in diesem Kalender.', 'Your partner sees these events with title and place. Work only as a block. Changes in ParentButler also go into this calendar.')}</Txt>
           <Btn label={busy ? tx('Liest Termine …', 'Reading events …') : tx('Übernehmen', 'Add')} height={46} disabled={busy} onPress={save} />
         </Animated.View>
       ) : null}

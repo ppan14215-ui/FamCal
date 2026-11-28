@@ -25,7 +25,6 @@ import { useFeed, canUndo, undoEntry, answerAsk, type FeedEntry, type EventSnap 
 import { getFamily, myRole } from '../../src/lib/sync';
 import { hm, short, TODAY } from '../../src/lib/dates';
 import { useScroller } from '../../src/lib/landing';
-import HeaderRight from '../../src/components/ui/HeaderRight';
 import { tx } from '../../src/i18n/lang';
 import { useVeil, Step, Dots } from '../../src/components/Veil';
 import { isTrip, makePackList, kidsOn, ageText } from '../../src/lib/pack';
@@ -39,9 +38,12 @@ import type { CalEvent } from '../../src/state/types';
 import { haptics } from '../../src/lib/haptics';
 import { setBuddy } from '../../src/lib/buddy';
 
+import { InboxCard } from './eingang';
 import { Entry, Thinking, Jumps, at, dayOf, useSettled } from '../../src/components/ChatCards';
 
 const SHOWN = 30;
+/** When the app opened: a fine line "Jetzt" parts what was said since from the log before (brand 27.11., section 7). */
+const OPENED = Date.now();
 
 export default function Chat() {
   const insets = useSafeAreaInsets();
@@ -65,21 +67,28 @@ export default function Chat() {
   useEffect(() => { setBuddy({ waiting: !!openQ && !thinking }); }, [!!openQ, thinking]);
   useEffect(() => () => setBuddy({ waiting: false }), []);
   const shown = feed.slice(-(SHOWN + more));
+  const asks = useStore((st) => st.inbox).filter((i) => i.state === 'ask');
   let lastDay = '';
+  // The first entry of this sitting, when there is a log before it.
+  const nowAt = shown.findIndex((f) => Date.parse(f.at) >= OPENED);
+  const nowId = nowAt > 0 ? shown[nowAt].id : null;
   return (
     <View style={{ flex: 1, backgroundColor: tokens.bg, paddingTop: insets.top }}>
       {simple ? null : <Jumps />}
       {/* The title stays put while the messages scroll under it (Julian 30.10. 22:15). */}
       <Head>
-        <H1 right={<HeaderRight people />}>Chat</H1>
+        <H1 sub={tx('Familie', 'Family')}>Chat</H1>
       </Head>
-      <ScrollView ref={scroller} onScroll={(e) => trackY(e.nativeEvent.contentOffset.y)} scrollEventThrottle={32} onContentSizeChange={() => { if (!more) scroller.current?.scrollToEnd({ animated: false }); }} contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 18, paddingTop: 8, paddingBottom: dock + (kb > 0 ? kb : insets.bottom) + 40, gap: 28 }} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+      <ScrollView ref={scroller} onScroll={(e) => trackY(e.nativeEvent.contentOffset.y)} scrollEventThrottle={32} onContentSizeChange={() => { if (!more) scroller.current?.scrollToEnd({ animated: false }); }} contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 20, paddingTop: 8, paddingBottom: dock + (kb > 0 ? kb : insets.bottom) + 40, gap: 28 }} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+        {/* Julian 18.11.: "Chat ist gleich Log und somit auch Eingangsbestätigung". Brand (27.11.): what still waits for
+            a yes stands on top, where it is seen first. */}
+        {asks.length ? <View style={{ gap: 10 }}>{asks.map((i) => <InboxCard key={i.id} item={i} />)}</View> : null}
         {feed.length > shown.length ? (
           <PressScale onPress={() => setMore((m) => m + SHOWN)} style={{ alignSelf: 'center', paddingVertical: 8, paddingHorizontal: 14 }}>
             <Txt size={13.5} weight={600} color={tokens.sub}>{tx('Ältere zeigen', 'Show older')}</Txt>
           </PressScale>
         ) : null}
-        {feed.length || veil.inline && veil.phase !== 'off' ? shown.map((f) => {
+        {feed.length || asks.length || veil.inline && veil.phase !== 'off' ? shown.map((f) => {
           // An answer shows on its question, not as a bubble of its own.
           if (f.answer && feed.some((x) => x.id === f.answer!.ask)) return null;
           const d = dayOf(f.at);
@@ -87,7 +96,14 @@ export default function Chat() {
           return (
             <React.Fragment key={f.id}>
               {f.id === openQ?.id ? <View onLayout={(e) => { qY.current = e.nativeEvent.layout.y; }} /> : null}
-              {head ? <View style={{ alignSelf: 'center', backgroundColor: tokens.segBg, borderRadius: 999, paddingVertical: 4, paddingHorizontal: 12 }}><Txt size={12.5} color={tokens.sub}>{head}</Txt></View> : null}
+              {f.id === nowId ? (
+                <Animated.View entering={swapIn} style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                  <View style={{ flex: 1, height: 1, backgroundColor: tokens.groupLine }} />
+                  <Txt size={12} line={16} weight={600} color={tokens.mute}>{tx('Jetzt', 'Now')}</Txt>
+                  <View style={{ flex: 1, height: 1, backgroundColor: tokens.groupLine }} />
+                </Animated.View>
+              ) : null}
+              {head ? <Txt size={12.5} line={16} weight={600} color={tokens.mute} style={{ alignSelf: 'center' }}>{head}</Txt> : null}
               <Entry f={f} mine={f.by === me} me={me} answer={f.ask ? feed.find((x) => x.answer?.ask === f.id) : undefined} />
             </React.Fragment>
           );

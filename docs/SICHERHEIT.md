@@ -6,7 +6,9 @@ Julian 27.10.: Vor der Veröffentlichung muss sicher sein, dass niemand über di
 
 - Der Claude Schlüssel liegt nur als Secret in Supabase, nie in der App.
 - Die Funktion `verstehen` nimmt nur angemeldete Nutzer an (JWT) und zählt jeden Aufruf in der Datenbank (`use_ai_call`).
-- Grenzen: 60 Sätze pro Person und Tag, gratis 30 Sätze pro Familie und Monat. Ein gesperrter Satz kostet nichts.
+- Grenzen (seit 22.11., Migration 20261122080000): Plus und Probetage 30 Sätze am Tag und 600 im Monat pro Familie (größere Familien bis 60 / 1200), gratis 30 Sätze im Monat. Aufnahmen nur Plus und Probetage, 40 pro Person am Tag, 1200 pro Familie im Monat. Notbremse: alle zusammen höchstens 5000 Sätze und 5000 Aufnahmen am Tag. Ein gesperrter Satz kostet nichts.
+- Testzugang: app.config.js bricht einen Store Build ab, wenn die Testvariablen gesetzt sind; auf dem Kanal production bleibt der Knopf versteckt (seit 22.11.).
+- RevenueCat Webhook ist deployt (22.11., ohne Secret antwortet er immer 403).
 - Eingaben werden auf 500 Zeichen gekürzt, Antworten auf 1200 Tokens.
 - Plus (`families.plus_until`) können Nutzer nicht selbst setzen.
 - Monatsgrenze für den Schlüssel in der Anthropic Console: 20 $.

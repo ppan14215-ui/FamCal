@@ -563,15 +563,19 @@ export const actions = {
   },
   clearDraftSymbol() { set(() => ({ draftSymbol: null })); },
 
+  /** Who takes a step of the first year (the "Wer übernimmt?" chip on the Erstes Jahr tab). */
+  setMilestoneWho(id: string, who: Who) { set((s) => ({ milestones: s.milestones.map((m) => (m.id === id ? { ...m, who } : m)) })); },
   toggleMilestone(id: string) { set((s) => ({ milestones: s.milestones.map((m) => (m.id === id ? { ...m, done: !m.done } : m)) })); },
 
   setPlan(p: State['plan']) { set(() => ({ plan: p })); },
   setPhotoTaken(v: boolean) { set(() => ({ photoTaken: v })); },
 };
 
-// Colours stay after a restart (Julian 30.10.: changing them in the settings); kept per device for now.
+// Colours stay after a restart (Julian 30.10.: changing them in the settings). This is the phone's copy; the
+// family keeps the parents' colours too, so both phones show the same (Julian 17.11., lib/sync.ts).
 const COLORS_KEY = 'famcal.colors';
-AsyncStorage.getItem(COLORS_KEY).then((v) => {
+/** Done once the phone's saved colours are back in the store (sync waits for it before it takes the family's). */
+export const colorsReady: Promise<void> = AsyncStorage.getItem(COLORS_KEY).then((v) => {
   const c = v ? JSON.parse(v) : null;
   if (!c) return;
   (['J', 'T'] as PersonId[]).forEach((p) => { if (Number.isInteger(c[p]) && c[p] >= 0) actions.setColor(p, c[p]); });

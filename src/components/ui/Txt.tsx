@@ -1,10 +1,10 @@
 /**
  * The app's only text primitive. Custom fonts on native ignore `fontWeight`,
- * so the weight picks the Geist file instead.
+ * so the weight picks the font file instead.
  */
 import React from 'react';
 import { Text, TextProps, TextStyle, StyleProp } from 'react-native';
-import { fonts, tokens, Weight } from '../../theme';
+import { fonts, headFont, tokens, Weight } from '../../theme';
 
 type Props = TextProps & {
   size?: number;
@@ -24,11 +24,12 @@ export default function Txt({ size = 16, line, weight = 400, color = tokens.ink,
       {...rest}
       style={[
         {
-          fontFamily: fonts[weight],
+          // Brand (27.11.): what reads as a heading (large and strong) is DM Sans Bold, set tight like the template.
+          fontFamily: size >= 20 && weight >= 600 ? headFont : fonts[weight],
           fontSize: size,
           lineHeight: line ?? Math.round(size * 1.38),
           color,
-          letterSpacing: tracking,
+          letterSpacing: tracking ?? (size >= 20 && weight >= 600 ? -0.028 * size : undefined),
           textAlign: center ? 'center' : undefined,
           textDecorationLine: strike ? 'line-through' : undefined,
         },

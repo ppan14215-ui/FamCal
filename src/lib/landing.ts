@@ -88,6 +88,14 @@ export function lightOneByOne(ids: string[], each?: (i: number) => void, gap = 2
     each?.(i);
   }, i * gap)));
 }
+/**
+ * Contact punch (Allo film, Julian 24.11.): a Termin that just arrived lands
+ * with one frame at 1.05 and settles back over 400 ms. Fresh plays it.
+ */
+const punchSubs = new Set<(id: string) => void>();
+export function punch(id: string) { punchSubs.forEach((f) => f(id)); }
+export const isLit = (id: string) => lit.has(id);
+export function onPunch(f: (id: string) => void) { punchSubs.add(f); return () => { punchSubs.delete(f); }; }
 export function useLit(id: string | undefined) {
   return useSyncExternalStore((l) => { subs.add(l); return () => { subs.delete(l); }; }, () => !!id && lit.has(id), () => false);
 }

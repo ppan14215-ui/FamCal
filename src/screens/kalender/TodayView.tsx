@@ -8,18 +8,22 @@
  * fills the screen (Julian 16.11.: "Warum nutzen wir nicht den gesamten Screen, alles ist gestaucht"). A Termin
  * stands at its time and is as tall as it lasts. Only where a card needs more room than its time gives, the hours
  * beside it make room: a card is never cut to fit and never lies over another one. A full day scrolls.
- * What is over today turns grey. A tap opens the Termin, a swipe to the left deletes (then Rückgängig).
+ * A tap opens the Termin, a swipe to the left on its card deletes (then Rückgängig). A swipe to the side anywhere
+ * else, or to the right on a card, brings the next or the last day (Julian 16.11.: "Slide right on the daily view
+ * does not let me go to the next day").
  *
  * Work is not one of the day's cards (Julian 16.11.: "Striped work blockers should show differently"): it is a
  * striped block behind them, from its start to its end as in the week, and a Termin during work lies on it.
  *
  * The cards are the app's own: white with a hairline and the soft shadow, on the usual ground (Julian 16.11.: the grey
  * ground of the reference was tried and taken back, "davor war es besser", the same shadows and cards in the whole app).
- * The page fades out under the head and before the nav ("We are missing the fade out").
+ * Nothing on the day is paler than the rest, also not what is over: the only fade is the one into the nav, and it
+ * shows only while the day runs on under the nav (Julian 16.11.: "The fade out is completely overdone and misplaced,
+ * was meant to only be if the last appointment overlaps the input bar").
  */
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { View, ScrollView, Platform } from 'react-native';
-import Animated, { useAnimatedStyle, useSharedValue, withSpring, withTiming } from 'react-native-reanimated';
+import Animated, { useAnimatedStyle, useSharedValue, withSpring, withTiming, type SharedValue } from 'react-native-reanimated';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { scheduleOnRN } from 'react-native-worklets';
 import Svg, { Defs, LinearGradient, Stop, Rect } from 'react-native-svg';
@@ -32,10 +36,11 @@ import PressScale from '../../components/ui/PressScale';
 import { Faces } from '../../components/ui/Person';
 import Stripes from '../../components/Stripes';
 import Fresh from '../../components/Fresh';
-import SwipeRow, { justSwiped } from '../../components/SwipeRow';
+import Blink from '../../components/Blink';
+import SwipeRow, { justSwiped, markSwiped } from '../../components/SwipeRow';
 import { navTop } from '../../components/NavBar';
-import { tokens, glass, springs, motion, easing, rowOut, rowLayout } from '../../theme';
-import { useStore, actions } from '../../state/store';
+import { tokens, glass, springs, motion, easing, rise, rowLayout, cardOut } from '../../theme';
+import { useStore, actions, get } from '../../state/store';
 import { useScroller, useLitIds } from '../../lib/landing';
 import { useCalEvents } from '../../lib/useEvents';
 import { useNowMin } from '../../lib/useNow';
@@ -82,8 +87,6 @@ const spans = (e: CalEvent) => !!e.endDate && e.endDate > e.date;
 const onDay = (e: CalEvent, day: string) => e.date === day || (spans(e) && e.date < day && day <= e.endDate!);
 /** Where a Termin ends on the hours; one without an end is only its start. */
 const endMin = (e: CalEvent) => (e.end && e.end > e.start ? minutes(e.end) : minutes(e.start));
-/** Over for today: it has ended, or started and has no end. */
-const isOver = (e: CalEvent, now: number) => minutes(e.end && e.end > e.start ? e.end : e.start) <= now;
 /** How tall a card's content is before it has been measured. */
 const guess = (e: CalEvent) => PAD * 2 + TITLE + (e.place ?? e.sub ? LINE : 0) + ROW_GAP + FACE + (e.note ? ROW_GAP + 66 : 0);
 /** The height a Termin's time gives its card: every hour it covers gets the hour's room. */
@@ -196,7 +199,7 @@ export function WeekStrip() {
 }
 
 /** One Termin as a card of the reference: bar, title and one grey line, its icon, then the faces and the time span. */
-const TodayCard = React.memo(function TodayCard({ e, date, over, hour, onContent }: { e: CalEvent; date: string; over: boolean; hour: number; onContent: (id: string, h: number) => void }) {
+const TodayCard = React.memo(function TodayCard({ e, date, hour, onContent }: { e: CalEvent; date: string; hour: number; onContent: (id: string, h: number) => void }) {
   const ink = evInk(e);
   const when = spans(e) ? tx(`Tag ${daysBetween(e.date, date) + 1}`, `Day ${daysBetween(e.date, date) + 1}`)
     : e.allDay ? tx('Ganztags', 'All day')
@@ -208,9 +211,9 @@ const TodayCard = React.memo(function TodayCard({ e, date, over, hour, onContent
     <Fresh id={e.id} radius={R} markAt={{ left: PAD, inset: PAD }}>
       {/* The app's one card: a hairline and the soft shadow (Julian 16.11.: the same shadows and cards in the whole app). */}
       <View style={[{ borderRadius: R }, glass.lift]}>
-      <SwipeRow bg={tokens.row} radius={R} onDelete={() => dropEvent(e)}>
+      <SwipeRow pager bg={tokens.row} radius={R} onDelete={() => dropEvent(e)}>
         <PressScale scale={0.985} onPress={() => { if (!justSwiped()) router.push(`/termin/${e.id}`); }} accessibilityLabel={`${e.title}, ${when}`}
-          style={{ flexDirection: 'row', gap: 12, padding: PAD, minHeight: tall, borderRadius: R, backgroundColor: tokens.row, opacity: over ? 0.45 : 1 }}>
+          style={{ flexDirection: 'row', gap: 12, padding: PAD, minHeight: tall, borderRadius: R, backgroundColor: tokens.row }}>
           <View style={{ width: 4, borderRadius: 2, backgroundColor: ink }} />
           {/* The content says how tall it is on its own, apart from the time's height: the page needs it to share out the hours. */}
           <View onLayout={(ev) => onContent(e.id, Math.round(ev.nativeEvent.layout.height) + PAD * 2)} style={{ flex: 1, minWidth: 0, gap: ROW_GAP, alignSelf: 'flex-start' }}>
@@ -223,10 +226,10 @@ const TodayCard = React.memo(function TodayCard({ e, date, over, hour, onContent
             </View>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: FACE }}>
               <Faces who={e.who} people={e.people} size={FACE} ring={tokens.row} />
-              <View style={{ flex: 1, minWidth: 0, flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', gap: 5 }}>
+              <Blink k={when} style={{ flex: 1, minWidth: 0, flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', gap: 5 }}>
                 <LineIcon name="clock" size={15} color={tokens.sub} />
                 <Txt size={14.5} line={LINE} color={tokens.sub} numberOfLines={1} style={{ flexShrink: 1, fontVariant: ['tabular-nums'] }}>{when}</Txt>
-              </View>
+              </Blink>
             </View>
             {e.note ? (
               <View style={{ borderRadius: 14, padding: 12, backgroundColor: tokens.chipBg }}>
@@ -246,14 +249,14 @@ const TodayCard = React.memo(function TodayCard({ e, date, over, hour, onContent
  * hours would cover it exactly). Its name and hours stand where a card's title stands, or `label` further down when
  * a Termin lies on that spot. A tap opens it like a Termin.
  */
-function Shift({ e, top, height, lane, of, over, label }: { e: CalEvent; top: number; height: number; lane: number; of: number; over: boolean; label: number }) {
+function Shift({ e, top, height, lane, of, label }: { e: CalEvent; top: number; height: number; lane: number; of: number; label: number }) {
   const look = shiftLook(e);
   const [a, b] = shiftSpan(e);
   const when = !e.allDay && e.end && e.end > e.start ? `${hm(a)} ${tx('bis', 'to')} ${hm(b)}` : '';
   return (
-    <PressScale scale={0.99} onPress={() => router.push(`/termin/${e.id}`)} accessibilityLabel={[look.name, e.title, when].filter(Boolean).join(', ')}
+    <PressScale scale={0.99} onPress={() => { if (!justSwiped()) router.push(`/termin/${e.id}`); }} accessibilityLabel={[look.name, e.title, when].filter(Boolean).join(', ')}
       style={{ position: 'absolute', top, height, left: `${(lane / of) * 100}%`, width: `${100 / of}%`, paddingLeft: lane ? 3 : 0, paddingRight: lane < of - 1 ? 3 : 0 }}>
-      <Stripes look={look} radius={R} style={{ flex: 1, opacity: over ? 0.45 : 0.9, paddingHorizontal: of > 2 ? 8 : PAD + 4, paddingTop: label }}>
+      <Stripes look={look} radius={R} style={{ flex: 1, opacity: 0.9, paddingHorizontal: of > 2 ? 8 : PAD + 4, paddingTop: label }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: of > 2 ? 6 : 8, minHeight: TITLE }}>
           <Txt size={15} line={TITLE} weight={600} color={look.ink} numberOfLines={1} style={{ flex: 1, minWidth: 0 }}>{e.title}</Txt>
           {/* Alone it says its hours; side by side each block shows whose it is (a big family has more colours than two). */}
@@ -265,14 +268,16 @@ function Shift({ e, top, height, lane, of, over, label }: { e: CalEvent; top: nu
   );
 }
 
-const FADE = 88;
+const FADE = 56;
 /**
- * The page fades out into the ground before it reaches the nav, as in the reference (Julian 16.11.: "We are missing
- * the fade out"). Solid from the nav's top down, so nothing reads through beside the pill.
+ * Where the day runs on under the nav, it fades out into the ground before it reaches it, as in the reference; the
+ * ground is solid from the nav's top down, so nothing reads through beside the pill. `show` is 0 while the day ends
+ * above the nav: then there is no fade at all (Julian 16.11.: only "if the last appointment overlaps the input bar").
  */
-function GroundFade({ solid }: { solid: number }) {
+function GroundFade({ solid, show }: { solid: number; show: SharedValue<number> }) {
+  const st = useAnimatedStyle(() => ({ opacity: show.value }));
   return (
-    <View pointerEvents="none" style={{ position: 'absolute', left: 0, right: 0, bottom: 0 }}>
+    <Animated.View pointerEvents="none" style={[{ position: 'absolute', left: 0, right: 0, bottom: 0 }, st]}>
       <View style={{ height: FADE }}>
         <Svg width="100%" height="100%" preserveAspectRatio="none">
           <Defs>
@@ -287,7 +292,7 @@ function GroundFade({ solid }: { solid: number }) {
         </Svg>
       </View>
       <View style={{ height: solid + 1, marginTop: -1, backgroundColor: tokens.bg }} />
-    </View>
+    </Animated.View>
   );
 }
 
@@ -307,6 +312,9 @@ export default function TodayView({ bottom, band }: { bottom?: React.ReactNode; 
   const track = useScroller(ref);
   const now = useNowMin();
   const today = day === TODAY;
+  // Start (Allo motion map): the day's Termine rise in one by one, 50 ms apart. Only right after the view opens; later arrivals land with the punch instead.
+  const born = useRef(Date.now());
+  const arrive = (i: number) => (Date.now() - born.current < 1200 ? rise(i) : undefined);
 
   const { whole, timed, shifts, info } = useMemo(() => {
     const whole: CalEvent[] = [], timed: CalEvent[] = [], shifts: CalEvent[] = [];
@@ -362,30 +370,83 @@ export default function TodayView({ bottom, band }: { bottom?: React.ReactNode; 
     actions.setCalDay((hit.find((e) => e.date >= TODAY) ?? hit[0]).date);
   }, [lit]);
 
-  // Another day swaps in place: back to the top, and the cards come in with a short fade (opacity only).
+  // A swipe to the side brings the next or the last day, as the strip above pages its weeks. The day follows the
+  // finger and leaves to its side; the next one then comes in from the other side. Nothing shows at rest.
+  const W = useSharedValue(360);
+  const x = useSharedValue(0);
+  const op = useSharedValue(1);
+  /** The side the next day comes in from after a swipe (1 from the right, -1 from the left); 0 without one. */
+  const side = useRef(0);
+  const go = (dir: number) => { side.current = dir; haptics.select(); actions.setCalDay(addDays(get().calDay, dir)); };
+  const pan = Gesture.Pan()
+    .maxPointers(1)
+    .activeOffsetX([-14, 14])
+    .failOffsetY([-12, 12])
+    // On the web the press under the finger still fires after the drag: it must not open that Termin.
+    .onStart(() => { scheduleOnRN(markSwiped); })
+    .onUpdate((e) => { x.value = e.translationX; op.value = 1 - Math.min(0.5, Math.abs(e.translationX) / W.value); })
+    .onEnd((e) => {
+      scheduleOnRN(markSwiped);
+      if (Math.abs(e.translationX) > W.value * 0.22 || Math.abs(e.velocityX) > 700) {
+        const dir = e.translationX < 0 ? 1 : -1;
+        x.value = withTiming(-dir * W.value * 0.6, { duration: 140 });
+        op.value = withTiming(0, { duration: 140 }, (f) => { if (f) scheduleOnRN(go, dir); });
+      } else {
+        x.value = withSpring(0, springs.snapBack);
+        op.value = withTiming(1, { duration: 160 });
+      }
+    });
+
+  // Another day swaps in place and starts at its top. Reached by a swipe it slides in from its side, otherwise the
+  // cards come in with a short fade (opacity only).
   const fade = useSharedValue(1);
   const seen = useRef(day);
   useEffect(() => {
     if (seen.current === day) return;
     seen.current = day;
     ref.current?.scrollTo({ y: 0, animated: false });
-    fade.value = 0;
-    fade.value = withTiming(1, { duration: motion.micro, easing: easing.out });
+    scrollY.current = 0;
+    const dir = side.current;
+    side.current = 0;
+    if (dir) {
+      fade.value = 1;
+      x.value = dir * W.value * 0.4;
+      x.value = withSpring(0, springs.smooth);
+      op.value = 0.3;
+      op.value = withTiming(1, { duration: 220 });
+    } else {
+      x.value = 0;
+      op.value = 1;
+      fade.value = 0;
+      fade.value = withTiming(1, { duration: motion.micro, easing: easing.out });
+    }
   }, [day]);
-  const shown = useAnimatedStyle(() => ({ opacity: fade.value }));
+  const shown = useAnimatedStyle(() => ({ opacity: fade.value * op.value, transform: [{ translateX: x.value }] }));
+
+  // The fade into the nav shows only while the day runs on under it: from the last 40 points above the nav on.
+  const contentH = useRef(0);
+  const scrollY = useRef(0);
+  const below = useSharedValue(0);
+  const mark = () => {
+    const rest = contentH.current - pageH - scrollY.current; // how far the day still runs on below the page
+    below.value = pageH ? Math.max(0, Math.min(1, (rest - (END - 24)) / 24)) : 0;
+  };
+  useEffect(mark, [pageH]);
 
   const nowHour = today ? Math.floor(now / 60) : -1;
   const none = !whole.length && !timed.length && !shifts.length;
 
   return (
-    <View onLayout={(e) => setPageH(Math.round(e.nativeEvent.layout.height))} style={{ flex: 1 }}>
+    <GestureDetector gesture={pan} touchAction="pan-y">
+    <View onLayout={(e) => { W.value = e.nativeEvent.layout.width; setPageH(Math.round(e.nativeEvent.layout.height)); }} style={{ flex: 1 }}>
     <ScrollView
       ref={ref}
       style={{ flex: 1 }}
       showsVerticalScrollIndicator={false}
       keyboardShouldPersistTaps="handled"
       scrollEventThrottle={16}
-      onScroll={(e) => track(e.nativeEvent.contentOffset.y)}
+      onScroll={(e) => { const y = e.nativeEvent.contentOffset.y; track(y); scrollY.current = y; mark(); }}
+      onContentSizeChange={(_w, h) => { contentH.current = h; mark(); }}
       contentContainerStyle={{ paddingHorizontal: 18, paddingTop: TOP, paddingBottom: solid + END }}
     >
       <Animated.View style={shown}>
@@ -422,16 +483,16 @@ export default function TodayView({ bottom, band }: { bottom?: React.ReactNode; 
                 const need = TITLE + 8;
                 const free = (y: number) => y + need <= end && !plan.spots.some(([t, b2]) => t < y + need && b2 > y);
                 const spot = [top + PAD - 4, ...plan.spots.filter(([t, b2]) => b2 > top && t < end).map(([, b2]) => b2 + 2)].find(free);
-                return <Shift key={e.id} e={e} top={top} height={end - top} lane={side?.lane ?? 0} of={side?.lanes ?? 1} over={today && minutes(b) <= now} label={(spot ?? top + PAD - 4) + 4 - top} />;
+                return <Shift key={e.id} e={e} top={top} height={end - top} lane={side?.lane ?? 0} of={side?.lanes ?? 1} label={(spot ?? top + PAD - 4) + 4 - top} />;
               })}
-              {whole.map((e) => (
-                <Animated.View key={e.id} exiting={rowOut} layout={slide} style={{ marginBottom: GAP }}>
-                  <TodayCard e={e} date={day} over={false} hour={plan.hour} onContent={content} />
+              {whole.map((e, i) => (
+                <Animated.View key={e.id} entering={arrive(i)} exiting={cardOut} layout={slide} style={{ marginBottom: GAP }}>
+                  <TodayCard e={e} date={day} hour={plan.hour} onContent={content} />
                 </Animated.View>
               ))}
               {timed.map((e, i) => (
-                <Animated.View key={e.id} exiting={rowOut} layout={slide} style={{ marginTop: plan.gaps[i] ?? GAP }}>
-                  <TodayCard e={e} date={day} over={today && isOver(e, now)} hour={plan.hour} onContent={content} />
+                <Animated.View key={e.id} entering={arrive(whole.length + i)} exiting={cardOut} layout={slide} style={{ marginTop: plan.gaps[i] ?? GAP }}>
+                  <TodayCard e={e} date={day} hour={plan.hour} onContent={content} />
                 </Animated.View>
               ))}
             </View>
@@ -444,7 +505,8 @@ export default function TodayView({ bottom, band }: { bottom?: React.ReactNode; 
         ) : null}
       </Animated.View>
     </ScrollView>
-    <GroundFade solid={solid} />
+    <GroundFade solid={solid} show={below} />
     </View>
+    </GestureDetector>
   );
 }

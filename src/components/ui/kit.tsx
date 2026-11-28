@@ -8,7 +8,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { ScrollView, StyleProp, View, ViewStyle, Platform, LayoutChangeEvent } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Defs, LinearGradient, Stop, Rect } from 'react-native-svg';
-import Animated, { useAnimatedStyle, useSharedValue, withSpring, withTiming, interpolateColor, makeMutable, type SharedValue } from 'react-native-reanimated';
+import Animated, { useAnimatedStyle, useSharedValue, withSpring, withTiming, withDelay, interpolateColor, makeMutable, type SharedValue } from 'react-native-reanimated';
 import Txt, { Dot } from './Txt';
 import LineIcon, { LineName } from './LineIcon';
 import PressScale from './PressScale';
@@ -127,27 +127,24 @@ export function Screen({ children, head, headEnd, tab, footer, bg = tokens.bg, g
  * dem orangen Button Einfluss"): semibold, no period. A short info stands behind it on the same line, a long one
  * under it. `dot` is kept for callers and ignored.
  */
-export function H1({ children, sub, right, size = 29 }: { children: React.ReactNode; sub?: string; right?: React.ReactNode; size?: number; dot?: string }) {
-  const inline = !!sub && sub.length <= 16;
+export function H1({ children, sub, right, size = 34 }: { children: React.ReactNode; sub?: string; right?: React.ReactNode; size?: number; dot?: string }) {
+  // Brand (27.11.): a short grey line above (date, count, context), the title big and tight under it.
   return (
-    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12, minHeight: 40 }}>
+    <View style={{ flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', gap: 12, minHeight: 40 }}>
       <View style={{ flex: 1, minWidth: 0 }}>
-        <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 9 }}>
-          <Txt size={size} line={Math.round(size * 1.18)} weight={600} tracking={-size * 0.025} numberOfLines={1} style={{ flexShrink: 1 }}>{children}</Txt>
-          {inline ? <Txt size={16} line={21} color={tokens.sub} numberOfLines={1}>{sub}</Txt> : null}
-        </View>
-        {sub && !inline ? <Txt size={14} line={19} color={tokens.sub} numberOfLines={1}>{sub}</Txt> : null}
+        {sub ? <Txt size={15} line={20} weight={500} color={tokens.sub} numberOfLines={1}>{sub}</Txt> : null}
+        <Txt size={size} line={Math.round(size * 1.12)} weight={700} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8} style={{ flexShrink: 1 }}>{children}</Txt>
       </View>
       {right}
     </View>
   );
 }
 
-/** Section label over a flat group: small caps, grey, an optional count on the right. */
+/** Section title over a group (brand 27.11.): ink, semibold, sentence case; an optional count on the right. */
 export function H2({ children, right }: { children: React.ReactNode; right?: string }) {
   return (
-    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', paddingTop: 6 }}>
-      <Txt size={13.5} line={18} weight={600} tracking={0.6} color={tokens.sub} style={{ textTransform: 'uppercase' }}>{children}</Txt>
+    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', paddingTop: 12 }}>
+      <Txt size={17} line={22} weight={600} tracking={-0.25}>{children}</Txt>
       {right ? <Txt size={14} line={18} weight={500} color={tokens.sub}>{right}</Txt> : null}
     </View>
   );
@@ -164,7 +161,7 @@ export function Lead({ children }: { children: React.ReactNode }) {
 // ─── Surfaces ──────────────────────────────────────────────────────────────
 
 /**
- * Flat rows separated by 1px hairlines, straight on the ground (klar look, Julian 13.11.: dense, no white blocks). Rows rise
+ * Rows lying together on one soft grey ground with a fine line between them (brand 27.11., like iOS settings). Rows rise
  * in one stagger apart on first show; later rows fade in or out and their
  * neighbours slide into place. Give rows a key so the right one leaves.
  */
@@ -173,14 +170,14 @@ export function Group({ children, style }: { children: React.ReactNode; style?: 
   const first = useRef(true);
   useEffect(() => { first.current = false; }, []);
   return (
-    <Animated.View layout={rowLayout} style={style}>
+    <Animated.View layout={rowLayout} style={[kids.length ? { backgroundColor: tokens.group, borderRadius: 16, paddingHorizontal: 14 } : null, style]}>
       {kids.map((k, i) => (
         <Animated.View
           key={(k as React.ReactElement).key ?? i}
           entering={first.current ? rise(i) : rowIn}
           exiting={rowOut}
           layout={rowLayout}
-          style={i > 0 ? { borderTopWidth: 1, borderTopColor: tokens.hair } : undefined}
+          style={i > 0 ? { borderTopWidth: 1, borderTopColor: tokens.groupLine } : undefined}
         >
           {k}
         </Animated.View>
@@ -289,7 +286,8 @@ export function StepDots({ i, n = 8 }: { i: number; n?: number }) {
  * Segmented control on a grey track; the white pill slides to the tapped
  * item on a spring instead of jumping.
  */
-export function Seg<T extends string>({ items, value, onChange, height = 34 }: { items: { key: T; label: string }[]; value: T; onChange: (k: T) => void; height?: number }) {
+const SEG_ON = '0 1px 2px rgba(20,48,47,0.08), 0 2px 6px rgba(20,48,47,0.06)';
+export function Seg<T extends string>({ items, value, onChange, onAgain, height = 30 }: { items: { key: T; label: string }[]; value: T; onChange: (k: T) => void; onAgain?: (k: T) => void; height?: number }) {
   const idx = Math.max(0, items.findIndex((it) => it.key === value));
   const [w, setW] = useState(0);
   // Julian 31.10. 18:20: on the phone a fresh switch (each Kalender view draws its own header) showed the pill at the
@@ -300,10 +298,10 @@ export function Seg<T extends string>({ items, value, onChange, height = 34 }: {
   // The pill glides on the tap itself; the new view comes once the glide is mostly done, so building it never holds the glide (Julian 31.10.: "lag").
   const pick = (k: T, i: number) => { x.value = withSpring(i, springs.smooth); setTimeout(() => onChange(k), 140); };
   const pill = useAnimatedStyle(() => ({ transform: [{ translateX: x.value * w }] }));
-  const onLayout = (e: LayoutChangeEvent) => setW((e.nativeEvent.layout.width - 8) / items.length);
+  const onLayout = (e: LayoutChangeEvent) => setW((e.nativeEvent.layout.width - 4) / items.length);
   return (
-    <View onLayout={onLayout} style={{ flexDirection: 'row', padding: 4, borderRadius: 999, backgroundColor: tokens.segBg }}>
-      {w ? <Animated.View pointerEvents="none" style={[{ position: 'absolute', left: 4, top: 4, width: w, height, borderRadius: 999 }, glass.sm, pill]} /> : null}
+    <View onLayout={onLayout} style={{ flexDirection: 'row', padding: 2, borderRadius: 10, backgroundColor: tokens.segBg }}>
+      {w ? <Animated.View pointerEvents="none" style={[{ position: 'absolute', left: 2, top: 2, width: w, height, borderRadius: 8, backgroundColor: tokens.segOn, boxShadow: SEG_ON } as any, pill]} /> : null}
       {items.map((it) => {
         const on = it.key === value;
         return (
@@ -313,13 +311,13 @@ export function Seg<T extends string>({ items, value, onChange, height = 34 }: {
             accessibilityLabel={it.label}
             accessibilityState={{ selected: on }}
             scale={0.95}
-            onPress={() => { if (!on) { haptics.select(); pick(it.key, items.indexOf(it)); } }}
+            onPress={() => { if (on) { onAgain?.(it.key); return; } haptics.select(); pick(it.key, items.indexOf(it)); }}
             style={{
-              flex: 1, height, borderRadius: 999, alignItems: 'center', justifyContent: 'center',
+              flex: 1, height, borderRadius: 8, alignItems: 'center', justifyContent: 'center',
               backgroundColor: !w && on ? tokens.segOn : 'transparent',
             }}
           >
-            <Txt size={14} weight={on ? 600 : 500} color={on ? tokens.ink : tokens.sub}>{it.label}</Txt>
+            <Txt size={13.5} weight={on ? 600 : 500} color={on ? tokens.ink : '#5E706E'} numberOfLines={1}>{it.label}</Txt>
           </PressScale>
         );
       })}
@@ -328,43 +326,11 @@ export function Seg<T extends string>({ items, value, onChange, height = 34 }: {
 }
 
 /**
- * The view switch as words on a hairline, as in the klar draft Julian approved: the chosen word is ink and
- * semibold, and a short ink line under it glides to the tapped word (transform only) before the new view comes.
+ * The view switch (brand 27.11.): the same segmented control as everywhere, a white pill that glides on a soft grey
+ * track. A tap on the chosen one calls `onAgain` (Heute: back to today). `bleed` is kept for callers.
  */
-const TAB_LINE = 100;
-export function Tabs<T extends string>({ items, value, onChange, onAgain, bleed = 0 }: { items: { key: T; label: string }[]; value: T; onChange: (k: T) => void; /** A tap on the word that is already chosen (Heute: back to today). */ onAgain?: (k: T) => void; /** How far the hairline reaches past both sides, into the screen's gutter. */ bleed?: number }) {
-  const [at, setAt] = useState<Record<string, { x: number; w: number }>>({});
-  const cur = at[value];
-  const x = useSharedValue(0), w = useSharedValue(0);
-  const placed = useRef(false);
-  const glide = (p: { x: number; w: number }) => {
-    x.value = withTiming(p.x, { duration: motion.base, easing: easing.out });
-    w.value = withTiming(p.w, { duration: motion.base, easing: easing.out });
-  };
-  useEffect(() => {
-    if (!cur) return;
-    if (!placed.current) { placed.current = true; x.value = cur.x; w.value = cur.w; } else glide(cur);
-  }, [cur?.x, cur?.w]);
-  const line = useAnimatedStyle(() => ({ opacity: w.value > 0 ? 1 : 0, transform: [{ translateX: x.value }, { scaleX: w.value / TAB_LINE }] as const }));
-  return (
-    <View style={{ marginHorizontal: -bleed, paddingHorizontal: bleed, borderBottomWidth: 1, borderBottomColor: tokens.hair }}>
-      <View accessibilityRole="tablist" style={{ flexDirection: 'row', gap: 20 }}>
-        {items.map((it) => {
-          const on = it.key === value;
-          return (
-            <View key={it.key} onLayout={(e) => { const { x: lx, width } = e.nativeEvent.layout; setAt((m) => (m[it.key]?.x === lx && m[it.key]?.w === width ? m : { ...m, [it.key]: { x: lx, w: width } })); }}>
-              <PressScale accessibilityRole="tab" accessibilityLabel={it.label} accessibilityState={{ selected: on }} scale={0.96} hitSlop={{ top: 8, bottom: 6, left: 9, right: 9 }}
-                onPress={() => { if (on) { onAgain?.(it.key); return; } haptics.select(); const p = at[it.key]; if (p) glide(p); setTimeout(() => onChange(it.key), 140); }}
-                style={{ paddingTop: 4, paddingBottom: 9 }}>
-                <Txt size={16.5} line={21} weight={on ? 600 : 400} color={on ? tokens.ink : tokens.sub}>{it.label}</Txt>
-              </PressScale>
-            </View>
-          );
-        })}
-        <Animated.View pointerEvents="none" style={[{ position: 'absolute', left: 0, bottom: -1, width: TAB_LINE, height: 2, borderRadius: 1, backgroundColor: tokens.ink, transformOrigin: '0% 50%' } as any, line]} />
-      </View>
-    </View>
-  );
+export function Tabs<T extends string>({ items, value, onChange, onAgain }: { items: { key: T; label: string }[]; value: T; onChange: (k: T) => void; onAgain?: (k: T) => void; bleed?: number }) {
+  return <Seg items={items} value={value} onChange={onChange} onAgain={onAgain} />;
 }
 
 export const shadowSm: ViewStyle = Platform.select({
@@ -407,15 +373,22 @@ export function Chip({ children, bg = tokens.chipBg, color = tokens.ink, onPress
  */
 export function Check({ done, onPress, size = 24, color = tokens.done }: { done: boolean; onPress?: () => void; size?: number; color?: string }) {
   const v = useSharedValue(done ? 1 : 0);
+  const d = useSharedValue(done ? 1 : 0);
   useEffect(() => {
     // Calm, not playful (Julian 28.10.): the fill settles in once, no bounce.
     v.value = withTiming(done ? 1 : 0, { duration: done ? motion.micro : 120, easing: easing.out });
+    // The tick draws itself left to right, 60 ms after the shape (Allo: shape first, then content).
+    d.value = done ? withDelay(60, withTiming(1, { duration: 200, easing: easing.out })) : withTiming(0, { duration: 0 });
   }, [done]);
   const fill = useAnimatedStyle(() => ({ opacity: v.value, transform: [{ scale: 0.8 + 0.2 * v.value }] }));
+  const wipe = useAnimatedStyle(() => ({ transform: [{ translateX: d.value * size }] }));
   const inner = (
     <Animated.View style={[{ width: size, height: size, borderRadius: 999, borderWidth: 1.5, borderColor: tokens.circleLine, alignItems: 'center', justifyContent: 'center' }]}>
       <Animated.View style={[{ position: 'absolute', top: -1.5, left: -1.5, width: size, height: size, borderRadius: 999, backgroundColor: color, alignItems: 'center', justifyContent: 'center' }, fill]}>
         <LineIcon name="check" size={size * 0.62} color="#FFFFFF" stroke={2.4} />
+        <View pointerEvents="none" style={{ position: 'absolute', top: 0, bottom: 0, left: 0, right: 0, borderRadius: 999, overflow: 'hidden' }}>
+          <Animated.View style={[{ position: 'absolute', top: 0, bottom: 0, left: size * 0.12, width: size, backgroundColor: color }, wipe]} />
+        </View>
       </Animated.View>
     </Animated.View>
   );

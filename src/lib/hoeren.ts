@@ -5,6 +5,7 @@
  */
 import { getAuth, freshToken } from './auth';
 import { spracheCloud, ohneKi, zugestimmt } from './privat';
+import { cloudEarsAllowed } from './plan';
 
 // 12.11.: 7 s cut off long sentences the server was still writing (it allows Scribe 12 s).
 const WAIT_MS = 15000;
@@ -14,12 +15,14 @@ let off = false;
 /** False once the server said it has no key: then the phone's own words show live again. */
 // Without a login (onboarding) the cloud can't hear, so the phone's own words must land (Julian 05.11. 23:28: every second
 // recording failed in the onboarding).
-export const cloudOn = () => !off && !hearCapped && spracheCloud() && !!getAuth().session;
+export const cloudOn = () => !off && !hearCapped && cloudEarsAllowed() && spracheCloud() && !!getAuth().session;
 /** Why the cloud ears are off right now, for the error log and the hint (never what was said). */
-export const cloudWhy = () => off ? 'off' : hearCapped ? 'capped' : ohneKi() ? 'ohne_ki' : !zugestimmt() ? 'no_consent' : !getAuth().session ? 'no_session' : '';
+export const cloudWhy = () => off ? 'off' : hearCapped ? 'capped' : !cloudEarsAllowed() ? 'free' : ohneKi() ? 'ohne_ki' : !zugestimmt() ? 'no_consent' : !getAuth().session ? 'no_session' : '';
 /** Day cap of cloud ears reached (Julian 05.11.: 40 a person a day): the phone's own words are used until the app restarts. */
 let hearCapped = false;
 export const cloudCapped = () => hearCapped;
+/** The live ears got a 429 (cap or free plan): the phone's own words from here on, until the app restarts. */
+export const markHearCapped = () => { hearCapped = true; };
 
 /** hint: the app's listening language, so a sentence Scribe takes for empty English is asked again in it; peak: loudest volume 0..10, only for the log. */
 /** How the last upload went (status, server error, time), for the error log only. */
@@ -30,7 +33,7 @@ export async function hearInCloud(uri: string, hint?: string, peak?: number): Pr
   const session = getAuth().session;
   const url = process.env.EXPO_PUBLIC_SUPABASE_URL;
   // Ohne KI or no consent yet (Julian 05.11.): the recording never leaves the phone.
-  if (off || !session || !url || !uri || !spracheCloud()) { last = { skipped: off ? 'off' : !session ? 'no_session' : !uri ? 'no_uri' : 'setting' }; return null; }
+  if (off || !session || !url || !uri || !spracheCloud() || !cloudEarsAllowed()) { last = { skipped: off ? 'off' : !session ? 'no_session' : !uri ? 'no_uri' : 'setting' }; return null; }
   const began = Date.now();
   const form = new FormData();
   // React Native sends a local file this way; the bytes never pass through JavaScript.

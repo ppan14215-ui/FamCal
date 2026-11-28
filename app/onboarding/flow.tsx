@@ -743,7 +743,7 @@ function PartnerPhone({ owner, title, body }: { owner: string; title: string; bo
   return (
     <Animated.View pointerEvents="none" style={[{ position: 'absolute', left: 14, right: 14, top: 8, borderRadius: 26, backgroundColor: '#2E4650', padding: 10, paddingTop: 8, gap: 6, boxShadow: '0 14px 30px rgba(22,35,42,0.25)' } as any, st]}>
       <Txt size={12} weight={600} color="#FFFFFF" style={{ opacity: 0.8, paddingHorizontal: 6 }}>{tx(`${owner}s Handy`, `${owner}’s phone`)}</Txt>
-      <LockNotif app="FamCal" title={title} body={body} when={tx('jetzt', 'now')} tag={tx('Vorschau', 'Preview')} />
+      <LockNotif app="ParentButler" title={title} body={body} when={tx('jetzt', 'now')} tag={tx('Vorschau', 'Preview')} />
     </Animated.View>
   );
 }

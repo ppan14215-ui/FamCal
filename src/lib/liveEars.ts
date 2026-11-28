@@ -13,7 +13,7 @@
  */
 import { Platform } from 'react-native';
 import { getAuth, freshToken } from './auth';
-import { cloudOn, hearInCloud } from './hoeren';
+import { cloudOn, hearInCloud, markHearCapped } from './hoeren';
 
 type Mic = { start: (o: { sampleRate: number; channels: number; bitDepth: number }) => void; stop: () => void; addListener: (e: 'onAudioData', cb: (ev: { data: string }) => void) => { remove: () => void } };
 
@@ -168,6 +168,7 @@ export function startLiveEars(on: { words: (sure: string, part: string) => void;
       const r = await res.json().catch(() => ({})) as { url?: string; error?: string };
       clearTimeout(late);
       mark(`token:${res.status}`);
+      if (res.status === 429) markHearCapped();
       if (!res.ok || !r.url) { error = r.error ?? `http_${res.status}`; dead = true; misses++; return; }
       if (stopped && !size) return;
       const sock = new WebSocket(r.url);

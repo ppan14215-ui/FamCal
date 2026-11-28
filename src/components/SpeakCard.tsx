@@ -11,11 +11,14 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { View, ScrollView, Pressable, Platform, useWindowDimensions } from 'react-native';
 import Animated, { useSharedValue, useAnimatedStyle, withTiming, withRepeat, withSequence, withDelay, interpolate, interpolateColor, Extrapolation, Easing, useReducedMotion, type SharedValue } from 'react-native-reanimated';
+import TagText from './TagText';
+import { usePathname } from 'expo-router';
 import Txt from './ui/Txt';
 import LineIcon from './ui/LineIcon';
 import PressScale from './ui/PressScale';
 import VoiceWaves from './VoiceWaves';
 import Pin from './buddy/Pin';
+import HearScreen, { hearOwns } from './HearScreen';
 import { useMascot } from '../lib/mascot';
 import { tokens, blend } from '../theme';
 import { voiceLevel, useBuddy, isNight } from '../lib/buddy';
@@ -133,7 +136,8 @@ function KlarCard({ seat }: { seat?: 'right' }) {
   const b = useBuddy();
   const veil = useVeil();
   const mo = useMemoOut();
-  const open = speakOpen(now);
+  // Speaking itself now has its own white screen (HearScreen, Julian 28.11.); the card keeps the questions.
+  const open = speakOpen(now) && !hearOwns(now.phase);
   // What the card shows. While it closes it keeps its last words and buttons, so nothing else flashes up on the way
   // out (Julian 16.11.: the dark card stays when typing takes over, only its words change).
   const kept = useRef(now);
@@ -156,7 +160,10 @@ function KlarCard({ seat }: { seat?: 'right' }) {
   const thinking = (veil.phase === 'think' && !!veil.inline) || b.thinking;
   const [late, setLate] = useState(false);
   useEffect(() => { setLate(false); if (!thinking) return; const t = setTimeout(() => setLate(true), 12000); return () => clearTimeout(t); }, [thinking]);
-  const want: Stage = open ? 'card' : thinking && !late && !typing && mode !== 'input' ? 'think' : 'rest';
+  // On the chat page the field stands right above the nav, so the bubble would lie on it (Julian 24.11. screenshot):
+  // there the dots in the chat show the thinking and the nav stays.
+  const onChat = /\/chat$/.test(usePathname());
+  const want: Stage = open ? 'card' : thinking && !late && !typing && mode !== 'input' && !onChat ? 'think' : 'rest';
   const [stage, setStage] = useState<Stage>('rest');
   const thinkSince = useRef(0);
   // When the thinking began. If it is already going on when the bubble may show (the keyboard just closed after a
@@ -201,9 +208,11 @@ function KlarCard({ seat }: { seat?: 'right' }) {
   const PIN_DY = S * 0.04;
   // Memo's seat, from the middle: in the nav pill, or (off the tabs, Termin ändern) at the right end of the dark line.
   const home = seat === 'right' ? CW / 2 - 26 : mo.dx;
+  // In the bar Memo is the bigger, raised button in the middle: the traveller lands at that size and height.
+  const HK = seat === 'right' ? 1 : mo.k, HDY = seat === 'right' ? 0 : mo.dy;
   const geo = (st: Stage) => (st === 'card' ? { w: CW, h: CH, r: 26, cx: CW / 2, yb: 0, px: K_PAD.l + S / 2, py: K_PAD.b + K_ROW / 2 + PIN_DY }
     : st === 'think' ? { w: BUB_W, h: BUB_H, r: BUB_H / 2, cx: CW / 2, yb: (NAV - BUB_H) / 2, px: CW / 2, py: NAV / 2 + PIN_DY }
-    : { w: BODY, h: BODY, r: BODY / 2, cx: CW / 2 + home, yb: NAV / 2 - 0.2 - BODY / 2, px: CW / 2 + home, py: NAV / 2 - 0.2 + PIN_DY });
+    : { w: BODY * HK, h: BODY * HK, r: BODY * HK / 2, cx: CW / 2 + home, yb: NAV / 2 - 0.2 + HDY - BODY * HK / 2, px: CW / 2 + home, py: NAV / 2 - 0.2 + HDY + PIN_DY * HK });
   const g0 = geo('rest');
   const w = useSharedValue(g0.w), h = useSharedValue(g0.h), r = useSharedValue(g0.r), cx = useSharedValue(g0.cx), yb = useSharedValue(g0.yb);
   const px = useSharedValue(g0.px), py = useSharedValue(g0.py);
@@ -230,8 +239,9 @@ function KlarCard({ seat }: { seat?: 'right' }) {
     const hid = (v: SharedValue<number>, x: number) => { v.value = withDelay(260, withTiming(x, { duration: 1 })); };
     const go = handOver ? hid : to;
     go(w, g.w); go(h, g.h); go(r, g.r); go(cx, g.cx); go(yb, g.yb); go(px, g.px); go(py, g.py);
-    to(ps, stage === 'think' ? BUB_PIN : 1);
+    to(ps, stage === 'think' ? BUB_PIN : stage === 'rest' ? HK : 1);
     if (!moved) return;
+    if (from === 'rest' && stage === 'card' && d) setJump((j) => ({ n: j.n + 1, h: 10 }));
     if (handOver) {
       so.value = withDelay(110, withTiming(0, { duration: 120 }));
       po.value = withDelay(110, withTiming(0, { duration: 60 }));
@@ -244,7 +254,7 @@ function KlarCard({ seat }: { seat?: 'right' }) {
       so.value = withDelay(d, withTiming(0, { duration: 60 }));
       po.value = withDelay(d + 90, withTiming(0, { duration: 1 }));
     } else { so.value = 1; po.value = 1; }
-  }, [stage, CW, home]);
+  }, [stage, CW, home, HK, HDY]);
   // The open card grows and shrinks with its words, like a text field. Only then: on the way out the words change
   // too, and that must not cut the journey short.
   useEffect(() => { if (prev.current === 'card' && stage === 'card') h.value = reduced ? CH : withTiming(CH, { duration: 180, easing: OUT }); }, [CH]);
@@ -257,6 +267,10 @@ function KlarCard({ seat }: { seat?: 'right' }) {
   // Something landed: the travelling Memo is glad together with the one in the pill, so they look the same when he
   // lands. Not inside the bubble (there are only the dots); a joy from just before he leaves it plays on the way home.
   const [glad, setGlad] = useState(0);
+  // His hops (Julian 24.11., Allo film): a big one from his seat into the opening card, a small one when a Termin is done.
+  const [jump, setJump] = useState({ n: 0, h: 10 });
+  const seenHop = useRef(b.hop);
+  useEffect(() => { if (b.hop !== seenHop.current) { seenHop.current = b.hop; setJump((j) => ({ n: j.n + 1, h: 6 })); } }, [b.hop]);
   const joyAt = useRef(0);
   const seenJoy = useRef(b.joy);
   useEffect(() => {
@@ -312,9 +326,8 @@ function KlarCard({ seat }: { seat?: 'right' }) {
                     into them: the keyboard comes and they stand in the field, nothing is sent. */}
                 {words ? (
                   <Pressable onPress={intoText} accessibilityRole="button" accessibilityLabel={tapLabel()}>
-                    <Txt {...T} numberOfLines={6} color={writing ? dim(0.6) : ON}>
-                      {sure}{sure && s.live!.part ? ' ' : ''}<Txt {...T} color={dim(0.45)}>{s.live!.part}</Txt>
-                    </Txt>
+                    {/* What Memo already understood shows in the words as you speak (Julian 24.11.); the words still being heard stay muted and untagged. */}
+                    <View style={{ maxHeight: 6 * T.line, overflow: 'hidden', justifyContent: 'flex-end' }}><TagText text={sure} tail={s.live!.part} {...T} color={writing ? dim(0.6) : ON} tailColor={dim(0.45)} animate steady dark /></View>
                   </Pressable>
                 ) : s.phase === 'text' ? <Pressable onPress={intoText} accessibilityRole="button" accessibilityLabel={tapLabel()}><Txt {...T} numberOfLines={7} color={ON}>{s.text}</Txt></Pressable>
                   : writing ? <Pressable onPress={intoText} accessibilityRole="button" accessibilityLabel={tapLabel()}><Txt {...T} color={dim(0.45)}>{tx('Schreibe auf …', 'Writing it down …')}</Txt></Pressable>
@@ -379,7 +392,7 @@ function KlarCard({ seat }: { seat?: 'right' }) {
         </Animated.View>
       ) : stage === 'rest' && !linger ? null : (
         <Animated.View pointerEvents="none" style={[{ position: 'absolute', left: 0, bottom: 0, width: S, height: S }, pin]}>
-          <Pin size={S} mood={mood as any} load={stage === 'think'} joy={glad} joyKind={b.joyKind} poke={b.poke} sad={b.sad} wink={b.wink} level={voiceLevel} heard={s.live?.n ?? 0} ground={tokens.ink} />
+          <Pin size={S} mood={mood as any} load={stage === 'think'} joy={glad} joyKind={b.joyKind} hop={jump.n} hopH={jump.h} poke={b.poke} sad={b.sad} wink={b.wink} level={voiceLevel} heard={s.live?.n ?? 0} ground={tokens.ink} />
         </Animated.View>
       )}
     </View>
@@ -387,7 +400,7 @@ function KlarCard({ seat }: { seat?: 'right' }) {
 }
 
 export default function SpeakCard(props: { barH: number; from: string; klar?: boolean; seat?: 'right' }) {
-  return props.klar ? <KlarCard seat={props.seat} /> : <BigCard {...props} />;
+  return props.klar ? <><KlarCard seat={props.seat} /><HearScreen /></> : <BigCard {...props} />;
 }
 
 function BigCard({ barH, from }: { barH: number; from: string }) {
@@ -437,9 +450,7 @@ function BigCard({ barH, from }: { barH: number; from: string }) {
             {label || words ? <Txt size={12.5} weight={600} tracking={0.4} color={tokens.done} numberOfLines={2}>{label ?? (writing ? tx('Schreibe auf …', 'Writing it down …') : tx('Ich höre zu …', "I'm listening …"))}</Txt> : null}
             {words ? (
               <Pressable onPress={intoText} accessibilityRole="button" accessibilityLabel={tapLabel()}>
-                <Txt size={18} line={25} weight={500} numberOfLines={4} color={writing ? tokens.sub : tokens.ink}>
-                  {sure}{sure && s.live!.part ? ' ' : ''}<Txt size={18} line={25} weight={500} color={tokens.mute}>{s.live!.part}</Txt>
-                </Txt>
+                <View style={{ maxHeight: 4 * 25, overflow: 'hidden', justifyContent: 'flex-end' }}><TagText text={sure} tail={s.live!.part} size={18} line={25} weight={500} color={writing ? tokens.sub : tokens.ink} tailColor={tokens.mute} animate steady /></View>
               </Pressable>
             ) : s.phase === 'text' ? (
               <Pressable onPress={intoText} accessibilityRole="button" accessibilityLabel={tapLabel()}>

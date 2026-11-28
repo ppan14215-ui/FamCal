@@ -1,8 +1,8 @@
 /**
- * Kalender · Monat: the flat month, exactly as in the klar draft Julian approved (14.11.). Every day is its number
- * with one dot per Termin in the colour of who goes (Julian 04.11.: the simple month with dots). Today is the dark
- * circle, the chosen day lies on a soft grey field. Feiertage stand bold and Urlaub lies as a soft band behind its
- * days, so you can tell where they were (Julian 14.11.); both are named under the grid. Nothing else stands in a
+ * Kalender · Monat: the month of Ton & Papier (Julian 17.11.: "wir übernehmen nur die Monatsansicht"). Every day is
+ * a tall field with its number and one dot per Termin in the colour of who goes (Julian 04.11.: the simple month
+ * with dots). Today is an ink field, the chosen day lies on a soft field. Feiertage stand in their own colour and
+ * Urlaub lies as a soft band at the foot of its days (Julian 14.11.); both are named under the grid. Nothing else stands in a
  * day: work shifts belong to the hour grids. The chosen day's Termine follow as rows with fine lines between.
  * Swipe sideways for the month before or after.
  */
@@ -11,7 +11,8 @@ import { View, useWindowDimensions } from 'react-native';
 import { H2 } from '../../components/ui/kit';
 import Txt from '../../components/ui/Txt';
 import { tokens, persons, springs } from '../../theme';
-import { evInk } from '../../lib/evColor';
+import { evFill } from '../../lib/evColor';
+import { DaySection } from './DayList';
 import { useStore, actions } from '../../state/store';
 import { addDays, monday, dayNum, monthIdx, year, parse, iso, TODAY, MONTHS, short, weekday, WD_LONG } from '../../lib/dates';
 import PressScale from '../../components/ui/PressScale';
@@ -25,11 +26,12 @@ import { useCalEvents } from '../../lib/useEvents';
 import { isInfoDay } from '../../lib/feiertage';
 import { isVacation } from '../../lib/urlaub';
 import { AgendaRow } from './AgendaView';
+import { vivid } from '../../theme';
 
 // One letter per weekday, as in the draft.
-const HEAD = tx('M D M D F S S', 'M T W T F S S').split(' ');
-/** The number's circle and the band behind it. */
-const NUM = 30;
+const HEAD = tx('Mo Di Mi Do Fr Sa So', 'Mo Tu We Th Fr Sa Su').split(' ');
+/** Urlaub: the soft green of the brand. */
+const VAC = '#E7F4E6';
 
 export function monthTitle(day: string) {
   return { month: MONTHS[monthIdx(day)], year: year(day) };
@@ -50,6 +52,8 @@ export default function MonthView() {
   const day = useStore((s) => s.calDay);
   const events = useCalEvents();
   const people = useStore((s) => s.people);
+  // Ton & Papier (Julian 17.11.: "wir übernehmen nur die Monatsansicht"): tall cells, today as an ink field, the
+  // Urlaub as a band at the foot of its days. Everything else of the month is as it was.
   const m = monthIdx(day);
   const first = iso(new Date(Date.UTC(year(day), m, 1)));
   const start = monday(first);
@@ -88,7 +92,7 @@ export default function MonthView() {
   // Title, switch and weekday row take about 290, the talk field and tabs about 200.
   const { height: H } = useWindowDimensions();
   const rows = cells.length / 7;
-  const cellH = Math.round(Math.max(52, Math.min(62, (H - 500) / rows)));
+  const cellH = 62;
 
   // Swipe left or right for the next or previous month (Julian 30.10.), like in the week.
   const W = useSharedValue(360);
@@ -123,36 +127,35 @@ export default function MonthView() {
       <GestureDetector gesture={pan} touchAction="pan-y">
       <Animated.View onLayout={(e) => { W.value = e.nativeEvent.layout.width; }} style={[{ flexDirection: 'row', flexWrap: 'wrap' }, slide]}>
         {HEAD.map((h, i) => (
-          <View key={i} style={{ width: `${100 / 7}%`, alignItems: 'center', paddingBottom: 6 }}>
-            <Txt size={13} line={17} color={tokens.sub}>{h}</Txt>
+          <View key={i} style={{ width: `${100 / 7}%`, alignItems: 'center', paddingBottom: 8 }}>
+            <Txt size={13} line={17} weight={500} color={tokens.mute}>{h}</Txt>
           </View>
         ))}
         {cells.map((d, ci) => {
           const inMonth = monthIdx(d) === m;
           const c = inMonth ? at.get(d) : undefined;
-          const sel = d === day;
-          const isToday = d === TODAY;
+          const sel = d === day && inMonth;
+          const isToday = d === TODAY && inMonth;
           const evs = c?.evs ?? [];
-          // The band runs on to the next day inside the week's row and ends round where the Urlaub or the row ends.
+          const dots: string[] = [];
+          for (const e of evs) { const f = evFill(e); if (!dots.includes(f)) dots.push(f); if (dots.length === 3) break; }
+          // Urlaub: a soft green field behind its days, joined inside the week's row.
           const on = (o: number) => !!c?.vac && monthIdx(addDays(d, o)) === m && at.get(addDays(d, o))?.vac === c.vac;
           const joinL = ci % 7 !== 0 && on(-1), joinR = ci % 7 !== 6 && on(1);
           return (
-            <View key={d} style={{ width: `${100 / 7}%` }}>
+            <View key={d} style={{ width: `${100 / 7}%`, height: cellH, alignItems: 'center' }}>
+              {c?.vac ? <View style={{ position: 'absolute', left: joinL ? 0 : 4, right: joinR ? 0 : 4, top: 0, height: 44, backgroundColor: VAC, borderTopLeftRadius: joinL ? 0 : 22, borderBottomLeftRadius: joinL ? 0 : 22, borderTopRightRadius: joinR ? 0 : 22, borderBottomRightRadius: joinR ? 0 : 22 }} /> : null}
               <PressScale
-                scale={0.94}
+                scale={0.92}
                 onPress={() => { if (inMonth && !sel) { haptics.select(); actions.setCalDay(d); } }}
                 accessibilityLabel={short(d)}
                 accessibilityState={{ selected: sel }}
-                style={{ height: cellH, alignItems: 'center', paddingTop: 6, borderRadius: 10, backgroundColor: sel ? tokens.chipBg : 'transparent' }}
+                style={{ width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: sel ? tokens.ink : 'transparent' }}
               >
-                {c?.vac ? <View style={{ position: 'absolute', top: 6, height: NUM, left: joinL ? 0 : 5, right: joinR ? 0 : 5, backgroundColor: bandOf(c.vac), borderTopLeftRadius: joinL ? 0 : NUM / 2, borderBottomLeftRadius: joinL ? 0 : NUM / 2, borderTopRightRadius: joinR ? 0 : NUM / 2, borderBottomRightRadius: joinR ? 0 : NUM / 2 }} /> : null}
-                <View style={{ width: NUM, height: NUM, borderRadius: NUM / 2, alignItems: 'center', justifyContent: 'center', backgroundColor: isToday ? tokens.accent : 'transparent' }}>
-                  <Txt size={16.5} line={20} weight={isToday || c?.hol ? 600 : 400} color={isToday ? '#FFFFFF' : inMonth ? tokens.ink : tokens.circleLine}>{String(dayNum(d))}</Txt>
-                </View>
-                {evs.length ? (
-                  <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 3, height: 7, marginTop: 4 }}>
-                    {evs.slice(0, 3).map((e, i) => <View key={i} style={{ width: 5, height: 5, borderRadius: 3, backgroundColor: evInk(e) }} />)}
-                    {evs.length > 3 ? <Txt size={9} line={9} weight={700} color={tokens.sub}>+</Txt> : null}
+                <Txt size={17} line={22} weight={sel || isToday ? 600 : 500} color={sel ? '#FFFFFF' : !inMonth ? '#C9D2D0' : isToday || c?.hol ? '#E5484D' : tokens.ink} style={{ fontVariant: ['tabular-nums'] }}>{String(dayNum(d))}</Txt>
+                {dots.length ? (
+                  <View style={{ position: 'absolute', bottom: sel ? 6 : -2, flexDirection: 'row', gap: 3 }}>
+                    {dots.map((f, i) => <View key={i} style={{ width: 5, height: 5, borderRadius: 3, backgroundColor: f }} />)}
                   </View>
                 ) : null}
               </PressScale>
@@ -162,37 +165,22 @@ export default function MonthView() {
       </Animated.View>
       </GestureDetector>
       {holidays.length || vacations.length ? (
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', columnGap: 14, rowGap: 4, paddingHorizontal: 2 }}>
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', columnGap: 14, rowGap: 4, paddingHorizontal: 2, paddingTop: 4 }}>
           {holidays.map((e) => (
             <View key={e.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
-              <Txt size={12.5} weight={600} color={tokens.ink}>{String(dayNum(e.date))}</Txt>
+              <Txt size={12.5} weight={600} color="#E5484D">{String(dayNum(e.date))}</Txt>
               <Txt size={12.5} color={tokens.sub}>{e.title}</Txt>
             </View>
           ))}
           {vacations.map((e) => (
             <View key={e.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
-              <View style={{ width: 16, height: 9, borderRadius: 5, backgroundColor: bandOf(e) }} />
+              <View style={{ width: 16, height: 9, borderRadius: 5, backgroundColor: VAC }} />
               <Txt size={12.5} color={tokens.sub}>{e.title}</Txt>
             </View>
           ))}
         </View>
       ) : null}
-      <View>
-        <H2 right={real.length ? `${real.length} ${real.length === 1 ? tx('Termin', 'event') : tx('Termine', 'events')}` : undefined}>{tx(`${WD_LONG[weekday(day)]}, ${dayNum(day)}.`, `${WD_LONG[weekday(day)]} ${dayNum(day)}`)}</H2>
-        {info ? <Txt size={13} line={18} color={tokens.mute} numberOfLines={1} style={{ paddingTop: 6 }}>{info}</Txt> : null}
-        {real.length ? (
-          // The rows of Heute, taller and with fine lines between as in the draft: a tap opens, a swipe to the left deletes (Julian 31.10. 18:21).
-          <View style={{ paddingTop: 2 }}>
-            {real.map((e, i) => (
-              <View key={e.id} style={{ borderBottomWidth: i === real.length - 1 ? 0 : 1, borderBottomColor: tokens.hair }}>
-                <AgendaRow e={e} date={day} over={false} people={people} tall />
-              </View>
-            ))}
-          </View>
-        ) : (
-          <Txt size={14} color={tokens.sub} style={{ paddingTop: 8 }}>{tx('Nichts eingetragen.', 'Nothing planned.')}</Txt>
-        )}
-      </View>
+      <View style={{ paddingTop: 22 }}><DaySection key={day} day={day} /></View>
     </>
   );
 }

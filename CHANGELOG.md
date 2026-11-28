@@ -4,6 +4,90 @@ Alle sichtbaren Änderungen an FamCal. Neueste oben. Agenten und Menschen: Ände
 
 ## Unreleased
 
+- Neuer Tab "Erstes Jahr" statt Chat: wo euer Kind im ersten Jahr steht, ein Satz von Memo, was gerade zählt, die nächsten Fristen mit Countdown und wer sie übernimmt, danach der Rest des Jahres. Vergangene Fristen fragen "Schon erledigt?".
+- Memo schaut im Blatt beim Tippen nach unten auf deinen Text und nickt mit. Das Blatt lässt sich fast bis ganz nach oben ziehen. Die Chat Seite zeigt kein eigenes Eingabefeld mehr über der Leiste, Memo öffnet überall das Blatt.
+- Tippst du im Memo Blatt, fährt es mit der Tastatur auf zwei Drittel hoch, damit mehr vom Chat zu sehen ist.
+- Memo antippen öffnet den Verlauf ohne Tastatur. Sprechen öffnet einen ruhigen weißen Screen mit Memo oben, mitlaufendem Text und Welle statt der dunklen Karte. Die Termin Ansicht hat jetzt das gleiche helle Feld mit Mikro.
+
+### Neues App Icon
+- Memo flach in Tinte auf weißem Grund, passend zur neuen Marke (braucht neue App Version, kein Update über Nacht).
+
+### Julians Rückmeldung 28.11.
+- Die Leiste mit Memo in der Mitte ist fest; die Auswahl im Profil ist weg. Memo antippen öffnet die Texteingabe, das Mikro steht daneben.
+- Woche zeigt wieder die ganze Woche auf einen Blick (sieben Tage als Raster).
+
+### Neue Marke, Schritt 9: Familie, Familiencode, Plus, Ausprobieren
+- Familie: alle auf einer grauen Gruppe; der Familiencode als große Karte zum Vorlesen, Antippen kopiert.
+- Familie beitreten: die Frage als großer Titel, das Codefeld auf grauem Grund. Eingabefelder überall auf grauem Grund.
+- Plus: Vorteile und Preise auf grauen Karten, die Texte bleiben gleich.
+- Ausprobieren im Onboarding zeigt den Tag als neue Liste.
+
+### Neue Marke, Schritt 8: Memo als halbes Blatt
+- Memo öffnet sich auf jeder Seite als halbes Blatt: die Leiste wandert mit Memo nach oben und wird zur Trennlinie. Oben wechseln Kalender, Listen und Profil weiter, die Seite bleibt bedienbar; das Gespräch bleibt unten und sieht aus wie im Chat.
+- Trennlinie hochziehen öffnet den ganzen Chat, runterziehen oder den offenen Tab nochmal tippen schließt.
+
+### Neue Marke, Schritt 7: Bewegung (28.11.)
+- Neue Karten von Memo springen etwas ruhiger heraus (300 ms bis 1,06, dann 100 ms zurück).
+- Im Chat trennt eine feine Linie "Jetzt" das Neue vom Protokoll davor.
+
+### Neue Marke, Schritt 6: Profil (28.11.)
+- Der Tab heißt jetzt auch oben "Profil", mit deinem Namen darüber. Drei ruhige Gruppen: du (Konto, Meine Farbe), Familie, App.
+- Weg sind die Auswahlen, die nur das Aussehen umschalteten: Memo Farbe mit Vorschau, Jahr als Monate oder Kacheln, Listen als Kacheln oder Reiter, 3 Tage zeigen. Die Leiste bleibt wählbar.
+
+### Neue Marke, Schritt 5: Listen (28.11.)
+- Listen hat zwei Reiter: "Alle Listen" und "Aufgaben". Oben steht, wie viel offen ist.
+- Alle Listen zeigt den Einkauf direkt zum Abhaken, darunter "Wer macht was, diese Woche", dann jede andere Liste als ruhige Kachel mit Fortschritt.
+- Aufgaben sind die Liste "Zu erledigen"; die offenen stehen auch im Kalender unter Heute.
+- Zeilen ohne Symbole, mit Initialen statt Punkten; wer noch fehlt, zeigt ein gestrichelter Kreis. Die farbigen Kacheln und die Listen Chips fallen weg.
+
+### Neue Marke, Schritt 4: Chat (28.11.)
+- Überschrift "Chat" mit "Familie" darüber, die Familienköpfe oben rechts fallen weg.
+- Was auf ein Ja wartet, steht oben als graue Karte mit "Eintragen" und "Nein".
+- Gesagtes steht in breiten, sanft gefärbten Blasen mit Name und Uhrzeit darüber, Memo antwortet in grauen Blasen.
+- Termin Karten im Chat zeigen den Farbbalken der Person und wer dabei ist, statt Symbol, Ort Knopf und Pfeil.
+
+### Neue Marke, Schritt 3: Termin (28.11.)
+- Ein Termin öffnet mit großem Titel, darunter wer dabei ist als Pillen zum Antippen, dann ruhige graue Gruppen: Wann und Wo, Erinnern und Wiederholen, Mitbringen und Notiz. Löschen als ruhige Pille unten.
+- Neuer Termin wie im Entwurf: "Abbrechen" und "Sichern" oben, der Titel auf einer weißen Karte, die Felder in zwei Gruppen, unten ein großer Sichern Knopf.
+- Das große Symbol oben im Termin fällt weg.
+
+### Neue Marke, Schritt 2: Kalender (28.11.)
+- Heute ist eine ruhige Liste statt Stundenraster: Zeit, Farbbalken der Person, Titel, Gesichter. Vorbei wird blass, eine rote Linie zeigt Jetzt. Darunter die Aufgaben von heute zum Abhaken.
+- Woche: oben die sieben Tage mit Punkten in den Farben der Personen, darunter jeder Tag als Gruppe. Tippen auf einen Tag gleitet dorthin, Wischen auf der Leiste blättert die Woche.
+- Monat mit runden Tagen und Punkten, darunter der gewählte Tag. Jahr als zwölf ruhige Kacheln mit Balken für wie viel los ist, Urlaub grün, darunter was das Jahr noch bringt.
+- Überschrift mit grauer Zeile darüber, Personenfilter als "Alle" und farbige Punkte, auch in der einfachen Version.
+- Oben rechts nur noch das Plus, die Suche oben fällt weg. Das Briefing über Heute fällt weg, Fragen stehen im Chat.
+
+### Neue Marke, Schritt 1: neuer Look (27.11.)
+- Weißer Grund, Memo Tinte, ruhige Grautöne; Karten weiß mit feiner Linie statt Schatten.
+- Neue Schrift DM Sans, Überschriften kräftig.
+- Neues Farbthema "Familie" mit den Markenfarben ist Standard, Bunt bleibt wählbar, Erde fällt weg.
+- Die Leiste hat fünf gleich breite Spalten; der Einstellungen Tab heißt dort kurz "Profil".
+- Farbkreise in den Einstellungen zeigen die Farbe so, wie sie in der App erscheint.
+
+### Farbthema Bunt (27.11.)
+- Neues zweites Farbthema "Bunt" mit zehn kräftigen Farben neben Erde. Alle anderen Themen sind weg; alte Farben bleiben lesbar.
+- Die weißen Tags in den Chat Blasen haben keinen dunklen Rand mehr.
+
+### Bewegung in der ganzen App (25.11.)
+- Ein neuer Termin landet mit einem kurzen Stoß, genau wenn Memo nach seinem Sprung aufkommt, mit leichtem Tick am Handy.
+- Abhaken: der Haken zeichnet sich von links nach rechts.
+- Löschen: die Karte sinkt Richtung Rückgängig, die anderen rücken nach.
+- Verschiebt sich ein Termin, blinkt nur seine Zeit einmal.
+- Beim Öffnen kommen die Termine des Tages einzeln herein.
+- Chat: Memos Antwort kommt Wort für Wort, die neue Karte schlüpft neben Memo heraus.
+
+### Memo zeigt, was er verstanden hat: Tags im Satz (24.11.)
+- Namen der Familie, Zeiten, das Termin Wort und Orte erscheinen im Satz als farbige Tags: im Chat, in Nachrichten vom Partner, im Memo Verlauf und live beim Sprechen.
+- Ein neuer Tag wächst aus einem Punkt unter dem Wort (280 ms, kein Überschwingen); ältere Nachrichten zeigen ihn ruhig. Die Eingabezeile bleibt wie sie ist.
+
+### Startklar fürs MVP: Grenzen, Bezahlseite, Testzugang (22.11.)
+- Neuer Satz zum Start: „Damit nicht einer alles im Kopf hat.“ statt „Der klügste Familienkalender“.
+- Bezahlseite: Jahresabo vorausgewählt, Preis pro Tag, der Gründerpreis wird nur durchgestrichen gezeigt, wenn der Store wirklich ein günstigeres erstes Jahr verkauft. Kurze Liste, was Plus macht, und Antworten zum Kündigen. Die Probetage kommen aus dem Store, nicht aus dem Text.
+- Gratis Familien hören mit der Spracherkennung des Handys, die genaue Cloud Spracherkennung gehört zu Plus und den Probetagen. Die App fragt den Plan beim Start und nach jeder Rückkehr.
+- Server: KI Grenzen pro Familie (30 Sätze am Tag, 600 im Monat, mehr bei größeren Familien), Aufnahmen 40 pro Person am Tag und 1200 pro Familie im Monat, dazu eine Notbremse für alle zusammen. Wenn sie greift, sagt Memo das einmal und nimmt einfache Regeln.
+- Der Testzugang kann nicht mehr in einen Store Build gelangen: der Build bricht ab, und selbst dann bliebe der Knopf versteckt.
+
 ### Gelöschte Termine aus dem Handykalender bleiben weg (16.11.)
 - Ein Termin aus Google, den der Assistent gelöscht hat (gesprochen oder getippt), kam beim nächsten Abgleich zurück. Jetzt merkt sich die App jedes Löschen an einer Stelle, egal auf welchem Weg, auch wenn gerade ein Abgleich läuft. Rückgängig holt ihn wieder.
 - Server: Termine sind jetzt je Familie eindeutig (Migration events_key_per_family). Vorher stießen Termine aus dem Handykalender mit gleichen Nummern einer anderen Familie zusammen und das Speichern wurde abgelehnt.
@@ -96,6 +180,40 @@ Alle sichtbaren Änderungen an FamCal. Neueste oben. Agenten und Menschen: Ände
 - Chat: der schwarze Ändern Knopf auf den Karten ist weg, ein Tipp auf die Karte öffnet den Termin. Ein Wisch nach links löscht den Termin auch im Chat (danach Rückgängig), wie im Kalender. Zwischen Blasen, Antwort und Karte ist mehr Luft.
 - Eingabe (16.11.): Das Feld bleibt immer schwarz. Wer von der Sprechkarte auf Tippen wechselt („Aa“), bleibt in derselben schwarzen Karte, Memo bleibt an seinem Platz, Senden steht an derselben Stelle. Auf „Termin ändern“ und „Neue Liste“ ersetzt eine schmale schwarze Zeile das alte weiße Feld, und Einsprechen öffnet dort dieselbe schwarze Sprechkarte wie im Kalender.
 - Start (16.11.): Die App öffnet im Kalender mit „Heute“. In der Leiste steht der Kalender vorn, dann die Listen, der Chat rückt nach hinten und bleibt der Verlauf. Zurück führt jetzt immer in den Kalender. Nach der Einführung, nach Anmelden, Familie anlegen und Abo landet man ebenfalls im Kalender.
+- Start (16.11.): Der Start ist eine einzige Bewegung. Nach dem Blinzeln zieht sich das Schwarz um die Augen zu Memo zusammen, Memo gleitet in seinen Platz in der Leiste und kommt dort genau so groß an, wie er in der Leiste ist. Kein Sprung mehr, etwa 1,4 statt 2,3 Sekunden. Antippen überspringt den Start.
+- Heute: seitlich wischen blättert zum nächsten und zum vorigen Tag. Auf einem Termin löscht Wischen nach links wie bisher.
+- Heute: vergangene Termine sind nicht mehr blass. Das Ausblenden über der Leiste erscheint nur noch, wenn der Tag darunter weiterläuft.
+- Ein Tipp auf einen Termin öffnet ihn gleich zum Ändern, das Blatt dazwischen ist weg. Löschen steht am Ende der Seite, bei Serien für diesen einen Termin oder die ganze Serie.
+- Einstellungen sind ein eigener Tab in der Leiste (Julian 16.11.): Kalender, Listen, Chat, Einstellungen. Das Zahnrad oben im Chat entfällt. Nach einem neuen Farbthema oder einer anderen Navigation bleibt man in den Einstellungen statt im Kalender zu landen.
+- Jede Person hat eine Farbe, überall dieselbe (Julian 16.11.): Termine und Arbeit im Kalender, der Kreis und die eigene Blase im Chat. Wählbar in den Einstellungen unter „Deine Farbe“ und für jede Person unter Familie mit einem Tipp auf den Farbpunkt. Die eigene Blasenfarbe als getrennte Wahl entfällt.
+- Das Chat Fenster außerhalb des Chats liegt jetzt immer über der Seite, auf der du gerade bist: mit deinem Satz, Memos Antwort und der Karte mit Rückgängig. Es zeigt sich auch im Kalender und in den Listen, und ein Satz für eine Liste wirft dich nicht mehr vom Kalender zu den Listen. Das Fenster sitzt direkt über der Leiste und geht nach ein paar Sekunden von selbst, antippen hält es fest. Im Chat bleibt alles im Verlauf.
+- Die Farben der Eltern gehören jetzt der Familie: wer auf einem Handy eine Farbe wählt, sieht sie auch auf dem anderen, beim nächsten Öffnen oder Zurückkommen. Eine Wahl ohne Netz geht hoch, sobald das Handy wieder verbunden ist.
+- Ton & Papier, Etappe 1: Papier Grund, Petrol Tinte, warme Grautöne und Schatten, Überschriften in Bricolage Grotesque, Farbthema Erde als Standard. Aufbau und Verhalten unverändert.
+- Monat im Ton & Papier Stil: hohe Felder, heute als Tinte Feld, Urlaub als Band am Fuß der Tage.
+- Neue Leiste unten wie in anderen Apps: Kalender, Listen, Memo groß in der Mitte, Neu (Eingang mit Glocke), Einstellungen. Memo antippen öffnet den Chat mit offener Eingabe. Die bisherige Leiste bleibt in den Einstellungen wählbar.
+- Einstellungen: Jahr als Monate oder farbige Kacheln, 3 Tage Ansicht zeigen oder ausblenden.
+- Listen öffnen mit einer Übersicht aus farbigen Kacheln. Eine Kachel öffnet die Liste wie bisher, der Pfeil führt zurück. Die Reiter bleiben in den Einstellungen wählbar.
+- - Memo öffnen springt nicht mehr: die helle Eingabe blitzt nicht mehr kurz auf, und die Sprechkarte wächst aus Memo in der Mitte der Leiste statt von einer Stelle rechts daneben. Der Chat ist beim Start schon aufgebaut.
+- - App Start: Memo fällt jetzt mit Schwung in die Mitte der Leiste, prallt auf und schiebt die Tabs kurz zur Seite. Er kommt in seiner richtigen Größe an und springt nicht mehr vor der Landung.
+- App Start: Memo landet auf Android ganz unten in seinem Platz in der Leiste (Statusleiste wird nicht mehr vergessen)
+- Memo in der Mitte öffnet die Eingabe dort, wo man gerade ist, kein Wechsel in den Chat mehr; Zurück schließt sie
+- Der dritte Tab ist wieder der Chat: Verlauf und darunter, was noch auf ein Ja wartet
+- Memo kann die Standarddauer neuer Termine setzen, auch in den Einstellungen wählbar
+- Memo antippen öffnet das Textfeld, Sprechen startet erst über das Mikro
+- Kalender Startansicht wählbar, auch per Memo (z.B. Woche)
+- Standarddauer neuer Termine gilt für die ganze Familie; Memo merkt sich Regeln wie Arzt 1 Stunde und hält sich daran
+- Memo Feld bleibt offen, bis man daneben tippt; eigener Mikro Knopf im Feld
+- Memo geht als Verlauf über der Seite auf: Gespräch und Ergebnisse oben, helle Eingabe unten, Sprechen nur übers Mikro, schließen mit X, Zurück oder Wischen
+- Neuer Name ParentButler in den Texten der App (Plus, Familie beitreten, Widget)
+- Chat Seite hat wieder immer ein Eingabefeld, überall dieselbe helle Eingabe, Bild aus Plus öffnet das Feld, Memo korrigiert Spielrunden statt Minusrunden anzuhängen
+- Nach dem Tippen im Chat springt beim Wechsel zum Kalender kein Memo Blatt mehr auf
+- Chat: Memo legt sich beim Nachdenken nicht mehr über das Eingabefeld
+- Spracheingabe im Memo Blatt: Stopp beendet nur die Aufnahme, Senden erst danach mit dem Pfeil
+- Eingabefeld fährt mit der Tastatur mit, statt danach zu springen (Android)
+- Sprechkarte: der Pfeil beendet beim Zuhören erst die Aufnahme, gesendet wird mit dem zweiten Tipp
+- Memo versteht kurze Antworten im Gespräch ("Donnerstag", "Arbeit") und trägt fehlende Arbeit nach dem Muster der anderen Tage ein, statt endlos nachzufragen.
+- Memo erinnert sich an das, was im Memo Blatt steht (bis 12 Stunden statt 30 Minuten), und das Blatt ist deckend.
+- Memo hüpft einmal, wenn ein Termin fertig ist, und springt beim Mikro in die Sprechkarte (wie im Allo Film)
 
 ### App funktioniert zuverlässig (09.11. Audit)
 - Nach längerer Pause im Hintergrund klappen Assistent und Spracheingabe gleich beim ersten Satz, statt "Ich komme gerade nicht an den Assistenten".

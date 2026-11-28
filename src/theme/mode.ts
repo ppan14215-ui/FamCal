@@ -22,7 +22,7 @@ const LIGHT_ONLY = true;
 const wantDark = () => (LIGHT_ONLY ? false : choice === 'system' ? Appearance.getColorScheme() === 'dark' : choice === 'dunkel');
 
 // The family's colour theme for person colours (Julian 04.11.); the app's own colours never change.
-const readPal = (): ThemeId => { const v = getPref('palette') as ThemeId | undefined; return THEMES.some((t) => t.id === v) ? v! : 'klassisch'; };
+const readPal = (): ThemeId => { const v = getPref('palette') as ThemeId | undefined; return THEMES.some((t) => t.id === v) ? v! : 'marke'; };
 let palette: ThemeId = readPal();
 function apply(force = false) {
   const d = wantDark();
@@ -66,6 +66,15 @@ export function setColorBy(v: ColorBy) {
 export const useColorBy = () => useSyncExternalStore(sub, colorBy, colorBy);
 /** Remount the tree once, e.g. after the navigation style changed. */
 export function bumpGen() { gen++; subs.forEach((l) => l()); }
+/**
+ * A person's colour changed (Julian 16.11.: one colour per person, the same everywhere). The tabs draw once more,
+ * but only when the page that changed it is left, so nothing jumps under the finger while choosing. Only what a tab
+ * shows is drawn again (see the tabs' layout); the navigation itself stays, so nobody lands on another tab.
+ */
+let touched = false;
+let colorGen = 0;
+export function colorsTouched() { touched = true; }
+export function redrawIfTouched() { if (!touched) return; touched = false; colorGen++; subs.forEach((l) => l()); }
 // On the phone the saved choices arrive a moment after start: take them and redraw once.
 onPrefsReady(() => {
   const c = readChoice(), p = readPal(), b: ColorBy = getPref('colorBy') === 'kategorie' ? 'kategorie' : 'person';
@@ -94,3 +103,5 @@ export function Keyed({ children }: { children: React.ReactNode }) {
   const g = usePaletteGen();
   return React.createElement(React.Fragment, { key: g }, children);
 }
+/** Counts up each time a person's colour changed and the page that changed it was left. */
+export const useColorGen = () => useSyncExternalStore(sub, () => colorGen, () => colorGen);

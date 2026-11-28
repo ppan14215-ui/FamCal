@@ -83,10 +83,10 @@ Deno.serve(async (req) => {
   if (error) { console.warn('[kalender] feed failed'); return new Response('Error', { status: 500 }); }
   const rows = (data ?? []) as Row[];
   // A wrong or renewed token looks the same as a family without Termine, so nobody can probe for tokens.
-  const name = rows[0]?.family_name ?? 'FamCal';
-  const body = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//FamCal//Familienkalender//DE', 'CALSCALE:GREGORIAN', 'METHOD:PUBLISH', `X-WR-CALNAME:${esc(`FamCal ${name}`)}`, 'X-WR-TIMEZONE:Europe/Berlin', 'REFRESH-INTERVAL;VALUE=DURATION:PT1H', 'X-PUBLISHED-TTL:PT1H', ...TZ, ...rows.flatMap(vevent), 'END:VCALENDAR']
+  const name = rows[0]?.family_name ?? 'ParentButler';
+  const body = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//FamCal//Familienkalender//DE', 'CALSCALE:GREGORIAN', 'METHOD:PUBLISH', `X-WR-CALNAME:${esc(`ParentButler ${name}`)}`, 'X-WR-TIMEZONE:Europe/Berlin', 'REFRESH-INTERVAL;VALUE=DURATION:PT1H', 'X-PUBLISHED-TTL:PT1H', ...TZ, ...rows.flatMap(vevent), 'END:VCALENDAR']
     .map(fold).join('\r\n') + '\r\n';
   return new Response(req.method === 'HEAD' ? null : body, {
-    headers: { 'Content-Type': 'text/calendar; charset=utf-8', 'Content-Disposition': 'inline; filename="famcal.ics"', 'Cache-Control': 'private, max-age=900' },
+    headers: { 'Content-Type': 'text/calendar; charset=utf-8', 'Content-Disposition': 'inline; filename="parentbutler.ics"', 'Cache-Control': 'private, max-age=900' },
   });
 });

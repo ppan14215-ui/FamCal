@@ -6,7 +6,8 @@
 import React, { useState } from 'react';
 import { View } from 'react-native';
 import { router } from 'expo-router';
-import { Screen, H1, Lead, Btn, TextLink, Meta, Hint } from '../src/components/ui/kit';
+import { Screen, Lead, Btn, TextLink, Meta, Hint } from '../src/components/ui/kit';
+import Txt from '../src/components/ui/Txt';
 import { Field } from '../src/components/Field';
 import { joinFamily } from '../src/lib/sync';
 import { get } from '../src/state/store';
@@ -47,8 +48,12 @@ export default function Familie() {
         </View>
       }
     >
-      <H1>{tx('Habt ihr schon einen Kalender?', 'Already have a shared calendar?')}</H1>
-      <Lead>{tx('Wenn dein Partner FamCal schon nutzt, gib den Code aus der Einladung ein. Dann seht ihr beide denselben Kalender.', 'If your partner already uses FamCal, enter the code from the invite. Then you both see the same calendar.')}</Lead>
+      {/* Brand (28.11.): the question as the big title, in full; the small grey line above says where you are. */}
+      <View>
+        <Txt size={15} line={20} weight={500} color={tokens.sub}>{tx('Familie', 'Family')}</Txt>
+        <Txt size={34} line={38} weight={700} tracking={-0.6}>{tx('Habt ihr schon einen Kalender?', 'Already have a shared calendar?')}</Txt>
+      </View>
+      <Lead>{tx('Wenn dein Partner ParentButler schon nutzt, gib den Code aus der Einladung ein. Dann seht ihr beide denselben Kalender.', 'If your partner already uses ParentButler, enter the code from the invite. Then you both see the same calendar.')}</Lead>
       <Field label={tx('Code', 'Code')} value={code} onChangeText={setCode} placeholder={tx('Sechs Zeichen', 'Six characters')} />
       {error ? <Meta color={tokens.danger}>{error}</Meta> : <Hint>{tx('Den Code findet dein Partner unter Einstellungen bei „Partner einladen“.', 'Your partner finds the code in Settings under “Invite partner”.')}</Hint>}
     </Screen>

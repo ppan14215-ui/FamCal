@@ -32,11 +32,11 @@ export default function PlusPreview() {
       <BackBar />
       <H1>Plus</H1>
       <Lead>{tx('Organisieren bleibt gratis, für immer. Plus nimmt euch Arbeit ab.', 'Organising stays free, forever. Plus takes work off your hands.')}</Lead>
-      <View style={{ gap: 8 }}>
-        {[tx('Unbegrenzt sprechen statt 30 Sätze im Monat, Claude versteht auch lange Sätze', 'Talk without limits instead of 30 sentences a month, Claude understands long sentences too'), tx('Unbegrenzt erfassen: Mails, Fotos, Geteiltes', 'Capture without limits: mails, photos, shared links'), tx('Entwürfe für Absagen, Anträge, Antworten', 'Drafts for cancellations, forms and replies')].map((t) => (
+      <View style={{ backgroundColor: tokens.group, borderRadius: 16, paddingHorizontal: 14, paddingVertical: 12, gap: 10 }}>
+        {[tx('Bis zu 30 Sätze am Tag statt 30 im Monat, Claude versteht auch lange Sätze', 'Up to 30 sentences a day instead of 30 a month, Claude understands long sentences too'), tx('Erfassen aus Mails, Fotos und Geteiltem', 'Capture from mails, photos and shared links'), tx('Entwürfe für Absagen, Anträge, Antworten', 'Drafts for cancellations, forms and replies')].map((t) => (
           <View key={t} style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
             <LineIcon name="check" size={18} color={tokens.done} stroke={2.2} />
-            <Txt size={15}>{t}</Txt>
+            <Txt size={15} line={21} style={{ flex: 1 }}>{t}</Txt>
           </View>
         ))}
       </View>
@@ -44,7 +44,7 @@ export default function PlusPreview() {
         {PLANS.map((p) => {
           const on = plan === p.key;
           return (
-            <PressScale key={p.key} onPress={() => actions.setPlan(p.key)} style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 14, paddingHorizontal: 16, borderRadius: 20, backgroundColor: tokens.row, borderWidth: 2, borderColor: on ? tokens.ink : 'transparent', marginTop: 'badge' in p ? 8 : 0 }}>
+            <PressScale key={p.key} onPress={() => actions.setPlan(p.key)} style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 14, paddingHorizontal: 16, borderRadius: 16, backgroundColor: tokens.group, borderWidth: 2, borderColor: on ? tokens.ink : 'transparent', marginTop: 'badge' in p ? 8 : 0 }}>
               {'badge' in p ? (
                 <View style={{ position: 'absolute', top: -11, left: 14, height: 22, paddingHorizontal: 10, borderRadius: 999, backgroundColor: tokens.done, justifyContent: 'center' }}>
                   <Txt size={11.5} weight={700} color={tokens.onInk}>{p.badge}</Txt>

@@ -4,16 +4,17 @@
  * to bring, repeating and a note. A tap on the symbol opens every clay icon. Below it the reminder that saying it to
  * Memo does the same.
  */
+import { endAfter } from '../src/lib/dauer';
 import React, { useEffect, useRef, useState } from 'react';
-import { View, type ScrollView } from 'react-native';
+import { View, TextInput, Platform, type ScrollView } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { goBack } from '../src/lib/nav';
 import { Screen } from '../src/components/ui/kit';
 import Txt from '../src/components/ui/Txt';
-import Pin from '../src/components/buddy/Pin';
-import { FormBar, FormTitle, FormRow, FormValue, FormChip, FormPicks, FormInput, FormWho, whenChips, useWhenInView } from '../src/components/TerminForm';
+import { FormBar, FormRow, FormValue, FormPicks, FormInput, FormWho, FormGroup, whenText, useWhenInView } from '../src/components/TerminForm';
+import PressScale from '../src/components/ui/PressScale';
 import { REMINDERS, reminderLabel, repeatOptions } from '../src/components/TerminDetails';
-import { tokens } from '../src/theme';
+import { tokens, fonts, glass } from '../src/theme';
 import { useStore, actions, toast, get } from '../src/state/store';
 import WhenField from '../src/components/WhenField';
 import type { When } from '../src/lib/when';
@@ -40,7 +41,8 @@ export default function TerminNeu() {
   const [touched, setTouched] = useState(false);
   // Tapping an empty slot in the calendar hands over its day and hour (Julian 05.11.).
   const slot = useLocalSearchParams<{ date?: string; start?: string }>();
-  const plusHour = (t: string) => { const [h, m] = t.split(':').map(Number); return `${String(Math.min(23, h + 1)).padStart(2, '0')}:${String(m).padStart(2, '0')}`; };
+  // Julian 19.11.: the set length for new Termine (Einstellungen or told to Memo), else one hour.
+  const plusHour = (t: string) => endAfter(t);
   const [when, setWhen] = useState<When>(slot.date ? { date: slot.date, ...(slot.start ? { start: slot.start, end: plusHour(slot.start) } : {}) } : LIVE ? { date: TODAY } : { date: '2026-11-12', start: '09:30', end: '10:15' });
   const [place, setPlace] = useState(LIVE ? '' : 'Kinderarztpraxis Weber');
   const [who, setWho] = useState<Who>(LIVE ? 'both' : 'T');
@@ -96,39 +98,49 @@ export default function TerminNeu() {
 
   const rep = repeatOptions(when.date);
   return (
-    <Screen gap={18} scrollRef={scroll}
-      head={<FormBar title={tx('Neuer Termin', 'New event')} icon="x" leftLabel={tx('Abbrechen', 'Cancel')} onLeft={goBack} action={tx('Sichern', 'Save')} onAction={save} />}>
-      <FormTitle hero icon={icon} value={title} onIcon={() => { haptics.select(); actions.pickSymbol(icon); router.push('/symbol'); }} onChange={(t) => { setTouched(true); setTitle(t); }} autoFocus={LIVE} />
-      <View onLayout={linesAt}>
-        <FormRow label={tx('Wann', 'When')} below={open === 'wann' ? <WhenField card fold startOpen value={when} onChange={setWhen} onDone={() => setOpen(null)} /> : undefined}>
-          {open === 'wann' ? null : whenChips(when).map((c) => <FormChip key={c} label={c} onPress={() => toggle('wann')} />)}
-        </FormRow>
-        <FormRow label={tx('Wer', 'Who')}>
-          <FormWho who={who} people={people} onWho={setWho} onPerson={(id) => setPeople((p) => (p.includes(id) ? p.filter((x) => x !== id) : [...p, id]))} />
-        </FormRow>
-        <FormRow label={tx('Wo', 'Where')}>
-          <FormInput live label={tx('Wo', 'Where')} value={place} placeholder={tx('Hinzufügen', 'Add')} onCommit={setPlace} />
-        </FormRow>
-        <FormRow label={tx('Erinnern', 'Reminder')} onPress={() => toggle('erinnern')}
-          below={open === 'erinnern' ? <FormPicks items={REMINDERS.filter((r) => !!when.start || !/m$|h$/.test(r.key) || r.key === '')} value={reminder} onPick={(k) => { setReminder(k); setOpen(null); }} /> : undefined}>
-          <FormValue dim={!reminder}>{reminderLabel(reminder) || tx('Keine', 'None')}</FormValue>
-        </FormRow>
-        <FormRow label={tx('Mitbringen', 'Bring')}>
-          <FormInput live label={tx('Mitbringen', 'Bring')} value={bring} placeholder={tx('Hinzufügen', 'Add')} onCommit={setBring} />
-        </FormRow>
-        <FormRow label={tx('Wiederholen', 'Repeat')} onPress={() => toggle('wiederholen')}
-          below={open === 'wiederholen' ? <FormPicks items={rep} value={when.repeat ?? ''} onPick={(k) => { setWhen({ ...when, repeat: k || undefined }); setOpen(null); }} /> : undefined}>
-          <FormValue dim={!when.repeat}>{when.repeat || tx('Nie', 'Never')}</FormValue>
-        </FormRow>
-        <FormRow last label={tx('Notiz', 'Note')}>
-          <FormInput live label={tx('Notiz', 'Note')} value={note} placeholder={tx('Hinzufügen', 'Add')} onCommit={setNote} />
-        </FormRow>
+    <Screen gap={14} scrollRef={scroll}
+      head={<FormBar leftLabel={tx('Abbrechen', 'Cancel')} onLeft={goBack} action={tx('Sichern', 'Save')} onAction={save} />}>
+      <Txt size={34} line={38} weight={700}>{tx('Neuer Termin', 'New event')}</Txt>
+      {/* The title on a white card with its small label, as in the draft: the one thing to type. */}
+      <View style={[{ borderRadius: 16, paddingHorizontal: 18, paddingTop: 12, paddingBottom: 14, backgroundColor: '#FFFFFF' }, glass.lift]}>
+        <Txt size={11.5} line={14} weight={600} tracking={0.9} color={tokens.mute}>{tx('TERMIN', 'EVENT')}</Txt>
+        <TextInput value={title} onChangeText={(t) => { setTouched(true); setTitle(t); }} autoFocus={LIVE} placeholder={tx('Was steht an?', 'What is it?')} placeholderTextColor={tokens.mute}
+          accessibilityLabel={tx('Titel', 'Title')} selectionColor={tokens.select} cursorColor={tokens.ink} returnKeyType="done"
+          style={[{ marginTop: 4, fontFamily: fonts[700], fontSize: 20, lineHeight: 26, letterSpacing: -0.3, color: tokens.ink, padding: 0 }, Platform.OS === 'web' ? ({ outlineStyle: 'none' } as any) : null]} />
       </View>
-      <View style={{ flex: 1 }} />
-      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingBottom: 6 }}>
-        {minimal ? null : <Pin mood="idle" size={22} shadow={false} still />}
-        <Txt size={15.5} color={tokens.sub}>{minimal ? tx('Oder einfach sagen', 'Or just say it') : tx('Oder einfach Memo sagen', 'Or just tell Memo')}</Txt>
+      <View onLayout={linesAt} style={{ gap: 12 }}>
+        <FormGroup>
+          <FormRow label={tx('Wann', 'When')} onPress={open === 'wann' ? undefined : () => toggle('wann')} below={open === 'wann' ? <WhenField card fold startOpen value={when} onChange={setWhen} onDone={() => setOpen(null)} /> : undefined}>
+            {open === 'wann' ? null : <FormValue>{whenText(when)}</FormValue>}
+          </FormRow>
+          <FormRow label={tx('Wer', 'Who')}>
+            <FormWho who={who} people={people} onWho={setWho} onPerson={(id) => setPeople((p) => (p.includes(id) ? p.filter((x) => x !== id) : [...p, id]))} />
+          </FormRow>
+          <FormRow last label={tx('Wo', 'Where')}>
+            <FormInput live label={tx('Wo', 'Where')} value={place} placeholder={tx('Hinzufügen', 'Add')} onCommit={setPlace} />
+          </FormRow>
+        </FormGroup>
+        <FormGroup>
+          <FormRow label={tx('Erinnern', 'Reminder')} onPress={() => toggle('erinnern')}
+            below={open === 'erinnern' ? <FormPicks items={REMINDERS.filter((r) => !!when.start || !/m$|h$/.test(r.key) || r.key === '')} value={reminder} onPick={(k) => { setReminder(k); setOpen(null); }} /> : undefined}>
+            <FormValue dim={!reminder}>{reminderLabel(reminder) || tx('Keine', 'None')}</FormValue>
+          </FormRow>
+          <FormRow label={tx('Mitbringen', 'Bring')}>
+            <FormInput live label={tx('Mitbringen', 'Bring')} value={bring} placeholder={tx('Hinzufügen', 'Add')} onCommit={setBring} />
+          </FormRow>
+          <FormRow label={tx('Wiederholen', 'Repeat')} onPress={() => toggle('wiederholen')}
+            below={open === 'wiederholen' ? <FormPicks items={rep} value={when.repeat ?? ''} onPick={(k) => { setWhen({ ...when, repeat: k || undefined }); setOpen(null); }} /> : undefined}>
+            <FormValue dim={!when.repeat}>{when.repeat || tx('Nie', 'Never')}</FormValue>
+          </FormRow>
+          <FormRow last label={tx('Notiz', 'Note')}>
+            <FormInput live label={tx('Notiz', 'Note')} value={note} placeholder={tx('Hinzufügen', 'Add')} onCommit={setNote} />
+          </FormRow>
+        </FormGroup>
       </View>
+      <Txt size={15} line={20} color={tokens.sub} style={{ textAlign: 'center', paddingTop: 6 }}>{minimal ? tx('Oder einfach sagen', 'Or just say it') : tx('Oder einfach Memo sagen', 'Or just tell Memo')}</Txt>
+      <PressScale accessibilityRole="button" scale={0.98} onPress={save} style={{ height: 54, borderRadius: 14, backgroundColor: tokens.ink, alignItems: 'center', justifyContent: 'center' }}>
+        <Txt size={16} line={20} weight={600} color="#FFFFFF">{tx('Sichern', 'Save')}</Txt>
+      </PressScale>
     </Screen>
   );
 }

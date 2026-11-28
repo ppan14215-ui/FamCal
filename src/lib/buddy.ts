@@ -23,6 +23,8 @@ type State = {
   listening: boolean;
   /** Bumps each time something lands (an entry, an answer): ^^ and the smallest squash. */
   joy: number;
+  /** Bumps for a hop: a Termin is done (Julian 24.11.). */
+  hop: number;
   /** What landed, when it is a real result: Memo melts into that thing once (see buddy/morphs.ts). null = just glad. */
   joyKind: MorphKind | null;
   /** Bumps when something did not work: he looks down for a moment. */
@@ -59,10 +61,12 @@ type State = {
   dockHidden: boolean;
   /** Something works outside the Veil (the onboarding's offline answers): the bar's Memo thinks as with the assistant. */
   thinking: boolean;
+  /** Bumps when the start's Memo hits his seat in the bar: the tabs beside him get pushed aside and spring back. */
+  thud: number;
 };
 
 // intro starts true: BuddyIntro says when the screen is free (it always mounts with the root).
-let state: State = { listening: false, joy: 0, joyKind: null, sad: 0, wink: 0, poke: 0, from: null, intro: true, talk: 0, keys: 0, touch: null, waiting: false, covered: false, docked: 0, dockAt: null, typed: 0, landed: false, dockHidden: false, thinking: false };
+let state: State = { listening: false, joy: 0, hop: 0, joyKind: null, sad: 0, wink: 0, poke: 0, from: null, intro: true, talk: 0, keys: 0, touch: null, waiting: false, covered: false, docked: 0, dockAt: null, typed: 0, landed: false, dockHidden: false, thinking: false, thud: 0 };
 const subs = new Set<() => void>();
 const emit = () => subs.forEach((l) => l());
 
@@ -77,6 +81,7 @@ export function setBuddy(patch: Partial<State>) {
 export const buddyJoy = (kind: MorphKind | null = null) => setBuddy({ joy: state.joy + 1, joyKind: kind });
 export const buddySad = () => setBuddy({ sad: state.sad + 1 });
 export const buddyWink = () => setBuddy({ wink: state.wink + 1 });
+export const buddyHop = () => setBuddy({ hop: state.hop + 1 });
 export const buddyPoke = () => setBuddy({ poke: state.poke + 1 });
 export const buddyTalk = () => setBuddy({ talk: state.talk + 1 });
 export const buddyKeys = () => setBuddy({ keys: state.keys + 1 });

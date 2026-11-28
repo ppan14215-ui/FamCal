@@ -81,13 +81,16 @@ export default function LiveMemo({ place, hero, mid, midScale, look, gaze, entra
     sx.value = withSequence(withTiming(1 + 0.16 * big, { duration: 110, easing: out }), withTiming(1 - 0.06 * big, { duration: 170, easing: inOut }), withTiming(1 + 0.025 * big, { duration: 170, easing: inOut }), withTiming(1, { duration: 200, easing: inOut }));
     sy.value = withSequence(withTiming(1 - 0.16 * big, { duration: 110, easing: out }), withTiming(1 + 0.07 * big, { duration: 170, easing: inOut }), withTiming(1 - 0.025 * big, { duration: 170, easing: inOut }), withTiming(1, { duration: 200, easing: inOut }));
   };
+  /** Until when a flight is under way, so a late layout change (insets, window height on Android) bends it instead of cutting it. */
+  const flying = useRef(0);
   /** An arc: x eases evenly, y starts slow (or fast) so the path curves; the body leans into the move. */
   const fly = (x: number, y: number, s: number, ms: number, done?: () => void) => {
     const up = y < cy.value;
     cancelAnimation(cx); cancelAnimation(cy); cancelAnimation(k);
     cx.value = withTiming(x, { duration: ms, easing: inOut });
     // Calm: he also slows into his seat on the way down (a glide that arrives, not a drop that lands).
-    cy.value = withTiming(y, { duration: ms, easing: up ? Easing.bezier(0.2, 0.6, 0.35, 1) : calm ? Easing.bezier(0.5, 0, 0.2, 1) : Easing.bezier(0.55, 0, 0.75, 0.4) });
+    // Calm upwards too: he pushes off gently instead of leaving at full speed (Julian 17.11.: he jumps on the first screen).
+    cy.value = withTiming(y, { duration: ms, easing: calm ? Easing.bezier(0.5, 0, 0.2, 1) : up ? Easing.bezier(0.2, 0.6, 0.35, 1) : Easing.bezier(0.55, 0, 0.75, 0.4) });
     k.value = withTiming(s, { duration: ms, easing: inOut });
     // Stretch along the way, round again just before contact.
     if (!calm) {
@@ -95,6 +98,7 @@ export default function LiveMemo({ place, hero, mid, midScale, look, gaze, entra
       sy.value = withSequence(withTiming(1.12, { duration: ms * 0.4, easing: out }), withTiming(1, { duration: ms * 0.6, easing: inOut }));
     }
     at.current = { x, y, k: s };
+    flying.current = Date.now() + ms;
     if (done) setTimeout(done, ms);
   };
 
@@ -153,6 +157,9 @@ export default function LiveMemo({ place, hero, mid, midScale, look, gaze, entra
     const t = place === 'hero' ? { ...hero, k: 1 } : { ...mid, k: midScale };
     if (reduced) { cx.value = t.x; cy.value = t.y; k.value = t.k; at.current = t; return; }
     if (was.moveKey !== moveKey) { fly(t.x, t.y, t.k, moveMs ?? 560, () => settle(0.5)); return; }
+    // The seat moved under him while he is still on his way: he keeps flying, now to the new spot.
+    const left = flying.current - Date.now();
+    if (left > 120) { fly(t.x, t.y, t.k, left); return; }
     cx.value = withTiming(t.x, { duration: 240, easing: out });
     cy.value = withTiming(t.y, { duration: 240, easing: out });
     k.value = withTiming(t.k, { duration: 240, easing: out });

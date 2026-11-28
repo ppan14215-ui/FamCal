@@ -2,7 +2,7 @@
  * Memo, flat (Julian 13.11.2026: direction "Punkt": one solid round shape in one colour, two eyes, no shading).
  * He is the period after every headline, come alive. Pure vector, sharp at every size, no rendered assets.
  *
- * Klar look (Julian 13.11. to 14.11.): no hops, no salto. The body is exactly round at rest and almost still;
+ * Klar look (Julian 13.11. to 14.11.): no salto; a hop only at two moments (Julian 24.11.). The body is exactly round at rest and almost still;
  * the eyes carry the feeling. Every state flows into the next, looking aside slides the eyes over ("3D", but
  * strictly flat), thinking and night are slow, and on a real result he melts into a small object and back.
  * The motion itself lives in rig.ts (states, events) and morphs.ts (objects); this file only draws the pose.
@@ -51,6 +51,9 @@ export type PinProps = {
   joyKind?: MorphKind | null;
   /** How long the ^^ of a plain joy stays, in ms. */
   joyLong?: number;
+  /** Bumps for a hop (Julian 24.11.: only into the speak card and when a Termin is done); hopH is its height in u. */
+  hop?: number;
+  hopH?: number;
   poke?: number;
   tap?: number;
   wink?: number;
@@ -109,7 +112,7 @@ function Still({ size: S, mood, color, eye, gaze, style }: { size: number; mood:
 
 type LiveProps = PinProps & { color: string; eye: string; ground: string };
 
-function Live({ size: S = 40, mood = 'idle', joy = 0, joyKind, joyLong, poke = 0, tap = 0, wink = 0, sad = 0, glance, level, typeAt, gaze, heard = 0, pose, breathe, color, eye, ground, load, style }: LiveProps) {
+function Live({ size: S = 40, mood = 'idle', joy = 0, joyKind, joyLong, hop = 0, hopH = 8, poke = 0, tap = 0, wink = 0, sad = 0, glance, level, typeAt, gaze, heard = 0, pose, breathe, color, eye, ground, load, style }: LiveProps) {
   const D = S * BODY_D, u = D / 34;
   const st = load ? ST.load : ST[mood];
   const rest = gaze ?? REST, ty = typeAt ?? TYPE_AT;
@@ -169,6 +172,7 @@ function Live({ size: S = 40, mood = 'idle', joy = 0, joyKind, joyLong, poke = 0
   useEffect(() => { if (!first.current) push({ st, pose: poseId, breathe: breathe ? 1 : 0 }, st === ST.sleep ? RUN.sleep : RUN.state); }, [st, poseId, !!breathe]);
   useEffect(() => { if (!first.current) push({ restX: rest.x, restY: rest.y, typeX: ty.x, typeY: ty.y }, RUN.gaze); }, [rest.x, rest.y, ty.x, ty.y]);
   useEffect(() => { if (!first.current) push({ joyN: cur.current.joyN + 1, joyKind: kindId, joyLong: joyLong ?? 900 }, kindId ? RUN.morph : (joyLong ?? 900) + 500); }, [joy]);
+  useEffect(() => { if (!first.current && hop) push({ hopN: cur.current.hopN + 1, hopH }, RUN.hop); }, [hop]);
   useEffect(() => { if (!first.current) push({ pokeN: cur.current.pokeN + 1 }, RUN.poke); }, [poke]);
   useEffect(() => { if (!first.current) push({ tapN: cur.current.tapN + 1 }, RUN.tap); }, [tap]);
   useEffect(() => { if (!first.current) push({ winkN: cur.current.winkN + 1 }, RUN.wink); }, [wink]);

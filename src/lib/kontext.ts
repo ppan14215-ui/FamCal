@@ -15,6 +15,8 @@
  *   get access to the database. At most 20 rows per lookup, 3 per sentence.
  */
 import { get } from '../state/store';
+import { termDur } from './dauer';
+import { startView } from './ansicht';
 import type { CalEvent, List, Task, Who } from '../state/types';
 import { persons } from '../theme/tokens';
 import { TODAY, addDays, weekday } from './dates';
@@ -103,7 +105,7 @@ export function eventLine(e: CalEvent, A: Alias) {
 const STOP = new Set(('heute morgen übermorgen gestern bitte noch eine einen einem einer nicht auch dann wann was wie wer wo habe haben hast hat sind bist ist wird werden kommt kommen machen mach mache trag trage tragen eintragen termin termine terminen liste listen alle allen jeden jede jedem jeder nächste nächsten nächster diese diesen dieser woche wochen über unter nach vor beim bei zum zur mein meine meinen meiner unser unsere unseren soll sollen kann können muss müssen will wollen ändere ändern änder verschieb verschiebe verschieben lösch lösche löschen uhr und oder aber mit von für den dem des die der das ein ich wir ihr sie mir mich uns dir dich sich schon gerade mal doch gibt steht stehen drauf rein raus auf aus ins bis seit ganz ganze ganzen immer wieder neu neue neuen fällt fallen aus montag dienstag mittwoch donnerstag freitag samstag sonntag montags dienstags mittwochs donnerstags freitags samstags sonntags tag tage tagen abend abends mittag mittags früh vormittag nachmittag nachmittags the this that with have has had next what when where who how please tomorrow today and for from are was were will can our your add put move delete change monday tuesday wednesday thursday friday saturday sunday day days week').split(' '));
 
 export function keywords(s: string): string[] {
-  return [...new Set((s.toLowerCase().match(/[\p{L}\p{N}]+/gu) ?? []).filter((w) => w.length >= 3 && !STOP.has(w) && !/^\d+$/.test(w)))];
+  return [...new Set((s.toLowerCase().match(/[\p{L}\p{N}]+/gu) ?? ([] as string[])).filter((w: string) => w.length >= 3 && !STOP.has(w) && !/^\d+$/.test(w)))];
 }
 /** How many words of the sentence the text has: "Zahnarzt Fam3" ranks Karlo's Zahnarzt above his other Termine. */
 const score = (text: string, kws: string[]) => {
@@ -187,6 +189,8 @@ export function leanSnapshot(said: string, screen: string, A: Alias, screenList?
   const fam = [`Fam1 (J, Elternteil)`, `Fam2 (T, Elternteil)`, ...[...people].sort((a, b) => a.id.localeCompare(b.id)).map((p) => `${A.codes[p.id]} (${p.kind === 'kind' ? 'Kind' : p.kind === 'grosseltern' ? 'Großeltern' : 'Familie'}${p.birthday ? `, geboren ${p.birthday.slice(0, 4)}` : ''})`)];
   return [
     `Familie: ${fam.join(', ')}`,
+    termDur() ? `Standarddauer neuer Termine: ${termDur()} Minuten (einstellung ändert sie).` : 'Standarddauer neuer Termine: keine festgelegt (einstellung legt sie fest).',
+    `Startansicht des Kalenders: ${startView()} (einstellung ändert sie).`,
     `Termine ${day(from)} bis ${day(to)} (id | Tag | Zeit | Titel | Details):\n${win.map((e) => eventLine(e, A)).join('\n') || '(keine)'}`,
     series.length ? `Serien, die weiterlaufen:\n${series.map((e) => eventLine(e, A)).join('\n')}` : '',
     onDays.length ? `An den genannten Tagen:\n${onDays.map((e) => eventLine(e, A)).join('\n')}` : '',

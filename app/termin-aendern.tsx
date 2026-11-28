@@ -1,23 +1,27 @@
 /**
- * Termin ändern: the page behind "Ändern" on the Termin's sheet (app/termin/[id].tsx), built as the form of the klar
+ * Termin ändern: the page a tap on a Termin opens (Julian 16.11.: "The sheet middle steps seems unnecessary why don't
+ * I jump straight into event detail edit mode"; the route app/termin/[id].tsx shows this page), built as the form of the klar
  * draft Julian approved (14.11.): the symbol large on top as the head of the page, to tap (Julian 15.11.: "a larger
  * icon that you can click on and that kind of acted as the header"), the big title, then one line each for when, who,
  * where, the reminder, what to bring, repeating and a note. Everything stays editable (Julian 26.10.) and every change
  * counts at once. There is one "Fertig" (Julian 15.11.: "these two done buttons are confusing"): the "Wann" card only
  * folds, and a day or time still open in it is taken along on every way out. `verschieben` opens the day and time at
- * once. Deleting sits on the sheet, under "Mehr".
+ * once. Deleting stands at the foot of the page (it sat on the sheet, under "Mehr"), followed by Rückgängig.
  */
 import React, { useEffect, useRef, useState } from 'react';
 import { View, ScrollView } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
-import { keepPhoneEdit } from '../src/lib/phoneSync';
+import { keepPhoneEdit, dropPhoneEvents } from '../src/lib/phoneSync';
+import { splitOf, dropSplit } from '../src/lib/splitDay';
 import { Screen, Chip, Meta, Seg } from '../src/components/ui/kit';
 import ItemRow from '../src/components/ItemRow';
 import SourceLink from '../src/components/SourceLink';
 import Txt from '../src/components/ui/Txt';
+import PressScale from '../src/components/ui/PressScale';
+import LineIcon from '../src/components/ui/LineIcon';
 import AddInline from '../src/components/AddInline';
 import DateField from '../src/components/DateField';
-import { FormBar, FormTitle, FormRow, FormValue, FormChip, FormPicks, FormInput, FormWho, whenChips, useWhenInView } from '../src/components/TerminForm';
+import { FormBar, FormTitle, FormRow, FormValue, FormPicks, FormInput, FormGroup, WhoChips, whenText, useWhenInView } from '../src/components/TerminForm';
 import { tokens, persons } from '../src/theme';
 import { useStore, actions, toast, get } from '../src/state/store';
 import WhenField from '../src/components/WhenField';
@@ -32,16 +36,31 @@ import { REMINDERS, reminderKey, reminderLabel, repeatOptions, daysTo } from '..
 import TerminComments from '../src/components/TerminComments';
 import { eventById } from '../src/lib/useEvents';
 import { seriesId, ruleOf } from '../src/lib/repeat';
-import { evTint } from '../src/lib/evColor';
 
 type Open = 'wann' | 'erinnern' | 'mitbringen' | 'wiederholen' | null;
+
+/** A way to delete, at the foot of the page. */
+function Remove({ label, onPress }: { label: string; onPress: () => void }) {
+  return (
+    <PressScale accessibilityRole="button" scale={0.95} onPress={onPress} style={{ height: 40, paddingHorizontal: 16, borderRadius: 999, backgroundColor: tokens.group, alignItems: 'center', justifyContent: 'center' }}>
+      <Txt size={15} line={20} weight={500}>{label}</Txt>
+    </PressScale>
+  );
+}
 
 const addMin = (t: string, m: number) => { const v = Math.min(1439, minutes(t) + m); return `${String(Math.floor(v / 60)).padStart(2, '0')}:${String(v % 60).padStart(2, '0')}`; };
 
 export default function Termin() {
   const { id, verschieben } = useLocalSearchParams<{ id: string; verschieben?: string }>();
   const all = useStore((s) => s.events);
-  const e = eventById(all, id);
+  // One day changed as "Nur dieser Termin" is a Termin of its own now: the page follows it at once (lib/splitDay).
+  const e = eventById(all, splitOf(id) ?? id);
+  useEffect(() => () => dropSplit(id), [id]);
+  // The page deleted its Termin itself and is already on its way out.
+  const leaving = useRef(false);
+  // Its Termin is gone some other way (spoken, or on another phone): the page has nothing left to show.
+  const gone = !e;
+  useEffect(() => { if (gone && !leaving.current) goBack(); }, [gone]);
   // A series asks once what a change is for: this day or every day (TimeTree asks on save).
   const [scope, setScope] = useState<'one' | 'all'>('all');
   const [draft, setDraftState] = useState<When | null>(null);
@@ -129,11 +148,38 @@ export default function Termin() {
   const untilText = (d: string) => (year(d) === year(TODAY) ? dayMonth(d) : `${dayMonth(d)} ${year(d)}`);
   const toggle = (k: Open) => { haptics.select(); setOpen(open === k ? null : k); };
   const add = tx('Hinzufügen', 'Add');
+  // Deleting: the page goes first, then the Termin, and the note offers Rückgängig. A day or time still open is dropped.
+  const out = () => { haptics.commit(); leaving.current = true; setDraft(null); goBack(); };
+  const removeWork = () => {
+    // Work comes in many blocks; one tap clears all of that person's from this day on (Julian 29.10.).
+    const these = get().events.filter((x) => x.work && x.who === e.who && x.date >= e.date);
+    out();
+    these.forEach((x) => actions.removeEvent(x.id));
+    void dropPhoneEvents(these.map((x) => x.id));
+    toast(tx(`${these.length} Arbeitstermine gelöscht`, `${these.length} work blocks deleted`), () => { these.forEach((x) => actions.addEvent(x)); void dropPhoneEvents(these.map((x) => x.id), true); });
+  };
+  const removeOne = () => {
+    out();
+    const before = actions.skipOccurrence(e.id);
+    toast(tx(`„${e.title}“ am ${WD_SHORT[weekday(e.date)]} gelöscht`, `“${e.title}” on ${WD_SHORT[weekday(e.date)]} deleted`), before ? () => actions.restoreEvent(before) : undefined);
+  };
+  const removeAll = () => {
+    const it = get().events.find((x) => x.id === sid) ?? e;
+    out();
+    actions.removeEvent(it.id);
+    void dropPhoneEvents([it.id]);
+    toast(tx(`„${it.title}“ gelöscht`, `“${it.title}” deleted`), () => { actions.addEvent(it); void dropPhoneEvents([it.id], true); });
+  };
   return (
     <Screen gap={18} scrollRef={scroll}
-      head={<FormBar title={tx('Termin ändern', 'Edit event')} icon="back" leftLabel={tx('Zurück', 'Back')} onLeft={() => { done(); goBack(); }} action={tx('Fertig', 'Done')} onAction={() => { haptics.select(); done(); goBack(); }} />}>
+      head={<FormBar icon="back" leftLabel={tx('Kalender', 'Calendar')} onLeft={() => { done(); goBack(); }} action={tx('Fertig', 'Done')} onAction={() => { haptics.select(); done(); goBack(); }} />}>
       <Fresh id={`${e.id}:title`} radius={12}>
-        <FormTitle hero tint={evTint(e)} icon={e.icon} value={e.title} onIcon={pickIcon} onCommit={(t) => actions.updateEvent(target(), { title: t })} />
+        <FormTitle hero icon={e.icon} value={e.title} onIcon={pickIcon} onCommit={(t) => actions.updateEvent(target(), { title: t })} />
+      </Fresh>
+      <Fresh id={`${e.id}:who`} radius={12}>
+        {/* Work is just whose work it is (Julian 30.10.: "Coming along? Auf Arbeit?"). */}
+        {e.work ? <FormValue>{e.who === 'T' ? persons.T.name : persons.J.name}</FormValue>
+          : <WhoChips who={e.who} people={e.people ?? []} onWho={(w) => actions.setEventWho(target(), w)} onPerson={(pid) => actions.toggleEventPerson(target(), pid)} />}
       </Fresh>
       {series ? (
         <View style={{ gap: 6 }}>
@@ -141,25 +187,20 @@ export default function Termin() {
           <Meta>{scope === 'one' ? tx('Änderungen gelten nur für diesen Tag.', 'Changes apply to this day only.') : tx('Änderungen gelten für jeden Termin der Serie.', 'Changes apply to every date in the series.')}</Meta>
         </View>
       ) : null}
-      <View onLayout={linesAt}>
+      <View onLayout={linesAt} style={{ gap: 12 }}>
+        <FormGroup>
         <Fresh id={`${e.id}:when`} radius={12}>
-          <FormRow label={tx('Wann', 'When')} below={open === 'wann' ? <WhenField card fold startOpen value={draft ?? now} onChange={change} onDone={() => { done(); setOpen(null); }} extra={overlap} /> : undefined}>
-            {open === 'wann' ? null : whenChips(now).map((c) => <FormChip key={c} label={c} onPress={() => toggle('wann')} />)}
+          <FormRow label={tx('Wann', 'When')} onPress={open === 'wann' ? undefined : () => toggle('wann')} below={open === 'wann' ? <WhenField card fold startOpen value={draft ?? now} onChange={change} onDone={() => { done(); setOpen(null); }} extra={overlap} /> : undefined}>
+            {open === 'wann' ? null : <FormValue>{whenText(now)}</FormValue>}
           </FormRow>
         </Fresh>
-        <Fresh id={`${e.id}:who`} radius={12}>
-          <FormRow label={tx('Wer', 'Who')}>
-            {/* Work is just whose work it is (Julian 30.10.: "Coming along? Auf Arbeit?"). */}
-            {e.work ? <FormValue>{e.who === 'T' ? persons.T.name : persons.J.name}</FormValue>
-              : <FormWho who={e.who} people={e.people ?? []} onWho={(w) => actions.setEventWho(target(), w)} onPerson={(pid) => actions.toggleEventPerson(target(), pid)} />}
-          </FormRow>
-        </Fresh>
-        <FormRow label={tx('Wo', 'Where')}>
+        <FormRow last label={tx('Wo', 'Where')}>
           <FormInput label={tx('Wo', 'Where')} value={e.place ?? e.sub ?? ''} placeholder={add} onCommit={(t) => { actions.updateEvent(target(), e.place !== undefined || !e.sub ? { place: t || undefined } : { sub: t || undefined }); }} />
         </FormRow>
+        </FormGroup>
         {/* Work days are single entries; their repeat text is only a note, so no reminder, things to bring or series here. */}
         {e.work ? null : (
-          <>
+          <FormGroup>
             <FormRow label={tx('Erinnern', 'Reminder')} onPress={() => toggle('erinnern')}
               below={open === 'erinnern' ? (
                 <View style={{ gap: 10 }}>
@@ -169,6 +210,25 @@ export default function Termin() {
               ) : undefined}>
               <FormValue dim={!reminderKey(e.reminder)}>{reminderLabel(e.reminder) || tx('Keine', 'None')}</FormValue>
             </FormRow>
+            <FormRow last label={tx('Wiederholen', 'Repeat')} onPress={() => toggle('wiederholen')}
+              below={open === 'wiederholen' ? <View style={{ gap: 10 }}>
+                  <FormPicks items={e.repeat && !rep.some((r) => r.key === e.repeat) ? [{ key: e.repeat, label: e.repeat }, ...rep] : rep} value={e.repeat ?? ''} onPick={(k) => { patch({ repeat: k || undefined, ...(k ? {} : { repeatUntil: undefined }) }); if (!k) setOpen(null); }} />
+                  {e.repeat ? (
+                    <DateField
+                      label={tx('Serie endet', 'Series ends')}
+                      value={e.repeatUntil ?? null}
+                      onChange={(d) => patch({ repeatUntil: d < e.date ? e.date : d })}
+                      right={e.repeatUntil ? <Chip onPress={() => { haptics.select(); patch({ repeatUntil: undefined }); }}>{tx('Nie', 'Never')}</Chip> : <Txt size={14} color={tokens.sub}>{tx('Nie', 'Never')}</Txt>}
+                      extra={(d) => tx(`Letzter Termin am ${untilText(d)}.`, `Last one on ${untilText(d)}.`)}
+                    />
+                  ) : null}
+                </View> : undefined}>
+              <FormValue dim={!e.repeat}>{e.repeat || tx('Nie', 'Never')}</FormValue>
+            </FormRow>
+          </FormGroup>
+        )}
+        <FormGroup>
+        {e.work ? null : (
             <FormRow label={tx('Mitbringen', 'Bring')} onPress={() => toggle('mitbringen')}
               below={open === 'mitbringen' ? (
                 <View>
@@ -195,31 +255,19 @@ export default function Termin() {
               ) : undefined}>
               <FormValue dim={!things}>{things || add}</FormValue>
             </FormRow>
-            <FormRow label={tx('Wiederholen', 'Repeat')} onPress={() => toggle('wiederholen')}
-              below={open === 'wiederholen' ? (
-                <View style={{ gap: 10 }}>
-                  <FormPicks items={e.repeat && !rep.some((r) => r.key === e.repeat) ? [{ key: e.repeat, label: e.repeat }, ...rep] : rep} value={e.repeat ?? ''} onPick={(k) => { patch({ repeat: k || undefined, ...(k ? {} : { repeatUntil: undefined }) }); if (!k) setOpen(null); }} />
-                  {e.repeat ? (
-                    <DateField
-                      label={tx('Serie endet', 'Series ends')}
-                      value={e.repeatUntil ?? null}
-                      onChange={(d) => patch({ repeatUntil: d < e.date ? e.date : d })}
-                      right={e.repeatUntil ? <Chip onPress={() => { haptics.select(); patch({ repeatUntil: undefined }); }}>{tx('Nie', 'Never')}</Chip> : <Txt size={14} color={tokens.sub}>{tx('Nie', 'Never')}</Txt>}
-                      extra={(d) => tx(`Letzter Termin am ${untilText(d)}.`, `Last one on ${untilText(d)}.`)}
-                    />
-                  ) : null}
-                </View>
-              ) : undefined}>
-              <FormValue dim={!e.repeat}>{e.repeat || tx('Nie', 'Never')}</FormValue>
-            </FormRow>
-          </>
         )}
         <FormRow last label={tx('Notiz', 'Note')}>
           <FormInput label={tx('Notiz', 'Note')} value={e.note ?? ''} placeholder={add} onCommit={(t) => patch({ note: t || undefined })} />
         </FormRow>
+        </FormGroup>
       </View>
       {e.source ? <SourceLink prefix={tx('Aus', 'From')} s={{ label: e.source }} /> : null}
       {e.work ? null : <TerminComments flat eventId={e.id} />}
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+        {series ? <Remove label={tx('Nur diesen Termin löschen', 'Delete only this one')} onPress={removeOne} /> : null}
+        <Remove label={series ? tx('Ganze Serie löschen', 'Delete whole series') : tx('Löschen', 'Delete')} onPress={removeAll} />
+        {e.work ? <Remove label={tx('Alle Arbeitstermine ab hier löschen', 'Delete all work from here on')} onPress={removeWork} /> : null}
+      </View>
     </Screen>
   );
 }

@@ -10,7 +10,7 @@ import { tokens } from '../../theme';
 export type LineName =
   | 'home' | 'cal' | 'list' | 'inbox' | 'plus' | 'mic' | 'sync' | 'camera' | 'back' | 'chev'
   | 'check' | 'x' | 'lock' | 'clock' | 'copy' | 'send' | 'flash' | 'pin' | 'sparkle' | 'settings'
-  | 'papier' | 'users' | 'undo' | 'trash' | 'warn' | 'chat' | 'grid' | 'file' | 'image' | 'up' | 'search' | 'edit' | 'more' | 'arrow';
+  | 'papier' | 'users' | 'undo' | 'trash' | 'warn' | 'chat' | 'grid' | 'file' | 'image' | 'up' | 'search' | 'edit' | 'more' | 'arrow' | 'bell' | 'person' | 'year';
 
 type Props = { name: LineName; size?: number; color?: string; stroke?: number };
 
@@ -25,6 +25,7 @@ export default function LineIcon({ name, size = 22, color = tokens.ink, stroke =
 
 function shape(n: LineName, p: any) {
   switch (n) {
+    case 'bell': return <><Path {...p} d="M6 17V11a6 6 0 0 1 12 0v6l1.5 2h-15z" /><Path {...p} d="M10 21.5h4" /></>;
     case 'home': return <Path {...p} d="M4 11l8-7 8 7v8a1 1 0 0 1-1 1h-4v-6h-6v6H5a1 1 0 0 1-1-1z" />;
     case 'cal': return <><Rect {...p} x={4} y={5} width={16} height={15} rx={2} /><Path {...p} d="M4 10h16M9 3v4M15 3v4" /></>;
     case 'list': return <><Path {...p} d="M9 6h11M9 12h11M9 18h11" /><Circle {...p} cx={4.5} cy={6} r={1} /><Circle {...p} cx={4.5} cy={12} r={1} /><Circle {...p} cx={4.5} cy={18} r={1} /></>;
@@ -49,7 +50,9 @@ function shape(n: LineName, p: any) {
     case 'sparkle': return <><Path fill={p.stroke} d="M10 3.5c.5 4.3 2.2 6 6.5 6.5-4.3.5-6 2.2-6.5 6.5-.5-4.3-2.2-6-6.5-6.5 4.3-.5 6-2.2 6.5-6.5z" /><Path fill={p.stroke} d="M18 13.5c.25 2.1 1.1 2.95 3.2 3.2-2.1.25-2.95 1.1-3.2 3.2-.25-2.1-1.1-2.95-3.2-3.2 2.1-.25 2.95-1.1 3.2-3.2z" /></>;
     case 'settings': return <><Circle {...p} cx={12} cy={12} r={3} /><Path {...p} d="M19 12a7 7 0 0 0-.1-1.2l2-1.5-2-3.4-2.3.9a7 7 0 0 0-2-1.2L14.2 3h-4l-.4 2.6a7 7 0 0 0-2 1.2l-2.4-.9-2 3.4 2 1.5A7 7 0 0 0 5 12c0 .4 0 .8.1 1.2l-2 1.5 2 3.4 2.3-.9a7 7 0 0 0 2 1.2l.4 2.6h4l.4-2.6a7 7 0 0 0 2-1.2l2.3.9 2-3.4-2-1.5c.1-.4.1-.8.1-1.2z" /></>;
     case 'papier': return <><Path {...p} d="M4 20h4L19 9l-4-4L4 16z" /><Path {...p} d="M13.5 6.5l4 4" /></>;
+    case 'person': return <><Circle {...p} cx={12} cy={8} r={3.5} /><Path {...p} d="M5 20c0-3.6 3.1-6 7-6s7 2.4 7 6" /></>;
     case 'users': return <><Circle {...p} cx={9} cy={9} r={3} /><Circle {...p} cx={17} cy={10} r={2.5} /><Path {...p} d="M3 19c0-3 3-5 6-5s6 2 6 5M15 15c3 0 6 1 6 4" /></>;
+    case 'year': return <><Path {...p} d="M12 21v-9" /><Path {...p} d="M12 12c0-4.2 2.8-6.5 7-6.5 0 4.2-2.8 6.5-7 6.5z" /><Path {...p} d="M12 14.5c0-3.3-2.3-5.5-6-5.5 0 3.3 2.3 5.5 6 5.5z" /></>;
     case 'chat': return <Path {...p} d="M5 5h14a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1h-8l-4 3v-3H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1z" />;
     case 'grid': return <><Rect {...p} x={4} y={4} width={6.5} height={6.5} rx={2} /><Rect {...p} x={13.5} y={4} width={6.5} height={6.5} rx={2} /><Rect {...p} x={4} y={13.5} width={6.5} height={6.5} rx={2} /><Rect {...p} x={13.5} y={13.5} width={6.5} height={6.5} rx={2} /></>;
     case 'file': return <><Path {...p} d="M7 3h7l5 5v12a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z" /><Path {...p} d="M14 3v5h5" /></>;
