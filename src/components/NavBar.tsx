@@ -41,9 +41,10 @@ const EASE_OUT = Easing.bezier(0.23, 1, 0.32, 1);
 
 export const TABS: { name: string; key: string; icon: LineName }[] = [
   { name: 'kalender', key: 'nav.kalender', icon: 'cal' },
-  { name: 'listen', key: 'nav.listen', icon: 'list' },
-  // Julian 28.11.: the Chat tab goes, the first year takes its place (the chat lives in Memo's sheet).
+  // Julian 28.11.: the Chat tab goes, the first year takes its place right next to the calendar (the chat lives in
+  // Memo's sheet). Order he okayed: Kalender, Erstes Jahr, Memo, Listen, Profil.
   { name: 'jahr', key: 'nav.jahr', icon: 'year' },
+  { name: 'listen', key: 'nav.listen', icon: 'list' },
   // Julian 16.11.: "Setting can only be acces via chat? Needs to be it's own tap." The settings are a tab of their own.
   { name: 'einstellungen', key: 'nav.einstellungen', icon: 'settings' },
 ];
@@ -446,9 +447,9 @@ export function KlarPill({ current, onTab, bar }: { current?: string; onTab?: (n
           <View pointerEvents="none" style={[{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, backgroundColor: tokens.row, borderTopLeftRadius: 22, borderTopRightRadius: 22 }, glass.nav, { borderBottomWidth: 0 } as any]} />
           <View pointerEvents={onTab ? 'box-none' : 'none'} accessibilityRole="tablist" style={{ position: 'absolute', left: 0, right: 0, bottom: foot, height: navH(), flexDirection: 'row', alignItems: 'center', paddingHorizontal: 6 }}>
             {/* Five equal columns (Julian 27.11.: "die Tabs sind nicht sauber verteilt"); Memo stands in the middle one. */}
-            {slot('kalender', 0)}{slot('listen', 1)}
+            {slot('kalender', 0)}{slot('jahr', 1)}
             <View style={{ flex: 1 }} />
-            {slot('jahr', 2)}{slot('einstellungen', 3)}
+            {slot('listen', 2)}{slot('einstellungen', 3)}
           </View>
           <View pointerEvents="box-none" style={{ position: 'absolute', left: 0, right: 0, bottom: foot + navH() / 2 + BIG_UP - (BIG + 10) / 2, alignItems: 'center' }}>
             <View style={{ width: BIG + 10, height: BIG + 10, borderRadius: 999, backgroundColor: tokens.row, alignItems: 'center', justifyContent: 'center' }}>

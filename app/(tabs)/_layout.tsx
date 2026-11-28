@@ -19,7 +19,7 @@ function Fresh({ children, colours }: { children: React.ReactNode; colours: bool
   return <React.Fragment key={shown}>{children}</React.Fragment>;
 }
 
-/** Kalender, Listen, Erstes Jahr, Einstellungen (Julian 28.11.: Erstes Jahr replaces the Chat tab; the chat stays as a hidden route behind Memo's sheet). Before: (Julian 16.11.: the calendar is the heart and the start, the chat is the log, the settings get a tab of their own; Eingang lives in the chat). The first tab is also where Android's back leads. */
+/** Kalender, Erstes Jahr, Listen, Einstellungen (Julian 28.11.: Erstes Jahr replaces the Chat tab; the chat stays as a hidden route behind Memo's sheet). Before: (Julian 16.11.: the calendar is the heart and the start, the chat is the log, the settings get a tab of their own; Eingang lives in the chat). The first tab is also where Android's back leads. */
 export default function TabsLayout() {
   usePaletteGen();
   return (
@@ -33,10 +33,10 @@ export default function TabsLayout() {
         animation: 'fade', transitionSpec: { animation: 'timing', config: { duration: 150 } } }}
     >
       <Tabs.Screen name="kalender" />
+      <Tabs.Screen name="jahr" />
       <Tabs.Screen name="listen" />
       {/* Built at the start, so a tap on Memo lands in a chat that is already there instead of one that first has to
           draw while the Sprechkarte grows (Julian 17.11.: "anytime I open memo the input also jumps"). */}
-      <Tabs.Screen name="jahr" />
       <Tabs.Screen name="chat" options={{ lazy: false, href: null }} />
       <Tabs.Screen name="einstellungen" />
       <Tabs.Screen name="eingang" options={{ href: null }} />

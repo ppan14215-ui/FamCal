@@ -9,6 +9,7 @@
  * A tap on a row opens the Termin, a swipe to the left deletes it (then Rückgängig). A Termin that just landed
  * punches once (Fresh). Rows rise in one after another when the view opens. Transform and opacity only.
  */
+import FristHint from '../../components/FristHint';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { View, ScrollView, Platform } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
@@ -205,6 +206,7 @@ export function TodayList() {
   const arrive = (i: number) => (Date.now() - born.current < 1200 ? rise(i) : undefined);
   return (
     <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 6, paddingBottom: navTop(insets.bottom) + 40 }}>
+      {day === TODAY ? <FristHint /> : null}
       {info ? <Txt size={13} line={17} color={tokens.sub} numberOfLines={1} style={{ paddingBottom: 10 }}>{info}</Txt> : null}
       {items.length ? <DayGroup items={items} day={day} now={day === TODAY ? now : undefined} arrive={arrive} />
         : <Empty text={day === TODAY ? tx('Heute steht nichts an. Sag Memo einfach, was ansteht.', 'Nothing today. Just tell Memo what\'s coming up.') : tx('Nichts eingetragen.', 'Nothing planned.')} />}
