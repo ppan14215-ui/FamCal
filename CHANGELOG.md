@@ -4,6 +4,7 @@ Alle sichtbaren Änderungen an FamCal. Neueste oben. Agenten und Menschen: Ände
 
 ## Unreleased
 
+- Erstes Jahr ohne Kind fragt jetzt nach Geburtstag oder errechnetem Termin und legt dann das ganze Jahr an, auch für den anderen Elternteil. Von der Leiste nach oben wischen öffnet Memos Blatt.
 - Leiste: Kalender, Erstes Jahr, Memo, Listen, Profil. Auf Heute zeigt Memo einmal am Tag die nächste Frist, ein Tipp öffnet Erstes Jahr, das x blendet sie bis morgen aus.
 - Erstes Jahr: wer eine Frist übernimmt und was erledigt ist, bleibt jetzt nach einem Neustart erhalten und erscheint auch beim anderen Elternteil (sobald die Familie den Speicherplatz dafür am Server hat).
 - Neuer Tab "Erstes Jahr" statt Chat: wo euer Kind im ersten Jahr steht, ein Satz von Memo, was gerade zählt, die nächsten Fristen mit Countdown und wer sie übernimmt, danach der Rest des Jahres. Vergangene Fristen fragen "Schon erledigt?".

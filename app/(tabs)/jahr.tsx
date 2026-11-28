@@ -7,7 +7,9 @@
 import React, { useEffect, useState } from 'react';
 import { View } from 'react-native';
 import { router } from 'expo-router';
-import { Screen, H1 } from '../../src/components/ui/kit';
+import { Screen, H1, Seg, Btn } from '../../src/components/ui/kit';
+import { Field } from '../../src/components/Field';
+import DateField from '../../src/components/DateField';
 import Txt from '../../src/components/ui/Txt';
 import PressScale from '../../src/components/ui/PressScale';
 import LineIcon from '../../src/components/ui/LineIcon';
@@ -70,6 +72,8 @@ export default function Jahr() {
   const say = !top ? tx('Gerade steht nichts an. Ich sage Bescheid, wenn sich das ändert.', 'Nothing is due right now. I will tell you when that changes.')
     : tx(`${daysBetween(TODAY, top.date) <= 7 ? 'Diese Woche' : 'Als Nächstes'} zählt eins wirklich: ${top.title}.`, `${daysBetween(TODAY, top.date) <= 7 ? 'This week' : 'Next'} one thing really counts: ${top.title}.`)
       + ' ' + (top.who ? tx(`${owner(top.who)} hat es übernommen.`, `${owner(top.who)} has it.`) : tx('Noch hat es keiner übernommen.', 'Nobody has taken it yet.'));
+
+  if (!kid) return <Screen tab gap={12} head={<H1 sub={kicker}>{tx('Erstes Jahr', 'First year')}</H1>}><Ask /></Screen>;
 
   return (
     <Screen tab gap={12} head={<H1 sub={kicker}>{tx('Erstes Jahr', 'First year')}</H1>}>
@@ -167,5 +171,41 @@ function Step({ m }: { m: Milestone }) {
         ) : null}
       </View>
     </PressScale>
+  );
+}
+
+/**
+ * No child with a birthday yet (Julian 28.11.: "First year is empty for me"). Memo asks for the one date the whole
+ * year hangs on. The child is saved as a family person with that date, so it syncs and the other parent gets the
+ * same year; a date in the future counts as the due date.
+ */
+function Ask() {
+  const people = useStore((s) => s.people);
+  const nameless = people.find((p) => p.kind === 'kind' && !p.birthday);
+  const [here, setHere] = useState<'da' | 'bald'>('da');
+  const [name, setName] = useState(nameless?.name ?? '');
+  const [day, setDay] = useState<string | null>(null);
+  const go = () => {
+    if (!day) return;
+    haptics.commit();
+    const n = name.trim() || tx('Baby', 'Baby');
+    const same = people.find((p) => p.kind === 'kind' && p.name === n);
+    if (same) actions.updatePerson(same.id, { birthday: day });
+    else actions.addPerson({ name: n, kind: 'kind', color: 'Mint', birthday: day });
+    actions.setKid(day > TODAY ? { name: n, due: day } : { name: n, born: day });
+  };
+  return (
+    <>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: tokens.row, borderRadius: 18, padding: 14, borderWidth: 1, borderColor: tokens.groupLine }}>
+        <Pin size={44} mood="idle" ground={tokens.row} />
+        <Txt size={16} line={22} weight={500} style={{ flex: 1 }}>
+          {tx('Sag mir, wann euer Kind kam oder kommt. Dann lege ich euch das ganze erste Jahr an: Fristen, U Termine und Impfungen.', 'Tell me when your child was born or is due. Then I set up your whole first year: deadlines, check-ups and vaccinations.')}
+        </Txt>
+      </View>
+      <Seg items={[{ key: 'da', label: tx('Schon da', 'Already here') }, { key: 'bald', label: tx('Noch unterwegs', 'On the way') }]} value={here} onChange={(k) => { setHere(k); setDay(null); }} height={36} />
+      <Field label={tx('Name (geht auch später)', 'Name (can wait)')} value={name} onChangeText={setName} placeholder={tx('z. B. Emil', 'e.g. Emil')} />
+      <DateField key={here} label={here === 'da' ? tx('Geburtstag', 'Birthday') : tx('Errechneter Termin', 'Due date')} value={day} onChange={setDay} past={here === 'da'} />
+      <Btn label={tx('Erstes Jahr anlegen', 'Set up the first year')} onPress={go} disabled={!day} />
+    </>
   );
 }

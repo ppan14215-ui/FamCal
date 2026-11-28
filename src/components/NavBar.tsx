@@ -439,18 +439,24 @@ export function KlarPill({ current, onTab, bar }: { current?: string; onTab?: (n
       );
     };
     const foot = klarFoot(insets.bottom);
+    // Julian 28.11.: "Swipe from main nav should bring it up too": pushing up on the bar opens Memo's sheet, like the tap.
+    const openSheet = () => { if (priv.ohneKi || !onTab) return; haptics.tap(); setBarMode('input'); };
+    const swipeUp = Gesture.Pan().activeOffsetY(-12).failOffsetX([-24, 24])
+      .onEnd((e) => { if (e.translationY < -28 || e.velocityY < -600) scheduleOnRN(openSheet); });
     return (
       <View pointerEvents="box-none" style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0 }}>
         <Animated.View pointerEvents={away ? 'none' : 'box-none'} onLayout={(e) => { pillW.current = e.nativeEvent.layout.width; memoAt.current = pillW.current / 2; tell(); }}
           style={[{ position: 'absolute', left: 0, right: 0, bottom: 0, height: foot + navH() + BAR_UP }, hide]}>
           <Animated.View pointerEvents="box-none" style={[{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0 }, give]}>
           <View pointerEvents="none" style={[{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, backgroundColor: tokens.row, borderTopLeftRadius: 22, borderTopRightRadius: 22 }, glass.nav, { borderBottomWidth: 0 } as any]} />
-          <View pointerEvents={onTab ? 'box-none' : 'none'} accessibilityRole="tablist" style={{ position: 'absolute', left: 0, right: 0, bottom: foot, height: navH(), flexDirection: 'row', alignItems: 'center', paddingHorizontal: 6 }}>
+          <GestureDetector gesture={swipeUp}>
+          <View pointerEvents={onTab ? 'auto' : 'none'} accessibilityRole="tablist" style={{ position: 'absolute', left: 0, right: 0, bottom: foot, height: navH(), flexDirection: 'row', alignItems: 'center', paddingHorizontal: 6 }}>
             {/* Five equal columns (Julian 27.11.: "die Tabs sind nicht sauber verteilt"); Memo stands in the middle one. */}
             {slot('kalender', 0)}{slot('jahr', 1)}
             <View style={{ flex: 1 }} />
             {slot('listen', 2)}{slot('einstellungen', 3)}
           </View>
+          </GestureDetector>
           <View pointerEvents="box-none" style={{ position: 'absolute', left: 0, right: 0, bottom: foot + navH() / 2 + BIG_UP - (BIG + 10) / 2, alignItems: 'center' }}>
             <View style={{ width: BIG + 10, height: BIG + 10, borderRadius: 999, backgroundColor: tokens.row, alignItems: 'center', justifyContent: 'center' }}>
               <View onLayout={() => { memoAt.current = pillW.current / 2; tell(); }}>{memo.props.children}</View>
