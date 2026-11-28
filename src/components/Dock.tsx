@@ -481,7 +481,7 @@ export default function Dock() {
   const folded = useNavFolded();
   // Klar: the input lies over the nav pill instead of above it, so only what is taller than the pill needs extra room.
   const klarTabs = !!where && (where.tab || !!where.chat) && navStyle() === 'klar';
-  useEffect(() => { setDockSpace(!where || !shown ? 0 : klarTabs ? (where.chat ? h + navH() + 30 : Math.max(0, h - navH())) : h + (where.chat ? (folded ? 0 : navH() + 10) : where.tab ? 0 : 8)); }, [h, !!where, shown, folded, klarTabs]);
+  useEffect(() => { setDockSpace(!where || !shown ? 0 : klarTabs ? Math.max(0, h - navH()) : h + (where.chat ? (folded ? 0 : navH() + 10) : where.tab ? 0 : 8)); }, [h, !!where, shown, folded, klarTabs]);
   useEffect(() => () => timers.current.forEach(clearTimeout), []);
   // Shared to FamCal from the browser or another app (Julian 28.10.): as if typed into the field.
   const hearRef = useRef<(raw: string, how?: { voice?: boolean }) => void>(() => {});
@@ -527,9 +527,9 @@ export default function Dock() {
   useEffect(() => { wAnim.value = withTiming(tabsW, { duration: 240, easing: Easing.bezier(0.23, 1, 0.32, 1) }); }, [tabsW]);
   const wStyle = useAnimatedStyle(() => ({ width: wAnim.value }));
   // Typing hides the tabs, so the field drops into their place right above the keyboard.
-  const bottom = !where ? 0 : kb > 0 ? kb + 8 : klar && where.chat && !(typing && Platform.OS === 'web') ? above + navH() + 26 : onTabs ? (typing && Platform.OS === 'web' && !klar ? Math.max(insets.bottom, 12) + 10 : above) : insets.bottom + 12 + where.lift;
+  const bottom = !where ? 0 : kb > 0 ? kb + 8 : onTabs ? (typing && Platform.OS === 'web' && !klar ? Math.max(insets.bottom, 12) + 10 : above) : insets.bottom + 12 + where.lift;
   /** Where the field stands with no keyboard: the floor the keyboard's frame lifts it from. */
-  const restBottom = !where ? 0 : klar && where.chat && !(typing && Platform.OS === 'web') ? above + navH() + 26 : onTabs ? (typing && Platform.OS === 'web' && !klar ? Math.max(insets.bottom, 12) + 10 : above) : insets.bottom + 12 + where.lift;
+  const restBottom = !where ? 0 : onTabs ? (typing && Platform.OS === 'web' && !klar ? Math.max(insets.bottom, 12) + 10 : above) : insets.bottom + 12 + where.lift;
   useEffect(() => { setDockTop(where ? bottom + (shown ? h : 0) : 0); }, [bottom, h, !!where, shown]);
   // The field's own top edge (cards and pills above it don't count): Memo sits right on it (Julian 08.11.).
   // The field is the last row, flush with the bottom, so its top is bottom + its own height. Its y from onLayout went stale
@@ -580,10 +580,12 @@ export default function Dock() {
   const klarOpen = klar && (typing || barRaw === 'input');
   useEffect(() => { if (cardOpen) setTalkStart(false); }, [cardOpen]);
   // Julian 24.11. ("Chat input missing on chat page"): in the chat the field always stands above the nav, like any chat.
-  const chatField = klar && !!where?.chat;
+  // Julian 28.11.: the chat now lives in Memo's sheet everywhere, so the chat page gets no field of its own above the
+  // nav any more (it showed over the bar and, after a Memo tap, left the nav gone).
+  const chatField = false;
   const klarShow = (klarOpen || chatField) && !cardOpen && !talkStart;
   // Julian 23.11. ("4 bauen"): off the chat, the open Memo is one sheet over the page with the history in it.
-  const sheet = klarOpen && !where?.chat;
+  const sheet = klarOpen;
   // A picture picked under Plus lands in the field, so the field opens to show it (Julian 24.11.: "Image upload did not work").
   const picsN = usePics().length;
   useEffect(() => { if (picsN && klar) setBarMode('input'); }, [picsN, klar]);

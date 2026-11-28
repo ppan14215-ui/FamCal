@@ -4,7 +4,7 @@
  * above, the conversation stays below; the page stays scrollable and tappable while Memo works. Pull the line up and
  * it becomes the full Chat; pull it down, tap the open tab again or press back and it closes. The entries are the Chat tab's own.
  */
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { View, ScrollView, PanResponder, Keyboard, Platform, useWindowDimensions } from 'react-native';
 import Animated, { FadeOut, useSharedValue, useAnimatedStyle, withTiming, Easing, runOnJS } from 'react-native-reanimated';
 import { router, usePathname } from 'expo-router';
@@ -35,6 +35,7 @@ const TABS: { name: string; icon: LineName; label: () => string }[] = [
 /** Where the sheet starts, from the top: half the screen at rest, two thirds tall while typing. */
 const HALF = 0.46;
 const TWO_THIRDS = 0.33;
+const TALL = 0.08;
 
 export default function MemoVerlauf({ foot, onClose }: { foot: number; onClose: () => void }) {
   const { height } = useWindowDimensions();
@@ -53,20 +54,25 @@ export default function MemoVerlauf({ foot, onClose }: { foot: number; onClose: 
   const focus = useTyping();
   const kb = useKeyboardInset();
   const keys = focus && (Platform.OS === 'web' || kb > 0);
+  // Pulled up (Julian 28.11.: "swipe it all the way or at least 90 %"), the sheet holds almost the whole screen.
+  const [tall, setTall] = useState(false);
+  const tallR = useRef(false);
+  tallR.current = tall;
   const topV = useSharedValue(Math.round(height * HALF));
-  useEffect(() => { topV.value = withTiming(Math.round(height * (keys ? TWO_THIRDS : HALF)), { duration: 240, easing: OUT }); }, [keys, height]);
+  useEffect(() => { topV.value = withTiming(Math.round(height * (tall ? TALL : keys ? TWO_THIRDS : HALF)), { duration: 240, easing: OUT }); }, [keys, tall, height]);
   const topStyle = useAnimatedStyle(() => ({ top: topV.value }));
   const close = () => onClose();
   // The whole Chat has its own field above the nav, so the sheet's open input is let go on the way.
   const go = (name: string) => { haptics.select(); if (name === 'chat') { Keyboard.dismiss(); setBarMode('rest'); } router.navigate(('/' + name) as any); };
-  const full = () => go('chat');
   // The line goes with the finger: down far or fast closes, up far or fast opens the whole Chat.
   const pan = useRef(PanResponder.create({
     onMoveShouldSetPanResponder: (_, g) => Math.abs(g.dy) > 6 && Math.abs(g.dy) > Math.abs(g.dx),
     onPanResponderMove: (_, g) => { y.value = g.dy > 0 ? g.dy : Math.max(-60, g.dy * 0.5); },
     onPanResponderRelease: (_, g) => {
-      if (g.dy > 90 || g.vy > 0.8) { y.value = withTiming(height, { duration: 220, easing: OUT }, () => runOnJS(close)()); }
-      else if (g.dy < -70 || g.vy < -0.8) { y.value = withTiming(0, { duration: 200, easing: OUT }); full(); }
+      // Down: a tall sheet steps back to half, a half one closes. Up: it grows to almost the whole screen.
+      if ((g.dy > 90 || g.vy > 0.8) && tallR.current) { haptics.select(); setTall(false); y.value = withTiming(0, { duration: 200, easing: OUT }); }
+      else if (g.dy > 90 || g.vy > 0.8) { y.value = withTiming(height, { duration: 220, easing: OUT }, () => runOnJS(close)()); }
+      else if (g.dy < -70 || g.vy < -0.8) { haptics.select(); setTall(true); y.value = withTiming(0, { duration: 200, easing: OUT }); }
       else y.value = withTiming(0, { duration: 200, easing: OUT });
     },
   })).current;
@@ -92,7 +98,7 @@ export default function MemoVerlauf({ foot, onClose }: { foot: number; onClose: 
           {slot(TABS[0])}{slot(TABS[1])}
           <View style={{ flex: 1, alignItems: 'center' }}>
             <View style={{ marginTop: -30, width: 68, height: 68, borderRadius: 34, backgroundColor: tokens.bg, alignItems: 'center', justifyContent: 'center' }}>
-              <MemoMic box={58} size={58 / 0.8} ground={tokens.bg} onPress={() => buddyTalk()} label={tx('Mit Memo sprechen', 'Talk to Memo')} />
+              <MemoMic below box={58} size={58 / 0.8} ground={tokens.bg} onPress={() => buddyTalk()} label={tx('Mit Memo sprechen', 'Talk to Memo')} />
             </View>
           </View>
           {slot(TABS[2])}{slot(TABS[3])}

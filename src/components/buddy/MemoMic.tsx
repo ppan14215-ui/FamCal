@@ -22,7 +22,7 @@ import { tx } from '../../i18n/lang';
  * the nav) do not report where they are: they once overwrote the seat with their smaller size, so the start's Memo
  * arrived small and jumped to the bar's size (Julian 18.11.: "jumps before landing in the nav bar"). */
 let seats = 0;
-export default function MemoMic({ onPress, onLongPress, box = 34, size = 40, label, ground, seat }: { onPress: () => void; onLongPress?: () => void; box?: number; size?: number; label?: string; ground?: string; seat?: boolean }) {
+export default function MemoMic({ onPress, onLongPress, box = 34, size = 40, label, ground, seat, below }: { onPress: () => void; onLongPress?: () => void; box?: number; size?: number; label?: string; ground?: string; seat?: boolean; /** The field is under him (Memo's sheet, Julian 28.11.): he looks down at the words and nods along. */ below?: boolean }) {
   const b = useBuddy();
   const minimal = useMascot() === 'minimal';
   const typing = useTyping();
@@ -46,7 +46,13 @@ export default function MemoMic({ onPress, onLongPress, box = 34, size = 40, lab
     return { x: c((b.touch.x - b.dockAt.x) / 140), y: c((b.touch.y - b.dockAt.y) / 140), n: b.touch.n };
   }, [b.touch?.n]);
   // Typing: the text sits left of him on one line, above him once it grows into the card; his eyes follow it as it gets longer.
-  const typeAt = { x: Math.round((-1 + 0.5 * Math.min(1, b.typed / 40)) * 10) / 10, y: b.typed > 0 ? -0.85 : -0.15 };
+  const typeAt = below
+    ? { x: Math.round((-0.7 + 1.4 * Math.min(1, b.typed / 40)) * 10) / 10, y: 0.9 }
+    : { x: Math.round((-1 + 0.5 * Math.min(1, b.typed / 40)) * 10) / 10, y: b.typed > 0 ? -0.85 : -0.15 };
+  // Watching from above the sheet he nods now and then as the words come (a small hop every dozen letters).
+  const [nod, setNod] = useState(0);
+  const step = Math.floor(b.typed / 12);
+  useEffect(() => { if (below && step > 0) setNod((n) => n + 1); }, [below, step]);
   const ask = b.waiting && mood !== 'listen' && mood !== 'think';
   // Tapped: he squints for a moment, then listens.
   const [tap, setTap] = useState(0);
@@ -62,7 +68,7 @@ export default function MemoMic({ onPress, onLongPress, box = 34, size = 40, lab
       accessibilityRole="button" accessibilityLabel={label ?? tx('Memo, tippen zum Sprechen', 'Memo, tap to talk')}
       style={{ width: box, height: box, alignItems: 'center', justifyContent: 'center', overflow: 'visible' }}>
       <View pointerEvents="none" style={{ width: size, height: size, marginTop: -(0.08 * size - 0.4), opacity: b.landed && !b.dockHidden && !out ? 1 : 0 }}>
-        <Pin size={size} mood={mood} joy={b.joy} joyKind={b.joyKind} hop={b.hop} hopH={6} poke={b.poke} tap={tap} sad={b.sad} wink={b.wink} level={voiceLevel} glance={glance} typeAt={typeAt} ground={ground} />
+        <Pin size={size} mood={mood} joy={b.joy} joyKind={b.joyKind} hop={b.hop + nod} hopH={below && nod ? 4 : 6} poke={b.poke} tap={tap} sad={b.sad} wink={b.wink} level={voiceLevel} glance={glance} typeAt={typeAt} ground={ground} />
       </View>
       {ask ? (
         <View pointerEvents="none" style={{ position: 'absolute', right: -5, top: -5, width: 15, height: 15, borderRadius: 8, alignItems: 'center', justifyContent: 'center', backgroundColor: tokens.row, boxShadow: `0 0 0 1px ${tokens.hair}` } as any}>

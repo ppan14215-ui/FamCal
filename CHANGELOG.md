@@ -4,6 +4,7 @@ Alle sichtbaren Änderungen an FamCal. Neueste oben. Agenten und Menschen: Ände
 
 ## Unreleased
 
+- Memo schaut im Blatt beim Tippen nach unten auf deinen Text und nickt mit. Das Blatt lässt sich fast bis ganz nach oben ziehen. Die Chat Seite zeigt kein eigenes Eingabefeld mehr über der Leiste, Memo öffnet überall das Blatt.
 - Tippst du im Memo Blatt, fährt es mit der Tastatur auf zwei Drittel hoch, damit mehr vom Chat zu sehen ist.
 - Memo antippen öffnet den Verlauf ohne Tastatur. Sprechen öffnet einen ruhigen weißen Screen mit Memo oben, mitlaufendem Text und Welle statt der dunklen Karte. Die Termin Ansicht hat jetzt das gleiche helle Feld mit Mikro.
 
