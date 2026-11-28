@@ -8,6 +8,8 @@ import { View } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
 import * as Clipboard from 'expo-clipboard';
 import { Screen, H1, H2, Group, Chevron, Seg } from '../../src/components/ui/kit';
+import { SectionLabel } from '../../src/components/ui/Group';
+import { usePersons } from '../../src/components/ui/Person';
 import { useTermDur, setTermDur, durLabel } from '../../src/lib/dauer';
 import { useStartView, setStartView, viewLabel, VIEWS } from '../../src/lib/ansicht';
 import Txt from '../../src/components/ui/Txt';
@@ -44,19 +46,19 @@ import { HOME } from '../../src/lib/home';
 /** A plain row: name left, value right, like Apple's settings (Julian 03.11.). Flat on the ground, hairlines only. */
 function SRow({ t, v, right, onPress }: { t: string; v?: string; right?: React.ReactNode; onPress?: () => void }) {
   return (
-    <PressScale scale={0.985} onPress={onPress} disabled={!onPress} style={{ flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 50, paddingVertical: 8, paddingHorizontal: 2, backgroundColor: tokens.bg }}>
-      <Txt size={17} line={22} numberOfLines={1} style={{ flexShrink: 0 }}>{t}</Txt>
+    <PressScale scale={0.985} onPress={onPress} disabled={!onPress} style={{ flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: 52, paddingVertical: 12 }}>
+      <Txt size={15.5} line={21} weight={500} tracking={-0.19} numberOfLines={1} style={{ flexShrink: 0 }}>{t}</Txt>
       <View style={{ flex: 1 }} />
-      {v ? <Txt size={16} line={22} color={tokens.sub} numberOfLines={1} style={{ flexShrink: 1 }}>{v}</Txt> : null}
-      {right === undefined ? <Chevron /> : right}
+      {v ? <Txt size={15} line={20} color={tokens.sub} numberOfLines={1} style={{ flexShrink: 1 }}>{v}</Txt> : null}
+      {right === undefined ? <LineIcon name="chev" size={13} color={tokens.mute} stroke={2} /> : right}
     </PressScale>
   );
 }
 /** A row of "Du": the grey name left, its control right. */
 function Pick({ t, children }: { t: string; children: React.ReactNode }) {
   return (
-    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12, minHeight: 54, paddingVertical: 8, paddingHorizontal: 2 }}>
-      <Txt size={16.5} line={22} color={tokens.sub}>{t}</Txt>
+    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12, minHeight: 52, paddingVertical: 8 }}>
+      <Txt size={15.5} line={21} weight={500} tracking={-0.19}>{t}</Txt>
       {children}
     </View>
   );
@@ -82,17 +84,17 @@ function Swatches() {
   const sel = ((colors[me] % n) + n) % n;
   const taken = ((colors[me === 'J' ? 'T' : 'J'] % n) + n) % n;
   return (
-    <View style={{ gap: 10, paddingTop: 12, paddingBottom: 14, paddingHorizontal: 2 }}>
-      <Txt size={16.5} line={22} color={tokens.sub}>{tx('Deine Farbe', 'Your colour')}</Txt>
-      <View accessibilityRole="radiogroup" style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+    <View style={{ gap: 10, paddingTop: 14, paddingBottom: 14 }}>
+      <Txt size={15.5} line={21} weight={500} tracking={-0.19}>{tx('Meine Farbe', 'My colour')}</Txt>
+      <View accessibilityRole="radiogroup" style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
         {personPalette.map(shade).map((c, i) => {
           const on = i === sel;
           const off = i === taken && !on;
           return (
             <PressScale key={c.name} scale={0.9} hitSlop={4} disabled={off} accessibilityRole="radio" accessibilityLabel={c.name.replace(/^[A-Z]-/, '')} accessibilityState={{ selected: on, disabled: off }} onPress={() => { haptics.select(); actions.setColor(me, i); colorsTouched(); }}
-              style={{ width: 38, height: 38, borderRadius: 19, alignItems: 'center', justifyContent: 'center', borderWidth: 1.5, borderColor: on ? tokens.ink : 'transparent', opacity: off ? 0.25 : 1 }}>
+              style={{ width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: on ? tokens.ink : 'transparent', opacity: off ? 0.25 : 1 }}>
               {/* The colour as people see it in the app: the fill (brand and Bunt both name it bg). */}
-              <View style={{ width: 29, height: 29, borderRadius: 15, backgroundColor: c.bg }} />
+              <View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: c.bg }} />
             </PressScale>
           );
         })}
@@ -146,82 +148,55 @@ export default function Einstellungen() {
   const country = useStore((s) => s.country);
   const code = getFamily()?.invite_code;
   const openCals = () => router.push({ pathname: '/onboarding/kalender', params: { zurueck: '1' } });
-  const copy = <LineIcon name="copy" size={18} color={tokens.sub} />;
+  const copy = <LineIcon name="copy" size={17} color={tokens.mute} />;
+  const pp = usePersons();
   return (
-    <Screen gap={10} tab>
-      <H1>{tx('Einstellungen', 'Settings')}</H1>
-
-      <H2>{tx('Du', 'You')}</H2>
+    <Screen gap={0} tab head={<H1 sub={(pp[getFamily() ? myRole() : 'J']?.name ?? '')}>{tx('Profil', 'Profile')}</H1>}>
+      {/* Brand (27.11.): three quiet groups, you, the family, the app. What was only a look to choose went away. */}
       <Group>
+        <SRow key="konto" t={tx('Konto', 'Account')} v={(pp[getFamily() ? myRole() : 'J']?.name ?? '')} onPress={() => router.push('/personen')} />
         <Swatches key="farbe" />
-        <Pick key="memo" t="Memo">
-          <View style={{ width: 216 }}>
-            <Seg items={[{ key: 'ink', label: tx('Tinte', 'Ink') }, { key: 'me', label: tx('Meine Farbe', 'My colour') }]} value={memo} onChange={(k) => { setMemoColor(k); }} />
-          </View>
-        </Pick>
-        <Preview key="vorschau" />
-        {/* Julian 11.11.: Memo, or a minimal mic with record and stop. */}
-        <Pick key="sprechen" t={tx('Sprechen', 'Talking')}>
-          <View style={{ width: 216 }}>
-            <Seg items={[{ key: 'pin', label: tx('Mit Memo', 'With Memo') }, { key: 'minimal', label: 'Minimal' }]} value={masc} onChange={(k) => { setMascot(k); toast(k === 'minimal' ? tx('Nur Mikro und Stopp, ohne Memo', 'Just mic and stop, no Memo') : tx('Memo ist wieder da', 'Memo is back')); }} />
-          </View>
-        </Pick>
-        {/* Julian 17.11.: a configurable app. Where he liked two ways, both stay and a setting picks one. */}
-        <Pick key="leiste" t={tx('Leiste', 'Navigation')}>
-          <View style={{ width: 216 }}>
-            <Seg items={[{ key: 'mitte', label: tx('Memo mittig', 'Memo centred') }, { key: 'pille', label: tx('Mit Chat', 'With chat') }]} value={navLook} onChange={(k) => { setNavLook(k); }} />
-          </View>
-        </Pick>
-        <Pick key="jahr" t={tx('Jahr', 'Year')}>
-          <View style={{ width: 216 }}>
-            <Seg items={[{ key: 'klein', label: tx('Monate', 'Months') }, { key: 'kacheln', label: tx('Kacheln', 'Tiles') }]} value={yearLook} onChange={(k) => { setYearLook(k); }} />
-          </View>
-        </Pick>
-        <Pick key="listen" t={tx('Listen', 'Lists')}>
-          <View style={{ width: 216 }}>
-            <Seg items={[{ key: 'kacheln', label: tx('Kacheln', 'Tiles') }, { key: 'reiter', label: tx('Reiter', 'Tabs') }]} value={listLook} onChange={(k) => { setListLook(k); }} />
-          </View>
-        </Pick>
-        <Pick key="tage" t={tx('3 Tage', '3 days')}>
-          <View style={{ width: 216 }}>
-            <Seg items={[{ key: 'an', label: tx('Zeigen', 'Show') }, { key: 'aus', label: tx('Ausblenden', 'Hide') }]} value={days3 ? 'an' : 'aus'} onChange={(k) => { setShowDays(k === 'an'); }} />
-          </View>
-        </Pick>
-        <SRow key="start" t={tx('Kalender startet mit', 'Calendar opens on')} v={tx(viewLabel(sv, true), viewLabel(sv, false))} onPress={() => { const opts = VIEWS.filter((x) => x !== 'tag' || showDays()); const v = opts[(opts.indexOf(sv) + 1) % opts.length]; haptics.select(); setStartView(v); toast(tx(`Kalender startet mit ${viewLabel(v, true)}`, `Calendar opens on ${viewLabel(v, false)}`)); }} />
-        <SRow key="sprache" t={tx('Sprache beim Sprechen', 'Speech language')} v={sl === 'de' ? tx('Deutsch', 'German') : tx('Englisch', 'English')} onPress={() => { const v = sl === 'de' ? 'en' : 'de'; setSpeechLang(v); setSl(v); toast(v === 'de' ? tx('Ich höre jetzt auf Deutsch', 'Listening in German now') : tx('Ich höre jetzt auf Englisch', 'Listening in English now')); }} />
       </Group>
 
-      <H2>{tx('Familie', 'Family')}</H2>
+      <SectionLabel>{tx('Familie', 'Family')}</SectionLabel>
       <Group>
-        <SRow key="mitglieder" t={tx('Mitglieder', 'Members')} v={String(2 + people)} onPress={() => router.push('/personen')} />
-        <SRow key="dauer" t={tx('Dauer neuer Termine', 'New event length')} v={dur ? tx(durLabel(dur, true), durLabel(dur, false)) : tx('Wie üblich', 'Usual')} onPress={() => { const opts = [0, 30, 60, 90, 120]; const v = opts[(opts.indexOf(dur) + 1) % opts.length]; haptics.select(); setTermDur(v); toast(v ? tx(`Neue Termine dauern ${durLabel(v, true)}`, `New events last ${durLabel(v, false)}`) : tx('Dauer wie üblich', 'Usual length')); }} />
-        <SRow key="kalender" t={tx('Kalender verbinden', 'Connect calendars')} v={cals.map((c) => CAL_SHORT[c.provider] ?? c.provider).join(', ') || undefined} onPress={openCals} />
-        {HIDDEN.extras ? null : <SRow key="hinweise" t={tx('Benachrichtigungen', 'Notifications')} onPress={() => router.push('/demo/sperrbildschirm')} />}
+        <SRow key="mitglieder" t={tx('Familie', 'Family')} v={tx(`${2 + people} Personen`, `${2 + people} people`)} onPress={() => router.push('/personen')} />
         {LIVE ? (
           code ? <SRow key="code" t={tx('Familiencode', 'Family code')} v={code} right={copy} onPress={async () => { await Clipboard.setStringAsync(code).catch(() => {}); toast(tx('Code kopiert', 'Code copied')); }} /> : null
         ) : (
           <SRow key="adresse" t={tx('Familienadresse', 'Family address')} v="huber-7q2@familie.app" right={copy} onPress={async () => { await Clipboard.setStringAsync('huber-7q2@familie.app').catch(() => {}); toast(tx('Adresse kopiert', 'Address copied')); }} />
         )}
+        <SRow key="kalender" t={tx('Kalender verbinden', 'Connect calendars')} v={cals.map((c) => CAL_SHORT[c.provider] ?? c.provider).join(', ') || undefined} onPress={openCals} />
         <SRow key="urlaub" t={tx('Urlaub und Feiertage', 'Vacation and holidays')} v={(land && (country === 'DE' ? land : regionName(country, land))) || countryName(country)} onPress={() => router.push('/urlaub')} />
-        <SRow key="wissen" t={tx('Was ich weiß', 'What I know')} onPress={() => router.push('/wissen')} />
+        <SRow key="wissen" t={tx('Was Memo weiß', 'What Memo knows')} onPress={() => router.push('/wissen')} />
       </Group>
 
-      <H2>{tx('Konto', 'Account')}</H2>
+      <SectionLabel>App</SectionLabel>
       <Group>
+        {HIDDEN.extras ? null : <SRow key="hinweise" t={tx('Benachrichtigungen', 'Notifications')} onPress={() => router.push('/demo/sperrbildschirm')} />}
+        <SRow key="sprache" t={tx('Sprache beim Sprechen', 'Speech language')} v={sl === 'de' ? tx('Deutsch', 'German') : tx('Englisch', 'English')} onPress={() => { const v = sl === 'de' ? 'en' : 'de'; setSpeechLang(v); setSl(v); toast(v === 'de' ? tx('Ich höre jetzt auf Deutsch', 'Listening in German now') : tx('Ich höre jetzt auf Englisch', 'Listening in English now')); }} />
+        <SRow key="start" t={tx('Kalender startet mit', 'Calendar opens on')} v={tx(viewLabel(sv, true), viewLabel(sv, false))} onPress={() => { const opts = VIEWS.filter((x) => x !== 'tag' || showDays()); const v = opts[(opts.indexOf(sv) + 1) % opts.length]; haptics.select(); setStartView(v); toast(tx(`Kalender startet mit ${viewLabel(v, true)}`, `Calendar opens on ${viewLabel(v, false)}`)); }} />
+        <SRow key="dauer" t={tx('Dauer neuer Termine', 'New event length')} v={dur ? tx(durLabel(dur, true), durLabel(dur, false)) : tx('Wie üblich', 'Usual')} onPress={() => { const opts = [0, 30, 60, 90, 120]; const v = opts[(opts.indexOf(dur) + 1) % opts.length]; haptics.select(); setTermDur(v); toast(v ? tx(`Neue Termine dauern ${durLabel(v, true)}`, `New events last ${durLabel(v, false)}`) : tx('Dauer wie üblich', 'Usual length')); }} />
+        <SRow key="thema" t={tx('Farbthema', 'Colour theme')} v={themeName} onPress={() => router.push('/design')} />
+        <Pick key="leiste" t={tx('Leiste', 'Navigation')}>
+          <View style={{ width: 200 }}>
+            <Seg items={[{ key: 'mitte', label: tx('Memo mittig', 'Memo centred') }, { key: 'pille', label: tx('Mit Chat', 'With chat') }]} value={navLook} onChange={(k) => { setNavLook(k); }} />
+          </View>
+        </Pick>
         {/* Julian 05.11.: Ohne KI, Sprache nur auf dem Handy, Alle Daten löschen. */}
         <SRow key="datenschutz" t={tx('Datenschutz', 'Privacy')} v={ohneKiNow ? tx('Ohne KI', 'Without AI') : undefined} onPress={() => router.push('/datenschutz')} />
         <SRow key="export" t={tx('Kalender Abo und Export', 'Calendar feed and export')} onPress={() => router.push('/kalender-abo')} />
-        <SRow key="plus" t={tx('Plus testen', 'Try Plus')} v={LIVE ? undefined : '7 von 10'} onPress={() => router.push('/plus')} />
+        <SRow key="plus" t="Plus" v={LIVE ? undefined : '7 von 10'} onPress={() => router.push('/plus')} />
         {LIVE ? <SRow key="daten" t={tx('Nutzungsdaten teilen', 'Share usage data')} v={noStats ? tx('Aus', 'Off') : tx('An', 'On')} right={null} onPress={() => { haptics.select(); const off = !noStats; setAnalyticsOff(off); setNoStats(off); }} /> : null}
         {LIVE ? (
-          <PressScale key="ab" scale={0.985} onPress={async () => { await forgetLocal(); await signOut(); if (router.canDismiss()) router.dismissAll(); router.replace('/anmelden'); }} style={{ minHeight: 50, justifyContent: 'center', paddingHorizontal: 2 }}>
-            <Txt size={17} line={22} color={tokens.danger}>{tx('Abmelden', 'Sign out')}</Txt>
+          <PressScale key="ab" scale={0.985} onPress={async () => { await forgetLocal(); await signOut(); if (router.canDismiss()) router.dismissAll(); router.replace('/anmelden'); }} style={{ minHeight: 52, justifyContent: 'center' }}>
+            <Txt size={15.5} line={21} weight={500} color={tokens.danger}>{tx('Abmelden', 'Sign out')}</Txt>
           </PressScale>
         ) : null}
       </Group>
 
       {/* Julian 04.11.: the real settings apart from what is only there to try things out. */}
-      <H2>{tx('Zum Testen', 'For testing')}</H2>
+      <SectionLabel>{tx('Zum Testen', 'For testing')}</SectionLabel>
       {HIDDEN.toggles ? null : <>
       <View style={{ gap: 8 }}>
         {/* Julian 30.10.: both versions side by side, to compare. */}

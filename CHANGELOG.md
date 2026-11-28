@@ -4,6 +4,10 @@ Alle sichtbaren Änderungen an FamCal. Neueste oben. Agenten und Menschen: Ände
 
 ## Unreleased
 
+### Neue Marke, Schritt 6: Profil (28.11.)
+- Der Tab heißt jetzt auch oben "Profil", mit deinem Namen darüber. Drei ruhige Gruppen: du (Konto, Meine Farbe), Familie, App.
+- Weg sind die Auswahlen, die nur das Aussehen umschalteten: Memo Farbe mit Vorschau, Jahr als Monate oder Kacheln, Listen als Kacheln oder Reiter, 3 Tage zeigen. Die Leiste bleibt wählbar.
+
 ### Neue Marke, Schritt 5: Listen (28.11.)
 - Listen hat zwei Reiter: "Alle Listen" und "Aufgaben". Oben steht, wie viel offen ist.
 - Alle Listen zeigt den Einkauf direkt zum Abhaken, darunter "Wer macht was, diese Woche", dann jede andere Liste als ruhige Kachel mit Fortschritt.
